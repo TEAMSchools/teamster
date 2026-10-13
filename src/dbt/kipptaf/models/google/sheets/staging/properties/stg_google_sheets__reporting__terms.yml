@@ -34,6 +34,21 @@ models:
               - grade_band
           config:
             severity: error
+      # Consumers resolve a term by joining a date into these windows by type,
+      # code and name (plus region, school and grade band where a type scopes
+      # by them). Two such windows that overlap, or a window whose end precedes
+      # its start, fan that join out or drop rows silently. Rows missing a
+      # bound are a separate defect and are excluded here. #5276
+      - dbt_utils.mutually_exclusive_ranges:
+          arguments:
+            lower_bound_column: start_date
+            upper_bound_column: end_date
+            partition_by: type, code, name, region, school_id, grade_band
+            gaps: allowed
+            zero_length_range_allowed: true
+          config:
+            severity: error
+            where: start_date is not null and end_date is not null
     columns:
       - name: type
         data_type: string
@@ -92,7 +107,12 @@ models:
           upstream.
       - name: grade_band
         data_type: string
-        description: Grade band (`ES`, `MS`, `HS`). Null when not band-specific.
+        description: >-
+          Grades or grade band the row applies to. A band label such as `ES`,
+          `MS`, `HS` or `K-2` on most types; on `LIT` rows, a comma-separated
+          list of grade levels (e.g. `0,1,2`, with 0 for kindergarten) that sit
+          that round, and one term can carry several rows that differ only by
+          band. Part of the dim_terms term_key. Null when not band-specific.
       - name: lockbox_date
         data_type: date
         description: >-

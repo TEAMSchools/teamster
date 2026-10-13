@@ -12,7 +12,7 @@ import fastavro
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from oracledb import Connection, ConnectParams, Cursor, connect, defaults
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from sqlalchemy import Select, TextClause
 
 from teamster.libraries.powerschool.sis.odbc.schema import ORACLE_AVRO_SCHEMA_TYPES
@@ -38,7 +38,7 @@ class PowerSchoolODBCResource(ConfigurableResource):
     """
 
     user: str
-    password: str
+    password: str = Field(repr=False)
     host: str
     port: str = "1521"
     service_name: str

@@ -33,3 +33,4 @@ inner join
 where
     ir.date_range = 'Weekly'
     and ir.academic_year_int = {{ var("current_academic_year") }}
+    and cw.location_region != 'KIPP Miami'

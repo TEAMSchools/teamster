@@ -276,13 +276,20 @@ legitimately-superseded inactive rows that repeat the key.
   redundant `severity` / `store_failures` / `store_failures_as` from
   singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
 - Staging-layer tests MUST set `config: severity: error` on every test. The
-  project default is `warn`, so staging tests without explicit `severity: error`
-  silently degrade to warnings and won't fail CI. Intermediate/mart/`rpt_` tests
-  may omit the override where a warning is acceptable.
-- Removing a `severity: warn` override reverts to project default (`warn`), not
-  `error`. To restore `error`, set `config: severity: error` explicitly.
-- Unscoped `+config` applies to tests from all installed packages, not just the
-  current project
+  district and kipptaf project default is `warn`, so their staging tests without
+  explicit `severity: error` silently degrade to warnings and won't fail CI.
+  Intermediate/mart/`rpt_` tests may omit the override where a warning is
+  acceptable.
+- Removing a `severity: warn` override reverts to the project default: `warn` in
+  a district or kipptaf, `error` in a source package. To force `error`, set
+  `config: severity: error` explicitly.
+- The root project's `dbt_project.yml` test config overrides a package's
+  resource-level config, so an unscoped `data_tests: +severity: warn` in a
+  district silently downgrades every package test declared `error`. Districts
+  therefore scope their `warn` default under their own project name
+  (`kippnewark: +severity: warn`). Source packages declare no project-level
+  severity at all, so a package test resolves dbt's own default, `error`, unless
+  the test itself says otherwise. Keep it that way.
 - **`accepted_values` passes NULLs** — it compiles to
   `where value not in (...)`, which NULL never satisfies. Every enum column that
   must be non-null carries `not_null` too, including one a `coalesce` makes
@@ -385,7 +392,8 @@ the normalized value its sibling scalar columns assert.
   — verify every paste against the current source.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
-  Describe calculated fields by logic. Use qualitative language — no stats.
+  Describe calculated fields by logic. Content test:
+  `.claude/rules/comments.md`.
 - Columns with **per-column** `data_tests:` must be sorted to the top of the
   `columns:` list for visibility — including after a change that strips a
   column's last test. Reorder freely under `contract: enforced`: BigQuery
@@ -406,7 +414,5 @@ the normalized value its sibling scalar columns assert.
 - YAML `description:` is for what/why a column or model computes. Don't put
   TODOs, history, migration plumbing, or tracking-issue refs (`#3142`, etc.) in
   descriptions — those go in inline SQL comments at the derivation site.
-- The reverse also holds: rationale that needs no code context belongs in
-  `description:`, not an inline SQL comment. Keep SQL comments to what a reader
-  of that line cannot see — a non-obvious fallback, why a filter exists. The
-  repo's existing multi-paragraph SQL comments are not a precedent to extend.
+- The reverse (rationale belongs in `description:`, not an inline SQL comment):
+  the inline-comment rule in `.claude/rules/dbt-sql.md`.

@@ -7,15 +7,12 @@ CODE_LOCATION = "kippmiami"
 LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 ```
 
-GCS bucket: `teamster-kippmiami`
-
 ## Active Integrations
 
 | Module      | Type          | Trigger                                                                |
 | ----------- | ------------- | ---------------------------------------------------------------------- |
 | `dbt`       | dbt assets    | `AutomationConditionSensor`                                            |
-| `deanslist` | API assets    | schedule (nightly)                                                     |
-| `finalsite` | API + SFTP    | schedule (contacts 04:00 + 12:00 ET) + couchdrop sensor                |
+| `finalsite` | API + SFTP    | schedule (contacts 00:15 + 12:00 ET) + couchdrop sensor                |
 | `fldoe`     | SFTP assets   | `AutomationConditionSensor`                                            |
 | `iready`    | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                    |
 | `renlearn`  | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                                  |
@@ -64,33 +61,27 @@ Constraints to preserve when touching any of these:
   Focus, not live Focus.** A snapshot older than the last hand-run Focus import
   makes the next delivery re-send those records and duplicate them. The
   `kippmiami__dlt__focus__intraday_sensor` probes every Focus table every 15
-  minutes and loads only what changed, so that snapshot is now refreshed within
-  ~15 minutes of any change instead of at fixed clock times — this makes the
-  dependency **easier** to satisfy than the old three-cron setup, not harder.
-  The `0 4 * * *` schedule is the unconditional overnight backstop for only the
-  count-only tables (`cursor_column: null` in `config/focus.yaml` —
-  `co_teachers` as of writing), which is the set the sensor's count-only probe
-  can't fully see an in-place edit on. The other 78 `updated_at`-tracked tables
-  have NO unconditional reload anymore — if one of them is ever suspected of
-  drifting (a stuck signature, a bad cursor), fix it with a manual launch of the
-  Focus asset job for that table, not by waiting for a nightly pass that no
-  longer touches it. The safe rule for ops is unchanged and was never a clock
-  time: do not re-run the delivery unless a Focus sync has run SINCE the last
-  import.
+  minutes and loads only what changed, so that snapshot is refreshed within ~15
+  minutes of any change. **Keep the `0 4 * * *` runs**: they are the
+  unconditional overnight reload for only the count-only tables (tiering:
+  `libraries/dlt/focus/CLAUDE.md` → _Probe gating_). Losing them would delay
+  picking up an in-place edit to a count-only table by up to a day; FRESH's
+  Miami enrollment/attendance rows and the rest of Focus-sourced Miami data come
+  from `updated_at`-tracked tables and would not go stale. Those tables have NO
+  unconditional reload — if one is suspected of drifting (a stuck signature, a
+  bad cursor), fix it with a manual launch of the Focus asset job for that
+  table. The safe rule for ops is not a clock time: do not re-run the delivery
+  unless a Focus sync has run SINCE the last import.
 - **First diagnostic when midday Focus data looks stale: check whether the
   intraday sensor is running.** It ships with `defaultStatus` STOPPED and must
-  be enabled by hand after a one-off manual load of all 79 tables has seeded
-  their baselines — the 04:00 tier cannot seed them, since it now targets only
-  the count-only tables (see `libraries/dlt/focus/CLAUDE.md`). A stopped sensor
-  now silently freezes every `updated_at`-tracked table — the 04:00 tier no
-  longer reloads them as a daily fallback, only the count-only tables — so this
-  is the first thing to check, where "did the 12:00 cron fire?" used to be.
-- **Keep the 04:00 runs**, but note what they cover changed: the tier now
-  reloads only the count-only tables (`co_teachers`), not a full refresh.
-  FRESH's Miami enrollment/attendance rows and the rest of Focus-sourced Miami
-  data come from `updated_at`-tracked tables the intraday sensor keeps fresh
-  continuously — losing the 04:00 tier would not put those on day-old data. It
-  would delay picking up an in-place edit to a count-only table by up to a day.
+  be enabled by hand after a one-off manual load of every table has seeded their
+  baselines (the 04:00 tier seeds only the count-only tables). A stopped sensor
+  silently freezes every `updated_at`-tracked table.
+- **The `contacts` API pull runs at 00:15, not 04:00.** That still lands before
+  FRESH's 05:00 Tableau extract, so Miami's morning dashboard reads same-day
+  data, and it puts `contacts` ahead of the NJ consumers of
+  `stg_finalsite__contacts` at 01:00 (Google Directory user sync) and 01:25
+  (DeansList). It is independent of the dlt Focus 04:00 tier above. See #4715.
 
 `kippmiami__extracts__focus__asset_job_schedule` also has to be STARTED in the
 Dagster+ UI; its `defaultStatus` is STOPPED and it had never run in prod as of
@@ -117,3 +108,9 @@ rebuild (#5195, #5228), when the location carries about 120
 `kippmiami/powerschool/*` dbt assets; PR B removes them again. kipptaf reads the
 dataset as a BQ-native source. Do not drop the dataset or the GCS files under
 `gs://teamster-kippmiami/dagster/kippmiami/powerschool/`.
+
+DeansList is retired the same way (#5110): Miami stopped using it, and this
+location has no `deanslist` assets or schedules. `kippmiami_deanslist` is a
+frozen dataset (last ingested 2026-07-21) that kipptaf still unions for history.
+Do not drop it or the GCS files under
+`gs://teamster-kippmiami/dagster/kippmiami/deanslist/`.

@@ -75,6 +75,19 @@ with
             and co.rn_year = 1
             and co.rn_undergrad = 1
             and co.cohort = {{ var("current_academic_year") }}
+    ),
+
+    all_graduates as (
+        select co.school_name, count(distinct co.student_number) as total_graduates,
+
+        from {{ ref("int_extracts__student_enrollments") }} as co
+        where
+            co.school_level = 'HS'
+            and co.rn_year = 1
+            and co.rn_undergrad = 1
+            and co.academic_year + 1 = {{ var("current_academic_year") }}
+            and co.exitcode = 'G1'
+        group by co.school_name
     )
 
 select
@@ -97,6 +110,8 @@ select
 
     sum(gr.is_4yr_grad) as total_4yr_grad,
 
+    coalesce(ag.total_graduates, 0) as total_graduates,
+
     round(
         sum(gr.is_4yr_grad) / (
             (sum(gr.is_entry_cohort) + sum(gr.is_transfer_in)) - sum(gr.is_transfer_out)
@@ -105,4 +120,5 @@ select
     ) as pct_grad,
 
 from grad_roster as gr
-group by gr.cohort, gr.school_name
+left join all_graduates as ag on gr.school_name = ag.school_name
+group by gr.cohort, gr.school_name, ag.total_graduates

@@ -1,45 +1,92 @@
 models:
   - name: rpt_appsheet__assessments
+    description: >-
+      Illuminate assessment list for the Assessment AppSheet app, one row per
+      Illuminate assessment id, internal and external alike. A passthrough of
+      `int_assessments__assessments_members` plus a zero-indexed grade level.
     columns:
       - name: assessment_id
         data_type: int64
+        description: Illuminate assessment id.
+        data_tests:
+          - unique
       - name: title
         data_type: string
+        description: Assessment title.
       - name: academic_year
         data_type: int64
+        description: Academic year as recorded in Illuminate.
       - name: academic_year_clean
         data_type: int64
+        description:
+          Cleaned academic year from `int_illuminate__assessments`, the year the
+          DDI stack uses.
       - name: scope
         data_type: string
+        description: Assessment scope.
       - name: creator_first_name
         data_type: string
+        description: First name of the staff member who created the assessment.
       - name: creator_last_name
         data_type: string
+        description: Last name of the staff member who created the assessment.
       - name: performance_band_set_id
         data_type: int64
+        description: Illuminate performance band set id for the assessment.
       - name: assessment_type
         data_type: string
+        description: Illuminate assessment type.
       - name: tags
         data_type: string
+        description: Illuminate assessment tags.
       - name: module_code
         data_type: string
+        description:
+          AppSheet extension module code (module type plus sequence). Null for
+          external assessments.
       - name: module_type
         data_type: string
+        description:
+          AppSheet extension module type. Null for external assessments.
       - name: module_sequence
         data_type: int64
+        description:
+          AppSheet extension module sequence. Null for external assessments.
       - name: illuminate_grade_level_id
         data_type: int64
+        description:
+          AppSheet extension grade level plus one, matching Illuminate's
+          1-indexed grade level ids. Null for external assessments.
       - name: regions_assessed
         data_type: string
+        description:
+          Comma-separated list of regions that take the assessment, from the
+          AppSheet extension. Null for external assessments.
       - name: regions_report_card
         data_type: string
+        description:
+          Comma-separated list of regions whose report card uses the assessment,
+          from the AppSheet extension. Null for external assessments.
       - name: regions_progress_report
         data_type: string
+        description:
+          Comma-separated list of regions whose progress report uses the
+          assessment, from the AppSheet extension. Null for external
+          assessments.
       - name: administered_at
         data_type: date
+        description:
+          AppSheet extension administered date, falling back to Illuminate's.
       - name: subject_area
         data_type: string
+        description:
+          AppSheet extension subject, falling back to the Illuminate subject
+          area.
       - name: is_internal_assessment
         data_type: boolean
+        description: True when the assessment has an AppSheet extension row.
       - name: grade_level
         data_type: int64
+        description:
+          AppSheet extension grade level, with K as 0 (illuminate_grade_level_id
+          minus one). Null for external assessments.

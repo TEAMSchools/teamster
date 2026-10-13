@@ -638,6 +638,8 @@
                 "'": "&#39;",
               })[c],
           );
+        // Every link leaves the page; keep the launch page open behind it.
+        const NEW_TAB = 'target="_blank" rel="noopener"';
 
         const inView = (t, v) => v === "all" || (t.audiences || []).includes(v);
         const viewCount = (v) => tools.filter((t) => inView(t, v)).length;
@@ -653,7 +655,7 @@
         document.getElementById("promos").innerHTML = promos
           .map(
             (p) =>
-              `<a class="promo${p.emphasis ? " alt" : ""}" href="${esc(p.url)}">
+              `<a class="promo${p.emphasis ? " alt" : ""}" href="${esc(p.url)}" ${NEW_TAB}>
        <b>${esc(p.label)}</b><em>${esc(p.blurb)}</em></a>`,
           )
           .join("");
@@ -735,7 +737,7 @@
         function itemHtml(it) {
           const title = it.isFamily
             ? `<span class="name">${esc(it.name)}</span>`
-            : `<a class="name" href="${esc(it.url)}">${esc(it.name)}</a>`;
+            : `<a class="name" href="${esc(it.url)}" ${NEW_TAB}>${esc(it.name)}</a>`;
           const region = it.regionLabel
             ? `<span class="pill"><span class="dot" style="background:${esc(it.regionColor)}"></span>${esc(it.regionLabel)}</span>`
             : "";
@@ -746,7 +748,7 @@
             ? `<span class="sys">${esc(it.systemLabel || it.system)}</span>`
             : "";
           const guide = it.guide
-            ? `<a class="guide" href="${esc(it.guide)}"><svg viewBox="0 0 20 20" width="14" height="14" fill="none"
+            ? `<a class="guide" href="${esc(it.guide)}" ${NEW_TAB}><svg viewBox="0 0 20 20" width="14" height="14" fill="none"
            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path
            d="M10 5.5C8.5 4.3 6.6 4 4.2 4v11c2.4 0 4.3.3 5.8 1.5 1.5-1.2 3.4-1.5 5.8-1.5V4c-2.4 0-4.3.3-5.8 1.5z"/><path
            d="M10 5.5v11"/></svg>Help guide</a>`
@@ -758,7 +760,7 @@
             ? `<div class="regions">${it.regions
                 .map(
                   (r) =>
-                    `<a class="region" href="${esc(r.url)}"><span class="dot" style="background:${esc(r.color)}"></span>${esc(r.label)}</a>`,
+                    `<a class="region" href="${esc(r.url)}" ${NEW_TAB}><span class="dot" style="background:${esc(r.color)}"></span>${esc(r.label)}</a>`,
                 )
                 .join("")}</div>`
             : "";

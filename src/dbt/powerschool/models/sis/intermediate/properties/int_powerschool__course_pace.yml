@@ -1,0 +1,1160 @@
+models:
+  - name: int_powerschool__course_pace
+    description: >-
+      One row per current-year GPA course per student with the average percent
+      the student needs in each remaining term, exams included, for the course
+      Y1 to land on their target cutoff from
+      `int_powerschool__student_y1_target`, and the quickest-win ranking of
+      their open courses. A term counts as remaining until its termbin ends, so
+      the in-progress term is in the remaining weight and the pace does not
+      swing with each posted assignment. An ended term with no grade counts
+      nowhere, matching the Y1 average PowerSchool computes. A course whose
+      every term has ended is locked; it has no pace and stays in the GPA. The
+      quickest win ranks open courses by unweighted grade points gained at the
+      next letter times credit hours, divided by the percent-point gap between
+      the pace to that letter and the live Y1 percent, floored at one point;
+      courses below the student's target rank first and ties break on course
+      number. A course has no rank when it is locked, has no next letter, needs
+      more than 100 to reach it, or is already at or ahead of the pace to it.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - course_number
+    columns:
+      - name: pace_percent
+        data_type: float64
+        description: >-
+          (target cutoff × total weight − points banked) / remaining weight, in
+          percent. NULL when the course is locked or has no target.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 200
+                inclusive: true
+              config:
+                where: pace_percent is not null
+      - name: quickest_win_rank
+        data_type: int64
+        description:
+          1 is the quickest win. NULL when the course does not qualify.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                inclusive: true
+              config:
+                where: quickest_win_rank is not null
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: course_number
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: potential_credit_hours
+        data_type: float64
+        description: GPA credit hours for the course.
+      - name: courses_gradescaleid_unweighted
+        data_type: int64
+        description: Unweighted grade scale the course's points are read on.
+      - name: target_cutoff_percent
+        data_type: float64
+        description:
+          The student's target cutoff from `int_powerschool__student_y1_target`.
+      - name: y1_percent_current
+        data_type: float64
+        description: >-
+          Live Y1 percent on the current termbin row, else the latest started
+          term's.
+      - name: y1_grade_points_unweighted_current
+        data_type: float64
+        description: Unweighted grade points of the live Y1 letter.
+      - name: term_percent_current
+        data_type: float64
+        description:
+          Percent in the in-progress term; NULL before any grade posts.
+      - name: total_weight
+        data_type: float64
+        description: >-
+          Sum of term weights for the course over terms that are open or were
+          graded, 100 for four 25-point quarters, 98 with two 5-point exams.
+      - name: points_banked
+        data_type: float64
+        description: Sum of percent × weight over terms whose termbin has ended.
+      - name: remaining_weight
+        data_type: float64
+        description: Sum of term weights over terms whose termbin has not ended.
+      - name: is_below_target
+        data_type: boolean
+        description:
+          True when `y1_percent_current` is below `target_cutoff_percent`.
+      - name: is_secured
+        data_type: boolean
+        description: >-
+          Pace at or below 50, the live-gradebook floor, so the target is
+          already met.
+      - name: is_locked
+        data_type: boolean
+        description: Every termbin for the course has ended.
+      - name: next_cutoff_percent
+        data_type: float64
+        description: Cutoff percent of `next_letter_grade`.
+      - name: next_letter_grade
+        data_type: string
+        description: >-
+          Lowest unweighted letter with strictly more grade points than the
+          course's current unweighted Y1 points. NULL when locked or at the top.
+      - name: next_grade_points
+        data_type: float64
+        description: Unweighted grade points of `next_letter_grade`.
+      - name: points_gained
+        data_type: float64
+        description: >-
+          `next_grade_points` minus the course's current unweighted Y1 points.
+      - name: pace_percent_to_next
+        data_type: float64
+        description: The pace formula with the next cutoff as target.
+      - name: need_gap
+        data_type: float64
+        description: >-
+          `pace_percent_to_next` minus the live Y1 percent, floored at 1. NULL
+          when the course does not qualify for a rank.
+      - name: score
+        data_type: float64
+        description: >-
+          Credit hours times `points_gained` over `need_gap`. NULL when the
+          course does not qualify for a rank.
+
+unit_tests:
+  - name: unit_powerschool_course_pace
+    description: >-
+      Target cutoff 87 for every student. Student 1 course C1 has four 25-point
+      quarters, Q1 ended at 80, Q2 in progress at 85: banked 2000, remaining 75,
+      pace (8700 − 2000) / 75 = 89.33, below target (Y1 82); its next letter is
+      B at 83, pace (8300 − 2000) / 75 = 84, gap 2, score 5 × 0.33 / 2 = 0.83,
+      rank 1 as the only course. Student 2 course C2 has four 22-point quarters
+      and two 5-point exams, Q1 ended at 80: banked 1760, remaining 76, pace
+      (8526 − 1760) / 76 = 89.03, higher than the 87 a quarter-only pace would
+      give because the exam weights are remaining too; next B, pace (8134 −
+      1760) / 76 = 83.87, gap 3.87, score 0.43. Student 3 course C3 has two
+      terms that both ended: locked, pace NULL, no next letter and no rank.
+      Student 4 course C4 has no grade yet and nothing ended: banked 0,
+      remaining 100, pace 87, not below target because Y1 is NULL, and no next
+      letter. Student 5 course C5 has Y1 95 with Q1 at 95 ended: pace (8700 −
+      2375) / 75 = 84.33, not below target, and no letter above A in the scale
+      fixture. Student 6 course C6 joined the course in Q2: its Q1 row ended
+      with no grade, so that term counts in neither the total nor the banked
+      points, total weight is 75, remaining 75, and the pace is 87, not the 116
+      a 100-point total would give; next B+, pace 87, gap 3, score 0.55. Student
+      7 ranks five courses. C1 is at Y1 82 below target, next B at pace 84, gap
+      2, score 0.83, rank 1. C4 is at Y1 45 (F) with Q1 banked 1125, next B- at
+      80, pace (8000 − 1125) / 75 = 91.67, gap 46.67, score 5 × 2.67 / 46.67 =
+      0.29, below target so rank 2 ahead of the higher score. C2 is at Y1 88
+      (B+), not below target, next A- at 90, pace (9000 − 2000) / 75 = 93.33,
+      gap 5.33, score 0.32, rank 3. C3 is locked, no rank. C6 has three ended
+      terms at 100 and Q4 in progress with Y1 82: pace to the 87 target is 48,
+      so it is secured, and the pace to B is 32, below the Y1 of 82, so the
+      student is already ahead of pace and the course has no rank. The B scale
+      row appears twice, as the three-district union of the lookup repeats every
+      row, and no course may fan out.
+    model: int_powerschool__course_pace
+    overrides:
+      vars:
+        current_academic_year: 2025
+    given:
+      - input: ref('int_powerschool__student_y1_target')
+        rows:
+          - { studentid: 1, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 2, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 3, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 4, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 5, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 6, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 7, schoolid: 101, target_cutoff_percent: 87.0 }
+      - input: ref('int_powerschool__gradescaleitem_lookup')
+        rows:
+          - {
+              gradescaleid: 976,
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: A,
+              grade_points: 4.0,
+              min_cutoffpercentage: 93,
+            }
+          - {
+              gradescaleid: 976,
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: A-,
+              grade_points: 3.67,
+              min_cutoffpercentage: 90,
+            }
+          - {
+              gradescaleid: 976,
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B+,
+              grade_points: 3.33,
+              min_cutoffpercentage: 87,
+            }
+          - {
+              gradescaleid: 976,
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B,
+              grade_points: 3.0,
+              min_cutoffpercentage: 83,
+            }
+          - {
+              gradescaleid: 976,
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B-,
+              grade_points: 2.67,
+              min_cutoffpercentage: 80,
+            }
+          - {
+              gradescaleid: 976,
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: F,
+              grade_points: 0.0,
+              min_cutoffpercentage: 0,
+            }
+      - input: ref('base_powerschool__final_grades')
+        rows:
+          - {
+              studentid: 1,
+              course_number: C1,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 80.0,
+              y1_percent_grade_adjusted: 80.0,
+              y1_grade_points_unweighted: 2.67,
+            }
+          - {
+              studentid: 1,
+              course_number: C1,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: true,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 85.0,
+              y1_percent_grade_adjusted: 82.0,
+              y1_grade_points_unweighted: 2.67,
+            }
+          - {
+              studentid: 1,
+              course_number: C1,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-07-01,
+              termbin_end_date: 9999-09-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 1,
+              course_number: C1,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 2,
+              course_number: C2,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 22.0,
+              term_percent_grade_adjusted: 80.0,
+              y1_percent_grade_adjusted: 80.0,
+              y1_grade_points_unweighted: 2.67,
+            }
+          - {
+              studentid: 2,
+              course_number: C2,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: true,
+              term_weighted_points_possible: 22.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: 80.0,
+              y1_grade_points_unweighted: 2.67,
+            }
+          - {
+              studentid: 2,
+              course_number: C2,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: E1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-06-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 5.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 2,
+              course_number: C2,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-07-01,
+              termbin_end_date: 9999-09-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 22.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 2,
+              course_number: C2,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 22.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 2,
+              course_number: C2,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: E2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-12-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 5.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 3,
+              course_number: C3,
+              course_name: Health,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 2.5,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 50.0,
+              term_percent_grade_adjusted: 70.0,
+              y1_percent_grade_adjusted: 70.0,
+              y1_grade_points_unweighted: 1.67,
+            }
+          - {
+              studentid: 3,
+              course_number: C3,
+              course_name: Health,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 2.5,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 2000-06-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 50.0,
+              term_percent_grade_adjusted: 74.0,
+              y1_percent_grade_adjusted: 72.0,
+              y1_grade_points_unweighted: 1.67,
+            }
+          - {
+              studentid: 4,
+              course_number: C4,
+              course_name: Algebra,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 9999-03-31,
+              termbin_is_current: true,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 4,
+              course_number: C4,
+              course_name: Algebra,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-04-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 4,
+              course_number: C4,
+              course_name: Algebra,
+              academic_year: 2025,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-07-01,
+              termbin_end_date: 9999-09-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 4,
+              course_number: C4,
+              course_name: Algebra,
+              academic_year: 2025,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 5,
+              course_number: C5,
+              course_name: History,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 95.0,
+              y1_percent_grade_adjusted: 95.0,
+              y1_grade_points_unweighted: 4.0,
+            }
+          - {
+              studentid: 5,
+              course_number: C5,
+              course_name: History,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: true,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: 95.0,
+              y1_grade_points_unweighted: 4.0,
+            }
+          - {
+              studentid: 5,
+              course_number: C5,
+              course_name: History,
+              academic_year: 2025,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-07-01,
+              termbin_end_date: 9999-09-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 5,
+              course_number: C5,
+              course_name: History,
+              academic_year: 2025,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 6,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 6,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: true,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 84.0,
+              y1_percent_grade_adjusted: 84.0,
+              y1_grade_points_unweighted: 3.0,
+            }
+          - {
+              studentid: 6,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-07-01,
+              termbin_end_date: 9999-09-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 6,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 7,
+              course_number: C1,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 80.0,
+              y1_percent_grade_adjusted: 80.0,
+              y1_grade_points_unweighted: 2.67,
+            }
+          - {
+              studentid: 7,
+              course_number: C1,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: true,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 85.0,
+              y1_percent_grade_adjusted: 82.0,
+              y1_grade_points_unweighted: 2.67,
+            }
+          - {
+              studentid: 7,
+              course_number: C1,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-07-01,
+              termbin_end_date: 9999-09-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 7,
+              course_number: C1,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 7,
+              course_number: C2,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 80.0,
+              y1_percent_grade_adjusted: 80.0,
+              y1_grade_points_unweighted: 2.67,
+            }
+          - {
+              studentid: 7,
+              course_number: C2,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: true,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 96.0,
+              y1_percent_grade_adjusted: 88.0,
+              y1_grade_points_unweighted: 3.33,
+            }
+          - {
+              studentid: 7,
+              course_number: C2,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-07-01,
+              termbin_end_date: 9999-09-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 7,
+              course_number: C2,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 7,
+              course_number: C3,
+              course_name: Health,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 2.5,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 50.0,
+              term_percent_grade_adjusted: 70.0,
+              y1_percent_grade_adjusted: 70.0,
+              y1_grade_points_unweighted: 1.67,
+            }
+          - {
+              studentid: 7,
+              course_number: C3,
+              course_name: Health,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 2.5,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 2000-06-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 50.0,
+              term_percent_grade_adjusted: 74.0,
+              y1_percent_grade_adjusted: 72.0,
+              y1_grade_points_unweighted: 1.67,
+            }
+          - {
+              studentid: 7,
+              course_number: C4,
+              course_name: Algebra,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 45.0,
+              y1_percent_grade_adjusted: 45.0,
+              y1_grade_points_unweighted: 0.0,
+            }
+          - {
+              studentid: 7,
+              course_number: C4,
+              course_name: Algebra,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: true,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 40.0,
+              y1_percent_grade_adjusted: 45.0,
+              y1_grade_points_unweighted: 0.0,
+            }
+          - {
+              studentid: 7,
+              course_number: C4,
+              course_name: Algebra,
+              academic_year: 2025,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-07-01,
+              termbin_end_date: 9999-09-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 7,
+              course_number: C4,
+              course_name: Algebra,
+              academic_year: 2025,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 7,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 100.0,
+              y1_percent_grade_adjusted: 100.0,
+              y1_grade_points_unweighted: 4.0,
+            }
+          - {
+              studentid: 7,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 2000-06-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 100.0,
+              y1_percent_grade_adjusted: 100.0,
+              y1_grade_points_unweighted: 4.0,
+            }
+          - {
+              studentid: 7,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-07-01,
+              termbin_end_date: 2000-09-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 100.0,
+              y1_percent_grade_adjusted: 100.0,
+              y1_grade_points_unweighted: 4.0,
+            }
+          - {
+              studentid: 7,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: true,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 90.0,
+              y1_percent_grade_adjusted: 82.0,
+              y1_grade_points_unweighted: 2.67,
+            }
+    expect:
+      rows:
+        - {
+            studentid: 1,
+            course_number: C1,
+            total_weight: 100.0,
+            points_banked: 2000.0,
+            remaining_weight: 75.0,
+            pace_percent: 89.33,
+            is_below_target: true,
+            is_secured: false,
+            is_locked: false,
+            next_letter_grade: B,
+            pace_percent_to_next: 84.0,
+            need_gap: 2.0,
+            score: 0.83,
+            quickest_win_rank: 1,
+          }
+        - {
+            studentid: 2,
+            course_number: C2,
+            total_weight: 98.0,
+            points_banked: 1760.0,
+            remaining_weight: 76.0,
+            pace_percent: 89.03,
+            is_below_target: true,
+            is_secured: false,
+            is_locked: false,
+            next_letter_grade: B,
+            pace_percent_to_next: 83.87,
+            need_gap: 3.87,
+            score: 0.43,
+            quickest_win_rank: 1,
+          }
+        - {
+            studentid: 3,
+            course_number: C3,
+            total_weight: 100.0,
+            points_banked: 7200.0,
+            remaining_weight: 0.0,
+            pace_percent: null,
+            is_below_target: true,
+            is_secured: false,
+            is_locked: true,
+            next_letter_grade: null,
+            pace_percent_to_next: null,
+            need_gap: null,
+            score: null,
+            quickest_win_rank: null,
+          }
+        - {
+            studentid: 4,
+            course_number: C4,
+            total_weight: 100.0,
+            points_banked: 0.0,
+            remaining_weight: 100.0,
+            pace_percent: 87.0,
+            is_below_target: false,
+            is_secured: false,
+            is_locked: false,
+            next_letter_grade: null,
+            pace_percent_to_next: null,
+            need_gap: null,
+            score: null,
+            quickest_win_rank: null,
+          }
+        - {
+            studentid: 5,
+            course_number: C5,
+            total_weight: 100.0,
+            points_banked: 2375.0,
+            remaining_weight: 75.0,
+            pace_percent: 84.33,
+            is_below_target: false,
+            is_secured: false,
+            is_locked: false,
+            next_letter_grade: null,
+            pace_percent_to_next: null,
+            need_gap: null,
+            score: null,
+            quickest_win_rank: null,
+          }
+        - {
+            studentid: 6,
+            course_number: C6,
+            total_weight: 75.0,
+            points_banked: 0.0,
+            remaining_weight: 75.0,
+            pace_percent: 87.0,
+            is_below_target: true,
+            is_secured: false,
+            is_locked: false,
+            next_letter_grade: B+,
+            pace_percent_to_next: 87.0,
+            need_gap: 3.0,
+            score: 0.55,
+            quickest_win_rank: 1,
+          }
+        - {
+            studentid: 7,
+            course_number: C1,
+            total_weight: 100.0,
+            points_banked: 2000.0,
+            remaining_weight: 75.0,
+            pace_percent: 89.33,
+            is_below_target: true,
+            is_secured: false,
+            is_locked: false,
+            next_letter_grade: B,
+            pace_percent_to_next: 84.0,
+            need_gap: 2.0,
+            score: 0.83,
+            quickest_win_rank: 1,
+          }
+        - {
+            studentid: 7,
+            course_number: C2,
+            total_weight: 100.0,
+            points_banked: 2000.0,
+            remaining_weight: 75.0,
+            pace_percent: 89.33,
+            is_below_target: false,
+            is_secured: false,
+            is_locked: false,
+            next_letter_grade: A-,
+            pace_percent_to_next: 93.33,
+            need_gap: 5.33,
+            score: 0.32,
+            quickest_win_rank: 3,
+          }
+        - {
+            studentid: 7,
+            course_number: C3,
+            total_weight: 100.0,
+            points_banked: 7200.0,
+            remaining_weight: 0.0,
+            pace_percent: null,
+            is_below_target: true,
+            is_secured: false,
+            is_locked: true,
+            next_letter_grade: null,
+            pace_percent_to_next: null,
+            need_gap: null,
+            score: null,
+            quickest_win_rank: null,
+          }
+        - {
+            studentid: 7,
+            course_number: C4,
+            total_weight: 100.0,
+            points_banked: 1125.0,
+            remaining_weight: 75.0,
+            pace_percent: 101.0,
+            is_below_target: true,
+            is_secured: false,
+            is_locked: false,
+            next_letter_grade: B-,
+            pace_percent_to_next: 91.67,
+            need_gap: 46.67,
+            score: 0.29,
+            quickest_win_rank: 2,
+          }
+        - {
+            studentid: 7,
+            course_number: C6,
+            total_weight: 100.0,
+            points_banked: 7500.0,
+            remaining_weight: 25.0,
+            pace_percent: 48.0,
+            is_below_target: true,
+            is_secured: true,
+            is_locked: false,
+            next_letter_grade: B,
+            pace_percent_to_next: 32.0,
+            need_gap: null,
+            score: null,
+            quickest_win_rank: null,
+          }

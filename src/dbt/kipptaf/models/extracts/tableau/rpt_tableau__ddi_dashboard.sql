@@ -260,7 +260,7 @@ select
     co.is_sipps,
     co.is_low_25_fl,
 
-    qbls.qbl,
+    cast(null as string) as qbl,
 
     g.grade_goal,
     g.school_goal,
@@ -274,22 +274,13 @@ select
         ip.total_iready_lessons_passed_math, 0
     ) as total_iready_lessons_passed_math,
 
-    if(qbls.qbl is not null, true, false) as is_qbl,
+    false as is_qbl,
 
     coalesce(ip.is_pass_2_lessons_int_reading, 0) as is_passed_iready_2plus_reading_int,
     coalesce(ip.is_pass_4_lessons_int_reading, 0) as is_passed_iready_4plus_reading_int,
     coalesce(ip.is_pass_2_lessons_int_math, 0) as is_passed_iready_2plus_math_int,
     coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
 from identifiers as co
-left join
-    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
-    on co.academic_year = qbls.academic_year
-    and co.term = qbls.term_name
-    and co.region = qbls.region
-    and co.grade_level = qbls.grade_level
-    and co.response_type_code = qbls.standard_code
-    and co.subject_area = qbls.illuminate_subject_area
-    and qbls.qbl is not null
 left join
     {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id
@@ -368,7 +359,7 @@ select
     co.is_sipps,
     co.is_low_25_fl,
 
-    qbls.qbl,
+    cast(null as string) as qbl,
 
     g.grade_goal,
     g.school_goal,
@@ -378,20 +369,13 @@ select
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
 
-    if(qbls.qbl is not null, true, false) as is_qbl,
+    false as is_qbl,
 
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
     null as is_passed_iready_2plus_math_int,
     null as is_passed_iready_4plus_math_int,
 from identifiers as co
-left join
-    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
-    on co.academic_year = qbls.academic_year
-    and co.term = qbls.term_name
-    and co.region = qbls.region
-    and co.response_type_code = qbls.standard_code
-    and co.subject_area = qbls.illuminate_subject_area
 left join
     {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id

@@ -1,24 +1,42 @@
 models:
   - name: int_assessments__scaffold
     description: >-
-      Cross-joins the assessment catalog (assessment x administered_at x region)
-      against course enrollments to produce the canonical "expected to take"
-      grain. Used as the join scaffold for response and score data and as the
-      source for assessment-administration bridges.
+      One row per (Illuminate student, assessment). Used as the join scaffold
+      for response and score data and as the source for
+      assessment-administration bridges. Unions three branches. The internal
+      branch (`is_internal_assessment` true, `is_replacement` false) is the
+      "expected to take" grain — each internal assessment fanned out to its
+      `regions_assessed_array` regions and matched to course enrollments in that
+      region and subject whose enrollment window contains `administered_at`.
+      Grades K-8 (assessment `grade_level_id` 9 and below) also require the
+      student's latest Illuminate session in that academic year to be at the
+      assessment's grade and exclude enrollments flagged
+      `is_advanced_math_student`. Students in grades 9-12 (course enrollment
+      `illuminate_grade_level_id` 10 and above) match any internal assessment on
+      region, subject, and date alone, with no assessment grade check. When a
+      student matches several enrollments, the one with the latest
+      `cc_dateleft`, then latest `cc_dateenrolled`, is kept, and the Illuminate
+      sitting is LEFT JOINed, so students who have not tested are kept. The
+      replacement branch (`is_replacement` true) adds actual Illuminate sittings
+      of internal K-8 Text Study, Mathematics, Social Studies, and Science
+      assessments by students whose session grade differs from the assessment's
+      grade. The external branch (`is_internal_assessment` false) adds actual
+      sittings of every non-internal assessment. The replacement and external
+      branches carry no course-enrollment columns and take school from the
+      Illuminate session.
     config:
       materialized: table
       meta:
+        contains_pii: true
         dagster:
           # Cron instead of the default eager table condition, which
           # re-fires on ANY upstream data change, recursing through view
-          # chains up to 10 levels.
-          # ~95 executions/day on the eager table condition. Same downstream
-          # closure as int_assessments__course_enrollments: the assessment star
-          # on `0 0,10,13,15,17 * * *` plus topline weeklies on `0 0 * * *`.
+          # chains up to 10 levels. Same downstream closure and tick as
+          # int_assessments__course_enrollments.
           #
           # Refs #4821
           automation_condition:
-            cron_schedule: 0 0,10,13,15,17 * * *
+            cron_schedule: 30 0,10,13,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -41,10 +59,16 @@ models:
     columns:
       - name: illuminate_student_id
         data_type: int64
+        description: Illuminate student id.
       - name: powerschool_student_number
         data_type: int64
+        description: >-
+          Student number. Illuminate `local_student_id` on the K-8 internal,
+          replacement, and external branches; the course enrollment's student
+          number on the grades 9-12 internal branch.
       - name: assessment_id
         data_type: int64
+        description: Illuminate assessment id (member grain).
       - name: title
         data_type: string
         description: >-
@@ -55,24 +79,52 @@ models:
             source_column: int_assessments__assessments_members.title
       - name: subject_area
         data_type: string
+        description: >-
+          Member assessment subject area from
+          `int_assessments__assessments_members`.
       - name: academic_year
         data_type: int64
+        description: >-
+          `academic_year_clean` from `int_assessments__assessments_members`,
+          renamed.
       - name: administered_at
         data_type: date
+        description: >-
+          Member assessment administered date from
+          `int_assessments__assessments_members`.
       - name: performance_band_set_id
         data_type: int64
+        description: >-
+          Assessment-level band set from `int_assessments__assessments_members`.
       - name: powerschool_school_id
         data_type: int64
+        description: >-
+          School of the matched course enrollment on the internal branch; the
+          Illuminate session `site_id` on the replacement and external branches.
       - name: region
         data_type: string
+        description: >-
+          Region name. On the internal branch, an element of the assessment's
+          `regions_assessed_array`; on the replacement and external branches,
+          the `city` of the session school from
+          `stg_google_sheets__people__locations`, null when the school has no
+          match there.
       - name: grade_level_id
         data_type: int64
+        description: >-
+          Illuminate 1-indexed grade level id (grade level plus one). On the K-8
+          internal branch, the assessment's grade level; on the grades 9-12
+          internal branch, the course enrollment's grade level. Null on the
+          replacement and external branches.
       - name: scope
         data_type: string
+        description: From `int_assessments__assessments_members`.
       - name: module_type
         data_type: string
+        description: From `int_assessments__assessments_members`.
       - name: module_code
         data_type: string
+        description: From `int_assessments__assessments_members`.
       - name: discipline
         data_type: string
         description: >-
@@ -89,8 +141,9 @@ models:
           PowerSchool course enrollment row identifier from the matched
           enrollment in int_assessments__course_enrollments. Populated only for
           the internal-assessment branch (is_internal_assessment=true and
-          is_replacement=false); null for K-8 replacement curriculum and
-          external-assessment rows. Used as an upstream component of
+          is_replacement=false), and null there too when the match is a
+          synthesized ES Writing enrollment; null for K-8 replacement curriculum
+          and external-assessment rows. Used as an upstream component of
           dim_student_section_enrollments.student_section_enrollment_key.
         config:
           meta:
@@ -131,25 +184,39 @@ models:
       - name: _dbt_source_project
         data_type: string
         description: >-
-          Dagster code-location prefix derived from region (e.g. kippnewark,
-          kippcamden, kippmiami, kipppaterson). Carried into downstream hashes
-          so consumers join/hash on a stable column rather than re-deriving via
-          concat(region) or extract_source_project() at each call.
+          Dagster code-location prefix derived from region as `concat('kipp',
+          lower(region))` (e.g. kippnewark, kippcamden, kippmiami,
+          kipppaterson). Null when `region` is null. Carried into downstream
+          hashes so consumers join/hash on a stable column rather than
+          re-deriving it at each call.
       - name: student_assessment_id
         data_type: int64
+        description: >-
+          Illuminate student-assessment id of the sitting. Null on the internal
+          branch when the student has not taken the assessment.
       - name: date_taken
         data_type: date
+        description: >-
+          Illuminate date taken for the sitting. Null when the student has not
+          taken the assessment; can carry corrupt sentinel dates, which the
+          model-level warn test surfaces for the current academic year.
       - name: is_internal_assessment
         data_type: boolean
+        description: >-
+          True on the internal and replacement branches; false on the external
+          branch.
       - name: is_replacement
         data_type: boolean
+        description: True on the replacement branch only.
       - name: canonical_assessment_id
         data_type: int64
         description: >-
           Pass-through of
           int_assessments__assessments_members.canonical_assessment_id — the
           lead assessment_id within the partition (academic_year, scope,
-          subject_area, module_code, grade_level_id). See parent column for full
-          semantics. Consumers needing canonical_title,
-          canonical_administered_at, or canonical_grade_level_id join
-          int_assessments__assessments_canonical via this key.
+          subject_area, module_code, grade_level_id) for internal assessments,
+          and the row's own assessment_id for external assessments. See parent
+          column for full semantics. Consumers needing the canonical title,
+          administered date, or grade level join
+          int_assessments__assessments_canonical via this key (internal rows
+          only).

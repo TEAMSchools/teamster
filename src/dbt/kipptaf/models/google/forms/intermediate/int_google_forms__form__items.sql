@@ -348,6 +348,8 @@ select
 
     fie.abbreviation as item_abbreviation,
     fie.url_id as item_url_id,
+
+    lower(fie.abbreviation) as item_abbreviation_lower,
 from {{ ref("stg_google_forms__form") }} as f
 inner join form_items as fi on f.form_id = fi.form_id
 left join

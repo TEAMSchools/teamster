@@ -1,5 +1,8 @@
 models:
   - name: stg_schoolmint_grow__generic_tags
+    config:
+      # Overrides the schoolmint staging folder's table default.
+      materialized: view
     columns:
       - name: tag_id
         data_type: string

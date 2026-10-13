@@ -1,5 +1,6 @@
 import json
 import re
+from pathlib import Path
 
 import pytest
 
@@ -150,3 +151,16 @@ def test_build_raises_with_every_problem_listed(tmp_path):
         build(tmp_path)
 
     assert len(excinfo.value.errors) >= 4
+
+
+def test_every_link_in_the_real_template_opens_a_new_tab():
+    template = (
+        Path(__file__).resolve().parents[2] / "docs" / "launch" / "template.html"
+    ).read_text()
+    new_tab = re.search(r"const NEW_TAB = '([^']*)';", template)
+
+    assert new_tab is not None
+    assert 'target="_blank"' in new_tab.group(1)
+    anchors = re.findall(r"<a\b[^>]*>", template)
+    assert len(anchors) >= 4
+    assert all("${NEW_TAB}" in a for a in anchors), anchors

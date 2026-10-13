@@ -1,9 +1,15 @@
 models:
   - name: int_pearson__student_list_report
     description: >-
-      Union of each NJ district's int_pearson__student_list_report (the pearson
-      package model). Column docs live there; this wrapper adds
-      _dbt_source_project.
+      Union of the Newark, Camden and Paterson int_pearson__student_list_report
+      (the pearson package model, read via source()). One row per student,
+      academic year, administration and test. Column docs live on the package
+      model; this wrapper adds _dbt_source_project. Every row carries student
+      names, birth date, state and local ids and scores, so the whole model is
+      tagged PII.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

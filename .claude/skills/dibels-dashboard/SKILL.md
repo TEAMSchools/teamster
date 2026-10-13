@@ -1,0 +1,138 @@
+---
+name: dibels-dashboard
+description: >-
+  Use for ANY DIBELS work -- reading, explaining, querying, modelling, goal
+  setting, Tableau views, or answering a question about the numbers. Not only
+  code changes: invoke it before answering anything about DIBELS, because the
+  reference document it points at carries decisions that are not recoverable
+  from the SQL. Triggers: the DIBELS dashboard or Literacy Dashboard, Amplify or
+  mClass data, progress monitoring (PM) rounds or goals, aimline status or
+  categories (Meeting Aimline, Below Aimline, Trajectory), benchmark or
+  composite levels, DIBELS measures (ORF, NWF, PSF, WRF, Maze), the Bright Spots
+  tracker (#4952), the PM/aimline migration (#3834), benchmark completion
+  tracking (#4902), foundation, benchmark or PM goal setting, the Expected
+  Assessments sheet or LIT/PLIT rounds in reporting__terms, the Amplify DIBELS
+  spreadsheet, or any model matching *amplify*, *dibels* or *mclass*
+  (int_amplify__*, stg_amplify__*, int_google_sheets__dibels*,
+  stg_google_sheets__dibels*, int_topline__dibels_*,
+  int_students__dibels_participation_roster, rpt_tableau__dibels_dashboard,
+  rpt_gsheets__dibels_*) or their lineage.
+---
+
+# DIBELS Dashboard
+
+## Why this skill exists
+
+T&L's source doc gives goals as **ranges** ("62 - 66%") and, starting AY2025, as
+**two-or-more side-by-side population blocks** (All Students, Students with
+IEPs, and MLL, whose real goal values are still outstanding -- see _MLL
+population_ in `references/goal-setting.md`). The existing single-value staging
+table already required someone to collapse each range to one number by hand,
+applying a rule nobody wrote down. That rule is now written down (below) and
+encoded in a generator script instead of memory.
+
+## The min/max rule (verified, not guessed)
+
+Checked grade-by-grade against `stg_google_sheets__dibels_foundation_goals` for
+every Newark/Camden row across AY2024 and AY2025, zero exceptions:
+
+- **At/Above -> the LOW end** of the range
+- **Well Below -> the HIGH end** of the range
+- Holds identically for MOY and EOY. The rule is **goal_type-driven, not
+  period-driven** -- do not reintroduce a MOY-vs-EOY branch.
+
+## Where to look
+
+This file routes. Read the one page your task needs, not the whole skill. Each
+page opens with a contents list -- jump to the section you need rather than
+reading the page end to end.
+
+| If you are                                                                                                                                                                                                                                                        | Read                                                                                                                                              |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rolling the expectations scaffold forward a year or a season, or entering PM rounds for a new year                                                                                                                                                                | [references/rollover.md](references/rollover.md)                                                                                                  |
+| Running PM goal setting for a region after a benchmark window closes: follow the numbered steps in order and run every query; do not answer a step from memory                                                                                                    | [references/goal-setting.md](references/goal-setting.md) -> _Run goal setting per region_                                                         |
+| Setting, generating or pasting foundation or BM goals                                                                                                                                                                                                             | [references/goal-setting.md](references/goal-setting.md)                                                                                          |
+| Editing a Google Sheet source, a named range, or `sources-external.yml`                                                                                                                                                                                           | [references/sheets-and-sources.md](references/sheets-and-sources.md)                                                                              |
+| Answering what an aimline label means, or reporting a rate against the aimline                                                                                                                                                                                    | [references/aimline-method.md](references/aimline-method.md)                                                                                      |
+| Changing a model, a column, or a join in either PM chain                                                                                                                                                                                                          | [references/model-architecture.md](references/model-architecture.md)                                                                              |
+| Explaining a number that looks wrong, or verifying a change before reporting it                                                                                                                                                                                   | [references/diagnosing.md](references/diagnosing.md)                                                                                              |
+| A dbt test on a family model fired (for example `rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none`): the diagnosis query and fix are with the model's section                                                                                          | [references/model-architecture.md](references/model-architecture.md)                                                                              |
+| Finishing a change -- what to check, and what else must be updated                                                                                                                                                                                                | [references/diagnosing.md](references/diagnosing.md)                                                                                              |
+| The sight words dashboard (`rpt_tableau__sight_words_dashboard`): data flows from Illuminate on its own; upkeep is asking the MD of Teaching & Learning (Sabine Vilsaint) at rollover whether it is still used, then moving the dashboard's academic year forward | the reference doc, [`rpt_tableau__sight_words_dashboard`](../../../docs/models/dibels-dashboard-data-model.md#rpt_tableau__sight_words_dashboard) |
+| The NJDOE universal screener extract (`rpt_gsheets__njdoe_universal_screener_data`): in this family until the data team has a data-sharing agreement for NJDOE to pull from the vendor                                                                            | its own reference page, [docs/models/njdoe-universal-screener-data-model.md](../../../docs/models/njdoe-universal-screener-data-model.md)         |
+
+The data model itself — every column, its domain, and the decisions behind it —
+lives in
+[docs/models/dibels-dashboard-data-model.md](../../../docs/models/dibels-dashboard-data-model.md).
+That page and this skill hold different things: it holds the model, this holds
+the procedure and the traps. Do not copy facts between them.
+
+## Four rules that apply before you touch anything
+
+These are here because breaking one produces a plausible wrong answer rather
+than an error.
+
+1. **`assessment_type = 'PM'` is not a filter on its own.** It spans both
+   methods, so any PM count must also filter `model_type`, or it double-counts.
+   See [references/model-architecture.md](references/model-architecture.md).
+2. **Slice on the `expected_*` columns, never on a scores-side column.**
+   Filtering on a scores-side column silently drops the students who were never
+   tested, which is usually the population the question is about. Same file.
+3. **Hand over the whole sheet, never a patch.** See
+   [references/sheets-and-sources.md](references/sheets-and-sources.md).
+4. **Never verify a derived column by re-applying its own derivation.** The
+   check then compares an expression to itself and passes unconditionally. Drive
+   the check off the underlying flag instead. See
+   [references/diagnosing.md](references/diagnosing.md).
+
+## Before you finish: update this skill and the reference document
+
+**Not optional, and not gated on the user asking.** Any session that changes a
+DIBELS model, discovers something about how the data behaves, or settles a
+question with academics updates BOTH:
+
+- `docs/models/dibels-dashboard-data-model.md` — the published reference. It is
+  in the mkdocs nav, so a wrong page here is a bug, not a stale note.
+- this skill, for anything a future session needs BEFORE it opens a file.
+
+The reason is specific to this domain. Most of what matters about DIBELS is not
+recoverable from the SQL: which choices are T&L's and must not be 'corrected',
+which are ours, what academics were asked and answered, and which apparent bugs
+are recorded intent. On 2026-09-15 a session called a documented T&L rule a bug
+and started changing it; the yml description is what stopped that. A session
+that leaves its findings only in a PR body has lost them.
+
+What to write down, beyond the change itself:
+
+- A rule that looks wrong but is deliberate — say whose decision it is, and that
+  it must not be corrected.
+- A value or label rename — the old name, the new one, and the date, because
+  academics will ask about a word they still use.
+- A measurement a later QA run will compare against, with its date and academic
+  year, in `references/diagnosing.md`. Other counts stay in the session
+  scratchpad or the PR body; they go stale in a skill.
+- A dead end: an MCP that cannot reach a source, a check that proves nothing.
+
+Put column and model semantics in the model's properties yml, workflow and
+reasoning here, and the narrative in the reference document. The repo's yml
+conventions still apply to descriptions.
+
+**Ask before every push.** When the user asks to push, commit and push, or
+update the PR, and the branch changes any `src/dbt/` file with `dibels` or
+`amplify` in its path, stop before pushing and ask, in these words:
+
+> We need to update the skill and ref doc — do you authorize the update checks?
+
+On yes, check both files against what the branch changed and what the session
+learned, update what is missing, then push. On no, push as asked and say in the
+PR body that the reference doc and skill were not updated for this change. Ask
+again on the next push; one answer does not cover the branch.
+
+Covers the whole DIBELS dashboard suite: foundation and BM goals, the two PM
+methods (internal and aimline, #3834), participation, the sight words dashboard
+and the NJDOE screener extract. As a new track lands, give it a route and a
+reference file here rather than starting a separate skill.
+
+On hold, not in prod: the Bright Spots tracker (design and open questions on
+issue #4952, code on PR #4964) and Camden benchmark completion tracking (issue
+#4896, PR #4902).

@@ -64,8 +64,8 @@ To gate an _optional_ package layer per region, split the package into
 method/source subfolders (`api/`, `sftp/` — the amplify convention) and set
 `<package>: <method>: +enabled: false` in the unwired district's
 `dbt_project.yml`. Keep network-wide feeds enabled everywhere (e.g. finalsite
-SFTP `status_report` is consumed by kipptaf in all regions; only `api` is
-Miami-only). Method subfolders don't change asset keys.
+SFTP `status_report` is consumed by kipptaf in all regions). Method subfolders
+don't change asset keys.
 
 **Merging `dbt_project.yml` package configs can silently duplicate a top-level
 key.** When two branches each add `models: <package>:` (or `sources:`) at
@@ -107,6 +107,13 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   `JOBS_BY_PROJECT` (`state=DONE`, `error_result IS NULL`) before treating it as
   real. The Dagster run-retry absorbs it.
 
+## No seeds
+
+dbt seeds are forbidden. Every project sets `seed-paths: []`, so a CSV dropped
+into `seeds/` is never loaded and a `ref()` to it fails at parse. Hand-kept
+lookup data lives in a Google Sheet, read through a `sources-external.yml` entry
+and a `stg_google_sheets__*` model. Never put a path back in `seed-paths`.
+
 ## Model Conventions
 
 Conventions apply to **every** dbt project in this directory and load as
@@ -116,6 +123,10 @@ path-scoped rules on the first read of a matching file:
   picking and surrogate keys, date-range joins, formatting.
 - `.claude/rules/dbt-yaml.md` (`*.yml`): properties, sources, external tables,
   test config, unit-test fixtures, YAML conventions.
+- `.claude/rules/dbt-architecture.md` (`models/**`): layers, allowed edges,
+  intermediate kinds, and keys (rules A1-A11).
+- `.claude/rules/dbt-marts.md` (kipptaf `models/marts/**`): mart column naming,
+  strict-chain traversal, and PK/FK shapes (rubric R1-R4, R6-R10).
 - `.claude/rules/dbt-models.md` (`models/**`, `tests/**`): per-layer
   requirements, moving and retiring models, materialization changes,
   cross-project column changes.

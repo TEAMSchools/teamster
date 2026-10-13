@@ -1,79 +1,23 @@
 # CLAUDE.md — `marts/`
 
-Dimensional marts (star schema) consumed by Cube and Tableau. Most-downstream
-layer — no `ref()` from staging, intermediate, or reporting into marts.
-Intra-mart refs are permitted (e.g. `bridge_survey_expectations → dim_surveys`,
-`fct_staff_attrition → dim_staff_status`). When renaming a mart column, grep
-`ref(...)` within `marts/` too — not just outside.
+When renaming a mart column, grep `ref(...)` within `marts/` too — not just
+outside.
 
-**Bridge models (`bridge_*`)** are factless facts that link two or more
-dimensions via a many-to-many relationship and carry no measures. They live in
-`marts/bridges/`. Naming follows `bridge_<entity>_<entity>` or
-`bridge_<concept>` when the linked entities are obvious from context. Like dims
-and facts, bridges inherit `contract: enforced: true` and `materialized: view`,
-and require an explicit uniqueness test on their PK. Bridges follow the same
-strict-chain rule as facts — no diamond paths to a shared ancestor dim.
+Bridge models live in `marts/bridges/`, named `bridge_<entity>_<entity>`, or
+`bridge_<concept>` when the linked entities are obvious.
 
-## Column-naming rubric
-
-Applied to every column in every mart model.
-
-- **R1. Strip source-system prefixes/names** (`powerschool_`, `adp_`,
-  `deanslist_`, `focus_`, `finalsite_`) unless disambiguating unified columns.
-  Source-agnostic naming is load-bearing — the mart surface must not change when
-  Focus replaces PowerSchool or Finalsite replaces PowerSchool enrollment.
-- **R2. No KIPP-specific language** (`teammate`, `employee_number`, `microgoal`,
-  `dcid`, `oid`, `lep`).
-- **R3. Boolean fields use `is_` / `has_` prefix.** On fact tables, countable
-  0/1 flags may use `INT64` rather than `BOOLEAN` so `SUM(is_x)` / `AVG(is_x)`
-  read naturally without casting. Weighted non-binary measures drop `is_` (e.g.
-  `present_weight`).
-- **R4. Dates end `_date`; timestamps end `_timestamp`.**
-- **R5. \[reserved / removed\]** — numbering retained for stability of
-  references in prior PRs and issue history.
-- **R6. Ed-Fi Unified Data Model** nomenclature is the default for IDs, entity
-  names, standard attributes. Deviate toward plain English for awkward
-  descriptors.
-- **R7. Keep ubiquitous acronyms; spell out internal ones.** Ubiquitous,
-  user-facing acronyms (`gpa`, `ada`, `fte`, etc.) stay verbatim; niche
-  source-system acronyms (`dcid`, `oid`, `lep`) get spelled out or removed.
-- **R8. Plumbing removed** from mart SELECTs — see definition below.
-- **R9. Remove dimension attributes reachable via FK.** Includes natural keys
-  that duplicate a surrogate FK, and date columns that duplicate a date-key FK.
-- **R10. Entity qualification.** Qualify a descriptive column with the model's
-  entity prefix only when removing it creates a real downstream-join ambiguity
-  (e.g. `full_name` on every person dim — not `student_name`). Otherwise default
-  to unqualified. Don't entity-qualify bare reserved-word columns to satisfy BI
-  field-list readability — Cube `title:` aliases BI presentation. Evaluate R10 /
-  reserved-word rename decisions against raw-SQL ergonomics only.
-
-### Degenerate-dim rule
-
-Text columns (e.g. `incident_type`, `consequence_type`) drop `_code` / `_name`
-suffixes. **Exception**: when a code AND a human name coexist in the same table
-(e.g. `term_code` + `term_name`, `status_code` + `status_name`), both suffixes
-stay. Under R10, both halves also keep their entity prefix so the pair stays
-consistent.
-
-### Plumbing definition
-
-Removed from all mart SELECTs:
-
-- `_dbt_source_relation` (dbt internal, union-model metadata)
-- Source-system internal row IDs used only for upstream joins (DeansList `lid`,
-  PowerSchool `dcid`, Amplify record IDs, iReady submission IDs, etc.)
-- Any column whose only historical use was as a join key in intermediate layers
-
-Plumbing remains in `staging/` and `intermediate/` — only stripped from the mart
-SELECT.
+The column-naming rubric (R1-R4, R6-R10), degenerate-dim rule, plumbing
+definition, strict-chain traversal, and PK/FK/date column shapes live in
+`.claude/rules/dbt-marts.md`.
 
 ## Filing follow-up issues from marts work
 
 When filing a GitHub issue from marts work (spec authoring, PR review follow-up,
 CI warning triage), add it to project board
 [#4](https://github.com/orgs/TEAMSchools/projects/4) and set `Tier`, `PR batch`,
-and `Driver`. Commands and `GITHUB_TOKEN=` prefix: see root CLAUDE.md → MCP
-Servers `gh project` bullets. `Status` auto-sets to Todo on add — skip.
+and `Driver`. `gh project` commands: `.claude/context/github.md`; the
+`GITHUB_TOKEN=` prefix: `gh-token-scopes` skill. `Status` auto-sets to Todo on
+add — skip.
 
 **Ops-tracked grouping**: file ONE `ops-tracked` issue per underlying source
 (one Google Sheet, one config file) — bullets per orphan bucket inside. Don't
@@ -84,8 +28,10 @@ split per-bucket when the action is one sheet-editing session.
 Run before posting the final PR comment on any marts PR (spec, bugfix,
 refactor):
 
-- Scan touched models for diamond paths (see "Strict-chain traversal").
-- Scan touched models for column-naming rubric violations (R1–R10 above).
+- Scan the lines the PR adds or changes for diamond paths (_Strict-chain
+  traversal_ in `.claude/rules/dbt-marts.md`).
+- Scan the lines the PR adds or changes for column-naming rubric violations
+  (R1-R4, R6-R10).
 - Pull marts-model warnings from the latest CI run
   (`mcp__dbt__get_job_run_error` with `warning_only=true`). For each, search
   open issues by model name + FK target. Bucket orphans (by region, source,
@@ -96,47 +42,6 @@ refactor):
 - File newly surfaced errors per "Filing follow-up issues from marts work"
   above.
 
-## Strict-chain traversal
-
-Facts and child dims FK to their direct parent(s) only; deeper dimensional
-context is reached by traversing the FK chain, not by denormalizing it into the
-row.
-
-- **No diamond paths.** A fact should never have two FK routes to the same
-  ultimate dim. If a fact needs attributes of a deep dim (e.g. `dim_regions`
-  from a staff observation), traversal goes through the chain
-  (`fct_staff_observations → dim_locations → dim_regions`), not via a direct
-  `region_key` on the fact.
-- **Parent-fact inheritance.** A child fact that FKs to a parent fact inherits
-  the parent's dimensional context and does not repeat it. Example:
-  `fct_behavioral_consequences` carries `behavioral_incident_key` only; student
-  / location / region come through the parent, not duplicated here.
-
-Watch for common diamond triggers: a new `region_key` on a fact that already FKs
-to a location or staff-work-assignment; role-playing date FKs pointed at the
-same `dim_dates` row without a role qualifier (`created_date_key` vs
-`solved_date_key`, not both `date_key`). If you find yourself adding an FK to
-avoid a join, the chain is probably already there — use it instead.
-
-## PK / FK / date column shapes
-
-- **Primary key**: `<entity>_key`, always `generate_surrogate_key([...])`.
-- **Foreign key**: `<target>_key` when unambiguous; `<role>_<target>_key` when
-  multiple FKs to the same target coexist (e.g. `submitter_staff_key` +
-  `assignee_staff_key` on `fct_support_tickets`). Never expose the raw natural
-  key alongside its surrogate (R9).
-- **FK constraint form**: declare foreign keys with the ref-aware
-  `to: ref(...)` + `to_columns:` form (dbt 1.9+) at the **column** level for
-  single-column FKs — not model-level `expression: ref(...)`, which is free text
-  that doesn't capture the ref dependency.
-- **Date FK** (`_date_key`): raw DATE value matching `dim_dates.date_key`,
-  **not** a hash. Never also expose the same date as a degenerate `_date` column
-  next to its `_date_key` (R9).
-- **Nullable FK**: wrap with the
-  `if(col is not null, generate_surrogate_key, cast(null as string))` pattern
-  (see `src/dbt/CLAUDE.md` → "Nullable surrogate keys") — otherwise
-  relationships tests fail against the placeholder hash.
-
 ## Hash-input joins: INNER over LEFT when scope guarantees membership
 
 When a fact/bridge joins a parent (members, canonical, dim) purely to read
@@ -145,11 +50,9 @@ guarantees the parent row exists, use INNER JOIN. LEFT JOIN silently produces
 null hash inputs that surrogate-key into placeholder hashes — orphans surface
 only at `relationships` test runtime, not at compile.
 
-A dedupe on such a join is information-preserving — not dup-masking — when every
-matched parent yields the SAME hash (e.g. duplicate stints sharing the key's
-only input). Confirm the duplicate output rows are identical across every
-column; a genuine ambiguity produces differing rows and must still fail the PK
-test.
+If the parent has more rows than the key needs (e.g. several stints per
+student), project it to the hash inputs with a grain-projection `distinct` in a
+CTE before the join (S12), rather than deduping the output (A5).
 
 ## BigQuery reserved identifiers
 
@@ -192,15 +95,9 @@ the upstream CTE that aliases the source. Compile fails with
 
 ## `_dbt_source_project` joins and hashes
 
-When a marts fix touches joins or surrogate-key composition involving
-`_dbt_source_project` (or `_dbt_source_relation`), promote the
-`extract_source_project()` call up to the union model itself rather than
-applying it at each consumer
-([#3142](https://github.com/TEAMSchools/teamster/issues/3142)). Downstream
-consumers should join and hash on the materialized `_dbt_source_project` column,
-not re-derive it from `_dbt_source_relation` per-call. This counts as an
-additive upstream edit under "Spec authoring context" and does not require a
-separate refactor PR.
+Promoting `extract_source_project()` to the union model (`kipptaf/CLAUDE.md` →
+`_dbt_source_project` is pass-through) counts as an additive upstream edit under
+"Spec authoring context" and needs no separate refactor PR.
 
 ## Removing a mart-level `qualify row_number() = 1`
 
@@ -244,26 +141,15 @@ Source-system internal field names (`cc_dateleft`, `WorkAssignment.jobTitle`,
 `powerschool_student_number`, etc.) belong in `config.meta.source_column`, not
 in the user-visible `description:`.
 
-## Stale metadata from copy-paste
+## Table-materialized marts
 
-A copy-pasted column block usually keeps the old `description:` and
-`config.meta.source_*` pointing at the wrong source table. Update both after
-every paste.
-
-## Contract + uniqueness inherited
-
-Marts inherit `contract: enforced: true` and `materialized: view` from
-`dbt_project.yml`. Don't restate them per model. Every model still needs an
-explicit uniqueness test on its PK (`unique` on a single column, or
-`dbt_utils.unique_combination_of_columns` for composite).
-
-Exception: `dim_assessments`, `dim_courses`, `dim_dates`, `dim_regions`,
-`dim_staff`, `dim_students`, the six assessment-star marts, and the four
-assessment intermediates are `materialized: table`. All seven assessment marts
-share `int_assessments__response_rollup`'s `0 0,10,13,15,17 * * *` tick — Cube
-is their only consumer and its `proficiency_rollup` pre-aggregation refreshes
-daily, so intraday rebuilds are invisible
-([#4559](https://github.com/TEAMSchools/teamster/issues/4559),
+Marts default to `materialized: view`. Exception: `dim_assessments`,
+`dim_courses`, `dim_dates`, `dim_regions`, `dim_staff`, `dim_students`, the six
+assessment-star marts, and the four assessment intermediates are
+`materialized: table`. All seven assessment marts share
+`int_assessments__response_rollup`'s cron tick — Cube is their only consumer and
+its `proficiency_rollup` pre-aggregation refreshes daily, so intraday rebuilds
+are invisible ([#4559](https://github.com/TEAMSchools/teamster/issues/4559),
 [#4821](https://github.com/TEAMSchools/teamster/issues/4821)).
 
 **A table mart carries NO outgoing `foreign_key` constraints.** A table child
@@ -363,17 +249,11 @@ Constraint metadata still lands in `manifest.json` for downstream tooling (Cube)
 
 ## Exposures are the consumer contract
 
-Every external consumer (Tableau, Google Sheets, Cube, AppSheet, etc.) that
-reads a mart must have a dbt exposure under `src/dbt/kipptaf/models/exposures/`.
-Without one, column renames and removals silently break downstream — dbt has no
-other signal.
+Exposure requirements: `kipptaf/CLAUDE.md` → Exposures. Before removing a column
+from any `dim_*` / `fct_*`, grep `src/cube/model/` for `sql: <col>` and bare
+`<col>` — Cube YAML reads by name and dbt has no exposure to surface the dep.
 
-Before removing a column from any `dim_*` / `fct_*`, grep `src/cube/model/` for
-`sql: <col>` and bare `<col>` — Cube YAML reads by name and dbt has no exposure
-to surface the dep.
-
-Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on`; other
-exposures reference `rpt_*` / staging / intermediate models, not marts.
+Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on`.
 
 ## SCD2 status dims bound to enrollments
 
@@ -426,7 +306,8 @@ Validate the hash by checking the join row count reconciles before trusting it.
 
 - Reporting views (`rpt_*`) — live under `extracts/`.
 - Source-system cleanup — happens in `staging/` and `intermediate/`.
-- Plumbing (see definition above) — never leaks to a mart SELECT (R8).
+- Plumbing (_Plumbing definition_ in `.claude/rules/dbt-marts.md`) — never leaks
+  to a mart SELECT (R8).
 
 ## Spec authoring context
 

@@ -8,6 +8,7 @@ with
                     source(
                         "kipppaterson_powerschool", "int_powerschool__calendar_day"
                     ),
+                    source("kippmiami_powerschool", "int_powerschool__calendar_day"),
                 ]
             )
         }}

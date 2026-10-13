@@ -20,6 +20,7 @@ with
             rt.start_date as term_start_date,
             rt.region as term_region,
             rt.school_id as term_school_id,
+            rt.grade_band as term_grade_band,
         from {{ ref("int_assessments__scaffold") }} as sc
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
@@ -72,6 +73,7 @@ select
                     "term_start_date",
                     "term_region",
                     "term_school_id",
+                    "term_grade_band",
                 ]
             )
         }},

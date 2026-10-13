@@ -1,6 +1,5 @@
 # trunk-ignore-all(yamllint/quoted-strings)
 packages:
-  - local: ../deanslist
   - local: ../finalsite
   - local: ../iready
   - local: ../focus

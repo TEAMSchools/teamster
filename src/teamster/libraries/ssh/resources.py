@@ -4,7 +4,7 @@ import socket
 import socketserver
 import threading
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from stat import S_ISDIR, S_ISREG
 
@@ -172,6 +172,19 @@ _LegacyRSAKey = type(
 )
 
 
+def _is_safe_listing_filename(filename: str) -> bool:
+    """Whether a directory entry is a single, non-traversing name.
+
+    Entry names come from the remote server and are joined onto ``remote_dir``
+    to build the paths callers list, match, and download. A real SFTP entry is
+    always one path component (paramiko already drops the exact ``.`` and
+    ``..`` entries, nothing else), so a name carrying a separator or a ``..``
+    could steer that join — and the local download path derived from it —
+    outside the directory being walked.
+    """
+    return filename not in ("", ".", "..") and "/" not in filename
+
+
 def _persist_legacy_rsa(transport: Transport) -> None:
     """Keep `ssh-rsa` usable for the LIFETIME of one transport, and disable
     paramiko's periodic rekey on it.
@@ -195,6 +208,9 @@ def _persist_legacy_rsa(transport: Transport) -> None:
 
 
 class SSHResource(DagsterSSHResource):
+    # redeclared only to hide the inherited credentials from repr
+    password: str | None = Field(default=None, repr=False)
+    key_string: str | None = Field(default=None, repr=False)
     tunnel_remote_host: str | None = None
     test: bool = False
     # paramiko 5.0 dropped `ssh-rsa` (SHA-1 RSA host keys) from its default
@@ -291,6 +307,13 @@ class SSHResource(DagsterSSHResource):
 
         files: list[tuple[SFTPAttributes, str]] = []
         for file in sftp_client.listdir_attr(remote_dir):
+            if not _is_safe_listing_filename(file.filename):
+                self.log.warning(
+                    "Skipping illegal filename in SFTP listing of "
+                    f"'{remote_dir}': {file.filename!r}"
+                )
+                continue
+
             path = str(Path(remote_dir) / file.filename)
             mtime = check.not_none(value=file.st_mtime)
 
@@ -464,7 +487,13 @@ def _make_forward_handler(
                         # `Channel.send()` above — use `sendall()` here too.
                         self.request.sendall(data)
             finally:
-                channel.close()
+                # `open_ssh_tunnel`'s `client.close()` can close the SSH
+                # socket while this handler is mid-close (the forwarded client
+                # hung up just before the tunnel exited), so paramiko raises
+                # writing CHANNEL_CLOSE. The channel is gone either way; still
+                # close the local socket.
+                with suppress(EOFError, OSError, SSHException):
+                    channel.close()
                 self.request.close()
 
     return Handler

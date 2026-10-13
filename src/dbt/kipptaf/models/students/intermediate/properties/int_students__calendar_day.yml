@@ -14,16 +14,15 @@ models:
       int_focus__calendar_day is otherwise Focus-native. It emits academic_year
       and school_date and no insession or membershipvalue at all, and a row
       existing there IS an in-session day, so both flags are supplied as
-      constants on that branch. The Focus branch floors on the cutover year from
-      int_students__sis_cutover rather than on Focus row presence, because
-      Focus's calendar before that year is a scaffold rather than the network's
-      calendar of record. Every measure is dual-exposed: a neutral column
-      (`school_date`, `academic_year`, `is_in_session`, `is_in_membership`) for
-      new work, alongside the legacy PowerSchool-derived name (`date_value`,
-      `yearid`, `insession`, `membershipvalue`) that dim_school_calendars and
-      the NJ-parity gate read. The legacy set is transitional and kept only so
-      existing consumers can migrate independently; retiring it is out of scope
-      here.
+      constants on that branch. The Focus branch floors on the 2026 cutover year
+      rather than on Focus row presence, because Focus's calendar before that
+      year is a scaffold rather than the network's calendar of record. Every
+      measure is dual-exposed: a neutral column (`school_date`, `academic_year`,
+      `is_in_session`, `is_in_membership`) for new work, alongside the legacy
+      PowerSchool-derived name (`date_value`, `yearid`, `insession`,
+      `membershipvalue`) that dim_school_calendars and the NJ-parity gate read.
+      The legacy set is transitional and kept only so existing consumers can
+      migrate independently; retiring it is out of scope here.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

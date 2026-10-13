@@ -473,15 +473,6 @@ sources:
                 - kipppaterson
                 - powerschool
                 - stg_powerschool__termbins
-      - name: stg_powerschool__terms
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kipppaterson
-                - powerschool
-                - stg_powerschool__terms
       - name: stg_powerschool__u_clg_et_stu
         config:
           meta:
@@ -752,6 +743,15 @@ sources:
                 - kipppaterson
                 - powerschool
                 - int_powerschool__gpa_term
+      - name: int_powerschool__gpa
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kipppaterson
+                - powerschool
+                - int_powerschool__gpa
       - name: int_powerschool__gradescaleitem_lookup
         config:
           meta:
@@ -779,6 +779,24 @@ sources:
                 - kipppaterson
                 - powerschool
                 - int_powerschool__gpa_cumulative_year
+      - name: int_powerschool__student_y1_target
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kipppaterson
+                - powerschool
+                - int_powerschool__student_y1_target
+      - name: int_powerschool__course_pace
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kipppaterson
+                - powerschool
+                - int_powerschool__course_pace
       - name: int_powerschool__gradebook_assignments
         config:
           meta:
@@ -797,6 +815,15 @@ sources:
                 - kipppaterson
                 - powerschool
                 - int_powerschool__gradebook_assignments_scores
+      - name: int_powerschool__student_course_grades_spine
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kipppaterson
+                - powerschool
+                - int_powerschool__student_course_grades_spine
       - name: int_powerschool__section_teachers
         config:
           meta:
@@ -1031,7 +1058,7 @@ sources:
                 - kipppaterson
                 - powerschool
                 - stg_powerschool__s_stu_x
-      - name: int_powerschool__terms
+      - name: int_powerschool__terms_spine
         config:
           meta:
             dagster:
@@ -1039,4 +1066,4 @@ sources:
               asset_key:
                 - kipppaterson
                 - powerschool
-                - int_powerschool__terms
+                - int_powerschool__terms_spine

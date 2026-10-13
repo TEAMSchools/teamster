@@ -187,6 +187,11 @@ with
                 'Invalidated',
                 'Insufficient to Score/No Response'
             )
+            /* FLDOE added Grade 9 FAST ELA Reading in 2026-27. Dagster ingests the
+            raw file, but no downstream model is ready for Grade 9, so it is held
+            here on purpose. Lifting this filter also needs the grade_9 columns
+            added to the coalesce lists above. See #5283. */
+            and assessment_grade <= 8
     )
 
 select

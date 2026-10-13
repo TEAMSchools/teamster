@@ -1,49 +1,173 @@
 models:
   - name: rpt_tableau__community_service
+    description: >-
+      One row per student per DeansList community service entry, feeding the
+      Community Service Tableau dashboard. Covers current-year students in grade
+      9 and up who are currently enrolled (enroll_status 0), on their primary
+      enrollment for the year (rn_year = 1). Entries come from
+      stg_deanslist__behavior in the Community Service and Community Service
+      Hours categories, dated within the student's enrollment window. Students
+      with no entries appear once, with null entry columns and zero cs_hours. A
+      student can have several entries for the same behavior on the same date;
+      each is a separate DeansList entry with its own dl_said. The grade_9_hours
+      through grade_12_hours columns are prior-year totals written into
+      DeansList student custom fields once a year, and they repeat on every row
+      for the student. The dashboard's 50-hour graduation goal adds those
+      custom-field totals to this year's cs_hours in Tableau.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - dl_said
     columns:
       - name: student_number
         data_type: int64
+        description: Student number assigned by the school.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: int64
+        description: >-
+          Starting year of the academic year (July start). Always the current
+          academic year in this model.
       - name: student_name
         data_type: string
+        description: Student name, formatted Last, First.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
+        description: Student gender code (for example M or F).
+        config:
+          meta:
+            contains_pii: true
       - name: ethnicity
         data_type: string
+        description: Student race/ethnicity code from the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: iep_status
         data_type: string
+        description: >-
+          Has IEP when the student's special education field starts with SPED,
+          otherwise No IEP.
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
+        description: Whether the student is flagged as an English learner.
+        config:
+          meta:
+            contains_pii: true
       - name: c_504_status
         data_type: boolean
+        description: >-
+          Whether the student has a 504 plan. Null means the status is unknown,
+          not that there is no plan.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
+        description: Grade level of the enrollment, 9 or higher.
       - name: cohort
         data_type: int64
+        description: >-
+          Class cohort (expected graduation year). For high school students, the
+          cohort set in the student's first year at the school.
       - name: advisor_name
         data_type: string
+        description: >-
+          Advisor name (Last, First) for the student's high school advisory
+          section.
       - name: guardian_email
         data_type: string
+        description: >-
+          Guardian email, the first non-null of contact 1's and contact 2's
+          current email.
+        config:
+          meta:
+            contains_pii: true
       - name: student_email
         data_type: string
+        description: Student's Google Workspace email address.
+        config:
+          meta:
+            contains_pii: true
       - name: school_name
         data_type: string
+        description: >-
+          Short school abbreviation (the enrollment's school column, not the
+          full school name).
+      - name: dl_said
+        data_type: int64
+        description: >-
+          DeansList id of the community service behavior entry. Null for
+          students with no entries.
       - name: behavior_date
         data_type: date
+        description: Date the community service entry was logged for.
       - name: behavior
         data_type: string
+        description: >-
+          DeansList behavior name for the entry. Its leading number is the hours
+          value that cs_hours reads.
+        config:
+          meta:
+            contains_pii: true
       - name: notes
         data_type: string
+        description: Free-text notes staff entered on the behavior entry.
+        config:
+          meta:
+            contains_pii: true
       - name: cs_hours
         data_type: int64
+        description: >-
+          Community service hours on this entry, parsed upstream from the
+          leading digits of the behavior name. 0 when the name does not start
+          with a number and for students with no entries.
+        config:
+          meta:
+            contains_pii: true
       - name: staff_name
         data_type: string
+        description:
+          Name (Last, First) of the staff member who logged the entry.
       - name: grade_9_hours
         data_type: numeric
+        description: >-
+          Community service hours for grade 9, from the DeansList student custom
+          field. 0 when the field is blank or not a number.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_10_hours
         data_type: numeric
+        description: >-
+          Community service hours for grade 10, from the DeansList student
+          custom field. 0 when the field is blank or not a number.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_11_hours
         data_type: numeric
+        description: >-
+          Community service hours for grade 11, from the DeansList student
+          custom field. 0 when the field is blank or not a number.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_12_hours
         data_type: numeric
+        description: >-
+          Community service hours for grade 12, from the DeansList student
+          custom field. 0 when the field is blank or not a number.
+        config:
+          meta:
+            contains_pii: true

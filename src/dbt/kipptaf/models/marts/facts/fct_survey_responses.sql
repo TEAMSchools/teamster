@@ -8,9 +8,9 @@ with
             sr.survey_response_id,
             sr.survey_question_id,
             sr.question_shortname,
+            sr.survey_submission_key,
             sr.answer as response_text,
-
-            safe_cast(sr.answer as numeric) as response_value,
+            sr.answer_value as response_value,
         from {{ ref("int_surveys__survey_responses") }} as sr
         where
             sr.survey_title in (
@@ -24,7 +24,9 @@ with
             and sr.question_shortname is not null
     ),
 
-    /* Manager Survey responses */
+    /* Manager Survey responses. int_surveys__manager_survey_details does not
+       pass through int_surveys__survey_submissions, so this arm is the one
+       place the fact still joins it for the key. */
     manager_responses as (
         select
             ms.survey_id,
@@ -32,9 +34,14 @@ with
             ms.question_shortname,
             ms.answer as response_text,
             ms.answer_value as response_value,
-
             ms.effective_survey_response_id as survey_response_id,
+
+            ss.survey_submission_key,
         from {{ ref("int_surveys__manager_survey_details") }} as ms
+        inner join
+            {{ ref("int_surveys__survey_submissions") }} as ss
+            on ms.survey_id = ss.survey_id
+            and ms.effective_survey_response_id = ss.survey_response_id
         where ms.campaign_academic_year is not null
     ),
 
@@ -44,6 +51,7 @@ with
             survey_response_id,
             survey_question_id,
             question_shortname,
+            survey_submission_key,
             response_text,
             response_value,
         from general_responses
@@ -53,6 +61,7 @@ with
             survey_response_id,
             survey_question_id,
             question_shortname,
+            survey_submission_key,
             response_text,
             response_value,
         from manager_responses
@@ -65,10 +74,9 @@ with
  * submissions the fact actually models.
  */
 select
+    ar.survey_submission_key,
     ar.response_value,
     ar.response_text,
-
-    ss.survey_submission_key,
 
     {{
         dbt_utils.generate_surrogate_key(
@@ -80,9 +88,5 @@ select
     as survey_question_key,
 from all_responses as ar
 inner join
-    {{ ref("int_surveys__survey_submissions") }} as ss
-    on ar.survey_id = ss.survey_id
-    and ar.survey_response_id = ss.survey_response_id
-inner join
     {{ ref("fct_survey_submissions") }} as fss
-    on ss.survey_submission_key = fss.survey_submission_key
+    on ar.survey_submission_key = fss.survey_submission_key

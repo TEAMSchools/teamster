@@ -3,6 +3,20 @@ models:
     description:
       Term related information used for the school such as Semester, Full Year,
       etc.
+    data_tests:
+      # Warn rather than error on purpose. PowerSchool does not enforce this
+      # key, no district violates it today, and int_powerschool__terms_spine
+      # already reduces to one row per key, so a duplicate is not a build
+      # emergency. The test exists so a duplicate surfaces to ops instead of
+      # being absorbed silently downstream.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - yearid
+              - abbreviation
+          config:
+            severity: warn
     columns:
       - name: dcid
         data_type: int64

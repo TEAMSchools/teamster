@@ -11,7 +11,7 @@ models:
       concept. Three boolean flags carried on every row: not_enough_assignments
       (category_summary rows only), has_grade_above_100 and
       has_grade_below_70_no_comment (broadcast from an aggregate over
-      rpt_gsheets__gradebook_audit_student_flags — section x quarter facts,
+      int_extracts__gradebook_audit_student_flags — section x quarter facts,
       identical across all rows for a given section). Two health booleans,
       computed across all of a teacher's sections for the quarter and broadcast
       onto every row: is_healthy_gradebook_all_flags (false if any of the three
@@ -90,8 +90,13 @@ models:
       - name: section_or_period
         data_type: string
         description: >
-          Display identifier for the section. Uses external_expression for HS;
-          section_number otherwise.
+          Display identifier for the section, and the dimension the dashboard
+          groups its section rows on. HS combines external_expression with
+          section_number, so that two HS sections of the same course meeting in
+          the same period with the same teacher get separate rows instead of one
+          row carrying both sections' assignment counts. Non-HS uses
+          section_number alone. Unique within teacher, course, and quarter,
+          which is the property the dashboard depends on.
       - name: teacher_number
         data_type: string
         description: PowerSchool teacher number.

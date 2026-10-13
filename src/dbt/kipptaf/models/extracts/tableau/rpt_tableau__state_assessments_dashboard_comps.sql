@@ -75,7 +75,7 @@ with
         where comparison_demographic_subgroup not in ('SE Accommodation', 'Blank')
     ),
 
-    grouped_comps as (
+    grouped_comps_raw as (
         select
             academic_year,
             school_level,
@@ -89,13 +89,17 @@ with
             comparison_demographic_subgroup,
             focus_level,
 
+            count(*) as source_rows,
+
             sum(total_proficient_students) as total_proficient_students,
 
             sum(total_students) as total_students,
 
+            any_value(percent_proficient) as reported_percent_proficient,
+
             safe_divide(
                 sum(total_proficient_students), sum(total_students)
-            ) as percent_proficient,
+            ) as weighted_percent_proficient,
 
         from appended
         group by
@@ -110,6 +114,35 @@ with
             comparison_demographic_group,
             comparison_demographic_subgroup,
             focus_level
+    ),
+
+    grouped_comps as (
+        select
+            academic_year,
+            school_level,
+            grade_range_band,
+            assessment_name,
+            discipline,
+            test_code,
+            region,
+            comparison_entity,
+            comparison_demographic_group,
+            comparison_demographic_subgroup,
+            focus_level,
+            total_proficient_students,
+            total_students,
+
+            -- a source that publishes a percentage and no count cannot be
+            -- re-derived; fall back to what it reported. Guarded on a single
+            -- source row so a future grain change degrades to null rather
+            -- than silently averaging percentages unweighted.
+            if(
+                weighted_percent_proficient is null and source_rows = 1,
+                reported_percent_proficient,
+                weighted_percent_proficient
+            ) as percent_proficient,
+
+        from grouped_comps_raw
     )
 
 select

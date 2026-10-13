@@ -9,9 +9,9 @@ First, check `category` + `correlatedPodEvent` — both are auto-resolved by the
 collector:
 
 - **`category: "sigterm_during_import"`** with a `correlatedPodEvent` → the
-  group is a SIGTERM-mid-import artifact of code-server preemption (the
-  by-design priority-tier behavior in `.k8s/CLAUDE.md`). Do NOT include in
-  Emerging Issues. Emit a single Actions row:
+  group is a SIGTERM-mid-import artifact of a code-server pod being terminated
+  (eviction or preemption; pod priorities are in `.k8s/CLAUDE.md`). Do NOT
+  include in Emerging Issues. Emit a single Actions row:
   `Mute | Error group <id> (SIGTERM during import, <count> hits)`. The
   traceback's deepest project-code frame names whichever module was importing
   when SIGTERM arrived (pathlib, pydantic, fldoe.schema, etc.) — that file is

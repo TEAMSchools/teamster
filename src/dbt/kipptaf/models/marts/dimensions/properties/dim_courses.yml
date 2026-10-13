@@ -60,9 +60,9 @@ models:
       - name: academic_subject
         data_type: string
         description: >-
-          Subject area discipline mapped from course number via the course
-          subject crosswalk. Null when the course number is not in the
-          crosswalk.
+          Subject area discipline from the course-subject crosswalk, matched on
+          the course's SIS and course number. Null when the course is not on the
+          crosswalk for its SIS.
 
         config:
           meta:

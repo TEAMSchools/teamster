@@ -71,21 +71,6 @@ models:
           holds an emergency contact with no relationship recorded.
         data_tests:
           - not_null
-      - name: ContactType
-        data_type: string
-        description:
-          DeansList contact classification — `Parent1` for the `contact_1` slot,
-          `Parent2` for the `contact_2` slot, `Emergency` for every emergency
-          slot. DeansList sends automated reports, texts, and emails only to
-          `Parent1`/`Parent2` contacts.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - Parent1
-                  - Parent2
-                  - Emergency
       - name: HomePhone
         data_type: string
         description: Parent contact's phone number typed `Home`, if any.
@@ -156,6 +141,13 @@ models:
           - unique:
               config:
                 severity: warn
+      - name: ContactType
+        data_type: string
+        description:
+          DeansList contact classification — `Parent1` for the `contact_1` slot,
+          `Parent2` for the `contact_2` slot, `Emergency` for every emergency
+          slot. DeansList sends automated reports, texts, and emails only to
+          `Parent1`/`Parent2` contacts.
 unit_tests:
   - name: test_family_contacts_slot_contact_types
     description:

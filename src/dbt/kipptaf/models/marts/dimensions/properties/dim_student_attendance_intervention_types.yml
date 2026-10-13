@@ -4,8 +4,8 @@ models:
       Attendance intervention type dimension. One row per region x intervention
       threshold combination. Scaffolded from business rules that define at which
       unexcused-absence thresholds a communication intervention is expected.
-      Miami uses different thresholds (3, 5, 8, 10, 15+) than Newark and Camden
-      (4, 8, 12, 16, 20, 30, 40).
+      Miami uses different thresholds (3, 5, 8, 10, 15+) than Newark, Camden and
+      Paterson (4, 8, 12, 16, 20, 30, 40).
     columns:
       - name: intervention_type_key
         data_type: string

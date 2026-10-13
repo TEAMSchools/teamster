@@ -13,7 +13,7 @@ with
             and is_internal_assessment
             and not is_replacement
             and administered_at < current_date('{{ var("local_timezone") }}')
-        group by all
+        group by assessment_id, title, administered_at, region
     )
 
 select *,

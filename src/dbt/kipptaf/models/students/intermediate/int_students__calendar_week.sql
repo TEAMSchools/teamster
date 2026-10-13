@@ -19,10 +19,8 @@ with
             {{ extract_region("cw") }} as region,
         from {{ ref("int_focus__calendar_week") }} as cw
         inner join focus_schools as fs on cw.schoolid = fs.focus_school_id
-        -- One row. Floors on the cutover year, not on Focus row presence
-        -- (#5193).
-        cross join {{ ref("int_students__sis_cutover") }} as c
-        where cw.academic_year >= c.focus_start_academic_year
+        -- Floors on the cutover year, not on Focus row presence (#5193).
+        where cw.academic_year >= 2026
     )
 
 select

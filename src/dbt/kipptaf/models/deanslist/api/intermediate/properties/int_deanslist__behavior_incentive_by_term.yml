@@ -1,2 +1,4 @@
 models:
   - name: int_deanslist__behavior_incentive_by_term
+    config:
+      enabled: false

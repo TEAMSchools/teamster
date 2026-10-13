@@ -7,8 +7,7 @@ models:
       the FLEID lookup. Joined to the iReady scale-score crosswalk to expose
       sublevel and points-to-proficiency / points-to-growth derivations. Carries
       standardized metadata columns (results_type, district_state,
-      illuminate_subject, fast_aggregated_proficiency) from the district
-      intermediate.
+      fast_aggregated_proficiency) from the district intermediate.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -19,6 +18,28 @@ models:
               - administration_window
               - assessment_subject
     columns:
+      - name: assessment_type
+        data_type: string
+        description: >-
+          Program-lineage label ('state_fl_fast' / '..._fsa' / '..._eoc' /
+          '..._science') derived from assessment_name. Marts hash it into
+          assessment_key. Tested here because an unmapped assessment_name falls
+          back to 'state_fl_unknown', which would otherwise pass straight into
+          both assessment dims.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - state_fl_fast
+                  - state_fl_fsa
+                  - state_fl_eoc
+                  - state_fl_science
+              config:
+                severity: error
+
       - name: _dbt_source_relation
         data_type: string
         description: Source relation identifier from dbt_utils.union_relations.
@@ -76,6 +97,12 @@ models:
         description: >
           Grade level of the assessment. Ideally, it should match a student's
           enrolled grade.
+
+      - name: grade_level
+        data_type: int64
+        description: >
+          Integer form of assessment_grade, for numeric comparisons.
+          assessment_grade stays for string comparisons and crosswalk joins.
 
       - name: performance_level
         data_type: int64
@@ -137,13 +164,6 @@ models:
           Test code adjusted for school level — ALG01 grade 8 is suffixed with
           '_MS', grades 9-12 with '_HS'; all other test codes pass through
           unchanged.
-
-      - name: illuminate_subject
-        data_type: string
-        description: >
-          Standardized subject label for Illuminate/reporting — ELA subjects map
-          to 'Text Study'; Algebra I, Algebra II, and Geometry map to
-          'Mathematics'; all others pass through unchanged.
 
       - name: fast_aggregated_proficiency
         data_type: string
@@ -209,10 +229,3 @@ models:
         description: >
           Student's scale score from the prior administration window within the
           same academic year and subject, ordered by administration_window.
-
-      - name: assessment_type
-        data_type: string
-        description: >-
-          Program-lineage label ('state_fl_fast' / '..._fsa' / '..._eoc' /
-          '..._science') derived from assessment_name. Used by marts as the
-          hash-input value for assessment_key.

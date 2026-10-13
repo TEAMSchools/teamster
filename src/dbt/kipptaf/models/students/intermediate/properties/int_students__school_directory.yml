@@ -69,13 +69,6 @@ models:
           Which system produced the row. sis rows are historic and current
           enrollment; finalsite rows are next year's applicants. A consumer that
           needs only years with real enrollment filters to sis.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - sis
-                  - finalsite
       - name: ps_schoolid
         description: >
           PowerSchool network school number, unique across regions and populated

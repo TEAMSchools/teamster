@@ -6,7 +6,7 @@ with
             `subject`,
             overall_relative_placement_int,
             completion_date,
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__iready_diagnostic_results") }}
         where baseline_diagnostic_y_n = 'Y'
     ),
 
@@ -18,6 +18,20 @@ with
                 order_by="completion_date desc",
             )
         }}
+    ),
+
+    subject_weeks as (
+        select
+            student_number,
+            academic_year,
+            week_start_monday,
+            week_end_sunday,
+            discipline,
+            iready_subject,
+            region,
+            _dbt_source_project,
+        from {{ ref("int_extracts__student_enrollments_subjects_weeks") }}
+        where academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
 select
@@ -41,7 +55,7 @@ select
             and ir.percent_progress_to_annual_stretch_growth_percent < 1
         then 0
     end as is_bfb_stretch_growth_int,
-from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as cw
+from subject_weeks as cw
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on cw.academic_year = rt.academic_year
@@ -49,7 +63,7 @@ inner join
     and cw.week_start_monday between rt.start_date and rt.end_date
     and rt.type = 'IREX'
 left join
-    {{ ref("int_iready__diagnostic_results") }} as ir
+    {{ ref("int_assessments__iready_diagnostic_results") }} as ir
     on cw.student_number = ir.student_id
     and cw.academic_year = ir.academic_year_int
     and cw.iready_subject = ir.subject
@@ -62,4 +76,3 @@ left join
     on cw.student_number = d.student_id
     and cw.academic_year = d.academic_year_int
     and cw.iready_subject = d.subject
-where cw.academic_year >= {{ var("current_academic_year") - 1 }}

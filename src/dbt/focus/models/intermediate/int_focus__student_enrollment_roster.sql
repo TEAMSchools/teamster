@@ -223,10 +223,15 @@ with
     )
 
 select
-    * except (year_in_school, year_in_network),
+    * except (year_in_school, year_in_network, enroll_status),
 
     if(rn_year = 1, year_in_school, null) as year_in_school,
 
     if(rn_year = 1, year_in_network, null) as year_in_network,
+
+    -- #5598: student-level current status; rationale in the properties yml.
+    first_value(enroll_status) over (
+        partition by student_number order by rn_all
+    ) as enroll_status,
 
 from with_year_counts

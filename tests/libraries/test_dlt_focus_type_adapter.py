@@ -19,10 +19,13 @@ every table in the source, and these tests pin that.
 from datetime import timedelta
 from typing import Any
 
+import pyarrow as pa
 import pytest
+import sqlalchemy as sa
 from dagster_dlt.constants import META_KEY_SOURCE
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.libs.pyarrow import (
+    PyToArrowConversionException,
     UnsupportedArrowTypeException,
     py_arrow_to_table_schema_columns,
 )
@@ -37,6 +40,7 @@ from sqlalchemy import BigInteger, Column, Integer, MetaData, String, Table
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, INTERVAL
 from sqlalchemy.sql import sqltypes
 
+from teamster.libraries.dlt.focus import assets as focus_assets
 from teamster.libraries.dlt.focus.assets import (
     build_focus_dlt_assets,
     interval_to_microseconds_adapter,
@@ -197,8 +201,97 @@ def test_reflection_settings_reach_table_rows(monkeypatch):
     # table_rows takes no defaults but `table_loader_class`; a dropped kwarg
     # would silently change extract behavior
     assert captured["incremental"] is None
-    assert captured["query_adapter_callback"] is None
+    assert captured["query_adapter_callback"] is focus_assets.json_as_text_query_adapter
     assert captured["resolve_foreign_keys"] is False
+
+
+def _seed_json_mixing_scalars_and_lists(url: str) -> None:
+    """A scalar first, then a list, as in `apex_session_responses.response`."""
+    engine = sa.create_engine(url)
+    with engine.begin() as conn:
+        conn.exec_driver_sql("create table t (id integer primary key, response JSON)")
+        conn.exec_driver_sql("""insert into t values (1, '"B"'), (2, '[1,2]')""")
+    engine.dispose()
+
+
+def _response_column(url: str) -> pa.ChunkedArray:
+    for item in focus_assets._focus_table_items(
+        ConnectionStringCredentials(url), "t", None
+    ):
+        data = getattr(item, "data", item)
+        if isinstance(data, pa.Table):
+            return data.column("response")
+    raise AssertionError("no arrow table yielded")
+
+
+def test_json_mixing_scalars_and_lists_extracts_as_text(tmp_path):
+    """sqlite reflects a JSON-declared column as `sa.JSON` and parses it."""
+    url = f"sqlite:///{tmp_path / 'focus.db'}"
+    _seed_json_mixing_scalars_and_lists(url)
+
+    column = _response_column(url)
+
+    assert column.type == pa.string()
+    assert column.to_pylist() == ['"B"', "[1,2]"]
+
+
+def test_json_without_cast_reproduces_prod_failure(tmp_path, monkeypatch):
+    """Regression guard: the extract error the cast avoids.
+
+    dlt's fallback serializes nested values only when the first non-null value
+    is a list or dict, so a scalar first fails.
+    """
+    url = f"sqlite:///{tmp_path / 'focus.db'}"
+    _seed_json_mixing_scalars_and_lists(url)
+    monkeypatch.setattr(
+        focus_assets, "json_as_text_query_adapter", lambda query, table: query
+    )
+
+    with pytest.raises(PyToArrowConversionException):
+        _response_column(url)
+
+
+def test_json_query_adapter_casts_json_columns_to_text():
+    """Postgres returns the cast column as a string, never a parsed object."""
+    from sqlalchemy.dialects import postgresql
+    from sqlalchemy.dialects.postgresql import JSON, JSONB
+
+    from teamster.libraries.dlt.focus import assets as focus_assets
+
+    table = Table(
+        "apex_sessions",
+        MetaData(),
+        Column("id", Integer),
+        Column("audience_config", JSON()),
+        Column("response", JSONB()),
+    )
+
+    query = focus_assets.json_as_text_query_adapter(table.select(), table)
+    sql = str(query.compile(dialect=postgresql.dialect()))
+
+    assert "CAST(apex_sessions.audience_config AS TEXT) AS audience_config" in sql
+    assert "CAST(apex_sessions.response AS TEXT) AS response" in sql
+    assert "apex_sessions.id" in sql
+    assert "CAST(apex_sessions.id" not in sql
+
+
+def test_json_query_adapter_leaves_json_free_tables_alone():
+    from teamster.libraries.dlt.focus import assets as focus_assets
+
+    table = _gradebook_assignments_table()
+    query = table.select()
+
+    assert focus_assets.json_as_text_query_adapter(query, table) is query
+
+
+def test_json_type_adapter_declares_text():
+    """The schema hint must match the text the query returns."""
+    from sqlalchemy.dialects.postgresql import JSON, JSONB
+
+    from teamster.libraries.dlt.focus import assets as focus_assets
+
+    assert isinstance(focus_assets._widening_type_adapter(JSONB()), sqltypes.Text)
+    assert isinstance(focus_assets._widening_type_adapter(JSON()), sqltypes.Text)
 
 
 def test_interval_column_without_adapter_reproduces_prod_failure():

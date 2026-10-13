@@ -26,14 +26,6 @@ with
                 school_abbreviation,
                 null
             ) as es_grad_school_abbreviation,
-
-            lead(school_abbreviation, 1) over (
-                partition by student_number, rn_year order by academic_year asc
-            ) as next_year_school_lead,
-
-            lead(schoolid, 1) over (
-                partition by student_number, rn_year order by academic_year asc
-            ) as next_year_schoolid_lead,
         from {{ ref("base_powerschool__student_enrollments") }}
     ),
 
@@ -43,9 +35,7 @@ with
                 ms_school_abbreviation,
                 es_school_abbreviation,
                 es_grad_school_abbreviation,
-                days_enrolled,
-                next_year_school_lead,
-                next_year_schoolid_lead
+                days_enrolled
             ),
 
             first_value(ms_school_abbreviation ignore nulls) over (
@@ -66,18 +56,23 @@ with
                 rows between unbounded preceding and unbounded following
             ) as es_graduated,
 
-            max(if(rn_year = 1, next_year_school_lead, null)) over (
-                partition by student_number, academic_year
-            ) as next_year_school,
-
-            max(if(rn_year = 1, next_year_schoolid_lead, null)) over (
-                partition by student_number, academic_year
-            ) as next_year_schoolid,
-
             sum(days_enrolled) over (
                 partition by _dbt_source_project, academic_year, student_number
             ) as days_enrolled_year,
         from enrollments
+    ),
+
+    -- keyed on the year BEFORE its own, so the join below matches
+    -- academic_year + 1 and nothing else
+    next_year as (
+        select
+            student_number,
+            schoolid,
+            school_abbreviation,
+
+            academic_year - 1 as prior_academic_year,
+        from enrollments
+        where rn_year = 1
     ),
 
     mia_territory as (
@@ -110,6 +105,41 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
+    ),
+
+    hs_honors_dated as (
+        select
+            studentid,
+            academic_year,
+            _dbt_source_project,
+            enter_date,
+
+            -- exit before entry is a blank exit date (stored as 1900-01-01) or a
+            -- typo; treat it as still open
+            if(exit_date < enter_date, null, exit_date) as exit_date_or_open,
+
+            least(
+                current_date('{{ var("local_timezone") }}'),
+                date(academic_year + 1, 6, 30)
+            ) as as_of_date,
+        from {{ ref("int_powerschool__spenrollments") }}
+        where specprog_name = 'High School Honors Program'
+    ),
+
+    hs_honors as (
+        select
+            studentid,
+            academic_year,
+            _dbt_source_project,
+
+            row_number() over (
+                partition by _dbt_source_project, studentid, academic_year
+                order by enter_date desc
+            ) as rn_honors_year,
+        from hs_honors_dated
+        where
+            enter_date <= as_of_date
+            and (exit_date_or_open is null or exit_date_or_open >= as_of_date)
     )
 
 select
@@ -265,6 +295,9 @@ select
     gc.earned_credits_cum_projected,
     gc.potential_credits_cum,
 
+    nxt.school_abbreviation as next_year_school,
+    nxt.schoolid as next_year_schoolid,
+
     'KTAF' as district,
 
     concat(e.region, e.school_level) as region_school_level,
@@ -354,6 +387,16 @@ select
     ) as is_ada_above_or_at_80_cum_gpa_less_2,
 
     if(e.exitdate < cal.first_day_school_year, true, false) as is_pre_year_withdrawal,
+
+    e.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
+
+    case
+        when e.region = 'Miami'
+        then null
+        when hon.studentid is not null
+        then true
+        else false
+    end as is_hs_honors_program,
 
     case
         when e.grade_level = 99
@@ -507,6 +550,12 @@ left join
     and hi.specprog_name = 'Home Instruction'
     and hi.rn_student_program_year_desc = 1
 left join
+    hs_honors as hon
+    on e.studentid = hon.studentid
+    and e.academic_year = hon.academic_year
+    and e._dbt_source_project = hon._dbt_source_project
+    and hon.rn_honors_year = 1
+left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
 left join
@@ -526,8 +575,8 @@ left join
     and e.academic_year = (adapy.academic_year + 1)
     and e._dbt_source_project = adapy._dbt_source_project
 left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gc
-    on e.studentid = gc.studentid
+    {{ ref("int_students__gpa_cumulative") }} as gc
+    on e.student_number = gc.student_number
     and e.schoolid = gc.schoolid
     and e._dbt_source_project = gc._dbt_source_project
 left join
@@ -546,3 +595,7 @@ left join
     {{ ref("int_students__contacts_pivot") }} as sc
     on e.student_number = sc.student_number
     and e._dbt_source_project = sc._dbt_source_project
+left join
+    next_year as nxt
+    on e.student_number = nxt.student_number
+    and e.academic_year = nxt.prior_academic_year

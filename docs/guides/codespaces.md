@@ -4,6 +4,21 @@ The devcontainer is pre-configured for
 [GitHub Codespaces](https://github.com/features/codespaces) — no local setup
 required.
 
+## Accounts you need
+
+Request these before creating your first Codespace. A data team admin grants the
+GitHub and Google group memberships.
+
+| Account                                    | What it's for                                                                | Access                                                                                                                                                  |
+| ------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub, `TEAMSchools` org                  | Repo, Codespaces, pull requests                                              | Org member on your role's team (see [CONTRIBUTING](../CONTRIBUTING.md#code-review)). The 1Password service account token arrives as a Codespace secret. |
+| Google Workspace (`@apps.teamschools.org`) | BigQuery, local dbt, GCP tooling                                             | Member of `teamster-analysts@apps.teamschools.org`; without it the GCloud setup step fails (see [GCloud Authentication](#gcloud-authentication)).       |
+| Claude                                     | Claude Code in the Codespace, the [Cube connector](claude-cube-connector.md) | Claude login; Cube queries also need a `cube-*` Google group.                                                                                           |
+| 1Password                                  | Shared team credentials                                                      | Team account.                                                                                                                                           |
+| dbt Cloud                                  | CI run logs on pull requests                                                 | Read-only.                                                                                                                                              |
+| Dagster+                                   | Runs, assets, branch deployments                                             | Read-only.                                                                                                                                              |
+| Asana                                      | The Teamster project task Zapier creates for each pull request               | Workspace member.                                                                                                                                       |
+
 ## Prerequisites
 
 Set **VS Code Desktop** as your default Codespaces editor:
@@ -150,15 +165,15 @@ To grant a new developer access: add them to
 `gcloud auth login` and `gcloud auth application-default login` write to
 different places and expire independently:
 
-| Store                                  | Written by                              | Read by                                |
-| -------------------------------------- | --------------------------------------- | -------------------------------------- |
-| `credentials.db`                       | `gcloud auth login`                     | `gcloud` CLI commands, `bq`            |
-| `application_default_credentials.json` | `gcloud auth application-default login` | client libraries, every GCP MCP server |
+| Store                                  | Written by                              | Read by                                                                    |
+| -------------------------------------- | --------------------------------------- | -------------------------------------------------------------------------- |
+| `credentials.db`                       | `gcloud auth login`                     | `gcloud` CLI commands, `bq`                                                |
+| `application_default_credentials.json` | `gcloud auth application-default login` | client libraries, local dbt, the `gke` and `gcp-observability` MCP servers |
 
 A Workspace Cloud-session-length policy expires the **user** store roughly
 daily. ADC is unaffected. The symptom is lopsided: `bq` and bare `gcloud` start
-failing with "Reauthentication failed" while every MCP server and client-library
-script keeps working normally.
+failing with "Reauthentication failed" while local dbt, the ADC-backed MCP
+servers, and client-library scripts keep working normally.
 
 The **GCloud: Application Default Login** task refreshes ADC only — there is no
 task for the user store, so re-run `gcloud auth login` yourself when you need
@@ -238,3 +253,23 @@ own, so a call that worked under your user credential can still 403 under ADC.
 - **dbt Core Tools extension**: activates on
   `workspaceContains:**/dbt_project.yml` and parses projects on startup. Risk:
   extension may activate before `uv sync` installs dbt-core.
+- **uv cache lives outside the repo**: `UV_CACHE_DIR` points at
+  `/workspaces/.uv-cache` so the cache sits on the same filesystem as the venvs,
+  letting `UV_LINK_MODE=hardlink` share package files instead of copying them
+  into every worktree `.venv`. Both settings come from `devcontainer.json`, so a
+  change to either needs a container rebuild. The rebuild discards the old cache
+  at `~/.cache/uv` along with the rest of the home directory, so there is
+  nothing to clean up afterwards. If a host ever puts the cache and
+  `/workspaces` on different filesystems, uv warns and falls back to copying
+  rather than failing.
+- **A rebuild wipes the home directory**: `/home/vscode` sits on the container
+  overlay and only `/workspaces` is on the persistent volume, so a rebuild
+  deletes `~/.claude` — every Claude Code session transcript, the stored
+  credentials, and `~/.claude.json`. Archive them onto the volume first, then
+  restore after the rebuild:
+
+  ```bash
+  tar -czf /workspaces/claude-backup.tar.gz -C /home/vscode .claude .claude.json
+  # rebuild the container, then:
+  tar -xzf /workspaces/claude-backup.tar.gz -C /home/vscode
+  ```

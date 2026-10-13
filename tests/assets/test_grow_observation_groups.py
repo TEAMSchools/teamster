@@ -11,6 +11,7 @@ from teamster.code_locations.kipptaf.level_data.grow.assets import (
     _can_anchor_group,
     _match_observation_group,
     _observes_fallback,
+    _observes_whole_school,
 )
 
 
@@ -156,3 +157,48 @@ def test_observes_fallback_false_for_regional_observer() -> None:
 
 def test_observes_fallback_false_when_admin_cannot_anchor() -> None:
     assert _observes_fallback(_user(role_names=["School Admin"], readonly=1)) is False
+
+
+def test_observes_whole_school_true_for_regional_observer() -> None:
+    assert _observes_whole_school(_user(role_names=["Regional Observer"])) is True
+
+
+def test_observes_whole_school_true_alongside_other_roles() -> None:
+    """Most Regional Observers also teach and coach; neither role suppresses it."""
+    assert (
+        _observes_whole_school(
+            _user(role_names=["Teacher", "Coach", "Regional Observer"])
+        )
+        is True
+    )
+
+
+def test_observes_whole_school_false_without_the_role() -> None:
+    """A coach reaches their own reports only, through their own group."""
+    assert _observes_whole_school(_user(role_names=["Coach", "School Admin"])) is False
+
+
+def test_observes_whole_school_false_when_readonly() -> None:
+    """A Regional Admin is readonly, so the role alone must not anchor a group."""
+    assert (
+        _observes_whole_school(
+            _user(role_names=["Regional Admin", "Regional Observer"], readonly=1)
+        )
+        is False
+    )
+
+
+def test_observes_whole_school_false_when_inactive() -> None:
+    assert (
+        _observes_whole_school(_user(role_names=["Regional Observer"], inactive=1))
+        is False
+    )
+
+
+def test_observes_whole_school_false_when_missing_observers_role() -> None:
+    assert (
+        _observes_whole_school(
+            _user(role_names=["Regional Observer"], group_type=["observees"])
+        )
+        is False
+    )

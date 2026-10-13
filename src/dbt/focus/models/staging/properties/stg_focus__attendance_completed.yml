@@ -1,16 +1,11 @@
 models:
   - name: stg_focus__attendance_completed
     description: >-
-      Focus attendance-completion records — one row per section per date marking
-      that a teacher submitted attendance.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - course_period_id
-              - school_date
-          config:
-            severity: error
+      Focus attendance-submission log — one row per submission event, keyed on
+      `id`. Focus appends a new row each time attendance is saved, so a section
+      and date repeat when a teacher re-saves and when a co-teacher or
+      substitute submits separately. There is no one-row-per-section-per-date
+      grain.
     columns:
       - name: id
         description: Primary key — Focus attendance-completed id.

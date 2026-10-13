@@ -1,10 +1,12 @@
 """Cube schema invariants — cube/view names carry no warehouse prefix."""
 
 import pathlib
+import re
 
 import yaml
 
 CUBE_MODEL_DIR = pathlib.Path(__file__).parents[2] / "src" / "cube" / "model"
+ACCESS_JS = CUBE_MODEL_DIR.parent / "access.js"
 
 
 def _names() -> list[tuple[str, str]]:
@@ -165,6 +167,44 @@ def test_pre_aggregation_covers_row_level_scoping_members() -> None:
     )
 
 
+def test_coarse_grain_pre_aggregations_require_aligned_date_ranges() -> None:
+    # Cube defaults allow_non_strict_date_range_match to true for any rollup
+    # with a time_dimension. Above day grain that lets the rollup serve a date
+    # range that does not align with its buckets, and it returns wrong rows
+    # with no error (#5744: 0 rows for Sep-Oct from a year-grain rollup).
+    offenders = [
+        f"{cube}.{pre_agg['name']}"
+        for cube, pre_aggs in _pre_aggregations_by_root_cube().items()
+        for pre_agg in pre_aggs
+        if pre_agg.get("time_dimension")
+        and pre_agg.get("granularity", "day") != "day"
+        and pre_agg.get("allow_non_strict_date_range_match") is not False
+    ]
+    assert not offenders, (
+        "set allow_non_strict_date_range_match: false on these rollups:\n"
+        + "\n".join(offenders)
+    )
+
+
+def test_refresh_key_sql_names_its_cubes_table() -> None:
+    # A refresh_key sql that reads table metadata repeats the cube's table name
+    # as a string. Rename the table and update sql_table but not that string,
+    # and the metadata query returns no rows, its value never changes, and the
+    # rollup silently stops refreshing.
+    offenders = []
+    for path in CUBE_MODEL_DIR.rglob("cubes/**/*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for cube in doc.get("cubes", []) or []:
+            table = (cube.get("sql_table") or "").split(".")[-1]
+            for pre_agg in cube.get("pre_aggregations", []) or []:
+                sql = (pre_agg.get("refresh_key") or {}).get("sql")
+                if sql and table not in sql:
+                    offenders.append(f"{path}: {cube['name']}.{pre_agg['name']}")
+    assert not offenders, (
+        "refresh_key sql does not name its cube's sql_table:\n" + "\n".join(offenders)
+    )
+
+
 def test_row_level_filter_members_are_exposed_by_their_view() -> None:
     # A row_level filter naming a member the view doesn't (or no longer)
     # expose compiles fine but silently never matches -- Cube has no
@@ -187,4 +227,51 @@ def test_row_level_filter_members_are_exposed_by_their_view() -> None:
     assert not offenders, (
         "row_level filter references a member the view doesn't expose:\n"
         + "\n".join(offenders)
+    )
+
+
+def _staff_pii_scoped_members() -> set[str]:
+    # access.js STAFF_SENSITIVE_SCOPE_BY_MEMBER is the one list of members gated
+    # by staff_pii_scope; read it so a newly registered member is checked too.
+    return set(
+        re.findall(r'^\s+(\w+): "staff_pii_scope",$', ACCESS_JS.read_text(), re.M)
+    )
+
+
+def test_staff_pii_members_are_only_exposed_behind_staff_pii_groups() -> None:
+    # A staff_pii_scope member on a view with any policy group outside the
+    # staff-pii-<scope> tiers (e.g. the open staff-directory group) is readable
+    # by every resolved viewer, network-wide.
+    members = _staff_pii_scoped_members()
+    # Guard against a registry-format change making the check vacuous.
+    assert "status_reason" in members and "personal_email" in members, members
+
+    offenders = []
+    exposed_somewhere: set[str] = set()
+    for path in CUBE_MODEL_DIR.rglob("views/**/*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for view in doc.get("views", []) or []:
+            # Student cubes reuse names like birth_date; only staff-cube
+            # sources count (staff-domain cubes are named staff*).
+            sensitive = {
+                exposed
+                for exposed, qualified in _view_member_to_qualified_name(view).items()
+                if exposed in members and qualified.startswith("staff")
+            }
+            if not sensitive:
+                continue
+            exposed_somewhere |= sensitive
+            groups = [p.get("group") for p in view.get("access_policy", []) or []]
+            open_groups = [g for g in groups if not str(g).startswith("staff-pii-")]
+            if not groups or open_groups:
+                offenders.append(
+                    f"{path}: view {view['name']!r} exposes {sorted(sensitive)} "
+                    f"under non-staff-pii groups {open_groups or '[no policy]'}"
+                )
+    assert not offenders, (
+        "staff_pii_scope member exposed outside staff-pii-* groups:\n"
+        + "\n".join(offenders)
+    )
+    assert exposed_somewhere == members, (
+        f"registered but exposed by no view: {sorted(members - exposed_somewhere)}"
     )

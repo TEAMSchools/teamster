@@ -75,6 +75,7 @@ def adp_payroll_sftp_sensor(
         match = check.not_none(value=pattern.match(string=path))
 
         group_dict = match.groupdict()
+        group_dict["group_code"] = group_dict["group_code"].upper()
 
         partition_key = MultiPartitionKey(group_dict)
 

@@ -101,7 +101,7 @@ with
                 'sat_reading_test_score'
             ) as is_benchmark_eligible,
 
-            /* dense_rank on test_date, not row_number, because 261 official
+            /* dense_rank on test_date, not row_number, because some official
                sittings carry the same score twice under different rn_highest.
                Its max is the distinct-date count, which count(*) would inflate. */
             dense_rank() over (
@@ -117,7 +117,7 @@ with
     ),
 
     /* One row per administration per score type, so the change below is measured
-       between administrations rather than between duplicate rows. 261 official
+       between administrations rather than between duplicate rows. Some official
        sittings carry the same score twice under different rn_highest, and lagging
        over those directly would read a change of zero between a row and its own
        duplicate. */
@@ -142,10 +142,7 @@ with
        lineage carries it, because a practice score must never displace an official
        one -- but growth is the exception: a student's progression runs through both,
        and chaining them is the point. Scores stay comparable because a practice
-       score is converted onto the same scale as its official counterpart.
-
-       Nothing reads this yet. It exists for the growth-over-time work due shortly
-       after this PR. */
+       score is converted onto the same scale as its official counterpart. */
     admin_growth as (
         select
             student_number,
@@ -233,8 +230,8 @@ select
         null
     ) as rn_highest_benchmark_aligned_scope,
 
-    /* rn_highest = 1 is redundant to a max and suppresses 23 real scores. Kept
-       to match production while the repointing is verified. See TODO(#4658). */
+    /* rn_highest = 1 is redundant to a max and suppresses real scores whose
+       dated sibling ranked first. See TODO(#4658). */
     max(if(b.is_benchmark_eligible and b.rn_highest = 1, b.scale_score, null)) over (
         partition by
             b.student_number, b.test_type, b.benchmark_aligned_scope, b.subject_area

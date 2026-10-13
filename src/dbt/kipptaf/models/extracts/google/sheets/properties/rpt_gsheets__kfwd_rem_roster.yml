@@ -101,3 +101,13 @@ models:
         data_type: string
       - name: contact_kipp_region_name
         data_type: string
+      - name: advising_provider
+        data_type: string
+        description:
+          Organization providing postsecondary advising to the alum, from the
+          Salesforce contact record.
+      - name: high_school_graduated_from
+        data_type: string
+        description:
+          High school the alum graduated from, from the Salesforce contact
+          record.

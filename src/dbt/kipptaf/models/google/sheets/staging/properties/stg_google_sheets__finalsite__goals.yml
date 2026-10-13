@@ -1,13 +1,31 @@
 models:
   - name: stg_google_sheets__finalsite__goals
+    description: >
+      Recruitment and enrollment goals for the FRESH dashboard, entered by hand
+      in the Finalsite goals Google Sheet. One row per academic year, region,
+      school, grade level, goal granularity, goal type, and goal name, with the
+      goal's value. A straight pass-through of the sheet.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - enrollment_academic_year
+              - region
+              - schoolid
+              - grade_level
+              - goal_granularity
+              - goal_type
+              - goal_name
+          config:
+            severity: error
     columns:
       - name: grade_level
         data_type: int64
         description: >
-          Sheet-native grade level code. Pre-K is -1; K is 0; 1-12 are plain
-          integers; -9 marks a whole-school-total row. The sheet must store -9
-          for whole-school rows -- a failure on this test (typically -1 present
-          instead) means the sheet has not been recoded yet.
+          Grade level the goal applies to. K is 0 and grades 1-12 are plain
+          integers. -9 marks a whole-school total row (goal_granularity =
+          "School"). A failing accepted_values test that shows -1 means a
+          whole-school row in the sheet still uses the old code instead of -9.
         data_tests:
           - accepted_values:
               config:
@@ -17,35 +35,46 @@ models:
                 quote: false
       - name: enrollment_academic_year
         data_type: int64
+        description: >
+          Academic year the goal is for, as the starting calendar year (2025
+          means 2025-26).
       - name: region
         data_type: string
+        description: Region the goal belongs to.
       - name: school_level
         data_type: string
+        description: School level of the school, as entered in the sheet.
       - name: schoolid
         data_type: int64
+        description: >
+          PowerSchool school number. 0 on "Region/Grade Level" rows, which are
+          not tied to one school.
       - name: school
         data_type: string
+        description: School name or abbreviation as entered in the sheet.
       - name: goal_granularity
         data_type: string
         description: >
-          "School" (whole-school total, grade_level = -9), "School/Grade Level",
-          or "Region/Grade Level" (Inquiries/Applications/Deferred/ Waitlisted
-          -- not tied to a specific school).
+          Level the goal is set at -- "School" (whole-school total, grade_level
+          = -9), "School/Grade Level", or "Region/Grade Level" (region-wide for
+          one grade, schoolid = 0).
       - name: goal_type
         data_type: string
         description: >
-          "Enrollment" goals (Seat Target, FDOS Target, New Student Target,
-          Budget Target, Re-Enroll Projection) are plain manually-entered
-          targets. Every other goal_type is a computed roll-up of the Finalsite
-          recruitment funnel via status_crosswalk -- see
-          docs/models/fresh-dashboard-data-model.md for full definitions.
+          Funnel stage the goal belongs to, such as Enrollment, Inquiries,
+          Applications, Offers, Accepted, Pending Offers, Conversion. Enrollment
+          goals (Seat Target, FDOS Target, Budget Target, New Student Target,
+          Re-Enroll Projection) are targets compared to enrollment counts; the
+          other types line up with Finalsite funnel stages that downstream
+          models count through the status crosswalk.
       - name: goal_name
         data_type: string
         description: >
-          See docs/models/fresh-dashboard-data-model.md for the full goal_name
-          glossary (Seat Target, FDOS Target, New Student Target, Budget Target,
-          Re-Enroll Projection, Inquiries, App Target, Offers Target, Accepted,
-          Waitlisted, Deferred, Enrollment In Progress, Pending Offers [+
-          day-bucket splits], Conversion sub-types).
+          Specific goal within goal_type, such as Seat Target, App Target,
+          Offers Target, or a Pending Offers day bucket. Full glossary in
+          docs/models/fresh-dashboard-data-model.md.
       - name: goal_value
         data_type: numeric
+        description: >
+          The goal's value. Blank on many funnel-stage rows that have no target
+          set.

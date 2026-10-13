@@ -11,6 +11,7 @@ from teamster.code_locations.kipppaterson import (
     CODE_LOCATION,
     DBT_PROJECT,
     amplify,
+    cambium,
     couchdrop,
     dbt,
     deanslist,
@@ -48,6 +49,7 @@ defs = Definitions(
             modules=[
                 dbt,
                 amplify,
+                cambium,
                 deanslist,
                 edplan,
                 extracts,

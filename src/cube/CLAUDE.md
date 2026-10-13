@@ -13,7 +13,7 @@ spend profiling: invoke the `cube-ops` skill.
 
 ```text
 src/cube/
-  cube.js                   # Auth, group resolution, queryRewrite, sql-user gating
+  cube.js                   # Auth, group resolution, sql-user gating
   package.json              # Cube server + bigquery driver + googleapis
   .env.example              # Hook-blocked for Claude — but its local values are
                             # documented verbatim in docs/guides/cube.md, so read
@@ -29,9 +29,9 @@ src/cube/
       <domain>/<name>.yml   # Analyst-facing views — the only public surface
 ```
 
-One cube or view per file. Filename matches `name:`. New cubes go under
-`cubes/<domain>/`; cross-domain shared dims (dates, regions, locations, terms,
-school_calendars) go in `cubes/conformed/`.
+One cube or view per file. New cubes go under `cubes/<domain>/`; cross-domain
+shared dims (dates, regions, locations, terms, school_calendars) go in
+`cubes/conformed/`.
 
 ## MCP access (cube)
 

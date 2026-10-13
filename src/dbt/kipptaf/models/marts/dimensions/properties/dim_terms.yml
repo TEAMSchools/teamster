@@ -11,19 +11,22 @@ models:
         data_type: string
         description: >-
           Surrogate key for this dimension. Hash composition uses term type,
-          code, name, start date, region, and school ID. Region attributes are
-          reachable via dim_terms → dim_locations → dim_regions FK traversal.
+          code, name, start date, region, school ID, and grade band. Region
+          attributes are reachable via dim_terms → dim_locations → dim_regions
+          FK traversal.
         constraints:
           - type: primary_key
             warn_unsupported: false
             warn_unenforced: false
         data_tests:
-          # warn, not error: dim_terms is a view, so this only re-runs on a SQL
-          # edit. The grain check that fires on sheet edits lives on
-          # stg_google_sheets__reporting__terms.
+          # Sheet-driven duplicates are caught on every sheet edit by the grain
+          # test on stg_google_sheets__reporting__terms. This one catches
+          # fan-out from the region and school joins, which that test can't,
+          # but only when this view rebuilds (a SQL change, in CI or deploy),
+          # not when upstream data changes.
           - unique:
               config:
-                severity: warn
+                severity: error
 
       - name: location_key
         data_type: string
@@ -94,7 +97,10 @@ models:
       - name: grade_band
         data_type: string
         description: >-
-          Grade band (ES, MS, HS). Nullable when not school-specific.
+          Grades or grade band the term applies to. A band label such as `ES`,
+          `MS`, `HS` or `K-2` on most types; on `LIT` rows, a comma-separated
+          list of grade levels (e.g. `0,1,2`). Part of term_key. Null when not
+          band-specific.
 
       - name: data_freeze_date
         data_type: date
@@ -113,7 +119,3 @@ models:
           Semester this period falls within. S1 for term_name Q1/Q2, S2 for
           Q3/Q4. Self-mapped for type='ATT' semester rows (term_code S1/S2).
           NULL for periods that don't map to a quarter (annual, custom, etc.).
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [S1, S2]

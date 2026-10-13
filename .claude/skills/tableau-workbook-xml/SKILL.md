@@ -49,8 +49,8 @@ hover or a click cannot be rendered; say so and ask a human.
 Scripts live in `docs/tableau-xml/scripts/`. The two checkers run on every edit;
 `mutate.py` runs when step 2 needs a mutant; `repack.py` at step 5;
 `tsc_session.py` for the credentialed steps 1, 6 and 7, copied to a throwaway
-`tests/test_zz_*.py` and run with `uv run pytest -s` (a plain `uv run python`
-gets no secrets). Read exit codes with a redirect, never through a pipe.
+`tests/test_zz_*.py` and run with `uv run pytest -s`. Read exit codes with a
+redirect, never through a pipe.
 
 1. **Pull fresh.** Download with `include_extract=True` and record `updated_at`.
    If you have a previous base, diff the worksheet and parameter lists against

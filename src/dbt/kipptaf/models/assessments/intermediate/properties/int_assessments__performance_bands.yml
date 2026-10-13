@@ -18,6 +18,7 @@ models:
     columns:
       - name: assessment_id
         data_type: int64
+        description: Illuminate assessment id.
       - name: response_type
         data_type: string
         description: One of `overall`, `standard`, or `group`.
@@ -28,11 +29,17 @@ models:
           `reporting_group_id` for `group`.
       - name: performance_band_set_id
         data_type: int64
+        description: >-
+          Band set for this response. `overall` rows take the assessment-level
+          set from `int_assessments__assessments_members`; `standard` and
+          `group` rows take the set from the Illuminate assessment-standards and
+          assessment-reporting-groups staging models.
       - name: canonical_performance_band_set_id
         data_type: int64
         description: >-
-          For internal assessments, the `performance_band_set_id` of the row
-          whose `assessment_id` equals
-          `int_assessments__assessments_members.canonical_assessment_id` for the
-          same (response_type, response_type_id). For non-internal assessments,
-          equals `performance_band_set_id`.
+          For internal assessments, the `performance_band_set_id` of the lowest
+          `assessment_id` that has a row for the same (canonical_assessment_id,
+          response_type, response_type_id). That is the canonical member's set
+          whenever the canonical member carries the response, which `overall`
+          always does. For external assessments, equals
+          `performance_band_set_id`.

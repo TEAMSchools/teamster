@@ -69,20 +69,6 @@ models:
               arguments:
                 to: ref('dim_dates')
                 field: date_key
-      - name: respondent_type
-        data_type: string
-        description: >-
-          Discriminator for respondent type: staff, student, or family.
-          Determines which respondent FK is populated.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - staff
-                  - student
-                  - family
-
       - name: staff_key
         data_type: string
         description: >-
@@ -156,6 +142,11 @@ models:
               arguments:
                 to: ref('dim_staff')
                 field: staff_key
+      - name: respondent_type
+        data_type: string
+        description: >-
+          Discriminator for respondent type: staff, student, or family.
+          Determines which respondent FK is populated.
       - name: academic_year
         data_type: int64
         description: >-

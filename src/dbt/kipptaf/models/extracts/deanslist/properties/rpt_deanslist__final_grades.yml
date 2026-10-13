@@ -1,10 +1,8 @@
 models:
   - name: rpt_deanslist__final_grades
     description: >-
-      Pushes current-year final grades to DeansList. Network-wide, Miami
-      included: Miami is a DeansList region, with 11,585 incidents in
-      `int_deanslist__incidents` as of 2026-08-27, so it belongs in the grade
-      feed too. Ratified on #4996.
+      Pushes current-year final grades to DeansList for the regions that use it.
+      Miami is excluded because it no longer uses DeansList.
     columns:
       - name: student_number
         data_type: int64

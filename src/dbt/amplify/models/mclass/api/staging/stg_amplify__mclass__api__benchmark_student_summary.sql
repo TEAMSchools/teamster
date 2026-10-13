@@ -69,17 +69,6 @@ with
 
             cast(left(school_year, 4) as int) as academic_year,
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "student_primary_id",
-                        "school_year",
-                        "benchmark_period",
-                        "assessment_grade",
-                    ]
-                )
-            }} as surrogate_key,
-
         from {{ source("amplify_mclass_api", "benchmark_student_summary") }}
     )
 

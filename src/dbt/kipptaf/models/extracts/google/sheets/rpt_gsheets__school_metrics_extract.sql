@@ -267,7 +267,7 @@ with
         from {{ ref("int_deanslist__incidents__penalties") }}
         where
             create_ts_academic_year = {{ var("current_academic_year") }}
-            and referral_tier not in ('Non-Behavioral', 'Social Work')
+            and is_behavioral_referral
             and start_date is not null
     ),
 

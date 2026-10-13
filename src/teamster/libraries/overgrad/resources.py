@@ -2,7 +2,7 @@ import time
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Response, Session
 from requests.exceptions import HTTPError
 from tenacity import (
@@ -14,7 +14,7 @@ from tenacity import (
 
 
 class OvergradResource(ConfigurableResource):
-    api_key: str
+    api_key: str = Field(repr=False)
     api_version: str = "v1"
     page_limit: int = 20
     request_timeout: float = 60.0
@@ -63,15 +63,21 @@ class OvergradResource(ConfigurableResource):
     def list(self, path: str, *args: str, **kwargs) -> list[dict]:
         kwargs["params"] = {"limit": self.page_limit}
 
+        url = self._get_url(path, *args)
+
         page = 1
         data = []
         while True:
             kwargs["params"].update({"page": page})
 
-            response_json: dict = self.get(path, *args, **kwargs).json()
+            response_json: dict = self._request(method="GET", url=url, **kwargs).json()
 
             data.extend(response_json.pop("data"))
-            self._log.debug(response_json)
+
+            # no per-page logging: each Dagster log call is a synchronous event
+            # write, and hundreds of pages turn slow writes into a max_runtime timeout
+            if page == 1:
+                self._log.info(f"GET: {url} {response_json}")
 
             if page == response_json["total_pages"]:
                 break

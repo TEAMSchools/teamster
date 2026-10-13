@@ -1,7 +1,25 @@
 models:
   - name: int_extracts__student_enrollments_subjects_weeks
+    description:
+      One row per student, academic year, school week and discipline, built by
+      expanding int_extracts__student_enrollments_subjects across the in-session
+      weeks each stint covers. A stint covers a week when it starts on or before
+      the week's last school day and its last_enrolled_date falls on or after
+      the week's first school day. When two stints cover the same week (a
+      mid-week transfer or re-entry), the row kept is the stint enrolled on the
+      Monday, and otherwise the later stint.
     config:
       schema: extracts
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+              - discipline
+          config:
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -119,6 +137,16 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: exitdate
+      - name: last_enrolled_date
+        data_type: date
+        description:
+          Inclusive last day the student was enrolled in this stint. PowerSchool
+          records exitdate as the first day the student is no longer enrolled,
+          so PowerSchool stints use the day before exitdate; Focus trims each
+          stint to the day before the next one starts, so Focus stints use
+          exitdate unchanged. Null for graduate placeholder rows, which carry no
+          exit date. Use this column, not exitdate, for any "enrolled on date X"
+          test.
       - name: region
         data_type: string
       - name: school_level
@@ -432,6 +460,12 @@ models:
       - name: is_enrolled_week
         data_type: boolean
         description:
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed. Conditional on entrydate,
-          exitdate, week_start_monday.
+          True when the student was enrolled in this stint on the week's Monday,
+          meaning week_start_monday falls between entrydate and
+          last_enrolled_date.
+      - name: is_enrolled_week_end
+        data_type: boolean
+        description:
+          True when the student was enrolled in this stint on the week's Sunday,
+          meaning week_end_sunday falls between entrydate and
+          last_enrolled_date.

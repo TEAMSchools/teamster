@@ -1,14 +1,4 @@
-from typing import AbstractSet
-
 from dagster import AssetSelection, AutomationCondition
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets.graph.base_asset_graph import (
-    BaseAssetGraph,
-    BaseAssetNode,
-)
-from dagster._core.definitions.declarative_automation.operators.dep_operators import (
-    DepsAutomationCondition,
-)
 
 _MAX_VIEW_DEPTH = 10
 _VIEW_SELECTION = AssetSelection.tag("dagster/materialized", "view")
@@ -22,39 +12,14 @@ _SINCE_LAST_HANDLED = (
 )
 
 
-def _patched_get_dep_keys(
-    self: DepsAutomationCondition,
-    key: AssetKey,
-    asset_graph: BaseAssetGraph[BaseAssetNode],
-) -> AbstractSet[AssetKey]:
-    """Patched _get_dep_keys that copies the set before mutating.
-
-    Fixes a Dagster bug where allow/ignore selections use in-place set
-    operations (&=, -=) on the mutable set returned by parent_entity_keys,
-    permanently corrupting the asset graph's dependency information.
-    """
-    dep_keys = set(asset_graph.get(key).parent_entity_keys)
-
-    if self.allow_selection is not None:
-        dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
-
-    if self.ignore_selection is not None:
-        dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
-
-    return dep_keys
-
-
-# TODO: remove when dagster > 1.9.12 fixes _get_dep_keys
-DepsAutomationCondition._get_dep_keys = _patched_get_dep_keys
-
-
 def _build_dbt_condition(
     *extra_triggers: AutomationCondition,
+    requested_reset_triggers: AutomationCondition | None = None,
 ) -> AutomationCondition:
     """Build a dbt automation condition with the shared structure.
 
-    All three dbt conditions (view, union_relations, table) share the same
-    skeleton — they differ only in what additional triggers (beyond
+    All four dbt conditions (view, union_relations, table, cron) share the
+    same skeleton — they differ only in what additional triggers (beyond
     newly_missing) cause a materialization request.
 
     The shared structure is a fork of AutomationCondition.eager() with:
@@ -75,19 +40,39 @@ def _build_dbt_condition(
     permanent deadlocks on FRESH deps while the in-CL race it nominally
     prevented was already covered by dbt's intra-build DAG ordering plus
     ``any_deps_missing`` / ``any_deps_in_progress``.
+
+    ``requested_reset_triggers`` stay armed until this asset is requested,
+    not until it is updated. A materialization from a run that started
+    before the trigger fired (a stale in-flight run, or a manual UI run)
+    therefore cannot consume it. Stock eager() resets on newly_updated, so
+    an upstream update that lands during the asset's own run is cleared by
+    that run's completion and never re-runs.
+
+    Known limits of the requested reset:
+    - A trigger that fires on the tick right after the request is dropped:
+      that tick's newly_requested reset wins, because the trigger carries no
+      timing metadata. The requested run usually has not started yet, so it
+      reads the new data.
+    - A manual materialization does not clear a pending trigger, so one
+      extra run follows it.
     """
     triggers: AutomationCondition = AutomationCondition.newly_missing()
     for trigger in extra_triggers:
         triggers = triggers | trigger
 
+    handled = triggers.since(
+        _SINCE_LAST_HANDLED
+    ) | AutomationCondition.code_version_changed().since(
+        AutomationCondition.newly_updated()
+    )
+    if requested_reset_triggers is not None:
+        handled = handled | requested_reset_triggers.since(
+            AutomationCondition.newly_requested()
+        )
+
     return (
         AutomationCondition.in_latest_time_window()
-        & (
-            triggers.since(_SINCE_LAST_HANDLED)
-            | AutomationCondition.code_version_changed().since(
-                AutomationCondition.newly_updated()
-            )
-        )
+        & handled
         & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
         & ~AutomationCondition.any_deps_in_progress()
         & ~AutomationCondition.in_progress()
@@ -153,6 +138,47 @@ def _build_any_ancestor_code_version_changed(
     return AutomationCondition.any_deps_match(condition)
 
 
+def _build_parent_code_change_landed(
+    max_depth: int = _MAX_VIEW_DEPTH, view_selection: AssetSelection | None = None
+) -> AutomationCondition:
+    """Detect the tick a parent's post-code-change materialization lands.
+
+    For each parent X, ``pending`` is true from the tick X or any of its
+    ancestors changes code version until X next materializes. ``landed`` is
+    true on the tick ``pending`` turns off, i.e. the tick X's rebuild lands.
+
+    code_version_changed() alone cannot express this: it is true for exactly
+    one tick (it compares against the previous tick's cursor), which is the
+    deploy tick, before X has rebuilt.
+
+    ``newly_true()`` is evaluated first so its child always sees the full
+    subset. The ``newly_updated()`` conjunct keeps a cursor-less first
+    evaluation (after a condition tree change) from firing for parents that
+    did not update.
+
+    Recursion follows view parents only (view_selection), so a table behind a
+    view counts as a parent, mirroring _build_any_ancestor_updated.
+    """
+    pending = (
+        AutomationCondition.code_version_changed()
+        | _build_any_ancestor_code_version_changed(max_depth - 1)
+    ).since(AutomationCondition.newly_updated())
+
+    landed = (~pending).newly_true() & AutomationCondition.newly_updated()
+
+    condition = AutomationCondition.any_deps_match(landed)
+
+    for _ in range(max_depth - 1):
+        recurse = AutomationCondition.any_deps_match(condition)
+
+        if view_selection is not None:
+            recurse = recurse.allow(view_selection)
+
+        condition = AutomationCondition.any_deps_match(landed) | recurse
+
+    return condition
+
+
 def dbt_view_automation_condition() -> AutomationCondition:
     """Automation condition for dbt VIEW models.
 
@@ -172,14 +198,31 @@ def dbt_union_relations_automation_condition() -> AutomationCondition:
     compiled SQL, the view's own code_version_changed won't fire when the
     macro output changes due to upstream schema changes.
 
-    Adds recursive ancestor code_version_changed detection: when an upstream
-    model's raw SQL changes after a deploy, this view re-runs so the macro
-    recompiles with the updated column set.
+    Behaves like a view, plus one trigger: rebuild on the tick a parent's
+    post-code-change materialization lands (the parent's own code or any
+    ancestor's), looking through view parents to the table behind them. It
+    does NOT fire on the deploy tick, when the parent still has its old
+    schema (issue #4290), and it does NOT fire on upstream data-only updates.
 
-    Does NOT trigger on upstream data changes (any_deps_updated) to avoid
-    unnecessary Dagster credit and Kubernetes resource costs.
+    Known limits:
+    - A parent that reloads and finishes its rebuild within one sensor tick is
+      missed: pending arms and resets on the same tick and the reset wins.
+    - If a parent table does a data rebuild before its changed ancestor
+      rebuilds, pending clears early and the view rebuilds against the old
+      schema; the later rebuild does not re-fire it.
+    - A second parent that lands on the tick right after the view was requested
+      is dropped: that tick's newly_requested reset wins, because the trigger
+      carries no timing metadata. Usually harmless (the requested run compiles
+      after the landing), except for a table behind a view parent, which
+      ~any_deps_in_progress does not hold back.
+    - A phantom pending (stale cursor state) costs at most one extra view
+      rebuild. It cannot deadlock: this is a trigger, not a gate.
     """
-    return _build_dbt_condition(_build_any_ancestor_code_version_changed())
+    return _build_dbt_condition(
+        requested_reset_triggers=_build_parent_code_change_landed(
+            view_selection=_VIEW_SELECTION
+        )
+    )
 
 
 def dbt_table_automation_condition() -> AutomationCondition:
@@ -192,10 +235,15 @@ def dbt_table_automation_condition() -> AutomationCondition:
     intermediate views that aren't re-materialized.
 
     Triggers: newly_missing, any_deps_updated (direct + through views),
-    code_version_changed.
+    code_version_changed. The ancestor-updated trigger resets on request
+    only, so an upstream update that lands mid-run triggers one more run.
+    any_deps_updated ignores updates from runs that also targeted this
+    asset, so a single run that builds the chain does not re-fire it.
     """
     return _build_dbt_condition(
-        _build_any_ancestor_updated(view_selection=_VIEW_SELECTION)
+        requested_reset_triggers=_build_any_ancestor_updated(
+            view_selection=_VIEW_SELECTION
+        )
     )
 
 
@@ -218,13 +266,15 @@ def dbt_cron_automation_condition(
 
     Triggers: newly_missing, cron_tick_passed, code_version_changed (deploys
     still rebuild immediately). Retains the deps-missing/in-progress guards.
+    The cron trigger resets on request only, so a tick that passes during the
+    table's own run is not cleared by that run's completion.
 
     A None cron_timezone falls back to Dagster's cron_tick_passed default
     (UTC). The dbt translator passes its code location's LOCAL_TIMEZONE, so
     dbt models get local ticks without hardcoding a zone here.
     """
     return _build_dbt_condition(
-        AutomationCondition.cron_tick_passed(
+        requested_reset_triggers=AutomationCondition.cron_tick_passed(
             cron_schedule=cron_schedule,
             cron_timezone=cron_timezone or "UTC",
         )

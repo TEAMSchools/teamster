@@ -14,6 +14,7 @@ select
                 "rt.start_date",
                 "rt.region",
                 "rt.school_id",
+                "rt.grade_band",
             ]
         )
     }} as term_key,

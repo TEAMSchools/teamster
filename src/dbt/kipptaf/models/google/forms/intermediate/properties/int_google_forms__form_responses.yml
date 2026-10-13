@@ -140,3 +140,18 @@ models:
         data_type: date
       - name: employee_number
         data_type: int64
+      - name: item_abbreviation_lower
+        data_type: string
+        description:
+          item_abbreviation lowercased, from int_google_forms__form__items.
+      - name: answer
+        data_type: string
+        description: >-
+          The text answer, or the uploaded file name on a file-upload question
+          with no text.
+      - name: answer_value
+        data_type: numeric
+        description: text_value cast to numeric; null when it is not numeric.
+      - name: is_open_ended
+        data_type: int64
+        description: 1 when text_value is not an integer, else 0.

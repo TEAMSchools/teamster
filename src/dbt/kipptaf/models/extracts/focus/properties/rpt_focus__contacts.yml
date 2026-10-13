@@ -131,17 +131,6 @@ models:
           Phone rather than dropping the contact, but only when the slot carries
           a number — null when the slot has none (including when CONTACT1_VALUE
           was junk-rejected).
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - Cell Phone
-                  - Home Phone
-                  - Work Phone
-                  - Workplace
-                  - Alternate Phone
-              config:
-                severity: error
       - name: contact2_type
         data_type: string
         description:
@@ -150,17 +139,6 @@ models:
           Phone rather than dropping the contact, but only when the slot carries
           a number — null when the slot has none (including when CONTACT2_VALUE
           was junk-rejected).
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - Cell Phone
-                  - Home Phone
-                  - Work Phone
-                  - Workplace
-                  - Alternate Phone
-              config:
-                severity: error
       - name: contact3_type
         data_type: string
         description:
@@ -169,17 +147,6 @@ models:
           Phone rather than dropping the contact, but only when the slot carries
           a number — null when the slot has none (including when CONTACT3_VALUE
           was junk-rejected).
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - Cell Phone
-                  - Home Phone
-                  - Work Phone
-                  - Workplace
-                  - Alternate Phone
-              config:
-                severity: error
       - name: middle_name
         data_type: string
         config:

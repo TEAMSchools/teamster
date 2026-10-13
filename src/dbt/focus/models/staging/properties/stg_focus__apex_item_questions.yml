@@ -1,0 +1,39 @@
+models:
+  - name: stg_focus__apex_item_questions
+    description: >-
+      Focus Apex item-question links — one row per question inside an item, with
+      its order.
+    columns:
+      - name: id
+        description: Primary key — Focus apex_item_questions id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: item_id
+        description: Focus Apex item id the question sits in.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: question_id
+        description: Focus apex_questions id.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: sort_order
+        description: Position of the question within the item.
+        data_type: int
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

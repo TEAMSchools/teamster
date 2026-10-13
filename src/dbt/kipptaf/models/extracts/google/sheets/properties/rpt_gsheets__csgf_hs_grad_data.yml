@@ -34,5 +34,22 @@ models:
         data_type: int64
       - name: total_4yr_grad
         data_type: int64
+      - name: total_graduates
+        data_type: int64
+        description:
+          CSGF's own field tooltip reads "Include All Students Who Received a
+          Diploma." Distinct from total_4yr_grad -- not scoped to co.cohort =
+          var("current_academic_year") at all, since a student who received a
+          diploma this year can belong to an earlier cohort (5th-year/held-back
+          graduate) or a later one (early graduate), and both count here even
+          though grad_roster's cohort filter excludes them from every other
+          column on this model. Counts distinct students with exitcode = 'G1'
+          whose academic_year + 1 equals the current academic year, grouped by
+          school only -- verification numbers and background live in
+          docs/models/csgf-data-model.md. A school with off-cohort graduates but
+          zero current-cohort HS students would not get a row here at all (this
+          model is driven from grad_roster, which this column's CTE
+          intentionally isn't scoped to) -- monitored, not currently
+          manifesting; see the reference doc's Known Risks.
       - name: pct_grad
         data_type: float64

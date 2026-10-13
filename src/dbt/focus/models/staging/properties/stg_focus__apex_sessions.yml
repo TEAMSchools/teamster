@@ -1,0 +1,212 @@
+models:
+  - name: stg_focus__apex_sessions
+    description: >-
+      Focus Apex sessions — one row per student attempt at an assessment, with
+      its overall score and status. Teacher notes and discard or excuse reasons
+      (free text) are dropped. Use the session score for a student's overall
+      result; summed response scores do not always reconcile. Focus does not
+      cascade soft deletes, so join to stg_focus__apex_assigned_assessments to
+      drop attempts on deleted assignments.
+    columns:
+      - name: id
+        description: Primary key — Focus apex_sessions id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: assessment_id
+        description: Focus apex_assessments id.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: assignment_id
+        description: >-
+          Focus apex_assigned_assessments id the attempt belongs to (references
+          stg_focus__apex_assigned_assessments.id, not
+          stg_focus__apex_assignment_students.id).
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: Focus student id.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: attempt_id
+        description: Focus attempt id.
+        data_type: int
+      - name: config_id
+        description: Focus id of the testing configuration applied.
+        data_type: int
+      - name: form_id
+        description: Focus id of the test form served.
+        data_type: int
+      - name: syear
+        description: Focus school year (the spring calendar year).
+        data_type: int
+      - name: attempts
+        description: Attempt count Focus records on the session.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: completed
+        description: Whether the student submitted the attempt.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: completed_at
+        description: When the student submitted the attempt.
+        data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
+      - name: elapsed_time
+        description: Time the student spent testing, in microseconds.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: last_autosave_at
+        description: Last autosave of the student's answers.
+        data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
+      - name: graded
+        description: Whether scoring is finished.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: passed
+        description: Whether the attempt met the passing score.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: released
+        description: Whether results are released to the student.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: released_at
+        description: When results were released.
+        data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
+      - name: released_by
+        description: Focus user id of the staff member who released results.
+        data_type: int
+      - name: discarded
+        description: >-
+          Whether a teacher discarded the attempt. Exclude discarded attempts
+          from results.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: discarded_at
+        description: When the attempt was discarded.
+        data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
+      - name: discarded_by
+        description: >-
+          Focus user id of the staff member who discarded the attempt.
+        data_type: int
+      - name: excused
+        description: Whether the student was excused from the assessment.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: pending_rescore
+        description: >-
+          Whether the attempt awaits rescoring after a question changed; its
+          score may not match its responses.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: score_locked
+        description: Whether the score is locked against rescoring.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: score_locked_at
+        description: When the score was locked.
+        data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
+      - name: similar_responses
+        description: Focus flag for answers similar to another student's.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: is_observational
+        description: >-
+          Whether Focus marks the session as observational (teacher-recorded).
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: manually_seeded
+        description: Whether the randomization seed was set by hand.
+        data_type: boolean
+      - name: seed_override
+        description: Randomization seed set by hand.
+        data_type: int
+      - name: import_legacy_id
+        description: Identifier from the source system for imported scores.
+        data_type: string
+      - name: import_source
+        description: >-
+          Source system for imported scores; null when tested in Focus.
+        data_type: string
+      - name: score_actual
+        description: Points earned on the attempt.
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: score_max
+        description: Points possible on the attempt.
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: percent_score
+        description: >-
+          Percent score on the attempt (0-100); compare to
+          stg_focus__apex_band_levels min_score and max_score.
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

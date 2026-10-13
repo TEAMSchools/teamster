@@ -11,15 +11,18 @@ models:
       college-entrance assessments. Branches that do not populate a given
       scheduling column carry a typed NULL for that column (e.g. Illuminate and
       AP carry NULL administration_period; state branches carry NULL
-      source_assessment_id).
+      source_assessment_id). NJ state administrations come from
+      int_assessments__state_nj_scores, which unions Pearson and Cambium TIDE
+      results, and FL state administrations from int_fldoe__all_assessments;
+      both supply assessment_type and the test name as data.
     config:
       materialized: table
       meta:
         dagster:
-          # 5x/day table instead of an eager view — rationale and tick choice
+          # Cron table instead of an eager view — rationale and tick choice
           # in fct_assessment_scores_enrollment_scoped. Refs #4821
           automation_condition:
-            cron_schedule: 0 0,10,13,15,17 * * *
+            cron_schedule: 30 0,10,13,15,17 * * *
     columns:
       - name: assessment_administration_key
         data_type: string

@@ -19,34 +19,75 @@ with
             end_date,
             region,
             school_id,
+            grade_band,
             powerschool_year_id,
         from {{ ref("stg_google_sheets__reporting__terms") }}
         where `type` = 'RT'
     ),
 
-    gpa_term as (
+    gpa_term_cumulative as (
+        select
+            t._dbt_source_project,
+            t.schoolid,
+            t.academic_year,
+            t.student_number,
+            c.cumulative_y1_gpa,
+            c.cumulative_y1_gpa_unweighted,
+            c.cumulative_y1_gpa_projected,
+            c.earned_credits_cum,
+            c.potential_credits_cum,
+            t.yearid,
+            t.term_name,
+            t.semester,
+            t.gpa_term,
+            t.gpa_y1,
+            t.gpa_y1_unweighted,
+            t.gpa_semester,
+            t.n_failing_y1,
+            t.total_credit_hours_term,
+            t.total_credit_hours_y1,
+            t.grade_avg_term,
+            t.grade_avg_y1,
+        from {{ ref("int_students__gpa_term") }} as t
+        left join
+            {{ ref("int_students__gpa_cumulative") }} as c
+            on t.student_number = c.student_number
+            and t.schoolid = c.schoolid
+            and t._dbt_source_project = c._dbt_source_project
+
+        union all
+
+        -- Focus has cumulative GPA and no term rows.
         select
             _dbt_source_project,
             schoolid,
-            yearid,
-            academic_year,
+            calculated_academic_year as academic_year,
             student_number,
-            term_name,
-            semester,
-            gpa_term,
-            gpa_y1,
-            gpa_y1_unweighted,
-            gpa_semester,
-            n_failing_y1,
-            total_credit_hours_term,
-            total_credit_hours_y1,
-            grade_avg_term,
-            grade_avg_y1,
             cumulative_y1_gpa,
             cumulative_y1_gpa_unweighted,
             cumulative_y1_gpa_projected,
             earned_credits_cum,
             potential_credits_cum,
+
+            cast(null as int64) as yearid,
+            cast(null as string) as term_name,
+            cast(null as string) as semester,
+            cast(null as float64) as gpa_term,
+            cast(null as float64) as gpa_y1,
+            cast(null as float64) as gpa_y1_unweighted,
+            cast(null as float64) as gpa_semester,
+            cast(null as int64) as n_failing_y1,
+            cast(null as float64) as total_credit_hours_term,
+            cast(null as float64) as total_credit_hours_y1,
+            cast(null as float64) as grade_avg_term,
+            cast(null as float64) as grade_avg_y1,
+        from {{ ref("int_students__gpa_cumulative") }}
+        where studentid is null
+    ),
+
+    gpa_term as (
+        select
+            *,
 
             row_number() over (
                 partition by _dbt_source_project, student_number, schoolid
@@ -66,7 +107,7 @@ with
                     end desc
             ) as rn_current,
 
-        from {{ ref("int_students__gpa") }}
+        from gpa_term_cumulative
     )
 
 select
@@ -104,6 +145,7 @@ select
                     "rt.start_date",
                     "rt.region",
                     "rt.school_id",
+                    "rt.grade_band",
                 ]
             )
         }},

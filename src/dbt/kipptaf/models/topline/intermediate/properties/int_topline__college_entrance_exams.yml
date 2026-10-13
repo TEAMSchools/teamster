@@ -1,0 +1,4 @@
+models:
+  - name: int_topline__college_entrance_exams
+    config:
+      enabled: false

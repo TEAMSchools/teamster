@@ -71,3 +71,10 @@ models:
         data_type: int64
       - name: staff_full_name
         data_type: string
+      - name: cs_hours
+        data_type: int64
+        description: >-
+          Community service hours logged by the behavior, read from the leading
+          number in behavior (e.g. 10 hours). Only populated for the Community
+          Service and Community Service Hours behavior categories; null
+          otherwise, and null when behavior does not start with a number.

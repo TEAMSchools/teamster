@@ -1,5 +1,14 @@
 models:
   - name: rpt_deanslist__state_test_scores
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - test_type
+              - subject
+              - academic_year
+              - test_round
     columns:
       - name: student_number
         data_type: int64

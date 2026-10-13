@@ -120,6 +120,9 @@ models:
         data_type: int64
       - name: qbl
         data_type: string
+        description:
+          Always null. QBLs are a retired assessment program; the column stays
+          only so the DDI Suite workbook's field list does not change.
       - name: grade_goal
         data_type: float64
       - name: school_goal
@@ -142,6 +145,10 @@ models:
         data_type: string
       - name: is_qbl
         data_type: boolean
+        description:
+          False on assessment rows and null on walkthrough rows. QBLs are a
+          retired assessment program; the column stays only so the DDI Suite
+          workbook's field list does not change.
       - name: is_passed_iready_2plus_reading_int
         data_type: int64
       - name: is_passed_iready_4plus_reading_int

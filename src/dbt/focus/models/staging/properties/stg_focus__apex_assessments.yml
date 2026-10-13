@@ -1,0 +1,111 @@
+models:
+  - name: stg_focus__apex_assessments
+    description: >-
+      Focus Apex assessments — one row per assessment definition (the test
+      itself, not a scheduled sitting). Soft-deleted assessments are filtered
+      out. Scheduling lives in stg_focus__apex_assigned_assessments; the item
+      list in stg_focus__apex_assessment_items.
+    columns:
+      - name: id
+        description: Primary key — Focus apex_assessments id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: allow_grade_import
+        description: Whether scores may be imported into the Focus gradebook.
+        data_type: boolean
+      - name: allow_notes
+        description: >-
+          Note-taking setting shown to students during the test (for example
+          no_notes).
+        data_type: string
+      - name: blind_grading
+        description: >-
+          Whether graders see responses without student names when scoring.
+        data_type: boolean
+      - name: cooldown_minutes
+        description: Minutes a student must wait between attempts.
+        data_type: int
+      - name: description
+        description: Author-entered description of the assessment.
+        data_type: string
+      - name: district_administered
+        description: >-
+          Whether the assessment is administered district-wide rather than
+          authored by a teacher.
+        data_type: boolean
+      - name: grade_policy
+        description: >-
+          Which attempt counts toward the grade when a student has several (for
+          example last).
+        data_type: string
+      - name: honor_accommodations
+        description: Whether student testing accommodations apply.
+        data_type: boolean
+      - name: import_batch_id
+        description: Focus import batch id when the assessment was imported.
+        data_type: int
+      - name: import_legacy_id
+        description: Identifier from the source system for imported assessments.
+        data_type: string
+      - name: import_source
+        description: Source system for imported assessments; null when authored.
+        data_type: string
+      - name: instructions
+        description: Instructions shown to students before the test.
+        data_type: string
+      - name: lockdown_browser_download_url
+        description: Download link for the required lockdown browser.
+        data_type: string
+      - name: max_attempts
+        description: Maximum attempts allowed per student.
+        data_type: int
+      - name: partial_credit
+        description: Whether multi-part questions award partial credit.
+        data_type: boolean
+      - name: require_lockdown_browser
+        description: Whether students must test in a lockdown browser.
+        data_type: boolean
+      - name: retake_scoring
+        description: How a retake's score combines with earlier attempts.
+        data_type: string
+      - name: scored
+        description: Whether the assessment produces a score.
+        data_type: boolean
+      - name: secure
+        description: Whether the assessment is marked secure.
+        data_type: boolean
+      - name: shuffle_items
+        description: Whether item order is randomized per student.
+        data_type: boolean
+      - name: status
+        description: Authoring status — draft or published.
+        data_type: string
+      - name: syear
+        description: Focus school year (the spring calendar year).
+        data_type: int
+      - name: title
+        description: Assessment title.
+        data_type: string
+      - name: tools_json
+        description: >-
+          JSON text listing the on-screen tools enabled for students
+          (calculator, highlighter, and so on).
+        data_type: string
+      - name: uuid
+        description: Focus-assigned universally unique identifier for the row.
+        data_type: string
+      - name: vendor_id
+        description: Content vendor identifier for vendor-supplied assessments.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

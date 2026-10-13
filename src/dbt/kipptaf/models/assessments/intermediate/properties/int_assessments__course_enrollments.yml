@@ -1,43 +1,34 @@
 models:
   - name: int_assessments__course_enrollments
     description: >-
-      K-12 course enrollments unioned with synthesized Newark/Camden ES Writing
-      enrollments (grade <= 4). Provides the enrollment scaffold that internal
-      Illuminate assessments are joined against. One row per (student, academic
-      year, subject area, date enrolled), deduplicated to the latest exit per
-      enrollment span.
-
-
-      The student join keys on `student_number` rather than PowerSchool's
-      internal `cc_studentid`, which Focus leaves null -- before that change
-      this model held no Miami rows in any year. Miami AY2026 forward was then
-      still excluded, because the `not is_dropped_course` filter drops rows
-      whose flag is null and Focus set no flag. #4968 made both Focus drop flags
-      non-null, so Miami AY2026 now reaches this scaffold. Whether this model
-      should be network-wide or NJ-scoped remains #4996's decision; the
-      inclusion is a consequence of fixing the flags, not a scope judgment made
-      here.
-
-      Network-wide, Miami included. This model already recorded that #4996 owned
-      the decision; the decision is now made and it is INCLUDE. Miami held
-      61,910 rows in prod as of 2026-08-27.
+      Course-section inventory that the assessment models match scores and
+      Illuminate assessments against. K-12 course enrollments from both SIS
+      branches (PowerSchool, and Focus for Miami from AY2026), minus dropped
+      courses, unioned with synthesized Newark and Camden ES Writing enrollments
+      for grades K-4. Focus rows are normalized to the PowerSchool shape so the
+      same matching works for every region: the window end comes from exit_date
+      because Focus leaves cc_dateleft null on open sections, the subject comes
+      from the crosswalk's core subject when Focus has no Illuminate subject,
+      and homerooms flagged by title get credit type HR. One row per student,
+      academic year, subject (or, for rows with no subject, course number) and
+      enrollment date, keeping the latest exit; rows with no subject dedupe by
+      course so a homeroom never collapses into an elective that starts the same
+      day.
     config:
       materialized: table
       meta:
         dagster:
           # Cron instead of the default eager table condition, which
           # re-fires on ANY upstream data change, recursing through view
-          # chains up to 10 levels.
-          # ~98 executions/day on the eager table condition. Every downstream
-          # consumer is either the assessment star (dim_assessments,
-          # fct_assessment_scores_*, the expectation bridges) already on
-          # `0 0,10,13,15,17 * * *`, or a topline weekly on `0 0 * * *` — which
-          # the 00:00 tick covers. The deanslist mod extracts run `25 1 * * *`,
-          # after the 00:00 tick.
+          # chains up to 10 levels. Every downstream consumer is either the
+          # assessment star (dim_assessments, fct_assessment_scores_*, the
+          # expectation bridges) on this same tick, or a topline weekly whose
+          # tick is this one's first of the day. The deanslist mod extracts
+          # run after that first tick.
           #
           # Refs #4821
           automation_condition:
-            cron_schedule: 0 0,10,13,15,17 * * *
+            cron_schedule: 30 0,10,13,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -45,50 +36,362 @@ models:
               - _dbt_source_project
               - powerschool_student_number
               - illuminate_academic_year
-              - illuminate_subject_area
+              - subject_or_course_key
               - cc_dateenrolled
     columns:
       - name: powerschool_student_number
         data_type: int64
+        description: Student number shared by both SIS branches.
       - name: courses_credittype
         data_type: string
+        description: >-
+          Course credit type (ENG, MATH, SCI, HR, and so on), or RHET for the
+          synthesized ES Writing rows. Focus has no credit type, so Focus
+          homeroom sections, identified by title, are set to HR and other Focus
+          sections stay null.
       - name: powerschool_school_id
         data_type: int64
+        description: School of the course enrollment.
       - name: cc_dateenrolled
         data_type: date
+        description: >-
+          Date the student entered the section; for ES Writing rows, the
+          student's school entry date.
       - name: cc_dateleft
         data_type: date
+        description: >-
+          End of the section enrollment window. The course enrollment's
+          exit_date, which is cc_dateleft on PowerSchool rows and the departure
+          or scheduled term end on Focus rows, so it is never null on an open
+          Focus section. For ES Writing rows, the student's school exit date.
       - name: illuminate_subject_area
         data_type: string
+        description: >-
+          Illuminate subject area of the course from the course-subject
+          crosswalk. Focus courses carry no Illuminate subject on the crosswalk,
+          so their core subject maps to the matching Illuminate label (ELA to
+          Text Study, Math to Mathematics). Null for courses with no subject,
+          such as homeroom, PE and electives. Writing for ES Writing rows.
       - name: discipline
         data_type: string
+        description: >-
+          Course discipline from the course-subject crosswalk (ELA, Math,
+          Science, Social Studies, and so on), falling back to the crosswalk's
+          core subject for Focus courses. ELA for ES Writing rows.
+      - name: subject_or_course_key
+        data_type: string
+        description: >-
+          Dedupe and grain key. The Illuminate subject area when the course has
+          one, otherwise the course number, so rows with no subject stay one row
+          per course instead of one row per enrollment date. Writing for ES
+          Writing rows.
       - name: is_foundations
         data_type: boolean
+        description: >-
+          True when the crosswalk marks the course as a foundations course.
+          False for ES Writing rows.
       - name: cc_dcid
         data_type: int64
         description: >-
-          PowerSchool course enrollment row identifier. Used as an upstream
+          Course enrollment row identifier from the SIS. Used as an upstream
           component of
-          dim_student_section_enrollments.student_section_enrollment_key.
+          dim_student_section_enrollments.student_section_enrollment_key. Null
+          for ES Writing rows, which have no real course enrollment.
         config:
           meta:
-            source_column: base_powerschool__course_enrollments.cc_dcid
+            source_column: int_students__course_enrollments.cc_dcid
       - name: _dbt_source_project
         data_type: string
         description: >-
-          Region prefix (e.g. kippnewark, kippcamden, kippmiami, kipppaterson)
-          plumbed through from the upstream PowerSchool union models. Carried on
-          both K-12 and ES Writing branches and used as the region discriminator
-          in the trailing dedup partition and downstream surrogate keys
-          (student_section_enrollment_key). See #3142.
+          Region project (kippnewark, kippcamden, kippmiami, kipppaterson) of
+          the enrollment. Region discriminator in the dedupe partition and in
+          downstream surrogate keys such as student_section_enrollment_key.
         config:
           meta:
-            source_column: base_powerschool__course_enrollments._dbt_source_project
+            source_column: int_students__course_enrollments._dbt_source_project
       - name: region
         data_type: string
+        description: Short region name (Newark, Camden, Miami, Paterson).
       - name: illuminate_academic_year
         data_type: int64
+        description: >-
+          Academic year in Illuminate's convention, the SIS academic year plus
+          one.
       - name: illuminate_grade_level_id
         data_type: int64
+        description: >-
+          Grade level in Illuminate's convention, the SIS grade level plus one.
       - name: is_advanced_math_student
         data_type: boolean
+        description: >-
+          True when the student takes any advanced math course in the same
+          credit type that year. False, not null, when the SIS carries no
+          advanced-math flag (Focus), so those rows pass the scaffold's
+          advanced-math gate.
+
+unit_tests:
+  - name: test_focus_rows_get_window_end_subject_and_homeroom
+    description: >-
+      Focus rows leave cc_dateleft null on open sections and carry no
+      illuminate_subject_area, discipline or credit type. An open ELA section
+      takes its window end from exit_date and maps core_subject ELA to Text
+      Study and ELA. A homeroom section, flagged only by is_homeroom, comes out
+      with credit type HR. With no advanced-math flag on Focus,
+      is_advanced_math_student is false rather than null.
+    model: int_assessments__course_enrollments
+    given:
+      - input: ref('int_students__course_enrollments')
+        rows:
+          - {
+              students_student_number: 11,
+              _dbt_source_project: kippmiami,
+              cc_academic_year: 2026,
+              cc_schoolid: 30200804,
+              cc_dcid: 9001,
+              cc_course_number: "1001010",
+              cc_dateenrolled: 2026-08-12,
+              cc_dateleft: null,
+              exit_date: 2026-12-18,
+              courses_credittype: null,
+              illuminate_subject_area: null,
+              discipline: null,
+              core_subject: ELA,
+              is_homeroom: false,
+              is_foundations: null,
+              is_advanced_math: null,
+              is_dropped_course: false,
+            }
+          - {
+              students_student_number: 11,
+              _dbt_source_project: kippmiami,
+              cc_academic_year: 2026,
+              cc_schoolid: 30200804,
+              cc_dcid: 9002,
+              cc_course_number: HR6,
+              cc_dateenrolled: 2026-08-12,
+              cc_dateleft: null,
+              exit_date: 2026-12-18,
+              courses_credittype: null,
+              illuminate_subject_area: null,
+              discipline: null,
+              core_subject: null,
+              is_homeroom: true,
+              is_foundations: null,
+              is_advanced_math: null,
+              is_dropped_course: false,
+            }
+      - input: ref('base_powerschool__student_enrollments')
+        rows:
+          - {
+              student_number: 11,
+              _dbt_source_project: kippmiami,
+              academic_year: 2026,
+              rn_year: 1,
+              region: Miami,
+              grade_level: 6,
+              schoolid: 30200804,
+              entrydate: 2026-08-12,
+              exitdate: 2027-06-04,
+            }
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 11,
+            courses_credittype: null,
+            cc_dateleft: 2026-12-18,
+            illuminate_subject_area: Text Study,
+            discipline: ELA,
+            subject_or_course_key: Text Study,
+            is_advanced_math_student: false,
+          }
+        - {
+            powerschool_student_number: 11,
+            courses_credittype: HR,
+            cc_dateleft: 2026-12-18,
+            illuminate_subject_area: null,
+            discipline: null,
+            subject_or_course_key: HR6,
+            is_advanced_math_student: false,
+          }
+
+  - name: test_dedupe_keeps_no_subject_courses_apart
+    description: >-
+      Rows with no subject (a homeroom and a PE section) that share an
+      enrollment date stay as separate rows, keyed by course number. Two rows
+      for the same subject on the same date still collapse to the one with the
+      latest exit, and an exact tie on exit keeps the higher cc_dcid so the pick
+      is the same on every build. A PowerSchool course keeps its own Illuminate
+      subject (English 100) even though its core subject is ELA.
+    model: int_assessments__course_enrollments
+    given:
+      - input: ref('int_students__course_enrollments')
+        rows:
+          - {
+              students_student_number: 12,
+              _dbt_source_project: kippnewark,
+              cc_academic_year: 2025,
+              cc_schoolid: 73253,
+              cc_dcid: 9101,
+              cc_course_number: HR8,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              exit_date: 2026-06-19,
+              courses_credittype: HR,
+              illuminate_subject_area: null,
+              discipline: null,
+              core_subject: null,
+              is_homeroom: true,
+              is_foundations: null,
+              is_advanced_math: null,
+              is_dropped_course: false,
+            }
+          - {
+              students_student_number: 12,
+              _dbt_source_project: kippnewark,
+              cc_academic_year: 2025,
+              cc_schoolid: 73253,
+              cc_dcid: 9102,
+              cc_course_number: PE8,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              exit_date: 2026-06-19,
+              courses_credittype: PHYSED,
+              illuminate_subject_area: null,
+              discipline: null,
+              core_subject: null,
+              is_homeroom: false,
+              is_foundations: null,
+              is_advanced_math: null,
+              is_dropped_course: false,
+            }
+          - {
+              students_student_number: 12,
+              _dbt_source_project: kippnewark,
+              cc_academic_year: 2025,
+              cc_schoolid: 73253,
+              cc_dcid: 9103,
+              cc_course_number: ENG8,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-01-30,
+              exit_date: 2026-01-30,
+              courses_credittype: ENG,
+              illuminate_subject_area: Text Study,
+              discipline: ELA,
+              core_subject: ELA,
+              is_homeroom: false,
+              is_foundations: false,
+              is_advanced_math: false,
+              is_dropped_course: false,
+            }
+          - {
+              students_student_number: 12,
+              _dbt_source_project: kippnewark,
+              cc_academic_year: 2025,
+              cc_schoolid: 73253,
+              cc_dcid: 9105,
+              cc_course_number: MATH8,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              exit_date: 2026-06-19,
+              courses_credittype: MATH,
+              illuminate_subject_area: Mathematics,
+              discipline: Math,
+              core_subject: Math,
+              is_homeroom: false,
+              is_foundations: false,
+              is_advanced_math: false,
+              is_dropped_course: false,
+            }
+          - {
+              students_student_number: 12,
+              _dbt_source_project: kippnewark,
+              cc_academic_year: 2025,
+              cc_schoolid: 73253,
+              cc_dcid: 9106,
+              cc_course_number: MATH8,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              exit_date: 2026-06-19,
+              courses_credittype: MATH,
+              illuminate_subject_area: Mathematics,
+              discipline: Math,
+              core_subject: Math,
+              is_homeroom: false,
+              is_foundations: false,
+              is_advanced_math: false,
+              is_dropped_course: false,
+            }
+          - {
+              students_student_number: 12,
+              _dbt_source_project: kippnewark,
+              cc_academic_year: 2025,
+              cc_schoolid: 73253,
+              cc_dcid: 9107,
+              cc_course_number: ENG100,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              exit_date: 2026-06-19,
+              courses_credittype: ENG,
+              illuminate_subject_area: English 100,
+              discipline: ELA,
+              core_subject: ELA,
+              is_homeroom: false,
+              is_foundations: false,
+              is_advanced_math: false,
+              is_dropped_course: false,
+            }
+          - {
+              students_student_number: 12,
+              _dbt_source_project: kippnewark,
+              cc_academic_year: 2025,
+              cc_schoolid: 73253,
+              cc_dcid: 9104,
+              cc_course_number: ENG8,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              exit_date: 2026-06-19,
+              courses_credittype: ENG,
+              illuminate_subject_area: Text Study,
+              discipline: ELA,
+              core_subject: ELA,
+              is_homeroom: false,
+              is_foundations: false,
+              is_advanced_math: false,
+              is_dropped_course: false,
+            }
+      - input: ref('base_powerschool__student_enrollments')
+        rows:
+          - {
+              student_number: 12,
+              _dbt_source_project: kippnewark,
+              academic_year: 2025,
+              rn_year: 1,
+              region: Newark,
+              grade_level: 8,
+              schoolid: 73253,
+              entrydate: 2025-09-02,
+              exitdate: 2026-06-19,
+            }
+    expect:
+      rows:
+        - { cc_dcid: 9101, courses_credittype: HR, subject_or_course_key: HR8 }
+        - {
+            cc_dcid: 9102,
+            courses_credittype: PHYSED,
+            subject_or_course_key: PE8,
+          }
+        - {
+            cc_dcid: 9104,
+            courses_credittype: ENG,
+            subject_or_course_key: Text Study,
+          }
+        - {
+            cc_dcid: 9106,
+            courses_credittype: MATH,
+            subject_or_course_key: Mathematics,
+          }
+        - {
+            cc_dcid: 9107,
+            courses_credittype: ENG,
+            subject_or_course_key: English 100,
+          }

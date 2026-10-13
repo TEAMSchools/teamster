@@ -1,0 +1,103 @@
+models:
+  - name: int_surveys__alchemer_responses
+    description: >-
+      Alchemer survey responses at question grain, carrying every per-submission
+      column from int_surveys__alchemer_submissions so
+      int_surveys__survey_responses can union the rows in without a join.
+      Alchemer is decommissioned and every input is frozen, so this model was
+      built once on 2026-09-15 and is archived under the repo's archive pattern
+      alongside int_surveys__alchemer_submissions: disabled, declared in
+      sources-bigquery.yml, read by int_surveys__survey_responses as a source.
+
+      Only responses whose submission survived the SURVEY reporting-term filter
+      in int_surveys__alchemer_submissions appear here; the historic Manager
+      archive has no question-grain rows in the Alchemer results table.
+    config:
+      enabled: false
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_id
+              - survey_response_id
+              - survey_question_id
+              - question_shortname
+              - answer
+          config:
+            enabled: false
+            severity: error
+    columns:
+      - name: survey_id
+        description: Alchemer survey id as a string.
+      - name: survey_response_id
+        description: Alchemer response id as a string.
+      - name: survey_question_id
+        description: Alchemer question id as a string.
+      - name: question_shortname_lower
+        description: >-
+          question_shortname lowercased, for the department crosswalk join in
+          int_surveys__survey_responses.
+      - name: answer_value
+        description: answer cast to numeric; null when it is not numeric.
+      - name: is_open_ended
+        description: 1 when answer is not an integer, else 0.
+      - name: question_title
+        description: English question title from the Alchemer results table.
+      - name: question_shortname
+        description: Question short name from the Alchemer results table.
+      - name: answer
+        description: Response value as recorded by Alchemer.
+        config:
+          meta:
+            contains_pii: true
+      - name: survey_title
+        description: Alchemer survey title.
+      - name: respondent_email
+        description: Respondent email of the parent submission.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year of the parent submission.
+      - name: term_code
+        description: Reporting term code of the parent submission.
+      - name: term_name
+        description: Reporting-terms sheet name of the parent submission.
+      - name: respondent_employee_number
+        description: Employee number of the respondent.
+        config:
+          meta:
+            contains_pii: true
+      - name: respondent_preferred_name
+        description: Formatted name of the respondent.
+        config:
+          meta:
+            contains_pii: true
+      - name: respondent_samaccountname
+        description: Active Directory account name of the respondent.
+        config:
+          meta:
+            contains_pii: true
+      - name: respondent_userprincipalname
+        description: Active Directory user principal name of the respondent.
+        config:
+          meta:
+            contains_pii: true
+      - name: date_started
+        description: Timestamp the respondent opened the survey.
+      - name: date_submitted
+        description: Timestamp the respondent submitted the survey.
+      - name: survey_response_link
+        description: Deep link to the response in Alchemer.
+      - name: round_rn
+        description: Always 1.
+      - name: respondent_identifier
+        description: >-
+          Respondent employee number as a string, falling back to the respondent
+          email.
+        config:
+          meta:
+            contains_pii: true
+      - name: survey_submission_key
+        description: Surrogate key of the parent submission.

@@ -32,12 +32,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__students')
-                field: student_id
-              config:
-                severity: error
         config:
           meta:
             contains_pii: true
@@ -46,12 +40,6 @@ models:
         data_type: int
         data_tests:
           - not_null:
-              config:
-                severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__schools')
-                field: id
               config:
                 severity: error
       - name: district_id

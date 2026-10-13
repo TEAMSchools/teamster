@@ -7,7 +7,7 @@ profile: kipppaterson
 model-paths: [models]
 analysis-paths: [analyses]
 test-paths: [tests]
-seed-paths: [seeds]
+seed-paths: []
 macro-paths: [macros]
 snapshot-paths: [snapshots]
 
@@ -17,9 +17,36 @@ clean-targets:
   - dbt_packages
 
 data_tests:
-  +severity: warn
   +store_failures: true
   +store_failures_as: view
+  kipppaterson:
+    +severity: warn
+  # stg_cambium__njgpa is disabled below, and disabling a model leaves its
+  # tests enabled — they would scan a relation Paterson never builds. Each name
+  # is dbt's generated test name; changing a column name or accepted values
+  # list in the cambium yml renames the test and re-orphans it here.
+  cambium:
+    staging:
+      properties:
+        unique_stg_cambium__njgpa_student_test_uuid:
+          +enabled: false
+        not_null_stg_cambium__njgpa_student_test_uuid:
+          +enabled: false
+        not_null_stg_cambium__njgpa_test_date:
+          +enabled: false
+        not_null_stg_cambium__njgpa__period_:
+          +enabled: false
+        accepted_values_stg_cambium__njgpa__period___Spring__Fall__FALL__FallBlock:
+          +enabled: false
+  # The Pearson score models are frozen: Cambium replaced Pearson from Spring
+  # 2026, and kipptaf reads the last int_pearson__all_assessments table as
+  # history. Its test is disabled by generated name for the same reason as
+  # above.
+  pearson:
+    intermediate:
+      properties:
+        dbt_utils_unique_combination_of_columns_int_pearson__all_assessments_studenttestuuid:
+          +enabled: false
 
 vars:
   local_timezone: America/New_York
@@ -36,6 +63,10 @@ vars:
   pearson_state_assessment_relations:
     - int_pearson__njsla
     - int_pearson__njsla_science
+  # Paterson does not sit for NJGPA (stg_cambium__njgpa is disabled), so
+  # int_cambium__all_assessments reads stg_cambium__njsla alone.
+  cambium_state_assessment_relations:
+    - stg_cambium__njsla
 
 models:
   kipppaterson:
@@ -71,6 +102,11 @@ models:
     staging:
       stg_edplan__njsmart_powerschool_archive:
         +enabled: false
+  cambium:
+    +materialized: table
+    staging:
+      stg_cambium__njgpa:
+        +enabled: false
   deanslist:
     +materialized: table
     staging:
@@ -84,7 +120,17 @@ models:
         +enabled: false
   pearson:
     +materialized: table
+    # Frozen: the last prod tables stay as history (see data_tests above).
+    # Paterson's own int_pearson__njsla* remaps are disabled, with their tests,
+    # in models/pearson/intermediate/properties/.
+    intermediate:
+      int_pearson__all_assessments:
+        +enabled: false
     staging:
+      stg_pearson__njsla:
+        +enabled: false
+      stg_pearson__njsla_science:
+        +enabled: false
       stg_pearson__njgpa:
         +enabled: false
       stg_pearson__parcc:
@@ -152,6 +198,10 @@ sources:
     finalsite:
       contacts:
         +enabled: true
+  cambium:
+    cambium:
+      src_cambium__njgpa:
+        +enabled: false
   deanslist:
     deanslist:
       src_deanslist__dff_stats:

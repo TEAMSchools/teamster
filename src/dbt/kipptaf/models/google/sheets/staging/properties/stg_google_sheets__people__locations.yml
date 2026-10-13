@@ -45,7 +45,14 @@ models:
       - name: powerschool_school_id
         data_type: int64
         description: |
-          PowerSchool school ID. Join key for PowerSchool data.
+          PowerSchool school ID. Join key for PowerSchool data. Not unique
+          across the sheet, but unique among rows that carry an NCES school id,
+          which is what lets extracts join NCES ids on it.
+        data_tests:
+          - unique:
+              config:
+                where: nces_school_id is not null
+                severity: error
       - name: reporting_school_id
         data_type: int64
         description: |
@@ -130,3 +137,19 @@ models:
           owned. Null for campuses, non-school locations, and any school with
           no student org unit yet — a null drops that school's students from
           provisioning rather than misfiling them.
+      - name: nces_lea_id
+        data_type: string
+        description: |
+          NCES local education agency identifier from the Common Core of Data,
+          seven digits. Both KIPP NJ regions are single-school districts there,
+          so every school in one region shares the value. Held as text because
+          it is an identifier, not a quantity.
+      - name: nces_school_id
+        data_type: string
+        description: |
+          NCES school identifier from the Common Core of Data, twelve digits.
+          The federal listing has no counterpart to KIPP's internal campus
+          structure, so several KIPP schools in one region can share a value —
+          both Newark high schools do. Held as text because a twelve-digit
+          number renders in scientific notation when an extract is opened in
+          Excel. Null where no one has looked the value up yet.

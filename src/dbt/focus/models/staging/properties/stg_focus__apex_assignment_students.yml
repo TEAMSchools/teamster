@@ -1,0 +1,148 @@
+models:
+  - name: stg_focus__apex_assignment_students
+    description: >-
+      Focus Apex per-student assignment rows — one row per student on an Apex
+      assignment, carrying that student's testing window and attempt rules,
+      which override the assignment's defaults
+      (stg_focus__apex_assigned_assessments). Focus does not cascade soft
+      deletes, so join to stg_focus__apex_assigned_assessments to keep only live
+      assignments.
+    columns:
+      - name: id
+        description: >-
+          Primary key — Focus apex_assignment_students id. Its id space overlaps
+          stg_focus__apex_assigned_assessments.id; never match the two on id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: assignment_id
+        description: >-
+          Focus apex_assigned_assessments id the student is rostered on.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: Focus student id.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: assessment_id
+        description: >-
+          Focus apex_assessments id. Focus leaves it null on these rows; take
+          the assessment from the assignment (assignment_id).
+        data_type: int
+      - name: config_id
+        description: >-
+          Focus id of the testing configuration applied to the student.
+        data_type: int
+      - name: start_date
+        description: First date of the student's testing window.
+        data_type: date
+        config:
+          meta:
+            contains_pii: true
+      - name: start_time
+        description: Daily start time of the student's testing window.
+        data_type: time
+        config:
+          meta:
+            contains_pii: true
+      - name: end_date
+        description: Last date of the student's testing window.
+        data_type: date
+        config:
+          meta:
+            contains_pii: true
+      - name: end_time
+        description: Daily end time of the student's testing window.
+        data_type: time
+        config:
+          meta:
+            contains_pii: true
+      - name: include_weekends
+        description: Whether the student may test on weekends.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: close_at_bell
+        description: >-
+          Whether the student's open session closes at the end of the period.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: restrict_to_course_times
+        description: >-
+          Whether the student may test only during their class period.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: restrict_to_specified_times
+        description: >-
+          Whether the student may test only between start_time and end_time.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: time_limit
+        description: Time limit per attempt for the student, in microseconds.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: max_attempts
+        description: Maximum attempts allowed for the student.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: retake
+        description: Whether retakes are allowed for the student.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: retake_granted
+        description: Whether a teacher granted the student a retake.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: retake_elapse_time
+        description: Wait required before the student's retake, in microseconds.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: retake_score_policy
+        description: Which attempt's score is reported when the student retakes.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: released_at
+        description: When results were released to the student.
+        data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

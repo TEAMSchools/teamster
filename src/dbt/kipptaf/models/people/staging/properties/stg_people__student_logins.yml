@@ -1,5 +1,15 @@
 models:
   - name: stg_people__student_logins
+    description: >
+      Student usernames, Google emails, and default passwords, one row per
+      student. Append-only — a username is minted once and never rewritten, and
+      only default_password is updated on merge. Incremental runs mint logins
+      for new students, skipping any username already present. full_refresh is
+      pinned false, so the --full-refresh flag cannot rebuild it. When the table
+      does not exist (first build, or after a drop), the model seeds from the
+      current rows of snapshot_people__student_logins, keeping the most recent
+      row per username, so every username already minted stays reserved and a
+      student re-keyed to a new student number keeps only the new row.
     config:
       materialized: incremental
       incremental_strategy: merge
@@ -16,6 +26,9 @@ models:
           number for NJ regions and the Focus-prefixed student id for Miami.
           Serves as the incremental merge key, so a duplicate here would fan out
           every consumer that joins on it.
+        config:
+          meta:
+            contains_pii: true
         data_tests:
           - unique:
               config:
@@ -25,7 +38,27 @@ models:
                 severity: error
       - name: username
         data_type: string
+        description: >
+          Login name minted from the student's name and date of birth at first
+          sight, trying up to five name and birthday patterns in priority order
+          and taking the first one no other student holds. Never rewritten after
+          minting.
+        config:
+          meta:
+            contains_pii: true
       - name: default_password
         data_type: string
+        description: >
+          Initial password built from the student's cleaned last name and
+          two-digit birth year, padded with the student number when shorter than
+          8 characters and capped at 20. The only column updated on merge.
+        config:
+          meta:
+            contains_pii: true
       - name: google_email
         data_type: string
+        description:
+          The username at the teamstudents.org Google Workspace domain.
+        config:
+          meta:
+            contains_pii: true

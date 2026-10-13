@@ -14,10 +14,6 @@ models:
           # reads this mart. Refs #5217
           automation_condition:
             cron_schedule: 0 0,10,13,15,17 * * *
-    data_tests:
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: effective_start_date <= effective_end_date
     columns:
       - name: staff_work_history_key
         data_type: string

@@ -1,0 +1,48 @@
+models:
+  - name: int_ignite__student_treatment
+    description:
+      Class-level treatment flags rolled up to one row per student per academic
+      year. A student counts as treated in a practice if any class they were
+      enrolled in that year ran it, which is what `max` over the class-level
+      flags expresses. Both Table 1 and Table 2 read this model rather than
+      repeating the roll-up, so the two files cannot disagree about who was
+      treated.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description:
+          KIPP student number. Masked to `stu_id` before anything leaves the
+          warehouse.
+
+      - name: academic_year
+        data_type: int64
+        description: Start year of the school year, so 2024 is SY2024-2025.
+
+      - name: treatment_cp
+        data_type: int64
+        description:
+          1 where any of the student's classes ran co-planning that year. Zero
+          throughout, since only routine data cycles ran at KIPP NJ.
+
+      - name: treatment_rdc
+        data_type: int64
+        description:
+          1 where any of the student's classes ran routine data cycles that
+          year.
+
+      - name: treatment_rr
+        data_type: int64
+        description:
+          1 where any of the student's classes ran repeated reading that year.
+          Zero throughout.

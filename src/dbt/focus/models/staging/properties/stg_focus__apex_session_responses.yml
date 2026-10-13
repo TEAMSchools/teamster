@@ -1,0 +1,59 @@
+models:
+  - name: stg_focus__apex_session_responses
+    description: >-
+      Focus Apex session responses — one row per question in a student's
+      attempt, with points earned. The answer text and teacher feedback are
+      dropped. Most rows have a null score_actual and null needs_grading — blank
+      placeholders with no answer, or answers in unfinished attempts. Filter
+      score_actual is not null for scored responses.
+    columns:
+      - name: id
+        description: Primary key — Focus apex_session_responses id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: session_id
+        description: Focus apex_sessions id.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: question_id
+        description: Focus apex_questions id.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: needs_grading
+        description: >-
+          Whether the response awaits hand scoring. Null on unscored placeholder
+          rows.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true
+      - name: score_actual
+        description: Points earned on the question; null when not scored.
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: score_max
+        description: Points possible on the question.
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

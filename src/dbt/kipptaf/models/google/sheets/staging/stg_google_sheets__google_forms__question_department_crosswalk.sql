@@ -1,4 +1,4 @@
-select *,
+select * replace (lower(abbreviation) as abbreviation),
 from
     {{
         source(

@@ -65,11 +65,14 @@ materializations before flattening SQL. When flipping views to cron tables:
 
 ### Table→view materialization conversion needs a drop
 
-`create or replace view` does not drop a pre-existing table at the same path —
-the conversion silently keeps serving the stale table. Ship table→view
-conversions with either an explicit
-`DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
-`dbt build --select <model> --full-refresh` once after merge.
+dbt-bigquery's view materialization drops a pre-existing table at the same path
+only under `--full-refresh`; otherwise it raises `relation_wrong_type`
+(`bigquery__handle_existing_table`). Dagster's dbt runs never pass
+`--full-refresh`, so until someone does, the model keeps serving the old table
+and every triggered rebuild fails. A properties-yml-only flip also never fires a
+rebuild on its own (see above), so a flipped union view sits frozen at merge-day
+data. Run `dbt build --select <models> --full-refresh` right after the deploy
+lands.
 
 ### Snapshot meta-column config changes need a manual DDL migration
 
@@ -102,11 +105,11 @@ change.
 Compiles to the column SUPERSET from source-table `INFORMATION_SCHEMA.COLUMNS`,
 null-filling absent columns with `cast(null as <type>)`
 (`dbt_utils/macros/sql/union.sql`). It needs persisted relations, so it cannot
-union a local CTE — for that, BigQuery `full union all corresponding` gives the
-same superset/null-fill semantics. New columns added at package-level staging
-don't surface at kipptaf-level consumers until district projects rebuild prod.
-For single-PR refactors, add transformations at the kipptaf-level wrapper, not
-at package level.
+union a local CTE — for that, write a positional `union all` over enumerated
+columns with `cast(null as <type>)` padding (see `.claude/rules/dbt-sql.md`).
+New columns added at package-level staging don't surface at kipptaf-level
+consumers until district projects rebuild prod. For single-PR refactors, add
+transformations at the kipptaf-level wrapper, not at package level.
 
 **Value-only vs column change**: a value-only edit to a package model needs no
 staging — the column set is unchanged, so kipptaf CI compiles and corrected
@@ -144,31 +147,37 @@ to nothing — the `zz_<user>_*` dataset holds no copy.
 needs no authorization. Read the compiled SQL to confirm columns were listed; an
 empty expansion still compiles clean.
 
+### Comments and descriptions
+
+The content test is in `.claude/rules/comments.md`. dbt-specific: a `.sql`
+comment edit marks the model `state:modified` and widens CI's rebuild, so sweep
+comments beyond the block you are editing only when asked.
+
 ### Per-layer requirements
 
 **All staging models must**:
 
-1. Have `contract: enforced: true` (set at directory level in `dbt_project.yml`)
+1. Have `contract: enforced: true` (set at directory level in `dbt_project.yml`,
+   except kipptaf union views below)
 2. Have a uniqueness test — either `unique:` on a single column or
    `dbt_utils.unique_combination_of_columns`
 
 **All intermediate models must**:
 
 1. Have a uniqueness test
-2. Not be consumed directly by external tools or reports — a reporting view
-   (`rpt_*`) must always sit between an intermediate model and an external
-   consumer, buffering external dependencies from internal schema evolution
 
 **All `rpt_`, `dim_*`, and `fct_*` models must**:
 
 1. Have `contract: enforced: true`
 2. Have a uniqueness test
 
-**Exception** — thin cross-project wrapper `rpt_` models (a district
-`rpt_powerschool__autocomm_*` or other `extracts/` wrapper sourcing
-`kipptaf_extracts`) are contract-columns-only: NO uniqueness test or
-descriptions, which live on the kipptaf source view. See `kipptaf/CLAUDE.md` →
-`extracts/powerschool/` special case before adding either.
+**Exceptions** — a kipptaf `stg_` union view over district staging, and a thin
+cross-project wrapper `rpt_` (a district `rpt_powerschool__autocomm_*` or other
+`extracts/` wrapper sourcing `kipptaf_extracts`), carry NO uniqueness test; it
+lives on the model they wrap. The district wrapper is contract-columns-only (no
+descriptions); a union view enforces a contract only where its own properties
+file sets it. See `kipptaf/CLAUDE.md` → `extracts/powerschool/` special case and
+_kipptaf-level `stg_*` union views_ before adding either.
 
 ### Retiring a crosswalk or lookup as redundant
 

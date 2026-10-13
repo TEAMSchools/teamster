@@ -88,6 +88,7 @@ select
     f.item_kind,
     f.item_abbreviation,
     f.item_url_id,
+    f.item_abbreviation_lower,
 
     r.response_id,
     r.respondent_email,
@@ -106,6 +107,11 @@ select
     rafu.file_id as file_upload_file_id,
     rafu.file_name as file_upload_file_name,
     rafu.mime_type as file_upload_mime_type,
+
+    safe_cast(rata.value as numeric) as answer_value,
+    coalesce(rata.value, rafu.file_name) as answer,
+
+    if(safe_cast(rata.value as int) is null, 1, 0) as is_open_ended,
 
     safe_cast(
         regexp_extract(

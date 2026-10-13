@@ -9,7 +9,17 @@ with
             co.lastfirst,
 
             sg.course_number,
-            sg.agg_credittype as credittype,
+            case
+                when sg.credit_type like 'ENG%'
+                then 'ENG'
+                when sg.credit_type like 'MATH%'
+                then 'MATH'
+                when sg.credit_type like 'SCI%'
+                then 'SCI'
+                when sg.credit_type like 'SOC%'
+                then 'SOC'
+                else sg.credit_type
+            end as credittype,
             sg.potentialcrhrs,
 
             sg.earnedcrhrs,

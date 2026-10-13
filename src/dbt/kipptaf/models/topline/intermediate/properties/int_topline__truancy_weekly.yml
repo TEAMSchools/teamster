@@ -1,11 +1,47 @@
 models:
   - name: int_topline__truancy_weekly
+    description: >-
+      Weekly truancy flag, one row per student-week in the current and prior
+      academic year, collapsed from int_students__attendance_daily. A student is
+      truant for the week when any day at any school that week is flagged
+      truant, so a mid-week transfer yields one row rather than one per school.
+      Feeds int_topline__student_metrics.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
-          # nightly instead of eager: sole consumer is
-          # int_topline__student_metrics, itself on the same midnight cron.
+          # cron instead of eager: sole consumer is
+          # int_topline__student_metrics, which shares this tick.
           # Refs #4153
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 30 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+          config:
+            enabled: false
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the week belongs to.
+      - name: week_start_monday
+        description: Monday that opens the week.
+      - name: week_end_sunday
+        description: Sunday that closes the week.
+      - name: is_truant_int
+        description:
+          1 when the student was flagged truant on any day of the week,
+          otherwise 0.
+        config:
+          meta:
+            contains_pii: true

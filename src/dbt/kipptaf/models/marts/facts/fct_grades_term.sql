@@ -19,6 +19,7 @@ with
             end_date,
             region,
             school_id,
+            grade_band,
             powerschool_year_id,
         from {{ ref("stg_google_sheets__reporting__terms") }}
         where `type` = 'RT'
@@ -45,6 +46,7 @@ select
                     "rt.start_date",
                     "rt.region",
                     "rt.school_id",
+                    "rt.grade_band",
                 ]
             )
         }},

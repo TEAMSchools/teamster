@@ -32,7 +32,8 @@ def build_dbt_assets(
         selection_depends_on_nodes = [
             node
             for node_props in manifest["nodes"].values()
-            for node in node_props["depends_on"]["nodes"]
+            # seeds carry depends_on.macros only, no depends_on.nodes
+            for node in node_props["depends_on"].get("nodes", [])
             if dagster_dbt_translator.get_asset_key(node_props)
             in context.selected_asset_keys
         ]

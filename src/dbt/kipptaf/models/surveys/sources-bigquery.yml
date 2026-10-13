@@ -10,6 +10,22 @@ sources:
                 - kipptaf
                 - surveys
                 - int_surveys__response_identifiers
+      - name: int_surveys__alchemer_submissions
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - surveys
+                - int_surveys__alchemer_submissions
+      - name: int_surveys__alchemer_responses
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - surveys
+                - int_surveys__alchemer_responses
       - name: int_surveys__staff_info_archive_unpivot
         config:
           meta:

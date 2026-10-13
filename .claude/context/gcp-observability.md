@@ -7,7 +7,7 @@ data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
 
 `list_log_entries` over a busy day at WARNING+ severity routinely exceeds the
 context budget. Pre-filter (`severity`, `resource.type`), cap with `pageSize`,
-or dump the result to a file and hand it to a subagent.
+or read the spill file directly with `jq -r '.result' <file> | jq '<filter>'`.
 
 Drive and other Workspace APIs (Sheets, Calendar, Gmail) do NOT emit to GCP
 Cloud Logging by default — filtering audit logs for

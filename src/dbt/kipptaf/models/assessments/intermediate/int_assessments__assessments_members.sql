@@ -34,6 +34,7 @@ with
             ) as grade_level_id,
 
             if(iae.assessment_id is not null, true, false) as is_internal_assessment,
+            if(iae.regions_assessed = 'Miami', true, false) as is_florida_assessment,
         from {{ ref("int_illuminate__assessments") }} as a
         left join
             {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
@@ -76,6 +77,7 @@ with
             canonical_w as (
                 partition by
                     is_internal_assessment,
+                    is_florida_assessment,
                     academic_year,
                     scope,
                     subject_area,

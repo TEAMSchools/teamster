@@ -1,5 +1,7 @@
 models:
   - name: rpt_deanslist__star
+    config:
+      enabled: false
     columns:
       - name: score_type
         data_type: string

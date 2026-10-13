@@ -118,6 +118,8 @@ with
         select
             *,
 
+            yearid + 1990 as academic_year,
+
             round(
                 safe_divide(weighted_gpa_points_term, total_credit_hours_term), 2
             ) as gpa_term,
@@ -136,6 +138,7 @@ select
     gc.studentid,
     gc.schoolid,
     gc.yearid,
+    gc.academic_year,
     gc.storecode as term_name,
     gc.semester,
     gc.is_current,

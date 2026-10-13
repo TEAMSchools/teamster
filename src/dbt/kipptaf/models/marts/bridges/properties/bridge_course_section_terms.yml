@@ -29,8 +29,9 @@ models:
       - name: term_key
         data_type: string
         description: >-
-          Surrogate key derived from type, code, name, start_date, region, and
-          school_id of the matching reporting term. FK to dim_terms.
+          Surrogate key derived from type, code, name, start_date, region,
+          school_id, and grade_band of the matching reporting term. FK to
+          dim_terms.
         config:
           meta:
             foreign_key:
