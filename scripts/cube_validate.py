@@ -2032,7 +2032,41 @@ class Extracts:
         self.open = {}
 
 
-def run_compare(checks, snapdir, load, extracts, redo=False):
+def ignored_filter_leaks(
+    saved, entry, checks, fields, sheet, run_extract, defaults=None, lists=None
+) -> list[tuple[str, int]]:
+    """Rows in the state's slice that an ignored saved filter would have hidden.
+    ignore_sheet_filters is safe only while this is 0; a FIXED-LOD filter has no
+    extract column, so the checks file links its issue instead."""
+    ignored = set(checks["ignore_sheet_filters"])
+    if not ignored:
+        return []
+    kept = [f for f in saved if f["caption"] not in ignored]
+    where = state_where(entry, checks, fields, sheet, defaults=defaults, lists=lists)
+    where += sheet_conditions(kept, entry, checks)[0]
+    plain = {**checks, "ignore_sheet_filters": []}
+    out = []
+    for f in saved:
+        if f["caption"] not in ignored or f.get("calculated"):
+            continue
+        cond = sheet_conditions([f], entry, plain)[0]
+        if not cond:
+            continue
+        fails = f"not coalesce(({' and '.join(cond)}), false)"
+        sql = (
+            # trunk-ignore(bandit/B608): SQL over the dashboard's own extract; names come from the workbook
+            f"select count(*) as n from `{EXTRACT_TABLE}` where "
+            + " and ".join(f"({w})" for w in [*where, fails])
+        )
+        n = int(run_extract(sheet.datasource, sql)[0]["n"])
+        if n:
+            out.append((f["caption"], n))
+    return out
+
+
+def run_compare(
+    checks, snapdir, load, extracts, redo=False, warn: Callable[[str], None] = print
+):
     """Compare every exported state not compared yet (every state with redo, after a
     mapping changed), and propose the next descent level."""
     snapdir = Path(snapdir)
@@ -2065,12 +2099,11 @@ def run_compare(checks, snapdir, load, extracts, redo=False):
                 )
                 continue
             export = read_export((snapdir / meta["file"]).read_bytes())
+            saved = (m.get("sheet_filters") or {}).get(sheet_name, [])
+            kept = sheet_defaults(dflt, saved)
             try:
-                saved = (m.get("sheet_filters") or {}).get(sheet_name, [])
                 _, sheet_cube, sheet_missing = sheet_conditions(saved, e, checks)
-                filters, missing = state_filters(
-                    e, checks, sheet_defaults(dflt, saved), lists
-                )
+                filters, missing = state_filters(e, checks, kept, lists)
                 cells += compare_export(
                     sheet,
                     sid,
@@ -2094,6 +2127,18 @@ def run_compare(checks, snapdir, load, extracts, redo=False):
                         "not_comparable",
                         f"Cube error: {err}",
                     )
+                )
+            try:
+                for cap, n in ignored_filter_leaks(
+                    saved, e, checks, m["fields"], sheet, extracts, kept, lists
+                ):
+                    warn(
+                        f"{sid} / {sheet_name}: {n} rows in this slice fail the "
+                        f"ignored filter {cap}"
+                    )
+            except Exception as err:  # noqa: BLE001 - the check only warns
+                warn(
+                    f"{sid} / {sheet_name}: could not check the ignored saved filters: {err}"
                 )
     every = before + cells
 

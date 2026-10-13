@@ -2113,3 +2113,44 @@ def test_a_blank_cell_matches_a_cube_null_or_zero_in_compare_and_explain(tmp_pat
         sheet, "s1", export, FakeCube({"Alpha": _row(0)}, _row(0)), [], [], c
     )
     assert [x.status for x in cells] == ["match"]
+
+
+def _snapdir(tmp_path, csv=b"School Name,Avg Score\r\nAlpha,48.50\r\n", **manifest):
+    snapdir = tmp_path / "snap"
+    (snapdir / "csv").mkdir(parents=True)
+    (snapdir / "csv" / "n.csv").write_bytes(csv)
+    m = {
+        "workbook": "Demo",
+        "extracts": {},
+        "fields": {},
+        "states": {
+            "n": {
+                "state": {"id": "n", "dashboard": "Overview"},
+                "status": "ok",
+                "click_filters": {},
+                "sheets": {"Overview - Table": {"file": "csv/n.csv", "rows": 1}},
+            }
+        },
+        **manifest,
+    }
+    (snapdir / "manifest.json").write_text(json.dumps(m))
+    return snapdir
+
+
+def test_compare_warns_when_an_ignored_saved_filter_would_hide_rows(tmp_path):
+    c = _checks(tmp_path, filters=SAVED_MAP, ignore_sheet_filters=["Pct Done", "Score"])
+    snapdir = _snapdir(tmp_path, sheet_filters={"Overview - Table": SAVED})
+    sqls, warned = [], []
+
+    def extracts(ds, sql):
+        sqls.append(sql)
+        return [{"n": 3}]
+
+    cube = FakeCube({"Alpha": _row(48.5)}, _row(0))
+    cv.run_compare(c, snapdir, cube, extracts, warn=warned.append)
+    assert warned == [
+        "n / Overview - Table: 3 rows in this slice fail the ignored filter Score"
+    ]
+    assert "not coalesce((score >= 0.75), false)" in sqls[0]
+    # The FIXED-LOD filter has no extract column, so it is never counted.
+    assert not any("Calculation_8" in s for s in sqls)
