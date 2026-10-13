@@ -100,7 +100,8 @@ with
             conversion as ssk
             on a.assessment_id = ssk.assessment_id
             and a.points between ssk.raw_score_low and ssk.raw_score_high
-        where a.response_type in ('group', 'overall')
+        -- the sheet lists Illuminate ids, which Apex ids can repeat
+        where a.response_type in ('group', 'overall') and a.source = 'illuminate'
     ),
 
     scores as (

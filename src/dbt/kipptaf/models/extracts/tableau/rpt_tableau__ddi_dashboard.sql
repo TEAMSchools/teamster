@@ -57,7 +57,7 @@ with
             )
     ),
 
-    identifiers as (
+    responses as (
         select
             co.student_number,
             co.student_name,
@@ -107,21 +107,33 @@ with
 
             sd.standard_domain,
 
-            cc.sections_section_number as course_section,
-            cc.courses_course_name as course_name,
-            cc.courses_course_number as course_number,
-            cc.courses_credittype as course_credittype,
-            cc.teachernumber as course_teachernumber,
-            cc.teacher_lastfirst as course_teacher_name,
-            cc.is_foundations,
-
-            sf.dibels_most_recent_composite,
-            sf.state_test_proficiency,
-            sf.is_exempt_iready,
-            sf.nj_student_tier,
-            sf.is_low_25_fl,
-
             cast(r.assessment_id as string) as assessment_id,
+
+            -- Apex rows take the section the scaffold matched, Illuminate rows
+            -- the student's latest section in the subject
+            if(
+                r.source = 'apex',
+                ca.sections_section_number,
+                cc.sections_section_number
+            ) as course_section,
+            if(
+                r.source = 'apex', ca.courses_course_name, cc.courses_course_name
+            ) as course_name,
+            if(
+                r.source = 'apex', ca.courses_course_number, cc.courses_course_number
+            ) as course_number,
+            if(
+                r.source = 'apex', ca.courses_credittype, cc.courses_credittype
+            ) as course_credittype,
+            if(
+                r.source = 'apex', ca.teachernumber, cc.teachernumber
+            ) as course_teachernumber,
+            if(
+                r.source = 'apex', ca.teacher_lastfirst, cc.teacher_lastfirst
+            ) as course_teacher_name,
+            if(
+                r.source = 'apex', ca.is_foundations, cc.is_foundations
+            ) as is_foundations,
 
             if(r.date_taken is not null, 1, 0) as is_complete,
 
@@ -147,11 +159,9 @@ with
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
         left join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-            on co.student_number = sf.student_number
-            and co.academic_year = sf.academic_year
-            and cc.courses_credittype = sf.powerschool_credittype
-            and sf.rn_year = 1
+            {{ ref("base_powerschool__course_enrollments") }} as ca
+            on r.cc_dcid = ca.cc_dcid
+            and r._dbt_source_project = ca._dbt_source_project
         where
             /* Eligibility is enrollment as of the week end, not current
                enroll_status: that column is student-level and current-only, so
@@ -166,6 +176,24 @@ with
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
             and r.module_type != 'WPP'
+    ),
+
+    identifiers as (
+        select
+            r.*,
+
+            sf.dibels_most_recent_composite,
+            sf.state_test_proficiency,
+            sf.is_exempt_iready,
+            sf.nj_student_tier,
+            sf.is_low_25_fl,
+        from responses as r
+        left join
+            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
+            on r.student_number = sf.student_number
+            and r.academic_year = sf.academic_year
+            and r.course_credittype = sf.powerschool_credittype
+            and sf.rn_year = 1
     ),
 
     microgoals_long as (

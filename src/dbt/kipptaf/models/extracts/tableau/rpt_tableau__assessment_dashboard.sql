@@ -40,16 +40,36 @@ with
             asr.is_replacement,
             asr.is_internal_assessment as is_normed_scope,
 
-            enr.teachernumber as enr_teachernumber,
-            enr.teacher_lastfirst as teacher_name,
-            enr.courses_course_name as course_name,
-            enr.sections_expression as expression,
-            enr.sections_section_number as section_number,
-            enr.is_foundations,
-
+            -- Apex rows take the section the scaffold matched, Illuminate rows
+            -- the student's latest section in the subject
             if(
-                co.grade_level >= 9, enr.courses_credittype, asr.subject_area
-            ) as filter_join,
+                asr.source = 'apex', ea.teachernumber, enr.teachernumber
+            ) as enr_teachernumber,
+            if(
+                asr.source = 'apex', ea.teacher_lastfirst, enr.teacher_lastfirst
+            ) as teacher_name,
+            if(
+                asr.source = 'apex', ea.courses_course_name, enr.courses_course_name
+            ) as course_name,
+            if(
+                asr.source = 'apex', ea.sections_expression, enr.sections_expression
+            ) as expression,
+            if(
+                asr.source = 'apex',
+                ea.sections_section_number,
+                enr.sections_section_number
+            ) as section_number,
+            if(
+                asr.source = 'apex', ea.is_foundations, enr.is_foundations
+            ) as is_foundations,
+
+            case
+                when co.grade_level >= 9 and asr.source = 'apex'
+                then ea.courses_credittype
+                when co.grade_level >= 9
+                then enr.courses_credittype
+                else asr.subject_area
+            end as filter_join,
         from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
@@ -63,6 +83,10 @@ with
             and asr.subject_area = enr.illuminate_subject_area
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
+        left join
+            {{ ref("base_powerschool__course_enrollments") }} as ea
+            on asr.cc_dcid = ea.cc_dcid
+            and asr._dbt_source_project = ea._dbt_source_project
         where
             co.rn_year = 1
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
