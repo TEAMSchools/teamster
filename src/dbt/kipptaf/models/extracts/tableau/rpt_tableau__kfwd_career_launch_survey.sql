@@ -88,6 +88,7 @@ with
             r.contact_current_kipp_student as current_kipp_student,
             r.contact_owner_name,
             r.contact_postsec_advisor as postsec_advisor,
+            r.contact_postsec_advisor_name as postsec_advisor_name,
             r.contact_college_counselor_name as college_counselor,
             r.es_graduated,
             r.tier,
@@ -440,7 +441,7 @@ select
 
     if(r.most_recent_iep_date is not null, true, false) as is_special_education,
 
-    if(r.advising_provider = 'KIPP NYC', 'Collab', r.postsec_advisor) as advisor,
+    if(r.advising_provider = 'KIPP NYC', 'Collab', r.postsec_advisor_name) as advisor,
 
     if(
         r.contact_id is not null,
