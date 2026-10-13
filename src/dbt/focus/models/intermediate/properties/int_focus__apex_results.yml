@@ -3,8 +3,8 @@ models:
     description: >-
       Apex results per student and assessment — one overall row plus one row per
       standard, from the student's latest completed, non-discarded, non-excused
-      session on a live assignment (Focus school year 2026 and later). The
-      overall score is the session's own score, not the sum of its responses; a
+      session on a live assignment, in every Focus school year. The overall
+      score is the session's own score, not the sum of its responses; a
       standard's score sums the scored responses tagged to it, so a response
       tagged to 2 standards counts for both. Every row takes the band set
       attached to the assessment, standards included. Apex's passed flag is

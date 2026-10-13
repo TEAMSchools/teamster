@@ -1,6 +1,6 @@
 -- Asserts that int_assessments__resolved_section_enrollments is one row per
 -- score. The score grain is the inputs of score_grain_key (not output):
--- (student_number, _dbt_source_project, source_type,
+-- (student_number, _dbt_source_project, source_type, source,
 -- canonical_assessment_id, academic_year, administration_period, subject_area).
 -- NULL-safe via format("%T|...") so NULL canonical_assessment_id on state rows
 -- and NULL academic_year/administration_period on internal rows don't collapse

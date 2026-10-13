@@ -21,7 +21,10 @@ models:
       - name: title
         description: Apex assessment title.
       - name: academic_year
-        description: Focus school year start year (e.g. 2026 = 2026-27).
+        description: >-
+          Focus school year start year (e.g. 2026 = 2026-27). Where Focus has no
+          year, the school year of the first assignment start date (July
+          rollover).
       - name: band_set_id
         description: >-
           Apex band set attached to the assessment; null when none is attached.

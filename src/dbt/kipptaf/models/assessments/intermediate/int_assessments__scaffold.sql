@@ -171,6 +171,7 @@ with
             r.student_number,
             r.session_id,
             r.date_taken,
+            r._dbt_source_project,
 
             a.source,
             a.assessment_id,
@@ -187,7 +188,11 @@ with
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
             on r.assessment_id = a.assessment_id
-        where r.response_type = 'overall' and a.source = 'apex'
+        where
+            r.response_type = 'overall'
+            and a.source = 'apex'
+            -- keep in step with int_assessments__assessments_members
+            and r.academic_year >= 2026
     ),
 
     -- section fields are kept only when exactly 1 section matches
@@ -214,9 +219,10 @@ with
             {{ ref("int_assessments__course_enrollments") }} as ce
             on t.student_number = ce.student_number
             and t.subject_area = ce.subject_area
+            and t._dbt_source_project = ce._dbt_source_project
             and t.date_taken >= ce.cc_dateenrolled
             and t.date_taken < ce.cc_dateleft
-        where ce._dbt_source_project = 'kippmiami' and ce.cc_dcid is not null
+        where ce.cc_dcid is not null
         group by t.student_number, t.assessment_id
     ),
 
@@ -233,9 +239,9 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as se
             on t.student_number = se.student_number
+            and t._dbt_source_project = se._dbt_source_project
             and t.date_taken >= se.entrydate
             and t.date_taken < se.exitdate
-        where se._dbt_source_project = 'kippmiami'
     )
 
 select
@@ -426,7 +432,7 @@ select
     sc.cc_dateenrolled,
     sc.cc_dateleft,
 
-    'kippmiami' as _dbt_source_project,
+    t._dbt_source_project,
 
     t.canonical_assessment_id,
     t.session_id as student_assessment_id,

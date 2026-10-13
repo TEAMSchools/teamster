@@ -22,7 +22,7 @@ models:
         description: Focus id of the scoring rubric for hand-graded questions.
         data_type: int
       - name: syear
-        description: Focus school year (the spring calendar year).
+        description: Focus school year start year (e.g. 2026 = 2026-27).
         data_type: int
       - name: type
         description: >-

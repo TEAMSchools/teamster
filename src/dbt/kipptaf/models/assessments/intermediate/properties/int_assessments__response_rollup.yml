@@ -363,7 +363,8 @@ unit_tests:
               5 as performance_band_set_id,
               'Level 3' as performance_band_label,
               3 as performance_band_label_number,
-              true as is_mastery
+              true as is_mastery,
+              'kippmiami' as _dbt_source_project
       - input: ref('int_illuminate__agg_student_responses')
         rows:
           - {

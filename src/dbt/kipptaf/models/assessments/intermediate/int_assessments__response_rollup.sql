@@ -349,6 +349,7 @@ with
         inner join
             {{ ref("int_focus__apex_results") }} as r
             on s.student_number = r.student_number
+            and s._dbt_source_project = r._dbt_source_project
             and s.assessment_id = r.assessment_id
             and s.student_assessment_id = r.session_id
         where s.source = 'apex'

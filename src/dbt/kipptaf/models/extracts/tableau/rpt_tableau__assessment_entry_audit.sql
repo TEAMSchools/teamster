@@ -41,3 +41,5 @@ where
     s.academic_year = {{ var("current_academic_year") }}
     and s.is_internal_assessment
     and not s.is_replacement
+    -- Apex session ids collide with Illuminate student_assessment_id
+    and s.source = 'illuminate'

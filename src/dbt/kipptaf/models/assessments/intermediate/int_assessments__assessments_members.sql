@@ -85,6 +85,7 @@ with
             true as is_internal_assessment,
             true as is_florida_assessment,
         from {{ ref("int_focus__apex_assessments") }}
+        -- keep in step with int_assessments__scaffold (apex_tested)
         where academic_year >= 2026
     ),
 

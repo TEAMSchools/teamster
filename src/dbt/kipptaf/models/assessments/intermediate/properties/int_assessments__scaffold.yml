@@ -28,7 +28,9 @@ models:
       the student's Miami course enrollment in the assessment's subject that is
       open on the test date, only when exactly 1 matches; otherwise the section
       columns are null and school and grade come from the student's enrollment
-      on that date. `section_match_method` records which case applied.
+      on that date. `section_match_method` records which case applied. Apex rows
+      exist only for students who tested, so completion measured on this model
+      reads 100% for Apex by construction.
     config:
       materialized: table
       meta:
@@ -252,7 +254,8 @@ unit_tests:
       1 Miami Math section open on the test date and takes its section; one has
       2 and gets no section but keeps the school and grade from enrollment; one
       has none open (a closed section and a Text Study section do not count). A
-      standard-level result row adds no scaffold row.
+      standard-level result row and a result from before school year 2026 add no
+      scaffold row.
     model: int_assessments__scaffold
     given:
       - input: ref('int_assessments__assessments_members')
@@ -283,13 +286,17 @@ unit_tests:
               9001 as assessment_id,
               1 as session_id,
               date('2026-10-01') as date_taken,
-              'overall' as response_type
+              'overall' as response_type,
+              'kippmiami' as _dbt_source_project,
+              2026 as academic_year
           union all
-          select 101, 9001, 1, date('2026-10-01'), 'standard'
+          select 101, 9001, 1, date('2026-10-01'), 'standard', 'kippmiami', 2026
           union all
-          select 102, 9001, 2, date('2026-10-01'), 'overall'
+          select 102, 9001, 2, date('2026-10-01'), 'overall', 'kippmiami', 2026
           union all
-          select 103, 9001, 3, date('2026-10-01'), 'overall'
+          select 103, 9001, 3, date('2026-10-01'), 'overall', 'kippmiami', 2026
+          union all
+          select 104, 9001, 4, date('2025-10-01'), 'overall', 'kippmiami', 2025
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {

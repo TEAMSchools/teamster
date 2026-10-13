@@ -55,7 +55,17 @@ with
     ),
 
     assignments as (
-        select assessment_id, min(start_date) as administered_at,
+        select
+            assessment_id,
+
+            min(start_date) as administered_at,
+
+            -- school year rolls over on 1 July
+            if(
+                extract(month from min(start_date)) >= 7,
+                extract(year from min(start_date)),
+                extract(year from min(start_date)) - 1
+            ) as administered_school_year,
         from {{ ref("stg_focus__apex_assigned_assessments") }}
         group by assessment_id
     )
@@ -63,13 +73,15 @@ with
 select
     a.id as assessment_id,
     a.title,
-    a.syear as academic_year,
 
     bs.band_set_id,
 
     sub.subject_area,
 
     asg.administered_at,
+
+    -- some assessments carry no syear in Focus
+    coalesce(a.syear, asg.administered_school_year) as academic_year,
 from {{ ref("stg_focus__apex_assessments") }} as a
 left join band_sets as bs on a.id = bs.assessment_id
 left join assessment_subjects as sub on a.id = sub.assessment_id

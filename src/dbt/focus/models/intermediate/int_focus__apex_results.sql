@@ -19,11 +19,7 @@ with
         inner join
             {{ ref("stg_focus__apex_assigned_assessments") }} as aa
             on s.assignment_id = aa.id
-        where
-            s.completed
-            and s.discarded is not true
-            and s.excused is not true
-            and s.syear >= 2026
+        where s.completed and s.discarded is not true and s.excused is not true
     ),
 
     sessions_picked as (
