@@ -1127,3 +1127,29 @@ data_tests:
         dagster:
           ref:
             name: int_iready__diagnostic_results
+
+  - name: stg_google_sheets__ignite__treatment_sections__resolved_rows_match_a_section
+    description: >-
+      Every resolved row on the Ignite treatment sections sheet must name a real
+      PowerSchool section (school, academic year, course number and section
+      number). int_ignite__treatment_assignment inner-joins these rows to
+      sections, so a row that names no section silently drops its treated
+      students rather than raising an error.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__ignite__treatment_sections
+
+  - name: test_kippfwd_goals_resolve_to_scaffold
+    description: >-
+      Every KIPP Forward goal must have a scaffold row for its academic year,
+      test type and score type. Both branches of
+      int_google_sheets__kippfwd__goals_unpivot are driven from the scaffold, so
+      a goal with no scaffold row is dropped entirely rather than reported with
+      a null threshold.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kippfwd__goals

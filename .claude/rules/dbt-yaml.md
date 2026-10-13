@@ -337,11 +337,14 @@ run `dbt parse --no-partial-parse`; partial parse caches the unbound state.
 
 ### Singular-test `meta.dagster.ref` needs `package:` for cross-package refs
 
+A singular test that reads more than one model needs `meta.dagster.ref` in
+`tests/properties.yml`, or Dagster never sees its result: `build_dbt_assets`
+drops the observation dagster-dbt falls back to.
+
 dagster-dbt resolves `meta.dagster.ref` via `(name, package, version)`. Omitting
 `package:` defaults to the running project — so a test under
 `src/dbt/<source>/tests/` referencing a model in its own package silently misses
-the lookup and logs `AssetObservation` across all parents instead of an
-`AssetCheckResult` on the intended asset. Always set `package: <source>` for
+the lookup and never becomes a check. Always set `package: <source>` for
 source-system package tests. Tests in `src/dbt/kipptaf/tests/` don't need it
 (refs default to kipptaf).
 

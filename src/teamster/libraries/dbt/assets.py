@@ -1,7 +1,7 @@
 import json
 import re
 
-from dagster import AssetExecutionContext, RetryPolicy
+from dagster import AssetExecutionContext, AssetObservation, RetryPolicy
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 
@@ -112,6 +112,14 @@ def build_dbt_assets(
         # build models
         dbt_build = dbt_cli.cli(args=["build"], context=context)
 
-        yield from dbt_build.stream().fetch_column_metadata(with_column_lineage=False)
+        for event in dbt_build.stream().fetch_column_metadata(
+            with_column_lineage=False
+        ):
+            # dbt's eager indirect selection runs tests whose Dagster check is
+            # outside this run's selection; dagster-dbt reports those as
+            # observations on every parent, which push real materializations
+            # out of the asset catalog. The test result stays in the dbt logs.
+            if not isinstance(event, AssetObservation):
+                yield event
 
     return _assets
