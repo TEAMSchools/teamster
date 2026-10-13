@@ -256,3 +256,21 @@ sources:
                 - kippmiami
                 - focus
                 - int_focus__gradebook_grades
+      - name: int_focus__apex_assessments
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__apex_assessments
+      - name: int_focus__apex_results
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__apex_results

@@ -87,7 +87,7 @@ models:
         description: Authoring status — draft or published.
         data_type: string
       - name: syear
-        description: Focus school year (the spring calendar year).
+        description: Focus school year start year (e.g. 2026 = 2026-27).
         data_type: int
       - name: title
         description: Assessment title.

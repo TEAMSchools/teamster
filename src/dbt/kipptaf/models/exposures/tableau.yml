@@ -588,6 +588,7 @@ exposures:
       - ref("rpt_tableau__miami_k2_iready")
       - ref("rpt_tableau__miami_k2_star")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:

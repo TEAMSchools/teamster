@@ -2,30 +2,40 @@ models:
   - name: int_assessments__assessments_canonical
     description: >-
       Canonical-grain projection of `int_assessments__assessments_members`. One
-      row per `canonical_assessment_id` — the logical assessment that may span
-      multiple regional members (e.g., the four regional copies of the same Q2
-      ELA module collapse to one canonical row). Canonical attrs (`title`,
-      `administered_date`, `grade_level_id`) are picked from the member with the
-      lowest `assessment_id` in the canonical group via
-      `dbt_utils.deduplicate(partition_by="canonical_assessment_id",
+      row per `source` and `canonical_assessment_id` — the logical assessment
+      that may span multiple regional members (e.g., the four regional copies of
+      the same Q2 ELA module collapse to one canonical row). Canonical attrs
+      (`title`, `administered_date`, `grade_level_id`) are picked from the
+      member with the lowest `assessment_id` in the canonical group via
+      `dbt_utils.deduplicate(partition_by="source, canonical_assessment_id",
       order_by="assessment_id")`, matching the `first_value(... order by
       assessment_id) over canonical_w` window in the upstream model.
       `regions_array` is the union of `regions_assessed_array` across all
       internal members of the group. Internal assessments only — this model
       filters to `is_internal_assessment`, so external (non-AppSheet)
       assessments have no canonical row.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - source
+              - canonical_assessment_id
     columns:
       - name: canonical_assessment_id
         data_tests:
-          - unique
           - not_null
         data_type: int64
         description: >-
-          Primary key. The lowest `assessment_id` among internal assessments in
-          the canonical partition `(academic_year, scope, subject_area,
-          module_code, grade_level_id)`. Internal members of
-          `int_assessments__assessments_members` FK here via their own
-          `canonical_assessment_id` column.
+          Key, together with `source`. The lowest `assessment_id` among internal
+          assessments in the canonical partition `(source, academic_year, scope,
+          subject_area, module_code, grade_level_id)`. Internal members of
+          `int_assessments__assessments_members` FK here via their own `source`
+          and `canonical_assessment_id`.
+      - name: source
+        data_type: string
+        description: >-
+          System the assessment comes from (`illuminate` or `apex`). Part of the
+          key.
       - name: regions_array
         data_type: array<string>
         description: >-

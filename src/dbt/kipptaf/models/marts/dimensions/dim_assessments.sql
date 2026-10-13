@@ -12,10 +12,10 @@ with
             m.module_code,
             m.module_type,
             m.is_internal_assessment,
+            m.source as assessment_type,
 
             c.grade_level,
 
-            'illuminate' as assessment_type,
             'enrollment' as assessment_scope,
 
             cast(null as string) as combined_academic_subject,
@@ -25,7 +25,8 @@ with
         from {{ ref("int_assessments__assessments_members") }} as m
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on m.canonical_assessment_id = c.canonical_assessment_id
+            on m.source = c.source
+            and m.canonical_assessment_id = c.canonical_assessment_id
         where m.is_internal_assessment
     ),
 

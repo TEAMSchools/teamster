@@ -44,7 +44,7 @@ with
         select
             a.academic_year,
             a.illuminate_student_id,
-            a.powerschool_student_number,
+            a.student_number as powerschool_student_number,
             a.assessment_id,
             a.title as assessment_title,
             a.date_taken as test_date,
@@ -77,21 +77,16 @@ with
             ) as administration_round,
 
             max(if(a.response_type = 'overall', a.points, null)) over (
-                partition by
-                    a.academic_year, a.powerschool_student_number, a.assessment_id
+                partition by a.academic_year, a.student_number, a.assessment_id
             ) as raw_score,
 
             max(if(a.response_type = 'overall', ssk.aligned_scale_score, null)) over (
-                partition by
-                    a.academic_year, a.powerschool_student_number, a.assessment_id
+                partition by a.academic_year, a.student_number, a.assessment_id
             ) as scale_score,
 
             count(distinct ssk.subject_area) over (
                 partition by
-                    a.academic_year,
-                    a.powerschool_student_number,
-                    ssk.scope_round,
-                    ssk.grade_level
+                    a.academic_year, a.student_number, ssk.scope_round, ssk.grade_level
             ) as actual_total_subjects_tested,
 
         from {{ ref("int_assessments__response_rollup") }} as a
@@ -105,7 +100,8 @@ with
             conversion as ssk
             on a.assessment_id = ssk.assessment_id
             and a.points between ssk.raw_score_low and ssk.raw_score_high
-        where a.response_type in ('group', 'overall')
+        -- the sheet lists Illuminate ids, which Apex ids can repeat
+        where a.response_type in ('group', 'overall') and a.source = 'illuminate'
     ),
 
     scores as (

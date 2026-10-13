@@ -1,20 +1,20 @@
 with
     progress_report_region as (
-        select iae.assessment_id, progress_report_region,
+        select iae.assessment_id, progress_report_region, 'illuminate' as `source`,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join
             unnest(split(iae.regions_progress_report, ' , ')) as progress_report_region
     ),
 
     report_card_region as (
-        select iae.assessment_id, report_card_region,
+        select iae.assessment_id, report_card_region, 'illuminate' as `source`,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     ),
 
     mod_assessment as (
         select
-            ar.powerschool_student_number as student_number,
+            ar.student_number,
             ar.academic_year,
             ar.assessment_id,
             ar.title,
@@ -41,12 +41,13 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
             on ar.academic_year = co.academic_year
-            and ar.powerschool_student_number = co.student_number
+            and ar.student_number = co.student_number
             and co.rn_year = 1
             and co.grade_level < 5
         left join
             report_card_region as rcr
-            on ar.assessment_id = rcr.assessment_id
+            on ar.source = rcr.source
+            and ar.assessment_id = rcr.assessment_id
             and co.region = rcr.report_card_region
         where
             ar.response_type = 'overall'
@@ -61,7 +62,7 @@ with
 
     mod_standards as (
         select
-            ar.powerschool_student_number as student_number,
+            ar.student_number,
             ar.academic_year,
             ar.assessment_id,
             ar.title,
@@ -88,7 +89,7 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
             on ar.academic_year = co.academic_year
-            and ar.powerschool_student_number = co.student_number
+            and ar.student_number = co.student_number
             and co.rn_year = 1
         where
             ar.is_internal_assessment
@@ -102,7 +103,7 @@ with
 
     mod_standards_domains as (
         select
-            ar.powerschool_student_number as student_number,
+            ar.student_number,
             ar.academic_year,
             ar.assessment_id,
             ar.title,
@@ -129,12 +130,13 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
             on ar.academic_year = co.academic_year
-            and ar.powerschool_student_number = co.student_number
+            and ar.student_number = co.student_number
             and co.rn_year = 1
             and co.grade_level < 5
         inner join
             progress_report_region as prr
-            on ar.assessment_id = prr.assessment_id
+            on ar.source = prr.source
+            and ar.assessment_id = prr.assessment_id
             and co.region = prr.progress_report_region
         where
             ar.response_type = 'overall'
@@ -146,7 +148,7 @@ with
         union all
 
         select
-            ar.powerschool_student_number as student_number,
+            ar.student_number,
             ar.academic_year,
             ar.assessment_id,
             ar.title,
@@ -176,12 +178,13 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
             on ar.academic_year = co.academic_year
-            and ar.powerschool_student_number = co.student_number
+            and ar.student_number = co.student_number
             and co.rn_year = 1
             and co.grade_level < 5
         inner join
             report_card_region as rcr
-            on ar.assessment_id = rcr.assessment_id
+            on ar.source = rcr.source
+            and ar.assessment_id = rcr.assessment_id
             and co.region = rcr.report_card_region
         where
             ar.response_type = 'standard'
