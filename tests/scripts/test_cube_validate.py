@@ -26,6 +26,18 @@ def _load():
 
 
 cv = _load()
+
+
+def _load_snapshot():
+    path = Path(__file__).parents[2] / "scripts" / "cube_validate_snapshot.py"
+    spec = importlib.util.spec_from_file_location("cube_validate_snapshot", path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["cube_validate_snapshot"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
 SECRET = "x" * 32  # PyJWT warns on HS256 keys under 32 bytes
 
 
@@ -1828,3 +1840,105 @@ def test_a_group_lookup_translates_each_member(tmp_path):
     )
     entry = {"state": {"dashboard": "Overview", "filters": {"Level": "ES"}}}
     assert cv.state_filters(entry, c, lists=lists)[0][0]["values"] == ["A", "B"]
+
+
+SECTION = {
+    "cube": "demo.identifier",
+    "sql": "section_number",
+    "key": r"^G\d+ - .* - (\S+)$",
+}
+
+
+def _with_section(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Section Number"] = dict(SECTION)
+    return cv.load_checks(_write(tmp_path, d))
+
+
+def test_both_scripts_agree_on_the_name_columns():
+    snap = _load_snapshot()
+    assert snap.PERSON_FIELD.pattern == "(" + "|".join(cv.PERSON_WORDS) + ")$"
+
+
+def test_a_dimension_or_filter_reading_a_name_column_must_say_who_it_names(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Teacher"] = {
+        "cube": None,
+        "sql": "teacher_name",
+    }
+    with pytest.raises(cv.CheckError, match="name column"):
+        cv.load_checks(_write(tmp_path, d))
+    d["sheets"]["Overview - Table"]["dims"]["Teacher"]["person"] = "a teacher"
+    cv.load_checks(_write(tmp_path, d))
+    d["filters"]["Teacher"] = {"cube": None, "sql": "teacher_name"}
+    with pytest.raises(cv.CheckError, match="name column"):
+        cv.load_checks(_write(tmp_path, d))
+
+
+def test_a_keyed_dimension_shows_only_its_key(tmp_path):
+    c = _with_section(tmp_path)
+    cell = cv.Cell(
+        "Overview - Table",
+        "s",
+        {"Section Number": "G5 - Teacher, A - 501"},
+        "Avg Score",
+        "48.50",
+        48.5,
+        47.0,
+        40,
+        "mismatch",
+        verdict="fail",
+    )
+    assert cv.masked_key(cell, c) == {"Section Number": "501"}
+    text = cv.digest_markdown("Demo", [cell], c)
+    assert "Teacher, A" not in text and "501" in text
+    odd = cv.Cell(
+        "Overview - Table",
+        "s",
+        {"Section Number": "Teacher, A"},
+        "Avg Score",
+        "1",
+        1,
+        2,
+        40,
+        "mismatch",
+        verdict="fail",
+    )
+    assert cv.masked_key(odd, c) == {
+        "Section Number": "a label the key pattern does not match"
+    }
+
+
+def test_a_clicked_label_filters_by_its_key_and_never_reaches_a_draft(tmp_path):
+    c = _with_section(tmp_path)
+    c["mismatches"]["dup"] = {
+        "title": "fix(cube): x",
+        "what": "y",
+        "fix": "cube",
+        "labels": [],
+        "related": [],
+        "where": "tableau",
+    }
+    entry = {
+        "state": {"dashboard": "Overview"},
+        "click_filters": {"Section Number": "G5 - Teacher, A - 501"},
+    }
+    assert cv.state_filters(entry, c)[0] == [
+        {"member": "demo.identifier", "operator": "equals", "values": ["501"]}
+    ]
+    cell = cv.Cell(
+        "Overview - Table",
+        "s",
+        {},
+        "Avg Score",
+        "48.50",
+        48.5,
+        47.0,
+        40,
+        "mismatch",
+        verdict="fix_cube",
+        explained_by=["dup"],
+    )
+    states = {"s": {**entry, "status": "ok", "sheets": {}}}
+    body = cv.issue_drafts("Demo", [cell], c, states, {})["dup"]
+    assert "Teacher, A" not in body and "'501'" in body

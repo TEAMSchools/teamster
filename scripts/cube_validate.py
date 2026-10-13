@@ -47,6 +47,11 @@ class CheckError(ValueError):
 
 FIX_SIDES = ("cube", "dashboard", "source", "undecided")
 
+# Name columns. Same words as cube_validate_snapshot.PERSON_FIELD: a dimension or
+# filter reading one must say who it names (person:), so outputs show a label.
+PERSON_WORDS = ("lastfirst", "student_name", "first_name", "last_name", "teacher_name")
+PERSON_SQL = re.compile(rf"\b({'|'.join(PERSON_WORDS)})\b")
+
 
 _ISO_DATE = re.compile(r"^(\d{4}-\d{2}-\d{2})[T ]")
 _WHOLE_FLOAT = re.compile(r"^-?\d+\.0+$")
@@ -398,6 +403,16 @@ def load_checks(path) -> dict:
             for c, m in (s.get("measures") or {}).items()
         }
         sheets[name] = SheetMap(name, s.get("datasource", ""), dims, measures)
+    for name, s in raw["sheets"].items():
+        for c, d in (s.get("dims") or {}).items():
+            if PERSON_SQL.search(d.get("sql") or "") and not d.get("person"):
+                raise CheckError(
+                    f"{name} / {c}: its sql reads a name column; add person: "
+                    "(true for a student, or a label such as 'a teacher')"
+                )
+    for c, f in (raw.get("filters") or {}).items():
+        if PERSON_SQL.search(f.get("sql") or "") and not f.get("person"):
+            raise CheckError(f"filter {c}: its sql reads a name column; add person:")
     members = {m.cube for s in sheets.values() for m in s.measures.values() if m.cube}
     for gid, ms in (raw.get("rows") or {}).items():
         unknown = set(ms) - members
@@ -557,7 +572,10 @@ def _person_captions(checks: dict) -> dict[str, str]:
 
 
 def _own_filters(
-    entry: dict, defaults: dict | None, lists: Lists | None = None
+    entry: dict,
+    defaults: dict | None,
+    lists: Lists | None = None,
+    keyed: dict[str, Dim] | None = None,
 ) -> list[tuple[str, object]]:
     """A state's filters as Tableau applies them: saved defaults it keeps, its own
     filters, and its click (with Tableau's formatting removed), each expanded to
@@ -565,7 +583,16 @@ def _own_filters(
     lists = lists or Lists()
     st = entry["state"]
     own = dict(st.get("filters") or {})
-    clicks = {c: norm_dim(v) for c, v in (entry.get("click_filters") or {}).items()}
+    keyed = keyed or {}
+
+    def click_value(c, v):
+        if c in keyed:
+            v = _key_text(keyed[c], v) or v
+        return norm_dim(v)
+
+    clicks = {
+        c: click_value(c, v) for c, v in (entry.get("click_filters") or {}).items()
+    }
     kept = [
         (c, list(v))
         for c, v in (defaults or {}).items()
@@ -580,7 +607,7 @@ def state_filters(
     st = entry["state"]
     members = _caption_members(checks)
     out, missing = [], []
-    for caption, value in _own_filters(entry, defaults, lists):
+    for caption, value in _own_filters(entry, defaults, lists, _keyed_dims(checks)):
         member = members.get(caption)
         if value is None:
             missing.append(caption)
@@ -1109,7 +1136,7 @@ def state_where(
     dims_sql = {c: d.sql for c, d in sheet.dims.items()}
     person = _person_captions(checks) if public_only else {}
     out = []
-    for caption, value in _own_filters(entry, defaults, lists):
+    for caption, value in _own_filters(entry, defaults, lists, _keyed_dims(checks)):
         f = (
             lists.column(caption)
             or (fields.get(caption) or {}).get("field")
@@ -1191,14 +1218,30 @@ def _grain(c: Cell) -> tuple[tuple[str, ...], tuple[str, ...]]:
     )
 
 
+def _key_text(dim: Dim, value: str) -> str | None:
+    """The join key inside a displayed label (Tableau shows a section as
+    "G5 - <teacher> - 501"; the key is 501). None when the pattern misses."""
+    if not dim.key:
+        return value
+    m = re.search(dim.key, value)
+    if not m:
+        return None
+    return m.group(1) if m.groups() else m.group(0)
+
+
+def _keyed_dims(checks: dict) -> dict[str, Dim]:
+    return {c: d for s in checks["sheets"].values() for c, d in s.dims.items() if d.key}
+
+
 def tableau_key(sheet: SheetMap, caption: str, value) -> str:
-    """The join key in a value Tableau shows: the dimension's key pattern, if any."""
+    """The join key in a value Tableau shows: the dimension's key pattern, if any,
+    then its alias lookup."""
     dim = sheet.dims.get(caption)
-    if dim is not None and dim.key and isinstance(value, str):
-        if m := re.search(dim.key, value):
-            value = m.group(1) if m.groups() else m.group(0)
-    if dim is not None and dim.values and isinstance(value, str):
-        value = dim.values.get(value.strip(), value)
+    if dim is not None and isinstance(value, str):
+        found = _key_text(dim, value)
+        value = value if found is None else found
+        if dim.values:
+            value = dim.values.get(value.strip(), value)
     return norm_dim(value)
 
 
@@ -1622,12 +1665,23 @@ def _fmt(v) -> str:
     return "nothing" if v is None else f"{v:.4g}"
 
 
+UNKEYED = "a label the key pattern does not match"
+
+
 def masked_key(c: Cell, checks: dict) -> dict[str, str]:
-    dims = checks["sheets"][c.sheet].dims if c.sheet in checks["sheets"] else {}
+    """A cell's key as outputs may show it: a person as their label, a keyed
+    label as its key only."""
+    sheet = checks["sheets"].get(c.sheet)
+    dims = sheet.dims if sheet else {}
     out = {}
     for d, v in c.key.items():
-        p = dims[d].person if d in dims else False
-        out[d] = (p if isinstance(p, str) else "a student") if p else v
+        dim = dims.get(d)
+        if dim is not None and dim.person:
+            out[d] = dim.person if isinstance(dim.person, str) else "a student"
+        elif dim is not None and dim.key and v != TOTAL:
+            out[d] = _key_text(dim, v) or UNKEYED
+        else:
+            out[d] = v
     return out
 
 
