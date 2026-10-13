@@ -95,11 +95,11 @@ class Workbook:
     sheet_filters: dict[str, list[SheetFilter]] = field(default_factory=dict)
 
 
-def default_caption(field: str) -> str:
-    """The caption Tableau shows for a column that has none of its own."""
-    if "_" not in field and field[:1].isupper():
-        return field
-    return " ".join(w[:1].upper() + w[1:] for w in field.split("_"))
+def caption_of(el, field: str) -> str:
+    """The caption Tableau shows for a column: its stored caption, else the raw
+    field name. vf takes this caption, and ignores any other silently."""
+    caption = el.get("caption") if el is not None else None
+    return caption or field
 
 
 def _unquote(v: str) -> str:
@@ -163,9 +163,7 @@ def _saved_filters(w, columns, ds_caption) -> list[SheetFilter]:
             "["
         ):
             continue  # reads only a parameter: a sheet swap, not a data filter
-        caption = (el.get("caption") if el is not None else None) or default_caption(
-            name
-        )
+        caption = caption_of(el, name)
         numeric = el is not None and el.get("datatype") in ("integer", "real")
         common = {
             "sheet": sheet,
@@ -226,9 +224,7 @@ def _card(root, columns, ds_caption, dash: str, z) -> FilterCard:
     ds, field = _split(z.get("param") or "")
     col = columns.get((ds, field))
     calc = col.find("calculation") if col is not None else None
-    caption = (col.get("caption") if col is not None else None) or default_caption(
-        field
-    )
+    caption = caption_of(col, field)
     values: tuple[str, ...] = ()
     if calc is not None:
         found = [a or b for a, b in _LITERAL.findall(calc.get("formula") or "")]

@@ -46,7 +46,6 @@ def test_filter_cards_carry_field_caption_and_default():
         "academic_year",
     }
     assert cards["school"].caption == "School Name"  # explicit caption wins
-    assert cards["grade_level"].caption == "Grade Level"  # Tableau's default
     assert cards["region"].default_all is True
     assert cards["iep_status"].default_all is False  # saved as "No IEP" only
     assert cards["school"].datasource == "rpt_demo (kipptaf_tableau)"
@@ -78,16 +77,16 @@ def test_actions_are_filter_or_link():
     assert acts["Open Report"].kind == "link"
 
 
-@pytest.mark.parametrize(
-    ("field", "caption"),
-    [
-        ("grade_level", "Grade Level"),
-        ("c_504_status", "C 504 Status"),
-        ("Title", "Title"),
-    ],
-)
-def test_default_caption(field, caption):
-    assert snap.default_caption(field) == caption
+def test_a_field_with_no_stored_caption_keeps_its_raw_name():
+    # Tableau shows an uncaptioned field under its raw name, and vf takes the
+    # shown caption: a title-cased guess was ignored silently (all 6 DIBELS states).
+    wb = snap.read_workbook(TWB)
+    cards = {c.field: c for c in wb.filters}
+    assert cards["grade_level"].caption == "grade_level"
+    assert cards["region"].caption == "region"
+    assert cards["school"].caption == "School Name"  # a stored caption wins
+    saved = {f.field: f for f in wb.sheet_filters["Overview - Table"]}
+    assert saved["iep_status"].caption == "iep_status"
 
 
 def test_review_copy_exposes_dashboard_sheets_only():
@@ -859,24 +858,24 @@ def test_read_workbook_reads_each_sheets_saved_filters():
         f.caption: f for f in snap.read_workbook(TWB).sheet_filters["Overview - Table"]
     }
     assert set(sf) == {
-        "Iep Status",
+        "iep_status",
         "Subject Group",
-        "Response Type",
-        "Standard Code",
-        "Score",
+        "response_type",
+        "standard_code",
+        "score",
         "Pct Done",
     }
-    assert sf["Iep Status"].op == "in" and sf["Iep Status"].values == ("No IEP",)
+    assert sf["iep_status"].op == "in" and sf["iep_status"].values == ("No IEP",)
     # A group becomes its underlying column and the bin's members.
     assert (sf["Subject Group"].field, sf["Subject Group"].values) == (
         "subject",
         ("English", "Writing"),
     )
-    assert sf["Response Type"].values == ("O", "overall")
-    assert sf["Standard Code"].op == "not_in" and sf["Standard Code"].values == (
+    assert sf["response_type"].values == ("O", "overall")
+    assert sf["standard_code"].op == "not_in" and sf["standard_code"].values == (
         "Overall",
     )
-    assert (sf["Score"].op, sf["Score"].low, sf["Score"].high, sf["Score"].numeric) == (
+    assert (sf["score"].op, sf["score"].low, sf["score"].high, sf["score"].numeric) == (
         "range",
         "0.75",
         None,
@@ -892,7 +891,7 @@ def test_the_manifest_records_each_dashboard_sheets_saved_filters(tmp_path):
     wb = snap.read_workbook(TWB)
     saved = snap.sheet_filter_map(wb, ["Overview"])
     assert set(saved) == {"Overview - Table", "Overview - Detail"}
-    assert {"Response Type", "Subject Group"} <= {
+    assert {"response_type", "Subject Group"} <= {
         f["caption"] for f in saved["Overview - Table"]
     }
     m = _manifest()
