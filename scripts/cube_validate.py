@@ -402,6 +402,7 @@ def load_checks(path) -> dict:
         "filters": raw.get("filters") or {},
         "param_filters": raw.get("param_filters") or {},
         "param_where": raw.get("param_where") or {},
+        "ignore_sheet_filters": raw.get("ignore_sheet_filters") or [],
         "cube_filters": raw.get("cube_filters") or [],
         "extract_filters": raw.get("extract_filters") or [],
     }
@@ -422,7 +423,25 @@ def read_export(data: bytes) -> Export:
     for c in rows[0]:
         seen[c] = seen.get(c, 0) + 1
         cols.append(c if seen[c] == 1 else f"{c} ({seen[c]})")
-    return Export(cols, [dict(zip(cols, r, strict=False)) for r in rows[1:] if r])
+    out = Export(cols, [dict(zip(cols, r, strict=False)) for r in rows[1:] if r])
+    return _pivot_measure_names(out) if MEASURE_NAMES in cols else out
+
+
+MEASURE_NAMES, MEASURE_VALUES = "Measure Names", "Measure Values"
+
+
+def _pivot_measure_names(e: Export) -> Export:
+    """A sheet with Measure Names exports one row per measure; make it one column
+    per measure, so it compares like any other sheet."""
+    dims = [c for c in e.columns if c not in (MEASURE_NAMES, MEASURE_VALUES)]
+    measures = list(dict.fromkeys(r[MEASURE_NAMES] for r in e.rows))
+    wide: dict[tuple, dict[str, str]] = {}
+    for r in e.rows:
+        key = tuple(r.get(d, "") for d in dims)
+        wide.setdefault(key, dict(zip(dims, key, strict=True)))[r[MEASURE_NAMES]] = (
+            r.get(MEASURE_VALUES, "")
+        )
+    return Export(dims + measures, list(wide.values()))
 
 
 @dataclass(frozen=True)
@@ -542,6 +561,83 @@ def state_filters(
     for caption, value in (st.get("params") or {}).items():
         out += checks["param_filters"].get(caption, {}).get(value, [])
     return out, missing
+
+
+NULL_MEMBER = "%null%"  # how Tableau saves a blank member
+
+
+def sheet_conditions(entries, entry, checks) -> tuple[list[str], list[dict], list[str]]:
+    """A sheet's saved filters as extract conditions and Cube filters, for those the
+    state keeps: a state's own filter on a caption replaces the saved one. Also
+    returns the captions Cube cannot express, unless ignore_sheet_filters names them."""
+    st = entry["state"]
+    own = set(st.get("filters") or {}) | set(entry.get("click_filters") or {})
+    ignored = set(checks.get("ignore_sheet_filters") or [])
+    members = _caption_members(checks)
+    where: list[str] = []
+    cube: list[dict] = []
+    missing: list[str] = []
+    for f in entries or []:
+        cap = f["caption"]
+        if cap in own or cap in ignored:
+            continue
+        col, numeric = f["field"], bool(f.get("numeric"))
+        vals = [v for v in f.get("values") or [] if v != NULL_MEMBER]
+        has_null = NULL_MEMBER in (f.get("values") or [])
+        lhs = col if numeric else f"cast({col} as string)"
+        listed = ", ".join(v if numeric else _sql_lit(v) for v in vals)
+        if not f.get("calculated"):
+            if f["op"] == "range":
+                if f.get("low") is not None:
+                    where.append(f"{col} >= {f['low']}")
+                if f.get("high") is not None:
+                    where.append(f"{col} <= {f['high']}")
+            elif f["op"] == "in":
+                cond = f"{lhs} in ({listed})" if vals else ""
+                if has_null:
+                    cond = f"({cond} or {col} is null)" if cond else f"{col} is null"
+                if cond:
+                    where.append(cond)
+            else:
+                parts = [f"{col} is not null"] if has_null else []
+                if vals:
+                    parts.append(
+                        f"{lhs} not in ({listed})"
+                        if has_null
+                        else f"({col} is null or {lhs} not in ({listed}))"
+                    )
+                where.append(" and ".join(parts))
+        member = members.get(cap)
+        lookup = (checks["filters"].get(cap) or {}).get("values")
+        mapped = [lookup.get(v) for v in vals] if lookup is not None else list(vals)
+        if member is None or None in mapped:
+            missing.append(cap)
+            continue
+        mapped = list(dict.fromkeys(str(v) for v in mapped))
+        if f["op"] == "range":
+            if f.get("low") is not None:
+                cube.append(
+                    {"member": member, "operator": "gte", "values": [str(f["low"])]}
+                )
+            if f.get("high") is not None:
+                cube.append(
+                    {"member": member, "operator": "lte", "values": [str(f["high"])]}
+                )
+        elif f["op"] == "in":
+            eq = {"member": member, "operator": "equals", "values": mapped}
+            unset = {"member": member, "operator": "notSet"}
+            if mapped and has_null:
+                cube.append({"or": [eq, unset]})
+            else:
+                cube.append(eq if mapped else unset)
+        else:
+            if has_null:
+                cube.append({"member": member, "operator": "set"})
+            if mapped:
+                cube.append(
+                    {"member": member, "operator": "notEquals", "values": mapped}
+                )
+    return where, cube, missing
 
 
 def hard_filters(checks: dict, datasource: str) -> list[dict]:
@@ -1046,7 +1142,7 @@ def _has_state(st: dict) -> bool:
 
 
 def _trust(
-    cells, checks, states, fields, run_extract, defaults=None
+    cells, checks, states, fields, run_extract, defaults=None, sheet_filters=None
 ) -> dict[tuple, bool]:
     """A measure's SQL is trusted at a grain once it reproduces every comparable cell
     of one state at that grain. Per grain, so a total Tableau computes differently
@@ -1064,6 +1160,8 @@ def _trust(
         meas = sheet.measures[mname]
         dflt = (defaults or {}).get(states[state]["state"]["dashboard"])
         where = state_where(states[state], checks, fields, sheet, defaults=dflt)
+        saved = (sheet_filters or {}).get(sname, [])
+        where += sheet_conditions(saved, states[state], checks)[0]
         rows = run_extract(
             sheet.datasource, extract_sql(sheet, meas, list(grain), where)
         )
@@ -1141,7 +1239,15 @@ class Live:
 
 
 def explain_cells(
-    cells, checks, states, fields, run_extract, load, live=None, defaults=None
+    cells,
+    checks,
+    states,
+    fields,
+    run_extract,
+    load,
+    live=None,
+    defaults=None,
+    sheet_filters=None,
 ) -> None:
     sides = fix_sides(checks)
     batches: dict[tuple, list[Cell]] = {}
@@ -1162,7 +1268,9 @@ def explain_cells(
             key = (c.sheet, c.state, _grain(c)[0], c.measure)
             batches.setdefault(key, []).append(c)
     mapped = [c for c in cells if not c.why]
-    trusted = _trust(mapped, checks, states, fields, run_extract, defaults)
+    trusted = _trust(
+        mapped, checks, states, fields, run_extract, defaults, sheet_filters
+    )
     for (sname, state, grain, mname), batch in batches.items():
         sheet = checks["sheets"][sname]
         meas = sheet.measures[mname]
@@ -1173,9 +1281,14 @@ def explain_cells(
             continue
         entry = states[state]
         dflt = (defaults or {}).get(entry["state"]["dashboard"])
-        where = state_where(entry, checks, fields, sheet, defaults=dflt)
-        base = state_filters(entry, checks, dflt)[0] + hard_filters(
-            checks, sheet.datasource
+        saved_where, saved_cube, _ = sheet_conditions(
+            (sheet_filters or {}).get(sname, []), entry, checks
+        )
+        where = state_where(entry, checks, fields, sheet, defaults=dflt) + saved_where
+        base = (
+            state_filters(entry, checks, dflt)[0]
+            + hard_filters(checks, sheet.datasource)
+            + saved_cube
         )
         sql = extract_sql(sheet, meas, list(grain), where)
         ext = apply_calc(
@@ -1452,7 +1565,7 @@ def digest_markdown(workbook, cells, checks) -> str:
 
 
 def issue_drafts(
-    workbook, cells, checks, states, fields, defaults=None
+    workbook, cells, checks, states, fields, defaults=None, sheet_filters=None
 ) -> dict[str, str]:
     out = {}
     for s, m in checks["mismatches"].items():
@@ -1468,6 +1581,8 @@ def issue_drafts(
         where = state_where(
             entry, checks, fields, sheet, public_only=True, defaults=dflt
         )
+        saved = (sheet_filters or {}).get(first.sheet, [])
+        where += sheet_conditions(saved, entry, checks)[0]
         query = extract_sql(sheet, meas, grain, where)
         alt = [v for v in meas.variants if s in v["explains"]]
         labels = _issue_labels(m)
@@ -1524,7 +1639,15 @@ def issue_drafts(
 
 
 def write_outputs(
-    out_dir, workbook, run_date, cells, checks, states, fields, defaults=None
+    out_dir,
+    workbook,
+    run_date,
+    cells,
+    checks,
+    states,
+    fields,
+    defaults=None,
+    sheet_filters=None,
 ) -> Path:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -1532,7 +1655,9 @@ def write_outputs(
     (out / f"{stem}-coverage.md").write_text(coverage_markdown(states, cells))
     digest = out / f"{stem}-digest.md"
     digest.write_text(digest_markdown(workbook, cells, checks))
-    drafts = issue_drafts(workbook, cells, checks, states, fields, defaults)
+    drafts = issue_drafts(
+        workbook, cells, checks, states, fields, defaults, sheet_filters
+    )
     if drafts:
         (out / f"{stem}-issues").mkdir(exist_ok=True)
         for s, text in drafts.items():
@@ -1605,8 +1730,16 @@ def run_compare(checks, snapdir, load, extracts, redo=False):
                 continue
             export = read_export((snapdir / meta["file"]).read_bytes())
             try:
+                saved = (m.get("sheet_filters") or {}).get(sheet_name, [])
+                _, sheet_cube, sheet_missing = sheet_conditions(saved, e, checks)
                 cells += compare_export(
-                    sheet, sid, export, load, filters, missing, checks
+                    sheet,
+                    sid,
+                    export,
+                    load,
+                    filters + sheet_cube,
+                    missing + sheet_missing,
+                    checks,
                 )
             except CubeError as err:
                 cells.append(
@@ -1713,6 +1846,7 @@ def _explain(a) -> int:
             client.load,
             _live(client),
             m.get("defaults"),
+            m.get("sheet_filters"),
         )
     finally:
         extracts.close()
@@ -1736,6 +1870,7 @@ def _drafts(a) -> int:
         m["states"],
         m["fields"],
         m.get("defaults"),
+        m.get("sheet_filters"),
     )
     print(f"digest: {digest}")
     return 0

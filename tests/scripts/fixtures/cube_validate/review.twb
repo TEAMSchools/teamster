@@ -27,6 +27,21 @@
       <column datatype='integer' name='[academic_year]' role='dimension' type='ordinal' />
       <column datatype='string' name='[iep_status]' role='dimension' type='nominal' />
       <column datatype='string' name='[student_name]' role='dimension' type='nominal' />
+      <column caption='Subject Group' datatype='string' name='[Subject (group)]' role='dimension' type='nominal'>
+        <calculation class='categorical-bin' column='[subject]' default='&quot;Other&quot;' new-bin='true'>
+          <bin default-name='false' value='&quot;Literacy&quot;'>
+            <value>&quot;English&quot;</value>
+            <value>&quot;Writing&quot;</value>
+          </bin>
+        </calculation>
+      </column>
+      <column datatype='real' name='[score]' role='measure' type='quantitative' />
+      <column caption='View Switch' datatype='boolean' name='[Calculation_9]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='[Parameters].[Group By (copy)] = &quot;Teacher&quot;' />
+      </column>
+      <column caption='Pct Done' datatype='real' name='[Calculation_8]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='{FIXED [school]: SUM([score])}' />
+      </column>
       <column caption='Is Tested' datatype='string' name='[Calculation_1]' role='dimension' type='nominal'>
         <calculation class='tableau' formula='IF [percent_correct] &gt;= 0 THEN &quot;Yes&quot; ELSE &quot;No&quot; END' />
       </column>
@@ -59,6 +74,30 @@
           </filter>
           <filter class='categorical' column='[federated.demo1].[none:region:nk]'>
             <groupfilter function='level-members' level='[none:region:nk]' user:ui-enumeration='all' />
+          </filter>
+          <filter class='categorical' column='[federated.demo1].[Subject (group)]'>
+            <groupfilter function='member' level='[Subject (group)]' member='&quot;Literacy&quot;' />
+          </filter>
+          <filter class='categorical' column='[federated.demo1].[none:response_type:nk]'>
+            <groupfilter function='union'>
+              <groupfilter function='member' level='[none:response_type:nk]' member='&quot;O&quot;' />
+              <groupfilter function='member' level='[none:response_type:nk]' member='&quot;overall&quot;' />
+            </groupfilter>
+          </filter>
+          <filter class='categorical' column='[federated.demo1].[none:standard_code:nk]'>
+            <groupfilter function='except'>
+              <groupfilter function='level-members' level='[none:standard_code:nk]' />
+              <groupfilter function='member' level='[none:standard_code:nk]' member='&quot;Overall&quot;' />
+            </groupfilter>
+          </filter>
+          <filter class='quantitative' column='[federated.demo1].[none:score:qk]' included-values='in-range'>
+            <min>0.75</min>
+          </filter>
+          <filter class='categorical' column='[federated.demo1].[none:Calculation_9:nk]'>
+            <groupfilter function='member' level='[none:Calculation_9:nk]' member='false' />
+          </filter>
+          <filter class='quantitative' column='[federated.demo1].[none:Calculation_8:qk]' included-values='in-range'>
+            <min>0.75</min>
           </filter>
         </view>
       </table>

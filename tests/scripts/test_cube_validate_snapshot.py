@@ -851,3 +851,51 @@ def test_a_resumed_session_exports_only_what_is_missing_or_not_ok():
     }
     new = snap.State("Overview")
     assert snap.pending([done, ignored, failed, new], m) == [ignored, failed, new]
+
+
+# ---------------------------------------------------------------- saved sheet filters
+def test_read_workbook_reads_each_sheets_saved_filters():
+    sf = {
+        f.caption: f for f in snap.read_workbook(TWB).sheet_filters["Overview - Table"]
+    }
+    assert set(sf) == {
+        "Iep Status",
+        "Subject Group",
+        "Response Type",
+        "Standard Code",
+        "Score",
+        "Pct Done",
+    }
+    assert sf["Iep Status"].op == "in" and sf["Iep Status"].values == ("No IEP",)
+    # A group becomes its underlying column and the bin's members.
+    assert (sf["Subject Group"].field, sf["Subject Group"].values) == (
+        "subject",
+        ("English", "Writing"),
+    )
+    assert sf["Response Type"].values == ("O", "overall")
+    assert sf["Standard Code"].op == "not_in" and sf["Standard Code"].values == (
+        "Overall",
+    )
+    assert (sf["Score"].op, sf["Score"].low, sf["Score"].high, sf["Score"].numeric) == (
+        "range",
+        "0.75",
+        None,
+        True,
+    )
+    # A calculation the extract has no column for is flagged; one that only reads a
+    # parameter (a sheet swap) is left out.
+    assert sf["Pct Done"].calculated is True
+    assert "View Switch" not in sf
+
+
+def test_the_manifest_records_each_dashboard_sheets_saved_filters(tmp_path):
+    wb = snap.read_workbook(TWB)
+    saved = snap.sheet_filter_map(wb, ["Overview"])
+    assert set(saved) == {"Overview - Table", "Overview - Detail"}
+    assert {"Response Type", "Subject Group"} <= {
+        f["caption"] for f in saved["Overview - Table"]
+    }
+    m = _manifest()
+    m.sheet_filters = saved
+    snap.write_manifest(tmp_path / "manifest.json", m)
+    assert snap.read_manifest(tmp_path / "manifest.json").sheet_filters == saved

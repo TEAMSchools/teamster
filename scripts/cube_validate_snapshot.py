@@ -68,12 +68,31 @@ class Action:
     exclude: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class SheetFilter:
+    """A filter a worksheet saves, which Tableau applies before any export."""
+
+    sheet: str
+    field: str  # the extract column (a group's underlying column)
+    caption: str
+    datasource: str
+    op: str  # "in", "not_in" or "range"
+    values: tuple[str, ...] = ()  # "%null%" stands for blank
+    low: str | None = None
+    high: str | None = None
+    numeric: bool = False
+    # A calculation the extract has no column for: only a Cube member, or the
+    # checks file's ignore_sheet_filters, can account for it.
+    calculated: bool = False
+
+
 @dataclass
 class Workbook:
     dashboards: dict[str, list[str]]
     filters: list[FilterCard]
     params: list[Param]
     actions: list[Action]
+    sheet_filters: dict[str, list[SheetFilter]] = field(default_factory=dict)
 
 
 def default_caption(field: str) -> str:
@@ -123,7 +142,90 @@ def read_workbook(twb_text: str) -> Workbook:
                 params.append(_param(columns, dash, z.get("param") or ""))
         dashboards[dash] = sheets
     actions = [_action(a) for a in root.iter("action")]
-    return Workbook(dashboards, filters, params, actions)
+    sheet_filters = {
+        w.get("name") or "": _saved_filters(w, columns, ds_caption)
+        for w in root.iter("worksheet")
+    }
+    return Workbook(dashboards, filters, params, actions, sheet_filters)
+
+
+def _is_number(s: str) -> bool:
+    try:
+        float(s)
+    except ValueError:
+        return False
+    return True
+
+
+def _saved_filters(w, columns, ds_caption) -> list[SheetFilter]:
+    sheet, out = w.get("name") or "", []
+    for f in w.iter("filter"):
+        col = f.get("column") or ""
+        if "[Action (" in col or "Measure Names" in col or not _FIELD.match(col):
+            continue
+        ds, name = _split(col)
+        el = columns.get((ds, name))
+        calc = el.find("calculation") if el is not None else None
+        formula = (calc.get("formula") or "") if calc is not None else ""
+        if formula and not re.sub(r"\[Parameters\]\.\[[^\]]+\]", "", formula).count(
+            "["
+        ):
+            continue  # reads only a parameter: a sheet swap, not a data filter
+        caption = (el.get("caption") if el is not None else None) or default_caption(
+            name
+        )
+        numeric = el is not None and el.get("datatype") in ("integer", "real")
+        common = {
+            "sheet": sheet,
+            "field": name,
+            "caption": caption,
+            "datasource": ds_caption.get(ds, ds),
+            "numeric": numeric,
+            "calculated": bool(formula),
+        }
+        if f.get("class") == "quantitative":
+            lo, hi = f.find("min"), f.find("max")
+            out.append(
+                SheetFilter(
+                    **common,
+                    op="range",
+                    low=lo.text if lo is not None else None,
+                    high=hi.text if hi is not None else None,
+                )
+            )
+            continue
+        top = f.find("groupfilter")
+        if top is None or top.get("function") not in ("member", "union", "except"):
+            continue  # all members, or a user filter (row-level security)
+        members = tuple(
+            _unquote(g.get("member") or "")
+            for g in f.iter("groupfilter")
+            if g.get("member")
+        )
+        if calc is not None and calc.get("class") == "categorical-bin":
+            bins = {
+                _unquote(b.get("value") or ""): tuple(
+                    _unquote(v.text or "") for v in b.findall("value")
+                )
+                for b in calc.findall("bin")
+            }
+            if not all(m in bins for m in members):
+                continue  # the group's default bin: no fixed member list
+            common.update(
+                field=(calc.get("column") or "").strip("[]"), calculated=False
+            )
+            members = tuple(v for m in members for v in bins[m])
+        common["numeric"] = numeric and all(
+            _is_number(m) for m in members if m != "%null%"
+        )
+        out.append(
+            SheetFilter(
+                **common,
+                op="not_in" if top.get("function") == "except" else "in",
+                values=members,
+            )
+        )
+    return out
 
 
 def _card(root, columns, ds_caption, dash: str, z) -> FilterCard:
@@ -688,6 +790,19 @@ class Manifest:
     closed: bool = False
     # Saved default selections per dashboard: {dashboard: {caption: [values]}}.
     defaults: dict[str, dict] = field(default_factory=dict)
+    # Each sheet's own saved filters: {sheet: [SheetFilter as a dict]}.
+    sheet_filters: dict[str, list] = field(default_factory=dict)
+
+
+def sheet_filter_map(wb: Workbook, dashboards: list[str]) -> dict[str, list[dict]]:
+    """The saved filters of every sheet on the named dashboards, for the manifest."""
+    return {
+        s: [
+            {**asdict(f), "values": list(f.values)} for f in wb.sheet_filters.get(s, [])
+        ]
+        for d in dashboards
+        for s in wb.dashboards.get(d, [])
+    }
 
 
 def write_manifest(path: Path, m: Manifest) -> None:
@@ -1293,6 +1408,7 @@ def _open(a) -> int:
         if resume is not None:
             # Same live revision: earlier exports still hold; only the copy is new.
             resume.copy_luid, resume.closed = copy, False
+            resume.sheet_filters = sheet_filter_map(wb, checks["dashboards"])
             write_manifest(snapdir / "manifest.json", resume)
             todo = pending(_states_for(checks, a.states), resume)
             print(f"resuming: {len(todo)} states to export")
@@ -1316,6 +1432,7 @@ def _open(a) -> int:
             }
             for d in checks["dashboards"]
         }
+        m.sheet_filters = sheet_filter_map(wb, checks["dashboards"])
         write_manifest(snapdir / "manifest.json", m)
         _export_all(session, m, snapdir, wb, checks, _states_for(checks, a.states))
     return 0

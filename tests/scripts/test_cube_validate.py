@@ -1380,3 +1380,147 @@ def test_a_filter_can_translate_values_to_cubes(tmp_path):
     # A value the lookup does not cover cannot be expressed in Cube.
     other = {"state": {"dashboard": "Overview", "filters": {"Schoolid": "5173"}}}
     assert cv.state_filters(other, c) == ([], ["Schoolid"])
+
+
+# ---------------------------------------------------------------- saved sheet filters
+def _sf(caption, field, op, values=(), low=None, numeric=False, calculated=False):
+    return {
+        "sheet": "S",
+        "field": field,
+        "caption": caption,
+        "datasource": DS,
+        "op": op,
+        "values": list(values),
+        "low": low,
+        "high": None,
+        "numeric": numeric,
+        "calculated": calculated,
+    }
+
+
+SAVED = [
+    _sf("Academic Year", "academic_year", "in", ["2026"], numeric=True),
+    _sf("Subject Group", "subject", "in", ["English", "Writing"]),
+    _sf("Response Type", "response_type", "in", ["O", "overall"]),
+    _sf("Standard Code", "standard_code", "not_in", ["Overall"]),
+    _sf("Score", "score", "range", low="0.75", numeric=True),
+    _sf(
+        "Pct Done", "Calculation_8", "range", low="0.75", numeric=True, calculated=True
+    ),
+]
+SAVED_MAP = {
+    "Academic Year": {"cube": "demo.academic_year"},
+    "Subject Group": {"cube": "demo.academic_subject"},
+    "Response Type": {
+        "cube": "demo.response_type",
+        "values": {"O": "overall", "overall": "overall"},
+    },
+    "Standard Code": {"cube": "demo.response_type_code"},
+    "Score": {"cube": "demo.score"},
+}
+
+
+def test_saved_sheet_filters_reach_the_extract_and_cube(tmp_path):
+    c = _checks(tmp_path, filters=SAVED_MAP, ignore_sheet_filters=["Pct Done"])
+    where, cube, missing = cv.sheet_conditions(SAVED, {"state": {"dashboard": "D"}}, c)
+    assert where == [
+        "academic_year in (2026)",
+        "cast(subject as string) in ('English', 'Writing')",
+        "cast(response_type as string) in ('O', 'overall')",
+        "(standard_code is null or cast(standard_code as string) not in ('Overall'))",
+        "score >= 0.75",
+    ]
+    assert cube == [
+        {"member": "demo.academic_year", "operator": "equals", "values": ["2026"]},
+        {
+            "member": "demo.academic_subject",
+            "operator": "equals",
+            "values": ["English", "Writing"],
+        },
+        {"member": "demo.response_type", "operator": "equals", "values": ["overall"]},
+        {
+            "member": "demo.response_type_code",
+            "operator": "notEquals",
+            "values": ["Overall"],
+        },
+        {"member": "demo.score", "operator": "gte", "values": ["0.75"]},
+    ]
+    assert missing == []
+
+
+def test_an_unmapped_saved_filter_is_a_missing_member_unless_ignored(tmp_path):
+    c = _checks(tmp_path, filters=SAVED_MAP)
+    assert cv.sheet_conditions(SAVED, {"state": {"dashboard": "D"}}, c)[2] == [
+        "Pct Done"
+    ]
+
+
+def test_a_state_overrides_the_saved_filter_on_its_caption(tmp_path):
+    c = _checks(tmp_path, filters=SAVED_MAP, ignore_sheet_filters=["Pct Done"])
+    entry = {"state": {"dashboard": "D", "filters": {"Academic Year": "2025"}}}
+    where, cube, _ = cv.sheet_conditions(SAVED, entry, c)
+    assert not any("academic_year" in w for w in where)
+    assert all(f["member"] != "demo.academic_year" for f in cube)
+
+
+def test_a_saved_blank_member_keeps_or_drops_nulls(tmp_path):
+    c = _checks(tmp_path, filters={"Band": {"cube": "demo.band"}})
+    keep = [_sf("Band", "band", "in", ["1", "%null%"])]
+    drop = [_sf("Band", "band", "not_in", ["%null%"])]
+    entry = {"state": {"dashboard": "D"}}
+    assert cv.sheet_conditions(keep, entry, c)[0] == [
+        "(cast(band as string) in ('1') or band is null)"
+    ]
+    assert cv.sheet_conditions(keep, entry, c)[1] == [
+        {
+            "or": [
+                {"member": "demo.band", "operator": "equals", "values": ["1"]},
+                {"member": "demo.band", "operator": "notSet"},
+            ]
+        }
+    ]
+    assert cv.sheet_conditions(drop, entry, c)[0] == ["band is not null"]
+    assert cv.sheet_conditions(drop, entry, c)[1] == [
+        {"member": "demo.band", "operator": "set"}
+    ]
+
+
+def test_compare_applies_saved_sheet_filters(tmp_path):
+    c = _checks(tmp_path, filters=SAVED_MAP, ignore_sheet_filters=["Pct Done"])
+    snapdir = tmp_path / "snap"
+    (snapdir / "csv").mkdir(parents=True)
+    (snapdir / "csv" / "n.csv").write_bytes(b"School Name,Avg Score\r\nAlpha,48.50\r\n")
+    manifest = {
+        "workbook": "Demo",
+        "extracts": {},
+        "fields": {},
+        "sheet_filters": {"Overview - Table": SAVED},
+        "states": {
+            "n": {
+                "state": {"id": "n", "dashboard": "Overview"},
+                "status": "ok",
+                "click_filters": {},
+                "sheets": {"Overview - Table": {"file": "csv/n.csv", "rows": 1}},
+            }
+        },
+    }
+    (snapdir / "manifest.json").write_text(json.dumps(manifest))
+    cube = FakeCube({"Alpha": _row(48.5)}, _row(0))
+    cv.run_compare(c, snapdir, cube, lambda ds, sql: [])
+    assert {
+        "member": "demo.response_type",
+        "operator": "equals",
+        "values": ["overall"],
+    } in cube.queries[0]["filters"]
+
+
+def test_a_measure_names_export_is_pivoted_to_one_column_per_measure():
+    e = cv.read_export(
+        b"Measure Names,Module Type,Measure Values\r\n"
+        b"Avg. Percent Correct,QA,36.24\r\nMastery,QA,0.5\r\nMastery,CRQ,0.25\r\n"
+    )
+    assert e.columns == ["Module Type", "Avg. Percent Correct", "Mastery"]
+    assert e.rows == [
+        {"Module Type": "QA", "Avg. Percent Correct": "36.24", "Mastery": "0.5"},
+        {"Module Type": "CRQ", "Mastery": "0.25"},
+    ]
