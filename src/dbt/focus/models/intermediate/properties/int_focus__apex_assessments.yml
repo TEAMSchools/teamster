@@ -1,0 +1,36 @@
+models:
+  - name: int_focus__apex_assessments
+    description: >-
+      Apex assessments with the attributes the shared assessment pipeline needs
+      — one row per live Apex assessment. Subject comes from the root category
+      of the standards the assessment's questions are tagged to, and is null
+      when they span more than 1 subject or an unrecognized category; it is
+      never parsed from the title. Band set is the live set attached to the
+      assessment; Apex's default band set is never applied to an assessment
+      without one.
+    columns:
+      - name: assessment_id
+        description: Primary key — Apex assessment id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: title
+        description: Apex assessment title.
+      - name: academic_year
+        description: Focus school year start year (e.g. 2026 = 2026-27).
+      - name: band_set_id
+        description: >-
+          Apex band set attached to the assessment; null when none is attached.
+      - name: subject_area
+        description: >-
+          Subject in the shared assessment pipeline's vocabulary (Text Study,
+          Mathematics, Science, Social Studies), from the assessment's
+          standards.
+      - name: administered_at
+        description: >-
+          Earliest start date among the assessment's assignments; the fallback
+          administration date when AppSheet has none.

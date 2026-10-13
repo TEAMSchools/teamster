@@ -714,3 +714,123 @@ unit_tests:
         - { student_id: 2, has_iep: false, spedlep: null }
         - { student_id: 3, has_iep: false, spedlep: null }
         - { student_id: 4, has_iep: false, spedlep: null }
+
+  - name: test_int_focus__apex_assessments_subject
+    model: int_focus__apex_assessments
+    given:
+      - input: ref('stg_focus__apex_assessments')
+        rows:
+          - { id: 1, title: a1, syear: 2026 }
+          - { id: 2, title: a2, syear: 2026 }
+          - { id: 3, title: a3, syear: 2026 }
+          - { id: 4, title: a4, syear: 2026 }
+          - { id: 5, title: a5, syear: 2026 }
+          - { id: 6, title: a6, syear: 2026 }
+      - input: ref('stg_focus__apex_assessment_items')
+        rows:
+          - { assessment_id: 1, item_id: 1 }
+          - { assessment_id: 2, item_id: 2 }
+          - { assessment_id: 3, item_id: 3 }
+          - { assessment_id: 4, item_id: 4 }
+          - { assessment_id: 5, item_id: 5 }
+          - { assessment_id: 5, item_id: 6 }
+      - input: ref('stg_focus__apex_item_questions')
+        rows:
+          - { item_id: 1, question_id: 1 }
+          - { item_id: 2, question_id: 2 }
+          - { item_id: 3, question_id: 3 }
+          - { item_id: 4, question_id: 4 }
+          - { item_id: 5, question_id: 1 }
+          - { item_id: 6, question_id: 3 }
+      - input: ref('stg_focus__apex_question_standards')
+        rows:
+          - { question_id: 1, standard_id: 1 }
+          - { question_id: 2, standard_id: 2 }
+          - { question_id: 3, standard_id: 3 }
+          - { question_id: 4, standard_id: 4 }
+      - input: ref('stg_focus__standards')
+        rows:
+          - { id: 1, category_1_id: 1 }
+          - { id: 2, category_1_id: 2 }
+          - { id: 3, category_1_id: 3 }
+          - { id: 4, category_1_id: 4 }
+      - input: ref('stg_focus__standard_categories_1')
+        rows:
+          - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
+          - { id: 2, title: Language Arts (B.E.S.T.)(Focus) }
+          - { id: 3, title: Science (Florida SC)(Focus) }
+          - { id: 4, title: Social Studies (Florida SS)(Focus) }
+      - input: ref('stg_focus__apex_band_set_assessments')
+        rows: []
+      - input: ref('stg_focus__apex_band_sets')
+        rows: []
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows: []
+    expect:
+      rows:
+        - { assessment_id: 1, subject_area: Mathematics }
+        - { assessment_id: 2, subject_area: Text Study }
+        - { assessment_id: 3, subject_area: Science }
+        - { assessment_id: 4, subject_area: Social Studies }
+        - { assessment_id: 5, subject_area: null }
+        - { assessment_id: 6, subject_area: null }
+
+  - name: test_int_focus__apex_assessments_band_set
+    model: int_focus__apex_assessments
+    given:
+      - input: ref('stg_focus__apex_assessments')
+        rows:
+          - { id: 1, title: a1, syear: 2026 }
+          - { id: 2, title: a2, syear: 2026 }
+      - input: ref('stg_focus__apex_band_set_assessments')
+        rows:
+          - { assessment_id: 1, band_set_id: 10 }
+          - { assessment_id: 2, band_set_id: 20 }
+          - { assessment_id: 3, band_set_id: 10 }
+      - input: ref('stg_focus__apex_band_sets')
+        rows:
+          - { id: 10, is_default: false }
+      - input: ref('stg_focus__apex_assessment_items')
+        rows: []
+      - input: ref('stg_focus__apex_item_questions')
+        rows: []
+      - input: ref('stg_focus__apex_question_standards')
+        rows: []
+      - input: ref('stg_focus__standards')
+        rows: []
+      - input: ref('stg_focus__standard_categories_1')
+        rows: []
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows: []
+    expect:
+      rows:
+        - { assessment_id: 1, band_set_id: 10 }
+        - { assessment_id: 2, band_set_id: null }
+
+  - name: test_int_focus__apex_assessments_administered_at
+    model: int_focus__apex_assessments
+    given:
+      - input: ref('stg_focus__apex_assessments')
+        rows:
+          - { id: 1, title: a1, syear: 2026 }
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { assessment_id: 1, start_date: 2026-09-15 }
+          - { assessment_id: 1, start_date: 2026-09-08 }
+      - input: ref('stg_focus__apex_band_set_assessments')
+        rows: []
+      - input: ref('stg_focus__apex_band_sets')
+        rows: []
+      - input: ref('stg_focus__apex_assessment_items')
+        rows: []
+      - input: ref('stg_focus__apex_item_questions')
+        rows: []
+      - input: ref('stg_focus__apex_question_standards')
+        rows: []
+      - input: ref('stg_focus__standards')
+        rows: []
+      - input: ref('stg_focus__standard_categories_1')
+        rows: []
+    expect:
+      rows:
+        - { assessment_id: 1, administered_at: 2026-09-08 }
