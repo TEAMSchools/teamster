@@ -1942,3 +1942,56 @@ def test_a_clicked_label_filters_by_its_key_and_never_reaches_a_draft(tmp_path):
     states = {"s": {**entry, "status": "ok", "sheets": {}}}
     body = cv.issue_drafts("Demo", [cell], c, states, {})["dup"]
     assert "Teacher, A" not in body and "'501'" in body
+
+
+@pytest.mark.parametrize("sql", ["dim_student_name", "teacher_first_name"])
+def test_a_suffix_named_name_column_needs_person_too(tmp_path, sql):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Who"] = {"cube": None, "sql": sql}
+    with pytest.raises(cv.CheckError, match="name column"):
+        cv.load_checks(_write(tmp_path, d))
+
+
+def test_a_click_the_key_pattern_misses_is_a_missing_filter_not_a_raw_label(tmp_path):
+    c = _with_section(tmp_path)
+    c["mismatches"]["dup"] = {
+        "title": "fix(cube): x",
+        "what": "y",
+        "fix": "cube",
+        "labels": [],
+        "related": [],
+        "where": "tableau",
+    }
+    entry = {
+        "state": {"dashboard": "Overview"},
+        "click_filters": {"Section Number": "Teacher, A"},
+    }
+    assert cv.state_filters(entry, c) == ([], ["Section Number"])
+    cell = cv.Cell(
+        "Overview - Table",
+        "s",
+        {},
+        "Avg Score",
+        "48.50",
+        48.5,
+        47.0,
+        40,
+        "mismatch",
+        verdict="fix_cube",
+        explained_by=["dup"],
+    )
+    states = {"s": {**entry, "status": "ok", "sheets": {}}}
+    body = cv.issue_drafts("Demo", [cell], c, states, {})["dup"]
+    assert "Teacher, A" not in body
+
+
+@pytest.mark.parametrize("key", [r"^G\d+ - .* - \S+$", "(unclosed"])
+def test_a_key_pattern_needs_one_capture_group(tmp_path, key):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Section Number"] = {
+        "cube": "demo.identifier",
+        "sql": "section_number",
+        "key": key,
+    }
+    with pytest.raises(cv.CheckError, match="Section Number.*capture group"):
+        cv.load_checks(_write(tmp_path, d))

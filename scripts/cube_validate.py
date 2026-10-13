@@ -50,7 +50,7 @@ FIX_SIDES = ("cube", "dashboard", "source", "undecided")
 # Name columns. Same words as cube_validate_snapshot.PERSON_FIELD: a dimension or
 # filter reading one must say who it names (person:), so outputs show a label.
 PERSON_WORDS = ("lastfirst", "student_name", "first_name", "last_name", "teacher_name")
-PERSON_SQL = re.compile(rf"\b({'|'.join(PERSON_WORDS)})\b")
+PERSON_SQL = re.compile(rf"({'|'.join(PERSON_WORDS)})\b")
 
 
 _ISO_DATE = re.compile(r"^(\d{4}-\d{2}-\d{2})[T ]")
@@ -405,6 +405,15 @@ def load_checks(path) -> dict:
         sheets[name] = SheetMap(name, s.get("datasource", ""), dims, measures)
     for name, s in raw["sheets"].items():
         for c, d in (s.get("dims") or {}).items():
+            if d.get("key"):
+                try:
+                    groups = re.compile(d["key"]).groups
+                except re.error:
+                    groups = 0
+                if groups != 1:
+                    raise CheckError(
+                        f"{name} / {c}: key needs one capture group around the join key"
+                    )
             if PERSON_SQL.search(d.get("sql") or "") and not d.get("person"):
                 raise CheckError(
                     f"{name} / {c}: its sql reads a name column; add person: "
@@ -586,8 +595,11 @@ def _own_filters(
     keyed = keyed or {}
 
     def click_value(c, v):
+        # A label the pattern misses has no safe value: None reports the filter
+        # missing rather than sending a raw label (a name) to Cube or a draft.
         if c in keyed:
-            v = _key_text(keyed[c], v) or v
+            v = _key_text(keyed[c], v)
+            return v and norm_dim(v)
         return norm_dim(v)
 
     clicks = {
@@ -1224,9 +1236,7 @@ def _key_text(dim: Dim, value: str) -> str | None:
     if not dim.key:
         return value
     m = re.search(dim.key, value)
-    if not m:
-        return None
-    return m.group(1) if m.groups() else m.group(0)
+    return (m.group(1) or None) if m else None
 
 
 def _keyed_dims(checks: dict) -> dict[str, Dim]:
