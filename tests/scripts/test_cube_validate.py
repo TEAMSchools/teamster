@@ -1689,3 +1689,17 @@ def test_explain_asks_cube_the_same_shape_of_query_as_compare(tmp_path):
         [cell], c, states, {}, lambda ds, sql: [{"m": 48.5}], lambda q: ([], []), live
     )
     assert asked and "demo.count_students" in asked[0]["measures"]
+
+
+def test_a_dimension_values_lookup_turns_tableau_aliases_into_stored_values(tmp_path):
+    # Tableau shows grade 0 as "K"; the extract and Cube store 0.
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Grade Level"] = {
+        "cube": "demo.grade_level",
+        "sql": "grade_level",
+        "values": {"K": "0"},
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+    sheet = c["sheets"]["Overview - Table"]
+    assert cv.tableau_key(sheet, "Grade Level", "K") == "0"
+    assert cv.tableau_key(sheet, "Grade Level", "5") == "5"

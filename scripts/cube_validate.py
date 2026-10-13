@@ -304,6 +304,8 @@ class Dim:
     # A regex whose first group is the join key inside the displayed text (Tableau
     # shows a section as "Teacher - Course - 501"; the key is 501).
     key: str | None = None
+    # Tableau aliases to stored values ("K" for grade 0), applied after `key`.
+    values: dict | None = None
 
 
 @dataclass
@@ -383,7 +385,11 @@ def load_checks(path) -> dict:
     for name, s in raw["sheets"].items():
         dims = {
             c: Dim(
-                d.get("cube"), d.get("sql") or "", d.get("person", False), d.get("key")
+                d.get("cube"),
+                d.get("sql") or "",
+                d.get("person", False),
+                d.get("key"),
+                {str(k): str(v) for k, v in (d.get("values") or {}).items()} or None,
             )
             for c, d in (s.get("dims") or {}).items()
         }
@@ -1147,6 +1153,8 @@ def tableau_key(sheet: SheetMap, caption: str, value) -> str:
     if dim is not None and dim.key and isinstance(value, str):
         if m := re.search(dim.key, value):
             value = m.group(1) if m.groups() else m.group(0)
+    if dim is not None and dim.values and isinstance(value, str):
+        value = dim.values.get(value.strip(), value)
     return norm_dim(value)
 
 
