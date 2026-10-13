@@ -512,12 +512,24 @@ class Lists:
         return cls(manifest.get("all_values") or {}, manifest.get("groups") or {})
 
     def expand(self, caption: str, value):
-        """A filter value as the stored values it stands for. None: an (All) the
-        snapshot has no list for, which Cube cannot be told."""
+        """A filter value as the stored values it stands for: a group's bins become
+        their members. None: an (All) the snapshot has no list for."""
+        g = self.groups.get(caption)
+        if g is not None:
+            bins = g["bins"]
+            if value == ALL:
+                return [v for members in bins.values() for v in members]
+            names = value if isinstance(value, list) else [value]
+            return [v for n in names for v in bins.get(n, [])]
         if value == ALL:
             found = self.all_values.get(caption)
             return None if found is None else list(found)
         return value
+
+    def column(self, caption: str) -> str | None:
+        """A group caption's underlying extract column."""
+        g = self.groups.get(caption)
+        return g["field"] if g is not None else None
 
 
 def _caption_members(checks: dict) -> dict[str, str]:
@@ -1093,11 +1105,16 @@ def state_where(
     """Extract SQL conditions for a state. public_only: for a draft that leaves the
     terminal, so private filters are dropped and person values masked."""
     st = entry["state"]
+    lists = lists or Lists()
     dims_sql = {c: d.sql for c, d in sheet.dims.items()}
     person = _person_captions(checks) if public_only else {}
     out = []
     for caption, value in _own_filters(entry, defaults, lists):
-        f = (fields.get(caption) or {}).get("field") or dims_sql.get(caption)
+        f = (
+            lists.column(caption)
+            or (fields.get(caption) or {}).get("field")
+            or dims_sql.get(caption)
+        )
         if not f or value is None:
             continue
         if isinstance(value, list):

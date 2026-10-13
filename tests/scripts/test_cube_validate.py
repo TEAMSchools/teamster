@@ -1769,3 +1769,62 @@ def test_explain_reads_all_as_the_value_list(tmp_path):
         lists=cv.Lists({"Region": ["North", "South"]}),
     )
     assert sqls and all("in ('North', 'South')" in s for s in sqls)
+
+
+GROUPS = {
+    "Subject Group": {
+        "datasource": DS,
+        "field": "subject",
+        "bins": {"Literacy": ["English", "Writing"], "Other": ["Math"]},
+    }
+}
+
+
+def test_a_group_bin_filters_cube_and_the_extract_by_its_members(tmp_path):
+    c = _checks(tmp_path, filters={"Subject Group": {"cube": "demo.subject"}})
+    lists = cv.Lists({}, GROUPS)
+    entry = {
+        "state": {"dashboard": "Overview", "filters": {"Subject Group": "Literacy"}}
+    }
+    assert cv.state_filters(entry, c, lists=lists)[0] == [
+        {
+            "member": "demo.subject",
+            "operator": "equals",
+            "values": ["English", "Writing"],
+        }
+    ]
+    fields = {"Subject Group": {"field": "Subject (group) (copy)", "datasource": DS}}
+    sheet = c["sheets"]["Overview - Table"]
+    assert cv.state_where(entry, c, fields, sheet, lists=lists) == [
+        "cast(subject as string) in ('English', 'Writing')"
+    ]
+    every = {"state": {"dashboard": "Overview", "filters": {"Subject Group": cv.ALL}}}
+    assert cv.state_filters(every, c, lists=lists)[0][0]["values"] == [
+        "English",
+        "Writing",
+        "Math",
+    ]
+
+
+def test_a_saved_default_bin_expands_too(tmp_path):
+    c = _checks(tmp_path, filters={"Subject Group": {"cube": "demo.subject"}})
+    plain = {"state": {"dashboard": "Overview"}}
+    out = cv.state_filters(
+        plain, c, {"Subject Group": ["Literacy"]}, cv.Lists({}, GROUPS)
+    )
+    assert out[0][0]["values"] == ["English", "Writing"]
+
+
+def test_a_group_lookup_translates_each_member(tmp_path):
+    c = _checks(
+        tmp_path,
+        filters={
+            "Level": {"cube": "demo.abbreviation", "values": {"1": "A", "2": "B"}}
+        },
+    )
+    lists = cv.Lists(
+        {},
+        {"Level": {"datasource": DS, "field": "schoolid", "bins": {"ES": ["1", "2"]}}},
+    )
+    entry = {"state": {"dashboard": "Overview", "filters": {"Level": "ES"}}}
+    assert cv.state_filters(entry, c, lists=lists)[0][0]["values"] == ["A", "B"]
