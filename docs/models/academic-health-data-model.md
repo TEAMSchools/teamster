@@ -262,8 +262,12 @@ that have not started yet are left out. Reads
   the quarter alone.
 - `section_or_period` is the section number below grade 9 and the period
   expression from grade 9.
-- Its uniqueness test currently warns because of duplicate stored grades in
-  prior years (see _Known issues, need to fix_).
+- Prior-year grades come from PowerSchool stored grades, which can hold more
+  than one grade for a student, course, year, and term. The package spine keeps
+  one: the grade included in GPA first, then the one stored for the enrolled
+  section, then the latest stored. So the grade shown matches the one the GPA
+  models count. A warning on `stg_powerschool__storedgrades` lists the
+  duplicates for cleanup in PowerSchool.
 - Do not relate it to the year extract on `student_number` alone; the match
   needs `academic_year` too, or a student fans out across every year.
 
@@ -645,29 +649,6 @@ The year extract's inner join to the year's primary enrollment includes the
 school, so a year whose grades were stored at another school, and a year with no
 primary enrollment row, drop out. The student's GPA history shows a gap for
 those years. Tracked in #4343.
-
-### Duplicate stored grades
-
-PowerSchool holds more than one stored grade for some student, course, year, and
-store code, each a real record (#5221). In the course extract they surface as
-duplicate prior-year rows, so its uniqueness test is at warn until the cleanup
-lands (`TODO(#3915)` in the model's YAML). Count them with:
-
-```sql
-select
-    count(*) - count(
-        distinct format(
-            '%T|%T|%T|%T|%T|%T',
-            _dbt_source_relation,
-            studentid,
-            academic_year,
-            `quarter`,
-            course_number,
-            category_name_code
-        )
-    ) as n_duplicate_rows,
-from `teamster-332318.kipptaf_tableau.rpt_tableau__student_course_grades`
-```
 
 ### Failing count reads 0 with no graded work
 

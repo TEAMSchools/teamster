@@ -11,11 +11,6 @@ models:
       active, so mid-year withdrawals drop. Newark, Camden and Paterson; Miami
       is hard-excluded (region unsupported in the rebuilt dashboard).
     data_tests:
-      # TODO(#3915): returns to error when the storedgrades double-write cleanup
-      # completes. All duplicates are prior-year storedgrades rows; current-year
-      # branches are structurally disjoint (base_powerschool__final_grades holds
-      # only Q/E storecodes, so the explicit Y1 branch is the sole Y1 emitter,
-      # and E rows never match the term spine).
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -25,6 +20,8 @@ models:
               - quarter
               - course_number
               - category_name_code
+          config:
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string

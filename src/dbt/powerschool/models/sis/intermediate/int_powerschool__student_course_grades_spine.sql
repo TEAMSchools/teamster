@@ -57,6 +57,43 @@ with
         where isyearrec = 1 and schoolid != 0
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    stored_grades as (
+        select
+            sg.studentid,
+            sg.yearid,
+            sg.academic_year,
+            sg.course_number,
+            sg.storecode,
+            sg.`percent`,
+            sg.grade,
+            sg.earnedcrhrs,
+            sg.potentialcrhrs,
+            sg.gpa_points,
+            sg.datestored,
+            sg.dcid,
+
+            coalesce(sg.excludefromgpa, 0) = 1 as is_excluded_from_gpa,
+            coalesce(sg.sectionid = ce.sectionid, false) as is_enrolled_section,
+        from {{ ref("stg_powerschool__storedgrades") }} as sg
+        left join
+            course_enrollments as ce
+            on sg.studentid = ce.studentid
+            and sg.yearid = ce.yearid
+            and sg.course_number = ce.course_number
+        where sg.storecode in ('Q1', 'Q2', 'Q3', 'Q4', 'Y1')
+    ),
+
+    stored_grades_deduped as (
+        {{
+            dbt_utils.deduplicate(
+                relation="stored_grades",
+                partition_by="studentid, yearid, course_number, storecode",
+                order_by="is_excluded_from_gpa asc, is_enrolled_section desc, datestored desc, dcid desc",
+            )
+        }}
+    ),
+
     y1_final_grades as (
         select
             studentid,
@@ -70,7 +107,7 @@ with
             earnedcrhrs as y1_course_final_earned_credits,
             potentialcrhrs as y1_course_final_potential_credit_hours,
             gpa_points as y1_course_final_grade_points,
-        from {{ ref("stg_powerschool__storedgrades") }}
+        from stored_grades_deduped
         where storecode = 'Y1'
     ),
 
@@ -163,10 +200,8 @@ with
 
             cast(null as int64) as courses_gradescaleid,
 
-        from {{ ref("stg_powerschool__storedgrades") }}
-        where
-            storecode in ('Q1', 'Q2', 'Q3', 'Q4', 'Y1')
-            and academic_year < {{ var("current_academic_year") }}
+        from stored_grades_deduped
+        where academic_year < {{ var("current_academic_year") }}
     ),
 
     grade_scale_rungs as (

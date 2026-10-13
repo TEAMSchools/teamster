@@ -85,11 +85,8 @@ with
            Upstream accumulates per student-school and its uniqueness key is
            (studentid, schoolid, academic_year), so a student at two schools in
            one year legitimately produces two rows and would fan this CTE out.
-           AY2023 onward has none; AY2019-AY2022 had 11-29 a year, values
-           genuinely differing. A recurrence would NOT fail CI — this model's
-           own key test is severity warn for the unrelated #3915 storedgrades
-           issue, so it would only inflate that warn count. Compare the count
-           against prod rather than trusting a green build.
+           Only older years have such students; a recurrence fails this model's
+           key test.
 
            That same per-school accumulation splits the middle- and high-school
            series, so a grade 9 row pairs a high-school projection with a
