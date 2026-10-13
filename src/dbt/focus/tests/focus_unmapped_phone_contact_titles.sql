@@ -12,9 +12,13 @@
 -- `is_email_title is not true` / `is true` are null-safe: a null title yields
 -- phone_type = null and is_email_title = null, and a plain `not is_email_title`
 -- would evaluate to null (silently excluding the row) rather than flagging it.
+-- A row with no value has nothing to drop, so it is not flagged.
 select title, count(*) as n,
 from {{ ref("stg_focus__people_join_contacts") }}
 where
-    (phone_type is null and is_email_title is not true)
-    or (phone_type is not null and is_email_title is true)
+    value is not null
+    and (
+        (phone_type is null and is_email_title is not true)
+        or (phone_type is not null and is_email_title is true)
+    )
 group by title
