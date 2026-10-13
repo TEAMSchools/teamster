@@ -2323,3 +2323,38 @@ def test_a_measure_reproduced_below_the_rate_is_incomplete(tmp_path):
 
     cv.explain_cells(cells, c, states, FIELDS, run, lambda q: ([], []))
     assert cells[0].verdict == "incomplete" and "50%" in cells[0].why
+
+
+def test_an_accepted_difference_needs_its_issue(tmp_path):
+    with pytest.raises(cv.CheckError, match="accepted needs issue"):
+        _checks(
+            tmp_path,
+            mismatches={"offgrade": {"title": "x", "what": "y", "fix": "accepted"}},
+        )
+
+
+def test_an_accepted_difference_passes_and_names_its_issue(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["mismatches"] = {
+        "offgrade": {
+            "title": "fix(cube): x",
+            "what": "y",
+            "fix": "accepted",
+            "issue": 5885,
+        }
+    }
+    d["sheets"]["Overview - Table"]["measures"]["Avg Score"]["variants"] = [
+        {"explains": ["offgrade"], "sql": "avg(score) + 0.5"}
+    ]
+    c = cv.load_checks(_write(tmp_path, d))
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    cell = cv.Cell(
+        "Overview - Table", "s", {}, "Avg Score", "48.50", 48.5, 49.0, 40, "mismatch"
+    )
+
+    def run(ds, sql):
+        return [{"m": 49.0 if "+ 0.5" in sql else 48.5}]
+
+    cv.explain_cells([cell], c, states, {}, run, lambda q: ([], []))
+    assert cell.verdict == "pass" and "#5885" in cell.why
+    assert "## Accepted differences" in cv.digest_markdown("Demo", [cell], c)

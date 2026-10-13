@@ -45,7 +45,7 @@ class CheckError(ValueError):
     """A checks file that cannot be run as written."""
 
 
-FIX_SIDES = ("cube", "dashboard", "source", "undecided")
+FIX_SIDES = ("cube", "dashboard", "source", "undecided", "accepted")
 
 # Name columns. Same words as cube_validate_snapshot.PERSON_FIELD: a dimension or
 # filter reading one must say who it names (person:), so outputs show a label.
@@ -397,6 +397,8 @@ def load_checks(path) -> dict:
             raise CheckError(
                 f"mismatch {name}: fix must be one of {', '.join(FIX_SIDES)}"
             )
+        if m["fix"] == "accepted" and not m.get("issue"):
+            raise CheckError(f"mismatch {name}: fix accepted needs issue: (the ruling)")
         m.setdefault("labels", [])
         m.setdefault("related", [])
         m.setdefault("where", "tableau")
@@ -1687,6 +1689,13 @@ def _explain_batch(
                 c.cube_variant = None if cube is None else c_v
                 break
         c.verdict = cell_verdict(c, sides, meas)
+        accepted = [
+            n for n in c.explained_by if n in sides.get("accepted", frozenset())
+        ]
+        if c.verdict == "pass" and accepted:
+            c.why = "accepted difference, see " + ", ".join(
+                f"#{checks['mismatches'][n]['issue']}" for n in accepted
+            )
         if c.verdict != "fail" or live is None:
             continue
         c.live = None if live_v is None else live_v.get(k)
@@ -1815,6 +1824,7 @@ _SIDE_TITLES = (
     ("dashboard", "Fix in the dashboard"),
     ("source", "Fix in the source"),
     ("undecided", "Owner to decide"),
+    ("accepted", "Accepted differences"),
 )
 
 
