@@ -1,7 +1,7 @@
 with
     expectations as (
         select
-            sc.powerschool_student_number,
+            sc.student_number,
             sc.assessment_id,
             sc.administered_at,
             sc.region,
@@ -40,12 +40,11 @@ with
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["powerschool_student_number", "assessment_id", "administered_at"]
+            ["student_number", "assessment_id", "administered_at"]
         )
     }} as assessment_expectation_key,
 
-    {{ dbt_utils.generate_surrogate_key(["powerschool_student_number"]) }}
-    as student_key,
+    {{ student_key("student_number") }} as student_key,
 
     {{
         dbt_utils.generate_surrogate_key(

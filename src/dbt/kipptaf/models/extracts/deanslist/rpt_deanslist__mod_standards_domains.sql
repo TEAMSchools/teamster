@@ -16,7 +16,7 @@ select
     'Progress Report' as report_type,
 
     ar.academic_year,
-    ar.powerschool_student_number as student_number,
+    ar.student_number,
     ar.subject_area,
     ar.term_administered,
 
@@ -45,7 +45,7 @@ from {{ ref("int_assessments__response_rollup") }} as ar
 inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on ar.academic_year = co.academic_year
-    and ar.powerschool_student_number = co.student_number
+    and ar.student_number = co.student_number
     and co.rn_year = 1
     and co.grade_level < 5
 inner join
@@ -55,7 +55,7 @@ inner join
 where ar.response_type = 'overall'
 group by
     ar.academic_year,
-    ar.powerschool_student_number,
+    ar.student_number,
     ar.subject_area,
     ar.term_administered,
     co.grade_level
@@ -66,7 +66,7 @@ select
     'Report Card' as report_type,
 
     ar.academic_year,
-    ar.powerschool_student_number as student_number,
+    ar.student_number,
     ar.subject_area,
     ar.term_administered,
 
@@ -98,7 +98,7 @@ inner join
 inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on ar.academic_year = co.academic_year
-    and ar.powerschool_student_number = co.student_number
+    and ar.student_number = co.student_number
     and co.rn_year = 1
     and co.grade_level < 5
 inner join
@@ -108,7 +108,7 @@ inner join
 where ar.response_type = 'standard'
 group by
     ar.academic_year,
-    ar.powerschool_student_number,
+    ar.student_number,
     ar.subject_area,
     ar.term_administered,
     sd.standard_domain,

@@ -15,7 +15,7 @@ with
 
             region,
 
-            coalesce(a.illuminate_grade_level_id, agl.grade_level_id) as grade_level_id,
+            coalesce(a.tagged_grade_level_id, agl.grade_level_id) as grade_level_id,
         from {{ ref("int_assessments__assessments_members") }} as a
         cross join unnest(a.regions_assessed_array) as region
         left join
@@ -55,7 +55,7 @@ with
 
             ssa.student_id as illuminate_student_id,
 
-            s.local_student_id as powerschool_student_number,
+            s.local_student_id as student_number,
 
             ce.powerschool_school_id,
             ce.cc_dateenrolled,
@@ -75,9 +75,9 @@ with
             on ssa.student_id = s.student_id
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on s.local_student_id = ce.powerschool_student_number
+            on s.local_student_id = ce.student_number
             and a.region = ce.region
-            and a.subject_area = ce.illuminate_subject_area
+            and a.subject_area = ce.subject_area
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
             and not ce.is_advanced_math_student
         where a.grade_level_id <= 9
@@ -96,13 +96,13 @@ with
             a.module_code,
             a.region,
 
-            ce.illuminate_grade_level_id as grade_level_id,
+            ce.grade_level_id,
 
             a.canonical_assessment_id,
 
             s.student_id as illuminate_student_id,
 
-            ce.powerschool_student_number,
+            ce.student_number,
             ce.powerschool_school_id,
             ce.cc_dateenrolled,
             ce.cc_dateleft,
@@ -113,13 +113,13 @@ with
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on a.subject_area = ce.illuminate_subject_area
+            on a.subject_area = ce.subject_area
             and a.region = ce.region
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
         inner join
             {{ ref("stg_illuminate__public__students") }} as s
-            on ce.powerschool_student_number = s.local_student_id
-            and ce.illuminate_grade_level_id >= 10
+            on ce.student_number = s.local_student_id
+            and ce.grade_level_id >= 10
     ),
 
     internal_assessments_ranked as (
@@ -151,7 +151,7 @@ with
             grade_level_id,
             canonical_assessment_id,
             illuminate_student_id,
-            powerschool_student_number,
+            student_number,
             powerschool_school_id,
             cc_dateenrolled,
             cc_dateleft,
@@ -164,7 +164,7 @@ with
 
 select
     ia.illuminate_student_id,
-    ia.powerschool_student_number,
+    ia.student_number,
     ia.assessment_id,
     ia.title,
     ia.subject_area,
@@ -202,7 +202,7 @@ union all
 select
     sa.student_id as illuminate_student_id,
 
-    s.local_student_id as powerschool_student_number,
+    s.local_student_id as student_number,
 
     a.assessment_id,
     a.title,
@@ -247,7 +247,7 @@ inner join
     {{ ref("int_illuminate__student_session_aff") }} as ssa
     on sa.student_id = ssa.student_id
     and a.academic_year = ssa.academic_year
-    and a.illuminate_grade_level_id != ssa.grade_level_id
+    and a.tagged_grade_level_id != ssa.grade_level_id
     and ssa.rn_student_session_desc = 1
 left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 where
@@ -261,7 +261,7 @@ union all
 select
     sa.student_id as illuminate_student_id,
 
-    s.local_student_id as powerschool_student_number,
+    s.local_student_id as student_number,
 
     a.assessment_id,
     a.title,

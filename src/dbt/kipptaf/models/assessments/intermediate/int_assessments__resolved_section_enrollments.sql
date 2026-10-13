@@ -1,7 +1,7 @@
 with
     candidates_subject as (
         select
-            s.powerschool_student_number,
+            s.student_number,
             s.canonical_assessment_id,
             s.academic_year,
             s.administration_period,
@@ -23,9 +23,9 @@ with
         from {{ ref("int_assessments__score_anchors") }} as s
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on s.powerschool_student_number = ce.powerschool_student_number
+            on s.student_number = ce.student_number
             and s._dbt_source_project = ce._dbt_source_project
-            and s.subject_area = ce.illuminate_subject_area
+            and s.subject_area = ce.subject_area
             and s.anchor_date >= ce.cc_dateenrolled
             and s.anchor_date < ce.cc_dateleft
             -- only sections with a real course-enrollment row resolve to a
@@ -60,7 +60,7 @@ with
 
     candidates_discipline as (
         select
-            s.powerschool_student_number,
+            s.student_number,
             s.canonical_assessment_id,
             s.academic_year,
             s.administration_period,
@@ -82,7 +82,7 @@ with
         from scores_unresolved as s
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on s.powerschool_student_number = ce.powerschool_student_number
+            on s.student_number = ce.student_number
             and s._dbt_source_project = ce._dbt_source_project
             and s.discipline = ce.discipline
             and s.anchor_date >= ce.cc_dateenrolled
@@ -93,7 +93,7 @@ with
 
     candidates_homeroom as (
         select
-            s.powerschool_student_number,
+            s.student_number,
             s.canonical_assessment_id,
             s.academic_year,
             s.administration_period,
@@ -115,7 +115,7 @@ with
         from scores_unresolved as s
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on s.powerschool_student_number = ce.powerschool_student_number
+            on s.student_number = ce.student_number
             and s._dbt_source_project = ce._dbt_source_project
             and ce.courses_credittype = 'HR'
             and s.anchor_date >= ce.cc_dateenrolled
@@ -154,7 +154,7 @@ with
 
     resolved as (
         select
-            powerschool_student_number,
+            student_number,
             canonical_assessment_id,
             academic_year,
             administration_period,
@@ -172,7 +172,7 @@ with
     )
 
 select
-    powerschool_student_number,
+    student_number,
     canonical_assessment_id,
     academic_year,
     administration_period,

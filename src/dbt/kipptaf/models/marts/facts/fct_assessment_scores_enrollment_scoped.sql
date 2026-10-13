@@ -5,7 +5,7 @@ with
     -- (+1 offset) while dim_assessment_administrations hashes the raw value.
     internal_assessments as (
         select
-            rr.powerschool_student_number as student_number,
+            rr.student_number,
             rr.assessment_id,
             rr.response_type_id,
             rr.response_type_code,
@@ -398,7 +398,7 @@ from internal_assessments as ia
 -- resolved section (out of scope) -- the resolver is the scope of record.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
-    on ia.student_number = sr.powerschool_student_number
+    on ia.student_number = sr.student_number
     and ia.assessment_id = sr.canonical_assessment_id
     and ia._dbt_source_project = sr._dbt_source_project
     and sr.source_type = 'internal'
@@ -486,7 +486,7 @@ from state_union as su
 -- section.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
-    on su.student_number = sr.powerschool_student_number
+    on su.student_number = sr.student_number
     and su.academic_year = sr.academic_year
     and su.administration_period = sr.administration_period
     and su.illuminate_subject = sr.subject_area
@@ -578,7 +578,7 @@ from vendor_all as va
 -- resolved section.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
-    on va.student_number = sr.powerschool_student_number
+    on va.student_number = sr.student_number
     and va.academic_year = sr.academic_year
     and va.administration_period = sr.administration_period
     and va.illuminate_subject = sr.subject_area

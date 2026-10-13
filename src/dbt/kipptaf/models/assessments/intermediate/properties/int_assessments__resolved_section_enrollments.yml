@@ -59,13 +59,13 @@ models:
           window contained the anchor date); homeroom means tier 3 resolved it
           (no subject section matched; the homeroom section active on the anchor
           date was used instead).
-      - name: powerschool_student_number
+      - name: student_number
         data_type: int64
         description: >-
           Student number, carried from int_assessments__score_anchors.
         config:
           meta:
-            source_column: int_assessments__scaffold.powerschool_student_number
+            source_column: int_assessments__scaffold.student_number
       - name: canonical_assessment_id
         data_type: int64
         description: >-
@@ -97,10 +97,10 @@ models:
       - name: subject_area
         data_type: string
         description: >-
-          Subject area of the assessment, aligned to illuminate_subject_area
-          values in int_assessments__course_enrollments, and the tier 1 join
-          key. Carried through from int_assessments__score_anchors; see that
-          model for how state and vendor subjects are resolved.
+          Subject area of the assessment, aligned to subject_area values in
+          int_assessments__course_enrollments, and the tier 1 join key. Carried
+          through from int_assessments__score_anchors; see that model for how
+          state and vendor subjects are resolved.
         config:
           meta:
             source_column: int_assessments__scaffold.subject_area
@@ -108,9 +108,9 @@ models:
         data_type: string
         description: >-
           Region identifier (kippnewark, kippcamden, kippmiami, kipppaterson) of
-          the score. Used as a discriminator alongside
-          powerschool_student_number when joining the course-enrollment
-          inventory and when deriving student_section_enrollment_key.
+          the score. Used as a discriminator alongside student_number when
+          joining the course-enrollment inventory and when deriving
+          student_section_enrollment_key.
         config:
           meta:
             source_column: int_assessments__scaffold._dbt_source_project
@@ -162,7 +162,7 @@ unit_tests:
         format: sql
         rows: |
           select
-              1 as powerschool_student_number,
+              1 as student_number,
               100 as canonical_assessment_id,
               cast(null as int64) as academic_year,
               cast(null as string) as administration_period,
@@ -174,9 +174,9 @@ unit_tests:
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
-              powerschool_student_number: 1,
+              student_number: 1,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: Mathematics,
+              subject_area: Mathematics,
               courses_credittype: MATH,
               cc_dateenrolled: 2024-01-01,
               cc_dateleft: 2025-06-15,
@@ -185,9 +185,9 @@ unit_tests:
               region: Newark,
             }
           - {
-              powerschool_student_number: 1,
+              student_number: 1,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: Mathematics,
+              subject_area: Mathematics,
               courses_credittype: MATH,
               cc_dateenrolled: 2025-09-01,
               cc_dateleft: 2026-06-15,
@@ -198,7 +198,7 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 1,
+            student_number: 1,
             canonical_assessment_id: 100,
             resolution_type: subject_section,
             cc_source_project: kippnewark,
@@ -215,7 +215,7 @@ unit_tests:
         format: sql
         rows: |
           select
-              2 as powerschool_student_number,
+              2 as student_number,
               200 as canonical_assessment_id,
               cast(null as int64) as academic_year,
               cast(null as string) as administration_period,
@@ -227,9 +227,9 @@ unit_tests:
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
-              powerschool_student_number: 2,
+              student_number: 2,
               _dbt_source_project: kippcamden,
-              illuminate_subject_area: HR,
+              subject_area: HR,
               courses_credittype: HR,
               cc_dateenrolled: 2024-09-01,
               cc_dateleft: 2025-06-15,
@@ -240,7 +240,7 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 2,
+            student_number: 2,
             canonical_assessment_id: 200,
             resolution_type: homeroom,
           }
@@ -255,7 +255,7 @@ unit_tests:
         format: sql
         rows: |
           select
-              3 as powerschool_student_number,
+              3 as student_number,
               300 as canonical_assessment_id,
               cast(null as int64) as academic_year,
               cast(null as string) as administration_period,
@@ -279,7 +279,7 @@ unit_tests:
         format: sql
         rows: |
           select
-              4 as powerschool_student_number,
+              4 as student_number,
               cast(null as int64) as canonical_assessment_id,
               2024 as academic_year,
               'Spring' as administration_period,
@@ -291,9 +291,9 @@ unit_tests:
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
-              powerschool_student_number: 4,
+              student_number: 4,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: Mathematics,
+              subject_area: Mathematics,
               courses_credittype: MATH,
               cc_dateenrolled: 2024-09-01,
               cc_dateleft: 2025-06-15,
@@ -304,7 +304,7 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 4,
+            student_number: 4,
             academic_year: 2024,
             administration_period: Spring,
             subject_area: Mathematics,
@@ -326,7 +326,7 @@ unit_tests:
         format: sql
         rows: |
           select
-              5 as powerschool_student_number,
+              5 as student_number,
               cast(null as int64) as canonical_assessment_id,
               2024 as academic_year,
               'BOY' as administration_period,
@@ -337,7 +337,7 @@ unit_tests:
               'k5-iready' as score_grain_key
           union all
           select
-              5 as powerschool_student_number,
+              5 as student_number,
               cast(null as int64) as canonical_assessment_id,
               2024 as academic_year,
               'BOY' as administration_period,
@@ -349,9 +349,9 @@ unit_tests:
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
-              powerschool_student_number: 5,
+              student_number: 5,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: Text Study,
+              subject_area: Text Study,
               courses_credittype: ELA,
               cc_dateenrolled: 2024-09-01,
               cc_dateleft: 2025-06-15,
@@ -362,30 +362,29 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 5,
+            student_number: 5,
             source_type: iready,
             student_section_enrollment_key: 862d5edd93004a2ab12782487a3292a7,
           }
         - {
-            powerschool_student_number: 5,
+            student_number: 5,
             source_type: dibels,
             student_section_enrollment_key: 862d5edd93004a2ab12782487a3292a7,
           }
 
   - name: test_state_score_resolves_course_level_section_by_discipline
     description: >-
-      A state score whose subject_area matches no section's
-      illuminate_subject_area resolves to the section in the same discipline.
-      Covers a NJ high school ELA score against an English 100 section and a FL
-      Civics score against a US History section. Both resolve as
-      subject_section.
+      A state score whose subject_area matches no section's subject_area
+      resolves to the section in the same discipline. Covers a NJ high school
+      ELA score against an English 100 section and a FL Civics score against a
+      US History section. Both resolve as subject_section.
     model: int_assessments__resolved_section_enrollments
     given:
       - input: ref('int_assessments__score_anchors')
         format: sql
         rows: |
           select
-              7 as powerschool_student_number,
+              7 as student_number,
               cast(null as int64) as canonical_assessment_id,
               2025 as academic_year,
               'Spring' as administration_period,
@@ -396,7 +395,7 @@ unit_tests:
               'k7' as score_grain_key
           union all
           select
-              9 as powerschool_student_number,
+              9 as student_number,
               cast(null as int64) as canonical_assessment_id,
               2025 as academic_year,
               'Spring' as administration_period,
@@ -408,9 +407,9 @@ unit_tests:
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
-              powerschool_student_number: 7,
+              student_number: 7,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: English 100,
+              subject_area: English 100,
               discipline: ELA,
               courses_credittype: ENG,
               cc_dateenrolled: 2025-09-02,
@@ -420,9 +419,9 @@ unit_tests:
               region: Newark,
             }
           - {
-              powerschool_student_number: 9,
+              student_number: 9,
               _dbt_source_project: kippmiami,
-              illuminate_subject_area: US History,
+              subject_area: US History,
               discipline: Social Studies,
               courses_credittype: SOC,
               cc_dateenrolled: 2025-08-11,
@@ -434,13 +433,13 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 7,
+            student_number: 7,
             source_type: state_nj,
             resolution_type: subject_section,
             student_section_enrollment_key: e79e1c231c32598d915358218e146d27,
           }
         - {
-            powerschool_student_number: 9,
+            student_number: 9,
             source_type: state_fl,
             resolution_type: subject_section,
             student_section_enrollment_key: a88dfa2c0671a2db1e3bc471f46aef56,
@@ -457,7 +456,7 @@ unit_tests:
         format: sql
         rows: |
           select
-              8 as powerschool_student_number,
+              8 as student_number,
               cast(null as int64) as canonical_assessment_id,
               2025 as academic_year,
               'Spring' as administration_period,
@@ -469,9 +468,9 @@ unit_tests:
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
-              powerschool_student_number: 8,
+              student_number: 8,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: Algebra I,
+              subject_area: Algebra I,
               discipline: Math,
               courses_credittype: MATH,
               cc_dateenrolled: 2025-09-02,
@@ -481,9 +480,9 @@ unit_tests:
               region: Newark,
             }
           - {
-              powerschool_student_number: 8,
+              student_number: 8,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: null,
+              subject_area: null,
               discipline: null,
               courses_credittype: HR,
               cc_dateenrolled: 2025-09-02,
@@ -495,7 +494,7 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 8,
+            student_number: 8,
             resolution_type: subject_section,
             student_section_enrollment_key: e79e1c231c32598d915358218e146d27,
           }
@@ -511,7 +510,7 @@ unit_tests:
         format: sql
         rows: |
           select
-              8 as powerschool_student_number,
+              8 as student_number,
               cast(null as int64) as canonical_assessment_id,
               2025 as academic_year,
               'Spring' as administration_period,
@@ -523,9 +522,9 @@ unit_tests:
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
-              powerschool_student_number: 8,
+              student_number: 8,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: Algebra I,
+              subject_area: Algebra I,
               discipline: Math,
               courses_credittype: MATH,
               cc_dateenrolled: 2025-09-02,
@@ -535,9 +534,9 @@ unit_tests:
               region: Newark,
             }
           - {
-              powerschool_student_number: 8,
+              student_number: 8,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: null,
+              subject_area: null,
               discipline: null,
               courses_credittype: HR,
               cc_dateenrolled: 2025-09-02,
@@ -549,7 +548,7 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 8,
+            student_number: 8,
             resolution_type: homeroom,
             student_section_enrollment_key: 4273d009759f72c159d95d262f431287,
           }
@@ -565,7 +564,7 @@ unit_tests:
         format: sql
         rows: |
           select
-              8 as powerschool_student_number,
+              8 as student_number,
               cast(null as int64) as canonical_assessment_id,
               2025 as academic_year,
               'MOY' as administration_period,
@@ -577,9 +576,9 @@ unit_tests:
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
-              powerschool_student_number: 8,
+              student_number: 8,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: Algebra I,
+              subject_area: Algebra I,
               discipline: Math,
               courses_credittype: MATH,
               cc_dateenrolled: 2025-09-02,
@@ -589,9 +588,9 @@ unit_tests:
               region: Newark,
             }
           - {
-              powerschool_student_number: 8,
+              student_number: 8,
               _dbt_source_project: kippnewark,
-              illuminate_subject_area: null,
+              subject_area: null,
               discipline: null,
               courses_credittype: HR,
               cc_dateenrolled: 2025-09-02,
@@ -603,7 +602,7 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 8,
+            student_number: 8,
             resolution_type: homeroom,
             student_section_enrollment_key: 4273d009759f72c159d95d262f431287,
           }

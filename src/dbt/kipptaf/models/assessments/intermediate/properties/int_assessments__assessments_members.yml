@@ -68,7 +68,7 @@ models:
       - name: module_sequence
         data_type: int64
         description: AppSheet extension value. Null for external assessments.
-      - name: illuminate_grade_level_id
+      - name: tagged_grade_level_id
         data_type: int64
         description: >-
           AppSheet extension grade level plus one, matching Illuminate's

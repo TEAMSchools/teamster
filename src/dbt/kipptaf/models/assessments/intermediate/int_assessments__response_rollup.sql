@@ -2,7 +2,7 @@ with
     scaffold_responses as (
         select
             s.illuminate_student_id,
-            s.powerschool_student_number,
+            s.student_number,
             s.assessment_id,
             s.title,
             s.scope,
@@ -119,8 +119,7 @@ with
         from sanitized_responses
         window
             w as (
-                partition by
-                    illuminate_student_id, canonical_assessment_id, is_replacement
+                partition by student_number, canonical_assessment_id, is_replacement
                 -- powerschool_school_id is the final tiebreaker so that
                 -- partitions where every row has null date_taken and null
                 -- student_assessment_id (students rostered to canonical members
@@ -137,7 +136,7 @@ with
     internal_assessment_rollup as (
         select
             illuminate_student_id,
-            powerschool_student_number,
+            student_number,
             canonical_assessment_id as assessment_id,
             canonical_title as title,
             canonical_administered_at as administered_at,
@@ -179,7 +178,7 @@ with
         where is_internal_assessment
         group by
             illuminate_student_id,
-            powerschool_student_number,
+            student_number,
             canonical_assessment_id,
             canonical_title,
             canonical_administered_at,
@@ -203,7 +202,7 @@ with
     response_union as (
         select
             illuminate_student_id,
-            powerschool_student_number,
+            student_number,
             academic_year,
             scope,
             subject_area,
@@ -238,7 +237,7 @@ with
 
         select
             illuminate_student_id,
-            powerschool_student_number,
+            student_number,
             academic_year,
             scope,
             subject_area,
@@ -279,7 +278,7 @@ with
 
 select
     ru.illuminate_student_id,
-    ru.powerschool_student_number,
+    ru.student_number,
     ru.academic_year,
     ru.scope,
     ru.subject_area,

@@ -37,7 +37,7 @@ with
                     when 'Math'
                     then 'Mathematics'
                 end
-            ) as illuminate_subject_area,
+            ) as subject_area,
         from {{ ref("int_students__course_enrollments") }}
         where not is_dropped_course
     ),
@@ -45,12 +45,12 @@ with
     enrollments_union as (
         /* K-12 enrollments */
         select
-            ce.students_student_number as powerschool_student_number,
+            ce.students_student_number as student_number,
             ce.courses_credittype,
             ce.cc_schoolid as powerschool_school_id,
             ce.cc_dateenrolled,
             ce.cc_dateleft,
-            ce.illuminate_subject_area,
+            ce.subject_area,
             ce.discipline,
             ce.is_foundations,
             ce.cc_dcid,
@@ -58,15 +58,13 @@ with
 
             co.region,
 
-            ce.cc_academic_year + 1 as illuminate_academic_year,
+            ce.cc_academic_year + 1 as academic_year,
 
-            co.grade_level + 1 as illuminate_grade_level_id,
+            co.grade_level + 1 as grade_level_id,
 
             -- no-subject rows (homeroom, PE, electives) dedupe per course, not
             -- into one row per enrollment date
-            coalesce(
-                ce.illuminate_subject_area, ce.cc_course_number
-            ) as subject_or_course_key,
+            coalesce(ce.subject_area, ce.cc_course_number) as subject_or_course_key,
 
             -- Partitioned on `students_student_number`, not `cc_studentid`:
             -- Focus leaves `cc_studentid` null on every Miami row, so a
@@ -104,7 +102,7 @@ with
 
         /* ES Writing */
         select
-            co.student_number as powerschool_student_number,
+            co.student_number,
 
             'RHET' as courses_credittype,
 
@@ -112,7 +110,7 @@ with
             co.entrydate as cc_dateenrolled,
             co.exitdate as cc_dateleft,
 
-            'Writing' as illuminate_subject_area,
+            'Writing' as subject_area,
             'ELA' as discipline,
             false as is_foundations,
 
@@ -121,8 +119,8 @@ with
             co._dbt_source_project,
             co.region,
 
-            co.academic_year + 1 as illuminate_academic_year,
-            co.grade_level + 1 as illuminate_grade_level_id,
+            co.academic_year + 1 as academic_year,
+            co.grade_level + 1 as grade_level_id,
 
             'Writing' as subject_or_course_key,
 
@@ -134,7 +132,7 @@ with
     {{
         dbt_utils.deduplicate(
             relation="enrollments_union",
-            partition_by="_dbt_source_project, powerschool_student_number, illuminate_academic_year, subject_or_course_key, cc_dateenrolled",
+            partition_by="_dbt_source_project, student_number, academic_year, subject_or_course_key, cc_dateenrolled",
             order_by="cc_dateleft desc, cc_dcid desc",
         )
     }}

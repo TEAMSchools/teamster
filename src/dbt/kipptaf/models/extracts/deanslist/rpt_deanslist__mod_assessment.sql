@@ -7,7 +7,7 @@ with
 
     assessment_response_avg as (
         select
-            ar.powerschool_student_number,
+            ar.student_number,
             ar.academic_year,
             ar.subject_area,
             ar.term_administered,
@@ -21,7 +21,7 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
             on ar.academic_year = co.academic_year
-            and ar.powerschool_student_number = co.student_number
+            and ar.student_number = co.student_number
             and co.rn_year = 1
             and co.grade_level < 5
         left join
@@ -35,14 +35,11 @@ with
             and ar.term_administered is not null
             and (ar.scope = 'Unit Assessment' or rcr.report_card_region is not null)
         group by
-            ar.powerschool_student_number,
-            ar.academic_year,
-            ar.subject_area,
-            ar.term_administered
+            ar.student_number, ar.academic_year, ar.subject_area, ar.term_administered
     )
 
 select
-    ara.powerschool_student_number as student_number,
+    ara.student_number,
     ara.academic_year,
     ara.term_administered,
     ara.subject_area as subject_area_label,

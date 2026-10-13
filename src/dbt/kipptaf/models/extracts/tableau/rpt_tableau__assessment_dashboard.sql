@@ -53,7 +53,7 @@ with
         from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
-            on co.student_number = asr.powerschool_student_number
+            on co.student_number = asr.student_number
             and co.academic_year = asr.academic_year
         left join
             {{ ref("base_powerschool__course_enrollments") }} as enr

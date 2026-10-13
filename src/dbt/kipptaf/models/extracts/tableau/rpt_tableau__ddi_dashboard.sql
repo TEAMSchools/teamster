@@ -131,7 +131,7 @@ with
         from {{ ref("int_extracts__student_enrollments_weeks") }} as co
         left join
             {{ ref("int_assessments__response_rollup") }} as r
-            on co.student_number = r.powerschool_student_number
+            on co.student_number = r.student_number
             and co.academic_year = r.academic_year
             and co.region = r.region
             and r.administered_at between co.week_start_monday and co.week_end_sunday
