@@ -228,25 +228,29 @@
       "source": {
         "source": "github",
         "repo": "anthropics/claude-plugins-official"
-      }
+      },
+      "autoUpdate": true
     },
     "dagster": {
       "source": {
         "source": "github",
         "repo": "dagster-io/skills"
-      }
+      },
+      "autoUpdate": true
     },
     "dbt-agent-marketplace": {
       "source": {
         "source": "github",
         "repo": "dbt-labs/dbt-agent-skills"
-      }
+      },
+      "autoUpdate": true
     },
     "superpowers-dev": {
       "source": {
         "source": "github",
         "repo": "obra/superpowers"
-      }
+      },
+      "autoUpdate": true
     }
   },
   "promptSuggestionEnabled": false,
