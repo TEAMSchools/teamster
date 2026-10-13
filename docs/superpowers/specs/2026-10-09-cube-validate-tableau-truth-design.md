@@ -495,3 +495,168 @@ to the review copy, and cutting those days leaves bugs in recent rows unchecked.
 - A cell the extract SQL cannot reproduce is `incomplete`, not unexplained.
 - In the offline replay, the gap "the extract leaves out rows" is `fail` (an
   unexplained gap), correcting Section 9's table.
+
+## Revision 2026-10-13: independent review
+
+Settled with the user after an independent review of the method and of a dry run
+on the 2026-10-09 DDI snapshot (8,821 pass, 16,366 incomplete, 10,232
+missing_member, 260 fail). Each item below replaces what earlier sections say on
+the same point. Two Cube findings from the review are filed separately and are
+not tool work: #5883 (`proficiency_rollup` leaves out future-dated scores) and
+#5885 (off-grade scores: the dashboard counts them, Cube drops them).
+
+### Planning states
+
+- **Captions.** A filter field with no stored caption is filtered by its raw
+  field name (`dibels_most_recent_composite`), not a title-cased guess. All 6
+  DIBELS states were silently ignored for this reason. One value is checked live
+  on the default state before the full export.
+- **Ignored filters.** `filter_ignored` judges only mapped sheets without table
+  calculations; a running-sum column changes between identical calls.
+- **`(All)`.** It means the caption's full list of extract values, sent to Cube
+  and to the extract SQL alike, never "no filter". `open` stores each list in
+  the manifest. A value with no lookup entry makes the state `missing_member`.
+- **Group filter cards.** Every bin of a `categorical-bin` card is a must state,
+  the default "Other" bin included. The manifest stores each group's column,
+  bins and Other members; a group caption expands to its members in the Cube
+  filters, the extract SQL and the coverage counts, through the same lookup
+  rule.
+- **Calculated filter cards.** A `filters:` entry may carry `sql:` (NJ Tutoring:
+  `case when tutoring_nj then 'Tutored' else 'Not Tutored' end`).
+- **Order.** Default view, tree roots, parameters, clicks, then cross-cuts.
+- **Cross-cuts.** The largest value is must; the rest are optional and get
+  promoted when the largest value mismatches.
+- **Trees.** The descent stops at the last level with a Cube member.
+- **Blanks.** Blank-value states stay optional until the live check confirms
+  that `vf(caption, "Null")` filters.
+- **Resume.** `--resume` re-runs missing and `export_failed` states only;
+  `filter_ignored` states only on request.
+
+### The session
+
+- **No deletes.** The tool makes no delete call to Tableau. The stale-copy sweep
+  is removed. `close` is read-only: it prints the copy's name and URL for the
+  analyst to delete by hand, and marks the session closed only once the copy is
+  gone. `open` refuses while any of this tool's review copies of the workbook is
+  still in the review project. This replaces Section 4 steps 1 and 5 and the
+  `close` row of Section 8.
+- **What is exported.** Only mapped sheets, plus the source sheet of each click
+  action. The review copy exposes only those sheets, so a forgotten copy shows
+  no student-level sheet.
+- **Token.** The PAT stays shared with Dagster. On 2026-10-09 the hourly
+  refreshes ran during the session and materialized. A dedicated PAT is
+  optional.
+
+### Mapping
+
+- **A `map` step** drafts `sheets:` from the exported headers, each column's
+  workbook formula, and Cube `/v1/meta`. Both dry-run trust failures were
+  visible in the formulas. The runbook order becomes: open the default state
+  only, map, compare it, run the Asana check (below), then export the rest.
+- **New mapping keys:**
+  - a dimension mapped to several Cube members with one extract expression
+    (`cube: [course_title, identifier]`,
+    `sql: course_name || ' - ' || section_number`), and `keys:`, a list of
+    regexes tried in order (the high-school section label first);
+  - a dimension mapped to a Cube time dimension at a granularity
+    (`cube: {time: <view>.date_day, granularity: week}`);
+  - `attr: true` for a known attribute, with the `*` rule as the fallback;
+  - `cube_filters` and `extract_filters` under one sheet, merged with the
+    datasource-level ones;
+  - Cube filters and an extract condition on one measure alone (the IEP / Gen Ed
+    mastery columns), and a measure that is the difference of two mapped
+    measures;
+  - `fixed: [dims]`: a ratio computed per fixed group, then averaged per mark,
+    on both sides (`Avg. % Completion`). This replaces gap 6's "stays unmapped".
+- **Privacy guard.** `load_checks` refuses a dimension or filter whose SQL is a
+  name column unless it carries `person:`. A dimension with a key shows only its
+  key in every output, never the full label.
+
+### Compare
+
+- **Two Cube routes.** Each sheet and state is queried twice: the measure alone,
+  as people ask (often served by a rollup), and with the student count (read
+  from the fact). A disagreement at the precision shown is an automatic mismatch
+  with `fix: cube`. The review found the rollup 107 rows short on one Literacy
+  slice this way (#5883).
+- **Rollups.** Coverage logs `usedPreAggregations` per query.
+- **Ignored saved filters.** When the extract has the column, `compare` counts
+  the rows in the slice that fail the filter and warns above 0.
+- **Blanks.** A blank Tableau cell matches a Cube null or 0, in `compare` and
+  `explain` alike.
+
+### Explain
+
+- **Trust.** Trust is a rate over every state's comparable cells at the grain;
+  95% or more is trusted. The per-cell reproduction check stays, and
+  non-reproducing cells are listed in the coverage report. This replaces the
+  "Trust gate fails on the default view" row of Section 8.
+- **Errors.** Any exception in a batch marks that batch `incomplete` with the
+  message. `cells.jsonl` is written as batches finish.
+- **Fail reasons.** A fail cell records the live-table value and both student
+  counts, and its reason names the numbers. Fails are labelled "row gap" when
+  the counts differ and "formula gap" when they agree.
+
+### Verdicts and mismatches
+
+- **`fix: accepted`.** A difference an owner has ruled on and will not fix. It
+  requires `issue:`. Its cells are `pass` with a note naming the issue, and the
+  Asana row is not reopened.
+- **Dimension rows.** A row that names a dimension is `pass` only when every
+  cell grouped by that dimension passes, else the worst of those cells.
+
+### Outputs and follow-up
+
+- **Investigate rows** carry the trusted extract SQL and the same SQL on the
+  live `rpt_` table, ready to run, plus the row-gap or formula-gap label.
+- **"Check it yourself."** Each issue draft carries the exact Cube query and the
+  same measure formula as SQL on the live `rpt_` table. Both read live data;
+  matching means fixed. No date gate: old rows keep changing, and no date is a
+  clean cutoff. The block says to compare Cube's `lastRefreshTime` with the
+  table's last-modified time and retry when one is behind. Tableau's numbers
+  stay in the draft as evidence, not as the test. A fix inside the workbook is
+  verified only by a new export.
+- **Who runs what.** The analyst owns runs; a builder verifies a fix with the
+  block above. `export --for <mismatch>` lists the states behind a mismatch's
+  cells, so a follow-up exports only those. The checks file is committed.
+- **`latest.json`.** `drafts` replaces every entry for the dashboard, so a
+  corrected row ID leaves no stale entry.
+
+### Asana rows
+
+- **Keying.** `rows:` names each row's dashboard, sheet and measure (or
+  dimension) caption, not a Cube member: 2 DDI rows share `pct_proficient`, and
+  member keying would pass one on the other's sheets. `rows_deferred:` lists
+  every other row with a reason. The checks file stores the Asana dashboard task
+  ID.
+- **The step.** After mapping and before the full export, Claude lists the
+  dashboard task's measure rows from Asana and sorts each into `rows:` or
+  `rows_deferred:` (unmapped, lives on an unlisted dashboard, or no Cube
+  member). A gap is mapped, or its dashboard added, before export.
+- **Late fixes.** A `rows:` change needs `drafts` only. A new measure mapping
+  needs `compare --redo` and `explain`, no export, when its column was exported.
+  Nothing in Asana is renamed or edited.
+
+### The first DDI run
+
+- **Scope.** The Module Dashboard only.
+- **Rows checked:** Mastery (boolean to 1/0); Percent Correct; Student Count / %
+  of Students; % Mastery IEP / Gen Ed diff and % Completion once their mapping
+  keys exist; the dimension rows Performance Band and Schoolid / Section Number.
+- **Rows deferred:** the headline "Mastery rate" row (Mastery Over Time
+  [School], second run, with the week mapping); Mastery rate by IEP / Gen Ed
+  (DKI and O3 views); % Complete this week (Landing Page); Goals, Microgoals,
+  i-Ready lessons, Walkthrough mastery and Tutoring bucket (no Cube member yet).
+  The Assessment Dashboard adds no row the Module Dashboard lacks.
+- **Mapping corrections.** "% of Students" is `count(student_number)` against
+  Cube `count_scored`, as a percent of total; on the dry-run extract the row
+  share reproduced all 5 band percentages exactly. High-school sections use the
+  course plus section key. `Is Normed Scope` is ignored with the saved-filter
+  check.
+- **Live checks before the full export:** the raw field name filters DIBELS; a
+  group bin name filters Subject Area (group); `"Null"` filters Is Foundations;
+  the high-school section key reproduces; both Cube routes run. Run on a weekday
+  between 9 AM and 5 PM New York time, not Friday.
+- **Still deferred to #5860:** a small click with at least 10 students, `plan`
+  re-scoring saved trees, checks on hand-written states, and skipped states in
+  coverage.
