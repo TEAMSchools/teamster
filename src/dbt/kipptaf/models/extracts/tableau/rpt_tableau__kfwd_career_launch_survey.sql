@@ -440,7 +440,7 @@ select
 
     if(r.most_recent_iep_date is not null, true, false) as is_special_education,
 
-    if(r.advising_provider = 'KIPP NYC', 'Collab', r.college_counselor) as advisor,
+    if(r.advising_provider = 'KIPP NYC', 'Collab', r.postsec_advisor) as advisor,
 
     if(
         r.contact_id is not null,
