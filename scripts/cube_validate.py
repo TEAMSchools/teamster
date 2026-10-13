@@ -1201,7 +1201,9 @@ def _ends_pair(kids):
     return [big] if big == small else [big, small]
 
 
-def next_states(states, status, trees, cross_cuts, fields, children) -> list[dict]:
+def next_states(
+    states, status, trees, cross_cuts, fields, children, members: set[str] | None = None
+) -> list[dict]:
     caption_of = {(f["datasource"], f["field"]): c for c, f in fields.items()}
     have = {_sig(e["state"]) for e in states.values()}
     out: list[dict] = []
@@ -1217,6 +1219,15 @@ def next_states(states, status, trees, cross_cuts, fields, children) -> list[dic
         if e.get("status") != "ok" or path is None:
             continue
         ds, levels = path
+        # The descent stops at the last level with a Cube member: a deeper state
+        # could only end missing_member.
+        if members is not None:
+            usable = []
+            for f in levels:
+                if caption_of.get((ds, f)) not in members:
+                    break
+                usable.append(f)
+            levels = usable or levels[:1]
         where = [(fields[c]["field"], v) for c, v in st["filters"].items()]
         bad = status.get(sid) == "mismatch"
         depth = len(st["filters"])
@@ -1247,6 +1258,26 @@ def next_states(states, status, trees, cross_cuts, fields, children) -> list[dic
         ]
         for v, _ in kids if bad else _ends_pair(kids):
             add({"dashboard": st["dashboard"], "filters": {**st["filters"], cap: v}})
+    # A cross-cut exports its largest value first; when that mismatches, its other
+    # values are proposed, to see whether the gap follows the flag.
+    for sid, e in sorted(states.items()):
+        st = e["state"]
+        fs = st.get("filters") or {}
+        if (
+            e.get("status") != "ok"
+            or status.get(sid) != "mismatch"
+            or st.get("params")
+            or st.get("click")
+            or len(fs) != 1
+        ):
+            continue
+        ((cap, _),) = fs.items()
+        f = fields.get(cap)
+        if not f or f["field"] not in cross_cuts.get(f["datasource"], []):
+            continue
+        for v, n in children(f["datasource"], [], f["field"]):
+            if v is not None and n >= SMALL_CELL:
+                add({"dashboard": st["dashboard"], "filters": {cap: v}})
     return out
 
 
@@ -2228,6 +2259,7 @@ def run_compare(
         checks.get("cross_cuts") or {},
         m["fields"],
         children,
+        members=set(_caption_members(checks)),
     )
     return cells, nxt
 

@@ -2358,3 +2358,30 @@ def test_an_accepted_difference_passes_and_names_its_issue(tmp_path):
     cv.explain_cells([cell], c, states, {}, run, lambda q: ([], []))
     assert cell.verdict == "pass" and "#5885" in cell.why
     assert "## Accepted differences" in cv.digest_markdown("Demo", [cell], c)
+
+
+def test_the_descent_stops_at_the_last_level_cube_can_express():
+    trees = {DS: {"region": ["region", "school", "grade_level"]}}
+    states = {"n": _entry({"Region": "North", "School Name": "Alpha"})}
+    out = cv.next_states(
+        states,
+        {"n": "mismatch"},
+        trees,
+        CROSS,
+        FIELDS,
+        children,
+        members={"Region", "School Name", "IEP"},
+    )
+    # Grade Level has no Cube member: the gap is split by the cross-cut instead.
+    assert [s["filters"].get("Grade Level") for s in out] == [None]
+    assert out[0]["filters"]["IEP"] == "No IEP"
+
+
+def test_a_mismatching_cross_cut_value_brings_in_its_other_values():
+    def kids(ds, where, f):
+        return [("No IEP", 25), ("Has IEP", 12), ("Tiny", 3), (None, 40)]
+
+    states = {"x": _entry({"IEP": "No IEP"})}
+    out = cv.next_states(states, {"x": "mismatch"}, TREES, CROSS, FIELDS, kids)
+    assert [s["filters"]["IEP"] for s in out] == ["Has IEP"]
+    assert cv.next_states(states, {"x": "match"}, TREES, CROSS, FIELDS, kids) == []
