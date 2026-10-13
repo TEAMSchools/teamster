@@ -441,7 +441,7 @@ kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.base_powerschool__course_enrollmen
 kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.base_powerschool__final_grades	#5812
 kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.int_powerschool__category_grades	#5812
 kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.int_powerschool__gpa_term	#5812
-kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.stg_powerschool__storedgrades	#5812
+kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.int_powerschool__student_course_grades_spine	#5812
 kipptaf.rpt_tableau__graduation_requirements	A1	kipptaf.base_powerschool__course_enrollments	#5812
 kipptaf.rpt_tableau__home_instruction	A1	kipptaf.int_deanslist__incidents	#5812
 kipptaf.rpt_tableau__home_instruction	A1	kipptaf.int_powerschool__spenrollments	#5812
