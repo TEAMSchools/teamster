@@ -115,10 +115,13 @@ def build_dbt_assets(
         for event in dbt_build.stream().fetch_column_metadata(
             with_column_lineage=False
         ):
-            # dbt's eager indirect selection runs tests whose Dagster check is
-            # outside this run's selection; dagster-dbt reports those as
-            # observations on every parent, which push real materializations
-            # out of the asset catalog. The test result stays in the dbt logs.
+            # dagster-dbt emits AssetObservation only for a test it cannot
+            # report as a selected check: one pulled in by dbt's eager indirect
+            # selection, or a multi-parent singular test with no
+            # meta.dagster.ref. It lands on every parent and pushes real
+            # materializations out of the asset catalog. The test result stays
+            # in the dbt logs. Verified against dagster-dbt 0.29.26
+            # (_to_observation_events_for_test); recheck on upgrade.
             if not isinstance(event, AssetObservation):
                 yield event
 

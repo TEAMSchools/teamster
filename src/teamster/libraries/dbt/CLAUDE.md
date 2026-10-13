@@ -22,11 +22,9 @@ Wraps `@dbt_assets` with two additional behaviors before running `dbt build`:
 This means adding a new external source to a dbt project automatically triggers
 staging without any Dagster code changes.
 
-The `dbt build` stream drops every `AssetObservation`. dagster-dbt emits one
-only for a test whose check is outside the run's selection (dbt eager indirect
-selection) or a multi-parent singular test with no `meta.dagster.ref`, and those
-observations crowd materializations out of the asset catalog. A singular test
-that should report in Dagster needs `meta.dagster.ref` to become a check.
+The `dbt build` stream drops every `AssetObservation` (reason in the code
+comment), so a dbt test reaches Dagster only as a check. Singular-test
+requirements: `.claude/rules/dbt-yaml.md`.
 
 ### `dagster_dbt_translator.py` — `CustomDagsterDbtTranslator`
 

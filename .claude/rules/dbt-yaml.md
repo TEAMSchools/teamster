@@ -335,7 +335,7 @@ Top-level `description` on a singular test must go in a properties yml under
 `config.description`, which dbt docs doesn't read. After adding/editing the yml,
 run `dbt parse --no-partial-parse`; partial parse caches the unbound state.
 
-### Singular-test `meta.dagster.ref` needs `package:` for cross-package refs
+### Singular-test `meta.dagster.ref`: when it's required, and `package:`
 
 A singular test that reads more than one model needs `meta.dagster.ref` in
 `tests/properties.yml`, or Dagster never sees its result: `build_dbt_assets`
