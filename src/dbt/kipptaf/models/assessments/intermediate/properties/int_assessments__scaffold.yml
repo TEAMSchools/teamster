@@ -90,10 +90,13 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          Student number. Illuminate `local_student_id` on the K-8 internal,
-          replacement, and external branches; the course enrollment's student
-          number on the grades 9-12 internal branch; the Focus student id, which
-          equals the student number, on the Apex branch.
+          Student number. The course enrollment's student number on the internal
+          branches; Illuminate `local_student_id` on the replacement and
+          external branches, with the Miami 8400 prefix added through AY2025
+          (`focus_student_number`); the Focus student id, which equals the
+          student number, on the Apex branch. Miami students carry a second
+          Illuminate record with the prefixed id from AY2026, so the bare record
+          is not prefixed in those years.
       - name: assessment_id
         data_type: int64
         description: Assessment id within `source` (member grain).
