@@ -55,6 +55,7 @@ with
             {{ ref("int_assessments__assessments_canonical") }} as c
             on s.source = c.source
             and s.canonical_assessment_id = c.canonical_assessment_id
+        where s.source = 'illuminate'
     ),
 
     -- Illuminate `date_taken` is unreliable for a small share of rows, in BOTH
@@ -236,6 +237,12 @@ with
             grade_level_id,
             performance_band_set_id,
 
+            cast(null as int64) as cc_dcid,
+            cast(null as string) as section_match_method,
+            cast(null as string) as apex_performance_band_label,
+            cast(null as int64) as apex_performance_band_label_number,
+            cast(null as bool) as apex_is_mastery,
+
             if(n_assessments > 1, true, false) as is_multipart_assessment,
         from internal_assessment_rollup
 
@@ -275,12 +282,76 @@ with
             canonical_grade_level_id as grade_level_id,
             canonical_performance_band_set_id as performance_band_set_id,
 
+            cast(null as int64) as cc_dcid,
+            cast(null as string) as section_match_method,
+            cast(null as string) as apex_performance_band_label,
+            cast(null as int64) as apex_performance_band_label_number,
+            cast(null as bool) as apex_is_mastery,
+
             false as is_multipart_assessment,
         -- sanitized_responses, not scaffold_responses: both union branches must
         -- read the cleaned date_taken. Reading the raw CTE here leaves the
         -- non-internal branch unsanitized.
         from sanitized_responses
         where not is_internal_assessment
+
+        union all
+
+        -- Apex scores and bands arrive per response from Focus; each assessment
+        -- is its own canonical group, so nothing rolls up
+        select
+            s.illuminate_student_id,
+            s.student_number,
+            s.source,
+            s.academic_year,
+            s.scope,
+            s.subject_area,
+            s.discipline,
+            s.module_type,
+            s.module_code,
+            s.region,
+            s._dbt_source_project,
+            s.is_internal_assessment,
+            s.is_replacement,
+
+            r.response_type,
+            r.response_type_id,
+            r.response_type_code,
+            r.response_type_description,
+            r.response_type_root_description,
+            r.date_taken,
+            r.points,
+
+            -- float64 in Focus; numeric keeps the union's Illuminate type
+            cast(r.percent_correct as numeric) as percent_correct,
+
+            1 as n_assessments,
+
+            [s.assessment_id] as assessment_ids,
+
+            s.powerschool_school_id,
+            s.title,
+            s.assessment_id,
+            s.administered_at,
+            s.grade_level_id,
+
+            r.performance_band_set_id,
+
+            s.cc_dcid,
+            s.section_match_method,
+
+            r.performance_band_label as apex_performance_band_label,
+            r.performance_band_label_number as apex_performance_band_label_number,
+            r.is_mastery as apex_is_mastery,
+
+            false as is_multipart_assessment,
+        from {{ ref("int_assessments__scaffold") }} as s
+        inner join
+            {{ ref("int_focus__apex_results") }} as r
+            on s.student_number = r.student_number
+            and s.assessment_id = r.assessment_id
+            and s.student_assessment_id = r.session_id
+        where s.source = 'apex'
     )
 
 select
@@ -314,14 +385,20 @@ select
     ru.n_assessments,
     ru.is_multipart_assessment,
     ru.assessment_ids,
-
-    pbl.label as performance_band_label,
-    pbl.label_number as performance_band_label_number,
-    pbl.is_mastery,
+    ru.cc_dcid,
+    ru.section_match_method,
 
     rta.name as term_administered,
 
     rtt.name as term_taken,
+
+    if(
+        ru.source = 'apex', ru.apex_performance_band_label, pbl.label
+    ) as performance_band_label,
+    if(
+        ru.source = 'apex', ru.apex_performance_band_label_number, pbl.label_number
+    ) as performance_band_label_number,
+    if(ru.source = 'apex', ru.apex_is_mastery, pbl.is_mastery) as is_mastery,
 from response_union as ru
 left join
     {{ ref("int_illuminate__performance_band_sets") }} as pbl
