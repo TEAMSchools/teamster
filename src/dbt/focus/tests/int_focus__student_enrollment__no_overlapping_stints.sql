@@ -6,10 +6,10 @@
 --
 -- Strict on the boundary: a stint that starts on the day another ends is a
 -- normal sequential transfer. Only a stint that starts strictly inside another
--- stint's span is returned. Same-start-date pairs are a different defect, held
--- by the staging uniqueness tests. An open stint ends June 30 of its year, the
--- same default the roster applies. Any returned row is a failure, and the fix
--- is in Focus: close the stale stint.
+-- stint's span is returned. Same-start-date pairs at different schools are
+-- held by stg_focus__student_enrollment__one_primary_per_stint. An open stint
+-- ends June 30 of its year, the same default the roster applies. Any returned
+-- row is a failure, and the fix is in Focus: close the stale stint.
 with
     stints as (
         select
