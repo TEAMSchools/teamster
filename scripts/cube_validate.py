@@ -883,8 +883,10 @@ def routes_agree(fact, alone, shown: Shown | None) -> bool:
     """Whether Cube's two routes give the same number at the precision Tableau shows."""
     if fact is None or alone is None:
         return (fact or 0.0) == (alone or 0.0)
+    if matches_raw(fact, alone):
+        return True
     if shown is None or shown.decimals is None:
-        return matches_raw(fact, alone)
+        return False
     return round(fact, shown.decimals) == round(alone, shown.decimals)
 
 
@@ -1005,6 +1007,7 @@ def _compare_grain(
     out, seen = [], set()
     for r in rows:
         k = tuple(tableau_key(sheet, d, r.get(d)) for d in grain)
+        seen.add(k)
         key = {**{d: r.get(d, "") for d in grain}, **fixed}
         for m in measures:
             meas, text = sheet.measures[m], r.get(m)
@@ -1044,7 +1047,6 @@ def _compare_grain(
                     )
                 )
             else:
-                seen.add(k)
                 v, alone = a.fact.get(k), a.alone.get(k)
                 split = not routes_agree(v, alone, shown)
                 ok = not split and matches_shown(v, shown)
