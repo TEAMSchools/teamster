@@ -1592,6 +1592,31 @@ def _open(a) -> int:
     return 0
 
 
+def root_captions(checks: dict, fields: dict) -> set[str]:
+    """Captions whose field tops a tree in the checks file."""
+    firsts = {
+        (ds, levels[0])
+        for ds, t in (checks.get("trees") or {}).items()
+        for levels in (t or {}).values()
+        if levels
+    }
+    return {c for c, f in fields.items() if (f["datasource"], f["field"]) in firsts}
+
+
+def export_rank(state: State, roots: set[str]) -> tuple:
+    """Default view, tree roots, parameters, clicks, then cross-cuts; descent
+    states after their parents. A session cut short still reaches the roots."""
+    if state.click:
+        kind = 3
+    elif not state.filters:
+        kind = 2 if state.params else 0
+    elif len(state.filters) == 1:
+        kind = 1 if state.filters[0][0] in roots else 4
+    else:
+        kind = 5
+    return (kind, len(state.filters), state.id)
+
+
 def _export_all(session, m, snapdir, wb, checks, states) -> None:
     listed = listed_sheets(checks)
     judged = judged_sheets(checks)
@@ -1604,12 +1629,13 @@ def _export_all(session, m, snapdir, wb, checks, states) -> None:
     if not m.all_values:  # a snapshot opened before value lists were recorded
         m.all_values = value_lists(m, snapdir)
     all_values = m.all_values
+    roots = root_captions(checks, m.fields)
     dims_for = {
         s: list((v.get("dims") or {})) for s, v in (checks.get("sheets") or {}).items()
     }
     with Coverage(m, snapdir) as covers:
-        # Parents first, so the filter-took-effect check has something to compare with.
-        for state in sorted(states, key=lambda s: (len(s.filters), s.id)):
+        # Parents first, roots before cross-cuts (export_rank).
+        for state in sorted(states, key=lambda s: export_rank(s, roots)):
             session.check_refresh(m.workbook_luid, m.live_updated_at)
             m.states[state.id] = export_state(
                 session,

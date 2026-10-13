@@ -442,6 +442,33 @@ def test_a_cross_cut_with_many_values_is_sampled_not_split():
     )
 
 
+def test_export_order_puts_tree_roots_before_cross_cuts():
+    fields = {
+        "Region": {"field": "region", "datasource": DS},
+        "IEP": {"field": "iep_status", "datasource": DS},
+    }
+    checks = {"trees": {DS: {"region": ["region", "school"]}}}
+    roots = snap.root_captions(checks, fields)
+    assert roots == {"Region"}
+    states = [
+        snap.State("Overview", filters=(("IEP", "No IEP"),)),
+        snap.State("Overview", click=("Table to Detail", "largest")),
+        snap.State("Overview", filters=(("Region", "North"), ("School Name", "A"))),
+        snap.State("Overview", params=(("Group By", "Teacher"),)),
+        snap.State("Overview", filters=(("Region", "North"),)),
+        snap.State("Overview"),
+    ]
+    ordered = sorted(states, key=lambda s: snap.export_rank(s, roots))
+    assert [s.id for s in ordered] == [
+        "overview--default",
+        "overview--region-north",
+        "overview--group-by-teacher",
+        "overview--click-table-to-detail-largest",
+        "overview--iep-no-iep",
+        "overview--region-north--school-name-a",
+    ]
+
+
 def test_best_parents_names_the_strongest_candidate_for_each_field():
     scores = {
         ("team", "school"): 0.7,
