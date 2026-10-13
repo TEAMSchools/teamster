@@ -1,6 +1,6 @@
 with
     report_card_region as (
-        select iae.assessment_id, report_card_region, 'illuminate' as `source`,
+        select iae.source, iae.assessment_id, report_card_region,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     ),
@@ -30,7 +30,9 @@ with
             and ar.assessment_id = rcr.assessment_id
             and co.region = rcr.report_card_region
         where
-            ar.response_type = 'overall'
+            -- performance_band_set_id is looked up in Illuminate's band sets
+            ar.source = 'illuminate'
+            and ar.response_type = 'overall'
             and ar.subject_area not in ('Text Study', 'Mathematics')
             and ar.academic_year = {{ var("current_academic_year") }}
             and ar.term_administered is not null
