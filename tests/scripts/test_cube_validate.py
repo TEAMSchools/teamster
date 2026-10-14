@@ -579,19 +579,51 @@ def test_a_dimension_with_no_member_is_a_missing_member(tmp_path):
     assert cells[0].status == "missing_member" and "Student" in cells[0].reason
 
 
-def test_an_empty_export_still_shows_cubes_rows(tmp_path):
+def test_a_header_only_export_still_shows_cubes_rows(tmp_path):
+    # The state's filter emptied the sheet: Cube's rows are real row-set gaps.
     c, sheet = _sheet(tmp_path)
-    for data in (b"", b"School Name,Avg Score\r\n"):
-        cells = cv.compare_export(
-            sheet,
-            "s1",
-            cv.read_export(data),
-            FakeCube({"Alpha": _row(48.5)}, _row(0)),
-            [],
-            [],
-            c,
-        )
-        assert any(x.reason == "Cube has this slice; Tableau does not" for x in cells)
+    cells = cv.compare_export(
+        sheet,
+        "s1",
+        cv.read_export(b"School Name,Avg Score\r\n"),
+        FakeCube({"Alpha": _row(48.5)}, _row(0)),
+        [],
+        [],
+        c,
+    )
+    assert any(x.reason == "Cube has this slice; Tableau does not" for x in cells)
+
+
+def test_an_export_with_no_header_is_a_sheet_not_shown(tmp_path):
+    # Live on DDI: a parameter hides Assessments Over Time in the default view, so
+    # it exports nothing at all; its Cube rows made 1,436 false mismatches.
+    c, sheet = _sheet(tmp_path)
+    cube = FakeCube({"Alpha": _row(48.5)}, _row(0))
+    cells = cv.compare_export(sheet, "s1", cv.read_export(b""), cube, [], [], c)
+    assert [(x.status, x.reason) for x in cells] == [
+        ("not_comparable", "the sheet shows nothing in this state")
+    ]
+    assert cube.queries == []
+
+
+def test_a_grain_with_no_tableau_values_says_so_instead_of_0_percent(tmp_path):
+    c = _checks(tmp_path)
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    only_cube = cv.Cell(
+        "Overview - Table",
+        "s",
+        {"School Name": "Alpha"},
+        "Avg Score",
+        None,
+        None,
+        48.5,
+        20,
+        "mismatch",
+        "Cube has this slice; Tableau does not",
+    )
+    cv.explain_cells([only_cube], c, states, {}, lambda ds, sql: [], lambda q: ([], []))
+    assert only_cube.verdict == "incomplete"
+    assert only_cube.why.startswith("no Tableau value at this grain")
 
 
 def test_percent_of_total_is_rebuilt_from_cubes_rows(tmp_path):

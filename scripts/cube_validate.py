@@ -1187,15 +1187,26 @@ def compare_export(
     sheet, state_id, export, load, filters, missing, checks, lists=None
 ) -> list[Cell]:
     cols = export.columns
-    # No header at all: compare at every mapped dimension Cube has, so its rows still show.
-    dims = (
-        [c for c in cols if c in sheet.dims]
-        if cols
-        else [d for d in sheet.dims if sheet.dims[d].cube]
-    )
-    measures = (
-        [c for c in cols if c in sheet.measures] if cols else list(sheet.measures)
-    )
+    if not cols:
+        # No header at all: Tableau drew nothing (a parameter or the view hides the
+        # sheet in this state). A header with no rows is different: the state's
+        # filter emptied the sheet, and Cube's rows are real gaps.
+        return [
+            Cell(
+                sheet.name,
+                state_id,
+                {},
+                "",
+                None,
+                None,
+                None,
+                None,
+                "not_comparable",
+                "the sheet shows nothing in this state",
+            )
+        ]
+    dims = [c for c in cols if c in sheet.dims]
+    measures = [c for c in cols if c in sheet.measures]
     cells = [
         Cell(
             sheet.name,
@@ -2015,13 +2026,15 @@ def _explain_batch(
     """Judge one sheet, state, grain and measure's mismatched cells."""
     sheet = checks["sheets"][sname]
     meas = sheet.measures[mname]
-    rate = trusted.get((sname, mname, grain), 0.0)
-    if rate < TRUST:
+    rate = trusted.get((sname, mname, grain))
+    if rate is None or rate < TRUST:
         for c in batch:
             c.verdict = "incomplete"
             c.why = (
-                f"extract SQL reproduces {rate:.0%} of this measure's cells at this "
-                f"grain; {TRUST:.0%} needed"
+                "no Tableau value at this grain to check the extract SQL against"
+                if rate is None
+                else f"extract SQL reproduces {rate:.0%} of this measure's cells at "
+                f"this grain; {TRUST:.0%} needed"
             )
         return
     where, base = _slice(
