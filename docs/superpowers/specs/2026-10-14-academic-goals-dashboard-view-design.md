@@ -56,6 +56,45 @@ Decisions settled in brainstorming with the owner:
   same bucket intermediate; that is a follow-up issue.
 - No amendment-form plumbing. Amendments land in the stores directly.
 
+## Why two new intermediates instead of logic in the view
+
+The dashboard view could, mechanically, decode buckets and assemble scores
+inline the way the old view did. It must not, for four specific reasons:
+
+1. **The layer rules leave no legal inline path.** An `rpt_` may read only marts
+   and domain intermediates (allowed-edges table,
+   `.claude/rules/dbt-architecture.md`). Every raw input here is off-limits at
+   the rpt layer: `int_powerschool__spenrollments` is a _source_ intermediate,
+   the Focus group tables and `stg_renlearn__star` are staging. The old view
+   survives on two **baselined** A1 edges
+   (`src/dbt/kipptaf/standard-baseline.tsv`, #5812); the baseline is a ratchet
+   for retiring old edges, not a precedent for new ones, and `dbt-layer-check`
+   fails a new model that re-creates them. #5855 moved the same class of
+   shortcut (kipptaf `stg_` over district `int_`) in the same direction: unions
+   and decodes belong in intermediates.
+2. **Bucket decode is identity resolution with two consumers.** "Which stored
+   program or group memberships put which student in which bucket" is a
+   business-entity definition, and the DDI Suite's Student Tier filter needs the
+   identical answer. Today the two dashboards compute tiers independently and
+   drift; with `int_students__bucket_assignments` there is one home, and the DDI
+   migration becomes a ref swap.
+3. **The grain test is the upload quality gate.** A student uploaded into two
+   bucket programs for one subject is detectable only at student x year x
+   subject grain, _before_ the roster join fans it out. A uniqueness test on an
+   intermediate fails loudly at the right place; the same mistake inside a wide
+   rpt would surface as a duplicated dashboard row with no pointer to the cause.
+4. **The score panel is comparison infrastructure, not view logic.** The
+   benchmark columns re-create exactly the Star staging read the baseline
+   exempts only for the old view. Relocated to
+   `int_assessments__goal_benchmarks`, the panel is legal, testable at its own
+   grain, and reusable by the DDI Suite and any future goal-adjacent view
+   instead of being rebuilt per dashboard.
+
+What this deliberately does not do: no marts (none covers these entities; the A2
+missing-mart issue is filed at PR time, and marts remain the fuller future
+answer), and no third intermediate for course sections (that join extends the
+existing roster intermediate instead).
+
 ## Components
 
 ### 1. Focus custom-group sources in kipptaf
