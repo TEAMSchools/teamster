@@ -1054,38 +1054,54 @@ def _ask_cube(sheet, grain, wanted, load, filters, student) -> dict[str, Answer]
     return {m: out[m] for m in wanted}
 
 
+def _bins(sheet, grain, lists) -> tuple[int, list[str], list[tuple[str, dict]]] | None:
+    """A grain's first group dimension, split for one query per bin: its position,
+    the grain without it, and each non-empty bin with a filter to its members.
+    None when the grain holds no group. Compare and explain both ask through this,
+    since counts and rates do not add up across members."""
+    i = next((i for i, d in enumerate(grain) if d in lists.groups), None)
+    if i is None:
+        return None
+    d = grain[i]
+    each = [
+        (
+            b,
+            {
+                "member": sheet.dims[d].cube,
+                "operator": "equals",
+                "values": [str(v) for v in members],
+            },
+        )
+        for b, members in lists.groups[d]["bins"].items()
+        if members
+    ]
+    return i, [*grain[:i], *grain[i + 1 :]], each
+
+
+def _rekey(values: dict, i: int, b: str) -> dict:
+    """One bin's answers keyed at the full grain: the bin name back at position i."""
+    return {(*k[:i], norm_dim(b), *k[i:]): v for k, v in values.items()}
+
+
 def _ask_by_bin(
     sheet, grain, measures, load, filters, student, lists
 ) -> dict[str, Answer]:
-    """Answers at a grain holding a group dimension: one set of queries per bin,
-    filtered to its members, since counts and rates do not add up across members.
+    """Answers at a grain holding a group dimension: one set of queries per bin.
     Raw values: the caller rebuilds table calculations after the bins merge."""
-    i = next((i for i, d in enumerate(grain) if d in lists.groups), None)
-    if i is None:
+    split = _bins(sheet, grain, lists)
+    if split is None:
         return _ask_cube(sheet, grain, measures, load, filters, student)
-    d, rest = grain[i], [*grain[:i], *grain[i + 1 :]]
+    i, rest, each = split
     out: dict[str, Answer] = {}
-    for b, members in lists.groups[d]["bins"].items():
-        if not members:
-            continue
-        only = {
-            "member": sheet.dims[d].cube,
-            "operator": "equals",
-            "values": [str(v) for v in members],
-        }
+    for b, only in each:
         part = _ask_by_bin(
             sheet, rest, measures, load, [*filters, only], student, lists
         )
         for m, a in part.items():
             o = out.setdefault(m, Answer({}, {}, {}, [], []))
-            for mine, theirs in (
-                (o.fact, a.fact),
-                (o.alone, a.alone),
-                (o.students, a.students),
-            ):
-                mine.update(
-                    {(*k[:i], norm_dim(b), *k[i:]): v for k, v in theirs.items()}
-                )
+            o.fact.update(_rekey(a.fact, i, b))
+            o.alone.update(_rekey(a.alone, i, b))
+            o.students.update(_rekey(a.students, i, b))
             o.rollups = sorted({*o.rollups, *a.rollups})
             o.rollups_alone = sorted({*o.rollups_alone, *a.rollups_alone})
     return out
@@ -1564,9 +1580,11 @@ def _own_sql(meas) -> tuple[str | None, str | None, str | None]:
     """The measure's SQL, with every aggregate limited by its own `where`."""
     if not meas.where:
         return meas.sql, meas.num, meas.den
-    return tuple(
-        _filtered(s, meas.where) if s else None for s in (meas.sql, meas.num, meas.den)
-    )
+
+    def own(s: str | None) -> str | None:
+        return _filtered(s, meas.where) if s else None
+
+    return own(meas.sql), own(meas.num), own(meas.den)
 
 
 def extract_sql(sheet, meas, grain, where, lists=None) -> str:
@@ -1768,26 +1786,19 @@ def _cube_queries(sheet, meas, grain, filters, student=None) -> list[dict]:
 def _cube_raw(sheet, meas, grain, filters, ask, student, lists) -> tuple[dict, dict]:
     """A plain measure's raw Cube values and student counts, asked per bin when
     the grain holds a group dimension, as compare asks."""
-    i = next((i for i, d in enumerate(grain) if d in lists.groups), None)
-    if i is None:
+    split = _bins(sheet, grain, lists)
+    if split is None:
         (q,) = _cube_queries(sheet, meas, grain, filters, student)
         by = _by_key(ask(q), sheet, grain)
         raw = {k: _num(r.get(meas.cube)) for k, r in by.items()}
         counts = {k: _int(r.get(student)) for k, r in by.items()} if student else {}
         return raw, counts
-    d, rest = grain[i], [*grain[:i], *grain[i + 1 :]]
+    i, rest, each = split
     raw, counts = {}, {}
-    for b, members in lists.groups[d]["bins"].items():
-        if not members:
-            continue
-        only = {
-            "member": sheet.dims[d].cube,
-            "operator": "equals",
-            "values": [str(v) for v in members],
-        }
+    for b, only in each:
         part, n = _cube_raw(sheet, meas, rest, [*filters, only], ask, student, lists)
-        for mine, theirs in ((raw, part), (counts, n)):
-            mine.update({(*k[:i], norm_dim(b), *k[i:]): v for k, v in theirs.items()})
+        raw.update(_rekey(part, i, b))
+        counts.update(_rekey(n, i, b))
     return raw, counts
 
 
