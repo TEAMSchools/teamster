@@ -328,14 +328,16 @@ TABLE_CALCS = {"percent_of_total", "running_sum"}
 
 @dataclass(frozen=True)
 class Dim:
-    cube: str | None
+    # One Cube member, several (joined with " - " to match `sql`), or none.
+    cube: str | tuple[str, ...] | None
     sql: str
     # Identifies a person: outputs show "a student", or this label, in place of values.
     person: bool | str = False
-    # A regex whose first group is the join key inside the displayed text (Tableau
-    # shows a section as "Teacher - Course - 501"; the key is 501).
-    key: str | None = None
-    # Tableau aliases to stored values ("K" for grade 0), applied after `key`.
+    # Regexes tried in order; the first that matches gives, in its one group, the
+    # join key inside the displayed text (Tableau shows a section as
+    # "G5 - <teacher> - 501"; the key is 501).
+    keys: tuple[str, ...] = ()
+    # Tableau aliases to stored values ("K" for grade 0), applied after the key.
     values: dict | None = None
 
 
@@ -395,6 +397,11 @@ def _measure(where: str, caption: str, m: dict, known: set[str]) -> Measure:
     )
 
 
+def _dim_keys(d: dict) -> tuple[str, ...]:
+    """A dimension's key patterns: `keys:`, or a single `key:`."""
+    return tuple(d.get("keys") or ([d["key"]] if d.get("key") else []))
+
+
 def load_checks(path) -> dict:
     raw = yaml.safe_load(Path(path).read_text()) or {}
     for key in ("workbook", "workbook_luid", "student_count", "sheets"):
@@ -420,10 +427,10 @@ def load_checks(path) -> dict:
     for name, s in raw["sheets"].items():
         dims = {
             c: Dim(
-                d.get("cube"),
+                tuple(d["cube"]) if isinstance(d.get("cube"), list) else d.get("cube"),
                 d.get("sql") or "",
                 d.get("person", False),
-                d.get("key"),
+                _dim_keys(d),
                 {str(k): str(v) for k, v in (d.get("values") or {}).items()} or None,
             )
             for c, d in (s.get("dims") or {}).items()
@@ -435,9 +442,9 @@ def load_checks(path) -> dict:
         sheets[name] = SheetMap(name, s.get("datasource", ""), dims, measures)
     for name, s in raw["sheets"].items():
         for c, d in (s.get("dims") or {}).items():
-            if d.get("key"):
+            for pattern in _dim_keys(d):
                 try:
-                    groups = re.compile(d["key"]).groups
+                    groups = re.compile(pattern).groups
                 except re.error:
                     groups = 0
                 if groups != 1:
@@ -601,7 +608,7 @@ def _caption_members(checks: dict) -> dict[str, str]:
         c: d.cube
         for s in checks["sheets"].values()
         for c, d in s.dims.items()
-        if d.cube
+        if isinstance(d.cube, str)
     }
     out.update({c: f["cube"] for c, f in checks["filters"].items() if f.get("cube")})
     return out
@@ -879,14 +886,55 @@ class Answer:
 def cube_query(sheet, grain, measures, filters) -> dict:
     return {
         "measures": sorted({m for m in measures if m}),
-        "dimensions": [sheet.dims[d].cube for d in grain],
+        "dimensions": [m for d in grain for m in cube_members(sheet.dims[d])],
         "filters": filters,
         "limit": CUBE_LIMIT,
     }
 
 
+def cube_members(dim: Dim) -> list[str]:
+    if dim.cube is None:
+        return []
+    return list(dim.cube) if isinstance(dim.cube, tuple) else [dim.cube]
+
+
+def cube_key(row: dict, dim: Dim) -> str:
+    """A Cube row's value for a dimension; several members join with " - ", as the
+    dimension's extract expression does."""
+    ms = cube_members(dim)
+    if len(ms) == 1:
+        return norm_dim(row.get(ms[0]))
+    return " - ".join(norm_dim(row.get(m)) for m in ms)
+
+
+def _multi(sheet, grain) -> list[int]:
+    return [i for i, d in enumerate(grain) if len(cube_members(sheet.dims[d])) > 1]
+
+
+class Keys:
+    """Row keys at a grain, joinable by a Tableau key: exactly, or, where a
+    multi-member dimension shows only its last member (an ES/MS section label
+    has no course), by the keys that end with it."""
+
+    def __init__(self, keys, multi: list[int]):
+        self.all, self.multi = set(keys), multi
+        self.short: dict[tuple, list[tuple]] = {}
+        for h in self.all if multi else ():
+            self.short.setdefault(self._short(h), []).append(h)
+
+    def _short(self, h: tuple) -> tuple:
+        return tuple(
+            v.rsplit(" - ", 1)[-1] if i in self.multi else v for i, v in enumerate(h)
+        )
+
+    def find(self, k: tuple) -> list[tuple]:
+        if k in self.all:
+            return [k]
+        return sorted(self.short.get(k, []))
+
+
 def _by_key(rows, sheet, grain) -> dict[tuple, dict]:
-    return {tuple(norm_dim(r.get(sheet.dims[d].cube)) for d in grain): r for r in rows}
+    return {tuple(cube_key(r, sheet.dims[d]) for d in grain): r for r in rows}
 
 
 def _ask_cube(sheet, grain, measures, load, filters, student) -> dict[str, Answer]:
@@ -1034,11 +1082,14 @@ def _compare_grain(
         )
         for m, a in raw.items()
     }
+    index = Keys({k for a in answers.values() for k in a.fact}, _multi(sheet, grain))
     fixed = {d: TOTAL for d in totals}
     out, seen = [], set()
     for r in rows:
-        k = tuple(tableau_key(sheet, d, r.get(d)) for d in grain)
-        seen.add(k)
+        # Every candidate counts as seen: an ambiguous key is reported once, here.
+        hits = index.find(tuple(tableau_key(sheet, d, r.get(d)) for d in grain))
+        seen.update(hits)
+        k = hits[0] if len(hits) == 1 else None
         key = {**{d: r.get(d, "") for d in grain}, **fixed}
         for m in measures:
             meas, text = sheet.measures[m], r.get(m)
@@ -1064,7 +1115,17 @@ def _compare_grain(
                         shown=text,
                     )
                 )
-            elif k not in a.fact:
+            elif len(hits) > 1:
+                out.append(
+                    cell(
+                        key,
+                        m,
+                        "not_comparable",
+                        "the shown key matches several Cube rows",
+                        shown=text,
+                    )
+                )
+            elif k is None or k not in a.fact:
                 out.append(
                     cell(
                         key,
@@ -1409,15 +1470,20 @@ def _grain(c: Cell) -> tuple[tuple[str, ...], tuple[str, ...]]:
 
 def _key_text(dim: Dim, value: str) -> str | None:
     """The join key inside a displayed label (Tableau shows a section as
-    "G5 - <teacher> - 501"; the key is 501). None when the pattern misses."""
-    if not dim.key:
+    "G5 - <teacher> - 501"; the key is 501): the first key pattern that matches.
+    None when none does; the value itself when the dimension has no pattern."""
+    if not dim.keys:
         return value
-    m = re.search(dim.key, value)
-    return (m.group(1) or None) if m else None
+    for pattern in dim.keys:
+        if m := re.search(pattern, value):
+            return m.group(1) or None
+    return None
 
 
 def _keyed_dims(checks: dict) -> dict[str, Dim]:
-    return {c: d for s in checks["sheets"].values() for c, d in s.dims.items() if d.key}
+    return {
+        c: d for s in checks["sheets"].values() for c, d in s.dims.items() if d.keys
+    }
 
 
 def tableau_key(sheet: SheetMap, caption: str, value) -> str:
@@ -1494,7 +1560,7 @@ def _trust(
     for (sname, mname, grain), by_state in pools.items():
         sheet = checks["sheets"][sname]
         meas = sheet.measures[mname]
-        hits = []
+        hits_all = []
         for state, mine in sorted(by_state.items()):
             where, _ = _slice(
                 states[state], sname, checks, fields, defaults, sheet_filters, lists
@@ -1503,10 +1569,13 @@ def _trust(
                 ext = _extract_measure(sheet, meas, grain, where, run_extract)
             except Exception:  # noqa: BLE001 - SQL the extract cannot run reproduces nothing
                 ext = {}
+            index = Keys(ext, _multi(sheet, grain))
             for c in mine:
-                c.reproduces = _reproduces(ext.get(_key(c, grain, sheet)), c, meas)
-                hits.append(c.reproduces)
-        out[(sname, mname, grain)] = sum(hits) / len(hits)
+                hits = index.find(_key(c, grain, sheet))
+                value = ext.get(hits[0]) if len(hits) == 1 else None
+                c.reproduces = _reproduces(value, c, meas)
+                hits_all.append(c.reproduces)
+        out[(sname, mname, grain)] = sum(hits_all) / len(hits_all)
     return out
 
 
@@ -1702,8 +1771,11 @@ def _explain_batch(
         )
         for v in meas.variants
     ]
+    index = Keys(ext, _multi(sheet, grain))
     for c in batch:
-        k = _key(c, grain, sheet)
+        k0 = _key(c, grain, sheet)
+        hits = index.find(k0)
+        k = hits[0] if len(hits) == 1 else k0
         c.extract = ext.get(k)
         if not _reproduces(c.extract, c, meas):
             c.verdict, c.why = (
@@ -1894,7 +1966,7 @@ def masked_key(c: Cell, checks: dict) -> dict[str, str]:
         dim = dims.get(d)
         if dim is not None and dim.person:
             out[d] = dim.person if isinstance(dim.person, str) else "a student"
-        elif dim is not None and dim.key and v != TOTAL:
+        elif dim is not None and dim.keys and v != TOTAL:
             out[d] = _key_text(dim, v) or UNKEYED
         else:
             out[d] = v

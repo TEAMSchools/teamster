@@ -1997,6 +1997,75 @@ def test_a_key_pattern_needs_one_capture_group(tmp_path, key):
         cv.load_checks(_write(tmp_path, d))
 
 
+SECTION_KEYS = [r"^(?!G\d+ - ).* - ([^-]+ - \S+)$", r"^G\d+ - .* - (\S+)$"]
+
+
+def _sections(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Section"] = {
+        "cube": ["demo.course_title", "demo.identifier"],
+        "sql": "course_name || ' - ' || section_number",
+        "keys": SECTION_KEYS,
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+    return c, c["sheets"]["Overview - Table"]
+
+
+def _section_cube(pairs):
+    def load(q):
+        return [
+            {
+                "demo.course_title": t,
+                "demo.identifier": i,
+                "demo.avg_score": "48.5",
+                "demo.count_students": "20",
+            }
+            for t, i in pairs
+        ], []
+
+    return load
+
+
+def test_the_es_label_never_matches_the_hs_key_pattern(tmp_path):
+    _, sheet = _sections(tmp_path)
+    dim = sheet.dims["Section"]
+    assert cv._key_text(dim, "Teacher, A - English 100 - 501") == "English 100 - 501"
+    assert cv._key_text(dim, "G5 - Teacher, B - 601") == "601"
+    assert cv._key_text(dim, "Teacher, A") is None
+
+
+def test_a_section_joins_on_course_and_section_or_on_the_section_alone(tmp_path):
+    c, sheet = _sections(tmp_path)
+    export = cv.read_export(
+        b'Section,Avg Score\r\n"Teacher, A - English 100 - 501",48.50\r\n'
+        b'"G5 - Teacher, B - 601",48.50\r\n'
+    )
+    load = _section_cube([("English 100", "501"), ("ELA 5", "601")])
+    cells = cv.compare_export(sheet, "s1", export, load, [], [], c)
+    assert [x.status for x in cells] == ["match", "match"]
+
+
+def test_a_short_key_matching_two_cube_rows_is_not_comparable(tmp_path):
+    c, sheet = _sections(tmp_path)
+    export = cv.read_export(b'Section,Avg Score\r\n"G5 - Teacher, B - 601",48.50\r\n')
+    load = _section_cube([("ELA 5", "601"), ("Math 5", "601")])
+    cells = cv.compare_export(sheet, "s1", export, load, [], [], c)
+    assert [(x.status, x.reason) for x in cells] == [
+        ("not_comparable", "the shown key matches several Cube rows")
+    ]
+
+
+def test_every_key_pattern_in_keys_needs_one_capture_group(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Section"] = {
+        "cube": ["demo.course_title", "demo.identifier"],
+        "sql": "course_name || ' - ' || section_number",
+        "keys": [SECTION_KEYS[0], r"^G\d+ - .* - \S+$"],
+    }
+    with pytest.raises(cv.CheckError, match="Section.*capture group"):
+        cv.load_checks(_write(tmp_path, d))
+
+
 def _two_routes(fact, alone):
     def load(q):
         is_alone = "demo.count_students" not in q["measures"]
