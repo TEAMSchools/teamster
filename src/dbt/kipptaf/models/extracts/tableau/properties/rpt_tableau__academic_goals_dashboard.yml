@@ -145,6 +145,7 @@ unit_tests:
         rows: |
           select
               2026 as academic_year,
+              'kippnewark' as _dbt_source_project,
               'Newark' as region,
               73254 as schoolid,
               'SPARK' as school,
@@ -167,6 +168,7 @@ unit_tests:
         format: sql
         rows: |
           select
+              cast(null as string) as _dbt_source_project,
               cast(null as int64) as student_number,
               cast(null as int64) as academic_year,
               cast(null as string) as subject,

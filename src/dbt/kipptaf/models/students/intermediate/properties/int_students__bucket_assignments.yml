@@ -4,14 +4,14 @@ models:
       The single home for stored student bucket assignments. PowerSchool special
       programs (NJ) and Focus custom student groups (Miami), decoded from the
       program or group name ("Bucket 1 - ELA"). One row per academic_year x
-      region x student_number x subject; where a student has assignment history
-      (rollout-PD amendments exit and re-enter), the latest assignment_date
-      wins. That pick is a business rule (the newest stored assignment is the
-      official one), not source-duplicate masking, which is why it lives in this
-      domain model rather than staging; a true double upload still surfaces
-      through n_active_assignments. Bucket 4 is never stored - consumers
-      coalesce a missing row to Bucket 4. Region is part of the grain because
-      student numbers repeat across PowerSchool instances.
+      _dbt_source_project x student_number x subject; where a student has
+      assignment history (rollout-PD amendments exit and re-enter), the latest
+      assignment_date wins. That pick is a business rule (the newest stored
+      assignment is the official one), not source-duplicate masking, which is
+      why it lives in this domain model rather than staging; a true double
+      upload still surfaces through n_active_assignments. Bucket 4 is never
+      stored - consumers coalesce a missing row to Bucket 4. _dbt_source_project
+      is part of the grain because student numbers repeat across regions.
     config:
       meta:
         contains_pii: true
@@ -24,7 +24,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
             - academic_year
-            - region
+            - _dbt_source_project
             - student_number
             - subject
           config:
@@ -60,8 +60,11 @@ models:
                 severity: warn
       - name: academic_year
         description: Academic year of the assignment (Focus syear as-is).
-      - name: region
-        description: Newark, Camden, Paterson, or Miami.
+      - name: _dbt_source_project
+        description: >-
+          District code location the assignment came from, carried through from
+          int_powerschool__spenrollments or
+          int_focus__student_group_memberships.
       - name: student_number
         description: Network student number (the Focus student_id for Miami).
       - name: bucket_store
@@ -77,8 +80,8 @@ unit_tests:
       Decodes both stores, picks the latest assignment on re-assignment
       (PowerSchool stores a scheduled future year-end exit on live rows and a
       past exit on amended-out rows), counts a same-subject double upload,
-      excludes non-bucket programs, and keeps same-number students in different
-      regions apart.
+      excludes non-bucket groups and programs, and keeps same-number students in
+      different regions apart.
     model: int_students__bucket_assignments
     given:
       - input: ref("int_powerschool__spenrollments")
@@ -124,41 +127,39 @@ unit_tests:
             student_number: 5001
             academic_year: 2026
             rn_year: 1
-            region: Newark
             _dbt_source_project: kippnewark
           - studentid: 12
             student_number: 5002
             academic_year: 2026
             rn_year: 1
-            region: Newark
             _dbt_source_project: kippnewark
           - studentid: 13
             student_number: 5001
             academic_year: 2026
             rn_year: 1
-            region: Camden
             _dbt_source_project: kippcamden
-      - input: ref("stg_focus__student_groups")
+      - input: ref("int_focus__student_group_memberships")
         format: sql
         rows: |
           select
-              90 as id,
-              'Bucket 2 - ELA' as title,
-              cast(null as date) as end_date,
-              'kippmiami' as _dbt_source_project
-      - input: ref("stg_focus__students_join_groups")
-        format: sql
-        rows: |
-          select
-              90 as group_id,
               84001234 as student_id,
               2026 as syear,
               timestamp '2026-09-17 12:00:00' as created_at,
+              'Bucket 2 - ELA' as title,
+              cast(null as date) as end_date,
               'kippmiami' as _dbt_source_project
+          union all
+          select
+              84001234,
+              2026,
+              timestamp '2026-09-17 12:00:00',
+              'Advisory 5A',
+              cast(null as date),
+              'kippmiami'
     expect:
       rows:
         - academic_year: 2026
-          region: Newark
+          _dbt_source_project: kippnewark
           student_number: 5001
           subject: Math
           bucket: Bucket 3
@@ -166,7 +167,7 @@ unit_tests:
           assignment_date: 2026-10-02
           n_active_assignments: 1
         - academic_year: 2026
-          region: Camden
+          _dbt_source_project: kippcamden
           student_number: 5001
           subject: Reading
           bucket: Bucket 2
@@ -174,7 +175,7 @@ unit_tests:
           assignment_date: 2026-09-05
           n_active_assignments: 2
         - academic_year: 2026
-          region: Miami
+          _dbt_source_project: kippmiami
           student_number: 84001234
           subject: Reading
           bucket: Bucket 2

@@ -73,6 +73,7 @@ with
 
     prev_yr_iready as (
         select
+            _dbt_source_project,
             student_id,
             `subject`,
             iready_proficiency,
@@ -264,6 +265,7 @@ left join
     {{ ref("int_assessments__fast_previous_year") }} as fp
     on co.academic_year = fp.academic_year
     and co.student_number = fp.student_number
+    and co._dbt_source_project = fp._dbt_source_project
     and sj.discipline = fp.discipline
 left join
     prev_yr_state_test as py
@@ -276,6 +278,7 @@ left join
     prev_yr_iready as pr
     on co.student_number = pr.student_id
     and co.academic_year = pr.academic_year_plus
+    and co._dbt_source_project = pr._dbt_source_project
     and sj.iready_subject = pr.subject
 left join
     dibels as db
@@ -305,7 +308,7 @@ left join
     {{ ref("int_students__bucket_assignments") }} as b
     on co.student_number = b.student_number
     and co.academic_year = b.academic_year
-    and co.region = b.region
+    and co._dbt_source_project = b._dbt_source_project
     and sj.iready_subject = b.subject
 left join
     {{ ref("int_students__course_enrollments") }} as cc

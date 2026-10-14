@@ -37,7 +37,8 @@ select
 from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 left join
     {{ ref("int_assessments__goal_benchmarks") }} as gb
-    on co.student_number = gb.student_number
+    on co._dbt_source_project = gb._dbt_source_project
+    and co.student_number = gb.student_number
     and co.academic_year = gb.academic_year
     and co.iready_subject = gb.subject
 left join

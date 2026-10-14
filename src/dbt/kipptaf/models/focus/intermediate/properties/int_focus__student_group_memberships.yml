@@ -1,9 +1,9 @@
 models:
-  - name: stg_focus__students_join_groups
+  - name: int_focus__student_group_memberships
     description: >-
       Kipptaf-level union_relations passthrough of kippmiami's
-      stg_focus__students_join_groups (student-to-custom-group memberships;
-      student_id is the Miami student number). Column docs/tests live on the
+      int_focus__student_group_memberships — student-to-group memberships with
+      the group's title and active dates. Column docs/tests live on the
       kippmiami source model.
     config:
       meta:

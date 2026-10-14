@@ -5,9 +5,9 @@ models:
       goals dashboard. The prior-year state result (NJSLA / FAST PM3 / Star EOY,
       with grade-3 FAST read from same-year PM1) sits first, and the i-Ready BOY
       typical-growth projection (Star BOY for Miami K) is the fallback. One row
-      per student x academic_year x subject. Display and comparison only -
-      bucket membership never derives from these columns. Miami K reads the
-      standard Star export until the FAST Star file is staged.
+      per _dbt_source_project x student x academic_year x subject. Display and
+      comparison only - bucket membership never derives from these columns.
+      Miami K reads the standard Star export until the FAST Star file is staged.
     config:
       meta:
         contains_pii: true
@@ -20,12 +20,17 @@ models:
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
+            - _dbt_source_project
             - academic_year
             - student_number
             - subject
           config:
             severity: error
     columns:
+      - name: _dbt_source_project
+        description: >-
+          District code location of the benchmark row, carried through from the
+          state, i-Ready, or Star source.
       - name: student_number
         description: Network student number.
       - name: academic_year
@@ -90,6 +95,7 @@ unit_tests:
             test_round: BOY
             rn_subj_round: 1
             student_grade_int: 0
+            _dbt_source_project: kippmiami
       - input: ref("stg_renlearn__star")
         rows:
           - student_display_id: 84005678
@@ -101,9 +107,11 @@ unit_tests:
             rn_subject_round: 1
             screening_period_window_name: Fall
             grade_level: 0
+            _dbt_source_project: kippmiami
     expect:
       rows:
-        - student_number: 84005678
+        - _dbt_source_project: kippmiami
+          student_number: 84005678
           academic_year: 2026
           subject: Math
           benchmark_assessment_type: Star BOY

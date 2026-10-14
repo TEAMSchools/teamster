@@ -3,10 +3,10 @@ with
         select
             sp.academic_year,
             sp.exit_date,
+            sp._dbt_source_project,
             sp.enter_date as assignment_date,
 
             co.student_number,
-            co.region,
 
             'powerschool' as bucket_store,
 
@@ -30,37 +30,32 @@ with
 
     focus_memberships as (
         select
-            sg.end_date as exit_date,
+            _dbt_source_project,
+            syear as academic_year,
+            student_id as student_number,
+            end_date as exit_date,
 
-            jg.syear as academic_year,
-            jg.student_id as student_number,
-
-            'Miami' as region,
             'focus' as bucket_store,
 
-            cast(jg.created_at as date) as assignment_date,
+            cast(created_at as date) as assignment_date,
 
-            trim(split(sg.title, '-')[offset(0)]) as bucket,
+            trim(split(title, '-')[offset(0)]) as bucket,
 
             case
-                trim(split(sg.title, '-')[safe_offset(1)])
+                trim(split(title, '-')[safe_offset(1)])
                 when 'ELA'
                 then 'Reading'
                 when 'Math'
                 then 'Math'
             end as `subject`,
-        from {{ ref("stg_focus__students_join_groups") }} as jg
-        inner join
-            {{ ref("stg_focus__student_groups") }} as sg
-            on jg.group_id = sg.id
-            and jg._dbt_source_project = sg._dbt_source_project
-        where sg.title like 'Bucket%'
+        from {{ ref("int_focus__student_group_memberships") }}
+        where title like 'Bucket%'
     ),
 
     assignment_union as (
         select
             academic_year,
-            region,
+            _dbt_source_project,
             student_number,
             `subject`,
             bucket,
@@ -73,7 +68,7 @@ with
 
         select
             academic_year,
-            region,
+            _dbt_source_project,
             student_number,
             `subject`,
             bucket,
@@ -87,7 +82,7 @@ with
     assignments as (
         select
             academic_year,
-            region,
+            _dbt_source_project,
             student_number,
             `subject`,
             bucket,
@@ -97,8 +92,10 @@ with
             countif(
                 exit_date is null
                 or exit_date >= current_date('{{ var("local_timezone") }}')
-            ) over (partition by academic_year, region, student_number, `subject`)
-            as n_active_assignments,
+            ) over (
+                partition by
+                    academic_year, _dbt_source_project, student_number, `subject`
+            ) as n_active_assignments,
         from assignment_union
     ),
 
@@ -106,7 +103,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="assignments",
-                partition_by="academic_year, region, student_number, subject",
+                partition_by="academic_year, _dbt_source_project, student_number, subject",
                 order_by="assignment_date desc",
             )
         }}
@@ -114,7 +111,7 @@ with
 
 select
     academic_year,
-    region,
+    _dbt_source_project,
     student_number,
     `subject`,
     bucket,

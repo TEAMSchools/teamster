@@ -1,10 +1,16 @@
 with
     state_test_union as (
         select
+            _dbt_source_project,
             student_number,
             academic_year,
             scale_score,
             performance_level as `level`,
+            is_proficient_int,
+            is_approaching_int,
+            is_below_int,
+            source_system,
+            illuminate_subject_area as `subject`,
 
             if(
                 score_source = 'state_nj', assessment_name, 'FAST PM3'
@@ -14,42 +20,36 @@ with
             academic_year + if(
                 score_source = 'state_fl' and administration_period = 'PM1', 0, 1
             ) as academic_year_plus,
-
-            is_proficient_int,
-            is_approaching_int,
-            is_below_int,
-            source_system,
-
-            illuminate_subject_area as `subject`,
         from {{ ref("int_assessments__state_scores") }}
         where
-            (
-                score_source = 'state_nj'
-                and assessment_name = 'NJSLA'
-                and not (grade_level_when_assessed = 8 and raw_subject like 'Algebra%')
-            )
-            or (
-                score_source = 'state_fl'
-                and assessment_name = 'FAST'
-                and scale_score is not null
-                and (
-                    (administration_period = 'PM3' and test_grade != 3)
-                    or (administration_period = 'PM1' and test_grade = 3)
+            student_number is not null
+            and (
+                (
+                    score_source = 'state_nj'
+                    and assessment_name = 'NJSLA'
+                    and not (
+                        grade_level_when_assessed = 8 and raw_subject like 'Algebra%'
+                    )
+                )
+                or (
+                    score_source = 'state_fl'
+                    and assessment_name = 'FAST'
+                    and scale_score is not null
+                    and (
+                        (administration_period = 'PM3' and test_grade != 3)
+                        or (administration_period = 'PM1' and test_grade = 3)
+                    )
                 )
             )
 
         union all
 
         select
+            _dbt_source_project,
             student_display_id as student_number,
-
             academic_year,
             unified_score as scale_score,
             state_benchmark_category_level as `level`,
-
-            'Star EOY' as assessment_type,
-
-            academic_year + 1 as academic_year_plus,
 
             if(state_benchmark_category_level < 4, 1, 0) as is_proficient_int,
             if(state_benchmark_category_level = 4, 1, 0) as is_approaching_int,
@@ -58,15 +58,21 @@ with
             cast(null as string) as source_system,
 
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
+
+            'Star EOY' as assessment_type,
+
+            academic_year + 1 as academic_year_plus,
         from {{ ref("stg_renlearn__star") }}
         where
-            rn_subject_round = 1
+            student_display_id is not null
+            and rn_subject_round = 1
             and screening_period_window_name = 'Spring'
             and grade_level between 1 and 2
     ),
 
     state_test_resolved as (
         select
+            _dbt_source_project,
             student_number,
             academic_year_plus,
             scale_score,
@@ -91,7 +97,8 @@ with
             *,
 
             row_number() over (
-                partition by student_number, academic_year_plus, `subject`
+                partition by
+                    _dbt_source_project, student_number, academic_year_plus, `subject`
                 order by scale_score desc
             ) as rn_state,
         from state_test_resolved
@@ -101,6 +108,7 @@ with
 
     iready_union as (
         select
+            _dbt_source_project,
             student_id as student_number,
             academic_year_int as academic_year,
             `subject`,
@@ -137,6 +145,7 @@ with
         union all
 
         select
+            _dbt_source_project,
             student_id as student_number,
             academic_year_int as academic_year,
             `subject`,
@@ -159,6 +168,7 @@ with
         union all
 
         select
+            _dbt_source_project,
             student_display_id as student_number,
             academic_year,
 
@@ -175,7 +185,8 @@ with
             if(district_benchmark_category_level >= 3, 1, 0) as is_below_int,
         from {{ ref("stg_renlearn__star") }}
         where
-            rn_subject_round = 1
+            student_display_id is not null
+            and rn_subject_round = 1
             and screening_period_window_name = 'Fall'
             and grade_level = 0
     ),
@@ -185,8 +196,12 @@ with
             *,
 
             row_number() over (
-                partition by student_number, academic_year, `subject`
-                order by if(assessment_type = 'Star BOY', 0, 1), scale_score desc
+                partition by
+                    _dbt_source_project, student_number, academic_year, `subject`
+                order by
+                    case
+                        assessment_type when 'Star BOY' then 0 when 'i-Ready BOY' then 1
+                    end
             ) as rn_iready,
         from iready_union
     ),
@@ -199,6 +214,7 @@ select
 
     ir.scale_score as scale_score_iready,
 
+    coalesce(st._dbt_source_project, ir._dbt_source_project) as _dbt_source_project,
     coalesce(st.student_number, ir.student_number) as student_number,
     coalesce(st.academic_year_plus, ir.academic_year) as academic_year,
     coalesce(st.subject, ir.subject) as `subject`,
@@ -213,6 +229,7 @@ select
 from state_test_picked as st
 full join
     iready_picked as ir
-    on st.student_number = ir.student_number
+    on st._dbt_source_project = ir._dbt_source_project
+    and st.student_number = ir.student_number
     and st.academic_year_plus = ir.academic_year
     and st.subject = ir.subject
