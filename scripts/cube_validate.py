@@ -3,6 +3,7 @@
     uv run --with tableauhyperapi scripts/cube_validate.py compare <checks.yml>
     uv run --with tableauhyperapi scripts/cube_validate.py explain <checks.yml>
     uv run --with tableauhyperapi scripts/cube_validate.py drafts <checks.yml>
+    uv run --with tableauhyperapi scripts/cube_validate.py map <checks.yml>
 
 Reads the latest snapshot cube_validate_snapshot.py wrote. `compare` and
 `explain` need CUBE_API_SECRET, which only the pytest secrets fixture provides,
@@ -205,6 +206,19 @@ class CubeClient:
                 )
             return rows, sorted((body.get("usedPreAggregations") or {}).keys())
         raise CubeError("gave up after 120 'Continue wait' responses")
+
+    def meta(self) -> list[str]:
+        """Every member name this identity can see, for drafting a mapping."""
+        r = self._http().get(
+            f"{self.url}/meta", headers={"Authorization": self._token()}
+        )
+        body = r.json()
+        return sorted(
+            x["name"]
+            for c in body.get("cubes", [])
+            for kind in ("measures", "dimensions")
+            for x in c.get(kind, [])
+        )
 
 
 def bigquery_rows(sql: str) -> list[dict]:
@@ -2110,6 +2124,105 @@ def write_outputs(
 SNAPSHOT_ROOT = Path.home() / ".cache" / "cube-validate"
 
 
+# Tableau names an aggregated column "<prefix><caption>" in an export header.
+AGG_PREFIXES = (
+    "Avg. ",
+    "Sum of ",
+    "Distinct count of ",
+    "Count of ",
+    "% of Total ",
+    "Running Sum of ",
+    "Max. ",
+    "Min. ",
+    "Median of ",
+)
+_AGG = re.compile(r"\b(AVG|SUM|COUNTD?|MIN|MAX|MEDIAN|TOTAL|WINDOW_\w+)\(", re.I)
+
+
+def column_formulas(twb_text: str) -> dict[str, dict]:
+    """Each workbook column by caption, with its datasource, field and formula."""
+    import defusedxml.ElementTree as SafeET
+
+    out: dict[str, dict] = {}
+    for ds in SafeET.fromstring(twb_text).iter("datasource"):
+        source = ds.get("caption") or ds.get("name") or ""
+        for col in ds.findall("column"):
+            name = (col.get("name") or "").strip("[]")
+            calc = col.find("calculation")
+            out.setdefault(
+                col.get("caption") or name,
+                {
+                    "datasource": source,
+                    "field": name,
+                    "formula": calc.get("formula") if calc is not None else None,
+                },
+            )
+    return out
+
+
+def header_column(header: str, formulas: dict) -> tuple[str, dict | None]:
+    """The workbook column behind an exported header, after Tableau's prefix."""
+    if header in formulas:
+        return header, formulas[header]
+    for p in AGG_PREFIXES:
+        if header.startswith(p) and header[len(p) :] in formulas:
+            return header[len(p) :], formulas[header[len(p) :]]
+    return header, None
+
+
+def candidates(field: str, caption: str, members: list[str]) -> list[str]:
+    """Cube members whose short name is the field or the caption: a draft only."""
+    want = {field.lower(), _slug(caption).replace("-", "_")}
+    return [m for m in members if m.split(".", 1)[-1] in want]
+
+
+def draft_map(snapdir: Path, members: list[str]) -> dict:
+    """A draft of sheets: for the analyst to edit, from each exported sheet's
+    header, the workbook's formula for each column, and Cube's members."""
+    snapdir = Path(snapdir)
+    formulas = column_formulas((snapdir / "review.twb").read_text(encoding="utf-8"))
+    m = json.loads((snapdir / "manifest.json").read_text())
+    headers: dict[str, list[str]] = {}
+    for _, e in sorted(m["states"].items()):
+        if e.get("status") != "ok":
+            continue
+        for sheet, meta in e["sheets"].items():
+            if sheet not in headers:
+                headers[sheet] = read_export(
+                    (snapdir / meta["file"]).read_bytes()
+                ).columns
+    out: dict[str, dict] = {}
+    for sheet, cols in headers.items():
+        out[sheet] = {}
+        for h in cols:
+            name, col = header_column(h, formulas)
+            formula = col["formula"] if col else None
+            prefixed = name != h
+            out[sheet][h] = {
+                "kind": "measure"
+                if prefixed or _AGG.search(formula or "")
+                else "dimension",
+                "formula": formula,
+                "field": col["field"] if col else None,
+                "datasource": col["datasource"] if col else None,
+                "cube_candidates": candidates(
+                    col["field"] if col else name, name, members
+                ),
+            }
+    return out
+
+
+def _map(a) -> int:
+    checks = load_checks(a.checks)
+    snapdir = latest_snapshot(checks["workbook"])
+    draft = draft_map(snapdir, _client().meta())
+    (snapdir / "map.yml").write_text(
+        yaml.safe_dump(draft, sort_keys=False, allow_unicode=True)
+    )
+    print(f"map draft: {len(draft)} sheets -> {snapdir / 'map.yml'}")
+    return 0
+
+
 def latest_snapshot(workbook: str, root: Path = SNAPSHOT_ROOT) -> Path:
     base = Path(root) / _slug(workbook)
     dirs = sorted(p for p in base.iterdir() if p.is_dir()) if base.exists() else []
@@ -2379,11 +2492,14 @@ def main(argv: list[str] | None = None) -> int:
         "--redo", action="store_true", help="recompare states already compared"
     )
     sub.add_parser("explain").add_argument("checks")
+    sub.add_parser("map").add_argument("checks")
     d = sub.add_parser("drafts")
     d.add_argument("checks")
     d.add_argument("--out", default=str(DEFAULT_OUT))
     a = p.parse_args(argv)
-    return {"compare": _compare, "explain": _explain, "drafts": _drafts}[a.cmd](a)
+    return {"compare": _compare, "explain": _explain, "drafts": _drafts, "map": _map}[
+        a.cmd
+    ](a)
 
 
 if __name__ == "__main__":

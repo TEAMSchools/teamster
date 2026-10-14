@@ -2385,3 +2385,49 @@ def test_a_mismatching_cross_cut_value_brings_in_its_other_values():
     out = cv.next_states(states, {"x": "mismatch"}, TREES, CROSS, FIELDS, kids)
     assert [s["filters"]["IEP"] for s in out] == ["Has IEP"]
     assert cv.next_states(states, {"x": "match"}, TREES, CROSS, FIELDS, kids) == []
+
+
+FIXTURE_TWB = (
+    Path(__file__).parent / "fixtures" / "cube_validate" / "review.twb"
+).read_text(encoding="utf-8")
+
+
+def test_column_formulas_and_headers_find_the_workbook_column():
+    cols = cv.column_formulas(FIXTURE_TWB)
+    assert cols["Pct Done"]["formula"] == "{FIXED [school]: SUM([score])}"
+    assert cols["School Name"] == {"datasource": DS, "field": "school", "formula": None}
+    assert cv.header_column("Avg. Pct Done", cols)[0] == "Pct Done"
+    assert cv.header_column("Mystery", cols) == ("Mystery", None)
+
+
+def test_candidates_match_the_field_or_the_caption():
+    members = ["demo.school", "demo.grade_level", "demo.avg_score"]
+    assert cv.candidates("school", "School Name", members) == ["demo.school"]
+    assert cv.candidates("Calculation_1", "Grade Level", members) == [
+        "demo.grade_level"
+    ]
+
+
+def test_draft_map_lists_each_exported_column_with_its_formula(tmp_path):
+    snapdir = _snapdir(tmp_path, csv=b"School Name,Avg. Pct Done\r\nAlpha,1\r\n")
+    (snapdir / "review.twb").write_text(FIXTURE_TWB, encoding="utf-8")
+    col = cv.draft_map(snapdir, ["demo.school"])["Overview - Table"]
+    assert col["School Name"]["kind"] == "dimension"
+    assert col["School Name"]["cube_candidates"] == ["demo.school"]
+    assert col["Avg. Pct Done"]["kind"] == "measure"
+    assert "FIXED" in col["Avg. Pct Done"]["formula"]
+
+
+def test_cube_client_reads_the_member_list():
+    class Http:
+        def get(self, url, headers):
+            return FakeResponse(
+                {
+                    "cubes": [
+                        {"measures": [{"name": "v.m"}], "dimensions": [{"name": "v.d"}]}
+                    ]
+                }
+            )
+
+    client = cv.CubeClient("https://cube/api", SECRET, "me@example.org", http=Http())
+    assert client.meta() == ["v.d", "v.m"]
