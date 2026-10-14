@@ -215,14 +215,14 @@ with
             row_number() over (
                 partition by
                     _dbt_source_project, student_number, academic_year, `subject`
-                order by priority, scale_score desc
+                order by priority asc, scale_score desc
             ) as rn_benchmark,
         from benchmark_union
         window
             w as (
                 partition by
                     _dbt_source_project, student_number, academic_year, `subject`
-                order by priority, scale_score desc
+                order by priority asc, scale_score desc
                 rows between unbounded preceding and unbounded following
             )
     )
