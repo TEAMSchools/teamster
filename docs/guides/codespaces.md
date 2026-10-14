@@ -209,10 +209,15 @@ own, so a call that worked under your user credential can still 403 under ADC.
   (`postStart.sh`) to make `op` fail fast instead of prompting
 - `claude-plugins-official` must be listed in `.claude/settings.json`
   `extraKnownMarketplaces` (pointing to `anthropics/claude-plugins-official`) so
-  `claude-install-plugins.sh` explicitly refreshes it via
-  `marketplace add --scope project` before installs run — omitting it causes
-  "Plugin not found in marketplace" errors for all `*@claude-plugins-official`
-  plugins
+  `claude-install-plugins.sh` registers it via `marketplace add` before installs
+  run — omitting it causes "Plugin not found in marketplace" errors for all
+  `*@claude-plugins-official` plugins
+- `claude-install-plugins.sh` must never pass `--scope project`. That scope
+  rewrites the entries in `.claude/settings.json` and drops fields such as
+  `autoUpdate`. `postStart.sh` re-runs the script whenever those entries change,
+  so the rewrite repeats on every container start. The script uses the user
+  scope for marketplaces and `--scope local` (gitignored
+  `.claude/settings.local.json`) for plugins
 - Check Claude auth with `"${CLAUDE}" auth status | grep -q '"loggedIn": true'`;
   flag-file guards are redundant and produce false "not logged in" errors —
   check auth directly
