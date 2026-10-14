@@ -17,6 +17,8 @@ models:
             - academic_year
             - student_number
             - subject
+          config:
+            severity: error
     columns:
       - name: student_number
         description: Network student number.

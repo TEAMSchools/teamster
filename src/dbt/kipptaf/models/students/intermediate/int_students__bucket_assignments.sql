@@ -10,9 +10,16 @@ with
             'powerschool' as bucket_store,
 
             trim(split(sp.specprog_name, '-')[offset(0)]) as bucket,
-            trim(split(sp.specprog_name, '-')[offset(1)]) as discipline,
 
             initcap(regexp_extract(sp._dbt_source_relation, r'kipp(\w+)_')) as region,
+
+            case
+                trim(split(sp.specprog_name, '-')[offset(1)])
+                when 'ELA'
+                then 'Reading'
+                when 'Math'
+                then 'Math'
+            end as `subject`,
         from {{ ref("int_powerschool__spenrollments") }} as sp
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
@@ -35,7 +42,14 @@ with
             cast(jg.created_at as date) as assignment_date,
 
             trim(split(sg.title, '-')[offset(0)]) as bucket,
-            trim(split(sg.title, '-')[offset(1)]) as discipline,
+
+            case
+                trim(split(sg.title, '-')[offset(1)])
+                when 'ELA'
+                then 'Reading'
+                when 'Math'
+                then 'Math'
+            end as `subject`,
         from {{ ref("stg_focus__students_join_groups") }} as jg
         inner join
             {{ ref("stg_focus__student_groups") }} as sg
@@ -49,7 +63,7 @@ with
             academic_year,
             region,
             student_number,
-            discipline,
+            `subject`,
             bucket,
             bucket_store,
             assignment_date,
@@ -62,7 +76,7 @@ with
             academic_year,
             region,
             student_number,
-            discipline,
+            `subject`,
             bucket,
             bucket_store,
             assignment_date,
@@ -76,15 +90,16 @@ with
             academic_year,
             region,
             student_number,
+            `subject`,
             bucket,
             bucket_store,
             assignment_date,
 
-            if(discipline = 'ELA', 'Reading', 'Math') as `subject`,
-
-            countif(exit_date is null) over (
-                partition by academic_year, region, student_number, discipline
-            ) as n_active_assignments,
+            countif(
+                exit_date is null
+                or exit_date >= current_date('{{ var("local_timezone") }}')
+            ) over (partition by academic_year, region, student_number, `subject`)
+            as n_active_assignments,
         from assignment_union
     ),
 

@@ -14,6 +14,7 @@ select
     co.iready_subject as `subject`,
     co.nj_student_tier as student_tier,
     co.bucket_store,
+    co.is_exempt_state_testing,
 
     gb.performance_level,
     gb.scale_score,

@@ -7,7 +7,10 @@ models:
       goals-sheet permutations. Official rollup measures aggregate student_tier
       in Tableau; is_tested_int drives the denominator parameter. Scoped to
       academic_year 2026 onward - SY26 stays on the disabled
-      rpt_tableau__academic_goals_rollup relation.
+      rpt_tableau__academic_goals_rollup relation. Goal columns join on the
+      sheet's AY2026+ convention (Mathematics / Text Study subject areas with a
+      numeric grade level); rows entered in the old HS style (course-named
+      subject areas, blank grade) do not join and read as a missing goal.
     config:
       contract:
         enforced: true
@@ -19,6 +22,8 @@ models:
             - academic_year
             - student_number
             - subject
+          config:
+            severity: error
     columns:
       - name: student_tier
         data_type: string
@@ -26,6 +31,7 @@ models:
           Stored bucket from PowerSchool special programs or Focus custom
           groups, Bucket 4 when no assignment is stored.
         data_tests:
+          - not_null
           - accepted_values:
               values: [Bucket 1, Bucket 2, Bucket 3, Bucket 4]
       - name: academic_year
@@ -70,6 +76,11 @@ models:
       - name: bucket_store
         data_type: string
         description: powerschool or focus; null when no assignment is stored.
+      - name: is_exempt_state_testing
+        data_type: boolean
+        description: >-
+          State-testing exemption flag from the roster, so Tableau can exclude
+          exempt students from enrolled denominators the way the old view did.
       - name: performance_level
         data_type: int64
         description: Benchmark-panel performance level (comparison only).
@@ -148,6 +159,7 @@ unit_tests:
               'Math' as iready_subject,
               'Mathematics' as illuminate_subject_area,
               'Bucket 4' as nj_student_tier,
+              false as is_exempt_state_testing,
               cast(null as string) as bucket_store,
               1 as rn_year,
               0 as enroll_status
@@ -187,6 +199,7 @@ unit_tests:
           subject: Math
           student_tier: Bucket 4
           bucket_store: null
+          is_exempt_state_testing: false
           performance_level: null
           scale_score: null
           scale_score_state: null

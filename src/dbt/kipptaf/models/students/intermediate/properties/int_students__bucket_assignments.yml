@@ -19,22 +19,31 @@ models:
             - region
             - student_number
             - subject
+          config:
+            severity: error
     columns:
       - name: subject
-        description: Reading or Math, decoded from the program or group name.
+        description: >-
+          Reading or Math, decoded from the program or group name; null when the
+          name's discipline token is neither ELA nor Math, so a typo surfaces
+          instead of defaulting to a subject.
         data_tests:
+          - not_null
           - accepted_values:
               values: [Reading, Math]
       - name: bucket
         description:
           Stored bucket label; the "everyone else" Bucket 4 has no stored row.
         data_tests:
+          - not_null
           - accepted_values:
               values: [Bucket 1, Bucket 2, Bucket 3]
       - name: n_active_assignments
         description: >-
-          Count of never-exited assignments sharing this grain; more than 1
-          means a double upload that the latest-wins pick is masking.
+          Count of assignments on this grain still active today (no exit date,
+          or a future one - PowerSchool stores a scheduled year-end exit on live
+          rows); more than 1 means a double upload that the latest-wins pick is
+          masking.
         data_tests:
           - dbt_utils.expression_is_true:
               expression: <= 1
@@ -56,7 +65,9 @@ models:
 unit_tests:
   - name: unit_int_students__bucket_assignments
     description: >-
-      Decodes both stores, picks the latest assignment on re-assignment,
+      Decodes both stores, picks the latest assignment on re-assignment
+      (PowerSchool stores a scheduled future year-end exit on live rows and a
+      past exit on amended-out rows), counts a same-subject double upload,
       excludes non-bucket programs, and keeps same-number students in different
       regions apart.
     model: int_students__bucket_assignments
@@ -74,7 +85,7 @@ unit_tests:
             academic_year: 2026
             specprog_name: Bucket 3 - Math
             enter_date: 2026-10-02
-            exit_date: null
+            exit_date: 2099-06-30
             _dbt_source_relation: "`t`.`kippnewark_powerschool`.`x`"
             _dbt_source_project: kippnewark
           - studentid: 12
@@ -88,7 +99,14 @@ unit_tests:
             academic_year: 2026
             specprog_name: Bucket 1 - ELA
             enter_date: 2026-09-01
-            exit_date: null
+            exit_date: 2099-06-30
+            _dbt_source_relation: "`t`.`kippcamden_powerschool`.`x`"
+            _dbt_source_project: kippcamden
+          - studentid: 13
+            academic_year: 2026
+            specprog_name: Bucket 2 - ELA
+            enter_date: 2026-09-05
+            exit_date: 2099-06-30
             _dbt_source_relation: "`t`.`kippcamden_powerschool`.`x`"
             _dbt_source_project: kippcamden
       - input: ref("int_extracts__student_enrollments")
@@ -139,10 +157,10 @@ unit_tests:
           region: Camden
           student_number: 5001
           subject: Reading
-          bucket: Bucket 1
+          bucket: Bucket 2
           bucket_store: powerschool
-          assignment_date: 2026-09-01
-          n_active_assignments: 1
+          assignment_date: 2026-09-05
+          n_active_assignments: 2
         - academic_year: 2026
           region: Miami
           student_number: 84001234
