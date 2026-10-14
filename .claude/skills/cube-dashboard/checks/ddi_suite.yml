@@ -13,16 +13,19 @@ scope:
 # stops at the last level with a Cube member, and Cube has neither (school
 # implies head of school).
 
-# The DDI Suite shows Illuminate assessments in Camden, Newark and Paterson.
+# The DDI Suite shows interims in all four regions: Illuminate in NJ, and Miami's
+# from Apex. A narrower scope here makes every Miami row a false gap.
 cube_filters:
   - member: student_assessment_scores_view.assessment_type
     operator: equals
     values:
       - illuminate
+      - apex
   - member: student_assessment_scores_view.region_name
     operator: equals
     values:
       - Camden
+      - Miami
       - Newark
       - Paterson
 
