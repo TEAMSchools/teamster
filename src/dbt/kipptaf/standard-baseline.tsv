@@ -31,7 +31,6 @@ kipptaf.bridge_course_section_terms	A1	kipptaf.stg_google_sheets__reporting__ter
 kipptaf.bridge_survey_questions	A1	kipptaf.int_google_forms__form__items	#5806
 kipptaf.bridge_survey_questions	A1	kipptaf.stg_google_sheets__surveys__scd_question_crosswalk	#5806
 kipptaf.bridge_survey_questions	A1	source.alchemer.stg_alchemer__survey_question	#5809
-kipptaf.bridge_survey_questions	A1	source.surveys.stg_surveys__manager_survey_detail_archive	#5809
 kipptaf.dim_assessment_administrations	A1	kipptaf.int_amplify__all_assessments	#5809
 kipptaf.dim_assessment_administrations	A1	kipptaf.int_fldoe__all_assessments	#5809
 kipptaf.dim_assessment_administrations	A1	kipptaf.stg_renlearn__star	#5809
