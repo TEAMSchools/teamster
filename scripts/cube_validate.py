@@ -2415,6 +2415,29 @@ def digest_markdown(
     return "\n".join(lines) + "\n"
 
 
+def _public_filters(filters: list[dict], checks: dict) -> list[dict]:
+    """Cube filters fit to leave the terminal: a person's values become their label."""
+    members = _caption_members(checks)
+    label = {
+        members[c]: lab for c, lab in _person_captions(checks).items() if c in members
+    }
+    return [
+        {**f, "values": [label[f["member"]]]}
+        if f.get("member") in label and f.get("values")
+        else f
+        for f in filters
+    ]
+
+
+_CHECK_YOURSELF = (
+    "Both queries below read live data, so they agree once the fix is in. Before "
+    "you compare them, check that Cube's `lastRefreshTime` (in its `/load` answer) "
+    "is not older than the table's last-modified time; if either is behind, wait "
+    "and run both again. The dashboard's numbers above are evidence, not the test. "
+    "A fix inside the Tableau workbook is checked only by the analyst's next export."
+)
+
+
 def issue_drafts(
     workbook,
     cells,
@@ -2434,7 +2457,7 @@ def issue_drafts(
         sheet = checks["sheets"][first.sheet]
         meas = sheet.measures[first.measure]
         grain = list(_grain(first)[0])
-        where, _ = _slice(
+        where, cube_filters = _slice(
             states[first.state],
             first.sheet,
             checks,
@@ -2444,7 +2467,22 @@ def issue_drafts(
             lists,
             public_only=True,
         )
-        query = extract_sql(sheet, meas, grain, where, lists)
+        # A diff measure has no SQL of its own: one query per part.
+        parts = [
+            (name, extract_sql(sheet, sheet.measures[name], grain, where, lists))
+            for name in meas.diff or (first.measure,)
+        ]
+        tag = (lambda n: f"-- {n}\n") if meas.diff else (lambda n: "")
+        query = "\n\n".join(tag(n) + q for n, q in parts)
+        cube_qs = _cube_queries(
+            sheet, meas, grain, _public_filters(cube_filters, checks)
+        )
+        try:
+            live_sql = query.replace(
+                f"`{EXTRACT_TABLE}`", f"`{live_table(sheet.datasource)}`"
+            )
+        except CheckError as err:
+            live_sql = f"-- {err}"
         alt = [v for v in meas.variants if s in v["explains"]]
         labels = _issue_labels(m)
         related = " ".join(f"#{n}" for n in m.get("related") or [])
@@ -2477,6 +2515,22 @@ def issue_drafts(
             yaml.safe_dump(alt, sort_keys=False).strip(),
             "```",
             "",
+            "## Check it yourself",
+            "",
+            _CHECK_YOURSELF,
+            "",
+            "Cube `/load`:",
+            "",
+            "```json",
+            *(json.dumps({"query": q}, indent=2) for q in cube_qs),
+            "```",
+            "",
+            "The same measure on the live table:",
+            "",
+            "```sql",
+            live_sql,
+            "```",
+            "",
             "## Where",
             "",
             f"- **Code location / dbt project:** {m.get('where', 'tableau')}",
@@ -2490,8 +2544,8 @@ def issue_drafts(
             "<summary>For Claude</summary>",
             "",
             f"> Checks file `.claude/skills/cube-dashboard/checks/{_slug(workbook)}.yml`, "
-            f"mismatch `{s}`. Rerun `cube_validate.py explain` after the fix; the cells "
-            "above must turn `pass`.",
+            f"mismatch `{s}`. A builder verifies with 'Check it yourself'; the analyst's "
+            "follow-up run confirms the cells turn `pass`.",
             "",
             "</details>",
         ]

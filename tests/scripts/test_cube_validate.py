@@ -2817,3 +2817,28 @@ def test_a_diff_measure_fail_prints_one_pair_of_blocks_per_part(tmp_path):
     for part in ("IEP", "Gen Ed"):
         assert f"Over the extract (what Tableau showed) ({part}):" in text
         assert f"Over the live table ({part}):" in text
+
+
+def test_a_draft_carries_a_check_it_yourself_block(tmp_path):
+    c, cells, states = _explained(tmp_path)
+    body = cv.issue_drafts("Demo", cells, c, states, {})["dup"]
+    assert "## Check it yourself" in body and "lastRefreshTime" in body
+    assert '"demo.avg_score"' in body
+    assert "`teamster-332318.kipptaf_tableau.rpt_demo`" in body
+
+
+def test_check_it_yourself_hides_person_values(tmp_path):
+    c, cells, states = _explained(tmp_path)
+    c["filters"]["Student"] = {"cube": "demo.student", "person": True}
+    states["s"]["state"]["filters"] = {"Student": "Real Name"}
+    body = cv.issue_drafts("Demo", cells, c, states, {})["dup"]
+    assert "Real Name" not in body and '"a student"' in body
+
+
+def test_a_draft_for_a_diff_measure_carries_both_parts(tmp_path):
+    c, cell, states = _diff_explained(tmp_path)
+    body = cv.issue_drafts("Demo", [cell], c, states, {})["dup"]
+    assert "None as m" not in body
+    block = body.split("```json\n")[1].split("```")[0]
+    assert '"true"' in block and '"false"' in block
+    assert "is_iep" in body and "not is_iep" in body.replace("NOT", "not")
