@@ -13,7 +13,21 @@ models:
               - assessment_id
           config:
             severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >-
+              assessment_key is not distinct from format('%s-%d', `source`,
+              assessment_id)
+          config:
+            severity: error
     columns:
+      - name: assessment_key
+        data_type: string
+        description: >-
+          The app's key, source and assessment_id joined with a hyphen (for
+          example apex-123). AppSheet fills it from the chosen assessment in
+          rpt_appsheet__assessments. dbt joins on source and assessment_id
+          instead.
       - name: source
         data_type: string
         description: >-
