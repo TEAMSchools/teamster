@@ -6,7 +6,8 @@ models:
       contact details, current enrollment, and how many survey responses they
       have submitted. A response counts for an alumnus when its respondent email
       matches their primary or secondary Salesforce email, or when the career
-      launch reconciliation sheet maps it to their contact.
+      launch reconciliation sheet maps it to their contact. Responses the
+      reconciliation sheet marks Exclude never count.
     config:
       contract:
         enforced: true
