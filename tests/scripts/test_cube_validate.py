@@ -2105,7 +2105,7 @@ def test_a_key_pattern_needs_one_capture_group(tmp_path, key):
 
 
 SECTION_KEYS = [
-    r"^(?!G?(?:\d+|K) - ).* - ([^-]+ - \S+)$",
+    r"^(?!G?(?:\d+|K) - ).*? - (.+ - \S+)$",
     r"^G?(?:\d+|K) - .* - (\S+)$",
 ]
 
@@ -2140,6 +2140,13 @@ def test_the_es_label_never_matches_the_hs_key_pattern(tmp_path):
     _, sheet = _sections(tmp_path)
     dim = sheet.dims["Section"]
     assert cv._key_text(dim, "Teacher, A - English 100 - 501") == "English 100 - 501"
+    assert (
+        cv._key_text(dim, "Teacher, A - English I - Honors - 501")
+        == "English I - Honors - 501"
+    )
+    assert (
+        cv._key_text(dim, "Smith-Jones, A - English 100 - 501") == "English 100 - 501"
+    )
     assert cv._key_text(dim, "G5 - Teacher, B - 601") == "601"
     for grade in ("G0", "GK", "K", "G10"):
         assert cv._key_text(dim, f"{grade} - Teacher, B - 601") == "601"

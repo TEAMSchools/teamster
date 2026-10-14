@@ -407,7 +407,7 @@ sheets:
         # "G<grade> - <teacher> - <section>" (kindergarten as G0, K or GK).
         # Anchored so neither pattern can capture a teacher's name.
         keys:
-          - ^(?!G?(?:\d+|K) - ).* - ([^-]+ - \S+)$
+          - ^(?!G?(?:\d+|K) - ).*? - (.+ - \S+)$
           - ^G?(?:\d+|K) - .* - (\S+)$
       Title: { cube: student_assessment_scores_view.title, sql: title }
     # Teacher Name stays unmapped: never a dimension.
