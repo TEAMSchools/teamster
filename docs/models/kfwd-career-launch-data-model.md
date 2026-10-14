@@ -340,7 +340,7 @@ over.
   row, often one with `rn_graduated > 1`. No row passes both filters, and the
   alum vanishes from the No Survey count. To see it, count alumni in the extract
   with no row where `rn_respondent = 1` and `rn_graduated = 1`. Fix: add
-  `rn_graduated` to the `rn_respondent` ordering.
+  `rn_graduated` to the `rn_respondent` ordering. Tracked in #5894.
 - **The AppSheet survey count does not match the Tableau extract.** It counts
   responses marked `Exclude`, and it does not match on Salesforce ID. Compare
   `survey_response_count` with the count of matched responses per alum in the
