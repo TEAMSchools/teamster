@@ -2,9 +2,11 @@ models:
   - name: stg_focus__apex_band_set_assessments
     description: >-
       Links between Focus Apex assessments and the mastery band set that scores
-      them — one row per assessment-set pair. Focus does not cascade soft
-      deletes, so join to stg_focus__apex_assessments and
-      stg_focus__apex_band_sets to keep only live rows.
+      them — at most one row per assessment, since Focus allows 1 band set per
+      assessment. Focus does not cascade soft deletes, so the band set or
+      assessment a row points to may be deleted; join to
+      stg_focus__apex_assessments and stg_focus__apex_band_sets to keep only
+      live rows.
     columns:
       - name: id
         description: Primary key — Focus apex_band_set_assessments id.
@@ -27,6 +29,9 @@ models:
         description: Focus apex_assessments id.
         data_type: int
         data_tests:
+          - unique:
+              config:
+                severity: error
           - not_null:
               config:
                 severity: error
