@@ -1946,7 +1946,13 @@ def explain_cells(
     sheet_filters=None,
     lists=None,
     on_batch: Callable[[], None] | None = None,
+    only: Only | None = None,
 ) -> None:
+    """Judge each cell; with `only`, just the selected ones (the rest keep their
+    verdicts)."""
+    if only is not None:
+        only.check(checks)
+        cells = [c for c in cells if only(c)]
     sides = fix_sides(checks)
     batches: dict[tuple, list[Cell]] = {}
     for c in cells:
@@ -2829,16 +2835,56 @@ def ignored_filter_leaks(
     return out
 
 
+@dataclass(frozen=True)
+class Only:
+    """A run limited to some sheets and/or measures (empty means all), so a newly
+    mapped metric re-runs its own cells and leaves every other result alone."""
+
+    sheets: frozenset = frozenset()
+    measures: frozenset = frozenset()
+
+    @classmethod
+    def of(cls, sheets, measures) -> Only | None:
+        if not sheets and not measures:
+            return None
+        return cls(frozenset(sheets or ()), frozenset(measures or ()))
+
+    def __call__(self, c: Cell) -> bool:
+        if self.sheets and c.sheet not in self.sheets:
+            return False
+        # A sheet-wide cell (an unmapped sheet, a Cube error) goes with its sheet.
+        return not self.measures or c.measure in self.measures or c.measure == ""
+
+    def check(self, checks: dict) -> None:
+        """A name that matches nothing would silently run nothing."""
+        sheets = checks["sheets"]
+        unknown = sorted(self.sheets - set(sheets))
+        mapped = {m for s in sheets.values() for m in s.measures}
+        unknown += sorted(self.measures - mapped)
+        if unknown:
+            raise CheckError(f"not mapped in the checks file: {', '.join(unknown)}")
+
+
 def run_compare(
-    checks, snapdir, load, extracts, redo=False, warn: Callable[[str], None] = print
+    checks,
+    snapdir,
+    load,
+    extracts,
+    redo=False,
+    warn: Callable[[str], None] = print,
+    only: Only | None = None,
 ):
     """Compare every exported state not compared yet (every state with redo, after a
-    mapping changed), and propose the next descent level."""
+    mapping changed), and propose the next descent level. With `only`, recompare
+    just the selected sheets and measures, in every state."""
     snapdir = Path(snapdir)
     m = json.loads((snapdir / "manifest.json").read_text())
     lists = Lists.of(m)
     before = [] if redo else read_cells(snapdir / "cells.jsonl")
-    done = {c.state for c in before}
+    if only is not None:
+        only.check(checks)
+        before = [c for c in before if not only(c)]
+    done = {c.state for c in before} if only is None else set()
     cells: list[Cell] = []
     for sid, e in sorted(m["states"].items()):
         if e.get("status") != "ok" or sid in done:
@@ -2846,6 +2892,8 @@ def run_compare(
         dflt = (m.get("defaults") or {}).get(e["state"]["dashboard"])
         filters, missing = state_filters(e, checks, dflt, lists)
         for sheet_name, meta in e["sheets"].items():
+            if only is not None and only.sheets and sheet_name not in only.sheets:
+                continue
             sheet = checks["sheets"].get(sheet_name)
             if sheet is None:
                 cells.append(
@@ -2906,6 +2954,8 @@ def run_compare(
                 warn(
                     f"{sid} / {sheet_name}: could not check the ignored saved filters: {err}"
                 )
+    if only is not None:
+        cells = [c for c in cells if only(c)]
     every = before + cells
 
     def children(ds, where, f):
@@ -2964,10 +3014,15 @@ def _compare(a) -> int:
                 checks,
                 {r["v"]: int(r["n"]) for r in rows if r["v"] is not None},
             )
-        cells, nxt = run_compare(checks, snapdir, client.load, extracts, a.redo)
+        only = Only.of(a.sheet, a.measure)
+        cells, nxt = run_compare(
+            checks, snapdir, client.load, extracts, a.redo, only=only
+        )
     finally:
         extracts.close()
     before = [] if a.redo else read_cells(snapdir / "cells.jsonl")
+    if only is not None:
+        before = [c for c in before if not only(c)]
     write_cells(snapdir / "cells.jsonl", before + cells)
     (snapdir / "next_states.yml").write_text(
         yaml.safe_dump(nxt, sort_keys=False, allow_unicode=True)
@@ -3000,6 +3055,7 @@ def _explain(a) -> int:
             m.get("sheet_filters"),
             lists=Lists.of(m),
             on_batch=lambda: write_cells(snapdir / "cells.jsonl", cells),
+            only=Only.of(a.sheet, a.measure),
         )
     finally:
         extracts.close()
@@ -3038,7 +3094,13 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument(
         "--redo", action="store_true", help="recompare states already compared"
     )
-    sub.add_parser("explain").add_argument("checks")
+    e = sub.add_parser("explain")
+    e.add_argument("checks")
+    for s in (c, e):
+        s.add_argument("--sheet", action="append", help="only this sheet (repeatable)")
+        s.add_argument(
+            "--measure", action="append", help="only this measure caption (repeatable)"
+        )
     sub.add_parser("map").add_argument("checks")
     d = sub.add_parser("drafts")
     d.add_argument("checks")

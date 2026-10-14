@@ -208,8 +208,11 @@ it yourself" block; the follow-up run confirms it.
 3. `compare`, `explain`, `drafts`. `drafts` replaces every `latest.json` entry
    for the dashboard.
 
-A `rows:` change needs `drafts` only. A new measure mapping needs
-`compare --redo` and `explain`, no export, when its column was already exported.
+A `rows:` change needs `drafts` only. A new measure mapping needs no export when
+its column was already exported: run `compare --measure "<caption>"` and
+`explain --measure "<caption>"` (both repeatable, and `--sheet "<sheet>"` too).
+They recompute only those cells, in every state, and leave the rest as they
+were. A name the checks file does not map is an error.
 
 ## Timing
 

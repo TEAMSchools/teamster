@@ -3040,3 +3040,65 @@ def test_a_saved_person_filter_never_reaches_a_digest_or_draft(tmp_path):
     text = cv.digest_markdown("Demo", cells, c, states, {}, sheet_filters=saved)
     for out in (body, text):
         assert "Real Name" not in out and "a student" in out
+
+
+# ---------------------------------------------------------------- selected checks
+def test_compare_can_rerun_only_the_selected_measures(tmp_path):
+    c = _checks(tmp_path)
+    snapdir = _snapdir(
+        tmp_path, csv=b"School Name,Avg Score,% Complete\r\nAlpha,48.50,80%\r\n"
+    )
+    cube = FakeCube({"Alpha": _row(48.5)}, _row(0))
+    first, _ = cv.run_compare(c, snapdir, cube, lambda ds, sql: [])
+    cv.write_cells(snapdir / "cells.jsonl", first)
+    only = cv.Only(measures=frozenset({"Avg Score"}))
+    again, _ = cv.run_compare(c, snapdir, cube, lambda ds, sql: [], only=only)
+    # Recompared although the state was done, and only the selected measure.
+    assert again and {x.measure for x in again} == {"Avg Score"}
+    # A plain run still skips states already compared.
+    assert cv.run_compare(c, snapdir, cube, lambda ds, sql: [])[0] == []
+
+
+def test_selecting_an_unknown_sheet_or_measure_is_an_error(tmp_path):
+    c = _checks(tmp_path)
+    with pytest.raises(cv.CheckError, match="Nope"):
+        cv.Only(measures=frozenset({"Nope"})).check(c)
+    with pytest.raises(cv.CheckError, match="Nope Sheet"):
+        cv.Only(sheets=frozenset({"Nope Sheet"})).check(c)
+
+
+def test_explain_leaves_unselected_cells_as_they_were(tmp_path):
+    c = _checks(tmp_path)
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    kept = cv.Cell(
+        "Overview - Table",
+        "s",
+        {},
+        "% Complete",
+        "80%",
+        0.8,
+        0.8,
+        20,
+        "match",
+        verdict="pass",
+        why="an earlier run",
+    )
+    redo = cv.Cell(
+        "Overview - Table", "s", {}, "Avg Score", "48.50", 48.5, 48.5, 20, "match"
+    )
+    cv.explain_cells(
+        [kept, redo],
+        c,
+        states,
+        {},
+        lambda ds, sql: [{"m": 48.5}],
+        lambda q: ([], []),
+        only=cv.Only(measures=frozenset({"Avg Score"})),
+    )
+    assert (kept.verdict, kept.why) == ("pass", "an earlier run")
+    assert redo.verdict == "pass"
+
+
+def test_only_is_none_when_nothing_is_selected():
+    assert cv.Only.of(None, None) is None
+    assert cv.Only.of(["S"], ["M"]) == cv.Only(frozenset({"S"}), frozenset({"M"}))
