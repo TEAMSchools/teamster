@@ -312,8 +312,8 @@ left join
     and sj.iready_subject = b.subject
 left join
     {{ ref("int_students__course_enrollments") }} as cc
-    on co.studentid = cc.cc_studentid
-    and co.yearid = cc.cc_yearid
+    on co.student_number = cc.students_student_number
+    and co.academic_year = cc.cc_academic_year
     and co._dbt_source_project = cc._dbt_source_project
     and sj.illuminate_subject_area = cc.illuminate_subject_area
     and not cc.is_dropped_section

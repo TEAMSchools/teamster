@@ -118,6 +118,20 @@ with
             csc.standard_course_name,
             csc.core_subject,
 
+            -- TODO(#5750): the crosswalk's Focus ELA and Math rows carry only
+            -- core_subject; drop the fallback once the sheet fills
+            -- Illuminate_Subject_Area for them
+            coalesce(
+                csc.illuminate_subject_area,
+                case
+                    csc.core_subject
+                    when 'ELA'
+                    then 'Text Study'
+                    when 'Math'
+                    then 'Mathematics'
+                end
+            ) as illuminate_subject_area,
+
             {{ extract_region("s") }} as region,
             trim(s.course_title) as courses_course_name,
             concat(usr.last_name, ', ', usr.first_name) as teacher_lastfirst,
@@ -199,6 +213,15 @@ with
                     cc_course_number
                 order by cc_dateenrolled desc, exit_date desc, cc_dcid asc
             ) as rn_course_number_year,
+
+            row_number() over (
+                partition by
+                    _dbt_source_project,
+                    students_student_number,
+                    cc_academic_year,
+                    illuminate_subject_area
+                order by cc_dateenrolled desc, exit_date desc, cc_dcid asc
+            ) as rn_student_year_illuminate_subject_desc,
         from focus_conformed
     ),
 
@@ -688,7 +711,7 @@ with
             cast(null as string) as nces_subject_area,
             cast(null as string) as school_code_override,
             cast(null as int64) as sla_include_tf,
-            cast(null as string) as illuminate_subject_area,
+            illuminate_subject_area,
             cast(null as bool) as is_foundations,
             cast(null as bool) as is_advanced_math,
             cast(null as string) as discipline,
@@ -700,7 +723,7 @@ with
             is_ap_course,
             cast(null as string) as standardized_discipline,
             is_homeroom,
-            cast(null as int64) as rn_student_year_illuminate_subject_desc,
+            rn_student_year_illuminate_subject_desc,
         from focus_course_dropped
     ),
 
