@@ -505,6 +505,12 @@ def load_checks(path) -> dict:
                 )
             if meas.variants:
                 raise CheckError(f"{name} / {c}: a diff measure takes no variants")
+            # compare differences raw parts; explain and the extract difference
+            # them after the scale and calculation, so only the unit case agrees.
+            if any(x.scale != 1 or x.table_calc for x in (meas, *parts)):
+                raise CheckError(
+                    f"{name} / {c}: a diff and its parts take no scale or table_calc"
+                )
         sheets[name] = SheetMap(
             name,
             s.get("datasource", ""),

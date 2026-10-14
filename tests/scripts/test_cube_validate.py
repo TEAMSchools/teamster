@@ -2781,6 +2781,19 @@ def test_a_diff_must_name_two_plain_measures_on_its_sheet(tmp_path):
         cv.load_checks(_write(tmp_path, d))
 
 
+def test_a_diff_and_its_parts_take_no_scale_or_table_calc(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    ms = d["sheets"]["Overview - Table"]["measures"]
+    ms["Diff"] = {"diff": ["Avg Score", "% Complete"]}
+    ms["Avg Score"]["scale"] = 100
+    with pytest.raises(cv.CheckError, match="Diff.*no scale or table_calc"):
+        cv.load_checks(_write(tmp_path, d))
+    ms["Avg Score"].pop("scale")
+    ms["Diff"]["table_calc"] = "percent_of_total"
+    with pytest.raises(cv.CheckError, match="Diff.*no scale or table_calc"):
+        cv.load_checks(_write(tmp_path, d))
+
+
 BANDS = {
     "Band (group)": {
         "datasource": DS,
