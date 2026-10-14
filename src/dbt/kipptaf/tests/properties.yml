@@ -629,6 +629,18 @@ data_tests:
           ref:
             name: int_people__staff_roster
 
+  - name: int_students__students__miami_active_non_cep_lunchstatus
+    description: >-
+      Every active Miami student outside CEP has a lunchstatus. Focus records
+      only a school-level code for CEP students, so their null is expected and
+      excluded; a null for anyone else is a missing individual determination for
+      Ops to enter in Focus.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_students__students
+
   - name: int_people__staff_roster__mail_populated_with_sam
     description: >-
       Anyone holding a sam_account_name must also hold a mail value. The Tableau

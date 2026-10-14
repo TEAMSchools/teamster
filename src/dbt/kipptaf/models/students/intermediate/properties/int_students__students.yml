@@ -25,16 +25,12 @@ models:
     columns:
       - name: lunchstatus
         description: >-
-          Meal eligibility, conformed upstream in int_focus__students. Null for
-          every Miami student today because Focus's free_reduced_meals_program
-          field currently carries only a school-level CEP direct-certification
-          code, not an individual determination -- but the mapping produces F, R
-          or P as soon as Focus records one.
-        data_tests:
-          - not_null:
-              config:
-                severity: warn
-                where: _dbt_source_project = 'kippmiami'
+          Meal eligibility, conformed upstream in int_focus__students. For
+          Miami, null wherever Focus's free_reduced_meals_program field carries
+          a school-level CEP code instead of an individual F, R or P
+          determination. The singular test
+          int_students__students__miami_active_non_cep_lunchstatus checks only
+          active Miami students outside CEP.
       - name: student_number
         description: Canonical network student number.
       - name: ethnicity

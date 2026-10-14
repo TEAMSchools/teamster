@@ -874,6 +874,8 @@ models:
                 values:
                   - Not Grad IEP Exempt
                   - "Yes"
+                  - ELA only. No Math match.
+                  - Math only. No ELA match.
         description:
           The enrollment status of the student. Conditional on enroll_status,
           grad_iep_exempt_overall.

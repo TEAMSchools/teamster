@@ -29,6 +29,7 @@ models:
               - assessment_id
               - response_type
               - response_type_description
+              - standard_domain
     columns:
       - name: source_model
         data_type: string
