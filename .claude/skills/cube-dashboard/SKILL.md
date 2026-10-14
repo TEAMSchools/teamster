@@ -59,10 +59,31 @@ Run:
 `uv run --with tableauhyperapi pytest tests/test_zz_cube_validate.py -s --tb=short`.
 `--tb=short` keeps credentials out of a traceback.
 
-## Validating a dashboard
+## When to run
 
-Run on a weekday between 9 AM and 5 PM New York time, not Friday: the scheduled
-Tableau refreshes share the PAT.
+Timing depends on the dashboard. Settle it before the first `open`.
+
+- **Its extract refreshes.** Find the dashboard's
+  `kipptaf__tableau__<dashboard>_extract_refresh_schedule` in
+  `docs/reference/automations.md` (New York time). Every export must finish
+  before the next one: `export` ends the session when the live workbook changes.
+  DDI Suite refreshes at 1:00 AM, at 6:00 PM, and at 4:00 PM on Fridays, so its
+  exports run weekdays between 9 AM and about 5 PM, never late Friday.
+- **The shared token.** The tool signs in with the same PAT as Dagster's Tableau
+  refreshes and the Tableau MCP; another sign-in ends the tool's session. It
+  waits about a minute and signs in again, up to 5 times. Exports also pause
+  during `tableau_quiet_minutes` (checks file, default `[0, 10]`), because the
+  hourly refreshes in `automations.md` sign in just after each hour. Widen it if
+  a run still loses its session at another minute.
+- **No Tableau MCP calls during a run.** Each one signs in with the same token.
+- **The nightly dbt build.** `explain` reads the live `rpt_` tables and Cube;
+  finish `compare` and `explain` the same day as the export.
+- **How long it takes.** On DDI (6 sheets): `open` with 49 cuts took about 25
+  minutes and `compare` about 1.5 minutes per cut. Plan the descent so its
+  exports also land before the next extract refresh; `compare` and `explain`
+  need no Tableau and can run after it.
+
+## Validating a dashboard
 
 1. **Header.** Create `checks/<dashboard>.yml` with `workbook`, `workbook_luid`,
    `review_project_luid` (TEMP-CB, `ddc817c2-6bc7-4bca-8be9-e385f95b9ebc`),
@@ -154,6 +175,8 @@ At the top level:
   when an ignored filter would hide rows in a slice. A FIXED-LOD filter cannot
   be counted; link its issue in a comment.
 - `rows`, `rows_deferred`, `asana_task`: the Asana rows (step 6).
+- `tableau_quiet_minutes: [start, end]`: minutes past each hour when exports
+  pause (see _When to run_).
 - `mismatches`: below.
 
 ## Reading the results

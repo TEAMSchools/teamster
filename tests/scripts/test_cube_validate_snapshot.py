@@ -732,6 +732,78 @@ class FakeSession:
         self.calls.append((sheet, tuple(filters), tuple(params)))
         return self.exports(sheet, {**dict(filters), **dict(params)})
 
+    def wait_out_refreshes(self):
+        pass
+
+    def check_refresh(self, luid, recorded):
+        pass
+
+
+def test_a_lost_session_waits_signs_in_again_and_retries():
+    # Live on DDI, another sign-in on the shared token ended the tool's session and
+    # the live-workbook check between exports raised with no retry.
+    calls = {"get": 0, "sign_in": 0}
+
+    def get_by_id(luid):
+        calls["get"] += 1
+        if calls["get"] <= 2:
+            raise RuntimeError("401002: Unauthorized Access")
+        return SimpleNamespace(updated_at=dt.datetime(2026, 10, 9, 5, 0, tzinfo=dt.UTC))
+
+    waits = []
+    server = SimpleNamespace(
+        workbooks=SimpleNamespace(get_by_id=get_by_id),
+        auth=SimpleNamespace(
+            sign_in=lambda a: calls.__setitem__("sign_in", calls["sign_in"] + 1)
+        ),
+    )
+    s = snap.Session(server, snap.TEMP_CB, auth="pat", sleep=waits.append)
+    s.check_refresh("w1", "2026-10-09T05:00:00+00:00")
+    assert calls == {"get": 3, "sign_in": 2} and waits == [snap.SIGN_IN_WAIT] * 2
+
+
+def test_exports_wait_out_the_dashboards_quiet_minutes():
+    waits = []
+
+    def at(h, m, s=0):
+        return lambda: dt.datetime(2026, 10, 14, h, m, s, tzinfo=dt.UTC)
+
+    busy = snap.Session(
+        SimpleNamespace(), snap.TEMP_CB, now=at(18, 4, 30), sleep=waits.append
+    )
+    busy.wait_out_refreshes()
+    assert waits == [330]  # until 18:10
+    snap.Session(
+        SimpleNamespace(), snap.TEMP_CB, now=at(18, 15), sleep=waits.append
+    ).wait_out_refreshes()
+    assert waits == [330]
+    # A dashboard whose refreshes sign in at :30 sets its own window.
+    late = snap.Session(
+        SimpleNamespace(),
+        snap.TEMP_CB,
+        now=at(18, 31),
+        sleep=waits.append,
+        quiet=(30, 40),
+    )
+    late.wait_out_refreshes()
+    assert waits == [330, 540]
+
+
+def test_a_failed_sign_out_after_a_lost_session_is_not_an_error():
+    def gone():
+        raise RuntimeError("401002: Unauthorized Access")
+
+    server = SimpleNamespace(
+        auth=SimpleNamespace(sign_in=lambda a: None, sign_out=gone)
+    )
+    with snap.signed_in(server, "pat"):
+        pass
+
+
+def test_the_quiet_window_comes_from_the_checks_file():
+    assert snap.quiet_minutes({}) == (0, 10)
+    assert snap.quiet_minutes({"tableau_quiet_minutes": [30, 40]}) == (30, 40)
+
 
 def _manifest():
     return snap.Manifest(
@@ -1046,7 +1118,6 @@ def test_export_records_each_captions_values_in_the_manifest(tmp_path, demo_hype
     m = _coverage_manifest(tmp_path, demo_hyper)
     (tmp_path / "csv").mkdir()
     s = FakeSession(lambda sheet, f: b"Region,N\r\nAll,9\r\n")
-    s.check_refresh = lambda luid, at: None
     wb = snap.read_workbook(TWB)
     checks = {"sheets": {"Overview - Table": {"measures": {"N": {"sql": "x"}}}}}
     snap._export_all(s, m, tmp_path, wb, checks, [snap.State("Overview")])

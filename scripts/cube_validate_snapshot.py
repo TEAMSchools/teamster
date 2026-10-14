@@ -13,6 +13,7 @@ Runbook: .claude/skills/cube-dashboard/SKILL.md.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
 import datetime as dt
 import io
@@ -995,6 +996,34 @@ def _workbooks_in(server, project: str) -> list:
     return [w for w in tsc.Pager(server.workbooks) if w.project_id == project]
 
 
+# The tool shares its Tableau token with the scheduled refreshes, and another
+# sign-in on it ends this session (401002).
+SIGN_IN_WAIT = 60.0  # seconds before signing in again
+SIGN_IN_TRIES = 5
+# Minutes past each hour when the dashboard's scheduled refreshes sign in; the
+# checks file's tableau_quiet_minutes overrides it per dashboard.
+DEFAULT_QUIET = (0, 10)
+
+
+def quiet_minutes(checks: dict) -> tuple[int, int]:
+    start, end = checks.get("tableau_quiet_minutes") or DEFAULT_QUIET
+    return int(start), int(end)
+
+
+@contextlib.contextmanager
+def signed_in(server, auth):
+    """A Tableau session that does not fail on sign-out: another sign-in on the
+    shared token may already have ended it."""
+    retry(lambda: server.auth.sign_in(auth), attempts=SIGN_IN_TRIES, wait=20.0)
+    try:
+        yield
+    finally:
+        try:
+            server.auth.sign_out()
+        except Exception:  # noqa: BLE001 - the session is already gone
+            pass
+
+
 class Session:
     def __init__(
         self,
@@ -1003,6 +1032,7 @@ class Session:
         now=lambda: dt.datetime.now(dt.UTC),
         auth=None,
         sleep=time.sleep,
+        quiet: tuple[int, int] = DEFAULT_QUIET,
     ):
         if project_luid not in NON_PRODUCTION_PROJECTS:
             raise SessionError(
@@ -1011,8 +1041,36 @@ class Session:
         self.server, self.project, self.now = server, project_luid, now
         # Kept to sign in again: a PAT allows one session, so another sign-in with
         # the same token (a scheduled refresh, the Tableau MCP) ends this one.
-        self.auth, self.sleep = auth, sleep
+        self.auth, self.sleep, self.quiet = auth, sleep, quiet
         self._views: dict = {}
+
+    def call(self, fn):
+        """Run a server call. When another sign-in on the shared token ends this
+        session (401002), wait, sign in again and retry."""
+        for attempt in range(1, SIGN_IN_TRIES + 1):
+            try:
+                return fn()
+            except Exception as e:
+                if (
+                    "401002" not in str(e)
+                    or self.auth is None
+                    or attempt == SIGN_IN_TRIES
+                ):
+                    raise
+                self.sleep(SIGN_IN_WAIT)
+                try:
+                    self.server.auth.sign_in(self.auth)
+                except Exception:  # noqa: BLE001 - the next attempt retries the sign-in
+                    pass
+        raise ValueError("SIGN_IN_TRIES must be >= 1")
+
+    def wait_out_refreshes(self) -> None:
+        """Hold exports through the minutes of each hour when the dashboard's
+        scheduled refreshes sign in with the same token (tableau_quiet_minutes)."""
+        t = self.now()
+        start, end = self.quiet
+        if start <= t.minute < end:
+            self.sleep((end - t.minute) * 60 - t.second)
 
     def review_copies(self, workbook: str) -> list:
         """This tool's review copies of the workbook still in the review project.
@@ -1060,18 +1118,13 @@ class Session:
                 opts = opts.vf(k, v)
             for k, v in params:
                 opts = opts.parameter(k, v)
-            try:
-                self.server.views.populate_csv(view, opts)
-            except Exception as e:
-                if "401002" in str(e) and self.auth is not None:
-                    self.server.auth.sign_in(self.auth)
-                raise
+            self.server.views.populate_csv(view, opts)
             return b"".join(view.csv)
 
-        return retry(fetch, sleep=self.sleep)
+        return retry(lambda: self.call(fetch), sleep=self.sleep)
 
     def check_refresh(self, live_luid: str, recorded: str) -> None:
-        now = self.server.workbooks.get_by_id(live_luid).updated_at
+        now = self.call(lambda: self.server.workbooks.get_by_id(live_luid)).updated_at
         if now and now.isoformat() != recorded:
             raise RefreshedError(
                 f"the live workbook changed at {now.isoformat()} (recorded {recorded}); "
@@ -1364,7 +1417,7 @@ def _download(luid: str, out_dir: Path) -> tuple[Path, str]:
     server, auth = _server()
 
     def fetch():
-        with server.auth.sign_in(auth):
+        with signed_in(server, auth):
             at = server.workbooks.get_by_id(luid).updated_at
             path = server.workbooks.download(
                 luid, filepath=str(out_dir / "live"), include_extract=True
@@ -1590,8 +1643,13 @@ def _open(a) -> int:
             )
     else:
         snapdir = new_snapshot_dir(checks["workbook"], at)
-    with server.auth.sign_in(auth):
-        session = Session(server, checks["review_project_luid"], auth=auth)
+    with signed_in(server, auth):
+        session = Session(
+            server,
+            checks["review_project_luid"],
+            auth=auth,
+            quiet=quiet_minutes(checks),
+        )
         open_guard(session, checks["workbook"])
         live_updated = server.workbooks.get_by_id(checks["workbook_luid"]).updated_at
         live_at = live_updated.isoformat() if live_updated else ""
@@ -1703,6 +1761,7 @@ def _export_all(session, m, snapdir, wb, checks, states) -> None:
     with Coverage(m, snapdir) as covers:
         # Parents first, roots before cross-cuts (export_rank).
         for state in sorted(states, key=lambda s: export_rank(s, roots)):
+            session.wait_out_refreshes()
             session.check_refresh(m.workbook_luid, m.live_updated_at)
             m.states[state.id] = export_state(
                 session,
@@ -1729,8 +1788,13 @@ def _export(a) -> int:
     if not m.copy_luid:
         raise SessionError("this snapshot has no review copy; open a new session")
     server, auth = _server()
-    with server.auth.sign_in(auth):
-        session = Session(server, checks["review_project_luid"], auth=auth)
+    with signed_in(server, auth):
+        session = Session(
+            server,
+            checks["review_project_luid"],
+            auth=auth,
+            quiet=quiet_minutes(checks),
+        )
         session.copy = server.workbooks.get_by_id(m.copy_luid)
         wb = read_workbook(
             (snapdir / "review.twb").read_text(encoding="utf-8", newline="")
@@ -1749,7 +1813,7 @@ def _close(a) -> int:
     if not m.copy_luid:
         raise SessionError("this snapshot has no review copy; open a new session")
     server, auth = _server()
-    with server.auth.sign_in(auth):
+    with signed_in(server, auth):
         session = Session(server, checks["review_project_luid"])
         left = [
             w for w in session.review_copies(checks["workbook"]) if w.id == m.copy_luid
