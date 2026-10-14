@@ -633,11 +633,15 @@ def test_open_refuses_while_a_review_copy_of_the_workbook_remains(monkeypatch):
     s, _ = _session(monkeypatch, _copies())
     with pytest.raises(snap.SessionError, match="ZZ-REVIEW 2026-10-07 0800 DDI Suite"):
         snap.open_guard(s, "DDI Suite")
+    # The server reports an internal hostname, so the link may not open: the
+    # message must also say where to find each copy by name.
+    with pytest.raises(snap.SessionError, match="by name in project TEMP-CB"):
+        snap.open_guard(s, "DDI Suite")
     clear, _ = _session(monkeypatch, [])
     snap.open_guard(clear, "DDI Suite")
 
 
-def test_close_waits_until_the_analyst_deletes_the_copy(monkeypatch, tmp_path):
+def test_close_waits_until_the_analyst_deletes_the_copy(monkeypatch, tmp_path, capsys):
     snap.write_manifest(tmp_path / "manifest.json", _manifest())  # copy-1
     left = [
         SimpleNamespace(
@@ -654,6 +658,7 @@ def test_close_waits_until_the_analyst_deletes_the_copy(monkeypatch, tmp_path):
     checks = tmp_path / "checks.yml"
     checks.write_text(f"workbook: Demo\nreview_project_luid: {snap.TEMP_CB}\n")
     assert snap.main(["close", str(checks)]) == 1
+    assert "by name in project TEMP-CB" in capsys.readouterr().out
     assert snap.read_manifest(tmp_path / "manifest.json").closed is False
     left.clear()
     assert snap.main(["close", str(checks)]) == 0

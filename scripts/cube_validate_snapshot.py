@@ -1079,6 +1079,14 @@ class Session:
             )
 
 
+# Tableau reports the server's internal hostname in webpage_url, so the link may
+# not open from a browser.
+FIND_BY_NAME = (
+    "  If the link does not open, find the copy by name in project TEMP-CB "
+    "(Explore > TEMP-CB)."
+)
+
+
 def open_guard(session: Session, workbook: str) -> None:
     """Refuse to publish while an earlier review copy is still in the project. The
     tool deletes nothing on Tableau; the analyst deletes each copy by hand."""
@@ -1086,8 +1094,8 @@ def open_guard(session: Session, workbook: str) -> None:
     if left:
         listed = "\n".join(f"  {w.name}: {w.webpage_url}" for w in left)
         raise SessionError(
-            "delete these review copies in Tableau first (project TEMP-CB), "
-            f"then run close and open again:\n{listed}"
+            "delete these review copies in Tableau first, then run close and open "
+            f"again:\n{listed}\n{FIND_BY_NAME}"
         )
 
 
@@ -1749,7 +1757,7 @@ def _close(a) -> int:
     if left:
         print(
             "delete the review copy in Tableau, then run close again:\n"
-            f"  {left[0].name}: {left[0].webpage_url}"
+            f"  {left[0].name}: {left[0].webpage_url}\n{FIND_BY_NAME}"
         )
         return 1
     m.closed = True
