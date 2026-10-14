@@ -6,6 +6,14 @@ models:
       dropped. Most rows have a null score_actual and null needs_grading — blank
       placeholders with no answer, or answers in unfinished attempts. Filter
       score_actual is not null for scored responses.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - session_id
+              - question_id
+          config:
+            severity: error
     columns:
       - name: id
         description: Primary key — Focus apex_session_responses id.
