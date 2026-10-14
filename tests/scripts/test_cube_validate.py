@@ -264,7 +264,7 @@ def test_load_checks_builds_sheet_maps(tmp_path):
 def test_load_checks_rejects_a_measure_without_sql(tmp_path):
     bad = json.loads(json.dumps(CHECKS))
     bad["sheets"]["Overview - Table"]["measures"]["Avg Score"].pop("sql")
-    with pytest.raises(cv.CheckError, match="give sql, or num and den"):
+    with pytest.raises(cv.CheckError, match="give sql, num and den, or diff"):
         cv.load_checks(_write(tmp_path, bad))
 
 
@@ -2617,3 +2617,58 @@ def test_a_measure_carries_its_own_cube_filters_and_extract_condition(tmp_path):
     assert len(asked) == 4  # 2 filter sets, each by both routes
     sql = cv.extract_sql(sheet, sheet.measures["IEP Score"], [], [])
     assert "iep_status LIKE '%SPED%'" in sql and "IF(" in sql.upper()
+
+
+def test_a_difference_of_two_measures_is_compared_and_reproduced(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    ms = d["sheets"]["Overview - Table"]["measures"]
+    for name, flag, cond in (
+        ("IEP", "true", "is_iep"),
+        ("Gen Ed", "false", "not is_iep"),
+    ):
+        ms[name] = {
+            "cube": "demo.avg_score",
+            "sql": "avg(score)",
+            "round": 2,
+            "cube_filters": [
+                {"member": "demo.is_iep", "operator": "equals", "values": [flag]}
+            ],
+            "where": cond,
+        }
+    ms["Diff"] = {"diff": ["IEP", "Gen Ed"], "round": 2}
+    c = cv.load_checks(_write(tmp_path, d))
+    sheet = c["sheets"]["Overview - Table"]
+
+    def load(q):
+        iep = {
+            "member": "demo.is_iep",
+            "operator": "equals",
+            "values": ["true"],
+        } in q["filters"]
+        return [
+            {
+                "demo.school": "Alpha",
+                "demo.avg_score": "40" if iep else "48.5",
+                "demo.count_students": "20",
+            }
+        ], []
+
+    export = cv.read_export(b"School Name,Diff\r\nAlpha,-8.50\r\n")
+    assert [
+        x.status for x in cv.compare_export(sheet, "s1", export, load, [], [], c)
+    ] == ["match"]
+
+    def run(ds, sql):
+        return [{"g0": "Alpha", "m": 48.5 if "NOT" in sql.upper() else 40.0}]
+
+    ext = cv._extract_measure(sheet, sheet.measures["Diff"], ("School Name",), [], run)
+    assert ext == {("Alpha",): -8.5}
+
+
+def test_a_diff_must_name_two_plain_measures_on_its_sheet(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["measures"]["Diff"] = {
+        "diff": ["Avg Score", "Nope"]
+    }
+    with pytest.raises(cv.CheckError, match="diff names 2 plain measures"):
+        cv.load_checks(_write(tmp_path, d))

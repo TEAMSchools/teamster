@@ -362,6 +362,7 @@ class Measure:
         default_factory=list
     )  # Cube filters for this measure alone
     where: str | None = None  # an extract condition for this measure alone
+    diff: tuple[str, str] | None = None  # A minus B, two plain measures on the sheet
 
 
 @dataclass
@@ -375,8 +376,8 @@ class SheetMap:
 
 
 def _measure(where: str, caption: str, m: dict, known: set[str]) -> Measure:
-    if not m.get("sql") and not (m.get("num") and m.get("den")):
-        raise CheckError(f"{where} / {caption}: give sql, or num and den")
+    if not m.get("sql") and not (m.get("num") and m.get("den")) and not m.get("diff"):
+        raise CheckError(f"{where} / {caption}: give sql, num and den, or diff")
     if m.get("table_calc") and m["table_calc"] not in TABLE_CALCS:
         raise CheckError(
             f"{where} / {caption}: table_calc must be one of {sorted(TABLE_CALCS)}"
@@ -407,6 +408,7 @@ def _measure(where: str, caption: str, m: dict, known: set[str]) -> Measure:
         list(m.get("variants") or []),
         list(m.get("cube_filters") or []),
         m.get("where"),
+        tuple(m["diff"]) if m.get("diff") else None,
     )
 
 
@@ -457,6 +459,16 @@ def load_checks(path) -> dict:
             c: _measure(name, c, m, set(mismatches))
             for c, m in (s.get("measures") or {}).items()
         }
+        for c, meas in measures.items():
+            if not meas.diff:
+                continue
+            parts = [measures.get(x) for x in meas.diff]
+            if len(meas.diff) != 2 or any(p is None or p.diff for p in parts):
+                raise CheckError(
+                    f"{name} / {c}: diff names 2 plain measures on this sheet"
+                )
+            if meas.variants:
+                raise CheckError(f"{name} / {c}: a diff measure takes no variants")
         sheets[name] = SheetMap(
             name,
             s.get("datasource", ""),
@@ -987,10 +999,27 @@ def _by_key(rows, sheet, grain) -> dict[tuple, dict]:
     return {tuple(cube_key(r, sheet.dims[d]) for d in grain): r for r in rows}
 
 
-def _ask_cube(sheet, grain, measures, load, filters, student) -> dict[str, Answer]:
+def _minus(a: dict, b: dict) -> dict:
+    return {
+        k: None if a.get(k) is None or b.get(k) is None else a[k] - b[k]
+        for k in a.keys() | b.keys()
+    }
+
+
+def _has_cube(sheet, meas) -> bool:
+    if meas.diff:
+        return all(sheet.measures[x].cube for x in meas.diff)
+    return meas.cube is not None
+
+
+def _ask_cube(sheet, grain, wanted, load, filters, student) -> dict[str, Answer]:
     """Each measure's raw values at the grain by both of Cube's routes: with the
     student count (read from the fact) and alone (often served by a rollup). One
-    pair of queries per distinct set of measure filters."""
+    pair of queries per distinct set of measure filters. A difference is built
+    from the answers for its two parts."""
+    measures = list(
+        dict.fromkeys(x for m in wanted for x in (sheet.measures[m].diff or (m,)))
+    )
     by_filters: dict[str, list[str]] = {}
     for m in measures:
         key = json.dumps(sheet.measures[m].cube_filters, sort_keys=True)
@@ -1011,7 +1040,18 @@ def _ask_cube(sheet, grain, measures, load, filters, student) -> dict[str, Answe
                 list(rollups),
                 list(rollups_alone),
             )
-    return out
+    for m in wanted:
+        d = sheet.measures[m].diff
+        if d:
+            a, b = out[d[0]], out[d[1]]
+            out[m] = Answer(
+                _minus(a.fact, b.fact),
+                _minus(a.alone, b.alone),
+                a.students,
+                sorted({*a.rollups, *b.rollups}),
+                sorted({*a.rollups_alone, *b.rollups_alone}),
+            )
+    return {m: out[m] for m in wanted}
 
 
 def routes_agree(fact, alone, shown: Shown | None) -> bool:
@@ -1130,7 +1170,7 @@ def _compare_grain(
             for r in rows
             for m in measures
         ]
-    asked = [m for m in measures if sheet.measures[m].cube]
+    asked = [m for m in measures if _has_cube(sheet, sheet.measures[m])]
     raw = _ask_cube(sheet, grain, asked, load, filters, student)
     answers = {
         m: Answer(
@@ -1600,6 +1640,12 @@ def _slice(
 
 
 def _extract_measure(sheet, meas, grain, where, run) -> dict:
+    if meas.diff:
+        a, b = (
+            _extract_measure(sheet, sheet.measures[x], grain, where, run)
+            for x in meas.diff
+        )
+        return _minus(a, b)
     rows = run(sheet.datasource, extract_sql(sheet, meas, list(grain), where))
     return apply_calc(meas, extract_values(rows, len(grain)), 1.0)
 
@@ -1647,11 +1693,23 @@ def _trust(
 
 def _cube_queries(sheet, meas, grain, filters, student=None) -> list[dict]:
     """The Cube queries behind one measure at a grain, its own filters on top."""
+    if meas.diff:
+        return [
+            q
+            for x in meas.diff
+            for q in _cube_queries(sheet, sheet.measures[x], grain, filters, student)
+        ]
     return [cube_query(sheet, grain, [meas.cube, student], filters + meas.cube_filters)]
 
 
 def _cube_measure(sheet, meas, grain, filters, ask, student=None) -> tuple[dict, dict]:
     """A measure's Cube values (its table calculation applied) and student counts."""
+    if meas.diff:
+        (a, n), (b, _) = (
+            _cube_measure(sheet, sheet.measures[x], grain, filters, ask, student)
+            for x in meas.diff
+        )
+        return _minus(a, b), n
     (q,) = _cube_queries(sheet, meas, grain, filters, student)
     by = _by_key(ask(q), sheet, grain)
     values = apply_calc(
