@@ -13,7 +13,9 @@ with
             illuminate_subject_area as `subject`,
 
             if(
-                score_source = 'state_nj', assessment_name, 'FAST PM3'
+                score_source = 'state_nj',
+                assessment_name,
+                concat('FAST ', administration_period)
             ) as assessment_type,
 
             -- grade 3 FAST reads PM1 of the same year, not PM3 of the prior year
@@ -67,7 +69,10 @@ with
             student_display_id is not null
             and rn_subject_round = 1
             and screening_period_window_name = 'Spring'
-            and grade_level between 1 and 2
+            -- K and grade-1 spring rows feed grade 1-2 benchmarks only; grade 3
+            -- is FAST PM1 with an i-Ready fallback, per the generator's ay2026
+            -- source config (never grade-2 Star)
+            and grade_level between 0 and 1
     ),
 
     state_test_resolved as (
@@ -99,7 +104,7 @@ with
             row_number() over (
                 partition by
                     _dbt_source_project, student_number, academic_year_plus, `subject`
-                order by scale_score desc
+                order by if(assessment_type = 'Star EOY', 1, 0), scale_score desc
             ) as rn_state,
         from state_test_resolved
     ),

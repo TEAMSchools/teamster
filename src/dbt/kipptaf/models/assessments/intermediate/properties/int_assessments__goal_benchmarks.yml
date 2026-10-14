@@ -2,11 +2,13 @@ models:
   - name: int_assessments__goal_benchmarks
     description: >-
       The benchmark-score panel shown beside stored bucket assignments on the
-      goals dashboard. The prior-year state result (NJSLA / FAST PM3 / Star EOY,
-      with grade-3 FAST read from same-year PM1) sits first, and the i-Ready BOY
-      typical-growth projection (Star BOY for Miami K) is the fallback. One row
-      per _dbt_source_project x student x academic_year x subject. Display and
-      comparison only - bucket membership never derives from these columns.
+      goals dashboard, mirroring the goal-setting generator's ay2026 source
+      config. The state result sits first - NJSLA or FAST PM3 from the prior
+      year, grade-3 FAST read from same-year PM1, and Star EOY (K and grade-1
+      spring) feeding grade 1-2 benchmarks only, never grade 3 - and the i-Ready
+      BOY typical-growth projection (Star BOY for Miami K) is the fallback. One
+      row per _dbt_source_project x student x academic_year x subject. Display
+      and comparison only - bucket membership never derives from these columns.
       Miami K reads the standard Star export until the FAST Star file is staged.
     config:
       meta:
@@ -14,9 +16,9 @@ models:
         standard_exempt:
           A5: >-
             The rn_state and rn_iready picks are priority rules, not dup-masking
-            — best prior state score per student x subject, and Star BOY ahead
-            of i-Ready for Miami K — matching the goal-setting generator's
-            source order.
+            — a current state test outranks a prior Star EOY, and Star BOY
+            outranks i-Ready for Miami K, both ordered by source before score —
+            matching the goal-setting generator's source order.
           A4: >-
             Shares its (_dbt_source_project, academic_year, student_number,
             subject) key with int_students__bucket_assignments, but the two hold
@@ -47,7 +49,8 @@ models:
       - name: subject
         description: Reading or Math.
       - name: benchmark_assessment_type
-        description: NJSLA, FAST, FAST PM3, Star EOY, Star BOY, or i-Ready BOY.
+        description:
+          NJSLA, FAST PM1, FAST PM3, Star EOY, Star BOY, or i-Ready BOY.
       - name: performance_level
         description:
           Performance level on whichever source won the priority pick.
@@ -126,6 +129,86 @@ unit_tests:
           scale_score_state: null
           is_proficient_int_state: null
           scale_score_iready: 777
+          is_proficient_int: 0
+          is_approaching_int: 1
+          is_below_int: 0
+          is_tested_int: 1
+
+  - name: unit_int_assessments__goal_benchmarks_grade3_fast_over_star
+    description: >-
+      A Miami 3rd grader with both a same-year FAST PM1 score and a grade-2 Star
+      EOY score shows FAST PM1 - grade-2 Star never feeds a grade-3 benchmark -
+      while a grade-1 spring Star row still feeds the grade-2 benchmark.
+    model: int_assessments__goal_benchmarks
+    given:
+      - input: ref("int_assessments__state_scores")
+        rows:
+          - student_number: 84001111
+            academic_year: 2026
+            scale_score: 210
+            performance_level: 2
+            is_proficient_int: 0
+            is_approaching_int: 1
+            is_below_int: 0
+            source_system: fldoe
+            illuminate_subject_area: Mathematics
+            score_source: state_fl
+            assessment_name: FAST
+            administration_period: PM1
+            test_grade: 3
+            grade_level_when_assessed: 3
+            raw_subject: null
+            _dbt_source_project: kippmiami
+      - input: ref("int_assessments__iready_diagnostic_results")
+        rows: []
+      - input: ref("stg_renlearn__star")
+        rows:
+          - student_display_id: 84001111
+            academic_year: 2025
+            star_discipline: Math
+            district_benchmark_category_level: null
+            state_benchmark_category_level: 3
+            unified_score: 900
+            rn_subject_round: 1
+            screening_period_window_name: Spring
+            grade_level: 2
+            _dbt_source_project: kippmiami
+          - student_display_id: 84002222
+            academic_year: 2025
+            star_discipline: Math
+            district_benchmark_category_level: null
+            state_benchmark_category_level: 4
+            unified_score: 850
+            rn_subject_round: 1
+            screening_period_window_name: Spring
+            grade_level: 1
+            _dbt_source_project: kippmiami
+    expect:
+      rows:
+        - _dbt_source_project: kippmiami
+          student_number: 84001111
+          academic_year: 2026
+          subject: Math
+          benchmark_assessment_type: FAST PM1
+          performance_level: 2
+          scale_score: 210
+          scale_score_state: 210
+          is_proficient_int_state: 0
+          scale_score_iready: null
+          is_proficient_int: 0
+          is_approaching_int: 1
+          is_below_int: 0
+          is_tested_int: 1
+        - _dbt_source_project: kippmiami
+          student_number: 84002222
+          academic_year: 2026
+          subject: Math
+          benchmark_assessment_type: Star EOY
+          performance_level: 4
+          scale_score: 850
+          scale_score_state: 850
+          is_proficient_int_state: 0
+          scale_score_iready: null
           is_proficient_int: 0
           is_approaching_int: 1
           is_below_int: 0
