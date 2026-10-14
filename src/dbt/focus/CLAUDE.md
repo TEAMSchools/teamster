@@ -14,6 +14,12 @@ headers) distinction. First day of school = `min(school_date)` per `syear` over
 in this package; kipptaf's copy of the same name is a thin passthrough
 `source()`-ing this package's built output, not a re-derivation).
 
+The ERD omits the Apex `apex_*` tables. Before adding an Apex table or test,
+check Focus's
+[Apex schema reference](https://fe.focusschoolsoftware.com/josh2/docs/apex_schema_reference.html)
+for its unique keys and join targets; it predates the live database, so trust a
+staged column it lacks.
+
 The kipptaf `rpt_focus__*` SFTP extracts keep a `trunk-ignore(sqlfluff/ST06)` —
 the Focus import column order is contract-fixed. ST06 firing is
 expression-shape-dependent, so keep the ignore even when a diff makes it look

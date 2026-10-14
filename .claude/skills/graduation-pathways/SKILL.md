@@ -174,14 +174,20 @@ Three rules drive the label, and only the first is obvious from the column
 names:
 
 1. **A subject only counts if the student sat the NJGPA in it.** `met_ela` with
-   `attempted_njgpa_ela` false contributes nothing.
+   `attempted_njgpa_ela` false contributes nothing. A DLM code (`M`) counts as
+   sitting it, in that subject only: `attempted_njgpa_*` is per student, set in
+   `int_students__graduation_pathway_scores`.
 2. **FAFSA is required to graduate**, but it is not counted against a student
    until the January deadline of their senior year. It is tracked before then.
    FAFSA never gates an 11th grader.
 3. **An 11th grader holding NJGPA records is treated as a 12th grader**, minus
-   FAFSA. Testing ahead of their peers usually means they are behind on credits.
-   The grace period belongs only to 11th graders with no records yet, and it
-   ends once results land in late June.
+   FAFSA. A DLM code counts as a record. Testing ahead of their peers usually
+   means they are behind on credits. Until results land in late June, an 11th
+   grader with no records reads `Awaiting Results`, and one whose only counting
+   subject leaves the other untested reads `ELA Only / Awaiting Math` or
+   `Math Only / Awaiting ELA`. These are not Grad Eligible: the dashboard must
+   never count a student whose results are still due as having met the
+   requirement.
 
 **A student who graduates without ever being placed in grade 12 is never checked
 for FAFSA.** `fafsa_required` reads `grade_level = 12`, so an 11th grader who

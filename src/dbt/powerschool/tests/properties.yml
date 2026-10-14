@@ -101,3 +101,50 @@ data_tests:
           ref:
             name: base_powerschool__course_enrollments
             package: powerschool
+
+  - name: base_powerschool__course_enrollments__no_concurrent_ap_subject
+    description: >-
+      A student enrolled in two different courses carrying the same AP subject
+      code at the same time. The AP subject code (`ap_course_subject`, from the
+      NJ course extension) says which AP exam a course prepares for, so two
+      concurrent courses with one code usually means a support course such as a
+      recitation section was tagged as if it were the AP course itself.
+      Downstream, the student then looks enrolled in that AP course twice. The
+      fix is in PowerSchool, clearing the AP subject on the support course;
+      kipptaf's `int_students__course_enrollments.rn_ap_course_subject_year`
+      keeps consumers to one course per subject in the meantime. A sequential
+      switch between two courses with the same code is not flagged. Dropped
+      sections are excluded, as in the overlap test above. Warn, since each row
+      is a PowerSchool course record to correct.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: base_powerschool__course_enrollments
+            package: powerschool
+
+  - name: base_powerschool__student_enrollments__cohort_not_ahead_of_entry
+    description: >-
+      A current high school student should never be ahead of the cohort they
+      entered with. For grade 9 and up, cohort freezes at the student's first
+      year in the school, which is correct for New Jersey's 4-year adjusted
+      cohort graduation rate. Falling behind that cohort is ordinary retention
+      and is not a defect, so only the other direction is tested -- a student
+      whose grade level implies an earlier graduating class (`cohort_primary`)
+      than their recorded cohort. Three causes produce that shape. A skipped
+      grade and a missing enrollment year are records problems, corrected in
+      PowerSchool. Summer credit recovery is not -- a student can advance a
+      grade over the summer with no enrollment row to show for it, because
+      int_powerschool__student_enrollment_union filters out the summer school,
+      so the records are already right. Warn rather than error, because no
+      result here is fixed by a code change. Miami's version is
+      int_extracts__student_enrollments__miami_cohort_not_ahead_of_entry in
+      kipptaf.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: base_powerschool__student_enrollments
+            package: powerschool
