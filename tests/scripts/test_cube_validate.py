@@ -2842,3 +2842,19 @@ def test_a_draft_for_a_diff_measure_carries_both_parts(tmp_path):
     block = body.split("```json\n")[1].split("```")[0]
     assert '"true"' in block and '"false"' in block
     assert "is_iep" in body and "not is_iep" in body.replace("NOT", "not")
+
+
+def test_a_saved_person_filter_never_reaches_a_digest_or_draft(tmp_path):
+    c, cells, states = _explained(tmp_path)
+    c["filters"]["Student"] = {"cube": "demo.student", "person": True}
+    saved = {
+        "Overview - Table": [
+            _sf("Student", "student_name", "in", ["Real Name", cv.NULL_MEMBER]),
+            _sf("Student", "student_name", "not_in", ["Real Name"]),
+        ]
+    }
+    cells[2].gap = "row gap"
+    body = cv.issue_drafts("Demo", cells, c, states, {}, sheet_filters=saved)["dup"]
+    text = cv.digest_markdown("Demo", cells, c, states, {}, sheet_filters=saved)
+    for out in (body, text):
+        assert "Real Name" not in out and "a student" in out

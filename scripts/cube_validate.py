@@ -741,11 +741,15 @@ def state_filters(
 NULL_MEMBER = "%null%"  # how Tableau saves a blank member
 
 
-def sheet_conditions(entries, entry, checks) -> tuple[list[str], list[dict], list[str]]:
+def sheet_conditions(
+    entries, entry, checks, public_only=False
+) -> tuple[list[str], list[dict], list[str]]:
     """A sheet's saved filters as extract conditions and Cube filters, for those the
     state keeps: a state's own filter on a caption replaces the saved one. Also
-    returns the captions Cube cannot express, unless ignore_sheet_filters names them."""
+    returns the captions Cube cannot express, unless ignore_sheet_filters names them.
+    With public_only, a person caption's values become its label."""
     st = entry["state"]
+    people = _person_captions(checks) if public_only else {}
     own = set(st.get("filters") or {}) | set(entry.get("click_filters") or {})
     ignored = set(checks.get("ignore_sheet_filters") or [])
     members = _caption_members(checks)
@@ -758,6 +762,8 @@ def sheet_conditions(entries, entry, checks) -> tuple[list[str], list[dict], lis
             continue
         col, numeric = f["field"], bool(f.get("numeric"))
         vals = [v for v in f.get("values") or [] if v != NULL_MEMBER]
+        if cap in people and vals:
+            vals = [people[cap]]
         # Tableau saves whole numbers as "1.0"; the extract may print "1".
         texts = [x for v in vals for x in dict.fromkeys([v, norm_key(v)])]
         has_null = NULL_MEMBER in (f.get("values") or [])
@@ -788,6 +794,8 @@ def sheet_conditions(entries, entry, checks) -> tuple[list[str], list[dict], lis
                 where.append(" and ".join(parts))
         member = members.get(cap)
         lookup = (checks["filters"].get(cap) or {}).get("values")
+        if cap in people:
+            lookup = None
         mapped = [lookup.get(v) for v in vals] if lookup is not None else list(vals)
         if member is None or None in mapped:
             missing.append(cap)
@@ -1711,7 +1719,7 @@ def _slice(
     sheet = checks["sheets"][sname]
     saved = (sheet_filters or {}).get(sname, [])
     dflt = sheet_defaults((defaults or {}).get(entry["state"]["dashboard"]), saved)
-    saved_where, saved_cube, _ = sheet_conditions(saved, entry, checks)
+    saved_where, saved_cube, _ = sheet_conditions(saved, entry, checks, public_only)
     where = state_where(entry, checks, fields, sheet, public_only, dflt, lists)
     cube = (
         state_filters(entry, checks, dflt, lists)[0]
@@ -2416,17 +2424,22 @@ def digest_markdown(
 
 
 def _public_filters(filters: list[dict], checks: dict) -> list[dict]:
-    """Cube filters fit to leave the terminal: a person's values become their label."""
+    """Cube filters fit to leave the terminal: a person's values become their label,
+    under any operator and inside `or`/`and` groups."""
     members = _caption_members(checks)
     label = {
         members[c]: lab for c, lab in _person_captions(checks).items() if c in members
     }
-    return [
-        {**f, "values": [label[f["member"]]]}
-        if f.get("member") in label and f.get("values")
-        else f
-        for f in filters
-    ]
+
+    def clean(f: dict) -> dict:
+        for k in ("or", "and"):
+            if k in f:
+                return {**f, k: [clean(x) for x in f[k]]}
+        if f.get("member") in label and f.get("values"):
+            return {**f, "values": [label[f["member"]]]}
+        return f
+
+    return [clean(f) for f in filters]
 
 
 _CHECK_YOURSELF = (
