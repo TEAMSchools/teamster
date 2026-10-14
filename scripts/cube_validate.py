@@ -339,6 +339,8 @@ class Dim:
     keys: tuple[str, ...] = ()
     # Tableau aliases to stored values ("K" for grade 0), applied after the key.
     values: dict | None = None
+    # Set when `cube` is a time dimension, asked at this granularity ("week").
+    granularity: str | None = None
 
 
 @dataclass
@@ -425,16 +427,20 @@ def load_checks(path) -> dict:
         m.setdefault("where", "tableau")
     sheets = {}
     for name, s in raw["sheets"].items():
-        dims = {
-            c: Dim(
-                tuple(d["cube"]) if isinstance(d.get("cube"), list) else d.get("cube"),
+        dims = {}
+        for c, d in (s.get("dims") or {}).items():
+            cube = d.get("cube")
+            granularity = None
+            if isinstance(cube, dict):
+                cube, granularity = cube["time"], cube["granularity"]
+            dims[c] = Dim(
+                tuple(cube) if isinstance(cube, list) else cube,
                 d.get("sql") or "",
                 d.get("person", False),
                 _dim_keys(d),
                 {str(k): str(v) for k, v in (d.get("values") or {}).items()} or None,
+                granularity=granularity,
             )
-            for c, d in (s.get("dims") or {}).items()
-        }
         measures = {
             c: _measure(name, c, m, set(mismatches))
             for c, m in (s.get("measures") or {}).items()
@@ -608,7 +614,8 @@ def _caption_members(checks: dict) -> dict[str, str]:
         c: d.cube
         for s in checks["sheets"].values()
         for c, d in s.dims.items()
-        if isinstance(d.cube, str)
+        # A time dimension's caption would filter through a date range; none does yet.
+        if isinstance(d.cube, str) and not d.granularity
     }
     out.update({c: f["cube"] for c, f in checks["filters"].items() if f.get("cube")})
     return out
@@ -884,12 +891,25 @@ class Answer:
 
 
 def cube_query(sheet, grain, measures, filters) -> dict:
-    return {
+    q = {
         "measures": sorted({m for m in measures if m}),
-        "dimensions": [m for d in grain for m in cube_members(sheet.dims[d])],
+        "dimensions": [
+            m
+            for d in grain
+            if not sheet.dims[d].granularity
+            for m in cube_members(sheet.dims[d])
+        ],
         "filters": filters,
         "limit": CUBE_LIMIT,
     }
+    times = [
+        {"dimension": sheet.dims[d].cube, "granularity": sheet.dims[d].granularity}
+        for d in grain
+        if sheet.dims[d].granularity
+    ]
+    if times:
+        q["timeDimensions"] = times
+    return q
 
 
 def cube_members(dim: Dim) -> list[str]:
@@ -899,8 +919,10 @@ def cube_members(dim: Dim) -> list[str]:
 
 
 def cube_key(row: dict, dim: Dim) -> str:
-    """A Cube row's value for a dimension; several members join with " - ", as the
-    dimension's extract expression does."""
+    """A Cube row's value for a dimension: a time dimension at its granularity, or
+    several members joined with " - ", as the extract expression does."""
+    if dim.granularity:
+        return norm_dim(row.get(f"{dim.cube}.{dim.granularity}"))
     ms = cube_members(dim)
     if len(ms) == 1:
         return norm_dim(row.get(ms[0]))

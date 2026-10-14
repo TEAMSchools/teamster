@@ -2066,6 +2066,36 @@ def test_every_key_pattern_in_keys_needs_one_capture_group(tmp_path):
         cv.load_checks(_write(tmp_path, d))
 
 
+def test_a_week_dimension_asks_cube_for_a_time_granularity(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Week"] = {
+        "cube": {"time": "demo.date_day", "granularity": "week"},
+        "sql": "week_start_monday",
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+    sheet = c["sheets"]["Overview - Table"]
+    asked = []
+
+    def load(q):
+        asked.append(q)
+        return [
+            {
+                "demo.date_day.week": "2026-10-05T00:00:00.000",
+                "demo.avg_score": "48.5",
+                "demo.count_students": "20",
+            }
+        ], []
+
+    export = cv.read_export(b"Week,Avg Score\r\n10/5/2026,48.50\r\n")
+    cells = cv.compare_export(sheet, "s1", export, load, [], [], c)
+    assert [x.status for x in cells] == ["match"]
+    assert asked[0]["dimensions"] == []
+    assert asked[0]["timeDimensions"] == [
+        {"dimension": "demo.date_day", "granularity": "week"}
+    ]
+    assert "Week" not in cv._caption_members(c)
+
+
 def _two_routes(fact, alone):
     def load(q):
         is_alone = "demo.count_students" not in q["measures"]
