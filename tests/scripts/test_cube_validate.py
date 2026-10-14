@@ -2672,3 +2672,81 @@ def test_a_diff_must_name_two_plain_measures_on_its_sheet(tmp_path):
     }
     with pytest.raises(cv.CheckError, match="diff names 2 plain measures"):
         cv.load_checks(_write(tmp_path, d))
+
+
+BANDS = {
+    "Band (group)": {
+        "datasource": DS,
+        "field": "band",
+        "bins": {"Low": ["1", "2"], "High": ["3"]},
+    }
+}
+
+
+def test_a_group_dimension_asks_cube_once_per_bin(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Band (group)"] = {
+        "cube": "demo.band",
+        "sql": "band",
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+    sheet = c["sheets"]["Overview - Table"]
+    lists = cv.Lists({}, BANDS)
+
+    def load(q):
+        (vals,) = [f["values"] for f in q["filters"] if f.get("member") == "demo.band"]
+        return [
+            {
+                "demo.avg_score": "40" if vals == ["1", "2"] else "60",
+                "demo.count_students": "20",
+            }
+        ], []
+
+    export = cv.read_export(b"Band (group),Avg Score\r\nLow,40.00\r\nHigh,60.00\r\n")
+    cells = cv.compare_export(sheet, "s1", export, load, [], [], c, lists)
+    assert [x.status for x in cells] == ["match", "match"]
+    sql = cv.extract_sql(
+        sheet, sheet.measures["Avg Score"], ["Band (group)"], [], lists=lists
+    )
+    assert "case when cast(band as string) in ('1', '2') then 'Low'" in sql
+
+
+def test_explain_asks_live_cube_per_bin_for_a_group_dimension(tmp_path):
+    # compare's Cube value is stale; Cube now matches Tableau bin by bin.
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Band (group)"] = {
+        "cube": "demo.band",
+        "sql": "band",
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+    lists = cv.Lists({}, BANDS)
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    cell = cv.Cell(
+        "Overview - Table",
+        "s",
+        {"Band (group)": "Low"},
+        "Avg Score",
+        "40.00",
+        40.0,
+        35.0,
+        20,
+        "mismatch",
+    )
+
+    def run(ds, sql):
+        return [{"g0": "Low", "m": 40.0, "n": 20}, {"g0": "High", "m": 60.0, "n": 20}]
+
+    def cube_now(q):
+        found = [f["values"] for f in q["filters"] if f.get("member") == "demo.band"]
+        if not found:
+            # Asked at the raw member grain: rows keyed by member, not by bin.
+            return [
+                {"demo.band": b, "demo.avg_score": "40", "demo.count_students": "10"}
+                for b in ("1", "2")
+            ], None
+        score = "40" if found[0] == ["1", "2"] else "60"
+        return [{"demo.avg_score": score, "demo.count_students": "20"}], None
+
+    live = cv.Live(rows=run, modified=lambda ds: None, cube_now=cube_now)
+    cv.explain_cells([cell], c, states, {}, run, lambda q: ([], []), live, lists=lists)
+    assert cell.verdict == "pass" and cell.cube == 40.0

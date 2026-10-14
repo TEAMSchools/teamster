@@ -1054,6 +1054,58 @@ def _ask_cube(sheet, grain, wanted, load, filters, student) -> dict[str, Answer]
     return {m: out[m] for m in wanted}
 
 
+def _ask_by_bin(
+    sheet, grain, measures, load, filters, student, lists
+) -> dict[str, Answer]:
+    """Answers at a grain holding a group dimension: one set of queries per bin,
+    filtered to its members, since counts and rates do not add up across members.
+    Raw values: the caller rebuilds table calculations after the bins merge."""
+    i = next((i for i, d in enumerate(grain) if d in lists.groups), None)
+    if i is None:
+        return _ask_cube(sheet, grain, measures, load, filters, student)
+    d, rest = grain[i], [*grain[:i], *grain[i + 1 :]]
+    out: dict[str, Answer] = {}
+    for b, members in lists.groups[d]["bins"].items():
+        if not members:
+            continue
+        only = {
+            "member": sheet.dims[d].cube,
+            "operator": "equals",
+            "values": [str(v) for v in members],
+        }
+        part = _ask_by_bin(
+            sheet, rest, measures, load, [*filters, only], student, lists
+        )
+        for m, a in part.items():
+            o = out.setdefault(m, Answer({}, {}, {}, [], []))
+            for mine, theirs in (
+                (o.fact, a.fact),
+                (o.alone, a.alone),
+                (o.students, a.students),
+            ):
+                mine.update(
+                    {(*k[:i], norm_dim(b), *k[i:]): v for k, v in theirs.items()}
+                )
+            o.rollups = sorted({*o.rollups, *a.rollups})
+            o.rollups_alone = sorted({*o.rollups_alone, *a.rollups_alone})
+    return out
+
+
+def _dim_sql(sheet, d, lists=None) -> str:
+    """A dimension's extract SQL; a group becomes a CASE over its bins' members."""
+    sql = sheet.dims[d].sql
+    g = (lists.groups if lists else {}).get(d)
+    if not g:
+        return sql
+    whens = " ".join(
+        f"when cast({sql} as string) in ({', '.join(_sql_lit(v) for v in members)}) "
+        f"then {_sql_lit(b)}"
+        for b, members in g["bins"].items()
+        if members
+    )
+    return f"case {whens} end"
+
+
 def routes_agree(fact, alone, shown: Shown | None) -> bool:
     """Whether Cube's two routes give the same number at the precision Tableau shows."""
     if fact is None or alone is None:
@@ -1066,7 +1118,7 @@ def routes_agree(fact, alone, shown: Shown | None) -> bool:
 
 
 def compare_export(
-    sheet, state_id, export, load, filters, missing, checks
+    sheet, state_id, export, load, filters, missing, checks, lists=None
 ) -> list[Cell]:
     cols = export.columns
     # No header at all: compare at every mapped dimension Cube has, so its rows still show.
@@ -1140,12 +1192,23 @@ def compare_export(
             load,
             every,
             checks["student_count"],
+            lists,
         )
     return cells
 
 
 def _compare_grain(
-    sheet, state_id, grain, totals, rows, dims, measures, load, filters, student
+    sheet,
+    state_id,
+    grain,
+    totals,
+    rows,
+    dims,
+    measures,
+    load,
+    filters,
+    student,
+    lists=None,
 ) -> list[Cell]:
     """One grain's cells: each Tableau row against Cube, then Cube's extra slices."""
 
@@ -1171,7 +1234,7 @@ def _compare_grain(
             for m in measures
         ]
     asked = [m for m in measures if _has_cube(sheet, sheet.measures[m])]
-    raw = _ask_cube(sheet, grain, asked, load, filters, student)
+    raw = _ask_by_bin(sheet, grain, asked, load, filters, student, lists or Lists())
     answers = {
         m: Answer(
             apply_calc(sheet.measures[m], a.fact, sheet.measures[m].scale),
@@ -1506,8 +1569,8 @@ def _own_sql(meas) -> tuple[str | None, str | None, str | None]:
     )
 
 
-def extract_sql(sheet, meas, grain, where) -> str:
-    sel = [f"{sheet.dims[d].sql} as g{i}" for i, d in enumerate(grain)]
+def extract_sql(sheet, meas, grain, where, lists=None) -> str:
+    sel = [f"{_dim_sql(sheet, d, lists)} as g{i}" for i, d in enumerate(grain)]
     sql_, num, den = _own_sql(meas)
     sel += [f"{sql_} as m"] if sql_ else [f"{num} as m_num", f"{den} as m_den"]
     # Backticks: sqlglot quotes the name, which to_hyper_sql swaps for the extract table.
@@ -1532,8 +1595,8 @@ def extract_values(rows, n_grain) -> dict:
     return out
 
 
-def counts_sql(sheet, grain, where, student) -> str:
-    sel = [f"{sheet.dims[d].sql} as g{i}" for i, d in enumerate(grain)]
+def counts_sql(sheet, grain, where, student, lists=None) -> str:
+    sel = [f"{_dim_sql(sheet, d, lists)} as g{i}" for i, d in enumerate(grain)]
     sel.append(f"count(distinct {student}) as n")
     # trunk-ignore(bandit/B608): SQL over the dashboard's own extract or rpt_ table; names come from the checks file
     sql = f"select {', '.join(sel)} from `{EXTRACT_TABLE}`"
@@ -1639,14 +1702,14 @@ def _slice(
     return where + saved_where, cube
 
 
-def _extract_measure(sheet, meas, grain, where, run) -> dict:
+def _extract_measure(sheet, meas, grain, where, run, lists=None) -> dict:
     if meas.diff:
         a, b = (
-            _extract_measure(sheet, sheet.measures[x], grain, where, run)
+            _extract_measure(sheet, sheet.measures[x], grain, where, run, lists)
             for x in meas.diff
         )
         return _minus(a, b)
-    rows = run(sheet.datasource, extract_sql(sheet, meas, list(grain), where))
+    rows = run(sheet.datasource, extract_sql(sheet, meas, list(grain), where, lists))
     return apply_calc(meas, extract_values(rows, len(grain)), 1.0)
 
 
@@ -1678,7 +1741,7 @@ def _trust(
                 states[state], sname, checks, fields, defaults, sheet_filters, lists
             )
             try:
-                ext = _extract_measure(sheet, meas, grain, where, run_extract)
+                ext = _extract_measure(sheet, meas, grain, where, run_extract, lists)
             except Exception:  # noqa: BLE001 - SQL the extract cannot run reproduces nothing
                 ext = {}
             index = Keys(ext, _multi(sheet, grain))
@@ -1702,24 +1765,49 @@ def _cube_queries(sheet, meas, grain, filters, student=None) -> list[dict]:
     return [cube_query(sheet, grain, [meas.cube, student], filters + meas.cube_filters)]
 
 
-def _cube_measure(sheet, meas, grain, filters, ask, student=None) -> tuple[dict, dict]:
+def _cube_raw(sheet, meas, grain, filters, ask, student, lists) -> tuple[dict, dict]:
+    """A plain measure's raw Cube values and student counts, asked per bin when
+    the grain holds a group dimension, as compare asks."""
+    i = next((i for i, d in enumerate(grain) if d in lists.groups), None)
+    if i is None:
+        (q,) = _cube_queries(sheet, meas, grain, filters, student)
+        by = _by_key(ask(q), sheet, grain)
+        raw = {k: _num(r.get(meas.cube)) for k, r in by.items()}
+        counts = {k: _int(r.get(student)) for k, r in by.items()} if student else {}
+        return raw, counts
+    d, rest = grain[i], [*grain[:i], *grain[i + 1 :]]
+    raw, counts = {}, {}
+    for b, members in lists.groups[d]["bins"].items():
+        if not members:
+            continue
+        only = {
+            "member": sheet.dims[d].cube,
+            "operator": "equals",
+            "values": [str(v) for v in members],
+        }
+        part, n = _cube_raw(sheet, meas, rest, [*filters, only], ask, student, lists)
+        for mine, theirs in ((raw, part), (counts, n)):
+            mine.update({(*k[:i], norm_dim(b), *k[i:]): v for k, v in theirs.items()})
+    return raw, counts
+
+
+def _cube_measure(
+    sheet, meas, grain, filters, ask, student=None, lists=None
+) -> tuple[dict, dict]:
     """A measure's Cube values (its table calculation applied) and student counts."""
     if meas.diff:
         (a, n), (b, _) = (
-            _cube_measure(sheet, sheet.measures[x], grain, filters, ask, student)
+            _cube_measure(sheet, sheet.measures[x], grain, filters, ask, student, lists)
             for x in meas.diff
         )
         return _minus(a, b), n
-    (q,) = _cube_queries(sheet, meas, grain, filters, student)
-    by = _by_key(ask(q), sheet, grain)
-    values = apply_calc(
-        meas, {k: _num(r.get(meas.cube)) for k, r in by.items()}, meas.scale
-    )
-    counts = {k: _int(r.get(student)) for k, r in by.items()} if student else {}
-    return values, counts
+    raw, counts = _cube_raw(sheet, meas, grain, filters, ask, student, lists or Lists())
+    return apply_calc(meas, raw, meas.scale), counts
 
 
-def _variant(v, sheet, meas, grain, where, base, run_extract, load, student=None):
+def _variant(
+    v, sheet, meas, grain, where, base, run_extract, load, student=None, lists=None
+):
     dash = None
     if v.get("where"):
         alt = Measure(
@@ -1745,12 +1833,18 @@ def _variant(v, sheet, meas, grain, where, base, run_extract, load, student=None
         alt = None
     if alt is not None:
         rows = run_extract(
-            sheet.datasource, extract_sql(sheet, alt, list(grain), where)
+            sheet.datasource, extract_sql(sheet, alt, list(grain), where, lists)
         )
         dash = apply_calc(alt, extract_values(rows, len(grain)), 1.0)
     cube = (
         _cube_measure(
-            sheet, meas, grain, base + v["cube_filters"], lambda q: load(q)[0], student
+            sheet,
+            meas,
+            grain,
+            base + v["cube_filters"],
+            lambda q: load(q)[0],
+            student,
+            lists,
         )[0]
         if v.get("cube_filters")
         else None
@@ -1872,11 +1966,11 @@ def _explain_batch(
     where, base = _slice(
         states[state], sname, checks, fields, defaults, sheet_filters, lists
     )
-    ext = _extract_measure(sheet, meas, grain, where, run_extract)
+    ext = _extract_measure(sheet, meas, grain, where, run_extract, lists)
     live_v, cube_now, cube_at, table_at = None, None, None, None
     live_n, cube_n = {}, {}
     if live is not None:
-        live_v = _extract_measure(sheet, meas, grain, where, live.rows)
+        live_v = _extract_measure(sheet, meas, grain, where, live.rows, lists)
         refreshed = []
 
         def ask_now(q):
@@ -1886,12 +1980,14 @@ def _explain_batch(
 
         # Same shape as compare's query, so Cube routes it the same way.
         cube_now, cube_n = _cube_measure(
-            sheet, meas, grain, base, ask_now, checks["student_count"]
+            sheet, meas, grain, base, ask_now, checks["student_count"], lists
         )
         cube_at = refreshed[-1] if refreshed else None
         student_col = checks.get("student_column", "student_number")
         live_n = extract_counts(
-            live.rows(sheet.datasource, counts_sql(sheet, grain, where, student_col)),
+            live.rows(
+                sheet.datasource, counts_sql(sheet, grain, where, student_col, lists)
+            ),
             len(grain),
         )
         table_at = live.modified(sheet.datasource)
@@ -1906,6 +2002,7 @@ def _explain_batch(
             run_extract,
             load,
             checks["student_count"],
+            lists,
         )
         for v in meas.variants
     ]
@@ -2247,7 +2344,7 @@ def issue_drafts(
             lists,
             public_only=True,
         )
-        query = extract_sql(sheet, meas, grain, where)
+        query = extract_sql(sheet, meas, grain, where, lists)
         alt = [v for v in meas.variants if s in v["explains"]]
         labels = _issue_labels(m)
         related = " ".join(f"#{n}" for n in m.get("related") or [])
@@ -2541,6 +2638,7 @@ def run_compare(
                     filters + sheet_cube,
                     missing + sheet_missing,
                     checks,
+                    lists,
                 )
             except CubeError as err:
                 cells.append(
