@@ -178,13 +178,24 @@ class CubeClient:
         )
 
     def load(self, query) -> tuple[list[dict], list[str]]:
+        import httpx
+
         overloaded = 0
         for _ in range(120):
-            r = self._http().post(
-                f"{self.url}/load",
-                json={"query": query},
-                headers={"Authorization": self._token()},
-            )
+            try:
+                r = self._http().post(
+                    f"{self.url}/load",
+                    json={"query": query},
+                    headers={"Authorization": self._token()},
+                )
+            except httpx.TransportError as err:
+                # Cube Cloud dropped the connection: back off like a busy answer, and
+                # give up as a CubeError, which costs only this sheet.
+                if overloaded >= 5:
+                    raise CubeError(f"Cube connection failed: {err}") from err
+                overloaded += 1
+                self.sleep(2**overloaded)
+                continue
             if r.status_code in (429, 502, 503, 504) and overloaded < 5:
                 # Cube Cloud is busy (other users, or this run's own workers): back off.
                 overloaded += 1

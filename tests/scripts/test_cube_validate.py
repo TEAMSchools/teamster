@@ -142,6 +142,41 @@ def test_cube_client_backs_off_when_cube_is_overloaded():
     assert rows == [{"a": "1"}] and waits and waits[0] >= 1
 
 
+def test_cube_client_retries_a_dropped_connection_then_reports_it():
+    # Live on DDI, Cube Cloud dropped a connection mid-response and the whole
+    # compare run ended with nothing saved.
+    import httpx
+
+    class Dropping:
+        def __init__(self, drops):
+            self.drops = drops
+
+        def post(self, url, json, headers):
+            if self.drops:
+                self.drops -= 1
+                raise httpx.RemoteProtocolError("Server disconnected")
+            return FakeResponse({"data": [{"a": "1"}]})
+
+    waits = []
+    client = cv.CubeClient(
+        "https://cube/api",
+        SECRET,
+        "me@example.org",
+        http=Dropping(2),
+        sleep=waits.append,
+    )
+    assert client.load({"measures": []})[0] == [{"a": "1"}] and len(waits) == 2
+    always = cv.CubeClient(
+        "https://cube/api",
+        SECRET,
+        "me@example.org",
+        http=Dropping(99),
+        sleep=lambda s: None,
+    )
+    with pytest.raises(cv.CubeError, match="connection"):
+        always.load({"measures": []})
+
+
 def test_cube_client_gives_each_thread_its_own_http_client():
     made = []
     client = cv.CubeClient(
