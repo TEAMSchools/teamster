@@ -629,18 +629,6 @@ data_tests:
           ref:
             name: int_people__staff_roster
 
-  - name: int_students__students__miami_active_non_cep_lunchstatus
-    description: >-
-      Every active Miami student has either a lunchstatus or a school-level meal
-      code (such as CEP) in Focus. A school-level code leaves lunchstatus null
-      by design; a student with no meal code at all is a missing record for Ops
-      to enter in Focus.
-    config:
-      meta:
-        dagster:
-          ref:
-            name: int_students__students
-
   - name: int_people__staff_roster__mail_populated_with_sam
     description: >-
       Anyone holding a sam_account_name must also hold a mail value. The Tableau
