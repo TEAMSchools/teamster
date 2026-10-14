@@ -27,10 +27,10 @@ models:
         description: >-
           Meal eligibility, conformed upstream in int_focus__students. For
           Miami, null wherever Focus's free_reduced_meals_program field carries
-          a school-level CEP code instead of an individual F, R or P
+          a school-level code such as CEP instead of an individual F, R or P
           determination. The singular test
           int_students__students__miami_active_non_cep_lunchstatus checks only
-          active Miami students outside CEP.
+          active Miami students with no meal code recorded at all.
       - name: student_number
         description: Canonical network student number.
       - name: ethnicity

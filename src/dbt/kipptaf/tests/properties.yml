@@ -631,10 +631,10 @@ data_tests:
 
   - name: int_students__students__miami_active_non_cep_lunchstatus
     description: >-
-      Every active Miami student outside CEP has a lunchstatus. Focus records
-      only a school-level code for CEP students, so their null is expected and
-      excluded; a null for anyone else is a missing individual determination for
-      Ops to enter in Focus.
+      Every active Miami student has either a lunchstatus or a school-level meal
+      code (such as CEP) in Focus. A school-level code leaves lunchstatus null
+      by design; a student with no meal code at all is a missing record for Ops
+      to enter in Focus.
     config:
       meta:
         dagster:

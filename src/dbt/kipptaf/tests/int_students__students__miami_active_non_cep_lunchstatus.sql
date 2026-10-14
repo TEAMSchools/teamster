@@ -8,7 +8,4 @@ where
     s._dbt_source_project = 'kippmiami'
     and s.enroll_status = 0
     and s.lunchstatus is null
-    and (
-        f.free_reduced_meals_program_label is null
-        or f.free_reduced_meals_program_label not like 'CEP%'
-    )
+    and f.meal_c is null

@@ -770,11 +770,10 @@ models:
           temporary. For the current year in NJ this is Titan's own eligibility
           determination, direct certification included -- a directly certified
           student can be certified at the reduced level (Medicaid Reduced), so
-          the direct-certification flag does not imply free. Null for Miami
-          today -- Focus's meal field currently carries only a school-level CEP
-          direct-certification code, not an individual determination. The
-          underlying Focus mapping (in int_focus__students) resolves to F, R or
-          P as soon as Focus records a per-student determination.
+          the direct-certification flag does not imply free. For Miami, the
+          Focus mapping in int_focus__students resolves to F, R or P, and is
+          null where Focus carries a school-level code such as CEP or no code at
+          all.
         config:
           meta:
             contains_pii: true
