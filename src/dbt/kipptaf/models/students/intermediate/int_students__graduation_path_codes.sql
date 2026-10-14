@@ -115,6 +115,8 @@ with
 
             (r.grade_level = 12 and r.fafsa_season_12th) as fafsa_required,
 
+            (r.grade_level = 11 and not r.njgpa_season_11th) as is_awaiting_results,
+
             (
                 not r.attempted_njgpa_ela and not r.attempted_njgpa_math
             ) as attempted_nothing,
@@ -153,6 +155,7 @@ select
         counts_ela,
         counts_math,
         fafsa_required,
+        is_awaiting_results,
         attempted_nothing,
         best_alternative_code
     ),
@@ -198,6 +201,10 @@ select
         then 'No FAFSA'
         when r.counts_ela and r.counts_math
         then 'Grad Eligible'
+        when r.counts_ela and r.is_awaiting_results and not r.attempted_njgpa_math
+        then 'ELA Only / Awaiting Math'
+        when r.counts_math and r.is_awaiting_results and not r.attempted_njgpa_ela
+        then 'Math Only / Awaiting ELA'
         when r.counts_ela and r.fafsa_required and not r.has_fafsa
         then 'ELA Only / No FAFSA'
         when r.counts_ela
@@ -208,12 +215,8 @@ select
         then 'Math Only'
         when r.has_fafsa and r.fafsa_required
         then 'FAFSA Only'
-        /* An 11th grader holding NJGPA records already is treated like a 12th
-           grader, minus the FAFSA requirement -- testing ahead of their peers
-           usually means they are behind on credits and belong in 12th grade.
-           The grace below is only for those with no records yet. */
-        when r.grade_level = 11 and r.attempted_nothing and not r.njgpa_season_11th
-        then 'Grad Eligible'
+        when r.is_awaiting_results and r.attempted_nothing
+        then 'Awaiting Results'
         else 'Not Grad Eligible'
     end as grad_eligibility,
 
