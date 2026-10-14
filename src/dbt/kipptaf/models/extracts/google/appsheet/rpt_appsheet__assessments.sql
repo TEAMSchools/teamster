@@ -1,4 +1,5 @@
 select
+    `source`,
     assessment_id,
     title,
     academic_year,
@@ -12,7 +13,7 @@ select
     module_code,
     module_type,
     module_sequence,
-    illuminate_grade_level_id,
+    tagged_grade_level_id as illuminate_grade_level_id,
     regions_assessed,
     regions_report_card,
     regions_progress_report,
@@ -20,5 +21,7 @@ select
     subject_area,
     is_internal_assessment,
 
-    illuminate_grade_level_id - 1 as grade_level,
+    tagged_grade_level_id - 1 as grade_level,
+
+    format('%s-%d', `source`, assessment_id) as assessment_key,
 from {{ ref("int_assessments__assessments_members") }}

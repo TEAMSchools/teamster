@@ -6,7 +6,8 @@ models:
       assessed subject) to their student section enrollment and assessment
       administration. Expectations without a resolvable section enrollment
       — replacement assessments and ES Writing in grades K-4 Newark/Camden
-      — live in `bridge_assessment_expectations_student_scoped`.
+      — live in `bridge_assessment_expectations_student_scoped`. Apex rows
+      cover only students who tested, so every Apex expectation is met.
     config:
       materialized: table
       meta:

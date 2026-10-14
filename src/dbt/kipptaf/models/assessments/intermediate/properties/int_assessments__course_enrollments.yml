@@ -34,12 +34,12 @@ models:
           arguments:
             combination_of_columns:
               - _dbt_source_project
-              - powerschool_student_number
-              - illuminate_academic_year
+              - student_number
+              - academic_year
               - subject_or_course_key
               - cc_dateenrolled
     columns:
-      - name: powerschool_student_number
+      - name: student_number
         data_type: int64
         description: Student number shared by both SIS branches.
       - name: courses_credittype
@@ -64,7 +64,7 @@ models:
           exit_date, which is cc_dateleft on PowerSchool rows and the departure
           or scheduled term end on Focus rows, so it is never null on an open
           Focus section. For ES Writing rows, the student's school exit date.
-      - name: illuminate_subject_area
+      - name: subject_area
         data_type: string
         description: >-
           Illuminate subject area of the course from the course-subject
@@ -112,12 +112,12 @@ models:
       - name: region
         data_type: string
         description: Short region name (Newark, Camden, Miami, Paterson).
-      - name: illuminate_academic_year
+      - name: academic_year
         data_type: int64
         description: >-
           Academic year in Illuminate's convention, the SIS academic year plus
           one.
-      - name: illuminate_grade_level_id
+      - name: grade_level_id
         data_type: int64
         description: >-
           Grade level in Illuminate's convention, the SIS grade level plus one.
@@ -132,12 +132,12 @@ models:
 unit_tests:
   - name: test_focus_rows_get_window_end_subject_and_homeroom
     description: >-
-      Focus rows leave cc_dateleft null on open sections and carry no
-      illuminate_subject_area, discipline or credit type. An open ELA section
-      takes its window end from exit_date and maps core_subject ELA to Text
-      Study and ELA. A homeroom section, flagged only by is_homeroom, comes out
-      with credit type HR. With no advanced-math flag on Focus,
-      is_advanced_math_student is false rather than null.
+      Focus rows leave cc_dateleft null on open sections and carry no Illuminate
+      subject area, discipline or credit type. An open ELA section takes its
+      window end from exit_date and maps core_subject ELA to Text Study and ELA.
+      A homeroom section, flagged only by is_homeroom, comes out with credit
+      type HR. With no advanced-math flag on Focus, is_advanced_math_student is
+      false rather than null.
     model: int_assessments__course_enrollments
     given:
       - input: ref('int_students__course_enrollments')
@@ -196,19 +196,19 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 11,
+            student_number: 11,
             courses_credittype: null,
             cc_dateleft: 2026-12-18,
-            illuminate_subject_area: Text Study,
+            subject_area: Text Study,
             discipline: ELA,
             subject_or_course_key: Text Study,
             is_advanced_math_student: false,
           }
         - {
-            powerschool_student_number: 11,
+            student_number: 11,
             courses_credittype: HR,
             cc_dateleft: 2026-12-18,
-            illuminate_subject_area: null,
+            subject_area: null,
             discipline: null,
             subject_or_course_key: HR6,
             is_advanced_math_student: false,

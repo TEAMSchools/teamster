@@ -1,17 +1,54 @@
 models:
   - name: stg_google_appsheet__illuminate_assessments_extension
     description: >-
-      Metadata layered onto Illuminate assessments through AppSheet — module,
-      grade, subject, and which regions the assessment covers and reports to.
-      Intended grain is one row per assessment_id.
+      Metadata layered onto Illuminate and Apex assessments through AppSheet —
+      module, grade, subject, and which regions the assessment covers and
+      reports to. One row per source and assessment_id; the two systems' ids can
+      collide, so every join to this model matches on both.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - source
+              - assessment_id
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              assessment_key is not distinct from
+              format('%s-%d', `source`, assessment_id)
+          config:
+            severity: error
     columns:
-      - name: assessment_id
-        data_type: int64
-        description: Illuminate assessment id the extension row describes.
+      - name: source
+        data_type: string
+        description: >-
+          System the assessment_id belongs to — illuminate or apex.
         data_tests:
-          - unique:
+          - not_null:
               config:
                 severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - illuminate
+                  - apex
+              config:
+                severity: error
+      - name: assessment_id
+        data_type: int64
+        description: >-
+          Assessment id the extension row describes, in the system named by
+          source.
+      - name: assessment_key
+        data_type: string
+        description: >-
+          The app's key, source and assessment_id joined with a hyphen (for
+          example apex-123). AppSheet fills it from the chosen assessment in
+          rpt_appsheet__assessments. Not the dim_assessments.assessment_key
+          hash, so never join the two. dbt joins on source and assessment_id
+          instead.
       - name: administered_at
         data_type: date
         description: >-

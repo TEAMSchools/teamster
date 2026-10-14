@@ -441,7 +441,7 @@ kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.base_powerschool__course_enrollmen
 kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.base_powerschool__final_grades	#5812
 kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.int_powerschool__category_grades	#5812
 kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.int_powerschool__gpa_term	#5812
-kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.stg_powerschool__storedgrades	#5812
+kipptaf.rpt_tableau__gradebook_gpa	A1	kipptaf.int_powerschool__student_course_grades_spine	#5812
 kipptaf.rpt_tableau__graduation_requirements	A1	kipptaf.base_powerschool__course_enrollments	#5812
 kipptaf.rpt_tableau__home_instruction	A1	kipptaf.int_deanslist__incidents	#5812
 kipptaf.rpt_tableau__home_instruction	A1	kipptaf.int_powerschool__spenrollments	#5812
@@ -500,14 +500,6 @@ kipptaf.rpt_tableau__kfwd_verification	A1	kipptaf.stg_kippadb__account	#5812
 kipptaf.rpt_tableau__kfwd_verification	A1	kipptaf.stg_kippadb__enrollment	#5812
 kipptaf.rpt_tableau__kfwd_verification	A1	kipptaf.stg_kippadb__term	#5812
 kipptaf.rpt_tableau__knowbe4_training_enrollment_roster	A1	kipptaf.stg_knowbe4__training_enrollments	#5812
-kipptaf.rpt_tableau__miami_fast	A1	kipptaf.base_powerschool__course_enrollments	#5812
-kipptaf.rpt_tableau__miami_fast	A1	kipptaf.int_fldoe__all_assessments	#5812
-kipptaf.rpt_tableau__miami_fast	A1	kipptaf.int_fldoe__fast_standard_performance_unpivot	#5812
-kipptaf.rpt_tableau__miami_fast	A1	kipptaf.int_iready__instruction_by_lesson	#5812
-kipptaf.rpt_tableau__miami_k2_iready	A1	kipptaf.base_powerschool__course_enrollments	#5812
-kipptaf.rpt_tableau__miami_k2_star	A1	kipptaf.base_powerschool__course_enrollments	#5812
-kipptaf.rpt_tableau__miami_k2_star	A1	kipptaf.stg_renlearn__star	#5812
-kipptaf.rpt_tableau__miami_k2_star	A1	kipptaf.stg_renlearn__star_dashboard_standards	#5812
 kipptaf.rpt_tableau__mtss_rti	A1	kipptaf.int_amplify__all_assessments	#5812
 kipptaf.rpt_tableau__mtss_rti	A1	kipptaf.int_deanslist__referral_suspension_rollup	#5812
 kipptaf.rpt_tableau__mtss_rti	A1	kipptaf.int_iready__diagnostic_results	#5812

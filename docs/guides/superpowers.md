@@ -16,8 +16,8 @@ Every feature, refactor, or significant change follows this lifecycle:
 ```text
  You say              Claude does                       You do
  ─────────            ──────────                        ──────
- "Let's brainstorm"   Asks questions, proposes           Answer questions,
-                      approaches, presents design        approve design
+ "Let's brainstorm"   Asks questions, plays back what    Answer questions,
+                      it heard, sizes the work           approve design
 
                       Opens GitHub issue, asks            Choose worktree or
                       worktree or branch switch           branch switch
@@ -44,35 +44,35 @@ Every feature, refactor, or significant change follows this lifecycle:
 
 Tell Claude what you want to build or change. It will:
 
-1. Explore the codebase to understand the current state.
-2. Ask you clarifying questions — **one at a time**, often multiple choice.
-3. Propose 2-3 approaches with trade-offs and a recommendation.
-4. Present the design and ask for your approval.
+1. Offer to skip the questions, then ask one open question about what you want
+   and why.
+2. Keep asking, **one question at a time**. When looking would help, it offers
+   to explore the codebase, your files, or the web; you decide.
+3. Play back each part in a few hundred words as it understands it, marking its
+   guesses, and ask what's wrong or missing.
+4. Size the work and say which size it picked.
 
-Claude sizes the brainstorm to the task:
+| Size              | What it means                               | What happens                                   |
+| ----------------- | ------------------------------------------- | ---------------------------------------------- |
+| Quick, clear task | Everything that matters is in your request  | Claude does it and tells you what it did       |
+| Small change      | The full design fits in a chat message      | You approve it in chat; no spec, no Phases 2-3 |
+| Project           | Needs a written design a builder could plan | A spec, reviewed by the team (Phases 2-3)      |
 
-- **Spike** — a quick probe to answer a question. No design document.
-- **Bounded** — a small, well-understood change. A short design agreed in chat;
-  no spec file, no Phases 2-3.
-- **Architectural** — anything larger or riskier. A full spec, reviewed by the
-  team (Phases 2-3). When in doubt, Claude picks this one.
+If Claude is unsure which size fits, it asks you. If the work grows partway
+through, it stops and moves up a size. Before handing over a project spec, a
+fresh reviewer reads it as the builder would, and Claude comes back once with
+any questions only you can answer.
 
-!!! warning "Don't skip this phase"
+**Your role:** Answer questions honestly. Overrule the size if it's wrong — a
+request that sounds clear can hide a choice you haven't made yet. Approve the
+design explicitly — agreeing with the idea is not the same as approving the
+design.
 
-    Every project goes through brainstorming — even "simple" ones. A config
-    change, a single new model, a small refactor. The design can be short, but
-    it must exist and be approved before anything is built.
-
-**Your role:** Answer questions honestly. Push back if something doesn't feel
-right, including the size Claude picked. Approve the design explicitly —
-agreeing with the idea is not the same as approving the design.
-
-**When you're done:** An architectural design moves to Phase 2 — no files are
-written yet.
+**When you're done:** A project moves to Phase 2 — no files are written yet.
 
 ## Phase 2: GitHub Issue and Dev Branch
 
-After an architectural brainstorm, Claude will:
+After a project brainstorm, Claude will:
 
 1. Open a GitHub issue through the GitHub connector — labeled with the
    appropriate conventional commit type (`feat`, `fix`, `refactor`, etc.) and

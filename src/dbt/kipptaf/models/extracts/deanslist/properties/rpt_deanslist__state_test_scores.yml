@@ -1,5 +1,11 @@
 models:
   - name: rpt_deanslist__state_test_scores
+    description:
+      New Jersey state assessment scores for DeansList, one row per student,
+      test, subject, year and round. Shipped as the deanslist_state_test_scores
+      file (see deanslist-annual.yaml in the kipptaf extracts config); the
+      DeansList Official Transcript reads it for its Standardized Test Scores
+      table.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -12,25 +18,69 @@ models:
     columns:
       - name: student_number
         data_type: int64
+        description: KIPP student number.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: string
+        description: School year as the vendor labels it, e.g. 2025-2026.
       - name: academic_year_int
         data_type: int64
+        description: Starting year of the school year, e.g. 2025 for 2025-2026.
       - name: test_round
         data_type: string
+        description: Testing period, e.g. Spring.
       - name: test_type
         data_type: string
+        description: Assessment program (PARCC, NJSLA, NJSLA Science or NJGPA).
       - name: subject
         data_type: string
+        description: Subject discipline (ELA, Math or Science).
       - name: test_name
         data_type: string
+        description: Full subject name as reported by the vendor.
+      - name: grade_level_when_assessed
+        data_type: int64
+        description:
+          The student's grade when they took the test, so DeansList can label a
+          score with its tested grade instead of looking it up in DeansList
+          enrollment history. NULL on Pearson NJGPA rows, which did not send it.
+        config:
+          meta:
+            contains_pii: true
       - name: scale_score
         data_type: numeric
+        description:
+          Scale score. Cambium scores (Spring 2026 on) use a different scale
+          from the earlier Pearson years, so scores do not compare across that
+          change.
+        config:
+          meta:
+            contains_pii: true
       - name: proficiency_level
         data_type: string
+        description: Performance level label, e.g. Met Expectations.
+        config:
+          meta:
+            contains_pii: true
       - name: is_proficient
         data_type: int64
+        description:
+          1 when the student met the proficiency bar for the test, otherwise 0.
+        config:
+          meta:
+            contains_pii: true
       - name: score_display
         data_type: string
+        description:
+          Performance level with the scale score in parentheses, e.g. Met
+          Expectations (750).
+        config:
+          meta:
+            contains_pii: true
       - name: test_index
         data_type: int64
+        description:
+          Order of the student's scores in this test_name, 1 for the earliest,
+          by year then round.

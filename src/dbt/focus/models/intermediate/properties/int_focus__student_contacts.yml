@@ -134,6 +134,14 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: phone_alternate
+        description: >-
+          Contact alternate phone (a Focus title such as "Alternate Phone"), raw
+          as stored in Focus. Focus-only, with no Finalsite or PowerSchool
+          counterpart, so the kipptaf contacts union does not carry it.
+        config:
+          meta:
+            contains_pii: true
       - name: phone_primary
         description: >-
           Contact primary phone — the highest-priority (lowest detail_priority)

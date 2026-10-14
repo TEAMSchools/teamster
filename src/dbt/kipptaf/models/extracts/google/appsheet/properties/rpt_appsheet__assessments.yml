@@ -1,21 +1,35 @@
 models:
   - name: rpt_appsheet__assessments
     description: >-
-      Illuminate assessment list for the Assessment AppSheet app, one row per
-      Illuminate assessment id, internal and external alike. A passthrough of
-      `int_assessments__assessments_members` plus a zero-indexed grade level.
+      Assessment list for the Assessment AppSheet app, one row per source and
+      assessment id — every Illuminate assessment, internal and external alike,
+      plus the Apex assessments in scope. A passthrough of
+      `int_assessments__assessments_members` plus a zero-indexed grade level and
+      the app's key.
     columns:
-      - name: assessment_id
-        data_type: int64
-        description: Illuminate assessment id.
+      - name: assessment_key
+        data_type: string
+        description: >-
+          The app's key, source and assessment_id joined with a hyphen (for
+          example apex-123). The extension table stores the same value, so
+          AppSheet links the two on one column instead of building its own
+          computed key.
         data_tests:
           - unique
+      - name: source
+        data_type: string
+        description: System the assessment_id belongs to — illuminate or apex.
+      - name: assessment_id
+        data_type: int64
+        description: Assessment id in the system named by source.
       - name: title
         data_type: string
         description: Assessment title.
       - name: academic_year
         data_type: int64
-        description: Academic year as recorded in Illuminate.
+        description: >-
+          Academic year as recorded in Illuminate. For Apex, the Focus school
+          year plus one, matching Illuminate's convention.
       - name: academic_year_clean
         data_type: int64
         description:
@@ -32,7 +46,9 @@ models:
         description: Last name of the staff member who created the assessment.
       - name: performance_band_set_id
         data_type: int64
-        description: Illuminate performance band set id for the assessment.
+        description: >-
+          Performance band set id for the assessment — Illuminate's, or the Apex
+          band set for Apex.
       - name: assessment_type
         data_type: string
         description: Illuminate assessment type.
@@ -61,7 +77,8 @@ models:
         data_type: string
         description:
           Comma-separated list of regions that take the assessment, from the
-          AppSheet extension. Null for external assessments.
+          AppSheet extension. Null for external assessments; Miami for an
+          untagged Apex assessment.
       - name: regions_report_card
         data_type: string
         description:
@@ -84,7 +101,9 @@ models:
           area.
       - name: is_internal_assessment
         data_type: boolean
-        description: True when the assessment has an AppSheet extension row.
+        description: >-
+          True when the assessment has an AppSheet extension row. Always true
+          for Apex, which is internal whether or not it is tagged.
       - name: grade_level
         data_type: int64
         description:
