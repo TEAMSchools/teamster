@@ -3,22 +3,24 @@ models:
     description: >-
       The benchmark-score panel shown beside stored bucket assignments on the
       goals dashboard, mirroring the goal-setting generator's ay2026 source
-      config. The state result sits first - NJSLA or FAST PM3 from the prior
-      year, grade-3 FAST read from same-year PM1, and Star EOY (K and grade-1
-      spring) feeding grade 1-2 benchmarks only, never grade 3 - and the i-Ready
-      BOY typical-growth projection (Star BOY for Miami K) is the fallback. One
-      row per _dbt_source_project x student x academic_year x subject. Display
-      and comparison only - bucket membership never derives from these columns.
-      Miami K reads the standard Star export until the FAST Star file is staged.
+      config as one ranked union. Priority order - NJSLA or FAST from the state
+      (prior-year PM3, grade-3 FAST read from same-year PM1), then Star EOY (K
+      and grade-1 spring feeding grade 1-2 benchmarks only, never grade 3), then
+      Star BOY (Miami K), then the i-Ready BOY typical-growth projection - with
+      the best state-side and fallback-side scores kept beside the pick for
+      comparison. One row per _dbt_source_project x student x academic_year x
+      subject. Display and comparison only - bucket membership never derives
+      from these columns. Miami K reads the standard Star export until the FAST
+      Star file is staged.
     config:
       meta:
         contains_pii: true
         standard_exempt:
           A5: >-
-            The rn_state and rn_iready picks are priority rules, not dup-masking
-            — a current state test outranks a prior Star EOY, and Star BOY
-            outranks i-Ready for Miami K, both ordered by source before score —
-            matching the goal-setting generator's source order.
+            The rn_benchmark pick is a priority rule, not dup-masking — one
+            ranked union ordered by source (state test, then Star EOY, then Star
+            BOY, then i-Ready) before score, matching the goal-setting
+            generator's source order.
           A4: >-
             Shares its (_dbt_source_project, academic_year, student_number,
             subject) key with int_students__bucket_assignments, but the two hold

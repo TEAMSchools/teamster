@@ -1,16 +1,20 @@
 with
-    state_test_union as (
+    benchmark_union as (
         select
             _dbt_source_project,
             student_number,
-            academic_year,
             scale_score,
-            performance_level as `level`,
             is_proficient_int,
             is_approaching_int,
             is_below_int,
-            source_system,
-            illuminate_subject_area as `subject`,
+
+            performance_level as `level`,
+
+            0 as priority,
+
+            scale_score as scale_score_state,
+            is_proficient_int as is_proficient_int_state,
+            cast(null as int64) as scale_score_iready,
 
             if(
                 score_source = 'state_nj',
@@ -18,10 +22,12 @@ with
                 concat('FAST ', administration_period)
             ) as assessment_type,
 
+            if(illuminate_subject_area = 'Text Study', 'Reading', 'Math') as `subject`,
+
             -- grade 3 FAST reads PM1 of the same year, not PM3 of the prior year
             academic_year + if(
                 score_source = 'state_fl' and administration_period = 'PM1', 0, 1
-            ) as academic_year_plus,
+            ) as academic_year,
         from {{ ref("int_assessments__state_scores") }}
         where
             student_number is not null
@@ -49,21 +55,25 @@ with
         select
             _dbt_source_project,
             student_display_id as student_number,
-            academic_year,
             unified_score as scale_score,
-            state_benchmark_category_level as `level`,
 
             if(state_benchmark_category_level < 4, 1, 0) as is_proficient_int,
             if(state_benchmark_category_level = 4, 1, 0) as is_approaching_int,
             if(state_benchmark_category_level = 5, 1, 0) as is_below_int,
 
-            cast(null as string) as source_system,
+            state_benchmark_category_level as `level`,
 
-            if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
+            1 as priority,
+
+            unified_score as scale_score_state,
+            if(state_benchmark_category_level < 4, 1, 0) as is_proficient_int_state,
+            cast(null as int64) as scale_score_iready,
 
             'Star EOY' as assessment_type,
 
-            academic_year + 1 as academic_year_plus,
+            if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
+
+            academic_year + 1 as academic_year,
         from {{ ref("stg_renlearn__star") }}
         where
             student_display_id is not null
@@ -73,54 +83,43 @@ with
             -- is FAST PM1 with an i-Ready fallback, per the generator's ay2026
             -- source config (never grade-2 Star)
             and grade_level between 0 and 1
-    ),
 
-    state_test_resolved as (
+        union all
+
         select
             _dbt_source_project,
-            student_number,
-            academic_year_plus,
-            scale_score,
-            `level`,
-            assessment_type,
-            is_proficient_int,
-            is_approaching_int,
-            is_below_int,
+            student_display_id as student_number,
+            unified_score as scale_score,
 
-            case
-                when source_system is null
-                then `subject`
-                when `subject` = 'Text Study'
-                then 'Reading'
-                else 'Math'
-            end as `subject`,
-        from state_test_union
-    ),
+            if(district_benchmark_category_level = 1, 1, 0) as is_proficient_int,
+            if(district_benchmark_category_level = 2, 1, 0) as is_approaching_int,
+            if(district_benchmark_category_level >= 3, 1, 0) as is_below_int,
 
-    state_test_ranked as (
-        select
-            *,
+            district_benchmark_category_level as `level`,
 
-            row_number() over (
-                partition by
-                    _dbt_source_project, student_number, academic_year_plus, `subject`
-                order by if(assessment_type = 'Star EOY', 1, 0), scale_score desc
-            ) as rn_state,
-        from state_test_resolved
-    ),
+            2 as priority,
 
-    state_test_picked as (select *, from state_test_ranked where rn_state = 1),
+            cast(null as numeric) as scale_score_state,
+            cast(null as int64) as is_proficient_int_state,
+            unified_score as scale_score_iready,
 
-    iready_union as (
+            'Star BOY' as assessment_type,
+
+            if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
+
+            academic_year,
+        from {{ ref("stg_renlearn__star") }}
+        where
+            student_display_id is not null
+            and rn_subject_round = 1
+            and screening_period_window_name = 'Fall'
+            and grade_level = 0
+
+        union all
+
         select
             _dbt_source_project,
             student_id as student_number,
-            academic_year_int as academic_year,
-            `subject`,
-            projected_level_number_typical as `level`,
-
-            'i-Ready BOY' as assessment_type,
-
             overall_scale_score + annual_typical_growth_measure as scale_score,
 
             if(projected_is_proficient_typical, 1, 0) as is_proficient_int,
@@ -140,6 +139,21 @@ with
                 then 1
                 else 0
             end as is_below_int,
+
+            projected_level_number_typical as `level`,
+
+            3 as priority,
+
+            cast(null as numeric) as scale_score_state,
+            cast(null as int64) as is_proficient_int_state,
+
+            overall_scale_score + annual_typical_growth_measure as scale_score_iready,
+
+            'i-Ready BOY' as assessment_type,
+
+            `subject`,
+
+            academic_year_int as academic_year,
         from {{ ref("int_assessments__iready_diagnostic_results") }}
         where
             test_round = 'BOY'
@@ -152,90 +166,82 @@ with
         select
             _dbt_source_project,
             student_id as student_number,
-            academic_year_int as academic_year,
-            `subject`,
-            level_number_with_typical as `level`,
-
-            'i-Ready BOY' as assessment_type,
-
             overall_scale_score + annual_typical_growth_measure as scale_score,
 
             if(level_number_with_typical >= 4, 1, 0) as is_proficient_int,
             if(level_number_with_typical = 3, 1, 0) as is_approaching_int,
             if(level_number_with_typical < 3, 1, 0) as is_below_int,
+
+            level_number_with_typical as `level`,
+
+            3 as priority,
+
+            cast(null as numeric) as scale_score_state,
+            cast(null as int64) as is_proficient_int_state,
+
+            overall_scale_score + annual_typical_growth_measure as scale_score_iready,
+
+            'i-Ready BOY' as assessment_type,
+
+            `subject`,
+
+            academic_year_int as academic_year,
         from {{ ref("int_assessments__iready_diagnostic_results") }}
         where
             test_round = 'BOY'
             and rn_subj_round = 1
             and sublevel_number_with_typical is not null
             and student_grade_int in (0, 1, 2, 9)
-
-        union all
-
-        select
-            _dbt_source_project,
-            student_display_id as student_number,
-            academic_year,
-
-            if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
-
-            district_benchmark_category_level as `level`,
-
-            'Star BOY' as assessment_type,
-
-            unified_score as scale_score,
-
-            if(district_benchmark_category_level = 1, 1, 0) as is_proficient_int,
-            if(district_benchmark_category_level = 2, 1, 0) as is_approaching_int,
-            if(district_benchmark_category_level >= 3, 1, 0) as is_below_int,
-        from {{ ref("stg_renlearn__star") }}
-        where
-            student_display_id is not null
-            and rn_subject_round = 1
-            and screening_period_window_name = 'Fall'
-            and grade_level = 0
     ),
 
-    iready_ranked as (
+    benchmark_ranked as (
         select
             *,
+
+            max(if(scale_score is not null, 1, 0)) over (
+                partition by
+                    _dbt_source_project, student_number, academic_year, `subject`
+            ) as is_tested_int,
+
+            first_value(scale_score_state ignore nulls) over w
+            as scale_score_state_pick,
+
+            first_value(is_proficient_int_state ignore nulls) over w
+            as is_proficient_int_state_pick,
+
+            first_value(scale_score_iready ignore nulls) over w
+            as scale_score_iready_pick,
 
             row_number() over (
                 partition by
                     _dbt_source_project, student_number, academic_year, `subject`
-                order by
-                    case
-                        assessment_type when 'Star BOY' then 0 when 'i-Ready BOY' then 1
-                    end,
-                    scale_score desc
-            ) as rn_iready,
-        from iready_union
-    ),
-
-    iready_picked as (select *, from iready_ranked where rn_iready = 1)
+                order by priority, scale_score desc
+            ) as rn_benchmark,
+        from benchmark_union
+        window
+            w as (
+                partition by
+                    _dbt_source_project, student_number, academic_year, `subject`
+                order by priority, scale_score desc
+                rows between unbounded preceding and unbounded following
+            )
+    )
 
 select
-    st.scale_score as scale_score_state,
-    st.is_proficient_int as is_proficient_int_state,
+    _dbt_source_project,
+    student_number,
+    academic_year,
+    `subject`,
+    scale_score,
+    is_proficient_int,
+    is_approaching_int,
+    is_below_int,
+    is_tested_int,
 
-    ir.scale_score as scale_score_iready,
-
-    coalesce(st._dbt_source_project, ir._dbt_source_project) as _dbt_source_project,
-    coalesce(st.student_number, ir.student_number) as student_number,
-    coalesce(st.academic_year_plus, ir.academic_year) as academic_year,
-    coalesce(st.subject, ir.subject) as `subject`,
-    coalesce(st.level, ir.level) as performance_level,
-    coalesce(st.scale_score, ir.scale_score) as scale_score,
-    coalesce(st.is_proficient_int, ir.is_proficient_int) as is_proficient_int,
-    coalesce(st.is_approaching_int, ir.is_approaching_int) as is_approaching_int,
-    coalesce(st.is_below_int, ir.is_below_int) as is_below_int,
-    coalesce(st.assessment_type, ir.assessment_type) as benchmark_assessment_type,
-
-    if(st.scale_score is not null or ir.scale_score is not null, 1, 0) as is_tested_int,
-from state_test_picked as st
-full join
-    iready_picked as ir
-    on st._dbt_source_project = ir._dbt_source_project
-    and st.student_number = ir.student_number
-    and st.academic_year_plus = ir.academic_year
-    and st.subject = ir.subject
+    `level` as performance_level,
+    assessment_type as benchmark_assessment_type,
+    scale_score_state_pick as scale_score_state,
+    is_proficient_int_state_pick as is_proficient_int_state,
+    scale_score_iready_pick as scale_score_iready,
+from benchmark_ranked
+where rn_benchmark = 1
