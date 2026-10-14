@@ -30,6 +30,8 @@ with
         where
             status_start_date is not null
             and enrollment_academic_year = {{ var("current_academic_year") }}
+            -- the prior cycle's file also carries rows for this year
+            and file_year = enrollment_academic_year
     )
 
 select
