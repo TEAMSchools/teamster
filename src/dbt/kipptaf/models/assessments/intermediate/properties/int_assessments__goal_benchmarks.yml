@@ -215,3 +215,64 @@ unit_tests:
           is_approaching_int: 1
           is_below_int: 0
           is_tested_int: 1
+
+  - name: unit_int_assessments__goal_benchmarks_grade4_fast_pm3
+    description: >-
+      A Miami 4th grader's benchmark reads their grade-3 FAST PM3 from the prior
+      year ahead of same-year i-Ready, with both comparison columns populated
+      from their own sides.
+    model: int_assessments__goal_benchmarks
+    given:
+      - input: ref("int_assessments__state_scores")
+        rows:
+          - student_number: 84003333
+            academic_year: 2025
+            scale_score: 228
+            performance_level: 3
+            is_proficient_int: 1
+            is_approaching_int: 0
+            is_below_int: 0
+            source_system: fldoe
+            illuminate_subject_area: Mathematics
+            score_source: state_fl
+            assessment_name: FAST
+            administration_period: PM3
+            test_grade: 3
+            grade_level_when_assessed: 3
+            raw_subject: null
+            _dbt_source_project: kippmiami
+      - input: ref("int_assessments__iready_diagnostic_results")
+        rows:
+          - student_id: 84003333
+            academic_year_int: 2026
+            subject: Math
+            projected_level_number_typical: 2
+            projected_is_proficient_typical: false
+            projected_sublevel_number_typical: 4
+            sublevel_number_with_typical: null
+            level_number_with_typical: null
+            overall_scale_score: 460
+            annual_typical_growth_measure: 25
+            region: KIPP Miami
+            test_round: BOY
+            rn_subj_round: 1
+            student_grade_int: 4
+            _dbt_source_project: kippmiami
+      - input: ref("stg_renlearn__star")
+        rows: []
+    expect:
+      rows:
+        - _dbt_source_project: kippmiami
+          student_number: 84003333
+          academic_year: 2026
+          subject: Math
+          benchmark_assessment_type: FAST PM3
+          performance_level: 3
+          scale_score: 228
+          scale_score_state: 228
+          is_proficient_int_state: 1
+          scale_score_iready: 485
+          is_proficient_int: 1
+          is_approaching_int: 0
+          is_below_int: 0
+          is_tested_int: 1

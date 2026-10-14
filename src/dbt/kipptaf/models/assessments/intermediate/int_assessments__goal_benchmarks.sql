@@ -44,7 +44,7 @@ with
                     and assessment_name = 'FAST'
                     and scale_score is not null
                     and (
-                        (administration_period = 'PM3' and test_grade != 3)
+                        administration_period = 'PM3'
                         or (administration_period = 'PM1' and test_grade = 3)
                     )
                 )
