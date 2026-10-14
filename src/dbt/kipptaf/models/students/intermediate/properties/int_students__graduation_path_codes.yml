@@ -288,16 +288,18 @@ models:
       - name: attempted_njgpa_ela
         data_type: boolean
         description: >-
-          Whether the student sat the NJGPA in English language arts at all.
-          True on the rows of a subject PowerSchool coded M. Defaults to false.
+          Whether the student sat the NJGPA in English language arts at all. A
+          student on the DLM pathway (code M) in ELA counts as having sat it.
+          One value per student, the same on every row. Defaults to false.
         config:
           meta:
             contains_pii: true
       - name: attempted_njgpa_math
         data_type: boolean
         description: >-
-          Whether the student sat the NJGPA in mathematics at all. True on the
-          rows of a subject PowerSchool coded M. Defaults to false.
+          Whether the student sat the NJGPA in mathematics at all. A student on
+          the DLM pathway (code M) in math counts as having sat it. One value
+          per student, the same on every row. Defaults to false.
         config:
           meta:
             contains_pii: true
