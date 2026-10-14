@@ -1,43 +1,94 @@
 models:
   - name: rpt_appsheet__kfwd_career_launch_survey
+    description:
+      One row per KIPP Forward alumnus (HSG or TAF status, cohort up to the
+      current year) for the career launch survey AppSheet app, with their
+      contact details, current enrollment, and how many survey responses they
+      have submitted. A response counts for an alumnus when its respondent email
+      matches their primary or secondary Salesforce email, or when the career
+      launch reconciliation sheet maps it to their contact.
     config:
       contract:
         enforced: true
     columns:
       - name: contact_id
         data_type: string
+        description: Salesforce contact id of the alumnus.
         data_tests:
           - unique
       - name: first_name
         data_type: string
+        description: Alumnus first name from Salesforce.
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
+        description: Alumnus last name from Salesforce.
+        config:
+          meta:
+            contains_pii: true
       - name: ktc_cohort
         data_type: int64
+        description: KIPP Through College cohort (high school graduation year).
       - name: primary_email
         data_type: string
+        description: Salesforce primary email, lowercased.
+        config:
+          meta:
+            contains_pii: true
       - name: secondary_email
         data_type: string
+        description: Salesforce secondary email, lowercased.
+        config:
+          meta:
+            contains_pii: true
       - name: currently_enrolled_school
         data_type: string
+        description:
+          School the alumnus is currently enrolled in, per Salesforce.
       - name: current_college_cumulative_gpa
         data_type: numeric
+        description: Current cumulative college GPA from Salesforce.
+        config:
+          meta:
+            contains_pii: true
       - name: pursuing_degree_type
         data_type: string
+        description:
+          Degree type of the alumnus's most recent postsecondary enrollment.
       - name: major
         data_type: string
+        description:
+          Major of the alumnus's most recent postsecondary enrollment.
       - name: primary_phone
         data_type: string
+        description: Salesforce mobile phone.
+        config:
+          meta:
+            contains_pii: true
       - name: secondary_phone
         data_type: string
+        description: Salesforce home phone.
+        config:
+          meta:
+            contains_pii: true
       - name: advising_provider
         data_type: string
+        description: Organization advising the alumnus, per Salesforce.
       - name: expected_college_grad_date
         data_type: date
+        description: Expected college graduation date from Salesforce.
       - name: survey_response_count
         data_type: int64
+        description:
+          Number of distinct career launch survey responses matched to the
+          alumnus; 0 when none.
       - name: latest_survey_date
         data_type: timestamp
+        description:
+          Submission time of the alumnus's most recent matched response. Null
+          when none matched, or when the only matches are bulk-add rows.
       - name: contact_owner
         data_type: string
         description: Name of the Salesforce contact owner for the alumnus.

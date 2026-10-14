@@ -21,14 +21,9 @@ with
             r.contact_owner_name as contact_owner,
             r.contact_postsec_advisor as postsec_advisor,
 
-            sr.survey_response_id as reconciliation_response_id,
-
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
         from {{ ref("int_kippadb__roster") }} as r
-        left join
-            {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
-            on r.contact_id = sr.sf_contact_id
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.contact_id is not null
@@ -43,11 +38,14 @@ with
 
             max(su.response_date_submitted) as latest_survey_date,
         from roster as r
+        left join
+            {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
+            on r.contact_id = sr.sf_contact_id
         inner join
             {{ ref("int_surveys__kfwd_career_launch_responses") }} as su
             on r.sf_email = su.respondent_user_principal_name
             or r.sf_secondary_email = su.respondent_user_principal_name
-            or r.reconciliation_response_id = su.response_id
+            or sr.survey_response_id = su.response_id
         group by r.contact_id
     )
 

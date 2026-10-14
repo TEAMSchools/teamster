@@ -1,5 +1,13 @@
 models:
   - name: int_surveys__kfwd_career_launch_responses
+    description:
+      KIPP Forward career launch survey answers, one row per response and
+      question, across every platform the survey has run on — the archived
+      Alchemer survey, Google Form v1, Google Form v2, and the bulk-add sheet.
+      Questions line up across platforms by short name. The two closed sources
+      (Alchemer and Form v1) keep only items that have both a short name and an
+      answer; their unnamed and unanswered items carry no data and would repeat
+      the key.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -10,17 +18,42 @@ models:
     columns:
       - name: response_date_submitted
         data_type: timestamp
+        description:
+          When the respondent submitted the response. Null for bulk-add rows.
       - name: respondent_salesforce_id
         data_type: string
+        description:
+          Salesforce contact id the platform recorded for the respondent. Null
+          for Google Forms responses, which are matched by email only.
       - name: survey_title
         data_type: string
+        description:
+          Platform the response came from ('Alchemer survey', 'Google Form v1',
+          'Google Form v2', or 'Bulk Add').
       - name: question_short_name
         data_type: string
+        description:
+          Short name of the question, shared across platforms so the same
+          question pivots into one column downstream.
       - name: response_string_value
         data_type: string
+        description: The respondent's answer, as text.
+        config:
+          meta:
+            contains_pii: true
       - name: survey_id
         data_type: string
+        description:
+          Survey or form id on the source platform; 'bulk_add' for the bulk-add
+          sheet.
       - name: response_id
         data_type: string
+        description:
+          Response id on the source platform; for the bulk-add sheet, a hash of
+          the Salesforce contact id.
       - name: respondent_user_principal_name
         data_type: string
+        description: Respondent email, lowercased. Null for bulk-add rows.
+        config:
+          meta:
+            contains_pii: true
