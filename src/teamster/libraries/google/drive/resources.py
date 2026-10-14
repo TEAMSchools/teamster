@@ -174,7 +174,8 @@ class GoogleDriveResource(ConfigurableResource):
         )
 
         while request is not None:
-            # googleapiclient retries 5xx, 429, and connection errors with backoff
+            # googleapiclient retries 5xx, 429, rate-limit 403s, and connection
+            # errors with backoff
             response = request.execute(num_retries=5)
 
             all_files.extend(response["files"])

@@ -115,9 +115,9 @@ Drive API methods targeting a specific file (`files.get`, `files.list`,
 grants access.
 
 `files_list` retries through `request.execute(num_retries=N)`, not `tenacity`:
-googleapiclient's built-in retry already limits itself to 5xx, 429, and
-connection errors. `BatchHttpRequest.execute()` takes no `num_retries`, so
-`get_modified_times` still does not retry.
+googleapiclient's built-in retry already limits itself to 5xx, 429, rate-limit
+403s, and connection errors. `BatchHttpRequest.execute()` takes no
+`num_retries`, so `get_modified_times` still does not retry.
 
 ## `forms/`
 
