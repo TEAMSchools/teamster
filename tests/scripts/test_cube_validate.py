@@ -399,7 +399,7 @@ def test_hard_filters_apply_per_datasource(tmp_path):
             {"member": "demo.other", "operator": "set", "datasource": "elsewhere"},
         ],
     )
-    assert cv.hard_filters(c, DS) == [
+    assert cv.hard_filters(c, c["sheets"]["Overview - Table"]) == [
         {"member": "demo.is_test", "operator": "equals", "values": ["false"]}
     ]
 
@@ -2535,3 +2535,50 @@ def test_cube_client_reads_the_member_list():
 
     client = cv.CubeClient("https://cube/api", SECRET, "me@example.org", http=Http())
     assert client.meta() == ["v.d", "v.m"]
+
+
+def test_a_known_attribute_leaves_the_grain(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Title"] = {
+        "cube": "demo.title",
+        "sql": "title",
+        "attr": True,
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+    cube = FakeCube({"Alpha": _row(48.5)}, _row(0))
+    export = cv.read_export(b"School Name,Title,Avg Score\r\nAlpha,T1,48.50\r\n")
+    cv.compare_export(c["sheets"]["Overview - Table"], "s1", export, cube, [], [], c)
+    assert cube.queries[0]["dimensions"] == ["demo.school"]
+
+
+def test_a_sheet_carries_its_own_filters_on_both_sides(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["cube_filters"] = [
+        {"member": "demo.grade_band", "operator": "equals", "values": ["HS"]}
+    ]
+    d["sheets"]["Overview - Table"]["extract_filters"] = [
+        {"sql": "school_level = 'HS'"}
+    ]
+    c = cv.load_checks(_write(tmp_path, d))
+    sheet = c["sheets"]["Overview - Table"]
+    assert {"member": "demo.grade_band", "operator": "equals", "values": ["HS"]} in (
+        cv.hard_filters(c, sheet)
+    )
+    entry = {"state": {"dashboard": "Overview"}}
+    assert "school_level = 'HS'" in cv.state_where(entry, c, {}, sheet)
+
+
+def test_hard_filters_never_send_private_or_datasource_keys(tmp_path):
+    private = {
+        "member": "demo.is_test",
+        "operator": "equals",
+        "values": ["false"],
+        "private": True,
+        "datasource": DS,
+    }
+    c = _checks(tmp_path, cube_filters=[private])
+    sheet = c["sheets"]["Overview - Table"]
+    assert cv.hard_filters(c, sheet) == [
+        {"member": "demo.is_test", "operator": "equals", "values": ["false"]}
+    ]
+    assert cv.hard_filters(c, sheet, public_only=True) == []

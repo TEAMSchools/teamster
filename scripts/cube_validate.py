@@ -341,6 +341,9 @@ class Dim:
     values: dict | None = None
     # Set when `cube` is a time dimension, asked at this granularity ("week").
     granularity: str | None = None
+    # A known attribute of a coarser mark: never part of the grain (the `*` rule
+    # stays the fallback for ones not listed).
+    attr: bool = False
 
 
 @dataclass
@@ -363,6 +366,8 @@ class SheetMap:
     datasource: str
     dims: dict[str, Dim]
     measures: dict[str, Measure]
+    cube_filters: list[dict] = field(default_factory=list)
+    extract_filters: list[dict] = field(default_factory=list)
 
 
 def _measure(where: str, caption: str, m: dict, known: set[str]) -> Measure:
@@ -440,12 +445,20 @@ def load_checks(path) -> dict:
                 _dim_keys(d),
                 {str(k): str(v) for k, v in (d.get("values") or {}).items()} or None,
                 granularity=granularity,
+                attr=bool(d.get("attr")),
             )
         measures = {
             c: _measure(name, c, m, set(mismatches))
             for c, m in (s.get("measures") or {}).items()
         }
-        sheets[name] = SheetMap(name, s.get("datasource", ""), dims, measures)
+        sheets[name] = SheetMap(
+            name,
+            s.get("datasource", ""),
+            dims,
+            measures,
+            list(s.get("cube_filters") or []),
+            list(s.get("extract_filters") or []),
+        )
     for name, s in raw["sheets"].items():
         for c, d in (s.get("dims") or {}).items():
             for pattern in _dim_keys(d):
@@ -797,11 +810,20 @@ def sheet_defaults(defaults: dict | None, saved) -> dict | None:
     return {c: v for c, v in defaults.items() if c not in covered}
 
 
-def hard_filters(checks: dict, datasource: str) -> list[dict]:
-    return [
-        {k: v for k, v in f.items() if k != "datasource"}
+def hard_filters(
+    checks: dict, sheet: SheetMap, public_only: bool = False
+) -> list[dict]:
+    """The dashboard's hard Cube filters for one sheet: the datasource's, then the
+    sheet's own. Only Cube's keys are sent."""
+    every = [
+        f
         for f in checks["cube_filters"]
-        if f.get("datasource") in (None, datasource)
+        if f.get("datasource") in (None, sheet.datasource)
+    ] + list(sheet.cube_filters)
+    return [
+        {k: v for k, v in f.items() if k not in ("datasource", "private")}
+        for f in every
+        if not (public_only and f.get("private"))
     ]
 
 
@@ -1041,14 +1063,18 @@ def compare_export(
 
     # A dimension showing "*" is an attribute (ATTR) of a coarser mark, never part
     # of the mark's grain: leave it out, and compare at the remaining dimensions.
-    attrs = [d for d in dims if any(r.get(d) == MULTI for r in export.rows)]
+    attrs = [
+        d
+        for d in dims
+        if sheet.dims[d].attr or any(r.get(d) == MULTI for r in export.rows)
+    ]
     dims = [d for d in dims if d not in attrs]
     groups: dict[tuple[str, ...], list[dict]] = {}
     for r in export.rows:
         groups.setdefault(tuple(d for d in dims if r.get(d) == TOTAL), []).append(r)
     if not groups:
         groups[()] = []
-    every = filters + hard_filters(checks, sheet.datasource)
+    every = filters + hard_filters(checks, sheet)
     for totals, rows in groups.items():
         grain = [d for d in dims if d not in totals]
         cells += _compare_grain(
@@ -1410,7 +1436,7 @@ def state_where(
     for caption, value in (st.get("params") or {}).items():
         if sql := checks["param_where"].get(caption, {}).get(value):
             out.append(sql)
-    for f in checks["extract_filters"]:
+    for f in [*checks["extract_filters"], *sheet.extract_filters]:
         if f.get("datasource") not in (None, sheet.datasource):
             continue
         if public_only and f.get("private"):
@@ -1549,7 +1575,7 @@ def _slice(
     where = state_where(entry, checks, fields, sheet, public_only, dflt, lists)
     cube = (
         state_filters(entry, checks, dflt, lists)[0]
-        + hard_filters(checks, sheet.datasource)
+        + hard_filters(checks, sheet, public_only)
         + saved_cube
     )
     return where + saved_where, cube
