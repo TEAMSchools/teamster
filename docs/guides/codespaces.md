@@ -47,32 +47,20 @@ rather than the browser editor.
 
 ## After the Codespace opens
 
-!!! warning "Allow Automatic Tasks"
+Do these once, in order. Run each task from ++ctrl+shift+p++ → **Tasks: Run
+Task**.
 
-    The first time the workspace opens, VS Code will ask:
-
-    > *"This folder has tasks that run automatically when you open this folder.
-    > Do you allow automatic tasks to run when you open this folder?"*
-
-    **Click "Allow and Run".** This is required for the automated setup to work.
-    If you dismiss or deny this prompt, the setup task will not run. To fix it,
-    add `"task.allowAutomaticTasks": "on"` to your local VS Code **User
-    Settings** (++ctrl+shift+p++ → **Open User Settings (JSON)**), then reopen
-    the Codespace.
-
-The **Setup: Post-Build Init** VS Code task runs automatically when the
-workspace opens. It walks you through each step in order:
-
-1. **GCloud Application Default Credentials** — opens a browser for Google
-   OAuth. Required for BigQuery, dbt, and all GCP-authenticated tooling.
-2. **Claude Code authentication** — opens a browser for Claude login.
-3. **Claude Code plugin installation** — installs plugins listed in
-   `.claude/settings.json`. Re-runs automatically when the plugin list changes.
-4. **dbt dev dataset reminder** — prints a note about running **dbt: Build
-   Init** for first-time setup.
-
-On subsequent opens (restarts, reconnects), the task re-checks each step and
-skips anything already configured.
+1. **Sign in to Claude Code** in the Claude Code extension panel, and accept the
+   prompt to trust the workspace folder. Trusting the folder lets Claude Code
+   register the plugin marketplaces in `.claude/settings.json`.
+2. Run **GCloud: Application Default Login**. It opens a browser for Google
+   OAuth. Required for BigQuery, dbt, and all GCP-authenticated tooling (see
+   [GCloud Authentication](#gcloud-authentication)).
+3. Run **Claude: Install Plugins**. Claude Code installs most project plugins on
+   its own once the folder is trusted, but not `dagster`, whose source is a
+   separate git repo. After this, `postStart.sh` re-runs the install whenever
+   the plugin list in `.claude/settings.json` changes.
+4. Run **dbt: Build Init** (see [First-time dbt setup](#first-time-dbt-setup)).
 
 **Dismiss VS Code extension prompts** — all required extensions are already
 configured in `devcontainer.json`; dismiss any extension install prompts VS Code
@@ -94,33 +82,32 @@ builds last since it depends on them.
 
 ## Manual tasks
 
-Individual setup steps are also available via ++ctrl+shift+p++ → **Tasks: Run
-Task**:
+Run these from ++ctrl+shift+p++ → **Tasks: Run Task**:
 
 | Task                              | When to use                          |
 | --------------------------------- | ------------------------------------ |
 | GCloud: Application Default Login | Re-authenticate after token expiry   |
-| Claude: Login                     | Re-authenticate Claude Code          |
 | Claude: Install Plugins           | Manually re-install project plugins  |
 | dbt: Build Init                   | Rebuild dev datasets (pick projects) |
 
+Claude Code sign-in is handled by the extension.
+
 ## Subsequent sessions
 
-`postStart.sh` runs automatically on resume (updates uv, syncs dependencies).
-The setup task re-checks auth and plugin state — you only need to
-re-authenticate if credentials have expired.
+`postStart.sh` runs automatically on resume: it updates uv, syncs dependencies,
+and re-installs Claude Code plugins if the plugin list changed. It does not
+refresh credentials; run **GCloud: Application Default Login** if a GCP call
+fails with an auth error.
 
 ## Container Internals
 
 ### Setup Lifecycle
 
 - **`postCreate.sh`** runs once on container creation — installs dependencies,
-  sets up GCP auth, removes `sudo`
-- **`postStart.sh`** runs on every container start — refreshes GCP ADC, Claude
-  auth, VS Code tasks. Keep it idempotent.
-- The "Setup: Post-Build Init" task polls with `pgrep` until
-  `postCreate.sh`/`postStart.sh` finish — VS Code fires `folderOpen` before they
-  complete, so the guard is intentional; do not remove it.
+  removes `sudo`
+- **`postStart.sh`** runs on every container start — updates tools and
+  dependencies, re-installs Claude Code plugins when the list changes. Keep it
+  idempotent.
 
 ### Secret Injection
 
@@ -229,9 +216,6 @@ own, so a call that worked under your user credential can still 403 under ADC.
 - Check Claude auth with `"${CLAUDE}" auth status | grep -q '"loggedIn": true'`;
   flag-file guards are redundant and produce false "not logged in" errors —
   check auth directly
-- On a fresh rebuild the Claude Code extension may not be installed when
-  `folderOpen` fires; `$CLAUDE` will be empty — poll for the binary rather than
-  silently skipping
 
 ### Container Quirks
 
