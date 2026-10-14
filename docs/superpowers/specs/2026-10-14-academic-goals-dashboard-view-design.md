@@ -259,3 +259,31 @@ disabled model no longer parses into the layer check.
 - The missing-marts issue to link for A2 (file at PR time).
 - NJ grade 9 and NJGPA goal rows land in the sheet when T&L supplies numbers;
   the view needs no change to pick them up.
+
+## Revision 2026-10-14 (pre-implementation)
+
+Plan-time code reading changed three things:
+
+1. `int_extracts__student_enrollments_subjects` already decodes PowerSchool
+   bucket programs inline (`bucket_programs`/`bucket_dedupe` CTEs ->
+   `nj_student_tier`, Bucket 4 default) with ~15 downstream consumers, including
+   `rpt_illuminate__programs` (the feed that populates Illuminate Student
+   Programs) and `rpt_tableau__ddi_dashboard`. Per A4 ("extend instead of adding
+   a sibling") and the reuse-identity rule in `src/dbt/kipptaf/CLAUDE.md`,
+   `int_students__bucket_assignments` becomes the ONE home for the decode and
+   the subjects roster is rewired to read it. Side effect, intended: Miami rows
+   of `nj_student_tier` change from a constant Bucket 4 (PowerSchool has no
+   Miami) to real Focus-stored tiers, across all consumers. NJ values are
+   unchanged (same decode, same latest-assignment pick).
+2. Grain carries region: student numbers repeat across PowerSchool instances, so
+   the bucket model's key is academic_year x region x student_number x subject,
+   and every join to it includes region.
+3. The double-upload gate is a latest-assignment-wins pick (matching current
+   roster behavior) plus an `n_active_assignments <= 1` warn test, not an
+   error-severity uniqueness failure: amendment history legitimately leaves
+   exited rows behind, and a hard error would fire on every re-assignment.
+4. Known display limitation: the Miami K benchmark panel reads the standard Star
+   export (`stg_renlearn__star`) while the generator reads the FAST Star file;
+   the panel switches when teamster#5377 stages that file.
+5. Focus ids need no crosswalk: the Focus `student_id` (8400-prefixed) IS the
+   Miami student number (see `int_focus__students`).
