@@ -9,8 +9,7 @@ models:
       Historic Manager Survey pairs come from
       int_surveys__manager_survey_details under its synthetic
       historic_alchemer_Manager_survey survey_id, so they list only the archive
-      questions that resolve to a Manager Survey form item and reach the
-      response facts.
+      questions that resolve to a Manager Survey form item.
     columns:
       - name: survey_question_bridge_key
         data_type: string
