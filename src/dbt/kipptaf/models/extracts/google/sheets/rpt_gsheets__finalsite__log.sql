@@ -1,4 +1,30 @@
 with
+    current_year_rows as (
+        select
+            enrollment_academic_year_display,
+            region,
+            assigned_school,
+            finalsite_enrollment_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            enrollment_type,
+            status_start_date,
+            detailed_status,
+            status_order,
+            file_year,
+
+            max(file_year) over (
+                partition by finalsite_enrollment_id
+            ) as latest_file_year,
+
+        from {{ ref("int_finalsite__status_report_unpivot") }}
+        where
+            status_start_date is not null
+            and enrollment_academic_year = {{ var("current_academic_year") }}
+    ),
+
     all_rows as (
         select
             enrollment_academic_year_display,
@@ -26,12 +52,8 @@ with
                 partition by finalsite_enrollment_id, status_start_date
             ) as status_count_for_day,
 
-        from {{ ref("int_finalsite__status_report_unpivot") }}
-        where
-            status_start_date is not null
-            and enrollment_academic_year = {{ var("current_academic_year") }}
-            -- the prior cycle's file also carries rows for this year
-            and file_year = enrollment_academic_year
+        from current_year_rows
+        where file_year = latest_file_year
     )
 
 select
