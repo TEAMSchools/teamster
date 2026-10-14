@@ -6,7 +6,7 @@ Usage: uv run scripts/check_dbt_standard.py --project-dir src/dbt/<project>
 Edge rules (A1, A8) run over the whole manifest against a per-project baseline
 of known violations; a baseline line must name an open tracking issue
 (--check-issues looks each one up) and is removed once fixed. Changed-line rules
-(A3, A4, A7, A9) need --diff. A model opts out of a rule with
+(A3, A4, A5, A7, A9) need --diff. A model opts out of a rule with
 config.meta.standard_exempt: {<rule>: <reason>}.
 """
 
@@ -261,11 +261,11 @@ _ALIAS_SCAN = re.compile(
 )
 
 
-def _hash_aliases(code: str) -> list[tuple[int, int, str]]:
-    """(start, end, alias) per direct hash; the alias is the first `as` outside
-    any parentheses opened after the hash."""
+def _aliases(pattern: re.Pattern, code: str) -> list[tuple[int, int, str]]:
+    """(start, end, alias) per pattern match; the alias is the first `as` outside
+    any parentheses opened after the match."""
     out = []
-    for m in _DIRECT_HASH.finditer(code):
+    for m in pattern.finditer(code):
         depth = 0
         for t in _ALIAS_SCAN.finditer(code, m.end()):
             if t.group() == "(":
@@ -279,6 +279,28 @@ def _hash_aliases(code: str) -> list[tuple[int, int, str]]:
                 break
             else:
                 break
+    return out
+
+
+# A5 row-picks: a dedup macro, an inline qualify, or a row_number() alias the
+# same model filters to 1. A filter on an upstream rn_ column is not a pick here.
+_DEDUP = re.compile(r"dbt_utils\.deduplicate\(|\bqualify\s+row_number\(\)", re.I)
+_ROW_NUMBER = re.compile(r"\brow_number\(\)\s*over\s*", re.I)
+
+
+def _row_picks(code: str) -> list[tuple[str, set[int]]]:
+    """(detail, lines) per row-pick in code."""
+    out = [
+        (m.group().rstrip("("), _span(code, m.start(), m.end()))
+        for m in _DEDUP.finditer(code)
+    ]
+    for start, end, alias in _aliases(_ROW_NUMBER, code):
+        filters = re.finditer(
+            rf"\b(?:where|and|on|qualify)\s+(?:\w+\.)?{alias}\s*=\s*1\b", code, re.I
+        )
+        spans = [_span(code, f.start(), f.end()) for f in filters]
+        if spans:
+            out.append((alias, _span(code, start, end).union(*spans)))
     return out
 
 
@@ -384,7 +406,8 @@ def check_touched(
     added: set[FileKey],
     domain_folders: set[str],
 ) -> list[Violation]:
-    """A3/A4 on added intermediates; A7/A9 on changed lines of marts and rpt_.
+    """A3/A4 on added intermediates; A5 on changed lines of domain int_, marts and
+    rpt_; A7/A9 on changed lines of marts and rpt_.
 
     changed maps (package, package-relative path) to the line numbers the PR
     adds or changes; added holds the same keys for new files.
@@ -408,8 +431,20 @@ def check_touched(
                     key, "A9", "select *", "error", f"{key}: final select is select *"
                 )
             )
+        if layer in ("domain_int", "mart", "rpt"):
+            found.extend(
+                Violation(
+                    key,
+                    "A5",
+                    detail,
+                    "error",
+                    f"{key}: row-pick ({detail}) belongs in stg_ or a source int_",
+                )
+                for detail, span in _row_picks(code)
+                if span & lines
+            )
         if layer == "mart":
-            for start, end, alias in _hash_aliases(code):
+            for start, end, alias in _aliases(_DIRECT_HASH, code):
                 macro = _macro_for(alias)
                 if macro and _span(code, start, end) & lines:
                     found.append(
