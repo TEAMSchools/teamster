@@ -2582,3 +2582,38 @@ def test_hard_filters_never_send_private_or_datasource_keys(tmp_path):
         {"member": "demo.is_test", "operator": "equals", "values": ["false"]}
     ]
     assert cv.hard_filters(c, sheet, public_only=True) == []
+
+
+IEP_ONLY = [{"member": "demo.is_iep", "operator": "equals", "values": ["true"]}]
+
+
+def test_a_measure_carries_its_own_cube_filters_and_extract_condition(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["measures"]["IEP Score"] = {
+        "cube": "demo.avg_score",
+        "sql": "avg(score)",
+        "round": 2,
+        "cube_filters": IEP_ONLY,
+        "where": "iep_status like '%SPED%'",
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+    sheet = c["sheets"]["Overview - Table"]
+    asked = []
+
+    def load(q):
+        asked.append(q)
+        iep = any(f.get("member") == "demo.is_iep" for f in q["filters"])
+        return [
+            {
+                "demo.school": "Alpha",
+                "demo.avg_score": "40" if iep else "48.5",
+                "demo.count_students": "20",
+            }
+        ], []
+
+    export = cv.read_export(b"School Name,Avg Score,IEP Score\r\nAlpha,48.50,40.00\r\n")
+    cells = cv.compare_export(sheet, "s1", export, load, [], [], c)
+    assert [x.status for x in cells] == ["match", "match"]
+    assert len(asked) == 4  # 2 filter sets, each by both routes
+    sql = cv.extract_sql(sheet, sheet.measures["IEP Score"], [], [])
+    assert "iep_status LIKE '%SPED%'" in sql and "IF(" in sql.upper()
