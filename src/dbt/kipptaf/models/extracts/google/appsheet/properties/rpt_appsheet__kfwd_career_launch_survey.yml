@@ -47,6 +47,9 @@ models:
         data_type: string
         description:
           School the alumnus is currently enrolled in, per Salesforce.
+        config:
+          meta:
+            contains_pii: true
       - name: current_college_cumulative_gpa
         data_type: numeric
         description: Current cumulative college GPA from Salesforce.
@@ -57,10 +60,16 @@ models:
         data_type: string
         description:
           Degree type of the alumnus's most recent postsecondary enrollment.
+        config:
+          meta:
+            contains_pii: true
       - name: major
         data_type: string
         description:
           Major of the alumnus's most recent postsecondary enrollment.
+        config:
+          meta:
+            contains_pii: true
       - name: primary_phone
         data_type: string
         description: Salesforce mobile phone.
@@ -79,6 +88,9 @@ models:
       - name: expected_college_grad_date
         data_type: date
         description: Expected college graduation date from Salesforce.
+        config:
+          meta:
+            contains_pii: true
       - name: survey_response_count
         data_type: int64
         description:
