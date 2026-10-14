@@ -483,6 +483,9 @@ PICK = (
     "code",
     [
         PICK,
+        PICK.replace("where rn_a", "where r.rn_a"),
+        PICK.replace("where rn_a = 1", "inner join u on r.a = u.a and r.rn_a = 1"),
+        PICK.replace("where", "qualify"),
         "select a,\nfrom t\nqualify row_number() over (partition by a) = 1\n",
         "{{ dbt_utils.deduplicate(relation='t', partition_by='a', order_by='b') }}\n",
     ],

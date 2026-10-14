@@ -109,8 +109,9 @@ adding a sibling.
 - Bad: `dbt_utils.deduplicate` on the PK at the end of a mart.
 - Enforced by: `dbt-layer-check` (lines the PR changes) errors on
   `dbt_utils.deduplicate`, `qualify row_number()`, or a `row_number()` alias the
-  model filters to `= 1`. A pick that is the business rule (latest test per
-  student) declares `standard_exempt: {A5: <reason>}`.
+  model filters to `= 1`. That includes an edit inside a pick an older model
+  already has. A pick that is the business rule (latest test per student)
+  declares `standard_exempt: {A5: <reason>}`.
 
 #### A6. Long in the core, wide at the edge
 
