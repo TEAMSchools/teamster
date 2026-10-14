@@ -22,4 +22,6 @@ select
     is_internal_assessment,
 
     tagged_grade_level_id - 1 as grade_level,
+
+    format('%s-%d', `source`, assessment_id) as assessment_key,
 from {{ ref("int_assessments__assessments_members") }}

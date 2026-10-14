@@ -4,19 +4,21 @@ models:
       Assessment list for the Assessment AppSheet app, one row per source and
       assessment id — every Illuminate assessment, internal and external alike,
       plus the Apex assessments in scope. A passthrough of
-      `int_assessments__assessments_members` plus a zero-indexed grade level.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - source
-              - assessment_id
+      `int_assessments__assessments_members` plus a zero-indexed grade level and
+      the app's key.
     columns:
-      - name: source
+      - name: assessment_key
         data_type: string
         description: >-
-          System the assessment_id belongs to — illuminate or apex. Half of the
-          app's key, with assessment_id.
+          The app's key, source and assessment_id joined with a hyphen (for
+          example apex-123). The extension table stores the same value, so
+          AppSheet links the two on one column instead of building its own
+          computed key.
+        data_tests:
+          - unique
+      - name: source
+        data_type: string
+        description: System the assessment_id belongs to — illuminate or apex.
       - name: assessment_id
         data_type: int64
         description: Assessment id in the system named by source.
