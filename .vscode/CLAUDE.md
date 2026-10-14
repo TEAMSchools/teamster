@@ -1,7 +1,7 @@
 # CLAUDE.md — `.vscode/`
 
-VS Code tasks and scripts. Human-facing GCloud auth, Claude auth, and plugin
-setup docs are in `docs/guides/codespaces.md`.
+VS Code tasks and scripts. Human-facing GCloud auth and plugin setup docs are in
+`docs/guides/codespaces.md`.
 
 ## Environment Quirks
 

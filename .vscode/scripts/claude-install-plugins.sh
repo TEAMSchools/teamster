@@ -17,7 +17,7 @@ SETTINGS='.claude/settings.json'
 echo '--- Adding extra marketplaces ---'
 jq -r '.extraKnownMarketplaces | to_entries[] | .value.source.repo' "${SETTINGS}" |
 	while read -r repo; do
-		"${CLAUDE}" plugins marketplace add "${repo}" || true
+		"${CLAUDE}" plugins marketplace add "${repo}" --scope user || true
 	done
 
 echo '--- Installing plugins ---'
