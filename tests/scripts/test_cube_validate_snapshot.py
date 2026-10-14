@@ -1087,6 +1087,24 @@ def test_group_lists_fill_the_other_bin_from_the_extract(tmp_path, demo_hyper):
     }
 
 
+def test_a_group_of_whole_numbers_matches_however_the_extract_prints_them(
+    tmp_path, demo_hyper
+):
+    # Tableau saves a numeric group's members as "5.0"; the extract prints 5. On
+    # DDI every band bin came out empty and all bands fell into Other.
+    m = _coverage_manifest(tmp_path, demo_hyper)
+    grades = {
+        "datasource": DS,
+        "field": "grade_level",
+        "bins": {"Low": ["5.0"]},
+        "other": "Rest",
+    }
+    out = snap.group_lists(
+        snap.Workbook({}, [], [], [], {}, {"Grades": grades}), m, tmp_path
+    )
+    assert out["Grades"]["bins"] == {"Low": ["5"], "Rest": ["6"]}
+
+
 def test_value_lists_give_a_group_its_bin_names(tmp_path, demo_hyper):
     m = _coverage_manifest(tmp_path, demo_hyper)
     m.groups = {"Pair": {**PAIR, "bins": {"AB": ["Alpha", "Beta"], "Rest": []}}}

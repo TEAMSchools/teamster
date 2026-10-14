@@ -1420,6 +1420,15 @@ def _value_maps(manifest: Manifest, snapdir: Path) -> dict[str, list[str]]:
     return all_values
 
 
+_WHOLE_FLOAT = re.compile(r"^-?\d+\.0+$")
+
+
+def _whole(v: str) -> str:
+    """A whole number spelled one way: Tableau saves a group member as "3.0",
+    while the extract prints 3."""
+    return v.split(".")[0] if _WHOLE_FLOAT.match(v) else v
+
+
 def group_lists(wb: Workbook, m: Manifest, snapdir: Path) -> dict[str, dict]:
     """The workbook's groups the extracts can expand, with the Other bin filled in:
     every value of the column that no named bin lists."""
@@ -1436,17 +1445,20 @@ def group_lists(wb: Workbook, m: Manifest, snapdir: Path) -> dict[str, dict]:
             prof = profile(h, sorted({wb.groups[c]["field"] for c in captions}))
         for caption in captions:
             g = wb.groups[caption]
-            named = {v for members in g["bins"].values() for v in members}
-            present = {v for v, _ in prof[g["field"]] if v is not None}
+            named = {_whole(v) for members in g["bins"].values() for v in members}
+            # The extract's spelling of each value, keyed as the group spells it.
+            present = {_whole(v): v for v, _ in prof[g["field"]] if v is not None}
             # A member the extract lacks filters nothing, and its missing Cube lookup
             # would make the whole bin a missing member.
             bins = {
-                b: [v for v in members if v in present]
+                b: [present[_whole(v)] for v in members if _whole(v) in present]
                 for b, members in g["bins"].items()
             }
             if g["other"]:
                 bins[g["other"]] = [
-                    v for v, _ in prof[g["field"]] if v is not None and v not in named
+                    v
+                    for v, _ in prof[g["field"]]
+                    if v is not None and _whole(v) not in named
                 ]
             out[caption] = {"datasource": ds, "field": g["field"], "bins": bins}
     return out
