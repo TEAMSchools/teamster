@@ -125,6 +125,14 @@ Timing depends on the dashboard. Settle it before the first `open`.
     each batch finishes, so a crash keeps the work done.
 11. **Report.** `cube_validate.py drafts <checks>` (no secret). Read the digest
     and the coverage report.
+12. **Classify, on this run's numbers.** The digest names no causes: it groups
+    fails by sheet, measure and row or formula gap. Before any decision list,
+    measure for each Investigate row what share each candidate cause closes (a
+    candidate `where:` or `sql:` run against this snapshot's cells, first match
+    wins) and what stays unexplained. Never carry a cause over from an earlier
+    run or a smoke test: a decision list cites only this run's shares, and names
+    its unexplained remainder. Proven causes become `mismatches:` entries and
+    variants, so the next `explain` ties the cells to them.
 
 ## Live checks
 
