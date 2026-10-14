@@ -64,7 +64,9 @@ field value codes_.
    staging model but not on the page is real (`apex_sessions.manually_seeded`).
    Two traps it records: `apex_session_grade_history.session_id` is VARCHAR
    (cast before joining to `apex_sessions.id`), and `apex_sessions.form_id` and
-   the `apex_form_*` tables are unwired, so do not join on them.
+   the `apex_form_*` tables are unwired, so do not join on them. WebFetch
+   returns only the page header: the tables are JSON in `window.APEX_DATA`
+   inside the HTML, so `curl` the page and read it with `jq`.
 7. **No coverage anywhere above** (a module-specific table like
    `positive_behaviors`) — ask the user for a screenshot of the table's columns
    rather than guessing.

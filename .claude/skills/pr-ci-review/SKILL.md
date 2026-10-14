@@ -67,8 +67,9 @@ description:
 - **`claude-review` fires only on PR `opened` / `ready_for_review`**, never on
   `synchronize` — it does NOT re-run when you push fixes, so don't wait or
   monitor for a re-review after a fix push. To get it onto code pushed after its
-  pass, toggle draft state via GraphQL `convertPullRequestToDraft` then
-  `markPullRequestReadyForReview`; REST
+  pass, toggle draft state: `mcp__github__update_pull_request` with
+  `draft: true`, then again with `draft: false` (verified on #5913), or GraphQL
+  `convertPullRequestToDraft` then `markPullRequestReadyForReview`. REST
   `gh api -X PATCH .../pulls/<n> -f draft=true` silently no-ops (returns
   `draft: false`, no error).
 

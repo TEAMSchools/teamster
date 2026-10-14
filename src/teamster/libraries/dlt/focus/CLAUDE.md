@@ -159,6 +159,17 @@ wrote to dlt `resource_state`.
 Focus uses an IP allowlist. Codespace cannot reach the database. Connection
 verification requires a branch deployment (GKE has static egress IP).
 
+### Querying the database directly
+
+For a table we do not sync, or a check BigQuery cannot answer, hand the user
+`scripts/focus-db-query.sh <file.sql>`. It runs psql in a throwaway pod in the
+`dagster-cloud` namespace with the `op-focus-db-kippmiami` secret, and the
+cluster's egress is already allowlisted. The connection goes through PgBouncer
+(port 6432), which rejects startup options: `PGOPTIONS` fails with
+`unsupported startup parameter in options`. Set read-only mode and timeouts
+inside the SQL file (`begin transaction read only;`
+`set local statement_timeout = '5min';` … `rollback;`).
+
 Branch-deployment dlt runs write to the prod `dagster_<district>_dlt_focus`
 dataset (see `../CLAUDE.md`), so a newly-configured table materialized in a
 branch deployment can be queried directly via BigQuery MCP to verify the load.
