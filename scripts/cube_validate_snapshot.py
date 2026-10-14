@@ -1635,9 +1635,7 @@ def _open(a) -> int:
         m.groups = group_lists(wb, m, snapdir)
         m.all_values = value_lists(m, snapdir)
         write_manifest(snapdir / "manifest.json", m)
-        _export_all(
-            session, m, snapdir, wb, checks, _states_for(checks, a.states, a.mismatch)
-        )
+        _export_all(session, m, snapdir, wb, checks, _states_for(checks, a.states))
     return 0
 
 
@@ -1717,7 +1715,9 @@ def _export(a) -> int:
         wb = read_workbook(
             (snapdir / "review.twb").read_text(encoding="utf-8", newline="")
         )
-        _export_all(session, m, snapdir, wb, checks, _states_for(checks, a.states))
+        _export_all(
+            session, m, snapdir, wb, checks, _states_for(checks, a.states, a.mismatch)
+        )
     return 0
 
 

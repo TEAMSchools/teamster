@@ -1135,3 +1135,52 @@ def test_export_for_a_mismatch_lists_the_states_behind_its_cells(tmp_path):
     assert snap.states_for_mismatch("Demo", "dup", tmp_path) == [north]
     with pytest.raises(snap.SessionError, match="nope"):
         snap.states_for_mismatch("Demo", "nope", tmp_path)
+
+
+def test_main_export_for_passes_the_mismatch_states_to_export_all(
+    tmp_path, monkeypatch
+):
+    north = snap.State("Overview", filters=(("Region", "North"),))
+    m = _manifest()
+    snapdir = tmp_path / "snap"
+    snapdir.mkdir()
+    (snapdir / "review.twb").write_text("<workbook/>")
+    seen = {}
+
+    class FakeAuth:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    fake_server = SimpleNamespace(
+        auth=SimpleNamespace(sign_in=lambda auth: FakeAuth()),
+        workbooks=SimpleNamespace(get_by_id=lambda luid: "copy"),
+    )
+    monkeypatch.setattr(
+        snap,
+        "_load_checks",
+        lambda p: {"workbook": "Demo", "review_project_luid": "rp"},
+    )
+    monkeypatch.setattr(snap, "latest_snapshot", lambda wb: snapdir)
+    monkeypatch.setattr(snap, "read_manifest", lambda p: m)
+    monkeypatch.setattr(snap, "_server", lambda: (fake_server, None))
+    monkeypatch.setattr(snap, "Session", lambda *a, **k: SimpleNamespace())
+    monkeypatch.setattr(snap, "read_workbook", lambda text: None)
+    monkeypatch.setattr(
+        snap, "states_for_mismatch", lambda wb, mm: [north] if mm == "dup" else []
+    )
+    monkeypatch.setattr(
+        snap, "_export_all", lambda *a: seen.setdefault("states", a[-1])
+    )
+    m.copy_luid = "copy-1"
+    assert snap.main(["export", "checks.yml", "--for", "dup"]) == 0
+    assert seen["states"] == [north]
+
+
+def test_open_never_reads_the_export_only_mismatch_option():
+    import inspect
+
+    assert "a.mismatch" not in inspect.getsource(snap._open)
+    assert "a.mismatch" in inspect.getsource(snap._export)
