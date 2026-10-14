@@ -97,8 +97,7 @@ filters:
 
 # Is Normed Scope hides nothing today (every default row is normed); compare
 # warns if that changes. % Completion is a FIXED-LOD filter compare cannot
-# count; no issue is filed for the completion finding yet (see the review
-# findings).
+# count; it hides nothing while the measure reads 100% everywhere (#5891).
 ignore_sheet_filters: ["% Completion", Is Normed Scope]
 
 # A grade spans schools, so `plan` would make grade a cross-cut; the analyst
@@ -379,8 +378,7 @@ sheets:
           sql: subject_area,
         }
     # Avg. % Completion is a fixed-level calculation averaged across schools and
-    # grades; it is the dashboard's known completion finding, left unmapped. No
-    # issue is filed for the completion finding yet; see the review findings.
+    # grades; it reads 100% everywhere (#5891), so it stays unmapped.
     measures:
       <<: *mastery
       Avg. Percent Correct:
@@ -588,8 +586,7 @@ rows_deferred:
   "1219284654682073": Lives on the Landing Page; second run
   # % Completion
   "1219087843079530":
-    Avg. % Completion is a FIXED-LOD calculation left unmapped (completion
-    finding)
+    Avg. % Completion is a FIXED-LOD calculation left unmapped (#5891)
   # Goals
   "1219284585516187": No Cube member yet
   # Microgoals
