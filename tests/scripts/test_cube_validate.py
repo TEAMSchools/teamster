@@ -2321,6 +2321,29 @@ def test_routes_agree_ignores_float_noise_at_a_rounding_boundary():
     assert not cv.routes_agree(48.5, 47.0, cv.Shown(48.5, 2))
 
 
+def test_an_unbuilt_rollup_on_the_alone_route_keeps_the_comparison(tmp_path):
+    # Live on DDI: the measure alone hit a rollup with no partitions built, and the
+    # whole Network Overview sheet went not comparable.
+    c, sheet = _sheet(tmp_path)
+    export = cv.read_export(b"School Name,Avg Score\r\nAlpha,48.50\r\n")
+
+    def load(q):
+        if "demo.count_students" not in q["measures"]:
+            raise cv.CubeError("Error: No pre-aggregation partitions were built yet")
+        row = {
+            "demo.school": "Alpha",
+            "demo.avg_score": "48.5",
+            "demo.count_students": "20",
+        }
+        return [row], []
+
+    (cell,) = cv.compare_export(sheet, "s1", export, load, [], [], c)
+    assert (cell.status, cell.routes, cell.cube) == ("match", False, 48.5)
+    assert cell.rollups_alone[0].startswith(
+        "alone route failed: Error: No pre-aggregation"
+    )
+
+
 def test_a_blank_cell_matches_a_cube_null_or_zero_in_compare_and_explain(tmp_path):
     assert cv.matches_cell(None, "") and cv.matches_cell(0.0, " ")
     assert not cv.matches_cell(0.5, "")

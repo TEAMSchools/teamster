@@ -1074,7 +1074,12 @@ def _ask_cube(sheet, grain, wanted, load, filters, student) -> dict[str, Answer]
         f = filters + json.loads(key)
         members = [sheet.measures[m].cube for m in ms]
         rows, rollups = load(cube_query(sheet, grain, [*members, student], f))
-        alone_rows, rollups_alone = load(cube_query(sheet, grain, members, f))
+        try:
+            alone_rows, rollups_alone = load(cube_query(sheet, grain, members, f))
+        except CubeError as err:
+            # The measure alone routes to a rollup Cube has not built: a Cube finding
+            # coverage reports, never a reason to drop the student-count comparison.
+            alone_rows, rollups_alone = rows, [f"alone route failed: {err}"[:120]]
         fact, alone = _by_key(rows, sheet, grain), _by_key(alone_rows, sheet, grain)
         for m in ms:
             cube = sheet.measures[m].cube
