@@ -7,7 +7,8 @@ models:
               - studentid
               - entrydate
           config:
-            where: schoolid != 999999
+            # zero-length stints are pre-registrations moved to another school
+            where: schoolid != 999999 and entrydate < exitdate
             severity: warn
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -15,7 +16,7 @@ models:
               - studentid
               - exitdate
           config:
-            where: schoolid != 999999
+            where: schoolid != 999999 and entrydate < exitdate
             severity: warn
     columns:
       - name: studentid
