@@ -1,0 +1,10 @@
+models:
+  - name: stg_focus__student_groups
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      stg_focus__student_groups (Focus custom student groups, where Miami bucket
+      assignments are stored). Column docs/tests live on the kippmiami source
+      model.
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.
