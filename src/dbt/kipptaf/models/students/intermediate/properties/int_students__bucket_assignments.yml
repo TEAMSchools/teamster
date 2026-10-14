@@ -20,13 +20,19 @@ models:
             Latest-assignment-wins is the business rule (the newest stored
             assignment is the official one), not source-duplicate masking; a
             true double upload still surfaces through n_active_assignments.
+          A4: >-
+            Shares its (_dbt_source_project, academic_year, student_number,
+            subject) key with int_assessments__goal_benchmarks, but the two hold
+            different facts from different sources (a stored bucket assignment
+            versus a benchmark score panel), so neither extends the other.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - academic_year
-            - _dbt_source_project
-            - student_number
-            - subject
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - _dbt_source_project
+              - student_number
+              - subject
           config:
             severity: error
     columns:
@@ -38,14 +44,16 @@ models:
         data_tests:
           - not_null
           - accepted_values:
-              values: [Reading, Math]
+              arguments:
+                values: [Reading, Math]
       - name: bucket
         description:
           Stored bucket label; the "everyone else" Bucket 4 has no stored row.
         data_tests:
           - not_null
           - accepted_values:
-              values: [Bucket 1, Bucket 2, Bucket 3]
+              arguments:
+                values: [Bucket 1, Bucket 2, Bucket 3]
       - name: n_active_assignments
         description: >-
           Count of assignments on this grain still active today (no exit date,
@@ -55,7 +63,8 @@ models:
           means a double upload that the latest-wins pick is masking.
         data_tests:
           - dbt_utils.expression_is_true:
-              expression: <= 1
+              arguments:
+                expression: <= 1
               config:
                 severity: warn
       - name: academic_year

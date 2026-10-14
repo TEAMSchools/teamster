@@ -201,7 +201,8 @@ with
                 order by
                     case
                         assessment_type when 'Star BOY' then 0 when 'i-Ready BOY' then 1
-                    end
+                    end,
+                    scale_score desc
             ) as rn_iready,
         from iready_union
     ),

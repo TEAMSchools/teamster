@@ -17,13 +17,19 @@ models:
             — best prior state score per student x subject, and Star BOY ahead
             of i-Ready for Miami K — matching the goal-setting generator's
             source order.
+          A4: >-
+            Shares its (_dbt_source_project, academic_year, student_number,
+            subject) key with int_students__bucket_assignments, but the two hold
+            different facts from different sources (a stored bucket assignment
+            versus a benchmark score panel), so neither extends the other.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - _dbt_source_project
-            - academic_year
-            - student_number
-            - subject
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - academic_year
+              - student_number
+              - subject
           config:
             severity: error
     columns:

@@ -88,6 +88,10 @@ with
             bucket,
             bucket_store,
             assignment_date,
+            exit_date,
+
+            exit_date is null
+            or exit_date >= current_date('{{ var("local_timezone") }}') as is_active,
 
             countif(
                 exit_date is null
@@ -104,7 +108,7 @@ with
             dbt_utils.deduplicate(
                 relation="assignments",
                 partition_by="academic_year, _dbt_source_project, student_number, subject",
-                order_by="assignment_date desc",
+                order_by="assignment_date desc, is_active desc, exit_date desc, bucket desc",
             )
         }}
     )
