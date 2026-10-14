@@ -15,6 +15,11 @@ models:
     config:
       meta:
         contains_pii: true
+        standard_exempt:
+          A5: >-
+            Latest-assignment-wins is the business rule (the newest stored
+            assignment is the official one), not source-duplicate masking; a
+            true double upload still surfaces through n_active_assignments.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:

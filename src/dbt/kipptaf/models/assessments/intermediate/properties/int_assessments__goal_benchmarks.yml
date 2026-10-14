@@ -11,6 +11,12 @@ models:
     config:
       meta:
         contains_pii: true
+        standard_exempt:
+          A5: >-
+            The rn_state and rn_iready picks are priority rules, not dup-masking
+            — best prior state score per student x subject, and Star BOY ahead
+            of i-Ready for Miami K — matching the goal-setting generator's
+            source order.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
