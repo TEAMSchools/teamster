@@ -54,10 +54,11 @@ description:
   awaiting a required review approval (CODEOWNERS `src/dbt/` =
   analytics-engineers), not a CI failure.
 
-- **`claude-review` skips PRs that touch only `*.md`, `package.json`, or
-  `package-lock.json`** (`paths:` filter in `claude-code-review.yaml`). A docs
-  or CLAUDE.md PR gets no review comment: do not wait for one, and drop the
-  "Review the Claude Code Review comment" checkbox from its body.
+- **`claude-review` skips PRs whose every file matches its exclusions** (docs,
+  lockfiles, CSVs, editor and docs-site config; list in the `paths:` filter of
+  `claude-code-review.yaml`). Such a PR gets no review comment: do not wait for
+  one, and drop the "Review the Claude Code Review comment" checkbox from its
+  body.
 - **Re-read the PR state before any follow-up push or body edit.** A small docs
   PR can merge within minutes of opening. Merge auto-deletes the branch, and a
   later `git push` silently recreates it as an orphan (`* [new branch]` in the

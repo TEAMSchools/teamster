@@ -5,12 +5,25 @@ on:
     types: [opened, ready_for_review]
     branches:
       - main
-    # Skip only PRs whose every file is excluded below (docs-only PRs).
+    # Skip only PRs whose every file is excluded below: docs, generated
+    # lockfiles, data, and editor or docs-site config where a mistake is
+    # cosmetic. Config that can break builds or weaken guardrails stays in.
     paths:
       - "**"
       - "!**/*.md"
+      - "!**/*.csv"
       - "!**/package.json"
       - "!**/package-lock.json"
+      - "!**/package-lock.yml"
+      - "!**/uv.lock"
+      - "!**/.gitignore"
+      - "!.github/ISSUE_TEMPLATE/**"
+      - "!.vscode/extensions.json"
+      - "!.vscode/launch.json"
+      - "!.vscode/settings.json"
+      - "!docs/images/**"
+      - "!LICENSE"
+      - "!mkdocs.yml"
 
 jobs:
   claude-review:
