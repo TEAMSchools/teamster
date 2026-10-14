@@ -1,0 +1,205 @@
+models:
+  - name: rpt_tableau__academic_goals_dashboard
+    description: >-
+      Student-grain datasource for the Academic Goal Roll-Up workbook (all four
+      tabs, all four regions). Joins only - the subjects roster (stored bucket,
+      Bucket 4 default), the benchmark-score comparison panel, and the
+      goals-sheet permutations. Official rollup measures aggregate student_tier
+      in Tableau; is_tested_int drives the denominator parameter. Scoped to
+      academic_year 2026 onward - SY26 stays on the disabled
+      rpt_tableau__academic_goals_rollup relation.
+    config:
+      contract:
+        enforced: true
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - academic_year
+            - student_number
+            - subject
+    columns:
+      - name: student_tier
+        data_type: string
+        description: >-
+          Stored bucket from PowerSchool special programs or Focus custom
+          groups, Bucket 4 when no assignment is stored.
+        data_tests:
+          - accepted_values:
+              values: ["Bucket 1", "Bucket 2", "Bucket 3", "Bucket 4"]
+      - name: academic_year
+        data_type: int64
+        description: Academic year of the enrollment.
+      - name: region
+        data_type: string
+        description: Newark, Camden, Paterson, or Miami.
+      - name: schoolid
+        data_type: int64
+        description: School number, the goals-sheet join key.
+      - name: school
+        data_type: string
+        description: School name.
+      - name: grade_level
+        data_type: int64
+        description: Current grade level (0 is kindergarten).
+      - name: student_number
+        data_type: int64
+        description: Network student number.
+      - name: student_name
+        data_type: string
+        description: Student name, for the roster view.
+      - name: iep_status
+        data_type: string
+        description: IEP status label, a roster filter.
+      - name: homeroom_section
+        data_type: string
+        description: Homeroom section, a roster filter.
+      - name: homeroom_teacher_name
+        data_type: string
+        description: Homeroom teacher, a roster filter.
+      - name: course_section
+        data_type: string
+        description: Course section for the subject (null for Miami).
+      - name: course_teacher_name
+        data_type: string
+        description: Course teacher for the subject (null for Miami).
+      - name: subject
+        data_type: string
+        description: Reading or Math.
+      - name: bucket_store
+        data_type: string
+        description: powerschool or focus; null when no assignment is stored.
+      - name: performance_level
+        data_type: int64
+        description: Benchmark-panel performance level (comparison only).
+      - name: scale_score
+        data_type: numeric
+        description: Benchmark-panel scale score (comparison only).
+      - name: scale_score_state
+        data_type: numeric
+        description: State-side benchmark scale score (comparison only).
+      - name: is_proficient_int_state
+        data_type: int64
+        description: State-side proficiency flag (comparison only).
+      - name: scale_score_iready
+        data_type: int64
+        description: Fallback-side benchmark scale score (comparison only).
+      - name: is_proficient_live_int
+        data_type: int64
+        description: Live-score proficiency flag (comparison only).
+      - name: is_approaching_live_int
+        data_type: int64
+        description: Live-score approaching flag (comparison only).
+      - name: is_below_live_int
+        data_type: int64
+        description: Live-score below flag (comparison only).
+      - name: grade_goal
+        data_type: float64
+        description: Goals-sheet grade goal for this school x grade x subject.
+      - name: school_goal
+        data_type: float64
+        description: Goals-sheet school goal.
+      - name: region_goal
+        data_type: float64
+        description: Goals-sheet region goal.
+      - name: organization_goal
+        data_type: float64
+        description: Goals-sheet organization goal.
+      - name: grade_band_goal
+        data_type: float64
+        description: Goals-sheet grade-band goal, the generator's target column.
+      - name: assessment_band_goal
+        data_type: float64
+        description: Goals-sheet assessment-band goal.
+      - name: benchmark_assessment_type
+        data_type: string
+        description:
+          Benchmark-panel source, Untested when no source has a score.
+      - name: is_tested_int
+        data_type: int64
+        description: >-
+          1 when any benchmark source has a score; drives the Tableau
+          denominator parameter.
+
+unit_tests:
+  - name: unit_rpt_academic_goals_dashboard_defaults
+    description: >-
+      An enrolled student with no stored bucket and no benchmark lands as Bucket
+      4 and Untested, and a missing goal row keeps the student with null goals.
+    model: rpt_tableau__academic_goals_dashboard
+    given:
+      - input: ref("int_extracts__student_enrollments_subjects")
+        format: sql
+        rows: |
+          select
+              2026 as academic_year,
+              'Newark' as region,
+              73254 as schoolid,
+              'SPARK' as school,
+              3 as grade_level,
+              5003 as student_number,
+              'Student, New' as student_name,
+              'No IEP' as iep_status,
+              '3A' as team,
+              'Teacher, A' as advisor_lastfirst,
+              cast(null as string) as course_section_number,
+              cast(null as string) as course_teacher_lastfirst,
+              'Math' as iready_subject,
+              'Mathematics' as illuminate_subject_area,
+              'Bucket 4' as nj_student_tier,
+              cast(null as string) as bucket_store,
+              1 as rn_year,
+              0 as enroll_status
+      - input: ref("int_assessments__goal_benchmarks")
+        format: sql
+        rows: |
+          select
+              cast(null as int64) as student_number,
+              cast(null as int64) as academic_year,
+              cast(null as string) as subject,
+              cast(null as string) as benchmark_assessment_type,
+              cast(null as int64) as performance_level,
+              cast(null as float64) as scale_score,
+              cast(null as float64) as scale_score_state,
+              cast(null as int64) as is_proficient_int_state,
+              cast(null as float64) as scale_score_iready,
+              cast(null as int64) as is_proficient_int,
+              cast(null as int64) as is_approaching_int,
+              cast(null as int64) as is_below_int,
+              cast(null as int64) as is_tested_int
+      - input: ref("int_assessments__academic_goals")
+        rows: []
+    expect:
+      rows:
+        - academic_year: 2026
+          region: Newark
+          schoolid: 73254
+          school: SPARK
+          grade_level: 3
+          student_number: 5003
+          student_name: Student, New
+          iep_status: No IEP
+          homeroom_section: 3A
+          homeroom_teacher_name: Teacher, A
+          course_section: null
+          course_teacher_name: null
+          subject: Math
+          student_tier: Bucket 4
+          bucket_store: null
+          performance_level: null
+          scale_score: null
+          scale_score_state: null
+          is_proficient_int_state: null
+          scale_score_iready: null
+          is_proficient_live_int: null
+          is_approaching_live_int: null
+          is_below_live_int: null
+          grade_goal: null
+          school_goal: null
+          region_goal: null
+          organization_goal: null
+          grade_band_goal: null
+          assessment_band_goal: null
+          benchmark_assessment_type: Untested
+          is_tested_int: 0
