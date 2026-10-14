@@ -5,17 +5,25 @@ on:
     types: [opened, ready_for_review]
     branches:
       - main
+    # Skip only PRs whose every file is excluded below: docs, generated
+    # lockfiles, data, and editor or docs-site config where a mistake is
+    # cosmetic. Config that can break builds or weaken guardrails stays in.
     paths:
-      - src/**
-      - tests/**
-      - scripts/**
-      # A PR editing a workflow runs that PR's own version of it, so a change
-      # here reviews itself. Kept in scope anyway: CI-config defects are exactly
-      # the class this workflow was silently failing to catch.
-      - .github/workflows/**
+      - "**"
       - "!**/*.md"
+      - "!**/*.csv"
       - "!**/package.json"
       - "!**/package-lock.json"
+      - "!**/package-lock.yml"
+      - "!**/uv.lock"
+      - "!**/.gitignore"
+      - "!.github/ISSUE_TEMPLATE/**"
+      - "!.vscode/extensions.json"
+      - "!.vscode/launch.json"
+      - "!.vscode/settings.json"
+      - "!docs/images/**"
+      - "!LICENSE"
+      - "!mkdocs.yml"
 
 jobs:
   claude-review:
