@@ -6,9 +6,12 @@ models:
       program or group name ("Bucket 1 - ELA"). One row per academic_year x
       region x student_number x subject; where a student has assignment history
       (rollout-PD amendments exit and re-enter), the latest assignment_date
-      wins. Bucket 4 is never stored - consumers coalesce a missing row to
-      Bucket 4. Region is part of the grain because student numbers repeat
-      across PowerSchool instances.
+      wins. That pick is a business rule (the newest stored assignment is the
+      official one), not source-duplicate masking, which is why it lives in this
+      domain model rather than staging; a true double upload still surfaces
+      through n_active_assignments. Bucket 4 is never stored - consumers
+      coalesce a missing row to Bucket 4. Region is part of the grain because
+      student numbers repeat across PowerSchool instances.
     config:
       meta:
         contains_pii: true
@@ -25,8 +28,8 @@ models:
       - name: subject
         description: >-
           Reading or Math, decoded from the program or group name; null when the
-          name's discipline token is neither ELA nor Math, so a typo surfaces
-          instead of defaulting to a subject.
+          name has no hyphenated discipline token or the token is neither ELA
+          nor Math, so a typo surfaces instead of defaulting to a subject.
         data_tests:
           - not_null
           - accepted_values:
@@ -41,9 +44,10 @@ models:
       - name: n_active_assignments
         description: >-
           Count of assignments on this grain still active today (no exit date,
-          or a future one - PowerSchool stores a scheduled year-end exit on live
-          rows); more than 1 means a double upload that the latest-wins pick is
-          masking.
+          or a future one). The exit date is per-assignment in PowerSchool (live
+          rows carry a scheduled year-end exit) but is the GROUP's end date in
+          Focus, where a membership has no end date of its own. More than 1
+          means a double upload that the latest-wins pick is masking.
         data_tests:
           - dbt_utils.expression_is_true:
               expression: <= 1
@@ -115,16 +119,19 @@ unit_tests:
             student_number: 5001
             academic_year: 2026
             rn_year: 1
+            region: Newark
             _dbt_source_project: kippnewark
           - studentid: 12
             student_number: 5002
             academic_year: 2026
             rn_year: 1
+            region: Newark
             _dbt_source_project: kippnewark
           - studentid: 13
             student_number: 5001
             academic_year: 2026
             rn_year: 1
+            region: Camden
             _dbt_source_project: kippcamden
       - input: ref("stg_focus__student_groups")
         format: sql

@@ -308,7 +308,7 @@ left join
     and co.region = b.region
     and sj.iready_subject = b.subject
 left join
-    {{ ref("base_powerschool__course_enrollments") }} as cc
+    {{ ref("int_students__course_enrollments") }} as cc
     on co.studentid = cc.cc_studentid
     and co.yearid = cc.cc_yearid
     and co._dbt_source_project = cc._dbt_source_project

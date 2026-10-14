@@ -18,7 +18,6 @@ with
             is_proficient_int,
             is_approaching_int,
             is_below_int,
-            raw_subject,
             source_system,
 
             illuminate_subject_area as `subject`,
@@ -56,7 +55,6 @@ with
             if(state_benchmark_category_level = 4, 1, 0) as is_approaching_int,
             if(state_benchmark_category_level = 5, 1, 0) as is_below_int,
 
-            cast(null as string) as raw_subject,
             cast(null as string) as source_system,
 
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,

@@ -44,7 +44,10 @@ models:
       - name: is_proficient_int_state
         description: State-side proficiency flag (1/0), null when no state row.
       - name: scale_score_iready
-        description: i-Ready-side projected scale score, kept beside the pick.
+        description: >-
+          Fallback-side scale score, kept beside the pick. Usually the i-Ready
+          projected score; for Miami K it is the Star BOY unified score, which
+          outranks i-Ready on that side.
       - name: is_proficient_int
         description: Picked-source proficiency flag (1/0).
       - name: is_approaching_int

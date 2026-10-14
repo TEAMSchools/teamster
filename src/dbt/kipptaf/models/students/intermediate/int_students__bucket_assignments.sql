@@ -6,15 +6,14 @@ with
             sp.enter_date as assignment_date,
 
             co.student_number,
+            co.region,
 
             'powerschool' as bucket_store,
 
             trim(split(sp.specprog_name, '-')[offset(0)]) as bucket,
 
-            initcap(regexp_extract(sp._dbt_source_relation, r'kipp(\w+)_')) as region,
-
             case
-                trim(split(sp.specprog_name, '-')[offset(1)])
+                trim(split(sp.specprog_name, '-')[safe_offset(1)])
                 when 'ELA'
                 then 'Reading'
                 when 'Math'
@@ -44,7 +43,7 @@ with
             trim(split(sg.title, '-')[offset(0)]) as bucket,
 
             case
-                trim(split(sg.title, '-')[offset(1)])
+                trim(split(sg.title, '-')[safe_offset(1)])
                 when 'ELA'
                 then 'Reading'
                 when 'Math'
