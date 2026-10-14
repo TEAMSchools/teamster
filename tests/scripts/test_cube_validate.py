@@ -799,6 +799,20 @@ def test_row_results_take_the_worst_cell_of_the_rows_members(tmp_path):
     assert rows["222"]["verdict"] == "incomplete"  # nothing comparable: never a pass
 
 
+def test_a_run_replaces_every_entry_for_its_dashboard(tmp_path):
+    p = tmp_path / "latest.json"
+    p.write_text(
+        json.dumps(
+            {
+                "888": {"verdict": "pass", "dashboard": "Demo"},  # a corrected row id
+                "999": {"verdict": "fail", "dashboard": "Other"},
+            }
+        )
+    )
+    cv.write_latest(p, "Demo", "2026-10-14", {"111": {"verdict": "pass"}})
+    assert sorted(json.loads(p.read_text())) == ["111", "999"]
+
+
 def test_write_latest_merges_rows(tmp_path):
     p = tmp_path / "latest.json"
     p.write_text(json.dumps({"999": {"verdict": "pass"}}))

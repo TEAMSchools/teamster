@@ -1366,7 +1366,36 @@ def _download(luid: str, out_dir: Path) -> tuple[Path, str]:
     return retry(fetch)
 
 
-def _states_for(checks: dict, path: str | None) -> list[State]:
+def states_for_mismatch(
+    workbook: str, mismatch: str, root: Path = SNAPSHOT_ROOT
+) -> list[State]:
+    """The states behind a mismatch's cells, from the newest snapshot that explained
+    it, so a follow-up exports only those."""
+    base = Path(root) / slug(workbook)
+    dirs = (
+        sorted((p for p in base.iterdir() if p.is_dir()), reverse=True)
+        if base.exists()
+        else []
+    )
+    for snapdir in dirs:
+        path = snapdir / "cells.jsonl"
+        if not path.exists():
+            continue
+        cells = [json.loads(line) for line in path.read_text().splitlines() if line]
+        ids = sorted(
+            {c["state"] for c in cells if mismatch in (c.get("explained_by") or [])}
+        )
+        if ids:
+            m = read_manifest(snapdir / "manifest.json")
+            return [State.from_dict(m.states[i]["state"]) for i in ids if i in m.states]
+    raise SessionError(f"no snapshot under {base} has cells explained by {mismatch}")
+
+
+def _states_for(
+    checks: dict, path: str | None, mismatch: str | None = None
+) -> list[State]:
+    if mismatch:
+        return states_for_mismatch(checks["workbook"], mismatch)
     raw = yaml.safe_load(Path(path).read_text()) if path else checks.get("states")
     if isinstance(raw, dict):  # a plan file: take its must and optional lists
         raw = (raw.get("must") or []) + (raw.get("optional") or [])
@@ -1606,7 +1635,9 @@ def _open(a) -> int:
         m.groups = group_lists(wb, m, snapdir)
         m.all_values = value_lists(m, snapdir)
         write_manifest(snapdir / "manifest.json", m)
-        _export_all(session, m, snapdir, wb, checks, _states_for(checks, a.states))
+        _export_all(
+            session, m, snapdir, wb, checks, _states_for(checks, a.states, a.mismatch)
+        )
     return 0
 
 
@@ -1728,6 +1759,12 @@ def main(argv: list[str] | None = None) -> int:
         s = sub.add_parser(name)
         s.add_argument("checks")
         s.add_argument("--states", help="a YAML list of states, or a plan file")
+        if name == "export":
+            s.add_argument(
+                "--for",
+                dest="mismatch",
+                help="export the states behind a mismatch's cells",
+            )
         if name == "open":
             s.add_argument(
                 "--resume",

@@ -2147,6 +2147,8 @@ def row_results(cells, checks) -> dict[str, dict]:
 def write_latest(path: Path, workbook: str, run_date: str, rows: dict) -> None:
     p = Path(path)
     data = json.loads(p.read_text()) if p.exists() else {}
+    # A run replaces its dashboard's entries, so a corrected row id leaves none stale.
+    data = {gid: r for gid, r in data.items() if r.get("dashboard") != workbook}
     for gid, r in rows.items():
         data[gid] = {**r, "dashboard": workbook, "run_date": run_date}
     p.parent.mkdir(parents=True, exist_ok=True)

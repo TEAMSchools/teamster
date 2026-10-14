@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import datetime as dt
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -1108,3 +1109,29 @@ def test_coverage_expands_a_group_bin_to_its_members(tmp_path, demo_hyper):
             snap.State("Overview", filters=(("Region", "North"), ("Pair", "AB")))
         )
         assert not covers(snap.State("Overview", filters=(("Pair", "AB"),)))
+
+
+def test_export_for_a_mismatch_lists_the_states_behind_its_cells(tmp_path):
+    old = tmp_path / "demo" / "2026-10-09T2236"
+    new = tmp_path / "demo" / "2026-10-14T1000"  # a fresh session, nothing compared yet
+    old.mkdir(parents=True)
+    new.mkdir(parents=True)
+    north = snap.State("Overview", filters=(("Region", "North"),))
+    m = _manifest()
+    m.states = {
+        north.id: {"state": north.as_dict(), "status": "ok"},
+        "overview--default": {
+            "state": snap.State("Overview").as_dict(),
+            "status": "ok",
+        },
+    }
+    snap.write_manifest(old / "manifest.json", m)
+    (old / "cells.jsonl").write_text(
+        json.dumps({"state": north.id, "explained_by": ["dup"]})
+        + "\n"
+        + json.dumps({"state": "overview--default", "explained_by": []})
+        + "\n"
+    )
+    assert snap.states_for_mismatch("Demo", "dup", tmp_path) == [north]
+    with pytest.raises(snap.SessionError, match="nope"):
+        snap.states_for_mismatch("Demo", "nope", tmp_path)
