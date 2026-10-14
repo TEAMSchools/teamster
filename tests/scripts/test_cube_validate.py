@@ -2750,3 +2750,70 @@ def test_explain_asks_live_cube_per_bin_for_a_group_dimension(tmp_path):
     live = cv.Live(rows=run, modified=lambda ds: None, cube_now=cube_now)
     cv.explain_cells([cell], c, states, {}, run, lambda q: ([], []), live, lists=lists)
     assert cell.verdict == "pass" and cell.cube == 40.0
+
+
+def test_investigate_rows_split_by_gap_with_runnable_sql(tmp_path):
+    c, cells, states = _explained(tmp_path)
+    fail = cells[2]
+    fail.key, fail.tableau, fail.cube, fail.gap = (
+        {"School Name": "Beta"},
+        9.0,
+        8.0,
+        "row gap",
+    )
+    text = cv.digest_markdown("Demo", cells, c, states, {})
+    assert "### Row gaps" in text and "typical gap 11.1%" in text
+    assert "from `EXTRACT_TABLE`" in text
+    assert "from `teamster-332318.kipptaf_tableau.rpt_demo`" in text
+
+
+def _diff_explained(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    ms = d["sheets"]["Overview - Table"]["measures"]
+    for name, flag, cond in (
+        ("IEP", "true", "is_iep"),
+        ("Gen Ed", "false", "not is_iep"),
+    ):
+        ms[name] = {
+            "cube": "demo.avg_score",
+            "sql": "avg(score)",
+            "round": 2,
+            "cube_filters": [
+                {"member": "demo.is_iep", "operator": "equals", "values": [flag]}
+            ],
+            "where": cond,
+        }
+    ms["Diff"] = {"diff": ["IEP", "Gen Ed"], "round": 2}
+    d["mismatches"] = {
+        "dup": {
+            "title": "fix(cube): duplicate rows",
+            "what": "Cube counts some rows twice.",
+            "fix": "cube",
+        }
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    cell = cv.Cell(
+        "Overview - Table",
+        "s",
+        {"School Name": "Beta"},
+        "Diff",
+        "-8.50",
+        -8.5,
+        -7.0,
+        40,
+        "mismatch",
+        verdict="fail",
+        gap="row gap",
+        explained_by=["dup"],
+    )
+    return c, cell, states
+
+
+def test_a_diff_measure_fail_prints_one_pair_of_blocks_per_part(tmp_path):
+    c, cell, states = _diff_explained(tmp_path)
+    text = cv.digest_markdown("Demo", [cell], c, states, {})
+    assert "None as m" not in text
+    for part in ("IEP", "Gen Ed"):
+        assert f"Over the extract (what Tableau showed) ({part}):" in text
+        assert f"Over the live table ({part}):" in text

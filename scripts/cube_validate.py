@@ -21,6 +21,7 @@ import io
 import json
 import os
 import re
+import statistics
 import sys
 import threading
 import time
@@ -2284,7 +2285,73 @@ def coverage_markdown(states, cells, checks=None) -> str:
     return "\n".join(lines) + "\n"
 
 
-def digest_markdown(workbook, cells, checks) -> str:
+def _typical_gap(cells) -> str:
+    """The median gap between Cube and Tableau, relative to what Tableau shows: a
+    0.3% shortfall everywhere reads differently from a 20-point cell."""
+    rel = [
+        abs(c.cube - c.tableau) / abs(c.tableau)
+        for c in cells
+        if c.cube is not None and c.tableau
+    ]
+    return f"{statistics.median(rel):.1%}" if rel else "unknown"
+
+
+def _investigate_sql(
+    c, checks, states, fields, defaults, sheet_filters, lists
+) -> list[str]:
+    """The trusted extract SQL for a fail cell, and the same SQL on the live table.
+    A diff measure prints one pair per part."""
+    sheet = checks["sheets"][c.sheet]
+    meas = sheet.measures[c.measure]
+    where, _ = _slice(
+        states[c.state],
+        c.sheet,
+        checks,
+        fields,
+        defaults,
+        sheet_filters,
+        lists,
+        public_only=True,
+    )
+    out: list[str] = []
+    for name in meas.diff or (c.measure,):
+        sql = extract_sql(
+            sheet, sheet.measures[name], list(_grain(c)[0]), where, lists=lists
+        )
+        try:
+            live = sql.replace(
+                f"`{EXTRACT_TABLE}`", f"`{live_table(sheet.datasource)}`"
+            )
+        except CheckError as err:
+            live = f"-- {err}"
+        part = f" ({name})" if meas.diff else ""
+        out += [
+            "",
+            f"  Over the extract (what Tableau showed){part}:",
+            "",
+            "  ```sql",
+            f"  {sql}",
+            "  ```",
+            "",
+            f"  Over the live table{part}:",
+            "",
+            "  ```sql",
+            f"  {live}",
+            "  ```",
+        ]
+    return out
+
+
+def digest_markdown(
+    workbook,
+    cells,
+    checks,
+    states=None,
+    fields=None,
+    defaults=None,
+    sheet_filters=None,
+    lists=None,
+) -> str:
     sides = fix_sides(checks)
     lines = [f"# {workbook}: Cube against Tableau", ""]
     lines.append(
@@ -2309,12 +2376,34 @@ def digest_markdown(workbook, cells, checks) -> str:
             lines += [f"  - {_example(c, checks, side)}" for c in mine[:3]]
     fails = _coarsest([c for c in cells if c.verdict == "fail"])
     if fails:
-        lines += ["", "## Investigate", ""]
-        for (sheet, measure), n in Counter(
-            (c.sheet, c.measure) for c in fails
-        ).most_common():
-            lines.append(f"- {sheet} / {measure}: {n} cells")
-        lines += [f"  - {_example(c, checks)}" for c in fails[:5]]
+        lines += ["", "## Investigate"]
+        for gap, title in (
+            ("row gap", "Row gaps: Cube and the live table count different students"),
+            ("formula gap", "Formula gaps: the same students, a different value"),
+            ("", "No live check"),
+        ):
+            mine = [c for c in fails if c.gap == gap]
+            if not mine:
+                continue
+            lines += ["", f"### {title}", ""]
+            by: dict[tuple, list[Cell]] = {}
+            for c in mine:
+                by.setdefault((c.sheet, c.measure), []).append(c)
+            for (sheet, measure), cs in sorted(by.items(), key=lambda x: -len(x[1])):
+                lines.append(
+                    f"- {sheet} / {measure}: {len(cs)} cells, typical gap {_typical_gap(cs)}"
+                )
+                lines += [f"  - {_example(c, checks)}" for c in cs[:3]]
+                if states is not None:
+                    lines += _investigate_sql(
+                        cs[0],
+                        checks,
+                        states,
+                        fields or {},
+                        defaults,
+                        sheet_filters,
+                        lists,
+                    )
     unsure = Counter(c.why or c.reason for c in cells if c.verdict == "incomplete")
     if unsure:
         lines += [
@@ -2427,7 +2516,11 @@ def write_outputs(
     stem = f"{run_date}-{_slug(workbook)}"
     (out / f"{stem}-coverage.md").write_text(coverage_markdown(states, cells, checks))
     digest = out / f"{stem}-digest.md"
-    digest.write_text(digest_markdown(workbook, cells, checks))
+    digest.write_text(
+        digest_markdown(
+            workbook, cells, checks, states, fields, defaults, sheet_filters, lists
+        )
+    )
     drafts = issue_drafts(
         workbook, cells, checks, states, fields, defaults, sheet_filters, lists
     )
