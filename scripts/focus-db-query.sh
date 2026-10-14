@@ -10,6 +10,11 @@
 #   set local statement_timeout = '5min';
 #   ...
 #   rollback;
+# The script refuses a file without the `begin transaction read only` line.
+#
+# Whatever psql prints lands in the pod log, which Cloud Logging keeps
+# (logs/stdout in teamster-332318). Select counts and aggregates only, never
+# student-level rows.
 #
 # Usage: bash scripts/focus-db-query.sh <file.sql>
 # Needs a kubectl context on the Dagster GKE cluster.
@@ -17,6 +22,10 @@ set -euo pipefail
 
 if [[ $# -ne 1 || ! -f ${1} ]]; then
 	echo "usage: ${0} <file.sql>" >&2
+	exit 2
+fi
+if ! grep -qi 'begin transaction read only' "${1}"; then
+	echo "${1} must open with: begin transaction read only;" >&2
 	exit 2
 fi
 
@@ -71,6 +80,9 @@ for _ in $(seq 1 120); do
 	*) sleep 5 ;;
 	esac
 done
+if [[ ${phase} != Succeeded && ${phase} != Failed ]]; then
+	echo "--- timed out after 10 minutes in phase ${phase}" >&2
+fi
 
 kubectl -n "${ns}" logs "${name}"
 echo "--- pod phase: ${phase}" >&2

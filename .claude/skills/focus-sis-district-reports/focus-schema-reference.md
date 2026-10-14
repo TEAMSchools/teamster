@@ -66,7 +66,10 @@ field value codes_.
    (cast before joining to `apex_sessions.id`), and `apex_sessions.form_id` and
    the `apex_form_*` tables are unwired, so do not join on them. WebFetch
    returns only the page header: the tables are JSON in `window.APEX_DATA`
-   inside the HTML, so `curl` the page and read it with `jq`.
+   inside the HTML. Extract it with
+   `curl -s <url> | grep -o 'window.APEX_DATA = .*' | sed -E 's/^window\.APEX_DATA = //; s/;? *<\/script>.*$//' | jq '.tables.apex_sessions'`
+   (each table under `.tables` has `cols`, `unique`, `index`, `purpose`,
+   `audit`).
 7. **No coverage anywhere above** (a module-specific table like
    `positive_behaviors`) — ask the user for a screenshot of the table's columns
    rather than guessing.

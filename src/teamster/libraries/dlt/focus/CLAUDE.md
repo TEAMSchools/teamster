@@ -168,7 +168,10 @@ cluster's egress is already allowlisted. The connection goes through PgBouncer
 (port 6432), which rejects startup options: `PGOPTIONS` fails with
 `unsupported startup parameter in options`. Set read-only mode and timeouts
 inside the SQL file (`begin transaction read only;`
-`set local statement_timeout = '5min';` … `rollback;`).
+`set local statement_timeout = '5min';` … `rollback;`); the script refuses a
+file without the first line. psql's output lands in Cloud Logging through the
+pod log, so write queries that return counts or aggregates, never student-level
+rows.
 
 Branch-deployment dlt runs write to the prod `dagster_<district>_dlt_focus`
 dataset (see `../CLAUDE.md`), so a newly-configured table materialized in a
