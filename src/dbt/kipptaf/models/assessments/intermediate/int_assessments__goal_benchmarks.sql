@@ -10,8 +10,6 @@ with
 
             performance_level as `level`,
 
-            0 as priority,
-
             scale_score as scale_score_state,
             is_proficient_int as is_proficient_int_state,
             cast(null as int64) as scale_score_iready,
@@ -28,6 +26,14 @@ with
             academic_year + if(
                 score_source = 'state_fl' and administration_period = 'PM1', 0, 1
             ) as academic_year,
+
+            case
+                when score_source = 'state_nj'
+                then 'njsla_prior_year'
+                when administration_period = 'PM1'
+                then 'fast_pm1'
+                else 'fast_pm3_prior_year'
+            end as `source`,
         from {{ ref("int_assessments__state_scores") }}
         where
             student_number is not null
@@ -43,10 +49,7 @@ with
                     score_source = 'state_fl'
                     and assessment_name = 'FAST'
                     and scale_score is not null
-                    and (
-                        administration_period = 'PM3'
-                        or (administration_period = 'PM1' and test_grade = 3)
-                    )
+                    and administration_period in ('PM1', 'PM3')
                 )
             )
 
@@ -63,8 +66,6 @@ with
 
             state_benchmark_category_level as `level`,
 
-            1 as priority,
-
             unified_score as scale_score_state,
             if(state_benchmark_category_level < 4, 1, 0) as is_proficient_int_state,
             cast(null as int64) as scale_score_iready,
@@ -74,15 +75,13 @@ with
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
 
             academic_year + 1 as academic_year,
+
+            'star_eoy_prior_year' as `source`,
         from {{ ref("stg_renlearn__star") }}
         where
             student_display_id is not null
             and rn_subject_round = 1
             and screening_period_window_name = 'Spring'
-            -- K and grade-1 spring rows feed grade 1-2 benchmarks only; grade 3
-            -- is FAST PM1 with an i-Ready fallback, per the generator's ay2026
-            -- source config (never grade-2 Star)
-            and grade_level between 0 and 1
 
         union all
 
@@ -97,8 +96,6 @@ with
 
             district_benchmark_category_level as `level`,
 
-            2 as priority,
-
             cast(null as numeric) as scale_score_state,
             cast(null as int64) as is_proficient_int_state,
             unified_score as scale_score_iready,
@@ -108,12 +105,13 @@ with
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
 
             academic_year,
+
+            'star_boy' as `source`,
         from {{ ref("stg_renlearn__star") }}
         where
             student_display_id is not null
             and rn_subject_round = 1
             and screening_period_window_name = 'Fall'
-            and grade_level = 0
 
         union all
 
@@ -142,8 +140,6 @@ with
 
             projected_level_number_typical as `level`,
 
-            3 as priority,
-
             cast(null as numeric) as scale_score_state,
             cast(null as int64) as is_proficient_int_state,
 
@@ -154,6 +150,8 @@ with
             `subject`,
 
             academic_year_int as academic_year,
+
+            'iready_boy' as `source`,
         from {{ ref("int_assessments__iready_diagnostic_results") }}
         where
             test_round = 'BOY'
@@ -174,8 +172,6 @@ with
 
             level_number_with_typical as `level`,
 
-            3 as priority,
-
             cast(null as numeric) as scale_score_state,
             cast(null as int64) as is_proficient_int_state,
 
@@ -186,12 +182,55 @@ with
             `subject`,
 
             academic_year_int as academic_year,
+
+            'iready_boy' as `source`,
         from {{ ref("int_assessments__iready_diagnostic_results") }}
         where
             test_round = 'BOY'
             and rn_subj_round = 1
             and sublevel_number_with_typical is not null
             and student_grade_int in (0, 1, 2, 9)
+    ),
+
+    -- each source counts only for the grades where the generator's ay2026
+    -- config names it; the enrolled grade, not the test's grade, decides
+    benchmark_graded as (
+        select
+            bu.*,
+
+            case
+                when bu.`source` = 'iready_boy'
+                then 1
+                when e.region != 'Miami' and bu.`source` = 'njsla_prior_year'
+                then 0
+                when
+                    e.region = 'Miami'
+                    and e.grade_level = 0
+                    and bu.`source` = 'star_boy'
+                then 0
+                when
+                    e.region = 'Miami'
+                    and e.grade_level in (1, 2)
+                    and bu.`source` = 'star_eoy_prior_year'
+                then 0
+                when
+                    e.region = 'Miami'
+                    and e.grade_level = 3
+                    and bu.`source` = 'fast_pm1'
+                then 0
+                when
+                    e.region = 'Miami'
+                    and e.grade_level between 4 and 9
+                    and bu.`source` = 'fast_pm3_prior_year'
+                then 0
+            end as priority,
+        from benchmark_union as bu
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on bu.student_number = e.student_number
+            and bu.academic_year = e.academic_year
+            and bu._dbt_source_project = e._dbt_source_project
+        where e.rn_year = 1
     ),
 
     benchmark_ranked as (
@@ -217,7 +256,8 @@ with
                     _dbt_source_project, student_number, academic_year, `subject`
                 order by priority asc, scale_score desc
             ) as rn_benchmark,
-        from benchmark_union
+        from benchmark_graded
+        where priority is not null
         window
             w as (
                 partition by
