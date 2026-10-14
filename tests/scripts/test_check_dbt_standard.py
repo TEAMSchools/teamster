@@ -468,6 +468,73 @@ def test_a9_dropped_by_standard_exempt() -> None:
     assert touched(node) == []
 
 
+PICK = (
+    "with r as (\n"
+    "    select\n"
+    "        a,\n"
+    "        row_number() over (partition by a order by b desc) as rn_a,\n"
+    "    from t\n"
+    ")\n\n"
+    "select a,\nfrom r\nwhere rn_a = 1\n"
+)
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        PICK,
+        "select a,\nfrom t\nqualify row_number() over (partition by a) = 1\n",
+        "{{ dbt_utils.deduplicate(relation='t', partition_by='a', order_by='b') }}\n",
+    ],
+)
+@pytest.mark.parametrize(
+    "name,path",
+    [
+        ("int_people__y", "models/people/b.sql"),
+        ("dim_y", "models/marts/dimensions/b.sql"),
+        ("rpt_tableau__y", "models/extracts/tableau/b.sql"),
+    ],
+)
+def test_a5_row_pick_below_source_int(code, name, path) -> None:
+    assert touched(coded(name, path, code)) == [(f"kipptaf.{name}", "A5", "error")]
+
+
+def test_a5_allowed_in_stg_and_source_int() -> None:
+    stg = coded("stg_powerschool__y", "models/powerschool/staging/b.sql", PICK)
+    int_ = coded("int_powerschool__y", "models/powerschool/intermediate/b.sql", PICK)
+    assert touched(stg, int_) == []
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # rank kept as a column, never filtered
+        "select\n    row_number() over (partition by a) as rn,\nfrom t\n",
+        # filter on a row number computed upstream
+        "select a,\nfrom t\nwhere rn_year = 1\n",
+    ],
+)
+def test_a5_ignores_unfiltered_or_upstream_row_number(code) -> None:
+    assert touched(coded("int_people__y", "models/people/b.sql", code)) == []
+
+
+def test_a5_ignores_unchanged_lines() -> None:
+    node = coded("int_people__y", "models/people/b.sql", PICK)
+    assert touched(node, changed={"models/people/b.sql": {2, 3}}) == []
+
+
+def test_a5_dropped_by_standard_exempt() -> None:
+    node = coded(
+        "int_people__y",
+        "models/people/b.sql",
+        PICK,
+        meta={
+            "standard_exempt": {"A5": "latest test per student is the business rule"}
+        },
+    )
+    assert touched(node) == []
+
+
 @pytest.mark.parametrize(
     "name", ["int_people__staff_pivoted", "int_people__staff_unioned"]
 )

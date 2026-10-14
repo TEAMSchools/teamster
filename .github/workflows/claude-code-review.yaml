@@ -97,6 +97,20 @@ jobs:
             to a folder the PR adds, and A7 only to an entity that already has a
             key macro under src/dbt/kipptaf/macros/.
 
+            For each int_ or rpt_ model the PR adds, write a ledger in the
+            fold-out: one line per rule below, even when the answer is "none". A
+            model with no ledger means you skipped it, so never leave one out. -
+            A4: the model's grain, and every model in the same folder at that
+              grain, including one whose grain columns carry different names
+              (assessment_subject vs subject).
+            - A5: every row-pick (dbt_utils.deduplicate, or row_number()
+              filtered to 1), and the standard_exempt reason if there is one.
+            - A10: every join between 2 regional models (unions of district
+              models), with its join keys and whether _dbt_source_project is
+              one of them.
+            This ledger replaces a free-form "checked and fine" note for added
+            models.
+
             Also check model altitude: derive a model in the source-system
             package at the same layer the source system derives it, not at
             kipptaf, so surrogate-key hashes are not recomputed at network
