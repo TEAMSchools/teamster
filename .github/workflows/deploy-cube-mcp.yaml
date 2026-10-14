@@ -68,6 +68,8 @@ jobs:
         run: |
           # Cloud Run IAM is open (--allow-unauthenticated); OAuth at the MCP
           # layer (WorkOS AuthKit) is the access gate.
+          # CUBE_MCP_LOG_FREE_TEXT stays false until People Operations approves
+          # storing question text (Refs #5613). Turning it on is this 1 value.
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image=${{ env.REGISTRY_IMAGE }}:${{ github.sha }} \
             --project=${{ env.GCP_PROJECT_ID }} \
@@ -81,5 +83,5 @@ jobs:
             --concurrency=80 \
             --ingress=all \
             --allow-unauthenticated \
-            --set-env-vars=TRANSPORT=http,CUBE_REST_URL=${{ vars.CUBE_REST_URL }},AUTHKIT_DOMAIN=${{ vars.AUTHKIT_DOMAIN }},PUBLIC_URL=${{ vars.PUBLIC_URL }} \
+            --set-env-vars=TRANSPORT=http,CUBE_REST_URL=${{ vars.CUBE_REST_URL }},AUTHKIT_DOMAIN=${{ vars.AUTHKIT_DOMAIN }},PUBLIC_URL=${{ vars.PUBLIC_URL }},SERVER_SHA=${{ github.sha }},CUBE_MCP_LOG_FREE_TEXT=false \
             --set-secrets=CUBE_API_SECRET=cube-api-secret:latest
