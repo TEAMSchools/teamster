@@ -16,6 +16,7 @@ models:
               - studentid
               - exitdate
           config:
+            # zero-length stints are pre-registrations moved to another school
             where: schoolid != 999999 and entrydate < exitdate
             severity: warn
     columns:

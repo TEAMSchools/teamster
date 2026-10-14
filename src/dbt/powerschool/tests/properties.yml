@@ -8,9 +8,9 @@ data_tests:
       `int_powerschool__ps_adaadm_daily_ctod` because the `(fteid,
       attendance_conversion_id)` join in that model resolves only when the FTE
       matches the school's bell-schedule conversion config. Graduated stints
-      (`schoolid = 999999`) and zero-length stints (`entrydate >= exitdate`) are
-      excluded — neither gets a membership day, so a mismatched FTE there never
-      reaches attendance.
+      (`schoolid = 999999`) and stints with no days left after clipping
+      (`entrydate >= exitdate_clipped`) are excluded — neither gets a membership
+      day, so a mismatched FTE there never reaches attendance.
     config:
       severity: warn
       meta:
@@ -89,9 +89,9 @@ data_tests:
       day is a normal sequential transfer and is allowed; multi-day overlap is
       the source-side defect that fans out cc date-range joins. Dropped sections
       (`is_dropped_section`) are excluded, because a drop and its replacement
-      section normally overlap and consumers already filter drops out. Lives in
-      the package because it asserts PowerSchool source quality, and each
-      district project holds one district, so no region partition key is needed.
+      section normally overlap and most consumers filter drops out. Lives in the
+      package because it asserts PowerSchool source quality, and each district
+      project holds one district, so no region partition key is needed.
       kippmiami does not consume the powerschool package, so Miami is not
       monitored here.
     config:
