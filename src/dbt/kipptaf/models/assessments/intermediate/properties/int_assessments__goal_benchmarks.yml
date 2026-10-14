@@ -1,0 +1,107 @@
+models:
+  - name: int_assessments__goal_benchmarks
+    description: >-
+      The benchmark-score panel shown beside stored bucket assignments on the
+      goals dashboard. The prior-year state result (NJSLA / FAST PM3 / Star EOY,
+      with grade-3 FAST read from same-year PM1) sits first, and the i-Ready BOY
+      typical-growth projection (Star BOY for Miami K) is the fallback. One row
+      per student x academic_year x subject. Display and comparison only -
+      bucket membership never derives from these columns. Miami K reads the
+      standard Star export until the FAST Star file is staged.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - academic_year
+            - student_number
+            - subject
+    columns:
+      - name: student_number
+        description: Network student number.
+      - name: academic_year
+        description: >-
+          The academic year the benchmark informs (prior-year state results are
+          shifted forward one year; grade-3 FAST PM1 and i-Ready BOY are
+          same-year).
+      - name: subject
+        description: Reading or Math.
+      - name: benchmark_assessment_type
+        description: NJSLA, FAST, FAST PM3, Star EOY, Star BOY, or i-Ready BOY.
+      - name: performance_level
+        description:
+          Performance level on whichever source won the priority pick.
+      - name: scale_score
+        description: >-
+          Scale score of the picked source; i-Ready rows carry the BOY score
+          plus annual typical growth.
+      - name: scale_score_state
+        description:
+          State-side scale score, kept beside the pick for comparison.
+      - name: is_proficient_int_state
+        description: State-side proficiency flag (1/0), null when no state row.
+      - name: scale_score_iready
+        description: i-Ready-side projected scale score, kept beside the pick.
+      - name: is_proficient_int
+        description: Picked-source proficiency flag (1/0).
+      - name: is_approaching_int
+        description: Picked-source approaching flag (1/0).
+      - name: is_below_int
+        description: Picked-source below flag (1/0).
+      - name: is_tested_int
+        description: >-
+          1 when any benchmark source has a score; drives the Tableau
+          denominator parameter.
+
+unit_tests:
+  - name: unit_int_assessments__goal_benchmarks_miami_k_star_first
+    description: >-
+      A Miami K student with both a Star BOY row and an i-Ready BOY row gets one
+      row with Star BOY picked first.
+    model: int_assessments__goal_benchmarks
+    given:
+      - input: ref("int_assessments__state_scores")
+        rows: []
+      - input: ref("int_assessments__iready_diagnostic_results")
+        rows:
+          - student_id: 84005678
+            academic_year_int: 2026
+            subject: Math
+            level_number_with_typical: 3
+            projected_level_number_typical: null
+            projected_is_proficient_typical: null
+            projected_sublevel_number_typical: null
+            sublevel_number_with_typical: 2
+            overall_scale_score: 400
+            annual_typical_growth_measure: 20
+            region: KIPP Miami
+            test_round: BOY
+            rn_subj_round: 1
+            student_grade_int: 0
+      - input: ref("stg_renlearn__star")
+        rows:
+          - student_display_id: 84005678
+            academic_year: 2026
+            star_discipline: Math
+            district_benchmark_category_level: 2
+            state_benchmark_category_level: null
+            unified_score: 777
+            rn_subject_round: 1
+            screening_period_window_name: Fall
+            grade_level: 0
+    expect:
+      rows:
+        - student_number: 84005678
+          academic_year: 2026
+          subject: Math
+          benchmark_assessment_type: Star BOY
+          performance_level: 2
+          scale_score: 777
+          scale_score_state: null
+          is_proficient_int_state: null
+          scale_score_iready: 777
+          is_proficient_int: 0
+          is_approaching_int: 1
+          is_below_int: 0
+          is_tested_int: 1
