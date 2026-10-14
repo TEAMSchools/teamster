@@ -7,7 +7,7 @@ models:
               - studentid
               - entrydate
           config:
-            # zero-length stints are pre-registrations moved to another school
+            # zero-length stints are flagged by the expression test below
             where: schoolid != 999999 and entrydate < exitdate
             severity: warn
       - dbt_utils.unique_combination_of_columns:
@@ -16,8 +16,17 @@ models:
               - studentid
               - exitdate
           config:
-            # zero-length stints are pre-registrations moved to another school
+            # zero-length stints are flagged by the expression test below
             where: schoolid != 999999 and entrydate < exitdate
+            severity: warn
+      # A never-show belongs on enroll_status = 1, which this model drops, so
+      # every zero- or negative-length stint left here is a record to clean up.
+      # Graduated placeholders at 999999 are zero-length by design.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: entrydate < exitdate
+          config:
+            where: schoolid != 999999
             severity: warn
     columns:
       - name: studentid
