@@ -96,12 +96,13 @@ models:
         data_type: int64
         description:
           Number of distinct career launch survey responses matched to the
-          alumnus; 0 when none.
+          alumnus, not counting responses marked Exclude; 0 when none.
       - name: latest_survey_date
         data_type: timestamp
         description:
-          Submission time of the alumnus's most recent matched response. Null
-          when none matched, or when the only matches are bulk-add rows.
+          Submission time of the alumnus's most recent matched response,
+          ignoring responses marked Exclude. Null when none matched, or when the
+          only matches are bulk-add rows.
       - name: contact_owner
         data_type: string
         description: Name of the Salesforce contact owner for the alumnus.
