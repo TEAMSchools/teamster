@@ -61,6 +61,32 @@ models:
           - not_null:
               config:
                 severity: error
+      # The name tests live here rather than on the DeansList and Focus extracts
+      # because those are views, whose tests rerun only when their code changes.
+      # warn: each row is a source-system record missing a name.
+      - name: contact_first_name
+        data_type: string
+        description:
+          The contact's given name as a discrete field, for receivers that
+          require first and last name separately rather than a single full-name
+          string. Sourced from the Finalsite contact record on the Finalsite
+          branch and from the Focus person record on the Miami branch, so it is
+          never derived by splitting `contact_name`.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null
+      - name: contact_last_name
+        data_type: string
+        description:
+          The contact's family name as a discrete field, the companion to
+          `contact_first_name`. Same per-branch sourcing.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null
       - name: personid
         data_type: string
         description:
@@ -93,25 +119,6 @@ models:
       - name: contact_name
         data_type: string
         description: The contact's full name.
-        config:
-          meta:
-            contains_pii: true
-      - name: contact_first_name
-        data_type: string
-        description:
-          The contact's given name as a discrete field, for receivers that
-          require first and last name separately rather than a single full-name
-          string. Sourced from the Finalsite contact record on the Finalsite
-          branch and from the Focus person record on the Miami branch, so it is
-          never derived by splitting `contact_name`.
-        config:
-          meta:
-            contains_pii: true
-      - name: contact_last_name
-        data_type: string
-        description:
-          The contact's family name as a discrete field, the companion to
-          `contact_first_name`. Same per-branch sourcing.
         config:
           meta:
             contains_pii: true

@@ -171,6 +171,19 @@ models:
           `cc_dateenrolled`, `cc_dateleft`, all descending. Null for Miami's
           Focus branch, which does not compute this window.
         data_type: int64
+      - name: rn_ap_course_subject_year
+        description: >-
+          Ranks a student's enrollments within a year by `ap_course_subject`, so
+          1 picks one course per AP subject. A section that was not dropped
+          wins, then the latest term and dates. Two courses can carry the same
+          AP subject code, such as a main AP course and a companion recitation
+          section, and without this pick a consumer counts the student once per
+          course. Rows with no AP subject are ranked too, so filter on
+          `ap_course_subject is not null` as well. The powerschool package test
+          base_powerschool__course_enrollments__no_concurrent_ap_subject lists
+          the courses to fix in PowerSchool. Null for Miami's Focus branch,
+          which carries no AP subject.
+        data_type: int64
       - name: standard_course_name
         description: >-
           SIS-independent course label from the course-subject crosswalk sheet,
