@@ -128,7 +128,10 @@ byte-identity).
 
 - Quick filters: School, Grade Level, Subject, IEP Status, Homeroom Section,
   Course Teacher, Course Section, Student Tier (the legacy School Rollup filter
-  set, kept).
+  set, kept). Course Teacher and Course Section are null for Miami by
+  construction (the Focus branch of `int_students__course_enrollments` carries
+  no course-subject mapping), so Miami users filter by school, grade, and
+  homeroom; say so in the Miami tab copy and the Task 13 handover.
 - Four bucket BANs (count + share of grade).
 - Student table: name, student number, tier (colored chip/cell), benchmark
   assessment type + score, section · teacher, IEP, note column with "Next
