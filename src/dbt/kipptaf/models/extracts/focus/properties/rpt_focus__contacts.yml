@@ -110,6 +110,8 @@ models:
           Guardian's first name from their Finalsite contact record on guardian
           rows; the emergency contact's first name (`emrg_N_name_first_name`) on
           emergency rows.
+        data_tests:
+          - not_null
       - name: last_name
         data_type: string
         config:
@@ -119,6 +121,8 @@ models:
           Guardian's last name from their Finalsite contact record on guardian
           rows; the emergency contact's last name (`emrg_N_name_last_name`) on
           emergency rows.
+        data_tests:
+          - not_null
       - name: contact1_type
         data_type: string
         description:

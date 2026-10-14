@@ -61,8 +61,9 @@ models:
           - not_null:
               config:
                 severity: error
-      # The name tests live here rather than on the DeansList and Focus extracts
-      # because those are views, whose tests rerun only when their code changes.
+      # The name tests live here rather than on rpt_deanslist__family_contacts,
+      # a view whose tests rerun only when its code changes. rpt_focus__contacts
+      # keeps its own, since it reads names from Finalsite, not from this model.
       # warn: each row is a source-system record missing a name.
       - name: contact_first_name
         data_type: string

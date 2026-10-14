@@ -79,7 +79,8 @@ with
                     a.is_dropped_section asc,
                     a.cc_termid desc,
                     a.cc_dateenrolled desc,
-                    a.cc_dateleft desc
+                    a.cc_dateleft desc,
+                    a.cc_dcid desc
             ) as rn_ap_course_subject_year,
 
         from {{ ref("int_powerschool__course_enrollments_union") }} as a

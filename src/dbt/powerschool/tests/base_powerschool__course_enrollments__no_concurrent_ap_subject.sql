@@ -10,16 +10,6 @@ with
             ce.cc_dateleft,
 
             cx.ap_course_subject,
-
-            lag(ce.cc_course_number) over (
-                partition by ce.cc_studyear, cx.ap_course_subject
-                order by ce.cc_dateenrolled, ce.cc_dateleft
-            ) as prev_course_number,
-
-            lag(ce.cc_dateleft) over (
-                partition by ce.cc_studyear, cx.ap_course_subject
-                order by ce.cc_dateenrolled, ce.cc_dateleft
-            ) as prev_dateleft,
         from {{ ref("base_powerschool__course_enrollments") }} as ce
         inner join
             {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
@@ -28,13 +18,21 @@ with
     )
 
 select
-    cc_studyear,
-    ap_course_subject,
-    cc_studentid,
-    cc_course_number,
-    prev_course_number,
-    cc_dateenrolled,
-    cc_dateleft,
-    prev_dateleft,
-from enrollments
-where cc_dateenrolled < prev_dateleft and cc_course_number != prev_course_number
+    a.cc_studyear,
+    a.ap_course_subject,
+    a.cc_studentid,
+    a.cc_course_number,
+    a.cc_dateenrolled,
+    a.cc_dateleft,
+
+    b.cc_course_number as other_course_number,
+    b.cc_dateenrolled as other_dateenrolled,
+    b.cc_dateleft as other_dateleft,
+from enrollments as a
+inner join
+    enrollments as b
+    on a.cc_studyear = b.cc_studyear
+    and a.ap_course_subject = b.ap_course_subject
+    and a.cc_course_number < b.cc_course_number
+    and a.cc_dateenrolled < b.cc_dateleft
+    and a.cc_dateleft > b.cc_dateenrolled
