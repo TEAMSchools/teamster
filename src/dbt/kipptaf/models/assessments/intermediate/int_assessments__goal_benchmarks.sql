@@ -99,7 +99,7 @@ with
         from state_test_resolved
     ),
 
-    state_test_picked as (select * from state_test_ranked where rn_state = 1),
+    state_test_picked as (select *, from state_test_ranked where rn_state = 1),
 
     iready_union as (
         select
@@ -193,7 +193,7 @@ with
         from iready_union
     ),
 
-    iready_picked as (select * from iready_ranked where rn_iready = 1)
+    iready_picked as (select *, from iready_ranked where rn_iready = 1)
 
 select
     st.scale_score as scale_score_state,

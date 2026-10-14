@@ -24,20 +24,20 @@ models:
         description: Reading or Math, decoded from the program or group name.
         data_tests:
           - accepted_values:
-              values: ["Reading", "Math"]
+              values: [Reading, Math]
       - name: bucket
         description:
           Stored bucket label; the "everyone else" Bucket 4 has no stored row.
         data_tests:
           - accepted_values:
-              values: ["Bucket 1", "Bucket 2", "Bucket 3"]
+              values: [Bucket 1, Bucket 2, Bucket 3]
       - name: n_active_assignments
         description: >-
           Count of never-exited assignments sharing this grain; more than 1
           means a double upload that the latest-wins pick is masking.
         data_tests:
           - dbt_utils.expression_is_true:
-              expression: "<= 1"
+              expression: <= 1
               config:
                 severity: warn
       - name: academic_year
