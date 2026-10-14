@@ -7,10 +7,10 @@ data_tests:
       different school or year produces silent NULLs in
       `int_powerschool__ps_adaadm_daily_ctod` because the `(fteid,
       attendance_conversion_id)` join in that model resolves only when the FTE
-      matches the school's bell-schedule conversion config. Schools at sentinel
-      `schoolid = 999999` (graduated students) are included — they should
-      reference one of PowerSchool's 999999-scoped FTEs, not a real-school FTE
-      carried over from prior enrollment.
+      matches the school's bell-schedule conversion config. Graduated stints
+      (`schoolid = 999999`) and stints with no days left after clipping
+      (`entrydate >= exitdate_clipped`) are excluded — neither gets a membership
+      day, so a mismatched FTE there never reaches attendance.
     config:
       severity: warn
       meta:
@@ -87,14 +87,13 @@ data_tests:
       student-and-year identifier -- consecutive enrollment rows must not have
       date ranges that overlap by more than one day. A single shared boundary
       day is a normal sequential transfer and is allowed; multi-day overlap is
-      the source-side defect behind the cc date-range fan-out (#3900, Ops
-      cleanup #3915). Moved here from kipptaf, where it read the network-level
-      union and was therefore blind to Miami, whose PowerSchool archive holds no
-      AY2026 rows. Runs at warn severity. Failing with 10,807 rows as of
-      2026-08-28: kippnewark 7,901, kippcamden 2,783, kipppaterson 123. Note:
-      kippmiami does not consume the powerschool package — its legacy
-      PowerSchool stack was removed in #4441 once the SIS had moved to Focus —
-      so Miami is not monitored by this test.
+      the source-side defect that fans out cc date-range joins. Dropped sections
+      (`is_dropped_section`) are excluded, because a drop and its replacement
+      section normally overlap and most consumers filter drops out. Lives in the
+      package because it asserts PowerSchool source quality, and each district
+      project holds one district, so no region partition key is needed.
+      kippmiami does not consume the powerschool package, so Miami is not
+      monitored here.
     config:
       severity: warn
       meta:
