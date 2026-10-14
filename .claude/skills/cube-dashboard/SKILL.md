@@ -113,9 +113,11 @@ Timing depends on the dashboard. Settle it before the first `open`.
    add its dashboard, before exporting. Show the analyst both lists. Nothing in
    Asana is renamed or edited.
 7. **Live checks**, the first time a workbook is validated: _Live checks_.
-8. **Export the rest.** `export <checks>`, then `compare`. While
-   `next_states.yml` is not empty:
-   `export <checks> --states <snapshot>/next_states.yml`, then compare again.
+8. **Export the rest.** `export <checks>`, then `compare`, then one descent
+   level: `export <checks> --states <snapshot>/next_states.yml` and compare
+   again. Stop at two levels: they show where each gap sits. Drill a third level
+   only after `explain`, and only under parents whose cells are still `fail`; an
+   explained gap only repeats grade by grade.
 9. **Close.** `close <checks>` prints the copy's name and URL. The analyst
    deletes it in Tableau; run `close` again until it says the copy is gone.
    Always, including after a failure. The tool deletes nothing on Tableau.
