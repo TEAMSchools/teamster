@@ -418,6 +418,41 @@ def _dim_keys(d: dict) -> tuple[str, ...]:
     return tuple(d.get("keys") or ([d["key"]] if d.get("key") else []))
 
 
+def _rows(raw: dict, sheets: dict) -> tuple[dict[str, list[dict]], dict[str, str]]:
+    """Asana rows keyed by caption. Two rows can share a Cube member, so each names
+    its dashboard, sheet, and a measure or dimension caption mapped there."""
+    out: dict[str, list[dict]] = {}
+    dashboards = raw.get("dashboards")
+    for gid, targets in (raw.get("rows") or {}).items():
+        targets = targets if isinstance(targets, list) else [targets]
+        for t in targets:
+            if not isinstance(t, dict) or not t.get("dashboard"):
+                raise CheckError(
+                    f"row {gid}: name dashboard, sheet, and measure or dimension "
+                    "(Cube members no longer key a row)"
+                )
+            if dashboards and t["dashboard"] not in dashboards:
+                raise CheckError(
+                    f"row {gid}: {t['dashboard']} is not a listed dashboard"
+                )
+            s = sheets.get(t.get("sheet"))
+            if s is None:
+                raise CheckError(f"row {gid}: sheet {t.get('sheet')} is not mapped")
+            if ("measure" in t) == ("dimension" in t):
+                raise CheckError(f"row {gid}: give a measure or a dimension")
+            caption = t.get("measure") or t.get("dimension")
+            if caption not in (s.measures if "measure" in t else s.dims):
+                raise CheckError(f"row {gid}: {caption} is not mapped on {t['sheet']}")
+        out[str(gid)] = targets
+    deferred = {str(k): v for k, v in (raw.get("rows_deferred") or {}).items()}
+    for gid, why in deferred.items():
+        if not (isinstance(why, str) and why.strip()):
+            raise CheckError(f"row {gid}: rows_deferred needs a reason")
+        if gid in out:
+            raise CheckError(f"row {gid} is both checked and deferred")
+    return out, deferred
+
+
 def load_checks(path) -> dict:
     raw = yaml.safe_load(Path(path).read_text()) or {}
     for key in ("workbook", "workbook_luid", "student_count", "sheets"):
@@ -497,18 +532,13 @@ def load_checks(path) -> dict:
     for c, f in (raw.get("filters") or {}).items():
         if PERSON_SQL.search(f.get("sql") or "") and not f.get("person"):
             raise CheckError(f"filter {c}: its sql reads a name column; add person:")
-    members = {m.cube for s in sheets.values() for m in s.measures.values() if m.cube}
-    for gid, ms in (raw.get("rows") or {}).items():
-        unknown = set(ms) - members
-        if unknown:
-            raise CheckError(
-                f"row {gid}: {', '.join(sorted(unknown))} is not mapped on any sheet"
-            )
+    rows, deferred = _rows(raw, sheets)
     return {
         **raw,
         "sheets": sheets,
         "mismatches": mismatches,
-        "rows": raw.get("rows") or {},
+        "rows": rows,
+        "rows_deferred": deferred,
         "filters": raw.get("filters") or {},
         "param_filters": raw.get("param_filters") or {},
         "param_where": raw.get("param_where") or {},
@@ -2115,22 +2145,32 @@ def _members(checks) -> dict[tuple[str, str], Measure]:
     }
 
 
-def row_results(cells, checks) -> dict[str, dict]:
+def _in_row(c: Cell, t: dict, states: dict | None) -> bool:
+    if c.sheet != t["sheet"]:
+        return False
+    if states is not None:
+        dash = ((states.get(c.state) or {}).get("state") or {}).get("dashboard")
+        if dash != t["dashboard"]:
+            return False
+    if "measure" in t:
+        return c.measure == t["measure"]
+    return c.key.get(t["dimension"], TOTAL) != TOTAL
+
+
+def row_results(cells, checks, states=None) -> dict[str, dict]:
     by_cell = _members(checks)
     out = {}
-    for gid, members in checks["rows"].items():
+    for gid, targets in checks["rows"].items():
         mine = [
             c
             for c in cells
-            if c.verdict
-            and (m := by_cell.get((c.sheet, c.measure)))
-            and m.cube in members
+            if c.verdict and any(_in_row(c, t, states) for t in targets)
         ]
         reopen = sorted(
             {
                 mm
                 for c in mine
-                if c.verdict == "missing_member"
+                if c.verdict == "missing_member" and (c.sheet, c.measure) in by_cell
                 for mm in by_cell[(c.sheet, c.measure)].missing_members
             }
         )
@@ -2597,7 +2637,9 @@ def write_outputs(
         (out / f"{stem}-issues").mkdir(exist_ok=True)
         for s, text in drafts.items():
             (out / f"{stem}-issues" / f"{s}.md").write_text(text)
-    write_latest(out / "latest.json", workbook, run_date, row_results(cells, checks))
+    write_latest(
+        out / "latest.json", workbook, run_date, row_results(cells, checks, states)
+    )
     return digest
 
 

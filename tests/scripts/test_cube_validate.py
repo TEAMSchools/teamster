@@ -218,7 +218,13 @@ CHECKS = {
     "student_count": "demo.count_students",
     "scope": {"filter": "Region"},
     "filters": {"Region": {"cube": "demo.region"}},
-    "rows": {"111": ["demo.avg_score"]},
+    "rows": {
+        "111": {
+            "dashboard": "Overview",
+            "sheet": "Overview - Table",
+            "measure": "Avg Score",
+        }
+    },
     "sheets": {
         "Overview - Table": {
             "datasource": DS,
@@ -281,11 +287,83 @@ def test_load_checks_checks_mismatches_and_variants(tmp_path):
         cv.load_checks(_write(tmp_path, bad))
 
 
-def test_load_checks_rows_must_name_mapped_members(tmp_path):
-    bad = json.loads(json.dumps(CHECKS))
-    bad["rows"] = {"111": ["demo.nope"]}
-    with pytest.raises(cv.CheckError, match="demo.nope"):
-        cv.load_checks(_write(tmp_path, bad))
+def test_rows_name_dashboard_sheet_and_a_mapped_caption(tmp_path):
+    with pytest.raises(cv.CheckError, match="Nope is not mapped"):
+        _checks(
+            tmp_path,
+            rows={
+                "111": {
+                    "dashboard": "Overview",
+                    "sheet": "Overview - Table",
+                    "measure": "Nope",
+                }
+            },
+        )
+    with pytest.raises(cv.CheckError, match="Cube members no longer key a row"):
+        _checks(tmp_path, rows={"111": ["demo.avg_score"]})
+    with pytest.raises(cv.CheckError, match="both checked and deferred"):
+        _checks(tmp_path, rows_deferred={"111": "lives on the Landing Page"})
+    with pytest.raises(cv.CheckError, match="needs a reason"):
+        _checks(tmp_path, rows_deferred={"333": ""})
+
+
+def test_two_rows_on_one_member_are_judged_on_their_own_sheets(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Other - Table"] = d["sheets"]["Overview - Table"]
+    d["rows"] = {
+        "111": {
+            "dashboard": "Overview",
+            "sheet": "Overview - Table",
+            "measure": "Avg Score",
+        },
+        "222": {
+            "dashboard": "Overview",
+            "sheet": "Other - Table",
+            "measure": "Avg Score",
+        },
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+
+    def cell(sheet, verdict):
+        return cv.Cell(
+            sheet, "s", {}, "Avg Score", "1", 1, 1, 20, "match", verdict=verdict
+        )
+
+    rows = cv.row_results(
+        [cell("Overview - Table", "pass"), cell("Other - Table", "fail")], c
+    )
+    assert (rows["111"]["verdict"], rows["222"]["verdict"]) == ("pass", "fail")
+
+
+def test_a_dimension_row_passes_only_when_every_cell_grouped_by_it_passes(tmp_path):
+    row = {
+        "dashboard": "Overview",
+        "sheet": "Overview - Table",
+        "dimension": "School Name",
+    }
+    c = _checks(tmp_path, rows={"444": row})
+
+    def cell(key, verdict):
+        return cv.Cell(
+            "Overview - Table",
+            "s",
+            key,
+            "Avg Score",
+            "1",
+            1,
+            1,
+            20,
+            "match",
+            verdict=verdict,
+        )
+
+    cells = [
+        cell({"School Name": "Alpha"}, "pass"),
+        cell({"School Name": "Beta"}, "undecided"),
+        cell({"School Name": "All"}, "fail"),  # a total is not grouped by the school
+        cell({}, "fail"),
+    ]
+    assert cv.row_results(cells, c)["444"]["verdict"] == "undecided"
 
 
 def test_read_export_keeps_repeated_columns():
@@ -754,7 +832,19 @@ def test_worst_follows_the_verdict_order():
 
 def test_row_results_take_the_worst_cell_of_the_rows_members(tmp_path):
     c = _checks(
-        tmp_path, rows={"111": ["demo.avg_score"], "222": ["demo.pct_complete"]}
+        tmp_path,
+        rows={
+            "111": {
+                "dashboard": "Overview",
+                "sheet": "Overview - Table",
+                "measure": "Avg Score",
+            },
+            "222": {
+                "dashboard": "Overview",
+                "sheet": "Overview - Table",
+                "measure": "% Complete",
+            },
+        },
     )
     cells = [
         cv.Cell(
@@ -1062,11 +1152,14 @@ REPLAY = {
     "workbook_luid": "w1",
     "student_count": "demo.count_students",
     "rows": {
-        "1": ["demo.pct_complete"],
-        "2": ["demo.pct_completion"],
-        "3": ["demo.n_tested"],
-        "4": ["demo.n_assessed"],
-        "5": ["demo.avg_score"],
+        gid: {"dashboard": "Replay", "sheet": "Sheet", "measure": m}
+        for gid, m in (
+            ("1", "% Complete"),
+            ("2", "% Completion"),
+            ("3", "Students Tested"),
+            ("4", "Students Assessed"),
+            ("5", "Avg Score"),
+        )
     },
     "mismatches": {
         "dup_rows": {
