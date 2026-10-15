@@ -3,21 +3,25 @@
 # Runs in parallel — dbt parse is CPU-only (no DB access)
 
 toplevel="$(git rev-parse --show-toplevel)" || {
-  echo "⚠️  post-merge: git rev-parse failed, prod manifests not updated" >&2
-  exit 0
+	echo "⚠️  post-merge: git rev-parse failed, prod manifests not updated" >&2
+	exit 0
 }
 cd "${toplevel}" || {
-  echo "⚠️  post-merge: cd failed, prod manifests not updated" >&2
-  exit 0
+	echo "⚠️  post-merge: cd failed, prod manifests not updated" >&2
+	exit 0
 }
+
+# linked worktrees have no dbt_packages/ and defer to the main checkout's manifests
+git_dirs="$(git rev-parse --path-format=absolute --git-dir --git-common-dir)"
+[[ "$(sed -n 1p <<<"${git_dirs}")" == "$(sed -n 2p <<<"${git_dirs}")" ]] || exit 0
 
 # trunk-ignore(shellcheck/SC1091): sourced file created at runtime by uv installer
 source "${HOME}/.local/bin/env"
 
 for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
-  uv run dbt parse --target prod \
-    --project-dir "src/dbt/${project}" \
-    --profiles-dir .dbt \
-    --target-path target/prod &
+	uv run dbt parse --target prod \
+		--project-dir "src/dbt/${project}" \
+		--profiles-dir .dbt \
+		--target-path target/prod &
 done
 wait

@@ -128,17 +128,17 @@ against prod via the BQ MCP.
 build right after a full clone fails
 `Not found: Table zz_stg_<district>_<source>.<model>` for a model that plainly
 exists in prod. Cause chain: `dbt clone` skips any node absent from `--state`
-(see above), and the prod manifest only regenerates via the post-merge action —
-which fails **silently** if `dbt parse` errors, freezing the manifest at its
-last good date. The parse error is usually a package the project no longer
-lists: a retired `local:` package stays in `<project>/dbt_packages/`, so parse
-still loads its models and dies on one referencing a since-disabled model (e.g.
-kippmiami kept a `powerschool` copy after the Focus migration →
-`int_powerschool__contacts` → `stg_powerschool__studentcontactassoc` "is
-disabled"). Diagnose by comparing the manifest's mtime to the model's add date
-and `grep` for the node's `unique_id`; fix with
-`dbt deps --project-dir src/dbt/<project>` (prunes the stale package) then the
-`dbt parse --target prod --target-path target/prod` regeneration above.
+(see above), and the prod manifest only regenerates via the post-merge action. A
+`dbt parse` error prints during the pull but does not fail it, so it is easy to
+miss, and the manifest freezes at its last good date. The parse error is usually
+a package the project no longer lists: a retired `local:` package stays in
+`<project>/dbt_packages/`, so parse still loads its models and dies on one
+referencing a since-disabled model (e.g. kippmiami kept a `powerschool` copy
+after the Focus migration → `int_powerschool__contacts` →
+`stg_powerschool__studentcontactassoc` "is disabled"). Diagnose by comparing the
+manifest's mtime to the model's add date and `grep` for the node's `unique_id`;
+fix with `dbt deps --project-dir src/dbt/<project>` (prunes the stale package)
+then the `dbt parse --target prod --target-path target/prod` regeneration above.
 Re-running the clone against the stale manifest just skips the same models
 again.
 
