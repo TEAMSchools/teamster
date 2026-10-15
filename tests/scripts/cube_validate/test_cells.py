@@ -277,16 +277,117 @@ def test_cell_outside_the_captured_rows_is_not_a_formula_gap(tmp_path):
     assert got["Hatch"] == cells.NO_ROWS
 
 
+def _with_sheet(**over):
+    """Checks with one default cut and the ADA sheet's fields overridden."""
+    sheet = _checks().sheets["ADA"]
+    f = {
+        "dims": sheet.dims,
+        "measures": sheet.measures,
+        "students": sheet.students,
+        **over,
+    }
+    return _checks(
+        cuts=(config.Cut("default"),),
+        sheets={
+            "ADA": config.SheetMap("ADA", "v", f["dims"], f["measures"], f["students"])
+        },
+    )
+
+
+_ANS_RISE = [{"v.locations_abbreviation": "Rise", "v.avg_daily_attendance": "0.942"}]
+
+
 def test_unmapped_measure_has_no_cube_counterpart(tmp_path):
     exports = {("default", "ADA"): b"School,ADA,Students,Tardy\nRise,94.2%,2,3.0%\n"}
-    answers = _ans(
-        "default",
-        [{"v.locations_abbreviation": "Rise", "v.avg_daily_attendance": "0.942"}],
-    )
+    measures = {
+        "ADA": config.MeasureMap("ADA", "avg_daily_attendance"),
+        "Tardy": config.MeasureMap("Tardy", None),
+    }
     got = {
         c.measure: c.verdict
         for c in _judge(
-            tmp_path, exports, answers, _checks(cuts=(config.Cut("default"),))
+            tmp_path,
+            exports,
+            _ans("default", _ANS_RISE),
+            _with_sheet(measures=measures),
         )
     }
     assert got["Tardy"] == cells.NO_COUNTERPART and got["ADA"] == cells.PASS
+
+
+def test_undeclared_column_makes_the_row_unjudgeable(tmp_path):
+    exports = {
+        (
+            "default",
+            "ADA",
+        ): b"School,Grade,ADA,Students\nRise,5,90.0%,1\nRise,6,98.0%,1\n"
+    }
+    got = _judge(tmp_path, exports, _ans("default", _ANS_RISE), _with_sheet())
+    assert got and {(c.verdict, c.reason) for c in got} == {
+        (cells.NO_COUNTERPART, "column not mapped: Grade")
+    }
+
+
+def test_dim_without_a_cube_column_is_unproven_not_a_crash(tmp_path):
+    dims = {
+        "School": config.FieldMap(
+            "School", "school_abbreviation", "locations_abbreviation", None
+        )
+    }
+    exports = {("default", "ADA"): b"School,ADA,Students\nRise,94.2%,2\n"}
+    got = _judge(tmp_path, exports, _ans("default", _ANS_RISE), _with_sheet(dims=dims))
+    assert got and all(
+        c.verdict == cells.UNPROVEN and "not mapped: School" in c.reason for c in got
+    )
+
+
+def test_label_mismatch_is_unproven_on_both_sides(tmp_path):
+    exports = {("default", "ADA"): b"School,ADA,Students\nRise,94.2%,2\n"}
+    answers = _ans(
+        "default",
+        [{"v.locations_abbreviation": "RISE", "v.avg_daily_attendance": "0.942"}],
+    )
+    got = _judge(tmp_path, exports, answers, _with_sheet())
+    assert got and {c.verdict for c in got} == {cells.UNPROVEN}
+    assert any(c.tableau is None for c in got)
+
+
+def test_click_target_sheet_without_a_count_is_not_proven_by_another_sheet(tmp_path):
+    checks = _checks(
+        cuts=(config.Cut("default"), config.Cut("click")),
+        sheets={
+            **_checks().sheets,
+            "Tgt": config.SheetMap(
+                "Tgt",
+                "v",
+                _checks().sheets["ADA"].dims,
+                {"ADA": config.MeasureMap("ADA", "avg_daily_attendance")},
+                None,
+            ),
+        },
+    )
+    exports = {
+        ("click", "ADA"): b"School,ADA,Students\nRise,94.2%,2\nLSP,90.0%,1\n",
+        ("click", "Tgt"): b"School,ADA\nLSP,90.0%\n",
+    }
+    rows = [
+        {"v.locations_abbreviation": "Rise", "v.avg_daily_attendance": "0.942"},
+        {"v.locations_abbreviation": "LSP", "v.avg_daily_attendance": "0.9"},
+    ]
+    answers = {
+        cells.answer_key("click", "ADA"): {"data": rows},
+        cells.answer_key("click", "Tgt"): {"data": rows[1:]},
+    }
+    manifest = {
+        "cuts": {
+            "click": {"click_filters": {"Region": "Camden"}, "click_targets": ["Tgt"]}
+        }
+    }
+    got = _judge(tmp_path, exports, answers, checks, manifest=manifest)
+    tgt = [c for c in got if c.sheet == "Tgt"]
+    assert tgt and all(
+        c.verdict == cells.UNPROVEN
+        and c.reason == "no student count proves this sheet's filters"
+        for c in tgt
+    )
+    assert all(c.verdict == cells.PASS for c in got if c.sheet == "ADA")

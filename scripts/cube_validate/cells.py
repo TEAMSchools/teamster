@@ -218,6 +218,22 @@ def _where(preds_t: list[str], preds_c: list[str]) -> str:
     return f"(({t}) or ({c}))"
 
 
+def _cube_labels(sm, key: tuple) -> dict[str, str | None]:
+    """Tableau labels for a Cube mark's dimension values (inverse of the maps)."""
+    labels: dict[str, str | None] = {}
+    for (h, d), v in zip(
+        [(h, d) for h, d in sm.dims.items() if d.cube], key, strict=True
+    ):
+        if v is None:
+            labels[h] = None
+            continue
+        hit = next((k for k, s in d.cube_values.items() if norm_value(s) == v), None)
+        if hit is None:
+            hit = next((k for k, s in d.values.items() if norm_value(s) == v), None)
+        labels[h] = hit if hit is not None else v
+    return labels
+
+
 def judge(
     ws,
     checks: Checks,
@@ -266,153 +282,175 @@ def judge(
                     n_def = ws.count("rows where in_t")
                     if n_cut != n_def:
                         ignored.add(s)
-        proof = gap or _proof(ws, checks, exports, base_t, student)
+        proof = (
+            dict.fromkeys(checks.sheets, gap)
+            if gap
+            else _proof(ws, checks, exports, base_t, student)
+        )
         for sheet, data in exports.items():
             if data is None:
                 continue
             sm = checks.sheets[sheet]
             ans = answers.get(answer_key(cut.id, sheet)) or {}
+            cdims = [h for h, d in sm.dims.items() if d.cube]
             cube_rows = {
                 tuple(
-                    norm_value(r.get(f"{sm.view}.{d.cube}"))
-                    for d in sm.dims.values()
-                    if d.cube
+                    norm_value(r.get(f"{sm.view}.{sm.dims[h].cube}")) for h in cdims
                 ): r
                 for r in ans.get("data") or []
             }
             seen = set()
             for row in parse_export(data):
                 dims = {h: v for h, v in row.items() if h in sm.dims}
-                unmapped = [
-                    h
-                    for h, v in row.items()
-                    if h not in sm.dims
-                    and h not in sm.measures
-                    and h != sm.students
-                    and parse_display(v) is None
-                    and v not in NULLS
-                ]
+                undeclared = _undeclared(sm, row)
                 key = tuple(
-                    _stored(sm.dims[h], dims.get(h), "c")
-                    for h, d in sm.dims.items()
-                    if d.cube
+                    norm_value(_stored(sm.dims[h], dims.get(h), "c")) for h in cdims
                 )
-                key = tuple(norm_value(k) for k in key)
                 seen.add(key)
                 crow = cube_rows.get(key)
-                status, reason, buckets, studs = _status(
-                    ws,
-                    checks,
-                    sheet,
-                    row,
-                    dims,
-                    unmapped,
-                    ignored,
-                    proof,
-                    base_t,
-                    base_c,
-                    ans,
-                    student,
-                )
+                if undeclared:
+                    status, reason, buckets, studs = (
+                        NO_COUNTERPART,
+                        f"column not mapped: {', '.join(undeclared)}",
+                        [],
+                        (0, 0),
+                    )
+                else:
+                    status, reason, buckets, studs = _status(
+                        ws, checks, sheet, dims, ignored, proof[sheet],
+                        base_t, base_c, ans, student,
+                    )  # fmt: skip
                 for h, v in row.items():
-                    if (
-                        h in sm.dims
-                        or h == sm.students
-                        or (h not in sm.measures and parse_display(v) is None)
-                    ):
+                    if h not in sm.measures:
                         continue
-                    m = sm.measures.get(h)
+                    m = sm.measures[h]
                     cube_v = (
                         float(crow[f"{sm.view}.{m.cube}"])
                         if (
-                            m
-                            and m.cube
+                            m.cube
                             and crow
                             and crow.get(f"{sm.view}.{m.cube}") is not None
                         )
                         else None
                     )
-                    if m is None or not m.cube:
+                    if undeclared:
+                        vd, rs = status, reason
+                    elif not m.cube:
                         vd, rs = NO_COUNTERPART, "measure not mapped"
                     elif status:
                         vd, rs = status, reason
+                    elif crow is None and studs[1] > 0:
+                        vd, rs = UNPROVEN, "Cube answer has no mark for these labels"
                     else:
-                        vd, rs = verdict(display_equal(v, cube_v, m.scale), buckets), ""
+                        vd, rs = (
+                            verdict(display_equal(v, cube_v, m.scale), buckets),
+                            "",
+                        )
                     out.append(
                         Cell(cut.id, sheet, dims, h, v, cube_v, vd, rs, buckets, studs)
                     )
             for key, crow in cube_rows.items():
                 if key in seen:
                     continue
+                labels = _cube_labels(sm, key)
+                status, reason, buckets, studs = _status(
+                    ws, checks, sheet, labels, ignored, proof[sheet],
+                    base_t, base_c, ans, student,
+                )  # fmt: skip
+                if status:
+                    vd, rs = status, reason
+                elif studs[0] > 0:
+                    vd, rs = (
+                        UNPROVEN,
+                        "Tableau shows no mark for labels the extract has rows for",
+                    )
+                elif not buckets:
+                    vd, rs = UNPROVEN, "no captured rows under these labels"
+                else:
+                    vd, rs = ROW_GAP, "Cube shows a mark Tableau does not"
                 for m in sm.measures.values():
                     raw = crow.get(f"{sm.view}.{m.cube}") if m.cube else None
                     if raw is None:
                         continue
-                    labels = dict(
-                        zip([h for h, d in sm.dims.items() if d.cube], key, strict=True)
-                    )
                     out.append(
                         Cell(
-                            cut.id,
-                            sheet,
-                            {k: v or "" for k, v in labels.items()},
-                            m.column,
-                            None,
-                            float(raw),
-                            ROW_GAP if not proof else UNPROVEN,
-                            "Cube shows a mark Tableau does not"
-                            if not proof
-                            else proof,
+                            cut.id, sheet, {k: v or "" for k, v in labels.items()},
+                            m.column, None, float(raw), vd, rs, buckets, studs,
                         )
-                    )
+                    )  # fmt: skip
     return out
 
 
-def _proof(ws, checks: Checks, exports: dict, base_t: dict, student: str) -> str:
-    """'' when every student count in the cut matches the extract, else why not."""
-    checked = 0
+def _undeclared(sm, row: dict) -> list[str]:
+    """Export headers the sheet map does not declare as dim, measure or count."""
+    return [
+        h for h in row if h not in sm.dims and h not in sm.measures and h != sm.students
+    ]
+
+
+def _proof(
+    ws, checks: Checks, exports: dict, base_t: dict, student: str
+) -> dict[str, str]:
+    """Per sheet: '' when its filters are proven against the extract, else why not.
+
+    A sheet with a student count is proven by its own rows. One without is proven
+    only when a proven sheet in the same cut has the same filters.
+    """
+    own: dict[str, str] = {}
     for sheet, data in exports.items():
         sm = checks.sheets[sheet]
         if data is None or not sm.students:
             continue
-        for row in parse_export(data):
-            want = parse_display(row.get(sm.students))
-            if want is None:
-                continue
-            preds = list(base_t[sheet])
-            for h, label in row.items():
-                if h in sm.dims:
-                    p = _pred(sm.dims[h], label, "t")
-                    if p:
-                        preds.append(p)
-            got = int(
-                ws.query(
-                    # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
-                    f"select count(distinct {student}) from rows where "
-                    + " and ".join(["in_t", *preds])
-                )[0][0]
-            )
-            checked += 1
-            if got != int(want.value):
-                return f"{sheet}: extract has {got} students where Tableau shows {int(want.value)}"
-    return "" if checked else "no sheet in this cut shows a student count"
+        checked = 0
+        reason = ""
+        try:
+            for row in parse_export(data):
+                if _undeclared(sm, row):
+                    continue
+                want = parse_display(row.get(sm.students))
+                if want is None:
+                    continue
+                preds = list(base_t[sheet])
+                for h, label in row.items():
+                    if h in sm.dims:
+                        p = _pred(sm.dims[h], label, "t")
+                        if p:
+                            preds.append(p)
+                got = int(
+                    ws.query(
+                        # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
+                        f"select count(distinct {student}) from rows where "
+                        + " and ".join(["in_t", *preds])
+                    )[0][0]
+                )
+                checked += 1
+                if got != int(want.value):
+                    reason = f"{sheet}: extract has {got} students where Tableau shows {int(want.value)}"
+                    break
+        except MappingGap as e:
+            reason = f"not mapped: {e.args[0]}"
+        if checked or reason:
+            own[sheet] = reason
+    if not own:
+        return dict.fromkeys(exports, "no sheet in this cut shows a student count")
+    proven = [s for s, r in own.items() if not r]
+    out = {}
+    for sheet in exports:
+        if sheet in own:
+            out[sheet] = own[sheet]
+        elif any(base_t[sheet] == base_t[p] for p in proven):
+            out[sheet] = ""
+        else:
+            out[sheet] = "no student count proves this sheet's filters"
+    return out
 
 
-def _status(
-    ws, checks, sheet, row, dims, unmapped, ignored, proof, base_t, base_c, ans, student
-):
+def _status(ws, checks, sheet, dims, ignored, proof, base_t, base_c, ans, student):
     """(verdict override, reason, buckets, (students dashboard, students Cube))."""
     if sheet in ignored:
         return FILTER_IGNORED, "export equals the default view's", [], (0, 0)
     if proof:
         return UNPROVEN, proof, [], (0, 0)
-    if unmapped:
-        return (
-            NO_COUNTERPART,
-            f"dimension not mapped: {', '.join(unmapped)}",
-            [],
-            (0, 0),
-        )
     if ans.get("error") or "data" not in ans:
         return (
             UNPROVEN,
@@ -422,11 +460,14 @@ def _status(
         )
     sm = checks.sheets[sheet]
     pt, pc = list(base_t[sheet]), list(base_c[sheet])
-    for h, label in dims.items():
-        for side, acc in (("t", pt), ("c", pc)):
-            p = _pred(sm.dims[h], label, side)
-            if p:
-                acc.append(p)
+    try:
+        for h, label in dims.items():
+            for side, acc in (("t", pt), ("c", pc)):
+                p = _pred(sm.dims[h], label, side)
+                if p:
+                    acc.append(p)
+    except MappingGap as e:
+        return UNPROVEN, f"not mapped: {e.args[0]}", [], (0, 0)
     where = _where(pt, pc)
     buckets = [
         tuple(r)
