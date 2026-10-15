@@ -1,6 +1,17 @@
 models:
   - name: rpt_extracts__survey_reminder
-    config:
-      enabled: false
-      contract:
-        enforced: false
+    description:
+      One row per staff email with at least one incomplete survey in a round
+      that is open now, for the current academic year. Feeds the survey reminder
+      list. Excludes the Gallup Q12 and TNTP Insight surveys.
+    columns:
+      - name: email
+        data_type: string
+        description:
+          Work email of a staff member who has not completed a current survey
+          round.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - unique
