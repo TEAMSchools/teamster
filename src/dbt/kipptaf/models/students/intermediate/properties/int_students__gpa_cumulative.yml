@@ -36,8 +36,10 @@ models:
           automation_condition:
             cron_schedule: 0 * * * *
     data_tests:
-      # Scoped to rows that resolved a student_number; see
-      # int_students__gpa_term for the 4 Camden AY2015 rows with none.
+      # Scoped to rows that resolved a student_number: GPA rows for students
+      # deleted from PowerSchool have none and collide. The package GPA models
+      # now inner join students, so drop this where once every NJ district has
+      # rebuilt int_powerschool__gpa_cumulative in prod.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:

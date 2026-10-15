@@ -19,11 +19,10 @@ models:
           automation_condition:
             cron_schedule: 0 4 * * *
     data_tests:
-      # Scoped to rows that resolved a student_number. int_powerschool__gpa_term
-      # carries 4 Camden AY2015 rows at schoolid 0 whose students_student_number
-      # is null directly on the package fact, so they collide with each other.
-      # They are kept rather than dropped, and fct_grades_gpa excludes them
-      # anyway on its inner join to enrollment.
+      # Scoped to rows that resolved a student_number: GPA rows for students
+      # deleted from PowerSchool have none and collide. The package GPA models
+      # now inner join students, so drop this where once every NJ district has
+      # rebuilt int_powerschool__gpa_term in prod.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
