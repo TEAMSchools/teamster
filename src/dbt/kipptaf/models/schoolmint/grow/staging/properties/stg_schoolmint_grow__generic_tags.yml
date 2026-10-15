@@ -1,8 +1,8 @@
 models:
   - name: stg_schoolmint_grow__generic_tags
-    config:
-      # Overrides the schoolmint staging folder's table default.
-      materialized: view
+    # Keep the staging folder's table default. A view never rebuilds on new tag
+    # loads, so nothing re-stages or refreshes the external tables it reads, and
+    # they read empty. Refs #5931.
     columns:
       - name: tag_id
         data_type: string
