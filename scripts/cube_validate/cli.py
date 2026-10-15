@@ -72,7 +72,7 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
             ws, checks, m, answers, lambda cut, sheet: _export(snap, cut, sheet)
         )
         picked = handchecks.pick(
-            cs, handchecks.row_samples(ws, checks), seed=snap.dir.name
+            cs, handchecks.row_samples(ws, checks), seed=snap.dir.name, answers=answers
         )
     handchecks.write(
         snap.analysis, picked, (m.get("review_copy") or {}).get("name", ""), answers

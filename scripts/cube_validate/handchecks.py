@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import random
 from dataclasses import dataclass
@@ -21,6 +22,15 @@ class HandCheck:
     answer: str = ""  # answer_key of a cell check's Cube query
 
 
+RESULTS = ("agree", "disagree", "pending")
+
+
+def _id(prefix: str, title: str) -> str:
+    """An id from the check's content, so a result never moves to another check."""
+    digest = hashlib.sha1(title.encode(), usedforsecurity=False).hexdigest()
+    return f"{prefix}-{digest[:8]}"
+
+
 def row_samples(ws, checks) -> list[dict]:
     """1 row per non-match (base, cause), the first by student and day."""
     s, d = f'"k_{checks.student_key}"', f'"k_{checks.date_key}"'
@@ -38,28 +48,33 @@ def row_samples(ws, checks) -> list[dict]:
     return out
 
 
-def _cell_check(i: int, c: Cell) -> HandCheck:
+def _cell_check(c: Cell, answers: dict) -> HandCheck:
     where = ", ".join(f"{k} = {v}" for k, v in c.dims.items()) or "the only mark"
+    title = f"{c.verdict}: {c.sheet} / {c.measure} ({where}, cut {c.cut})"
+    key = answer_key(c.cut, c.sheet)
+    at = (answers.get(key) or {}).get("last_refresh") or "an unrecorded time"
     return HandCheck(
-        f"C{i}",
+        _id("C", title),
         "cell",
-        f"{c.verdict}: {c.sheet} / {c.measure} ({where}, cut {c.cut})",
+        title,
         [
             f"In the review copy, open sheet `{c.sheet}` and set cut `{c.cut}` (see manifest.json).",
             f"Find the mark {where}. Tableau should show `{c.tableau}` for {c.measure}.",
-            f"Run the Cube query for `{answer_key(c.cut, c.sheet)}` (below). The captured value was `{c.cube}`.",
+            f"Run the Cube query for `{key}` (below). The captured value was `{c.cube}`.",
+            f"Cube's answer was captured at {at}; compare against that, not today's Cube.",
             f"The tool says **{c.verdict}**{f' ({c.reason})' if c.reason else ''}. Agree?",
         ],
-        answer_key(c.cut, c.sheet),
+        key,
     )
 
 
-def _row_check(i: int, r: dict) -> HandCheck:
+def _row_check(r: dict) -> HandCheck:
     keys = {k: v for k, v in r.items() if k.startswith("k_")}
+    title = f"{r['base']} / {r['cause']}: {keys}"
     return HandCheck(
-        f"R{i}",
+        _id("R", title),
         "row",
-        f"{r['base']} / {r['cause']}: {keys}",
+        title,
         [
             f"Row key {keys}. Dashboard side present: {r.get('in_t')}; Cube side present: {r.get('in_c')}.",
             "Look the day up in PowerSchool (Newark, Camden, Paterson) or Focus (Miami).",
@@ -72,10 +87,23 @@ def pick(
     cells: list[Cell],
     row_samples: list[dict],
     seed: str,
+    answers: dict | None = None,
     limit: int = 15,
     passes: int = 3,
 ) -> list[HandCheck]:
-    """Every verdict and bucket the run produced, then random passes, capped."""
+    """Every verdict and bucket the run produced, then random passes, capped.
+
+    Args:
+        cells: Every judged cell.
+        row_samples: 1 row per non-match bucket (row_samples).
+        seed: Seeds the random passes, so a snapshot always picks the same ones.
+        answers: Cube answers by answer_key, for each answer's capture time.
+        limit: The most checks to pick.
+        passes: How many random passes to add.
+
+    Returns:
+        The checks, cells first. Ids come from each check's content.
+    """
     # trunk-ignore(bandit/B311): seeded sampling for repeatable hand checks, not a security use
     rng = random.Random(seed)
     firsts: dict[str, Cell] = {}
@@ -94,18 +122,30 @@ def pick(
     pool = [c for c in cells if c.verdict == PASS]
     room = min(passes, limit - len(picked_cells) - len(picked_rows))
     picked_cells += rng.sample(pool, min(room, len(pool)))
-    out = [_cell_check(i + 1, c) for i, c in enumerate(picked_cells)]
-    out += [_row_check(i + 1, r) for i, r in enumerate(picked_rows)]
-    return out
+    out = [_cell_check(c, answers or {}) for c in picked_cells]
+    out += [_row_check(r) for r in picked_rows]
+    return list({h.id: h for h in out}.values())
 
 
 def read_results(path: Path) -> dict[str, str]:
+    """The analyst's result per check id.
+
+    Raises:
+        ValueError: A result is not exactly agree, disagree or pending; names
+            each such id and value.
+    """
     if not Path(path).exists():
         return {}
-    return {
-        e["id"]: e.get("result") or "pending"
-        for e in yaml.safe_load(Path(path).read_text()) or []
+    got = {
+        e["id"]: e.get("result") for e in yaml.safe_load(Path(path).read_text()) or []
     }
+    bad = [f"{k}: {v}" for k, v in got.items() if v not in RESULTS]
+    if bad:
+        raise ValueError(
+            f"hand_checks.yml results must be exactly {', '.join(RESULTS)}; "
+            f"fix {'; '.join(bad)}"
+        )
+    return got
 
 
 def write(

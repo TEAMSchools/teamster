@@ -318,3 +318,40 @@ def test_failed_resume_leaves_no_stale_completeness_flag(tmp_path, monkeypatch):
         run()
     invariants = snapshot.read_manifest(snap).get("invariants") or {}
     assert "capture completeness" not in invariants
+
+
+def test_analyze_stops_on_a_mistyped_hand_check_result(tmp_path):
+    checks = cli.config.load_checks(_write_checks(tmp_path))
+    snap = snapshot.new_snapshot("d", dt.datetime(2026, 10, 15, 16, 0), root=tmp_path)
+    d = dt.date(2026, 10, 6)
+    hyper.write_table(
+        snap.extract,
+        "Extract",
+        "Extract",
+        [
+            ("student_number", "bigint"),
+            ("calendardate", "date"),
+            ("school_abbreviation", "text"),
+        ],
+        [(1, d, "Rise"), (2, d, "Rise")],
+    )
+    hyper.write_table(
+        snap.cube,
+        "cube",
+        "rows",
+        [
+            ("lea_student_identifier", "double"),
+            ("attendance_date", "date"),
+            ("locations_abbreviation", "text"),
+        ],
+        [(1.0, d, "Rise")],
+    )
+    snapshot.write_manifest(snap, {"scope": ["Rise"], "cuts": {"default": {}}})
+    cli.analyze_snapshot(checks, snap)
+    y = snap.analysis / "hand_checks.yml"
+    data = yaml.safe_load(y.read_text())
+    assert data, "the planted dashboard-only row needs a hand check"
+    data[0]["result"] = "yes"
+    y.write_text(yaml.safe_dump(data))
+    with pytest.raises(ValueError, match=f"{data[0]['id']}: yes"):
+        cli.analyze_snapshot(checks, snap)

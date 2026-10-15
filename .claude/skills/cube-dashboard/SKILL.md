@@ -127,8 +127,10 @@ one row stop the report; never order them to make it pass.
 `<snapshot>/analysis/hand_checks.md` lists 10 to 15 checks: one per verdict and
 bucket, plus random passes. Tableau side in the review copy (same frozen
 extract), Cube side against the captured value, rows against PowerSchool or
-Focus. Mark each result exactly `agree` or `disagree` in `hand_checks.yml`, then
-`analyze`. Any other value is refused.
+Focus. Cube's side is the captured answer at its recorded refresh time, never
+today's Cube. Mark each result exactly `agree` or `disagree` in
+`hand_checks.yml` (new checks start `pending`), then `analyze`. Any other value
+stops `analyze` with an error naming the check's id.
 
 ## Last year
 
