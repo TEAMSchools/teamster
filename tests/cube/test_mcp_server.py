@@ -38,6 +38,16 @@ def test_module_loads(monkeypatch: pytest.MonkeyPatch) -> None:
     assert hasattr(server, "load"), "load tool not found"
     assert hasattr(server, "meta"), "meta tool not found"
     assert hasattr(server, "sql"), "sql tool not found"
+    tools = {t.name for t in server.mcp._tool_manager.list_tools()}
+    assert tools == {
+        "meta",
+        "load",
+        "sql",
+        "dry_run",
+        "cubesql",
+        "convert_query",
+        "graphql_to_json",
+    }
 
 
 def test_run_dispatches_to_stdio_by_default(
@@ -516,3 +526,445 @@ def test_load_and_sql_send_utc_timezone_by_default(
         server.load(ctx, {"measures": ["x.count"], "timezone": "America/New_York"})
     )
     assert sent[2]["json"]["query"]["timezone"] == "America/New_York"
+
+
+def test_no_docstring_names_cube_groups(monkeypatch: pytest.MonkeyPatch) -> None:
+    server = _load_server(monkeypatch)
+    texts = [
+        server.__doc__,
+        server.UserEmailPrompt.model_fields["email"].description,
+    ]
+    texts += [t.description for t in server.mcp._tool_manager.list_tools()]
+    for text in texts:
+        assert "cube-*" not in (text or "")
+
+
+def test_load_docstring_lists_every_operator_and_field(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    doc = server.load.__doc__
+    for op in [
+        "equals",
+        "notEquals",
+        "contains",
+        "notContains",
+        "startsWith",
+        "notStartsWith",
+        "endsWith",
+        "notEndsWith",
+        "in",
+        "notIn",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "set",
+        "notSet",
+        "inDateRange",
+        "notInDateRange",
+        "onTheDate",
+        "beforeDate",
+        "beforeOrOnDate",
+        "afterDate",
+        "afterOrOnDate",
+        "measureFilter",
+    ]:
+        assert f"`{op}`" in doc, op
+    for field in [
+        "ungrouped",
+        "responseFormat",
+        "cacheMode",
+        "compareDateRange",
+        "joinHints",
+        "subqueryJoins",
+        "maskedMembers",
+        "usedPreAggregations",
+    ]:
+        assert field in doc, field
+
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def _sql_fixture() -> dict[str, Any]:
+    return json.loads((FIXTURES / "cube_sql_response.json").read_text())
+
+
+def _recording_request(
+    monkeypatch: pytest.MonkeyPatch, server: ModuleType, reply: Any
+) -> list[tuple[str, str, dict[str, Any]]]:
+    """Replace server._request with a fake that records (method, path, kwargs)
+    and returns `reply` (or `reply.pop(0)` when it is a list of replies)."""
+    calls: list[tuple[str, str, dict[str, Any]]] = []
+
+    async def fake_request(method: str, path: str, **kwargs: Any) -> Any:
+        calls.append((method, path, kwargs))
+        return reply.pop(0) if isinstance(reply, list) else reply
+
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    monkeypatch.setattr(server, "_request", fake_request)
+    return calls
+
+
+def test_trim_sql_is_small_and_keeps_sql_and_preaggs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    raw = _sql_fixture()
+    trimmed = server._trim_sql(raw)
+    assert len(json.dumps(raw)) > 40_000
+    assert len(json.dumps(trimmed)) < 5_000
+    assert trimmed["sql"] == raw["sql"]["sql"]
+    assert trimmed["external"] == raw["sql"]["external"]
+    assert trimmed["preAggregations"] == [
+        p["preAggregationId"] for p in raw["sql"]["preAggregations"]
+    ]
+    assert "canUseTransformedQuery" not in json.dumps(trimmed)
+
+
+def test_trim_sql_without_preaggregations(monkeypatch: pytest.MonkeyPatch) -> None:
+    server = _load_server(monkeypatch)
+    trimmed = server._trim_sql({"sql": {"sql": ["SELECT 1", []]}})
+    assert trimmed["preAggregations"] == []
+
+
+def test_sql_posts_object_query_and_trims(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    fixture = _sql_fixture()
+    calls = _recording_request(monkeypatch, server, fixture)
+    ctx = MagicMock()
+
+    result = asyncio.run(server.sql(ctx, {"measures": ["x.count"]}))
+    method, path, kwargs = calls[0]
+    # GET, the method the deployed tool has always used against Cube Cloud.
+    assert (method, path) == ("GET", "/sql")
+    assert json.loads(kwargs["params"]["query"]) == {
+        "measures": ["x.count"],
+        "timezone": "UTC",
+    }
+    assert result == server._trim_sql(fixture)
+
+    assert asyncio.run(server.sql(ctx, {"measures": ["x.count"]}, full=True)) == fixture
+
+
+def test_sql_posts_sql_string_with_format_sql(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    reply = {"sql": {"sql": "SELECT 1"}}
+    calls = _recording_request(monkeypatch, server, reply)
+
+    result = asyncio.run(server.sql(MagicMock(), "SELECT MEASURE(x.count) FROM x"))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("GET", "/sql")
+    assert kwargs["params"] == {
+        "query": "SELECT MEASURE(x.count) FROM x",
+        "format": "sql",
+    }
+    assert result == reply
+
+
+def _dry_run_body(transformed: list[Any]) -> dict[str, Any]:
+    return {
+        "queryType": "regularQuery",
+        "normalizedQueries": [{}],
+        "queryOrder": [{}],
+        "pivotQuery": {},
+        "transformedQueries": transformed,
+    }
+
+
+def test_dry_run_posts_query_and_summarizes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    real = _sql_fixture()["sql"]["canUseTransformedQuery"]
+    body = _dry_run_body([real])
+    calls = _recording_request(monkeypatch, server, body)
+    ctx = MagicMock()
+
+    result = asyncio.run(server.dry_run(ctx, {"measures": ["x.count"]}))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("POST", "/dry-run")
+    assert kwargs["json"] == {"query": {"measures": ["x.count"], "timezone": "UTC"}}
+    summary = result["transformedQueries"][0]
+    assert "granularityHierarchies" not in summary
+    assert summary["leafMeasures"] == real["leafMeasures"]
+    assert summary["allFiltersWithinSelectedDimensions"] is False
+    assert len(json.dumps(result)) < 5_000
+    assert result["queryType"] == "regularQuery"
+
+    assert (
+        asyncio.run(server.dry_run(ctx, {"measures": ["x.count"]}, full=True)) == body
+    )
+
+
+def test_dry_run_summarizes_every_query_in_multi_query(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    big = {"leafMeasures": ["v.m"], "granularityHierarchies": {"x": ["y"] * 5000}}
+    _recording_request(monkeypatch, server, _dry_run_body([big, big]))
+
+    result = asyncio.run(server.dry_run(MagicMock(), {"measures": ["x.count"]}))
+    assert result["transformedQueries"] == [{"leafMeasures": ["v.m"]}] * 2
+
+
+def test_summarize_transformed_query_handles_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    assert server._summarize_transformed_query(None) is None
+
+
+CUBESQL_STREAM = (
+    '{"schema":[{"name":"c","column_type":"Int64"}],'
+    '"lastRefreshTime":"t","usedPreAggregations":{}}\n'
+    '{"data":[["1"],["2"]]}\n'
+    '{"data":[["3"]]}\n'
+)
+
+
+def test_parse_cubesql_stream_assembles_chunks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    out = server._parse_cubesql_stream(CUBESQL_STREAM)
+    assert out == {
+        "schema": [{"name": "c", "column_type": "Int64"}],
+        "lastRefreshTime": "t",
+        "usedPreAggregations": {},
+        "data": [["1"], ["2"], ["3"]],
+    }
+
+
+def test_parse_cubesql_stream_error_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    server = _load_server(monkeypatch)
+    out = server._parse_cubesql_stream('{"schema":[]}\n{"error":"boom"}\n')
+    assert out == {"error": "boom"}
+
+
+def test_parse_cubesql_stream_truncated_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    server = _load_server(monkeypatch)
+    with pytest.raises(RuntimeError, match="/cubesql"):
+        server._parse_cubesql_stream('{"schema":[]}\n{"data":[[1')
+
+
+def test_cubesql_posts_sql_with_utc_and_continue_wait(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    calls = _recording_request(monkeypatch, server, CUBESQL_STREAM)
+
+    result = asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("POST", "/cubesql")
+    assert kwargs["raw"] is True
+    assert kwargs["json"] == {
+        "query": "SELECT 1",
+        "timezone": "UTC",
+        "throwContinueWait": True,
+    }
+    assert result["data"] == [["1"], ["2"], ["3"]]
+
+
+def test_cubesql_polls_on_continue_wait_then_returns(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    calls = _recording_request(
+        monkeypatch, server, ['{"error":"Continue wait"}', CUBESQL_STREAM]
+    )
+
+    async def no_sleep(_seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(server.asyncio, "sleep", no_sleep)
+    result = asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
+    assert len(calls) == 2
+    assert len(result["data"]) == 3
+
+
+def test_cubesql_raises_at_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+
+    async def always_wait(*args: Any, **kwargs: Any) -> str:
+        del args, kwargs
+        return '{"error":"Continue wait"}'
+
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    monkeypatch.setattr(server, "_request", always_wait)
+    # A zero budget puts the first 'Continue wait' past the deadline. Patching
+    # time.monotonic instead would freeze asyncio's own clock and hang.
+    monkeypatch.setattr(server, "TIMEOUT_SECONDS", 0)
+    with pytest.raises(RuntimeError, match="did not complete"):
+        asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
+
+
+def test_cubesql_raises_cube_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    _recording_request(monkeypatch, server, '{"error":"Table not found"}\n')
+    with pytest.raises(RuntimeError, match="Table not found"):
+        asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
+
+
+def test_convert_query_posts_sql_to_rest(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    reply = {"query": {"measures": ["v.m"]}}
+    calls = _recording_request(monkeypatch, server, reply)
+
+    result = asyncio.run(server.convert_query(MagicMock(), "SELECT 1"))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("POST", "/convert-query")
+    assert kwargs["json"] == {"input": "sql", "output": "rest", "query": "SELECT 1"}
+    assert result == reply
+
+
+def test_graphql_to_json_returns_json_query(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    calls = _recording_request(
+        monkeypatch, server, {"jsonQuery": {"measures": ["v.m"]}}
+    )
+
+    result = asyncio.run(server.graphql_to_json(MagicMock(), "{ cube { v { m } } }"))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("POST", "/graphql-to-json")
+    assert kwargs["json"] == {"query": "{ cube { v { m } } }", "variables": {}}
+    assert result == {"measures": ["v.m"]}
+
+
+def test_graphql_to_json_raises_on_null(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    _recording_request(monkeypatch, server, {"jsonQuery": None})
+    with pytest.raises(RuntimeError, match="could not parse"):
+        asyncio.run(server.graphql_to_json(MagicMock(), "{ nope"))
+
+
+def test_every_tool_sends_minted_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx
+
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    server = _load_server(monkeypatch)
+    server._token_cache.clear()
+    replies: dict[str, Any] = {
+        "/load": {"data": []},
+        "/sql": _sql_fixture(),
+        "/dry-run": _dry_run_body([]),
+        "/cubesql": CUBESQL_STREAM,
+        "/convert-query": {"query": {}},
+        "/graphql-to-json": {"jsonQuery": {}},
+    }
+    seen: list[tuple[str, str]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path.removeprefix("/cubejs-api/v1")
+        seen.append((path, request.headers["Authorization"]))
+        reply = replies[path]
+        if isinstance(reply, str):
+            return httpx.Response(200, text=reply)
+        return httpx.Response(200, json=reply)
+
+    monkeypatch.setattr(
+        server,
+        "client",
+        httpx.AsyncClient(
+            base_url=server.CUBE_REST_URL, transport=httpx.MockTransport(handler)
+        ),
+    )
+    ctx = MagicMock()
+    query = {"measures": ["x.count"]}
+    asyncio.run(server.load(ctx, query))
+    asyncio.run(server.sql(ctx, query))
+    asyncio.run(server.dry_run(ctx, query))
+    asyncio.run(server.cubesql(ctx, "SELECT 1"))
+    asyncio.run(server.convert_query(ctx, "SELECT 1"))
+    asyncio.run(server.graphql_to_json(ctx, "{ x }"))
+
+    token = server._mint_token("engineer@apps.teamschools.org")
+    assert [p for p, _ in seen] == list(replies)
+    for _, header in seen:
+        assert header == token
+        assert not header.startswith("Bearer ")
+
+
+def test_sql_trims_each_query_of_a_multi_query(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    fixture = _sql_fixture()
+    # compareDateRange/blending: Cube returns one {sql, dataSource} per query.
+    body = [fixture, fixture]
+    # Wrapped: a list reply is read as a queue of replies.
+    _recording_request(monkeypatch, server, [body])
+    result = asyncio.run(server.sql(MagicMock(), {"measures": ["x.count"]}))
+    assert result == [server._trim_sql(fixture)] * 2
+
+
+def test_sql_string_raises_on_cube_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    _recording_request(monkeypatch, server, {"sql": {"error": "bad sql"}})
+    with pytest.raises(RuntimeError, match="bad sql"):
+        asyncio.run(server.sql(MagicMock(), "SELECT nope"))
+
+
+def test_convert_query_raises_on_cube_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    _recording_request(
+        monkeypatch, server, {"status": "error", "query": None, "error": "bad sql"}
+    )
+    with pytest.raises(RuntimeError, match="bad sql"):
+        asyncio.run(server.convert_query(MagicMock(), "SELECT nope"))
+
+
+def test_request_enforces_total_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx
+
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    server = _load_server(monkeypatch)
+
+    class SlowClient:
+        async def request(self, *args: Any, **kwargs: Any) -> httpx.Response:
+            del args, kwargs
+            await asyncio.sleep(5)
+            raise AssertionError("deadline not enforced")
+
+    monkeypatch.setattr(server, "client", SlowClient())
+    monkeypatch.setattr(server, "TIMEOUT_SECONDS", 0.05)
+    with pytest.raises(RuntimeError, match="did not complete"):
+        asyncio.run(server.load(MagicMock(), {"measures": ["x.count"]}))
+
+    # A tool that does not poll must not blame 'Continue wait' polling.
+    with pytest.raises(RuntimeError, match="did not complete") as excinfo:
+        asyncio.run(server.sql(MagicMock(), {"measures": ["x.count"]}))
+    assert "Continue wait" not in str(excinfo.value)
+
+
+def test_summarize_transformed_query_marks_omitted_values(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    wide = [f"v.dimension_{i}" for i in range(200)]
+    summary = server._summarize_transformed_query(
+        {"sortedDimensions": wide, "granularityHierarchies": {"x": []}}
+    )
+    # Too large to inline, but the key stays so the caller knows to ask for it.
+    assert "full=True" in summary["sortedDimensions"]
+    assert "granularityHierarchies" not in summary
+
+
+def test_load_docstring_describes_multi_query_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    assert "`results`" in server.load.__doc__
