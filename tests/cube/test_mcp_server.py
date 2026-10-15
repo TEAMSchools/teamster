@@ -702,3 +702,92 @@ def test_summarize_transformed_query_handles_none(
 ) -> None:
     server = _load_server(monkeypatch)
     assert server._summarize_transformed_query(None) is None
+
+
+CUBESQL_STREAM = (
+    '{"schema":[{"name":"c","column_type":"Int64"}],'
+    '"lastRefreshTime":"t","usedPreAggregations":{}}\n'
+    '{"data":[["1"],["2"]]}\n'
+    '{"data":[["3"]]}\n'
+)
+
+
+def test_parse_cubesql_stream_assembles_chunks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    out = server._parse_cubesql_stream(CUBESQL_STREAM)
+    assert out == {
+        "schema": [{"name": "c", "column_type": "Int64"}],
+        "lastRefreshTime": "t",
+        "usedPreAggregations": {},
+        "data": [["1"], ["2"], ["3"]],
+    }
+
+
+def test_parse_cubesql_stream_error_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    server = _load_server(monkeypatch)
+    out = server._parse_cubesql_stream('{"schema":[]}\n{"error":"boom"}\n')
+    assert out == {"error": "boom"}
+
+
+def test_cubesql_posts_sql_with_utc_and_continue_wait(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    calls = _recording_request(monkeypatch, server, CUBESQL_STREAM)
+
+    result = asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("POST", "/cubesql")
+    assert kwargs["raw"] is True
+    assert kwargs["json"] == {
+        "query": "SELECT 1",
+        "timezone": "UTC",
+        "throwContinueWait": True,
+    }
+    assert result["data"] == [["1"], ["2"], ["3"]]
+
+
+def test_cubesql_polls_on_continue_wait_then_returns(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    calls = _recording_request(
+        monkeypatch, server, ['{"error":"Continue wait"}', CUBESQL_STREAM]
+    )
+
+    async def no_sleep(_seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(server.asyncio, "sleep", no_sleep)
+    result = asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
+    assert len(calls) == 2
+    assert len(result["data"]) == 3
+
+
+def test_cubesql_raises_at_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+
+    async def always_wait(*args: Any, **kwargs: Any) -> str:
+        del args, kwargs
+        return '{"error":"Continue wait"}'
+
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    monkeypatch.setattr(server, "_request", always_wait)
+    # A zero budget puts the first 'Continue wait' past the deadline. Patching
+    # time.monotonic instead would freeze asyncio's own clock and hang.
+    monkeypatch.setattr(server, "TIMEOUT_SECONDS", 0)
+    with pytest.raises(RuntimeError, match="did not complete"):
+        asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
+
+
+def test_cubesql_raises_cube_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    _recording_request(monkeypatch, server, '{"error":"Table not found"}\n')
+    with pytest.raises(RuntimeError, match="Table not found"):
+        asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))

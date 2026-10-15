@@ -257,8 +257,12 @@ async def _request(
     *,
     email: str,
     poll: bool = False,
+    raw: bool = False,
     **kwargs: Any,
-) -> dict[str, Any]:
+) -> Any:
+    """Send one authenticated Cube request. `raw=True` returns the body text
+    unparsed (for `/cubesql`'s newline-delimited JSON) and leaves polling to
+    the caller."""
     if client is None:
         raise RuntimeError("_request called before the server lifespan started")
     headers = {"Authorization": _mint_token(email)}
@@ -269,6 +273,8 @@ async def _request(
             raise RuntimeError(
                 f"Cube {method} {path} {response.status_code}: {response.text}"
             )
+        if raw:
+            return response.text
         body = response.json()
         if poll and isinstance(body, dict) and body.get("error") == "Continue wait":
             if time.monotonic() + 1 >= deadline:
@@ -661,6 +667,80 @@ async def dry_run(
             _summarize_transformed_query(t) for t in body.get("transformedQueries", [])
         ],
     }
+
+
+def _parse_cubesql_stream(text: str) -> dict[str, Any]:
+    """Assemble `/cubesql`'s newline-delimited JSON into one object: the first
+    line's schema fields plus every `data` chunk's rows, in order. An `error`
+    line wins over everything before it."""
+    result: dict[str, Any] = {}
+    rows: list[Any] = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        chunk = json.loads(line)
+        if "error" in chunk:
+            return {"error": chunk["error"]}
+        rows.extend(chunk.pop("data", []))
+        result.update(chunk)
+    return {**result, "data": rows}
+
+
+@mcp.tool()
+async def cubesql(
+    ctx: Context, query: str, timezone: str | None = None
+) -> dict[str, Any]:
+    """Run a query in Cube's SQL API dialect (Postgres-flavored SQL) over REST.
+    An alternative to `load` when SQL is the easier way to say it.
+
+    Dialect: query views, not cubes (`FROM student_assessment_scores_view`).
+    Each member is a column named as in `meta` without the view prefix. Wrap
+    measures in `MEASURE(<measure>)` and `GROUP BY` the dimensions you select,
+    e.g. `SELECT academic_year, MEASURE(pct_proficient) FROM
+    student_assessment_scores_view GROUP BY 1`. For schema questions use
+    `meta`, not catalog tables. Use `sql`
+    with a SQL string to see the warehouse SQL it compiles to, and
+    `convert_query` to turn it into a `load` query object.
+
+    No row limit is applied by this tool; Cube's own limits apply. Page with
+    `LIMIT`/`OFFSET`. Response: {"schema": [...], "lastRefreshTime",
+    "usedPreAggregations", "data": [[row values], ...]}. Values come back as
+    strings — cast before comparing or doing arithmetic.
+
+    PII: student view results carry row-level student identifiers — avoid
+    selecting identifier columns (student_key, full_name, birth_date,
+    state/lea IDs) unless drill-down is explicitly requested. Keep any
+    identifying values in the local conversation only, never to PR comments,
+    issues, Slack, or scheduled-agent outputs.
+
+    An empty result for a query that should match rows can mean default-deny
+    access: no `dim_staff_cube_access` row for the email, a `none` scope on
+    that axis, or `resolveAccess` failing closed.
+
+    `timezone` defaults to UTC (mart dates are date-grain UTC).
+    """
+    email = await _get_user_email(ctx)
+    payload = {
+        "query": query,
+        "timezone": timezone or DEFAULT_QUERY_TIMEZONE,
+        "throwContinueWait": True,
+    }
+    deadline = time.monotonic() + TIMEOUT_SECONDS
+    while True:
+        text = await _request("POST", "/cubesql", json=payload, email=email, raw=True)
+        result = _parse_cubesql_stream(text)
+        error = result.get("error")
+        if error == "Continue wait":
+            if time.monotonic() + 1 >= deadline:
+                raise RuntimeError(
+                    f"Cube POST /cubesql did not complete within "
+                    f"{TIMEOUT_SECONDS}s ('Continue wait' polling)"
+                )
+            await asyncio.sleep(1)
+            continue
+        if error:
+            raise RuntimeError(f"Cube POST /cubesql: {error}")
+        return result
 
 
 def main() -> None:
