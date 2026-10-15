@@ -8,7 +8,10 @@ data-team Codespaces via `npx mcp-remote`.
 
 - `server.py` — `MCPServer` (mcp SDK's `mcp.server.mcpserver`, PEP 723 inline
   deps; the class was `FastMCP` under `mcp.server.fastmcp` before SDK 2.0).
-  Tools: `meta`, `load`, `sql`.
+  Tools: `meta`, `load`, `sql`, `dry_run`, `cubesql`, `convert_query`,
+  `graphql_to_json`. Every read-only Cube REST endpoint has one; the excluded
+  ones and why are in
+  `docs/superpowers/specs/2026-10-15-cube-mcp-rest-coverage-design.md`.
 - `Dockerfile` — Python 3.13-slim; bare `python` entrypoint (uv installs PEP 723
   deps at build time).
 
@@ -128,8 +131,16 @@ Cloud Run service via `--set-secrets`).
 
 ## Cube REST quirks
 
-- **`/sql` is GET-only**; query goes in URL via
-  `params={"query": json.dumps(query)}`. `/load` accepts POST with JSON body.
+- `/load`, `/sql`, and `/dry-run` accept POST with a JSON body. `/sql` with
+  `"format": "sql"` takes a SQL API string instead of a query object.
+- `/cubesql` returns newline-delimited JSON (schema line, then `data` chunks),
+  not one object; `_request(raw=True)` returns the text for
+  `_parse_cubesql_stream`.
+- `/graphql-to-json` answers a parse error with HTTP 200 and
+  `{"jsonQuery": null}`.
+- `/sql`'s `canUseTransformedQuery` is dev/Playground-only in the gateway
+  (`getSqlQueriesInternal`); do not build on it. `/dry-run` always returns that
+  data as `transformedQueries`.
 
 ## WorkOS quirks
 

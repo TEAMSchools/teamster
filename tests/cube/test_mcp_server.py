@@ -38,6 +38,16 @@ def test_module_loads(monkeypatch: pytest.MonkeyPatch) -> None:
     assert hasattr(server, "load"), "load tool not found"
     assert hasattr(server, "meta"), "meta tool not found"
     assert hasattr(server, "sql"), "sql tool not found"
+    tools = {t.name for t in server.mcp._tool_manager.list_tools()}
+    assert tools == {
+        "meta",
+        "load",
+        "sql",
+        "dry_run",
+        "cubesql",
+        "convert_query",
+        "graphql_to_json",
+    }
 
 
 def test_run_dispatches_to_stdio_by_default(
@@ -826,3 +836,51 @@ def test_graphql_to_json_raises_on_null(monkeypatch: pytest.MonkeyPatch) -> None
     _recording_request(monkeypatch, server, {"jsonQuery": None})
     with pytest.raises(RuntimeError, match="could not parse"):
         asyncio.run(server.graphql_to_json(MagicMock(), "{ nope"))
+
+
+def test_every_tool_sends_minted_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx
+
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    server = _load_server(monkeypatch)
+    server._token_cache.clear()
+    replies: dict[str, Any] = {
+        "/load": {"data": []},
+        "/sql": _sql_fixture(),
+        "/dry-run": _dry_run_body([]),
+        "/cubesql": CUBESQL_STREAM,
+        "/convert-query": {"query": {}},
+        "/graphql-to-json": {"jsonQuery": {}},
+    }
+    seen: list[tuple[str, str]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path.removeprefix("/cubejs-api/v1")
+        seen.append((path, request.headers["Authorization"]))
+        reply = replies[path]
+        if isinstance(reply, str):
+            return httpx.Response(200, text=reply)
+        return httpx.Response(200, json=reply)
+
+    monkeypatch.setattr(
+        server,
+        "client",
+        httpx.AsyncClient(
+            base_url=server.CUBE_REST_URL, transport=httpx.MockTransport(handler)
+        ),
+    )
+    ctx = MagicMock()
+    query = {"measures": ["x.count"]}
+    asyncio.run(server.load(ctx, query))
+    asyncio.run(server.sql(ctx, query))
+    asyncio.run(server.dry_run(ctx, query))
+    asyncio.run(server.cubesql(ctx, "SELECT 1"))
+    asyncio.run(server.convert_query(ctx, "SELECT 1"))
+    asyncio.run(server.graphql_to_json(ctx, "{ x }"))
+
+    token = server._mint_token("engineer@apps.teamschools.org")
+    assert [p for p, _ in seen] == list(replies)
+    for _, header in seen:
+        assert header == token
+        assert not header.startswith("Bearer ")

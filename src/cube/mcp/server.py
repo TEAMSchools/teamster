@@ -21,9 +21,13 @@ Email resolution (in order):
      engineer to set CUBE_USER_EMAIL or write the cache file directly.
 
 Tools:
-  meta  - return the Cube data model catalog (cached 1 hour per email)
-  load  - run a Cube query (JSON body per the REST API spec)
-  sql   - return the SQL Cube would generate for a query, without executing
+  meta            - return the Cube data model catalog (cached 1 hour per email)
+  load            - run a Cube query (JSON body per the REST API spec)
+  sql             - return the SQL Cube would generate, without executing
+  dry_run         - validate and normalize a query; pre-aggregation matching
+  cubesql         - run a SQL API dialect query over REST
+  convert_query   - SQL API query -> REST query object
+  graphql_to_json - Cube GraphQL query -> REST query object
 """
 
 import asyncio
@@ -239,10 +243,13 @@ mcp = MCPServer(
         "Query the Cube semantic layer (KIPP TEAM & Family metrics, dimensions, "
         "and views) via Cube Cloud's REST API. Start with the `meta` tool to "
         "discover views, then build a query and call `load` to execute (or "
-        "`sql` to inspect the compiled SQL). The load-bearing query-construction "
-        "guidance — member naming, filter operators, date handling, the "
-        "academic-year convention, and PII handling — lives in the individual "
-        "`meta`/`load`/`sql` tool descriptions, which reach the model reliably "
+        "`sql` to inspect the compiled SQL, `dry_run` to check pre-aggregation "
+        "matching). `cubesql` runs SQL API queries; `convert_query` and "
+        "`graphql_to_json` turn SQL or GraphQL into a `load` query object. The "
+        "load-bearing query-construction guidance — member naming, filter "
+        "operators, date handling, the academic-year convention, and PII "
+        "handling — lives in the individual tool descriptions, which reach the "
+        "model reliably "
         "on every surface (unlike this instructions block, which some clients "
         "drop or truncate)."
     ),
