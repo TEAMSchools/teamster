@@ -62,13 +62,19 @@ cubes:
         type: time
         public: true
 
+      # Cast to TIMESTAMP for Cube time joins.
       - name: exit_date
         description: >-
-          Date the student left this section. Cast to TIMESTAMP for Cube time
-          joins.
+          Date this section enrollment ends: the date the student left the
+          section, or the section's scheduled end while the student is still
+          enrolled. Never null.
         sql: CAST(exit_date AS TIMESTAMP)
         type: time
         public: true
+        meta:
+          ai_context: >-
+            A past exit_date can be a section's scheduled end, not a departure.
+            For students who left a section early, filter is_dropped_section.
 
       - name: is_dropped_section
         description: >-
