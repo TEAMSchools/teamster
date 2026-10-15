@@ -1183,8 +1183,9 @@ unit_tests:
       - input: ref('stg_focus__apex_band_levels')
         rows:
           - { band_set_id: 9, label: Low Level 1, min_score: 0, max_score: 39 }
-          - { band_set_id: 9, label: Level 2, min_score: 40, max_score: 59 }
-          - { band_set_id: 9, label: Level 3, min_score: 60, max_score: 100 }
+          - { band_set_id: 9, label: Level 2, min_score: 40, max_score: 44 }
+          - { band_set_id: 9, label: Level 3, min_score: 45, max_score: 54 }
+          - { band_set_id: 9, label: Level 4, min_score: 55, max_score: 100 }
           - { band_set_id: 8, label: Advanced, min_score: 0, max_score: 100 }
     expect:
       rows:
@@ -1192,17 +1193,17 @@ unit_tests:
             assessment_id: 1,
             response_type_code: null,
             percent_correct: 60.0,
-            performance_band_label: Level 3,
-            performance_band_label_number: 3,
+            performance_band_label: Level 4,
+            performance_band_label_number: 4,
             is_mastery: true,
           }
         - {
             assessment_id: 1,
             response_type_code: A,
             percent_correct: 50.0,
-            performance_band_label: Level 2,
-            performance_band_label_number: 2,
-            is_mastery: false,
+            performance_band_label: Level 3,
+            performance_band_label_number: 3,
+            is_mastery: true,
           }
         - {
             assessment_id: 1,
