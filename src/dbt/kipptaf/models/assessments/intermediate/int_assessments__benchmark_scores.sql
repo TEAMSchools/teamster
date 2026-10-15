@@ -32,7 +32,7 @@ with
 
             'iready' as score_source,
             'iready' as source_system,
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__iready_diagnostic_results") }}
 
         union all
 

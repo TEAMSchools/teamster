@@ -10,8 +10,7 @@ with
 
             title,
 
-            'illuminate' as assessment_type,
-
+            source as assessment_type,
             canonical_assessment_id as source_assessment_id,
 
             cast(null as string) as administration_period,
@@ -86,7 +85,7 @@ with
             cast(null as string) as test_type,
 
             if(subject = 'Math', 'Math', 'ELA') as scope,
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__iready_diagnostic_results") }}
         where overall_scale_score is not null and _dbt_source_project is not null
     ),
 

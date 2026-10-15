@@ -2,14 +2,19 @@ models:
   - name: rpt_tableau__sight_words_dashboard
     description: >-
       Illuminate Sight Words Quiz results for the sight words Tableau dashboard,
-      one row per quiz, sight word and student. Paterson is excluded.
+      one row per quiz, sight word and student, except where a quiz repository
+      carries the same sight word label on more than one field, which repeats
+      the row. Paterson is excluded.
 
       Two UNION ALL branches. The first crosses every quiz with every student
-      enrolled in the quiz's grade level that year, then LEFT JOINs the
-      student's response, so an untested student keeps a row with a null value.
-      The second (is_replacement true) adds students who have a response on a
-      quiz written for a different grade level, limited to students recently
-      enrolled; it carries scored rows only.
+      enrolled in the quiz's grade level that year, withdrawn students included,
+      then LEFT JOINs the student's response, so an untested student keeps a row
+      with a null value. The second (is_replacement true) adds students who have
+      a response on a quiz written for a different grade level, limited to
+      students recently enrolled; it carries scored rows only.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

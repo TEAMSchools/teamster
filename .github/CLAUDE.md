@@ -2,9 +2,10 @@
 
 ## Workflows
 
-- `claude-code-review.yaml` — auto-reviews PRs touching `src/`, `tests/`,
-  `scripts/`, `.github/workflows/`. Gating, the headless-deadlock caveat,
-  branch-deployment and push-`paths` behavior: `pr-ci-review` skill.
+- `claude-code-review.yaml` — auto-reviews every PR except those touching only
+  excluded files (docs, lockfiles, CSVs, cosmetic config; list in its `paths:`).
+  Gating, the headless-deadlock caveat, branch-deployment and push-`paths`
+  behavior: `pr-ci-review` skill.
 - `claude.yaml` — responds to `@claude` mentions on issues/PRs.
 - `dagster-cloud-deploy.yaml` — reusable workflow (`workflow_call`) for
   multi-arch Docker builds and Dagster Cloud deploys. Called by per-location

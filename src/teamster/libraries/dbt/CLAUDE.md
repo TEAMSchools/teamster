@@ -22,6 +22,10 @@ Wraps `@dbt_assets` with two additional behaviors before running `dbt build`:
 This means adding a new external source to a dbt project automatically triggers
 staging without any Dagster code changes.
 
+The `dbt build` stream drops every `AssetObservation` (reason in the code
+comment), so a dbt test reaches Dagster only as a check. Singular-test
+requirements: `.claude/rules/dbt-yaml.md`.
+
 ### `dagster_dbt_translator.py` — `CustomDagsterDbtTranslator`
 
 Customizes asset key and automation condition generation:

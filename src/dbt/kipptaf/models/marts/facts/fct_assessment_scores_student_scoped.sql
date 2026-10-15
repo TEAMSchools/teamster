@@ -32,9 +32,9 @@ with
         }}
     ),
 
-    -- Practice (mock SAT/ACT through Illuminate). One row per student x
-    -- (scope, test_date, administration_round). Inputs scoped to the
-    -- response_type='group' grain of int_assessments__college_assessment_practice.
+    -- Practice (mock SAT/ACT through Illuminate). Ranks every Group, Subject and
+    -- Total row together, so the order by lists the practice model's full grain
+    -- to keep rn_highest, a key input, the same on every rebuild.
     practice_assessments as (
         select
             powerschool_student_number as student_number,
@@ -48,7 +48,15 @@ with
 
             row_number() over (
                 partition by powerschool_student_number, scope
-                order by scale_score desc, test_date desc
+                order by
+                    scale_score desc,
+                    test_date desc,
+                    response_type asc,
+                    assessment_id asc,
+                    response_type_description asc,
+                    academic_year asc,
+                    scope_round asc,
+                    grade_level asc
             ) as rn_highest,
         from {{ ref("int_assessments__college_assessment_practice") }}
     ),

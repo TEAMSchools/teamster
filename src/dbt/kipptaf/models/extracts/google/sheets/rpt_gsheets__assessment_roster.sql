@@ -116,7 +116,7 @@ with
 
     internal as (
         select
-            powerschool_student_number as student_number,
+            student_number,
             academic_year,
             module_code as administration_round,
             performance_band_label,

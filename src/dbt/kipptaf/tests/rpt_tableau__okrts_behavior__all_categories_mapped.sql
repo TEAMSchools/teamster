@@ -60,6 +60,7 @@ with
                     'Before Care',
                     'Early / Late Pick Up',
                     'Early / Late Pickup',
+                    'Early/Late Pickup',
                     'Attendance',
                     'Class Attendance',
                     '3.0 GPA Bonus',

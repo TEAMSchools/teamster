@@ -448,15 +448,16 @@ unit_tests:
             0.0 as is_oss,
             0.0 as is_iss,
             0.0 as is_suspended,
-            1.0 as membershipvalue
+            1.0 as membershipvalue,
+            'Present' as attendance_category
           union all
-          select 2, 'kippnewark', date '2025-09-01', 'A', 0.901, 0.901, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+          select 2, 'kippnewark', date '2025-09-01', 'A', 0.901, 0.901, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present'
           union all
-          select 3, 'kippnewark', date '2025-09-01', 'A', 0.9, 0.9, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+          select 3, 'kippnewark', date '2025-09-01', 'A', 0.9, 0.9, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present'
           union all
-          select 4, 'kippnewark', date '2025-09-01', 'A', 0.8, 0.8, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+          select 4, 'kippnewark', date '2025-09-01', 'A', 0.8, 0.8, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present'
           union all
-          select 5, 'kippnewark', date '2025-09-01', 'A', 0.799, 0.799, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+          select 5, 'kippnewark', date '2025-09-01', 'A', 0.799, 0.799, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present'
 
       - input: ref('int_students__schools')
         format: sql
@@ -607,7 +608,8 @@ unit_tests:
             0.0 as is_oss,
             0.0 as is_iss,
             0.0 as is_suspended,
-            1.0 as membershipvalue
+            1.0 as membershipvalue,
+            'Present' as attendance_category
           from unnest(generate_date_array(
             date '2025-09-01', date '2025-09-10'
           )) as d

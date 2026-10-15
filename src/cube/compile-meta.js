@@ -1,6 +1,9 @@
 // Compile a Cube model directory with Cube's own schema compiler and print the
 // views as REST /meta-shaped JSON. Used by the schema compile test and by the
 // eval's catalog builder. Usage: node compile-meta.js <modelDir>
+// Cube prints a dev-mode warning on stdout when CUBEJS_DEV_MODE is unset, which
+// corrupts the JSON that callers parse.
+process.env.CUBEJS_DEV_MODE ??= "false";
 const fs = require("fs");
 const path = require("path");
 const { prepareCompiler } = require(

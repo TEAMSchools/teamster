@@ -1,0 +1,1444 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Same as the launch page: reachable by link, not surfaced in search. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E"
+    />
+    <title>Semantic layer build status — KIPP NJ | Miami</title>
+    <style>
+      /* Tokens and type stacks copied from docs/launch/template.html so the
+         two pages read as one site. Keep them in step if that file changes. */
+      :root {
+        --kipp-indigo: #001e62;
+        --kipp-orange: #f9a21a;
+        --indigo-700: #0a2f7e;
+        --indigo-600: #1a44a0;
+        --indigo-200: #b9caf0;
+        --indigo-100: #dde6fa;
+        --indigo-50: #eef3fc;
+        --neutral-0: #fff;
+        --neutral-25: #fafbfc;
+        --neutral-100: #e9edf3;
+        --neutral-200: #d6dde7;
+        --neutral-300: #b6c0cf;
+        --neutral-400: #8d99ab;
+        --neutral-600: #5a6675;
+        --neutral-800: #2a3340;
+        --surface-page: var(--neutral-25);
+        --surface-card: var(--neutral-0);
+        --surface-muted: var(--neutral-100);
+        --text-body: var(--neutral-800);
+        --text-muted: var(--neutral-600);
+        --text-subtle: var(--neutral-400);
+        --text-link: var(--indigo-600);
+        --border-subtle: var(--neutral-200);
+        --border-default: var(--neutral-300);
+        --focus-ring: #57c0e9;
+        --good: #1f7a1f;
+        --warn: #9a5b00;
+        /* Readiness scale: one hue, darker = closer to done. */
+        --s-ready: #001e62;
+        --s-cube_work: #9fb3e6;
+        --s-data_work: #d3ddf6;
+        --s-unknown: #b6c0cf;
+        --font-display:
+          "Whitney SSm A", "Whitney", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
+        --font-brand:
+          "Whitney SSm A", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
+        --font-mono:
+          "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, "SF Mono",
+          Menlo, "Roboto Mono", monospace;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--surface-page);
+        font-family: var(--font-brand);
+        color: var(--text-body);
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--text-link);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+      }
+      :focus-visible {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 2px;
+      }
+
+      /* masthead (as on the launch page) */
+      .mast {
+        background: var(--kipp-indigo);
+        padding: 16px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .mast .brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .wordmark {
+        font: 800 17px/1 var(--font-display);
+        letter-spacing: 0.02em;
+        color: #fff;
+      }
+      .wordmark span {
+        font-weight: 300;
+        opacity: 0.75;
+      }
+      .rule {
+        width: 1px;
+        height: 26px;
+        background: rgba(255, 255, 255, 0.28);
+      }
+      .mast .kicker {
+        font: 600 15px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #fff;
+      }
+      .mast .kicker:hover {
+        text-decoration: underline;
+      }
+      .mast .meta {
+        font: 400 12.5px/1 var(--font-brand);
+        color: rgba(255, 255, 255, 0.62);
+      }
+
+      /* header block */
+      .head {
+        padding: 18px 28px 22px;
+        background: var(--surface-card);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .back {
+        display: inline-block;
+        font: 600 13px/1 var(--font-brand);
+        margin-bottom: 14px;
+      }
+      .head h1 {
+        font: 700 26px/1.2 var(--font-display);
+        color: var(--kipp-indigo);
+        margin: 0 0 4px;
+      }
+      .head p.sub {
+        font: 400 14px/1.5 var(--font-brand);
+        color: var(--text-muted);
+        margin: 0;
+        max-width: 68ch;
+      }
+      .eyebrow {
+        display: block;
+        font: 700 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        margin-bottom: 9px;
+      }
+
+      /* how to read: two flows */
+      .flows {
+        margin-top: 16px;
+        display: grid;
+        gap: 10px;
+      }
+      .flow {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+      .flow-label {
+        font: 700 11px/1.3 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+      }
+      .flow-steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 0;
+      }
+      .flow-steps li {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 40px;
+        padding: 5px 12px 5px 13px;
+        margin-right: 16px;
+        background: var(--indigo-50);
+        border: 1px solid var(--indigo-100);
+        border-radius: 5px;
+      }
+      .flow-steps li::after {
+        content: "→";
+        position: absolute;
+        right: -13px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-subtle);
+        font-size: 13px;
+      }
+      .flow-steps li:last-child::after {
+        content: none;
+      }
+      .flow-steps li.end {
+        background: linear-gradient(
+          135deg,
+          var(--kipp-indigo),
+          var(--indigo-600)
+        );
+        border-color: var(--kipp-indigo);
+        padding-right: 16px;
+        box-shadow: 0 3px 10px rgba(0, 30, 98, 0.25);
+      }
+      .flow-steps li.end b {
+        color: #fff;
+      }
+      .flow-steps li.end > span {
+        color: rgba(255, 255, 255, 0.78);
+      }
+      .flow-steps .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--kipp-orange);
+        color: var(--kipp-indigo);
+        font: 800 11px/1 var(--font-brand);
+      }
+      .flow-steps b {
+        font: 600 13px/1.25 var(--font-brand);
+        color: var(--kipp-indigo);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .flow-steps span {
+        font: 400 12px/1.3 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .flow-steps i {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        border-radius: 4px 0 0 4px;
+      }
+      .flow-steps .n {
+        font: 500 11px/1 var(--font-mono);
+        color: var(--text-subtle);
+      }
+      .flow-note {
+        margin: 2px 0 0 162px;
+        font: 400 12.5px/1.4 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .flow-note b {
+        color: var(--kipp-indigo);
+      }
+      @media (max-width: 760px) {
+        .flow {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+        .flow-note {
+          margin-left: 0;
+        }
+      }
+
+      /* KPI tiles */
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .kpi {
+        padding: 12px 14px;
+        background: var(--indigo-50);
+        border: 1px solid var(--indigo-100);
+        border-radius: 5px;
+      }
+      .kpi-value {
+        font: 700 28px/1.15 var(--font-display);
+        color: var(--kipp-indigo);
+      }
+      .kpi-value small {
+        font: 400 14px/1 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .kpi-ms {
+        font: 600 15px/1.3 var(--font-brand);
+        color: var(--kipp-indigo);
+      }
+      .kpi-foot {
+        font: 400 12px/1.4 var(--font-brand);
+        color: var(--text-muted);
+        margin-top: 6px;
+      }
+      .kpi .bar {
+        margin-top: 9px;
+      }
+
+      /* stacked readiness bar */
+      .bar {
+        display: flex;
+        gap: 2px;
+        height: 8px;
+        width: 100%;
+        min-width: 90px;
+        background: var(--surface-muted);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .bar span {
+        display: block;
+        height: 100%;
+      }
+      .sw-ready {
+        background: var(--s-ready);
+      }
+      .sw-cube_work {
+        background: var(--s-cube_work);
+      }
+      .sw-data_work {
+        background: var(--s-data_work);
+      }
+      .sw-unset,
+      .sw-unknown {
+        background: repeating-linear-gradient(
+          45deg,
+          var(--s-unknown) 0 2px,
+          transparent 2px 5px
+        );
+      }
+      .sw-tableau_only {
+        background: transparent;
+        border: 1px dashed var(--text-subtle);
+      }
+
+      /* controls + legend */
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 18px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 28px;
+        background: var(--surface-card);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        font: 400 12.5px/1.4 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .legend i {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        vertical-align: -2px;
+        margin-right: 6px;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .field {
+        height: 40px;
+        border: 1px solid var(--border-default);
+        border-radius: 6px;
+        background: var(--surface-card);
+        font: 400 14px/1 var(--font-brand);
+        color: var(--text-body);
+        padding: 0 12px;
+      }
+      .field::placeholder {
+        color: var(--text-subtle);
+      }
+      #q {
+        width: 260px;
+      }
+
+      /* main */
+      .main {
+        padding: 8px 28px 40px;
+      }
+      .grouphead {
+        padding: 22px 0 6px;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .grouphead h2 {
+        font: 700 12px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        color: var(--kipp-indigo);
+        margin: 0;
+      }
+      .grouphead .fill {
+        flex: 1;
+        height: 1px;
+        background: var(--border-subtle);
+      }
+      .grouphead .n {
+        font: 500 12px/1 var(--font-mono);
+        color: var(--text-subtle);
+      }
+      .section-note {
+        font: 400 13.5px/1.5 var(--font-brand);
+        color: var(--text-muted);
+        margin: 0 0 12px;
+      }
+
+      /* dashboard table */
+      .table-wrap {
+        overflow-x: auto;
+        background: var(--surface-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 6px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 820px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 14px;
+        vertical-align: middle;
+      }
+      thead th {
+        font: 700 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border-subtle);
+        padding-block: 12px;
+      }
+      tr.domain th {
+        font: 700 12px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        color: var(--kipp-indigo);
+        padding-top: 20px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      tr.domain .dom-sum {
+        font: 400 12px/1 var(--font-brand);
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--text-subtle);
+        margin-left: 8px;
+      }
+      tr.dash td {
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      tr.dash:hover td {
+        background: var(--indigo-50);
+      }
+      .col-name {
+        width: 30%;
+      }
+      .col-bar {
+        width: 21%;
+      }
+      .col-stage {
+        width: 18%;
+      }
+      .col-due {
+        width: 10%;
+        white-space: nowrap;
+      }
+      .name-btn {
+        background: none;
+        border: 0;
+        padding: 0;
+        text-align: left;
+        cursor: pointer;
+        font: 600 15px/1.35 var(--font-brand);
+        color: var(--kipp-indigo);
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+      }
+      .name-btn .chev {
+        color: var(--text-subtle);
+        font-size: 10px;
+        transition: transform 0.15s;
+        display: inline-block;
+        width: 10px;
+      }
+      .name-btn[aria-expanded="true"] .chev {
+        transform: rotate(90deg);
+      }
+      .match-hint {
+        display: block;
+        font: 400 12px/1.4 var(--font-brand);
+        color: var(--text-subtle);
+        margin-left: 18px;
+      }
+      .cell-bar {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .count {
+        font: 400 13px/1 var(--font-brand);
+        color: var(--text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .count b {
+        color: var(--text-body);
+      }
+      .muted {
+        color: var(--text-subtle);
+      }
+      .due {
+        font: 400 13.5px/1 var(--font-brand);
+      }
+
+      /* transition stage */
+      .steps {
+        display: flex;
+        gap: 2px;
+      }
+      .steps span {
+        width: 14px;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--surface-muted);
+      }
+      .steps span.on {
+        background: var(--kipp-indigo);
+      }
+      .stage-label {
+        font: 400 13px/1.3 var(--font-brand);
+        margin-top: 5px;
+        color: var(--text-muted);
+      }
+      .stage-label.done {
+        color: var(--good);
+        font-weight: 600;
+      }
+      .stage-label.warn {
+        color: var(--warn);
+      }
+
+      /* detail drawer */
+      tr.detail td {
+        background: var(--surface-page);
+        border-bottom: 1px solid var(--border-subtle);
+        padding: 16px 18px 20px 36px;
+      }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 22px;
+      }
+      .detail h3 {
+        font: 700 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        margin: 0 0 10px;
+      }
+      .grp {
+        margin-bottom: 12px;
+      }
+      .grp-h {
+        font: 600 13px/1.3 var(--font-brand);
+        color: var(--kipp-indigo);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .grp-h i {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        display: inline-block;
+      }
+      .grp ul {
+        margin: 0;
+        padding-left: 16px;
+        font: 400 13.5px/1.45 var(--font-brand);
+      }
+      .grp li {
+        margin: 2px 0;
+      }
+      .grp li .use {
+        color: var(--text-subtle);
+      }
+      .checklist {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 8px;
+        font: 400 13.5px/1.6 var(--font-brand);
+      }
+      .checklist .tick {
+        display: inline-block;
+        width: 18px;
+        color: var(--good);
+        font-weight: 700;
+      }
+      .checklist .open {
+        color: var(--text-subtle);
+      }
+      .asana-link {
+        font: 600 12.5px/1 var(--font-brand);
+      }
+
+      /* timeline */
+      .tl {
+        background: var(--surface-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 6px;
+        padding: 14px 16px 10px;
+        overflow-x: auto;
+      }
+      .tl-inner {
+        min-width: 720px;
+      }
+      .tl-row {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 14px;
+        align-items: start;
+        padding: 8px 0;
+        border-top: 1px solid var(--border-subtle);
+      }
+      .tl-row:first-of-type {
+        border-top: 0;
+      }
+      .tl-label {
+        font: 600 13.5px/1.3 var(--font-brand);
+        color: var(--kipp-indigo);
+        padding-top: 4px;
+      }
+      .tl-label small {
+        display: block;
+        font: 400 12px/1.4 var(--font-brand);
+        color: var(--text-subtle);
+      }
+      .tl-track {
+        position: relative;
+        height: 30px;
+      }
+      .tl-track::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 14px;
+        border-top: 1px solid var(--border-subtle);
+      }
+      .tl-axis {
+        position: relative;
+        height: 20px;
+        margin-left: 194px;
+        font: 400 11.5px/1 var(--font-brand);
+        color: var(--text-subtle);
+      }
+      .tl-axis span {
+        position: absolute;
+        top: 0;
+        padding-left: 4px;
+        border-left: 1px solid var(--border-subtle);
+        height: 20px;
+        white-space: nowrap;
+      }
+      .tl-today {
+        position: absolute;
+        top: -4px;
+        bottom: -4px;
+        border-left: 2px solid var(--kipp-orange);
+      }
+      .tl-mark {
+        position: absolute;
+        top: 4px;
+        width: 22px;
+        height: 22px;
+        margin-left: -11px;
+        border: 0;
+        background: none;
+        padding: 0;
+        cursor: default;
+      }
+      .tl-mark::before {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        transform: rotate(45deg);
+        background: var(--surface-card);
+        border: 2px solid var(--kipp-indigo);
+        border-radius: 2px;
+      }
+      .tl-mark.done::before {
+        background: var(--kipp-indigo);
+      }
+      .tl-mark.dash::before {
+        transform: none;
+        border-radius: 50%;
+      }
+      .tl-unsched {
+        font: 400 12px/1.6 var(--font-brand);
+        color: var(--text-subtle);
+        margin-top: 2px;
+      }
+      .chip {
+        display: inline-block;
+        font: 500 11px/1 var(--font-mono);
+        padding: 3px 7px;
+        border-radius: 999px;
+        background: var(--surface-muted);
+        color: var(--text-muted);
+        margin: 2px 3px 0 0;
+      }
+      .chip.done {
+        text-decoration: line-through;
+      }
+      .tl-key {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        font: 400 12px/1.4 var(--font-brand);
+        color: var(--text-muted);
+        margin-top: 8px;
+      }
+      .tl-key i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-right: 6px;
+        vertical-align: -1px;
+      }
+      details.alltable {
+        margin-top: 12px;
+      }
+      details.alltable summary {
+        cursor: pointer;
+        font: 600 13px/1.4 var(--font-brand);
+        color: var(--text-link);
+      }
+      details.alltable table {
+        min-width: 560px;
+        margin-top: 8px;
+        font: 400 13.5px/1.4 var(--font-brand);
+        background: var(--surface-card);
+      }
+      details.alltable td,
+      details.alltable th {
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .empty {
+        padding: 40px 12px;
+        text-align: center;
+        font: 400 13.5px/1.5 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .empty b {
+        display: block;
+        font: 600 16px/1.4 var(--font-brand);
+        color: var(--kipp-indigo);
+        margin-bottom: 6px;
+      }
+      .foot {
+        padding: 18px 28px 28px;
+        font: 400 12px/1.5 var(--font-brand);
+        color: var(--text-subtle);
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      /* tooltip */
+      #tip {
+        position: fixed;
+        z-index: 50;
+        pointer-events: none;
+        background: var(--neutral-800);
+        color: #fff;
+        font: 400 12.5px/1.45 var(--font-brand);
+        padding: 8px 10px;
+        border-radius: 5px;
+        max-width: 300px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+      }
+      #tip .tr {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 900px) {
+        #q,
+        .controls,
+        .controls .field {
+          width: 100%;
+        }
+      }
+      @media (max-width: 640px) {
+        .mast,
+        .head,
+        .toolbar,
+        .main,
+        .foot {
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="mast">
+      <div class="brand">
+        <span class="wordmark">KIPP NJ <span>|</span> Miami</span>
+        <span class="rule"></span>
+        <a class="kicker" href="../">Data tools</a>
+      </div>
+      <span class="meta" id="mastmeta"></span>
+    </header>
+
+    <div class="head">
+      <a class="back" href="../">← All data tools</a>
+      <h1>Semantic layer build status</h1>
+      <p class="sub">
+        Where each core Tableau dashboard stands in its move to the Cube
+        semantic layer.
+      </p>
+      <div class="flows" aria-label="How to read this page">
+        <div class="flow">
+          <span class="flow-label">Each metric and dimension</span>
+          <ol class="flow-steps">
+            <li>
+              <i class="sw-data_work"></i><b>Needs data work first</b
+              ><span>Build it in dbt</span>
+            </li>
+            <li>
+              <i class="sw-cube_work"></i><b>Needs Cube work</b
+              ><span>Build or edit in Cube</span>
+            </li>
+            <li class="end">
+              <b><span class="badge" aria-hidden="true">✓</span>Ready in Cube</b
+              ><span>Claude can query it</span>
+            </li>
+          </ol>
+        </div>
+        <div class="flow">
+          <span class="flow-label">Each dashboard</span>
+          <ol class="flow-steps" id="flow-steps"></ol>
+        </div>
+        <p class="flow-note">
+          <b>Fully transitioned</b> = launched and every metric ready.
+        </p>
+      </div>
+      <div class="kpis" id="kpis"></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="legend" id="legend"></div>
+      <div class="controls">
+        <input
+          id="q"
+          class="field"
+          type="search"
+          placeholder="Search dashboards or metrics"
+          aria-label="Search dashboards, metrics and dimensions"
+        />
+        <select id="f-domain" class="field" aria-label="Domain">
+          <option value="">All domains</option>
+        </select>
+        <select id="f-stage" class="field" aria-label="Transition stage">
+          <option value="">All stages</option>
+          <option value="not">Not started</option>
+          <option value="prog">In progress</option>
+          <option value="done">Fully transitioned</option>
+        </select>
+      </div>
+    </div>
+
+    <main class="main" id="main">
+      <div class="grouphead">
+        <h2>Dashboards</h2>
+        <span class="fill"></span><span class="n" id="dash-n"></span>
+      </div>
+      <p class="section-note">
+        Select a dashboard to see its metrics, dimensions and transition
+        checklist.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-name">Dashboard</th>
+              <th class="col-bar">Metrics ready</th>
+              <th class="col-bar">Dimensions ready</th>
+              <th class="col-stage">Transition stage</th>
+              <th class="col-due">Target</th>
+            </tr>
+          </thead>
+          <tbody id="dash-body"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="empty-note" hidden>
+        <b>No dashboard matches that</b>Try a different search or clear the
+        filters.
+      </div>
+
+      <div class="grouphead">
+        <h2>Timeline</h2>
+        <span class="fill"></span>
+      </div>
+      <p class="section-note">
+        Project milestones and dashboard target dates. Items without a due date
+        are listed under each row.
+      </p>
+      <div class="tl"><div class="tl-inner" id="timeline"></div></div>
+      <div class="tl-key">
+        <span
+          ><i
+            style="
+              border: 2px solid var(--kipp-indigo);
+              transform: rotate(45deg);
+              border-radius: 2px;
+            "
+          ></i
+          >Milestone</span
+        >
+        <span
+          ><i
+            style="
+              background: var(--kipp-indigo);
+              transform: rotate(45deg);
+              border-radius: 2px;
+            "
+          ></i
+          >Milestone done</span
+        >
+        <span
+          ><i
+            style="border: 2px solid var(--kipp-indigo); border-radius: 50%"
+          ></i
+          >Dashboard target</span
+        >
+        <span
+          ><i style="border-left: 2px solid var(--kipp-orange); width: 2px"></i
+          >Today</span
+        >
+      </div>
+      <details class="alltable">
+        <summary>All milestones as a table</summary>
+        <div style="overflow-x: auto"><table id="ms-table"></table></div>
+      </details>
+
+      <div id="pl-section">
+        <div class="grouphead">
+          <h2>Outside the core set</h2>
+          <span class="fill"></span><span class="n" id="pl-n"></span>
+        </div>
+        <p class="section-note">
+          In the project's parking lot. Shown for reference, not counted in the
+          totals above.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-name">Dashboard</th>
+                <th class="col-bar">Metrics ready</th>
+                <th class="col-bar">Dimensions ready</th>
+                <th class="col-stage">Transition stage</th>
+                <th class="col-due">Target</th>
+              </tr>
+            </thead>
+            <tbody id="pl-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <footer class="foot">
+      Read from the Asana project “Data Marts + Semantic Layer” every 4 hours.
+      Shows names, counts and statuses only.
+    </footer>
+
+    <div id="tip" role="tooltip" hidden></div>
+
+    <!-- Data is refreshed every 4 hours by a GitHub Action in
+         cristinabaldor/semantic-layer-dashboard, which reads Asana. Moving that
+         refresh into this repo is tracked in TEAMSchools/teamster#5794. -->
+    <script type="module">
+      // data.js is `const DATA = {...};`. Fetch it as text and parse the object
+      // as JSON so nothing in a file from outside this repo runs on this site.
+      // The generator must keep writing a single JSON object literal.
+      const DATA_URL =
+        "https://cristinabaldor.github.io/semantic-layer-dashboard/data.js";
+
+      try {
+        const res = await fetch(DATA_URL);
+        if (!res.ok) throw new Error(`data.js returned HTTP ${res.status}`);
+        const text = await res.text();
+        render(
+          JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)),
+        );
+      } catch (err) {
+        console.error(err);
+        document
+          .querySelectorAll(".flows, #kpis, .toolbar")
+          .forEach((el) => (el.hidden = true));
+        document.getElementById("mastmeta").textContent = "";
+        document.getElementById("main").innerHTML =
+          '<div class="empty"><b>The status data didn’t load</b>Try again in a few minutes.</div>';
+      }
+
+      function render(DATA) {
+        const STATUS = {
+          ready: "Ready in Cube",
+          cube_work: "Needs Cube work",
+          data_work: "Needs data work first",
+          unset: "Status not set",
+          unknown: "Status unclear",
+          tableau_only: "Stays in Tableau",
+        };
+        const ORDER = ["ready", "cube_work", "data_work", "unset", "unknown"];
+        const PHASES = {
+          0: "Governance",
+          1: "Domain delivery",
+          2: "Enablement and support",
+          3: "Delivery platform",
+          4: "Team capacity",
+          5: "Sustainment",
+        };
+        // Display labels for checklist steps whose Asana names are long.
+        const SHORT_STEP = { "Rebuilt in Tableau on Cube": "Tableau rebuilt" };
+        const STEPS = DATA.checklist_steps.map((s) => SHORT_STEP[s] || s);
+        // "Partly in Cube" is counted as "Needs Cube work".
+        [...DATA.dashboards, ...DATA.parking_lot].forEach((d) =>
+          [...d.measures, ...d.dimensions].forEach((x) => {
+            if (x.status === "partial") x.status = "cube_work";
+          }),
+        );
+
+        const $ = (s) => document.querySelector(s);
+        const esc = (s) =>
+          String(s ?? "").replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[c],
+          );
+        const parseDate = (s) => {
+          const [y, m, d] = s.split("-").map(Number);
+          return new Date(y, m - 1, d);
+        };
+        const fmtDate = (s) =>
+          s
+            ? parseDate(s).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "";
+
+        // ── Derived numbers ──────────────────────────────────────────
+        function tally(items) {
+          const c = {};
+          ORDER.forEach((k) => (c[k] = 0));
+          let total = 0;
+          items.forEach((it) => {
+            if (it.status === "tableau_only") return;
+            c[it.status] = (c[it.status] || 0) + 1;
+            total++;
+          });
+          return { c, total, ready: c.ready };
+        }
+        function stageInfo(d) {
+          if (d.transitioned)
+            return { key: "done", label: "Fully transitioned", cls: "done" };
+          if (d.launched)
+            return {
+              key: "prog",
+              label: "Launched · metrics still open",
+              cls: "warn",
+            };
+          if (!d.has_checklist || d.stage === 0)
+            return { key: "not", label: "Not started", cls: "" };
+          // stage = furthest checklist step ticked, so name it as done.
+          return { key: "prog", label: `${STEPS[d.stage - 1]} ✓`, cls: "" };
+        }
+
+        // ── Building blocks ──────────────────────────────────────────
+        function bar(t, kind) {
+          if (!t.total) return '<div class="bar" aria-hidden="true"></div>';
+          const shown = ORDER.filter((k) => t.c[k]);
+          const segs = shown
+            .map(
+              (k) =>
+                `<span class="sw-${k}" style="width:${(t.c[k] / t.total) * 100}%"></span>`,
+            )
+            .join("");
+          const rows = shown.map((k) => `${STATUS[k]}|${t.c[k]}`).join(";");
+          return `<div class="bar" tabindex="0" data-tip="${esc(kind)}" data-rows="${esc(rows)}" aria-label="${t.ready} of ${t.total} ${kind} ready">${segs}</div>`;
+        }
+        function countText(t, noun) {
+          if (!t.total)
+            return `<span class="count muted">No ${noun} listed</span>`;
+          return `<span class="count"><b>${t.ready}</b> of ${t.total}</span>`;
+        }
+        function steps(d) {
+          return `<div class="steps" aria-hidden="true">${STEPS.map((_, i) => `<span class="${d.checklist[i] ? "on" : ""}"></span>`).join("")}</div>`;
+        }
+        function grouped(items, isDim) {
+          return (
+            [...ORDER, "tableau_only"]
+              .filter((k) => items.some((i) => i.status === k))
+              .map((k) => {
+                const these = items.filter((i) => i.status === k);
+                const list = these
+                  .map(
+                    (i) =>
+                      `<li>${esc(i.name)}${isDim && i.use ? ` <span class="use">· ${esc(i.use)}</span>` : ""}</li>`,
+                  )
+                  .join("");
+                return `<div class="grp"><div class="grp-h"><i class="sw-${k}"></i>${STATUS[k]} (${these.length})</div><ul>${list}</ul></div>`;
+              })
+              .join("") || '<p class="muted" style="margin:0">None listed.</p>'
+          );
+        }
+        function detail(d) {
+          const ck = d.has_checklist
+            ? `<ul class="checklist">${STEPS.map((s, i) => `<li><span class="tick">${d.checklist[i] ? "✓" : ""}</span><span class="${d.checklist[i] ? "" : "open"}">${esc(s)}</span></li>`).join("")}</ul>`
+            : '<p class="muted" style="margin:0 0 8px">No transition checklist yet.</p>';
+          return `<div class="detail-grid">
+            <div class="detail"><h3>Metrics</h3>${grouped(d.measures, false)}</div>
+            <div class="detail"><h3>Dimensions</h3>${grouped(d.dimensions, true)}</div>
+            <div class="detail"><h3>Transition checklist</h3>${ck}
+              <a class="asana-link" href="https://app.asana.com/0/0/${esc(d.gid)}" target="_blank" rel="noopener">Open in Asana ↗</a></div>
+          </div>`;
+        }
+        function row(d, hint) {
+          const st = stageInfo(d);
+          const m = tally(d.measures),
+            dm = tally(d.dimensions);
+          const icon = st.cls === "done" ? "✓ " : st.cls === "warn" ? "⚠ " : "";
+          return `<tr class="dash">
+            <td><button class="name-btn" aria-expanded="false" aria-controls="det-${esc(d.gid)}"><span class="chev">▶</span><span>${esc(d.name)}</span></button>${hint ? `<span class="match-hint">${esc(hint)}</span>` : ""}</td>
+            <td><div class="cell-bar">${bar(m, "metrics")}${countText(m, "metrics")}</div></td>
+            <td><div class="cell-bar">${bar(dm, "dimensions")}${countText(dm, "dimensions")}</div></td>
+            <td>${steps(d)}<div class="stage-label ${st.cls}">${icon}${esc(st.label)}</div></td>
+            <td class="due">${d.due ? fmtDate(d.due) : '<span class="muted">Not set</span>'}</td>
+          </tr>
+          <tr class="detail" id="det-${esc(d.gid)}" hidden><td colspan="5">${detail(d)}</td></tr>`;
+        }
+
+        // ── KPIs ─────────────────────────────────────────────────────
+        function renderKpis() {
+          const ds = DATA.dashboards;
+          const m = tally(ds.flatMap((d) => d.measures));
+          const dm = tally(ds.flatMap((d) => d.dimensions));
+          const done = ds.filter((d) => d.transitioned).length;
+          const started = ds.filter((d) => stageInfo(d).key === "prog").length;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const next = DATA.milestones
+            .filter((x) => !x.done && x.due && parseDate(x.due) >= today)
+            .sort((a, b) => a.due.localeCompare(b.due))[0];
+          const unsched = DATA.milestones.filter(
+            (x) => !x.done && !x.due,
+          ).length;
+          $("#kpis").innerHTML = `
+            <div class="kpi"><span class="eyebrow">Fully transitioned</span>
+              <div class="kpi-value">${done} <small>of ${ds.length} dashboards</small></div>
+              <div class="kpi-foot">${started} in progress · ${ds.length - done - started} not started</div></div>
+            <div class="kpi"><span class="eyebrow">Metrics ready in Cube</span>
+              <div class="kpi-value">${m.ready} <small>of ${m.total}</small></div>
+              ${bar(m, "metrics")}<div class="kpi-foot">A number a dashboard calculates, like attendance rate or % proficient. Counted once for each dashboard that uses it.</div></div>
+            <div class="kpi"><span class="eyebrow">Dimensions ready in Cube</span>
+              <div class="kpi-value">${dm.ready} <small>of ${dm.total}</small></div>
+              ${bar(dm, "dimensions")}<div class="kpi-foot">What you filter or slice a metric by, like school or grade level. Counted once for each dashboard that uses it.</div></div>
+            <div class="kpi"><span class="eyebrow">Next milestone</span>
+              ${next ? `<div class="kpi-ms">${esc(next.code)} ${esc(next.name)}</div><div class="kpi-foot">Due ${fmtDate(next.due)}</div>` : `<div class="kpi-ms muted">None scheduled</div>`}
+              <div class="kpi-foot">${unsched} open milestones have no due date yet</div></div>`;
+        }
+
+        // ── Dashboard table ──────────────────────────────────────────
+        function matchHint(d, q) {
+          if (!q) return { ok: true, hint: "" };
+          if (
+            d.name.toLowerCase().includes(q) ||
+            d.domain.toLowerCase().includes(q)
+          )
+            return { ok: true, hint: "" };
+          const mm = d.measures.filter((x) =>
+            x.name.toLowerCase().includes(q),
+          ).length;
+          const dd = d.dimensions.filter((x) =>
+            x.name.toLowerCase().includes(q),
+          ).length;
+          if (!mm && !dd) return { ok: false };
+          const parts = [];
+          if (mm) parts.push(`${mm} metric${mm > 1 ? "s" : ""}`);
+          if (dd) parts.push(`${dd} dimension${dd > 1 ? "s" : ""}`);
+          return { ok: true, hint: `Matches ${parts.join(" and ")}` };
+        }
+        function renderTable() {
+          const q = $("#q").value.trim().toLowerCase();
+          const fd = $("#f-domain").value,
+            fs = $("#f-stage").value;
+          const domains = [...new Set(DATA.dashboards.map((d) => d.domain))];
+          let html = "",
+            shown = 0;
+          domains.forEach((dom) => {
+            if (fd && fd !== dom) return;
+            const all = DATA.dashboards.filter((d) => d.domain === dom);
+            const rows = all
+              .map((d) => ({ d, mh: matchHint(d, q) }))
+              .filter(({ d, mh }) => mh.ok && (!fs || stageInfo(d).key === fs));
+            if (!rows.length) return;
+            shown += rows.length;
+            const m = tally(all.flatMap((d) => d.measures));
+            html += `<tr class="domain"><th colspan="5">${esc(dom)}<span class="dom-sum">${all.length} dashboard${all.length > 1 ? "s" : ""} · ${m.ready} of ${m.total} metrics ready</span></th></tr>`;
+            html += rows.map(({ d, mh }) => row(d, mh.hint)).join("");
+          });
+          $("#dash-body").innerHTML = html;
+          $("#empty-note").hidden = shown > 0;
+          $(".table-wrap").hidden = shown === 0;
+          $("#dash-n").textContent = shown;
+        }
+
+        // ── Timeline ─────────────────────────────────────────────────
+        function renderTimeline() {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const dashDated = DATA.dashboards.filter((d) => d.due);
+          const dates = [
+            ...DATA.milestones
+              .filter((m) => m.due)
+              .map((m) => parseDate(m.due)),
+            ...dashDated.map((d) => parseDate(d.due)),
+          ];
+          let start = new Date(Math.min(today, ...dates));
+          start = new Date(start.getFullYear(), start.getMonth(), 1);
+          let end = new Date(Math.max(+today + 180 * 864e5, ...dates));
+          end = new Date(end.getFullYear(), end.getMonth() + 1, 1);
+          const pct = (dt) => ((dt - start) / (end - start)) * 100;
+
+          let axis = "";
+          for (let d = new Date(start); d < end; d.setMonth(d.getMonth() + 1)) {
+            const opts =
+              d.getMonth() === 0 || +d === +start
+                ? { month: "short", year: "numeric" }
+                : { month: "short" };
+            axis += `<span style="left:${pct(d)}%">${d.toLocaleDateString(undefined, opts)}</span>`;
+          }
+          const todayLine = `<div class="tl-today" style="left:${pct(today)}%" title="Today"></div>`;
+          const mark = (cls, date, text, label) =>
+            `<button class="tl-mark ${cls}" style="left:${pct(parseDate(date))}%" data-tip="ms" data-text="${esc(text)}" aria-label="${esc(label)}"></button>`;
+
+          const groups = {};
+          DATA.milestones.forEach((m) => {
+            const p = m.code.slice(1).split(".")[0];
+            (groups[p] = groups[p] || []).push(m);
+          });
+          const rows = Object.keys(groups)
+            .sort((a, b) => a - b)
+            .map((p) => {
+              const ms = groups[p];
+              const marks = ms
+                .filter((m) => m.due)
+                .map((m) =>
+                  mark(
+                    m.done ? "done" : "",
+                    m.due,
+                    `${m.code} ${m.name}|Due ${fmtDate(m.due)}${m.done ? " · done" : ""}`,
+                    `${m.code} ${m.name}, due ${fmtDate(m.due)}`,
+                  ),
+                )
+                .join("");
+              const und = ms.filter((m) => !m.due);
+              const chips = und.length
+                ? `<div class="tl-unsched">No date yet: ${und.map((m) => `<span class="chip ${m.done ? "done" : ""}" title="${esc(m.name)}">${esc(m.code)}</span>`).join("")}</div>`
+                : "";
+              return `<div class="tl-row"><div class="tl-label">${esc(PHASES[p] || "Phase " + p)}<small>M${p} · ${ms.filter((m) => m.done).length} of ${ms.length} done</small></div>
+                <div><div class="tl-track">${todayLine}${marks}</div>${chips}</div></div>`;
+            });
+          const dmarks = dashDated
+            .map((d) =>
+              mark(
+                "dash",
+                d.due,
+                `${d.name}|Target ${fmtDate(d.due)}`,
+                `${d.name}, target ${fmtDate(d.due)}`,
+              ),
+            )
+            .join("");
+          rows.push(
+            `<div class="tl-row"><div class="tl-label">Dashboard targets<small>${dashDated.length} dated</small></div><div><div class="tl-track">${todayLine}${dmarks}</div><div class="tl-unsched">${DATA.dashboards.length - dashDated.length} of ${DATA.dashboards.length} dashboards have no target date yet</div></div></div>`,
+          );
+          $("#timeline").innerHTML =
+            `<div class="tl-axis">${axis}</div>` + rows.join("");
+
+          $("#ms-table").innerHTML =
+            `<thead><tr><th>Milestone</th><th>Phase</th><th>Due</th><th>Status</th></tr></thead><tbody>` +
+            DATA.milestones
+              .map(
+                (m) =>
+                  `<tr><td><b>${esc(m.code)}</b> ${esc(m.name)}</td><td>${esc(PHASES[m.code.slice(1).split(".")[0]] || "")}</td><td>${m.due ? fmtDate(m.due) : '<span class="muted">Not set</span>'}</td><td>${m.done ? "Done" : "Open"}</td></tr>`,
+              )
+              .join("") +
+            "</tbody>";
+        }
+
+        // ── Tooltip ──────────────────────────────────────────────────
+        const tip = $("#tip");
+        function showTip(el, x, y) {
+          if (el.dataset.tip === "ms") {
+            const [a, b] = el.dataset.text.split("|");
+            tip.innerHTML = `<b>${esc(a)}</b><br>${esc(b)}`;
+          } else {
+            const kind = el.dataset.tip;
+            tip.innerHTML =
+              `<b>${esc(kind[0].toUpperCase() + kind.slice(1))}</b>` +
+              el.dataset.rows
+                .split(";")
+                .map((r) => r.split("|"))
+                .map(
+                  ([k, v]) =>
+                    `<div class="tr"><span>${esc(k)}</span><span>${esc(v)}</span></div>`,
+                )
+                .join("");
+          }
+          tip.hidden = false;
+          const r = tip.getBoundingClientRect();
+          tip.style.left =
+            Math.min(x + 12, window.innerWidth - r.width - 8) + "px";
+          tip.style.top =
+            (y + 16 + r.height > window.innerHeight
+              ? y - r.height - 10
+              : y + 16) + "px";
+        }
+        document.addEventListener("mousemove", (e) => {
+          const el = e.target.closest("[data-tip]");
+          if (el) showTip(el, e.clientX, e.clientY);
+          else tip.hidden = true;
+        });
+        document.addEventListener("focusin", (e) => {
+          const el = e.target.closest("[data-tip]");
+          if (el) {
+            const r = el.getBoundingClientRect();
+            showTip(el, r.left, r.bottom);
+          }
+        });
+        document.addEventListener("focusout", () => (tip.hidden = true));
+
+        // ── Expand / collapse ────────────────────────────────────────
+        document.addEventListener("click", (e) => {
+          const btn = e.target.closest(".name-btn");
+          if (!btn) return;
+          const open = btn.getAttribute("aria-expanded") !== "true";
+          btn.setAttribute("aria-expanded", String(open));
+          document.getElementById(btn.getAttribute("aria-controls")).hidden =
+            !open;
+        });
+
+        // ── Init ─────────────────────────────────────────────────────
+        $("#mastmeta").textContent =
+          "Updated " +
+          new Date(DATA.updated).toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          });
+        $("#legend").innerHTML = [
+          "ready",
+          "cube_work",
+          "data_work",
+          "unset",
+          "tableau_only",
+        ]
+          .map((k) => `<span><i class="sw-${k}"></i>${STATUS[k]}</span>`)
+          .join("");
+        $("#flow-steps").innerHTML = STEPS.map((s, i) =>
+          i === STEPS.length - 1
+            ? `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>${esc(s)}</b><span>Dashboard runs on Cube</span></li>`
+            : `<li><b><span class="n">${i + 1}</span>${esc(s)}</b></li>`,
+        ).join("");
+        [...new Set(DATA.dashboards.map((d) => d.domain))].forEach((d) =>
+          $("#f-domain").insertAdjacentHTML(
+            "beforeend",
+            `<option>${esc(d)}</option>`,
+          ),
+        );
+        ["#q", "#f-domain", "#f-stage"].forEach((s) =>
+          $(s).addEventListener("input", renderTable),
+        );
+
+        renderKpis();
+        renderTable();
+        renderTimeline();
+        if (DATA.parking_lot.length) {
+          $("#pl-body").innerHTML = DATA.parking_lot
+            .map((d) => row(d, ""))
+            .join("");
+          $("#pl-n").textContent = DATA.parking_lot.length;
+        } else {
+          $("#pl-section").hidden = true;
+        }
+      }
+    </script>
+  </body>
+</html>

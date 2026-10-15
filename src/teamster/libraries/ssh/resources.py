@@ -4,7 +4,7 @@ import socket
 import socketserver
 import threading
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from stat import S_ISDIR, S_ISREG
 
@@ -487,7 +487,13 @@ def _make_forward_handler(
                         # `Channel.send()` above — use `sendall()` here too.
                         self.request.sendall(data)
             finally:
-                channel.close()
+                # `open_ssh_tunnel`'s `client.close()` can close the SSH
+                # socket while this handler is mid-close (the forwarded client
+                # hung up just before the tunnel exited), so paramiko raises
+                # writing CHANNEL_CLOSE. The channel is gone either way; still
+                # close the local socket.
+                with suppress(EOFError, OSError, SSHException):
+                    channel.close()
                 self.request.close()
 
     return Handler

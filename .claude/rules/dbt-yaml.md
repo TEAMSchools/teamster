@@ -335,13 +335,16 @@ Top-level `description` on a singular test must go in a properties yml under
 `config.description`, which dbt docs doesn't read. After adding/editing the yml,
 run `dbt parse --no-partial-parse`; partial parse caches the unbound state.
 
-### Singular-test `meta.dagster.ref` needs `package:` for cross-package refs
+### Singular-test `meta.dagster.ref`: when it's required, and `package:`
+
+A singular test that reads more than one model needs `meta.dagster.ref` in
+`tests/properties.yml`, or Dagster never sees its result: `build_dbt_assets`
+drops the observation dagster-dbt falls back to.
 
 dagster-dbt resolves `meta.dagster.ref` via `(name, package, version)`. Omitting
 `package:` defaults to the running project — so a test under
 `src/dbt/<source>/tests/` referencing a model in its own package silently misses
-the lookup and logs `AssetObservation` across all parents instead of an
-`AssetCheckResult` on the intended asset. Always set `package: <source>` for
+the lookup and never becomes a check. Always set `package: <source>` for
 source-system package tests. Tests in `src/dbt/kipptaf/tests/` don't need it
 (refs default to kipptaf).
 
@@ -392,8 +395,8 @@ the normalized value its sibling scalar columns assert.
   — verify every paste against the current source.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
-  Describe calculated fields by logic. Content test: _Comments and descriptions_
-  in `.claude/rules/dbt-models.md`.
+  Describe calculated fields by logic. Content test:
+  `.claude/rules/comments.md`.
 - Columns with **per-column** `data_tests:` must be sorted to the top of the
   `columns:` list for visibility — including after a change that strips a
   column's last test. Reorder freely under `contract: enforced`: BigQuery

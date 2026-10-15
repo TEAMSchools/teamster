@@ -45,8 +45,9 @@ cubes:
       - name: assessment_type
         description: >-
           Source-system category — illuminate (KIPP-authored internal interims);
-          iready, dibels and star (vendor diagnostics); college (SAT, ACT and
-          PSAT, Official and Practice); ap; the NJ state tests state_nj_njsla,
+          apex (Miami interims from Focus, tested students only); iready, dibels
+          and star (vendor diagnostics); college (SAT, ACT and PSAT, Official
+          and Practice); ap; the NJ state tests state_nj_njsla,
           state_nj_njsla_science, state_nj_njgpa and state_nj_parcc; the FL
           state tests state_fl_fast, state_fl_science, state_fl_eoc and
           state_fl_fsa; and the _unknown fallbacks. An open list. From spring

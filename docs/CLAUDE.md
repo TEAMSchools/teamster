@@ -21,6 +21,12 @@ not appear in site navigation.
 - `admonition` + `pymdownx.details` — collapsible callout blocks
 - `pymdownx.superfences` — fenced code blocks with language highlighting
 - `pymdownx.keys` — keyboard key rendering (`++ctrl+s++`)
+- `pymdownx.snippets` — `--8<-- "<path>:<section>"` includes a marked section of
+  a repo file (base path is the repo root). `reference/dbt-conventions.md` is
+  built from the marked sections of `dbt-architecture.md`, `dbt-marts.md`, and
+  `dbt-sql.md`. Edit those for rule text; the page's _Reference_ section is
+  page-local. A new snippet source also goes in the `paths:` of `pytest.yaml`
+  (the PR-time `mkdocs build`) and `mkdocs-gh-deploy.yaml`.
 - `pymdownx.tasklist` — checkbox task lists
 - `pymdownx.emoji` — Material emoji shortcodes
 - `attr_list` — HTML attributes on Markdown elements

@@ -65,11 +65,14 @@ materializations before flattening SQL. When flipping views to cron tables:
 
 ### Table→view materialization conversion needs a drop
 
-`create or replace view` does not drop a pre-existing table at the same path —
-the conversion silently keeps serving the stale table. Ship table→view
-conversions with either an explicit
-`DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
-`dbt build --select <model> --full-refresh` once after merge.
+dbt-bigquery's view materialization drops a pre-existing table at the same path
+only under `--full-refresh`; otherwise it raises `relation_wrong_type`
+(`bigquery__handle_existing_table`). Dagster's dbt runs never pass
+`--full-refresh`, so until someone does, the model keeps serving the old table
+and every triggered rebuild fails. A properties-yml-only flip also never fires a
+rebuild on its own (see above), so a flipped union view sits frozen at merge-day
+data. Run `dbt build --select <models> --full-refresh` right after the deploy
+lands.
 
 ### Snapshot meta-column config changes need a manual DDL migration
 
@@ -146,43 +149,35 @@ empty expansion still compiles clean.
 
 ### Comments and descriptions
 
-- One content test for SQL comments, YAML comments, and `description:` alike.
-  Keep the constraint and the why a future editor needs. Cut values another file
-  owns and point to that file instead (`dlt/<source>/schedules.py`, an exposure,
-  the model whose cron tick you share). Cut one-off measurements (GiB, row or
-  rebuild counts) and history; those go in the commit and PR. A `Refs #N`
-  pointer may stay in a comment, never a description. Where each kind of note
-  goes: `.claude/rules/dbt-sql.md` and _YAML conventions_ in
-  `.claude/rules/dbt-yaml.md`.
-- Editing inside a comment or description brings that whole block up to the
-  test. Sweep the rest of the file only when asked: a `.sql` comment edit marks
-  the model `state:modified` and widens CI's rebuild.
+The content test is in `.claude/rules/comments.md`. dbt-specific: a `.sql`
+comment edit marks the model `state:modified` and widens CI's rebuild, so sweep
+comments beyond the block you are editing only when asked.
 
 ### Per-layer requirements
 
 **All staging models must**:
 
-1. Have `contract: enforced: true` (set at directory level in `dbt_project.yml`)
+1. Have `contract: enforced: true` (set at directory level in `dbt_project.yml`,
+   except kipptaf union views below)
 2. Have a uniqueness test — either `unique:` on a single column or
    `dbt_utils.unique_combination_of_columns`
 
 **All intermediate models must**:
 
 1. Have a uniqueness test
-2. Not be consumed directly by external tools or reports — a reporting view
-   (`rpt_*`) must always sit between an intermediate model and an external
-   consumer, buffering external dependencies from internal schema evolution
 
 **All `rpt_`, `dim_*`, and `fct_*` models must**:
 
 1. Have `contract: enforced: true`
 2. Have a uniqueness test
 
-**Exception** — thin cross-project wrapper `rpt_` models (a district
-`rpt_powerschool__autocomm_*` or other `extracts/` wrapper sourcing
-`kipptaf_extracts`) are contract-columns-only: NO uniqueness test or
-descriptions, which live on the kipptaf source view. See `kipptaf/CLAUDE.md` →
-`extracts/powerschool/` special case before adding either.
+**Exceptions** — a kipptaf `stg_` union view over district staging, and a thin
+cross-project wrapper `rpt_` (a district `rpt_powerschool__autocomm_*` or other
+`extracts/` wrapper sourcing `kipptaf_extracts`), carry NO uniqueness test; it
+lives on the model they wrap. The district wrapper is contract-columns-only (no
+descriptions); a union view enforces a contract only where its own properties
+file sets it. See `kipptaf/CLAUDE.md` → `extracts/powerschool/` special case and
+_kipptaf-level `stg_*` union views_ before adding either.
 
 ### Retiring a crosswalk or lookup as redundant
 

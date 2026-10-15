@@ -59,10 +59,8 @@ models:
       - name: location_key
         data_type: string
         description: |
-          Canonical location FK. Resolved upstream in
-          `int_deanslist__incidents` via the canonical master on
-          `deanslist_school_id`. NULL for rows where the DeansList school_id
-          has no canonical mapping.
+          Canonical location FK for the school where the incident was logged.
+          NULL when that school has no canonical location.
         config:
           meta:
             foreign_key:

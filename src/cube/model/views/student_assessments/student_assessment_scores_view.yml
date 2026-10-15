@@ -13,8 +13,10 @@ views:
       measure. The Date members resolve for every source but read different
       dates: the administration date for Illuminate and college, the test date
       for state tests and vendor diagnostics, so a cross-source date cut mixes
-      the two. Contains direct student identifiers; see access_policy for PII
-      gating.
+      the two. Filter assessment_date, not date_day, for a single date or a date
+      range: it reads only the matching months of the fact, while date_day reads
+      every month. Use academic_year_label for school-year filters. Contains
+      direct student identifiers; see access_policy for PII gating.
 
     cubes:
       - join_path: student_assessment_scores
@@ -32,6 +34,7 @@ views:
           - avg_percent_correct
           - avg_scale_score
           - assessment_score_key
+          - assessment_date
           - date_taken
           - enrollment_resolution
           - proficiency_level
@@ -220,6 +223,7 @@ views:
             - is_replacement
         - name: Date
           members:
+            - assessment_date
             - date_day
             - academic_year
             - academic_year_label

@@ -20,16 +20,11 @@ any tab change. Archive tabs must be converted to BQ-native sources.
 
 ### Cross-region joins (critical)
 
-Union models carry `_dbt_source_relation` but values differ across models (they
-include schema + table name). **Never join on
-`a._dbt_source_relation = b._dbt_source_relation`** — join the materialized
-`_dbt_source_project` column:
-
-```sql
-inner join {{ ref("other_union_model") }} as b
-    on a.id = b.id
-    and a._dbt_source_project = b._dbt_source_project
-```
+Join unioned models on `_dbt_source_project` (A10 in
+`.claude/rules/dbt-architecture.md`). Union models also carry
+`_dbt_source_relation`, but its values differ across models (they include
+schema + table name). **Never join on
+`a._dbt_source_relation = b._dbt_source_relation`.**
 
 The `union_dataset_join_clause` macro that wrapped this comparison was deleted
 in [#3142](https://github.com/TEAMSchools/teamster/issues/3142). Five stale
@@ -95,6 +90,14 @@ Pure `union_relations()` views over per-region district staging tables (e.g.
 are functionally intermediates. Uniqueness tests and `materialized: table`
 belong on the per-region source-system staging models, not on the kipptaf-level
 view. Don't add either when creating a new one.
+
+Exception: make a union view a table when it hosts a `relationships` test
+against a kipptaf model, such as the location crosswalk. A test on a view runs
+only when the view's code changes, not when new data loads. A package can't
+`ref()` kipptaf, so the per-region model can't hold the test either. The table
+is the only place the check runs on every load. Find the current ones with
+`rg -l 'a test on a view runs only' models/`, and don't turn them back into
+views.
 
 Contract-enforcement here is per-model, NOT directory-wide: the `powerschool:`
 block in `dbt_project.yml` sets only `+schema:` (no `staging: +contract`), so
@@ -266,15 +269,11 @@ stays here is what to do and what not to do.
 - **`int_powerschool__student_enrollment_union`** — retain graduate placeholder
   rows; derived enrollment models and `dim_student_enrollments` stay
   alumni-inclusive. Include `academic_year` in surrogate key inputs.
-- **`stg_powerschool__cc` double-writes** — filter `is_dropped_section` first
-  when date-range joining `base_powerschool__course_enrollments`. Do NOT add
-  defensive dedupes (`qualify row_number() = 1` or `dbt_utils.deduplicate()`)
-  for the residual fan-out. Downgrade the affected mart PK uniqueness test to
-  `severity: warn` with a `TODO(#3915)` so it returns to error when source
-  cleanup completes. `base_powerschool__student_enrollments` date-range joins
-  currently need no tiebreaker. Tracked in
-  [#3900](https://github.com/TEAMSchools/teamster/issues/3900); Ops cleanup in
-  [#3915](https://github.com/TEAMSchools/teamster/issues/3915).
+- **`stg_powerschool__cc` double-writes** — the package
+  `base_powerschool__course_enrollments` already dedupes them, so consumers need
+  no dedupe of their own. A duplicate in a downstream key means a new fan-out:
+  fix that join, and keep the consumer's uniqueness test at error. The
+  `stg_powerschool__cc` warnings stay permanently as the Ops worklist.
 - **`int_people__location_crosswalk`** — consumers joining on an aliased name
   (e.g. `fct_staff_observations` on `gro.school_name`) must use this model.
   Canonical-grain consumers, meaning one row per logical school, use
@@ -300,8 +299,8 @@ stays here is what to do and what not to do.
   `stg_renlearn__star`.
 - **`stg_adp_workforce_now__workers` ghosts** — fix by rematerializing the ADP
   `workers` partitions spanning the record's active dates; the re-pull drops the
-  ghost and downstream tables rebuild via automation. Detection check tracked in
-  [#4407](https://github.com/TEAMSchools/teamster/issues/4407).
+  ghost and downstream tables rebuild via automation. The
+  `stg_adp_workforce_now__workers__ghost_open_records` asset check flags them.
 
 ## Exposures
 
@@ -446,9 +445,9 @@ snapshot — before removing it.
 - **`rpt_`** — analyst-built reporting views for external tools. Live in
   `models/extracts/`.
 - **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
-  `models/marts/`. Actively being developed; see
-  `src/dbt/kipptaf/models/marts/CLAUDE.md` for column-naming rubric, hash-change
-  discipline, and strict-chain rules.
+  `models/marts/`. The column-naming rubric and strict-chain rules are in
+  `.claude/rules/dbt-marts.md`; hash-change discipline and mart operations are
+  in `src/dbt/kipptaf/models/marts/CLAUDE.md`.
 
 New KIPP Forward Google Sheets extracts take the `rpt_gsheets__kfwd_` prefix.
 Existing models use both `kfwd_` and `kippfwd_`; `kfwd_` is the going-forward

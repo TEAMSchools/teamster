@@ -463,7 +463,16 @@ def build_sftp_folder_asset(
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
+    add_source_file_modified_timestamp: bool = False,
 ):
+    """Build an asset that concatenates every matching file in a folder.
+
+    Args:
+        add_source_file_modified_timestamp: stamp each row with its file's SFTP
+            mtime as `source_file_modified_timestamp`, so a consumer can keep
+            the most recently delivered copy of a record that appears in more
+            than one file. The asset's Avro schema must declare the field.
+    """
     if group_name is None:
         group_name = asset_key[1]
 
@@ -515,8 +524,8 @@ def build_sftp_folder_asset(
             )
 
         file_matches = [
-            path
-            for _, path in files
+            (attr, path)
+            for attr, path in files
             if re.search(
                 pattern=f"{remote_dir_regex_composed}/{remote_file_regex_composed}",
                 string=path,
@@ -537,9 +546,9 @@ def build_sftp_folder_asset(
 
             return None
 
-        local_filepaths = []
+        local_files = []
 
-        for file in file_matches:
+        for attr, file in file_matches:
             local_filepath = ssh.sftp_get(
                 remote_filepath=file,
                 local_filepath=resolve_local_filepath(
@@ -553,9 +562,9 @@ def build_sftp_folder_asset(
                 context.log.warning(msg=f"File is empty: {local_filepath}")
                 continue
 
-            local_filepaths.append(local_filepath)
+            local_files.append((local_filepath, attr.st_mtime))
 
-        for file_path in local_filepaths:
+        for file_path, file_mtime in local_files:
             records = file_to_records(
                 file_path=file_path,
                 encoding=file_encoding,
@@ -568,6 +577,10 @@ def build_sftp_folder_asset(
 
             if n_rows == 0:
                 context.log.warning(msg="File contains 0 rows")
+
+            if add_source_file_modified_timestamp:
+                for row in records:
+                    row["source_file_modified_timestamp"] = file_mtime
 
             all_records.extend(records)
 

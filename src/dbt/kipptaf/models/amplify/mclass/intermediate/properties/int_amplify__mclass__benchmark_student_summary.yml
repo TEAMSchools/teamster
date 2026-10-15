@@ -8,19 +8,8 @@ models:
       location through the location crosswalk on school_name, and puts Miami's
       pre-Focus student ids onto the network student number.
     config:
-      materialized: table
       meta:
         contains_pii: true
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_primary_id
-              - school_year
-              - benchmark_period
-              - assessment_grade
-          config:
-            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string

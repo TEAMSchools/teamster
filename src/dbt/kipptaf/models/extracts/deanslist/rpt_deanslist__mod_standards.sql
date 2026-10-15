@@ -1,7 +1,7 @@
 with
     response_clean as (
         select
-            powerschool_student_number,
+            student_number,
             academic_year,
             term_administered,
             response_type_description,
@@ -19,7 +19,7 @@ with
 
     std_avg as (
         select
-            powerschool_student_number,
+            student_number,
             academic_year,
             subject_area,
             term_administered,
@@ -30,7 +30,7 @@ with
             round(avg(percent_correct), 0) as avg_percent_correct,
         from response_clean
         group by
-            powerschool_student_number,
+            student_number,
             academic_year,
             subject_area,
             term_administered,
@@ -40,7 +40,7 @@ with
     )
 
 select
-    sa.powerschool_student_number as student_number,
+    sa.student_number,
     sa.academic_year,
     sa.subject_area,
     sa.term_administered as term,

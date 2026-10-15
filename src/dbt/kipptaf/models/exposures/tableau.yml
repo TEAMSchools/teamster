@@ -1,4 +1,19 @@
 exposures:
+  - name: academic_goal_rollup_dashboard
+    label: Academic Goal Roll-Up
+    type: dashboard
+    owner:
+      name: Data Team - awalters
+    depends_on:
+      - ref("rpt_tableau__academic_goals_dashboard")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 15cb4859-ab6d-46a7-8e4f-1aa786785aa3
   - name: crdc_dashboard
     label: CRDC Dashboard
     type: dashboard
@@ -360,8 +375,10 @@ exposures:
       - ref("rpt_tableau__gpa_goals")
       - ref("rpt_tableau__gpa_goal_progress")
       - ref("rpt_tableau__gpa_cumulative_year")
+      - ref("rpt_tableau__gpa_course_pace")
       - ref("rpt_tableau__student_course_grades")
       - ref("rpt_tableau__gradebook_audit")
+      - ref("rpt_tableau__gradebook_es_comments")
     config:
       meta:
         dagster:
@@ -379,7 +396,6 @@ exposures:
     depends_on:
       - ref("rpt_tableau__gradebook_gpa")
       - ref("rpt_tableau__gradebook_gpa_cumulative")
-      - ref("rpt_tableau__gradebook_es_comments")
     config:
       meta:
         dagster:
@@ -587,6 +603,7 @@ exposures:
       - ref("rpt_tableau__miami_k2_iready")
       - ref("rpt_tableau__miami_k2_star")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -754,6 +771,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__topline_cascade_dashboard")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:

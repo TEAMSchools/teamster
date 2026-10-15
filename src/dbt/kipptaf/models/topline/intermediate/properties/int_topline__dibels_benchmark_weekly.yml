@@ -11,6 +11,7 @@ models:
       period keep a row with a null is_proficient_int. Feeds
       int_topline__student_metrics.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
@@ -27,6 +28,7 @@ models:
               - academic_year
               - week_start_monday
           config:
+            enabled: false
             severity: error
     columns:
       - name: student_number

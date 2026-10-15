@@ -23,6 +23,7 @@ with
             ada.is_oss,
             ada.is_iss,
             ada.is_suspended,
+            ada.attendance_category,
 
             coalesce(ada.membershipvalue, ed.membershipvalue) as membershipvalue,
         from {{ ref("int_students__enrollment_daily") }} as ed
@@ -171,6 +172,11 @@ select
     n_present_days_ytd,
     ada_tier,
 
+    -- Null, not 'Present', when no attendance row joined. A carried break day
+    -- and a session day with an unrecorded register both land here, and both
+    -- mean unknown rather than present.
+    attendance_category,
+
     membershipvalue as membership_value,
 
     ada_tier in ('Tier 3', 'Tier 4') as is_chronically_absent,
@@ -181,21 +187,4 @@ select
     cast(is_oss as int64) as is_oss,
     cast(is_iss as int64) as is_iss,
     cast(is_suspended as int64) as is_suspended,
-
-    -- Null, not 'Present', when no attendance row joined. A carried break day
-    -- and a session day with an unrecorded register both land here, and both
-    -- mean unknown rather than present.
-    case
-        when is_absent is null
-        then null
-        when is_oss = 1
-        then 'Out-of-School Suspension'
-        when is_iss = 1
-        then 'In-School Suspension'
-        when is_absent = 1
-        then 'Absent'
-        when is_tardy = 1
-        then 'Tardy'
-        else 'Present'
-    end as attendance_category,
 from tiered

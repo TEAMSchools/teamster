@@ -1,0 +1,95 @@
+models:
+  - name: int_focus__apex_results
+    description: >-
+      Apex results per student and assessment — one overall row plus one row per
+      standard, from the student's latest completed, non-discarded, non-excused
+      session on a live assignment, in every Focus school year. The overall
+      score is the session's own score, not the sum of its responses; a
+      standard's score sums the scored responses tagged to it, so a response
+      tagged to 2 standards counts for both. Every row takes the band set
+      attached to the assessment, standards included. Apex's passed flag is
+      ignored because it disagrees with the bands.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - assessment_id
+              - response_type
+              - response_type_id
+          config:
+            severity: error
+    columns:
+      - name: is_mastery
+        description: >-
+          True for Level 3 and above, false for Level 1, Level 2 and the
+          Low/Mid/High levels, null for any other label or no band set.
+        data_tests:
+          # flags a band label the model's is_mastery case does not list yet
+          - not_null:
+              config:
+                severity: warn
+                where: performance_band_label is not null
+        config:
+          meta:
+            contains_pii: true
+      - name: student_number
+        description: >-
+          Focus student id, which equals the network student number for Miami
+          students.
+        config:
+          meta:
+            contains_pii: true
+      - name: assessment_id
+        description: Apex assessment id.
+      - name: session_id
+        description: Apex session (attempt) the row is scored from.
+      - name: academic_year
+        description: Focus school year start year (e.g. 2026 = 2026-27).
+      - name: date_taken
+        description: Local date the session was completed.
+        config:
+          meta:
+            contains_pii: true
+      - name: response_type
+        description:
+          overall for the whole assessment, standard for one standard.
+      - name: response_type_id
+        description: >-
+          Assessment id on overall rows; Focus standard id on standard rows.
+      - name: response_type_code
+        description: Standard short name; null on overall rows.
+      - name: response_type_description
+        description: Standard text; null on overall rows.
+      - name: response_type_root_description
+        description: Standard's root category title; null on overall rows.
+      - name: points
+        description: Points earned.
+        config:
+          meta:
+            contains_pii: true
+      - name: points_possible
+        description: Points possible.
+        config:
+          meta:
+            contains_pii: true
+      - name: percent_correct
+        description: Points earned over points possible, 0 to 100, 1 decimal.
+        config:
+          meta:
+            contains_pii: true
+      - name: performance_band_set_id
+        description: Apex band set attached to the assessment; null when none.
+      - name: performance_band_label
+        description: >-
+          Band level whose range holds percent_correct; a level runs from its
+          minimum up to the next level's minimum.
+        config:
+          meta:
+            contains_pii: true
+      - name: performance_band_label_number
+        description:
+          Band level position, 1 to N by minimum score within the set.
+        config:
+          meta:
+            contains_pii: true

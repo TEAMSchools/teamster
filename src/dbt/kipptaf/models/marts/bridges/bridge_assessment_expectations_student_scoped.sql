@@ -1,7 +1,8 @@
 with
     expectations as (
         select
-            sc.powerschool_student_number,
+            sc.student_number,
+            sc.source,
             sc.assessment_id,
             sc.administered_at,
             sc.region,
@@ -24,10 +25,12 @@ with
         from {{ ref("int_assessments__scaffold") }} as sc
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
-            on sc.assessment_id = a.assessment_id
+            on sc.source = a.source
+            and sc.assessment_id = a.assessment_id
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on a.canonical_assessment_id = c.canonical_assessment_id
+            on a.source = c.source
+            and a.canonical_assessment_id = c.canonical_assessment_id
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on sc.administered_at between rt.start_date and rt.end_date
@@ -40,25 +43,22 @@ with
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["powerschool_student_number", "assessment_id", "administered_at"]
+            ["student_number", "source", "assessment_id", "administered_at"]
         )
     }} as assessment_expectation_key,
 
-    {{ dbt_utils.generate_surrogate_key(["powerschool_student_number"]) }}
-    as student_key,
+    {{ student_key("student_number") }} as student_key,
 
     {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "'illuminate'",
-                "module_code",
-                "cast(canonical_administered_at as date)",
-                "academic_year",
-                "_dbt_source_project",
-                "null",
-                "canonical_assessment_id",
-                "null",
-            ]
+        assessment_administration_key(
+            "source",
+            "module_code",
+            "cast(canonical_administered_at as date)",
+            "academic_year",
+            "_dbt_source_project",
+            "null",
+            "canonical_assessment_id",
+            "null",
         )
     }} as assessment_administration_key,
 

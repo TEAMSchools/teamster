@@ -54,7 +54,7 @@ data_tests:
       nor is_email_title set (an unmapped title needing a new mapping), or has
       both set (an ambiguous title the model silently excludes as email,
       potentially dropping a real phone value). A null title is treated as
-      unmapped.
+      unmapped. Rows with no value are ignored.
     config:
       severity: warn
       meta:

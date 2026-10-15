@@ -11,15 +11,16 @@ same source into Okta bookmark tiles or a discovery skill.
 excluded from the build, so setting `verified` is not a quality note — it is
 what puts the tool in front of staff. The page starts empty and fills up.
 
-| File            | What it is                                                            |
-| --------------- | --------------------------------------------------------------------- |
-| `links.yml`     | Every tool: name, URL, description, who it is for                     |
-| `groups.yml`    | Topical groups, tool families, promo cards, and the publish threshold |
-| `build.py`      | Loads, validates, and renders the catalog into the page               |
-| `template.html` | The page shell the catalog gets rendered into                         |
-| `RUNBOOK.md`    | The task sequence — start there if you are picking up this work       |
-| `PROJECT.md`    | Why this exists, where it stands, and what's still open               |
-| `README.md`     | This file: what the directory is and what "reviewed" means            |
+| File              | What it is                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| `links.yml`       | Every tool: name, URL, description, who it is for                                       |
+| `groups.yml`      | Topical groups, tool families, promo cards, and the publish threshold                   |
+| `build.py`        | Loads, validates, and renders the catalog into the page                                 |
+| `template.html`   | The page shell the catalog gets rendered into                                           |
+| `RUNBOOK.md`      | The task sequence — start there if you are picking up this work                         |
+| `PROJECT.md`      | Why this exists, where it stands, and what's still open                                 |
+| `README.md`       | This file: what the directory is and what "reviewed" means                              |
+| `semantic-layer/` | Semantic layer build status page; loads its data from another repo, see the page source |
 
 `build.py` loads `links.yml` and `groups.yml`, validates them, and renders
 `template.html` into the published page. See PROJECT.md for how the pieces fit

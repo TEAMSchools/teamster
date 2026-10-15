@@ -278,6 +278,19 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  - name: survey_reminder_email_feed
+    label: Survey Reminder Email Feed
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1I5R4V0xGxwcq3-cZOy4wRe3EG5fuiIxGaA523UiWUKA
+    depends_on:
+      - ref("rpt_extracts__survey_reminder")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
   - name: survey_tracking_v3p0
     label: Survey Tracking v3.0
     type: application

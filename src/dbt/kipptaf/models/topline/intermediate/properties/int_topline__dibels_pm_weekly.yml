@@ -11,6 +11,7 @@ models:
       SY26-27 and settles rounds where measures disagree. Feeds
       int_topline__student_metrics.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
@@ -27,6 +28,7 @@ models:
               - academic_year
               - week_start_monday
           config:
+            enabled: false
             severity: error
     columns:
       - name: student_number

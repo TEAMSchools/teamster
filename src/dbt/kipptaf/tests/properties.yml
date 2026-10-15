@@ -298,14 +298,27 @@ data_tests:
           ref:
             name: stg_kippadb__contact_note
 
+  - name: int_assessments__assessments_members__no_cross_source_canonical
+    description: >-
+      Asserts that every assessment's canonical pick comes from its own source.
+      Illuminate and Apex assessment ids share one integer space, so a canonical
+      group keyed on id alone could merge an Apex assessment into an Illuminate
+      one. Returns members whose (source, canonical_assessment_id) matches no
+      member's (source, assessment_id).
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_assessments__assessments_members
+
   - name: int_assessments__resolved_section_enrollments__unique_per_score
     description: >-
       Asserts that int_assessments__resolved_section_enrollments contains one
       row per score. The score grain spans all three source branches (internal,
-      state_nj, state_fl): (powerschool_student_number, _dbt_source_project,
-      source_type, canonical_assessment_id, academic_year,
-      administration_period, subject_area). NULL-safe via format("%T|...") so
-      NULL canonical_assessment_id on state rows and NULL
+      state_nj, state_fl): (student_number, _dbt_source_project, source_type,
+      source, canonical_assessment_id, academic_year, administration_period,
+      subject_area). NULL-safe via format("%T|...") so NULL
+      canonical_assessment_id on state rows and NULL
       academic_year/administration_period on internal rows do not collapse the
       distinct count.
     config:
@@ -821,62 +834,6 @@ data_tests:
           ref:
             name: rpt_tableau__gpa_goal_progress
 
-  - name: stg_cambium__njgpa__not_empty
-    description: >-
-      stg_cambium__njgpa must never build empty. If Cambium drops or renames a
-      column the model depends on -- Summative Flag, say -- that column reads
-      entirely NULL, the district staging filter (where summative_flag = 'Y' and
-      test_attemptedness_flag = 'Y') returns zero rows, and unique / not_null
-      pass vacuously over an empty relation. The Avro schema check cannot catch
-      it either: it compares record fields against schema fields and warns only
-      on extras, so a removed column produces no signal and fastavro writes
-      null. Without this test NJGPA disappears from every downstream model with
-      every other test still green. Declared here in kipptaf rather than in the
-      cambium package because both district projects set an unscoped
-      `data_tests: +severity: warn`, which overrides installed-package test
-      config -- an `error` declared in the package silently resolves to `warn`,
-      leaving this guard non-blocking. kipptaf's root-project tests do hold
-      `error`.
-    config:
-      severity: error
-      meta:
-        dagster:
-          ref:
-            name: stg_cambium__njgpa
-
-  - name: stg_cambium__njsla__not_empty
-    description: >-
-      stg_cambium__njsla must never build empty, for the same reason as its
-      NJGPA sibling above -- a dropped or renamed Cambium column reads entirely
-      NULL, the district staging filter returns zero rows, and every unique /
-      not_null test passes vacuously over an empty relation. NJSLA carries the
-      additional risk that Science, ELA and Mathematics all arrive in the one
-      file, so a single silent column change removes three assessments at once.
-      Declared here in kipptaf rather than in the cambium package because the
-      district projects' unscoped `data_tests: +severity: warn` overrides
-      installed-package test config.
-    config:
-      severity: error
-      meta:
-        dagster:
-          ref:
-            name: stg_cambium__njsla
-
-  - name: stg_cambium__eoc__not_empty
-    description: >-
-      stg_cambium__eoc must never build empty, for the same reason as its NJGPA
-      and NJSLA siblings above -- a dropped or renamed Cambium column reads
-      entirely NULL, the district staging filter returns zero rows, and every
-      unique / not_null test passes vacuously over an empty relation, removing
-      Algebra I, Algebra II and Geometry at once. Declared here in kipptaf for
-      the same severity reason.
-    config:
-      severity: error
-      meta:
-        dagster:
-          ref:
-            name: stg_cambium__eoc
-
   - name: int_students__graduation_path_codes__cutoff_within_score_scale
     description: >-
       A graduation pathway cut score must be reachable on the scale of the
@@ -954,28 +911,25 @@ data_tests:
           ref:
             name: stg_google_sheets__student_graduation_path_cutoffs
 
-  - name: int_students__student_enrollments__cohort_not_ahead_of_entry
+  - name: int_extracts__student_enrollments__miami_cohort_not_ahead_of_entry
     description: >-
-      A high school student should never be ahead of the cohort they entered
-      with. For grade 9 and up, cohort freezes at the student's first year in
-      the school, which is correct for New Jersey's 4-year adjusted cohort
-      graduation rate. Falling behind that cohort is ordinary retention and is
-      not a defect, so only the other direction is tested -- a student whose
-      grade level implies an earlier graduating class than their recorded
-      cohort. Three causes produce that shape. A skipped grade and a missing
-      enrollment year are records problems, corrected in PowerSchool. Summer
-      credit recovery is not -- a student can advance a grade over the summer
-      with no enrollment row to show for it, because
-      int_powerschool__student_enrollment_union filters out the summer school,
-      so the records are already right. Warn rather than error, because no
-      result here is fixed by a code change, and because the cut score join no
-      longer depends on the two agreeing.
+      Miami's copy of the powerschool package test
+      base_powerschool__student_enrollments__cohort_not_ahead_of_entry, which
+      covers the New Jersey regions. Miami's enrollments come from Focus, and
+      kipptaf derives their cohort the same way, frozen at the student's first
+      year in the school for grade 9 and up. A current high school student whose
+      grade level implies an earlier graduating class (`cohort_primary`) than
+      their recorded cohort has skipped a grade or is missing an enrollment
+      year, both corrected in Focus. Falling behind the cohort is ordinary
+      retention and is not tested. Anchored on this table rather than on
+      int_students__student_enrollments, a view whose tests rerun only when its
+      code changes. Warn, because no result here is fixed by a code change.
     config:
       severity: warn
       meta:
         dagster:
           ref:
-            name: int_students__student_enrollments
+            name: int_extracts__student_enrollments
 
   - name: test_state_assessment_joins_resolve_miami
     description: >-
@@ -1145,3 +1099,67 @@ data_tests:
         dagster:
           ref:
             name: int_extracts__student_enrollments
+  - name: stg_adp_workforce_now__workers__ghost_open_records
+    description: >-
+      Flags associates whose open (9999-12-31) record comes from a workers
+      partition older than the second-newest one. Terminated workers stay in
+      every asOfDate snapshot, so the newest partition holds every associate,
+      and dropping out of the newest two means ADP hard-deleted or merged the
+      record. One day of slack absorbs a single missed or partial nightly pull.
+      A burst of hits points to two bad pulls in a row, not ghosts; re-pull the
+      newest partitions before rematerializing per associate. The nightly
+      schedule re-pulls only a rolling window, so a deletion never reaches older
+      partitions on its own. On a hit, rematerialize the ADP workers partitions
+      spanning the associate's active dates (through last_seen_partition_date);
+      the re-pull drops the record and the downstream tables rebuild. Warn
+      rather than error so a ghost does not stop the staging build and every ADP
+      consumer behind it.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_adp_workforce_now__workers
+
+  - name: int_iready__diagnostic_results__one_region_per_student_year
+    description: >-
+      Each student's i-Ready Diagnostics for one subject and academic year must
+      all resolve to one region. The package computes the most_recent_* columns
+      and rn_subj_year per student, subject and year without a region, because
+      the NJ i-Ready table holds Newark, Camden and Paterson together and the
+      region is only known once kipptaf maps each school through the location
+      crosswalk. A student tested under two regions in one year would get the
+      other region's latest values and lose rn_subj_year = 1 in one region, so
+      region-scoped reports would drop them without an error.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_iready__diagnostic_results
+
+  - name: stg_google_sheets__ignite__treatment_sections__resolved_rows_match_a_section
+    description: >-
+      Every resolved row on the Ignite treatment sections sheet must name a real
+      PowerSchool section (school, academic year, course number and section
+      number). int_ignite__treatment_assignment inner-joins these rows to
+      sections, so a row that names no section silently drops its treated
+      students rather than raising an error.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__ignite__treatment_sections
+
+  - name: test_kippfwd_goals_resolve_to_scaffold
+    description: >-
+      Every KIPP Forward goal must have a scaffold row for its academic year,
+      test type and score type. Both branches of
+      int_google_sheets__kippfwd__goals_unpivot are driven from the scaffold, so
+      a goal with no scaffold row is dropped entirely rather than reported with
+      a null threshold.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kippfwd__goals

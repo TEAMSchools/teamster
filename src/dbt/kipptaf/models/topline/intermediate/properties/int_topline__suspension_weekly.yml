@@ -1,6 +1,7 @@
 models:
   - name: int_topline__suspension_weekly
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:

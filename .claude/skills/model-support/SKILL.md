@@ -77,7 +77,7 @@ the request; if it is unclear, ask.
 
 | Mode     | Step                                        | Read                                                          |
 | -------- | ------------------------------------------- | ------------------------------------------------------------- |
-| Document | 1-2 Intake, consumers, boundary             | [intake-and-inventory.md](references/intake-and-inventory.md) |
+| Document | 1-2 Intake, consumers, boundary, inventory  | [intake-and-inventory.md](references/intake-and-inventory.md) |
 | Document | 3 Reference doc and cold review             | [reference-doc.md](references/reference-doc.md)               |
 | Document | 4-6 YAML, tests, known issues, SQL comments | [yaml-and-tests.md](references/yaml-and-tests.md)             |
 | Document | 7 Family skill, fact-check, walk test       | [model-skill.md](references/model-skill.md)                   |

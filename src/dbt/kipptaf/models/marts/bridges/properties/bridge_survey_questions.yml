@@ -6,6 +6,10 @@ models:
       the instrument definition level (not the administration instance). FK to
       dim_surveys via survey_key and to dim_survey_questions via
       survey_question_key. Questions pair to the instrument, not the instance.
+      Historic Manager Survey pairs come from
+      int_surveys__manager_survey_details under its synthetic
+      historic_alchemer_Manager_survey survey_id, so they list only the archive
+      questions that resolve to a Manager Survey form item.
     columns:
       - name: survey_question_bridge_key
         data_type: string

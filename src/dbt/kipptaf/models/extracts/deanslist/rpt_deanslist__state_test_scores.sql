@@ -6,6 +6,7 @@ select
     assessment_name as test_type,
     discipline as `subject`,
     raw_subject as test_name,
+    grade_level_when_assessed,
     scale_score,
     performance_level_label as proficiency_level,
 

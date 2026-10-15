@@ -1,14 +1,15 @@
 models:
   - name: int_assessments__assessments_members
     description: >-
-      Assessment-definition layer (member-grain). Joins Illuminate `assessments`
-      with the AppSheet `Illuminate Assessments Extension` overrides and an
-      `agl_dedup` CTE for `grade_level_id`. Exposes `canonical_assessment_id` as
-      the FK to `int_assessments__assessments_canonical` — computed via
-      `first_value(assessment_id) over (partition by is_internal_assessment,
-      is_florida_assessment, academic_year, scope, subject_area, module_code,
-      grade_level_id order by assessment_id)`. Consumers needing canonical attrs
-      (title, administered date, grade level, etc.) join
+      Assessment-definition layer, one row per `source` and `assessment_id`.
+      LEFT JOINs Illuminate `assessments` to the AppSheet `Illuminate
+      Assessments Extension` overrides and to an `agl_dedup` CTE (lowest
+      `grade_level_id` per assessment). Exposes `canonical_assessment_id` — for
+      internal assessments, `first_value(assessment_id) over (partition by
+      is_internal_assessment, is_florida_assessment, academic_year, scope,
+      subject_area, module_code, grade_level_id order by assessment_id)`; for
+      external assessments, the row's own `assessment_id`. Consumers needing
+      canonical attrs (title, administered date, grade level, etc.) join
       `int_assessments__assessments_canonical` on that FK. Network policy is one
       shared internal assessment per module across regions, so copies merge
       across regions by design. The exception is Miami, which built its own
@@ -18,59 +19,113 @@ models:
       keeps those copies out of New Jersey canonical groups, so New Jersey
       students never inherit a Florida title or administered date. Assessments
       tagged with Miami alongside other regions stay on the New Jersey side.
+      Canonical groups never span sources, because Illuminate and Apex ids share
+      one integer space. Miami Apex assessments (2026-27 on) come from Focus;
+      each is internal, Florida, and its own canonical group, because untagged
+      Apex assessments share null module and scope and would otherwise merge.
+      AppSheet tags join on source and assessment_id, so an Apex tag fills its
+      module, grade, subject, date, and regions; Apex scope is always null.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - source
+              - assessment_id
     columns:
       - name: assessment_id
         data_tests:
-          - unique
           - not_null
         data_type: int64
+        description: >-
+          Assessment id in its source system. Unique only together with
+          `source`.
+      - name: source
+        data_type: string
+        description: >-
+          System the assessment comes from (`illuminate` or `apex`). Part of the
+          key.
       - name: title
         data_type: string
+        description: Assessment title from Illuminate or Apex.
       - name: academic_year
         data_type: int64
+        description: >-
+          School year end year (2027 = 2026-27), from
+          `int_illuminate__assessments` or the Apex Focus school year plus 1.
       - name: academic_year_clean
         data_type: int64
+        description: >-
+          School year start year (2026 = 2026-27), from
+          `int_illuminate__assessments` or the Apex Focus school year.
       - name: scope
         data_type: string
+        description: Assessment scope, from `int_illuminate__assessments`.
       - name: creator_first_name
         data_type: string
+        description: >-
+          First name of the staff member who created the assessment, from
+          `int_illuminate__assessments`.
       - name: creator_last_name
         data_type: string
+        description: >-
+          Last name of the staff member who created the assessment, from
+          `int_illuminate__assessments`.
       - name: performance_band_set_id
         data_type: int64
+        description: >-
+          From `int_illuminate__assessments`, or the band set attached to the
+          Apex assessment.
       - name: assessment_type
         data_type: string
+        description: From `int_illuminate__assessments`.
       - name: tags
         data_type: string
+        description: From `int_illuminate__assessments`.
       - name: module_code
         data_type: string
+        description: >-
+          AppSheet extension `module_code` (`module_type` concatenated with
+          `module_sequence`). Null for external assessments.
       - name: module_type
         data_type: string
+        description: AppSheet extension value. Null for external assessments.
       - name: module_sequence
         data_type: int64
-      - name: illuminate_grade_level_id
+        description: AppSheet extension value. Null for external assessments.
+      - name: tagged_grade_level_id
         data_type: int64
+        description: >-
+          AppSheet extension grade level plus one, matching Illuminate's
+          1-indexed grade level ids. Null for external assessments.
       - name: regions_assessed
         data_type: string
+        description: >-
+          Comma-separated region list from the AppSheet extension; Miami on
+          untagged Apex assessments. Null for external assessments.
       - name: regions_report_card
         data_type: string
+        description: AppSheet extension value. Null for external assessments.
       - name: regions_progress_report
         data_type: string
+        description: AppSheet extension value. Null for external assessments.
       - name: regions_assessed_array
         data_type: array<string>
         description: >-
           `regions_assessed` with all whitespace stripped, then split on comma.
-          Within-row duplicates and any empty-string elements (from leading or
-          trailing commas) are resolved by `illuminate_deduped` in
-          `dim_assessment_administrations`. Consumers can `cross join
+          Within-row duplicates and empty-string elements (from leading or
+          trailing commas) are not removed. Consumers can `cross join
           unnest(regions_assessed_array)` to get one row per (assessment,
           region).
       - name: administered_at
         data_type: date
-        description: First non-null of administered_at.
+        description: >-
+          AppSheet extension `administered_at`, falling back to Illuminate
+          `administered_at`; on Apex, the earliest assignment start date.
       - name: subject_area
         data_type: string
-        description: First non-null of subject, subject_area.
+        description: >-
+          AppSheet extension `subject`, falling back to Illuminate
+          `subject_area`; on Apex, the subject of the assessment's standards.
       - name: grade_level_id
         data_type: int64
         description: >-
@@ -80,15 +135,189 @@ models:
           assessment.
       - name: is_internal_assessment
         data_type: boolean
-        description: Conditional on assessment_id.
+        description: >-
+          True when the assessment has an AppSheet extension row; always true on
+          Apex assessments.
 
       - name: canonical_assessment_id
         data_type: int64
         description: >-
-          FK to `int_assessments__assessments_canonical`. The lowest
-          `assessment_id` within the partition `(is_internal_assessment,
-          is_florida_assessment, academic_year, scope, subject_area,
-          module_code, grade_level_id)`. Multipart administrations (e.g., the
-          CRA + CRA-Essay halves of one logical Unit Quarterly Assessment) share
-          a `canonical_assessment_id`. Solo assessments equal their own
-          `assessment_id`.
+          FK to `int_assessments__assessments_canonical` for internal
+          assessments — the lowest `assessment_id` among internal assessments in
+          the partition `(is_florida_assessment, academic_year, scope,
+          subject_area, module_code, grade_level_id)`. Multipart administrations
+          (e.g., the CRA + CRA-Essay halves of one logical Unit Quarterly
+          Assessment) share a `canonical_assessment_id`. Solo internal
+          assessments, Apex assessments, and every external assessment equal
+          their own `assessment_id`; external ids have no row in the canonical
+          model.
+
+unit_tests:
+  - name: test_apex_assessments_are_their_own_canonical
+    description: >-
+      Two untagged Apex Math assessments from the same year each stay their own
+      canonical group instead of merging on their shared null tags, are internal
+      and Miami-assessed, and an Illuminate assessment sharing an id with one of
+      them stays separate. Apex years before 2026 are excluded.
+    model: int_assessments__assessments_members
+    given:
+      - input: ref('int_illuminate__assessments')
+        rows:
+          - {
+              assessment_id: 9001,
+              title: Illuminate Quiz,
+              academic_year: 2027,
+              academic_year_clean: 2026,
+              subject_area: Mathematics,
+              administered_at: 2026-09-01,
+            }
+      - input: ref('stg_google_appsheet__illuminate_assessments_extension')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as `source`,
+              cast(null as int64) as assessment_id,
+              cast(null as string) as module_type,
+              cast(null as int64) as module_sequence,
+              cast(null as string) as module_code,
+              cast(null as int64) as illuminate_grade_level_id,
+              cast(null as string) as regions_assessed,
+              cast(null as array<string>) as regions_assessed_array,
+              cast(null as string) as regions_report_card,
+              cast(null as string) as regions_progress_report,
+              cast(null as date) as administered_at,
+              cast(null as string) as subject
+          from unnest([1])
+          where false
+      - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
+        rows: []
+      - input: ref('int_focus__apex_assessments')
+        format: sql
+        rows: |
+          select
+              9001 as assessment_id,
+              'Apex Math A' as title,
+              2026 as academic_year,
+              7 as band_set_id,
+              'Mathematics' as subject_area,
+              date('2026-09-28') as administered_at
+          union all
+          select 9002, 'Apex Math B', 2026, 7, 'Mathematics', date('2026-10-05')
+          union all
+          select 8001, 'Apex Old', 2025, 7, 'Mathematics', date('2025-10-05')
+    expect:
+      rows:
+        - {
+            source: illuminate,
+            assessment_id: 9001,
+            academic_year: 2027,
+            academic_year_clean: 2026,
+            performance_band_set_id: null,
+            regions_assessed: null,
+            is_internal_assessment: false,
+            canonical_assessment_id: 9001,
+          }
+        - {
+            source: apex,
+            assessment_id: 9001,
+            academic_year: 2027,
+            academic_year_clean: 2026,
+            performance_band_set_id: 7,
+            regions_assessed: Miami,
+            is_internal_assessment: true,
+            canonical_assessment_id: 9001,
+          }
+        - {
+            source: apex,
+            assessment_id: 9002,
+            academic_year: 2027,
+            academic_year_clean: 2026,
+            performance_band_set_id: 7,
+            regions_assessed: Miami,
+            is_internal_assessment: true,
+            canonical_assessment_id: 9002,
+          }
+  - name: test_apex_tags_join_on_source
+    description: >-
+      An AppSheet tag reaches only the assessment in its own source — the Apex
+      tag fills module, grade, and report-card regions on its Apex row, and an
+      Illuminate tag on a colliding id leaves the Apex row with that id
+      untagged.
+    model: int_assessments__assessments_members
+    given:
+      - input: ref('int_illuminate__assessments')
+        rows:
+          - {
+              assessment_id: 9001,
+              title: Illuminate Quiz,
+              academic_year: 2027,
+              academic_year_clean: 2026,
+              subject_area: Mathematics,
+              administered_at: 2026-09-01,
+            }
+      - input: ref('stg_google_appsheet__illuminate_assessments_extension')
+        format: sql
+        rows: |
+          select
+              'illuminate' as `source`,
+              9001 as assessment_id,
+              'QA' as module_type,
+              1 as module_sequence,
+              'QA1' as module_code,
+              4 as illuminate_grade_level_id,
+              'Newark' as regions_assessed,
+              ['Newark'] as regions_assessed_array,
+              cast(null as string) as regions_report_card,
+              cast(null as string) as regions_progress_report,
+              cast(null as date) as administered_at,
+              cast(null as string) as subject
+          union all
+          select
+              'apex', 9002, 'QA', 2, 'QA2', 6, 'Miami', ['Miami'], 'Miami', null,
+              date('2026-10-10'), 'Algebra I'
+      - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
+        rows: []
+      - input: ref('int_focus__apex_assessments')
+        format: sql
+        rows: |
+          select
+              9001 as assessment_id,
+              'Apex Math A' as title,
+              2026 as academic_year,
+              7 as band_set_id,
+              'Mathematics' as subject_area,
+              date('2026-09-28') as administered_at
+          union all
+          select 9002, 'Apex Math B', 2026, 7, 'Mathematics', date('2026-10-05')
+    expect:
+      rows:
+        - {
+            source: illuminate,
+            assessment_id: 9001,
+            module_code: QA1,
+            grade_level_id: 4,
+            regions_assessed: Newark,
+            regions_report_card: null,
+            subject_area: Mathematics,
+            administered_at: 2026-09-01,
+          }
+        - {
+            source: apex,
+            assessment_id: 9001,
+            module_code: null,
+            grade_level_id: null,
+            regions_assessed: Miami,
+            regions_report_card: null,
+            subject_area: Mathematics,
+            administered_at: 2026-09-28,
+          }
+        - {
+            source: apex,
+            assessment_id: 9002,
+            module_code: QA2,
+            grade_level_id: 6,
+            regions_assessed: Miami,
+            regions_report_card: Miami,
+            subject_area: Algebra I,
+            administered_at: 2026-10-10,
+          }

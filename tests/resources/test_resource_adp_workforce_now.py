@@ -144,6 +144,7 @@ class _FakeResponse:
         self.status_code = status_code
         self._json_body = json_body
         self.text = text
+        self.content = text.encode()
         self._json_raises = json_raises
 
     def json(self) -> dict:
@@ -383,3 +384,52 @@ def test_request_persistent_gateway_404_retries_as_httperror(
 
     assert calls["n"] == 5
     assert isinstance(exc_info.value.last_attempt.exception(), HTTPError)
+
+
+def test_get_records_refetches_truncated_page(monkeypatch: pytest.MonkeyPatch):
+    """A 200 whose JSON body is cut off mid-stream must refetch that page.
+
+    Regression: ``get_records`` parsed the body outside any retry, so one
+    truncated page failed the whole step with ``JSONDecodeError``.
+    """
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+    monkeypatch.setattr(AdpWorkforceNowResource._get_page.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return _FakeResponse(200, {}, json_raises=True)
+        if calls["n"] == 2:
+            return _FakeResponse(200, {"workers": [{"associateOID": "a"}]})
+        return _FakeResponse(204, {})
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    records = adp_wfn.get_records(endpoint="hr/v2/workers")
+
+    assert records == [{"associateOID": "a"}]
+    assert calls["n"] == 3
+
+
+def test_get_records_persistent_truncated_page_gives_up(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A page that never parses stops after 5 fetches, not 5 x 5."""
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+    monkeypatch.setattr(AdpWorkforceNowResource._get_page.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        return _FakeResponse(200, {}, json_raises=True)
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    with pytest.raises(RetryError) as exc_info:
+        adp_wfn.get_records(endpoint="hr/v2/workers")
+
+    assert calls["n"] == 5
+    assert isinstance(exc_info.value.last_attempt.exception(), JSONDecodeError)
