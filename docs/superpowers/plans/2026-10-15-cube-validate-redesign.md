@@ -278,8 +278,10 @@ git commit -m "refactor(cube): start the cube_validate package and remove the ce
   - `write_table(path: Path, schema: str, table: str, columns: list[tuple[str, str]], rows: Iterable[Sequence]) -> int`
     — column types are `"text" | "double" | "bigint" | "date" | "bool"`;
     replaces the file; returns rows written.
-  - `class Workspace(scratch: Path, attach: dict[str, Path])` — context manager;
-    `.execute(sql) -> None`, `.query(sql) -> list[tuple]`,
+  - `class Workspace(scratch: Path, attach: dict[str, Path])` — context manager
+    whose own tables are always `create temporary table` (Hyper resolves
+    unqualified names only for temporary tables once files are attached);
+    manager; `.execute(sql) -> None`, `.query(sql) -> list[tuple]`,
     `.dicts(sql) -> list[dict]`, `.columns(alias, schema, table) -> list[str]`,
     `.count(sql_from_where: str) -> int`.
 
@@ -322,7 +324,7 @@ def test_write_then_join_two_files(tmp_path):
             {"k": 3, "d": None, "v": None},
         ]
         assert ws.columns("cub", "cube", "rows") == ["k", "v"]
-        ws.execute('create table t2 as select * from "cub"."cube"."rows"')
+        ws.execute('create temporary table t2 as select * from "cub"."cube"."rows"')
         assert ws.count("t2 where v is null") == 1
 ```
 
@@ -1460,7 +1462,7 @@ def build(ws, checks: Checks, scope: list[str]) -> RowsResult:
         f"when j.in_t then case when {outside} then 'outside_scope' else 'dashboard_only' end "
         "else 'cube_only' end"
     )
-    ws.execute(f"create table rows_base as select j.*, {base} as base from ({joined}) j")
+    ws.execute(f"create temporary table rows_base as select j.*, {base} as base from ({joined}) j")
 
     caused = ", ".join(lit(b) for b in CAUSED)
     if checks.causes:
@@ -1482,7 +1484,7 @@ def build(ws, checks: Checks, scope: list[str]) -> RowsResult:
         "case when base = 'match' then null when base = 'outside_scope' then 'outside_scope' "
         f"{whens} else 'unexplained' end"
     )
-    ws.execute(f"create table rows as select *, {cause} as cause from rows_base")
+    ws.execute(f"create temporary table rows as select *, {cause} as cause from rows_base")
     ws.execute("drop table rows_base")
     return _summarize(ws, checks)
 
@@ -1808,7 +1810,7 @@ def test_cube_query_refuses_an_unmapped_filter():
 def _rows_table(ws, extra=()):
     """A minimal rows table as Task 5 builds it."""
     ws.execute(
-        "create table rows (in_t bool, in_c bool, k_student bigint, k_day date, base text, cause text, "
+        "create temporary table rows (in_t bool, in_c bool, k_student bigint, k_day date, base text, cause text, "
         "t_region text, t_school_abbreviation text, c_regions_region_name text, c_locations_abbreviation text)"
     )
     vals = [
