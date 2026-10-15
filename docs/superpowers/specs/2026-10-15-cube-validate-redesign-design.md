@@ -1,9 +1,8 @@
 # Cube validation redesign: frozen rows first, then cells
 
-Status: sections approved in conversation 2026-10-15; awaiting review of the
-written spec. Refs #5856. Supersedes
-`2026-10-09-cube-validate-tableau-truth-design.md`. #5917 (quick check) was
-closed as not planned in favor of this design.
+Status: approved 2026-10-15. Refs #5856. Supersedes the 2026-10-09 cell-first
+design, which is in git history. #5917 (quick check) was closed as not planned
+in favor of this design.
 
 ## Goal
 
