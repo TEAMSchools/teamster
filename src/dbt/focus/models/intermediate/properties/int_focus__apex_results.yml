@@ -22,10 +22,12 @@ models:
     columns:
       - name: is_mastery
         description: >-
-          True for Level 3 and above, false for Level 1, Level 2 and the
-          Low/Mid/High levels, null for any other label or no band set.
+          True when the row's band is the band set's Level 3 band or above it,
+          false when the band is below Level 3. Decided by band order, not label
+          text. Null when there is no band set, no band, or the band set has no
+          Level 3 band.
         data_tests:
-          # flags a band label the model's is_mastery case does not list yet
+          # flags a band set with no band labeled Level 3
           - not_null:
               config:
                 severity: warn
