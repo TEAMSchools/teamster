@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from .cells import FORMULA_GAP, ORDER, ROW_GAP, answer_key
+from .cells import FORMULA_GAP, ORDER, PASS, ROW_GAP, answer_key
 
 SMALL = 10
 
@@ -44,6 +44,41 @@ def trust(invariants: dict[str, bool], results: dict[str, str]) -> str:
     if open_checks:
         return f"Pending: {open_checks} of {len(results)} hand checks still open."
     return "Trusted for this run: invariants hold and every hand check agrees."
+
+
+def _row_gap_buckets(gaps: list) -> list[str]:
+    """Each row-gap mark's buckets, once per mark: its measures share the rows."""
+    by_mark: dict[tuple, list] = {}
+    for c in gaps:
+        if c.verdict == ROW_GAP:
+            marks = ", ".join(f"{k}={v}" for k, v in c.dims.items())
+            by_mark.setdefault((c.cut, c.sheet, marks), c.buckets)
+    if not by_mark:
+        return []
+    out = [
+        "",
+        "#### Row gap buckets",
+        "",
+        "| Cut | Sheet | Marks | Base | Cause | Rows | Students |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for (cut, sheet, marks), buckets in by_mark.items():
+        for base, cause, n, students in buckets:
+            out.append(
+                f"| {cut} | {sheet} | {marks} | {base} | {cause} | {small(n)} | {small(students)} |"
+            )
+    return out
+
+
+def _untested(checks, cells: list) -> list[tuple[str, str]]:
+    """Mapped measures with no cell whose rows all match, so no cut tests the formula."""
+    tested = {(c.sheet, c.measure) for c in cells if c.verdict in (PASS, FORMULA_GAP)}
+    return [
+        (s, h)
+        for s, sm in checks.sheets.items()
+        for h, m in sm.measures.items()
+        if m.cube and (s, h) not in tested
+    ]
 
 
 def render(
@@ -125,6 +160,7 @@ def render(
             out.append(
                 f"| {c.cut} | {c.sheet} | {c.measure} | {marks} | {c.verdict} | {_mask(c.tableau)} | {_mask(c.cube)} |"
             )
+    out += _row_gap_buckets(gaps)
     shown = set()
     for c in cells:
         if c.verdict != FORMULA_GAP or (c.sheet, c.measure) in shown:
@@ -146,6 +182,8 @@ def render(
             (answers.get(answer_key(c.cut, c.sheet)) or {}).get("sql", ""),
             "```",
         ]
+    out += ["", "### Formulas not tested", ""]
+    out += [f"- {s} / {m}" for s, m in _untested(checks, cells)] or ["- (none)"]
     out += ["", "## Not checked", ""]
     out += [f"- {s}: {why}" for s, why in checks.excluded_sheets.items()] or [
         "- (none)"

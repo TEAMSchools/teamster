@@ -120,3 +120,66 @@ def test_render_holds_findings_and_suppresses_small_cells():
     assert "<10" in text and "| 3 |" not in text
     assert "SUM([x])" in text and "SELECT 1" in text
     assert "Comm Log" in text
+
+
+def _render(cs, sheets):
+    rr = rows.RowsResult(
+        totals={"tableau": 0, "cube": 0, "joined": 0},
+        buckets=[],
+        differing_columns={},
+        invariants={},
+    )
+    checks = config.Checks.__new__(config.Checks)
+    object.__setattr__(checks, "dashboard", "attendance_dashboard")
+    object.__setattr__(checks, "excluded_sheets", {})
+    object.__setattr__(checks, "sheets", sheets)
+    return report.render(checks, {}, rr, cs, {}, {}, {})
+
+
+def test_row_gap_lists_its_buckets_once_per_mark_with_small_counts():
+    buckets = [("match", None, 25, 12), ("dashboard_only", "unexplained", 3, 2)]
+    cs = [
+        cells.Cell(
+            "default",
+            "ADA",
+            {"School": "Rise"},
+            m,
+            "94.2%",
+            0.95,
+            cells.ROW_GAP,
+            buckets=buckets,
+        )  # fmt: skip
+        for m in ("ADA", "Tardy")
+    ]
+    text = _render(cs, {})
+    assert "| Cut | Sheet | Marks | Base | Cause | Rows | Students |" in text
+    assert text.count("| default | ADA | School=Rise | dashboard_only |") == 1
+    assert (
+        "| default | ADA | School=Rise | dashboard_only | unexplained | <10 | <10 |"
+        in text
+    )
+    assert "| default | ADA | School=Rise | match | None | 25 | 12 |" in text
+
+
+def test_formulas_not_tested_lists_mapped_measures_with_no_clean_cut():
+    sheets = {
+        "ADA": config.SheetMap(
+            "ADA",
+            "v",
+            {},
+            {
+                "ADA": config.MeasureMap("ADA", "avg_daily_attendance"),
+                "Tardy": config.MeasureMap("Tardy", "tardy_rate"),
+                "Other": config.MeasureMap("Other", None),
+            },
+        )
+    }
+    cs = [
+        cells.Cell("default", "ADA", {}, "ADA", "1", 1.0, cells.PASS),
+        cells.Cell("default", "ADA", {}, "Tardy", "1", 1.0, cells.ROW_GAP),
+        cells.Cell("default", "ADA", {}, "Tardy", "1", 1.0, cells.COINCIDENTAL),
+    ]
+    text = _render(cs, sheets)
+    section = text.split("### Formulas not tested", 1)[1].split("##", 1)[0]
+    assert "- ADA / Tardy" in section
+    assert "ADA / ADA" not in section and "Other" not in section
