@@ -18,7 +18,7 @@ with
             cc.sections_dcid,
             cc.cc_academic_year,
             cc.cc_dateenrolled,
-            cc.cc_dateleft,
+            cc.exit_date,
             cc.is_dropped_section,
             cc.is_dropped_course,
             cc.cc_course_number,
@@ -38,15 +38,8 @@ with
         -- alumni placeholder rows (enroll_status=3) have NULL entrydate/exitdate
         -- and match no stint here, producing a NULL student_enrollment_key
         --
-        -- The coalesce below is now dead and kept only as a guard: #5043 made
-        -- cc_dateleft non-null on both SIS branches and added a not_null test
-        -- on it, so the sentinel can no longer fire. It was required while
-        -- Focus left an open schedule's end_date null. Drop it whenever this
-        -- model is next touched. entrydate
-        -- and exitdate are never null in student_enrollments, so they need no
-        -- equivalent coalesce. The ~10.6% of Miami rows still unmatched after
-        -- this is an accepted residual within the NJ completed-year orphan-rate
-        -- norm -- see the rate test in
+        -- The ~10.6% of Miami rows still unmatched is an accepted residual
+        -- within the NJ completed-year orphan-rate norm -- see the rate test in
         -- tests/test_miami_section_enrollment_orphan_rate.sql.
         --
         -- That residual is attributed, not unexplained. Of the orphaned
@@ -77,7 +70,7 @@ with
             and cc.sections_schoolid = enr.schoolid
             and cc.cc_academic_year = enr.academic_year
             and cc._dbt_source_project = enr._dbt_source_project
-            and coalesce(cc.cc_dateleft, cast('9999-12-31' as date)) > enr.entrydate
+            and cc.exit_date > enr.entrydate
             and cc.cc_dateenrolled < enr.exitdate
     ),
 
@@ -96,7 +89,7 @@ with
             _dbt_source_project,
             cc_academic_year as academic_year,
             cc_dateenrolled as entry_date,
-            cc_dateleft as exit_date,
+            exit_date,
             is_dropped_section,
             is_dropped_course,
             is_homeroom,
@@ -158,7 +151,7 @@ with
                     se.cc_course_number
                 order by
                     (se.is_dropped_section or se.is_dropped_course) asc,
-                    coalesce(se.exit_date, cast('9999-12-31' as date)) desc,
+                    se.exit_date desc,
                     se.entry_date desc,
                     se.student_section_enrollment_key asc
             ) as course_enrollment_rank,
@@ -186,7 +179,7 @@ with
                     se._dbt_source_project, se.student_enrollment_key, se.is_homeroom
                 order by
                     (se.is_dropped_section or se.is_dropped_course) asc,
-                    coalesce(se.exit_date, cast('9999-12-31' as date)) desc,
+                    se.exit_date desc,
                     se.entry_date desc,
                     se.student_section_enrollment_key asc
             ) as homeroom_rank,

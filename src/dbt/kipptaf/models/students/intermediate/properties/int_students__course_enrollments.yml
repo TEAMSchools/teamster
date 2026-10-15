@@ -41,19 +41,16 @@ models:
           When this section enrollment ends, whether or not the student left
           early. Non-null on every row in both SIS branches, so a consumer
           bounding an enrollment window reads this rather than `cc_dateleft`.
-          Named for `dim_student_section_enrollments.exit_date`, which is this
-          value and until #5043 aliased `cc_dateleft` itself.
+          `dim_student_section_enrollments.exit_date` is this value.
 
           The two SIS record it differently and neither is wrong. PowerSchool
           has no separate departure date, so `cc_dateleft` is already this
           concept -- the actual leave date when the student left, the term end
           plus a day while the enrollment is open. Focus keeps the two apart, so
           this resolves to the schedule `end_date` when the student left and
-          `marking_period_end_date` otherwise.
-
-          Added on #5043. Before it, consumers compared `cc_dateleft` directly
-          and every Focus row with an open enrollment -- 95.8% of Miami AY2026
-          -- made the comparison unknown and dropped out.
+          `marking_period_end_date` otherwise. A consumer that compares
+          `cc_dateleft` instead drops every open Focus enrollment, because the
+          comparison is unknown.
         data_type: date
         data_tests:
           - not_null:
