@@ -122,28 +122,30 @@ def test_cube_query_refuses_an_unmapped_filter():
         cells.cube_query(_checks(), "ADA", config.Cut("x", {"Grade": "9"}), {})
 
 
-def _rows_table(ws, extra=()):
+def _rows_table(ws, extra=(), rise_cube="Rise"):
     """A minimal rows table as Task 5 builds it."""
     ws.execute(
         "create temporary table rows (in_t bool, in_c bool, k_student bigint, k_day date, base text, cause text, "
         "t_region text, t_school_abbreviation text, c_regions_region_name text, c_locations_abbreviation text)"
     )
     vals = [
-        "(true, true, 1, '2026-10-06', 'match', null, 'Newark', 'Rise', 'Newark', 'Rise')",
-        "(true, true, 2, '2026-10-06', 'match', null, 'Newark', 'Rise', 'Newark', 'Rise')",
+        f"(true, true, 1, '2026-10-06', 'match', null, 'Newark', 'Rise', 'Newark', '{rise_cube}')",
+        f"(true, true, 2, '2026-10-06', 'match', null, 'Newark', 'Rise', 'Newark', '{rise_cube}')",
         "(true, true, 3, '2026-10-06', 'match', null, 'Camden', 'LSP', 'Camden', 'LSP')",
         *extra,
     ]
     ws.execute("insert into rows values " + ", ".join(vals))
 
 
-def _judge(tmp_path, exports, answers, checks=None, extra=(), manifest=None):
+def _judge(
+    tmp_path, exports, answers, checks=None, extra=(), manifest=None, rise_cube="Rise"
+):
     pytest.importorskip("tableauhyperapi")
     # trunk-ignore(pyright/reportAttributeAccessIssue)
     from cube_validate import hyper
 
     with hyper.Workspace(tmp_path / "a.hyper", {}) as ws:
-        _rows_table(ws, extra)
+        _rows_table(ws, extra, rise_cube)
         return cells.judge(
             ws,
             checks or _checks(),
@@ -347,9 +349,43 @@ def test_label_mismatch_is_unproven_on_both_sides(tmp_path):
         "default",
         [{"v.locations_abbreviation": "RISE", "v.avg_daily_attendance": "0.942"}],
     )
-    got = _judge(tmp_path, exports, answers, _with_sheet())
+    got = _judge(tmp_path, exports, answers, _with_sheet(), rise_cube="RISE")
+    by = {c.tableau is None: c for c in got}
+    assert not {c.verdict for c in got} & {cells.FORMULA_GAP, cells.ROW_GAP}
+    assert by[False].verdict == cells.UNPROVEN
+    assert by[False].reason == "Cube answer has no mark for these labels"
+    assert by[True].verdict == cells.UNPROVEN
+    assert (
+        by[True].reason == "Tableau shows no mark for labels the extract has rows for"
+    )
+
+
+def test_dashboard_only_row_with_no_cube_mark_is_a_row_gap(tmp_path):
+    extra = [
+        "(true, false, 9, '2026-10-06', 'dashboard_only', 'unexplained', 'Newark', 'Hatch', null, null)"
+    ]
+    exports = {
+        ("default", "ADA"): b"School,ADA,Students\nRise,94.2%,2\nHatch,88.0%,1\n"
+    }
+    got = {
+        c.dims["School"]: c
+        for c in _judge(
+            tmp_path, exports, _ans("default", _ANS_RISE), _with_sheet(), extra
+        )
+    }
+    assert got["Hatch"].verdict == cells.ROW_GAP
+    assert ("dashboard_only", "unexplained", 1, 1) in got["Hatch"].buckets
+
+
+def test_dim_with_cube_column_but_no_cube_member_is_unproven(tmp_path):
+    dims = {
+        **_checks().sheets["ADA"].dims,
+        "Grade": config.FieldMap("Grade", "region", None, "x"),
+    }
+    exports = {("default", "ADA"): b"School,Grade,ADA,Students\nRise,Newark,90.0%,2\n"}
+    got = _judge(tmp_path, exports, _ans("default", _ANS_RISE), _with_sheet(dims=dims))
     assert got and {c.verdict for c in got} == {cells.UNPROVEN}
-    assert any(c.tableau is None for c in got)
+    assert all("not mapped: Grade: no Cube member" == c.reason for c in got)
 
 
 def test_click_target_sheet_without_a_count_is_not_proven_by_another_sheet(tmp_path):

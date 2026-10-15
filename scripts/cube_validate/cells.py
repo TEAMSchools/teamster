@@ -24,6 +24,8 @@ NO_ROWS = "no captured rows"
 NEVER_CUBE = (FILTER_IGNORED, UNPROVEN, NO_COUNTERPART, NO_ROWS)
 ORDER = (ROW_GAP, FORMULA_GAP, COINCIDENTAL, PASS, *NEVER_CUBE)
 
+CUBE_SIDE = ("match", "value_differs", "cube_only")
+DASHBOARD_SIDE = ("match", "value_differs", "dashboard_only", "outside_scope")
 ALL = "(All)"
 NULLS = ("", "Null", "(Blank)", "%null%")
 TOTALS = ("Total", "Grand Total")
@@ -339,7 +341,7 @@ def judge(
                         vd, rs = NO_COUNTERPART, "measure not mapped"
                     elif status:
                         vd, rs = status, reason
-                    elif crow is None and studs[1] > 0:
+                    elif crow is None and any(b[0] in CUBE_SIDE for b in buckets):
                         vd, rs = UNPROVEN, "Cube answer has no mark for these labels"
                     else:
                         vd, rs = (
@@ -359,13 +361,13 @@ def judge(
                 )  # fmt: skip
                 if status:
                     vd, rs = status, reason
-                elif studs[0] > 0:
+                elif any(b[0] in DASHBOARD_SIDE for b in buckets):
                     vd, rs = (
                         UNPROVEN,
                         "Tableau shows no mark for labels the extract has rows for",
                     )
                 elif not buckets:
-                    vd, rs = UNPROVEN, "no captured rows under these labels"
+                    vd, rs = NO_ROWS, ""
                 else:
                     vd, rs = ROW_GAP, "Cube shows a mark Tableau does not"
                 for m in sm.measures.values():
@@ -459,6 +461,9 @@ def _status(ws, checks, sheet, dims, ignored, proof, base_t, base_c, ans, studen
             (0, 0),
         )
     sm = checks.sheets[sheet]
+    for h, d in sm.dims.items():
+        if not d.cube:
+            return UNPROVEN, f"not mapped: {h}: no Cube member", [], (0, 0)
     pt, pc = list(base_t[sheet]), list(base_c[sheet])
     try:
         for h, label in dims.items():
