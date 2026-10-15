@@ -13,10 +13,6 @@ jq '. + {"python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
-# install post-merge hook for future manifest regeneration
-cp .vscode/scripts/post-merge.sh .git/hooks/post-merge
-chmod +x .git/hooks/post-merge
-
 # install extra apt packages
 sudo apt-get update -y &&
 	sudo apt-get -y install --no-install-recommends sshpass &&

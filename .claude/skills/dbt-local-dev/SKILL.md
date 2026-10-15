@@ -79,14 +79,16 @@ Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
 "table not found" when those externals aren't staged for the current user. Add
 `--defer --state=src/dbt/<project>/target/prod/`. **`--state` path is relative
 to `--project-dir`** — repo-root form silently fails with "Could not find
-manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
-`git pull`; if stale, regenerate with
+manifest". The prod manifest is refreshed on every `git pull` by the trunk
+action `dbt-prod-manifests` (`.trunk/trunk.yaml`, post-merge trigger), which
+runs `.vscode/scripts/post-merge.sh`. Trunk owns `core.hooksPath`, so a script
+copied into `.git/hooks/` never runs. If stale, regenerate with
 `uv run dbt parse --target prod --project-dir <project> --target-path target/prod`.
 
 **From a worktree**, `--state` must be absolute
 (`/workspaces/teamster/src/dbt/<project>/target/prod`). The relative form
 resolves under the worktree, which has no `target/prod/` — only the main repo's
-manifest is refreshed by `post-merge`.
+manifest is refreshed by the post-merge action.
 
 Validate a newly-added data test against prod before pushing:
 `dbt test --select <model> --target dev --defer --state <prod manifest>` runs
@@ -126,8 +128,8 @@ against prod via the BQ MCP.
 build right after a full clone fails
 `Not found: Table zz_stg_<district>_<source>.<model>` for a model that plainly
 exists in prod. Cause chain: `dbt clone` skips any node absent from `--state`
-(see above), and the prod manifest only regenerates via `.git/hooks/post-merge`
-— which fails **silently** if `dbt parse` errors, freezing the manifest at its
+(see above), and the prod manifest only regenerates via the post-merge action —
+which fails **silently** if `dbt parse` errors, freezing the manifest at its
 last good date. The parse error is usually a package the project no longer
 lists: a retired `local:` package stays in `<project>/dbt_packages/`, so parse
 still loads its models and dies on one referencing a since-disabled model (e.g.
