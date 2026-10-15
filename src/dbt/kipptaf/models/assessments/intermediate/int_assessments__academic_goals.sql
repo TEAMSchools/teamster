@@ -10,6 +10,7 @@ select
     g.organization_goal,
     g.grade_band_goal,
     g.assessment_band_goal,
+    g.region_grade_goal,
 
     s.school_level,
 
