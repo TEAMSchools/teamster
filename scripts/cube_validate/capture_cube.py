@@ -279,6 +279,9 @@ def write_cube_hyper(snap, checks, types: dict[str, str]) -> int:
 def scope_query(checks) -> dict | None:
     """1 grouped, undated count by the scope member; None without a scope key.
 
+    It carries cube.filters, so a filter that drops a whole school drops it
+    from the scope too.
+
     Cube rewrites every query to the caller's schools, so the values it returns
     are the scope. Rows captured for a period cannot stand in for it: a school
     with no rows that period would look out of scope.
@@ -290,6 +293,7 @@ def scope_query(checks) -> dict | None:
     return {
         "dimensions": [f"{v}.{member}"],
         "measures": [f"{v}.count_students"],
+        "filters": [*checks.cube.filters],
         "limit": CUBE_LIMIT,
         "total": True,
     }

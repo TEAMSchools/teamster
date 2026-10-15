@@ -191,10 +191,19 @@ def _scope_checks():
 def test_scope_query_is_one_grouped_undated_count():
     assert capture_cube.scope_query(_scope_checks()) == {
         "dimensions": ["v.locations_abbreviation"],
+        "filters": [],
         "measures": ["v.count_students"],
         "limit": 50000,
         "total": True,
     }
+
+
+def test_scope_query_carries_cube_filters_but_no_date_filter():
+    f = {"member": "v.region", "operator": "equals", "values": ["Newark"]}
+    checks = _scope_checks()
+    checks.cube = config.CubeRows("v", "attendance_date", (), (f,))
+    q = capture_cube.scope_query(checks)
+    assert q["filters"] == [f]
 
 
 def test_capture_scope_returns_the_values_cube_sends_back():
