@@ -609,6 +609,60 @@ async def sql(
     return body if full else _trim_sql(body)
 
 
+_SUMMARY_VALUE_MAX_CHARS = 1_000
+
+
+def _summarize_transformed_query(
+    transformed: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Keep the fields that explain a pre-aggregation match. Drops
+    `granularityHierarchies` (one entry per date member, tens of KB) and any
+    other value too large to read at a glance."""
+    if transformed is None:
+        return None
+    return {
+        k: v
+        for k, v in transformed.items()
+        if k != "granularityHierarchies"
+        and len(json.dumps(v)) <= _SUMMARY_VALUE_MAX_CHARS
+    }
+
+
+@mcp.tool()
+async def dry_run(
+    ctx: Context, query: dict[str, Any], full: bool = False
+) -> dict[str, Any]:
+    """Validate and normalize a Cube query without compiling or running SQL.
+    Takes the same query object as `load`.
+
+    Use it to check that a query is valid, to see how Cube normalizes it, and
+    to find out why a query did or did not match a pre-aggregation (rollup).
+
+    Response: `queryType`, `normalizedQueries`, `queryOrder`, `pivotQuery`, and
+    `transformedQueries`, one per normalized query. Each transformed query
+    holds Cube's matching inputs: `measures`, `leafMeasures`,
+    `sortedDimensions`, `timeDimensions`, `isAdditive`,
+    `leafMeasureAdditive`, `allFiltersWithinSelectedDimensions`, and similar
+    flags. A rollup matches only when the query's dimensions, measures, and
+    filters all fit inside it. By default the large `granularityHierarchies`
+    field is dropped; `full=True` returns Cube's raw objects.
+
+    Queries default to timezone UTC; see `load`.
+    """
+    email = await _get_user_email(ctx)
+    body = await _request(
+        "POST", "/dry-run", json={"query": _with_default_timezone(query)}, email=email
+    )
+    if full:
+        return body
+    return {
+        **body,
+        "transformedQueries": [
+            _summarize_transformed_query(t) for t in body.get("transformedQueries", [])
+        ],
+    }
+
+
 def main() -> None:
     transport = os.environ.get("TRANSPORT", TRANSPORT_STDIO)
     if transport not in VALID_TRANSPORTS:

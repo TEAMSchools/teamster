@@ -649,3 +649,56 @@ def test_sql_posts_sql_string_with_format_sql(monkeypatch: pytest.MonkeyPatch) -
         "format": "sql",
     }
     assert result == reply
+
+
+def _dry_run_body(transformed: list[Any]) -> dict[str, Any]:
+    return {
+        "queryType": "regularQuery",
+        "normalizedQueries": [{}],
+        "queryOrder": [{}],
+        "pivotQuery": {},
+        "transformedQueries": transformed,
+    }
+
+
+def test_dry_run_posts_query_and_summarizes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    real = _sql_fixture()["sql"]["canUseTransformedQuery"]
+    body = _dry_run_body([real])
+    calls = _recording_request(monkeypatch, server, body)
+    ctx = MagicMock()
+
+    result = asyncio.run(server.dry_run(ctx, {"measures": ["x.count"]}))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("POST", "/dry-run")
+    assert kwargs["json"] == {"query": {"measures": ["x.count"], "timezone": "UTC"}}
+    summary = result["transformedQueries"][0]
+    assert "granularityHierarchies" not in summary
+    assert summary["leafMeasures"] == real["leafMeasures"]
+    assert summary["allFiltersWithinSelectedDimensions"] is False
+    assert len(json.dumps(result)) < 5_000
+    assert result["queryType"] == "regularQuery"
+
+    assert (
+        asyncio.run(server.dry_run(ctx, {"measures": ["x.count"]}, full=True)) == body
+    )
+
+
+def test_dry_run_summarizes_every_query_in_multi_query(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    big = {"leafMeasures": ["v.m"], "granularityHierarchies": {"x": ["y"] * 5000}}
+    _recording_request(monkeypatch, server, _dry_run_body([big, big]))
+
+    result = asyncio.run(server.dry_run(MagicMock(), {"measures": ["x.count"]}))
+    assert result["transformedQueries"] == [{"leafMeasures": ["v.m"]}] * 2
+
+
+def test_summarize_transformed_query_handles_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    assert server._summarize_transformed_query(None) is None
