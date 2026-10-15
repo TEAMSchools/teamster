@@ -278,8 +278,27 @@ legitimately-superseded inactive rows that repeat the key.
 - Staging-layer tests MUST set `config: severity: error` on every test. The
   district and kipptaf project default is `warn`, so their staging tests without
   explicit `severity: error` silently degrade to warnings and won't fail CI.
-  Intermediate/mart/`rpt_` tests may omit the override where a warning is
-  acceptable.
+  Intermediate tests may omit the override where a warning is acceptable.
+- Marts and `rpt_` models carry only `error` tests and unit tests (#5948). Until
+  a folder has its own `+severity: error` block in `dbt_project.yml`, set
+  `config: severity: error` on each new test there. An `error` test lands only
+  after its query returns 0 rows in prod. Sort each test:
+  - Grain: the backstop on every mart and `rpt_` model. Add `not_null` on
+    natural-key grain columns (`unique` skips nulls) unless non-null by
+    construction; a `generate_surrogate_key` PK needs only `unique`.
+  - A `relationships` test from a mart or `rpt_` model to another model is not a
+    regression test. Key drift is the key macros' job (A7); a population
+    mismatch becomes a shared upstream model or a unit test; real orphans become
+    an upstream `warn`. The pre-join FK check below still applies.
+  - The model's own logic → a unit test.
+  - A promise an upstream model makes → `error` on that model.
+  - Source data → the earliest model that sees it: a `warn` with a downstream
+    defense and a description naming the source system, what is wrong, and what
+    to change there; or, when no business rule can handle it, an `error` gate. A
+    new gate lands as `warn` and flips after it passes in prod. A failing test
+    skips only downstream tables; a view between a gate and its consumers still
+    reads the bad rows.
+  - Build timing → delete.
 - Removing a `severity: warn` override reverts to the project default: `warn` in
   a district or kipptaf, `error` in a source package. To force `error`, set
   `config: severity: error` explicitly.
@@ -335,13 +354,16 @@ Top-level `description` on a singular test must go in a properties yml under
 `config.description`, which dbt docs doesn't read. After adding/editing the yml,
 run `dbt parse --no-partial-parse`; partial parse caches the unbound state.
 
-### Singular-test `meta.dagster.ref` needs `package:` for cross-package refs
+### Singular-test `meta.dagster.ref`: when it's required, and `package:`
+
+A singular test that reads more than one model needs `meta.dagster.ref` in
+`tests/properties.yml`, or Dagster never sees its result: `build_dbt_assets`
+drops the observation dagster-dbt falls back to.
 
 dagster-dbt resolves `meta.dagster.ref` via `(name, package, version)`. Omitting
 `package:` defaults to the running project — so a test under
 `src/dbt/<source>/tests/` referencing a model in its own package silently misses
-the lookup and logs `AssetObservation` across all parents instead of an
-`AssetCheckResult` on the intended asset. Always set `package: <source>` for
+the lookup and never becomes a check. Always set `package: <source>` for
 source-system package tests. Tests in `src/dbt/kipptaf/tests/` don't need it
 (refs default to kipptaf).
 

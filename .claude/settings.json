@@ -22,6 +22,7 @@
       "mcp__claude_ai_Google_Cloud_BigQuery__get_table_info",
       "mcp__claude_ai_Google_Cloud_BigQuery__list_dataset_ids",
       "mcp__claude_ai_Google_Cloud_BigQuery__list_table_ids",
+      "mcp__claude_ai_Slack__slack_send_message",
       "mcp__context7__query-docs",
       "mcp__context7__resolve-library-id",
       "mcp__dagster__get_asset_check_executions",
@@ -228,25 +229,29 @@
       "source": {
         "source": "github",
         "repo": "anthropics/claude-plugins-official"
-      }
+      },
+      "autoUpdate": true
     },
     "dagster": {
       "source": {
         "source": "github",
         "repo": "dagster-io/skills"
-      }
+      },
+      "autoUpdate": true
     },
     "dbt-agent-marketplace": {
       "source": {
         "source": "github",
         "repo": "dbt-labs/dbt-agent-skills"
-      }
+      },
+      "autoUpdate": true
     },
     "superpowers-dev": {
       "source": {
         "source": "github",
         "repo": "obra/superpowers"
-      }
+      },
+      "autoUpdate": true
     }
   },
   "promptSuggestionEnabled": false,

@@ -348,19 +348,21 @@ deadline of their senior year; FAFSA never gates an 11th grader.
 flowchart TD
     start([Student]) --> g10{Grade 10 or below?}
     g10 -->|yes| ge[Grad Eligible]
-    g10 -->|no| counts[A subject counts only if the student sat the NJGPA in it]
+    g10 -->|no| counts[A subject counts only if the student sat the NJGPA in it, or is coded DLM in it]
     counts --> both{Both subjects count?}
     both -->|yes| f1{FAFSA required and missing?}
     f1 -->|no| ge
     f1 -->|yes| nf[No FAFSA]
     both -->|no| one{One subject counts?}
-    one -->|yes| f2{FAFSA required and missing?}
+    one -->|yes| aw{Grade 11, other subject untested, before results land?}
+    aw -->|yes| onlyaw[ELA Only / Awaiting Math or Math Only / Awaiting ELA]
+    aw -->|no| f2{FAFSA required and missing?}
     f2 -->|no| only[ELA Only or Math Only]
     f2 -->|yes| onlynf[ELA Only / No FAFSA or Math Only / No FAFSA]
     one -->|no| hasf{Has FAFSA and FAFSA is required?}
     hasf -->|yes| fo[FAFSA Only]
     hasf -->|no| g11{Grade 11, no NJGPA records, before results land?}
-    g11 -->|yes| ge
+    g11 -->|yes| ar[Awaiting Results]
     g11 -->|no| nge[Not Grad Eligible]
 ```
 
@@ -393,13 +395,16 @@ Two models, split by grain:
 `grad_eligibility` is derived in the model, so there is no combination it cannot
 label; a new state rule is a new branch in the model. Three rules drive it:
 
-1. A subject only counts if the student sat the NJGPA in it.
+1. A subject only counts if the student sat the NJGPA in it. A DLM code (`M`)
+   counts as sitting it, in that subject only.
 2. FAFSA is required to graduate, but is not counted against a student until the
    January deadline of their senior year, and never gates an 11th grader.
-3. An 11th grader holding NJGPA records is treated as a 12th grader, minus
-   FAFSA. Testing ahead of their peers usually means they are behind on credits.
-   The grace period is only for 11th graders with no records yet, and it ends
-   once results land in late June.
+3. An 11th grader holding NJGPA records, a DLM code included, is treated as a
+   12th grader, minus FAFSA. Testing ahead of their peers usually means they are
+   behind on credits. Until results land in late June, an 11th grader with no
+   records yet reads Awaiting Results. One whose only counting subject leaves
+   the other untested reads ELA Only / Awaiting Math or Math Only / Awaiting
+   ELA.
 
 ### Picking a student's best score
 

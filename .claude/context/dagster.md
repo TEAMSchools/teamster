@@ -33,7 +33,13 @@ opaque token.
   rematerialized — including view models (distinct from the data-change
   condition, which skips views) — within minutes of the post-merge location
   deploy. To confirm a rollout landed: `get_location_load_history` (new commit
-  LOADED) → `list_runs` / `get_asset_materializations` for the asset.
+  LOADED) → `list_runs` / `get_asset_materializations` for the asset. A
+  materialization after the merge is not proof: a sensor run queued just before
+  the reload runs on the OLD image, records the old `dagster/code_version`, and
+  nothing re-triggers it. Check that run's `dagster/image` tag
+  (`mcp__dagster-plus__get_run`) names the new commit, or compare its code
+  version with a sibling district built from the same package model. On a
+  mismatch, launch the asset once with `mcp__dagster-plus__launch_asset_run`.
 - **Schedule/sensor-launched runs report no asset selection**; recover it from
   the `ASSET_MATERIALIZATION_PLANNED` events on page 1 of
   `mcp__dagster-plus__get_run_logs` (`.claude/context/dagster-plus.md`). A

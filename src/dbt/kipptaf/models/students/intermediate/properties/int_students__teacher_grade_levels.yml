@@ -22,6 +22,7 @@ models:
               - teachernumber
               - academic_year
               - grade_level
+              - _dbt_source_project
     columns:
       - name: teachernumber
         description: >-

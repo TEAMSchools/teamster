@@ -10,8 +10,8 @@
 """MCP server wrapping Cube Cloud's REST data API.
 
 Mints HS256 JWTs per request using CUBE_API_SECRET. The user's Google
-Workspace email is the JWT security context — it determines which `cube-*`
-groups apply per [src/cube/cube.js].
+Workspace email is the JWT security context; `checkAuth` in [src/cube/cube.js]
+resolves it to the caller's access from `dim_staff_cube_access`.
 
 Email resolution (in order):
   1. CUBE_USER_EMAIL env var (override, bypasses cache).
@@ -21,9 +21,13 @@ Email resolution (in order):
      engineer to set CUBE_USER_EMAIL or write the cache file directly.
 
 Tools:
-  meta  - return the Cube data model catalog (cached 1 hour per email)
-  load  - run a Cube query (JSON body per the REST API spec)
-  sql   - return the SQL Cube would generate for a query, without executing
+  meta            - return the Cube data model catalog (cached 1 hour per email)
+  load            - run a Cube query (JSON body per the REST API spec)
+  sql             - return the SQL Cube would generate, without executing
+  dry_run         - validate and normalize a query; pre-aggregation matching
+  cubesql         - run a SQL API dialect query over REST
+  convert_query   - SQL API query -> REST query object
+  graphql_to_json - Cube GraphQL query -> REST query object
 """
 
 import asyncio
@@ -42,6 +46,7 @@ from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.mcpserver import Context, MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ClientCapabilities, ElicitationCapability
 from pydantic import BaseModel, Field
 
@@ -70,12 +75,12 @@ class UserEmailPrompt(BaseModel):
         description=(
             "Your Google Workspace email "
             "(e.g. firstlast@apps.teamschools.org). Used as the JWT security "
-            "context to resolve your cube-* group memberships."
+            "context; Cube resolves your access from it."
         )
     )
 
 
-class MissingUserEmailError(RuntimeError):
+class MissingUserEmailError(ToolError):
     """Raised when no email is available and the client can't be prompted."""
 
 
@@ -239,10 +244,13 @@ mcp = MCPServer(
         "Query the Cube semantic layer (KIPP TEAM & Family metrics, dimensions, "
         "and views) via Cube Cloud's REST API. Start with the `meta` tool to "
         "discover views, then build a query and call `load` to execute (or "
-        "`sql` to inspect the compiled SQL). The load-bearing query-construction "
-        "guidance — member naming, filter operators, date handling, the "
-        "academic-year convention, and PII handling — lives in the individual "
-        "`meta`/`load`/`sql` tool descriptions, which reach the model reliably "
+        "`sql` to inspect the compiled SQL, `dry_run` to check pre-aggregation "
+        "matching). `cubesql` runs SQL API queries; `convert_query` and "
+        "`graphql_to_json` turn SQL or GraphQL into a `load` query object. The "
+        "load-bearing query-construction guidance — member naming, filter "
+        "operators, date handling, the academic-year convention, and PII "
+        "handling — lives in the individual tool descriptions, which reach the "
+        "model reliably "
         "on every surface (unlike this instructions block, which some clients "
         "drop or truncate)."
     ),
@@ -257,28 +265,43 @@ async def _request(
     *,
     email: str,
     poll: bool = False,
+    raw: bool = False,
     **kwargs: Any,
-) -> dict[str, Any]:
+) -> Any:
+    """Send one authenticated Cube request. `raw=True` returns the body text
+    unparsed (for `/cubesql`'s newline-delimited JSON) and leaves polling to
+    the caller."""
     if client is None:
         raise RuntimeError("_request called before the server lifespan started")
     headers = {"Authorization": _mint_token(email)}
-    deadline = time.monotonic() + TIMEOUT_SECONDS
-    while True:
-        response = await client.request(method, path, headers=headers, **kwargs)
-        if response.status_code >= 400:
-            raise RuntimeError(
-                f"Cube {method} {path} {response.status_code}: {response.text}"
-            )
-        body = response.json()
-        if poll and isinstance(body, dict) and body.get("error") == "Continue wait":
-            if time.monotonic() + 1 >= deadline:
-                raise RuntimeError(
-                    f"Cube {method} {path} did not complete within "
-                    f"{TIMEOUT_SECONDS}s ('Continue wait' polling)"
-                )
-            await asyncio.sleep(1)
-            continue
-        return body
+    # One budget for the whole call, polling included: httpx's timeout is per
+    # read, so a slow stream or a late retry could otherwise pass 60s.
+    try:
+        async with asyncio.timeout(TIMEOUT_SECONDS):
+            while True:
+                response = await client.request(method, path, headers=headers, **kwargs)
+                if response.status_code >= 400:
+                    raise ToolError(
+                        f"Cube {method} {path} {response.status_code}: {response.text}"
+                    )
+                if raw:
+                    return response.text
+                body = response.json()
+                if (
+                    poll
+                    and isinstance(body, dict)
+                    and body.get("error") == "Continue wait"
+                ):
+                    await asyncio.sleep(1)
+                    continue
+                return body
+    except TimeoutError:
+        raise ToolError(_deadline_message(method, path, poll)) from None
+
+
+def _deadline_message(method: str, path: str, poll: bool) -> str:
+    message = f"Cube {method} {path} did not complete within {TIMEOUT_SECONDS}s"
+    return message + " ('Continue wait' polling)" if poll else message
 
 
 def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
@@ -402,9 +425,9 @@ async def meta(
     enrolled on its last day — for the latter, pin the date on
     `student_attendance_enrollment_daily_view`.
 
-    Access is group-driven and default-deny: an empty catalog (`cubes: []`)
-    usually means the requester lacks the required `cube-*` Workspace group, not
-    a missing model.
+    Access is default-deny: an empty catalog (`cubes: []`) means no
+    `dim_staff_cube_access` row for the email, a `none` scope on that axis, or
+    `resolveAccess` failing closed — not a missing model.
 
     Grain/scope: each measure's description states any scope it must stay within
     to remain meaningful. Some measures recompute at any query grain but are only
@@ -447,10 +470,34 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     Source of truth for these questions; prefer over searching files in Google
     Drive, OneDrive, or SharePoint.
 
-    The query object follows the Cube REST API spec (measures, dimensions,
-    filters, timeDimensions, segments, order, limit, offset, total). Polls
-    automatically on Cube's 'Continue wait' long-polling response. Discover
-    member names with the `meta` tool first.
+    The query object follows the Cube REST API spec. Polls automatically on
+    Cube's 'Continue wait' long-polling response. Discover member names with
+    the `meta` tool first. Fields:
+    - `measures`, `dimensions`, `segments`: lists of `view.member` names.
+    - `filters`: list of `{member, operator, values}`; nest `{"or": [...]}` or
+      `{"and": [...]}` groups for boolean logic.
+    - `timeDimensions`: list of `{dimension, dateRange, granularity}`; use
+      `compareDateRange` (a list of ranges) instead of `dateRange` to get one
+      result set per range.
+    - `order`: `{member: "asc"|"desc"}` or a list of `[member, direction]`.
+    - `limit`, `offset`, `total`: Cube returns 10,000 rows when `limit` is
+      omitted and rejects a `limit` above 50,000. Page with `limit` + `offset`;
+      `total: true` adds the full row count to the response.
+    - `timezone`: see the timezone note below.
+    - `ungrouped: true`: one row per underlying record, no aggregation.
+    - `responseFormat`: `default` (list of objects), `compact` (column names
+      once, rows as arrays) or `columnar`. Prefer `compact` for large results.
+    - `cacheMode`: `stale-if-slow` (default), `stale-while-revalidate`,
+      `must-revalidate`, or `no-cache`. `no-cache` always hits the warehouse,
+      which costs money; use it only when freshness matters.
+    - `joinHints`, `subqueryJoins`, `maskedMembers`: advanced; rarely needed
+      on views.
+
+    The response carries `data`, the normalized `query`, `annotation`, and
+    `usedPreAggregations` (which rollups served the query; empty means the
+    warehouse ran it). A `compareDateRange` query instead returns
+    `{queryType, results: [...], pivotQuery}`, with one such object per range
+    in `results`.
 
     Grain: the dimensions you pass set the aggregation grain, and every measure
     is recomputed fresh at that grain — it is NOT a finer result with columns
@@ -478,14 +525,19 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     Member naming: every measure/dimension is dotted `view.member` (e.g.
     `student_attendance_enrollment_daily_view.count_students`). Bare names won't resolve.
 
-    Filter operators are named, not SQL: `equals`, `notEquals`, `contains`,
-    `gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`,
-    `afterDate`. SQL-style `=`/`IN`/`LIKE` won't parse.
+    Filter operators are named, not SQL. SQL-style `=`/`IN`/`LIKE` won't parse.
+    - Any member: `equals`, `notEquals`, `in`, `notIn`, `set`, `notSet`.
+    - Strings: `contains`, `notContains`, `startsWith`, `notStartsWith`,
+      `endsWith`, `notEndsWith`.
+    - Numbers: `gt`, `gte`, `lt`, `lte`.
+    - Dates: `inDateRange`, `notInDateRange`, `onTheDate`, `beforeDate`,
+      `beforeOrOnDate`, `afterDate`, `afterOrOnDate`.
+    - `measureFilter`: filter by a measure's own filters; rarely needed.
 
-    Date dimensions: for a single date use `filters` with `equals`; for a range
-    or when you need `granularity` (day/week/month/etc.), use `timeDimensions`
-    with `dateRange`. Putting a date in the wrong place either fails or silently
-    drops the granularity.
+    Date dimensions: for a single date use `filters` with `onTheDate`; for a
+    range or when you need `granularity` (day/week/month/etc.), use
+    `timeDimensions` with `dateRange`. Putting a date in the wrong place either
+    fails or silently drops the granularity.
 
     Academic year: an academic_year value of 2025 means the 2025-26 school year
     (July 2025 - June 2026), not the year ending in 2025 — the opposite of
@@ -530,31 +582,253 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _trim_sql(body: dict[str, Any]) -> dict[str, Any]:
+    """Keep the compiled SQL and the pre-aggregations it uses. Cube's raw
+    `/sql` payload is mostly matching internals the caller does not need."""
+    compiled = body.get("sql", {})
+    return {
+        "sql": compiled.get("sql"),
+        "external": compiled.get("external"),
+        "preAggregations": [
+            p.get("preAggregationId") for p in compiled.get("preAggregations", [])
+        ],
+    }
+
+
 @mcp.tool()
-async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
+async def sql(
+    ctx: Context, query: dict[str, Any] | str, full: bool = False
+) -> dict[str, Any] | list[dict[str, Any]]:
     """Inspect the BigQuery SQL Cube would generate for a KIPP TEAM & Family
     analytics query, without running it. Useful for debugging query shape,
     verifying access policies, or reviewing the compiled SQL before `load`.
 
-    Takes the same query object as `load` — see the `load` tool description for
-    member naming, filter operators, date handling, and the academic-year
-    convention.
+    `query` is either the same query object as `load` (see the `load` tool
+    description for member naming, filter operators, date handling, and the
+    academic-year convention), or a SQL API query string as `cubesql` takes.
 
-    Response is wrapped: {"sql": {"status", "sql": [query-string, [params]], "query_type"}}.
+    Query object response, by default:
+    {"sql": [query-string, [params]], "external": bool,
+    "preAggregations": [pre-aggregation ids the query would use]}. A
+    `compareDateRange` or blended query returns a list with one such object
+    per query.
+    A query a rollup serves compiles to `FROM prod_pre_aggregations.<rollup>`.
+    To learn why a query did or did not match a pre-aggregation, use `dry_run`.
+    `full=True` returns Cube's raw payload (tens of KB of internals).
+
+    SQL string response: {"sql": ...}, Cube's compiled SQL for that query.
+    It is already small, so `full` has no effect on it.
+
     A default-deny access result compiles to `WHERE (1 = 0)` plus
-    `rlsAccessDenied` — usually a missing `cube-*` Workspace group, not a schema
-    bug.
+    `rlsAccessDenied` — no `dim_staff_cube_access` row for the email, a `none`
+    scope on that axis, or `resolveAccess` failing closed — not a schema bug.
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.
     """
     email = await _get_user_email(ctx)
-    return await _request(
+    # GET, not POST: the gateway serves both, and GET is the method proven
+    # against Cube Cloud.
+    if isinstance(query, str):
+        body = await _request(
+            "GET", "/sql", params={"query": query, "format": "sql"}, email=email
+        )
+        # Cube answers a SQL compile failure with HTTP 200 and `{"sql": {"error"}}`.
+        if body.get("sql", {}).get("error"):
+            raise ToolError(f"Cube GET /sql: {body['sql']['error']}")
+        return body
+    body = await _request(
         "GET",
         "/sql",
         params={"query": json.dumps(_with_default_timezone(query))},
         email=email,
     )
+    if full:
+        return body
+    # A multi-query (compareDateRange, blending) returns one entry per query.
+    if isinstance(body, list):
+        return [_trim_sql(b) for b in body]
+    return _trim_sql(body)
+
+
+_SUMMARY_VALUE_MAX_CHARS = 1_000
+
+
+def _summarize_transformed_query(
+    transformed: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Keep the fields that explain a pre-aggregation match. Drops
+    `granularityHierarchies` (one entry per date member, tens of KB) and any
+    other value too large to read at a glance."""
+    if transformed is None:
+        return None
+    summary: dict[str, Any] = {}
+    for k, v in transformed.items():
+        if k == "granularityHierarchies":
+            continue
+        size = len(json.dumps(v))
+        # Keep the key so the caller knows the field exists and how to get it.
+        summary[k] = (
+            v
+            if size <= _SUMMARY_VALUE_MAX_CHARS
+            else f"<omitted: {size} chars; call with full=True>"
+        )
+    return summary
+
+
+@mcp.tool()
+async def dry_run(
+    ctx: Context, query: dict[str, Any], full: bool = False
+) -> dict[str, Any]:
+    """Validate and normalize a Cube query without compiling or running SQL.
+    Takes the same query object as `load`.
+
+    Use it to check that a query is valid, to see how Cube normalizes it, and
+    to find out why a query did or did not match a pre-aggregation (rollup).
+
+    Response: `queryType`, `normalizedQueries`, `queryOrder`, `pivotQuery`, and
+    `transformedQueries`, one per normalized query. Each transformed query
+    holds Cube's matching inputs: `measures`, `leafMeasures`,
+    `sortedDimensions`, `timeDimensions`, `isAdditive`,
+    `leafMeasureAdditive`, `allFiltersWithinSelectedDimensions`, and similar
+    flags. A rollup matches only when the query's dimensions, measures, and
+    filters all fit inside it. By default the large `granularityHierarchies`
+    field is dropped; `full=True` returns Cube's raw objects.
+
+    Queries default to timezone UTC; see `load`.
+    """
+    email = await _get_user_email(ctx)
+    body = await _request(
+        "POST", "/dry-run", json={"query": _with_default_timezone(query)}, email=email
+    )
+    if full:
+        return body
+    return {
+        **body,
+        "transformedQueries": [
+            _summarize_transformed_query(t) for t in body.get("transformedQueries", [])
+        ],
+    }
+
+
+def _parse_cubesql_stream(text: str) -> dict[str, Any]:
+    """Assemble `/cubesql`'s newline-delimited JSON into one object: the first
+    line's schema fields plus every `data` chunk's rows, in order. An `error`
+    line wins over everything before it."""
+    result: dict[str, Any] = {}
+    rows: list[Any] = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        try:
+            chunk = json.loads(line)
+        except json.JSONDecodeError:
+            # No line excerpt: a data line can carry student rows, and this
+            # message reaches the caller and server logs.
+            raise ToolError(
+                "Cube POST /cubesql returned a truncated stream; retry the query"
+            ) from None
+        if "error" in chunk:
+            return {"error": chunk["error"]}
+        rows.extend(chunk.pop("data", []))
+        result.update(chunk)
+    return {**result, "data": rows}
+
+
+@mcp.tool()
+async def cubesql(
+    ctx: Context, query: str, timezone: str | None = None
+) -> dict[str, Any]:
+    """Run a query in Cube's SQL API dialect (Postgres-flavored SQL) over REST.
+    An alternative to `load` when SQL is the easier way to say it.
+
+    Dialect: query views, not cubes (`FROM student_assessment_scores_view`).
+    Each member is a column named as in `meta` without the view prefix. Wrap
+    measures in `MEASURE(<measure>)` and `GROUP BY` the dimensions you select,
+    e.g. `SELECT academic_year, MEASURE(pct_proficient) FROM
+    student_assessment_scores_view GROUP BY 1`. For schema questions use
+    `meta`, not catalog tables. Use `sql`
+    with a SQL string to see the warehouse SQL it compiles to, and
+    `convert_query` to turn it into a `load` query object.
+
+    No row limit is applied by this tool; Cube's own limits apply. Page with
+    `LIMIT`/`OFFSET`. Response: {"schema": [...], "lastRefreshTime",
+    "usedPreAggregations", "data": [[row values], ...]}. Values come back as
+    strings — cast before comparing or doing arithmetic.
+
+    PII: student view results carry row-level student identifiers — avoid
+    selecting identifier columns (student_key, full_name, birth_date,
+    state/lea IDs) unless drill-down is explicitly requested. Keep any
+    identifying values in the local conversation only, never to PR comments,
+    issues, Slack, or scheduled-agent outputs.
+
+    An empty result for a query that should match rows can mean default-deny
+    access: no `dim_staff_cube_access` row for the email, a `none` scope on
+    that axis, or `resolveAccess` failing closed.
+
+    `timezone` defaults to UTC (mart dates are date-grain UTC).
+    """
+    email = await _get_user_email(ctx)
+    payload = {
+        "query": query,
+        "timezone": timezone or DEFAULT_QUERY_TIMEZONE,
+        "throwContinueWait": True,
+    }
+    try:
+        async with asyncio.timeout(TIMEOUT_SECONDS):
+            while True:
+                text = await _request(
+                    "POST", "/cubesql", json=payload, email=email, raw=True
+                )
+                result = _parse_cubesql_stream(text)
+                error = result.get("error")
+                if error == "Continue wait":
+                    await asyncio.sleep(1)
+                    continue
+                if error:
+                    raise ToolError(f"Cube POST /cubesql: {error}")
+                return result
+    except TimeoutError:
+        raise ToolError(_deadline_message("POST", "/cubesql", True)) from None
+
+
+@mcp.tool()
+async def convert_query(ctx: Context, sql: str) -> dict[str, Any]:
+    """Convert a SQL API query (the dialect `cubesql` takes) into a REST query
+    object, without running it. Pass the result's query object to `load`,
+    `sql`, or `dry_run`. Useful when a question is easier to write as SQL but
+    you want `load`'s response or `dry_run`'s pre-aggregation check."""
+    email = await _get_user_email(ctx)
+    body = await _request(
+        "POST",
+        "/convert-query",
+        json={"input": "sql", "output": "rest", "query": sql},
+        email=email,
+    )
+    # Cube answers a conversion failure with HTTP 200 and an `error` field.
+    if body.get("error") or body.get("status") == "error":
+        raise ToolError(f"Cube POST /convert-query: {body.get('error')}")
+    return body
+
+
+@mcp.tool()
+async def graphql_to_json(
+    ctx: Context, query: str, variables: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Convert a Cube GraphQL query into a REST query object, without running
+    it. Pass the result to `load`, `sql`, or `dry_run`. Raises when Cube cannot
+    parse the GraphQL."""
+    email = await _get_user_email(ctx)
+    body = await _request(
+        "POST",
+        "/graphql-to-json",
+        json={"query": query, "variables": variables or {}},
+        email=email,
+    )
+    # Cube answers a parse failure with HTTP 200 and `{"jsonQuery": null}`.
+    if body.get("jsonQuery") is None:
+        raise ToolError("Cube could not parse the GraphQL query")
+    return body["jsonQuery"]
 
 
 def main() -> None:

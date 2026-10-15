@@ -818,6 +818,8 @@ Performed in the Cube Cloud UI by an admin:
    - `CUBEJS_DB_BQ_CREDENTIALS` — service account JSON (base64-encoded)
    - `CUBEJS_SQL_SUPER_USER=cube-superset-service` — SQL API super-user for
      Superset user impersonation (follow-up integration)
+   - `CUBEJS_DB_EXPORT_BUCKET=teamster-cube-exports` and
+     `CUBEJS_DB_EXPORT_BUCKET_TYPE=gcp` — see step 7
 
    Cube Cloud automatically generates `CUBEJS_API_SECRET`, the SQL API username,
    and the SQL API password on deployment creation — find them under the
@@ -827,3 +829,13 @@ Performed in the Cube Cloud UI by an admin:
    `roles/bigquery.jobUser` on the `teamster-332318` project — both for the
    warehouse data (`dim_*` / `fct_*`) and for `dim_staff_cube_access` /
    `dim_staff_reporting_chain` used for identity resolution
+7. Pre-aggregation builds go through the Cloud Storage export bucket
+   `gs://teamster-cube-exports` (in `teamster-332318`, location US): BigQuery
+   `EXTRACT`s each build to the bucket and Cube Store loads it from there,
+   instead of Cube paging rows through its own server. The service account needs
+   `roles/storage.objectAdmin` on the bucket, plus BigQuery Data Editor, which
+   it also needs to write build tables to `prod_pre_aggregations`. A lifecycle
+   rule deletes objects after 1 day, because Cube does not clean up its export
+   files. Keep the bucket for Cube exports only — the rule deletes anything else
+   in it — and separate from Cube Store's own storage bucket. Removing the two
+   `CUBEJS_DB_EXPORT_BUCKET*` variables falls back to the slower paged load.

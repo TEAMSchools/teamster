@@ -21,7 +21,7 @@ with
     ),
 
     pre_filter_qaf as (
-        select powerschool_student_number, subject_area, module_code, percent_correct,
+        select student_number, subject_area, module_code, percent_correct,
         from {{ ref("int_assessments__response_rollup") }}
         where
             module_type = 'QAF'
@@ -31,7 +31,7 @@ with
     ),
 
     qaf_pct_correct as (
-        select powerschool_student_number, subject_area, qaf1, qaf2, qaf3, qaf4,
+        select student_number, subject_area, qaf1, qaf2, qaf3, qaf4,
         from
             pre_filter_qaf pivot (
                 max(percent_correct) for module_code in ('QAF1', 'QAF2', 'QAF3', 'QAF4')
@@ -221,7 +221,7 @@ left join
     and co.iready_subject = ir.subject
 left join
     qaf_pct_correct as ia
-    on co.student_number = ia.powerschool_student_number
+    on co.student_number = ia.student_number
     and co.illuminate_subject_area = ia.subject_area
 left join
     {{ ref("int_assessments__iready_diagnostic_results") }} as dr

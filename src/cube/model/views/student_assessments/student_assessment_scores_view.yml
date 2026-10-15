@@ -9,12 +9,17 @@ views:
       percent_correct is null for state and vendor rows. response_type /
       response_type_code carry the standard/skill breakdown (Illuminate only).
       State and vendor administrations have no single administered date, so the
-      Date members (academic_year, academic_year_label, date_day, month_number,
-      month_name) resolve for every source but are scoped by different dates per
-      source: the administration date for Illuminate/college, the student's
-      completion (test) date for state/vendor. A cross-source date cut (e.g.
-      "scores in May") therefore mixes those two date concepts. Contains direct
-      student identifiers — see access_policy for PII gating.
+      Date members (assessment_date, academic_year, academic_year_label,
+      date_day, month_number, month_name) resolve for every source but are
+      scoped by different dates per source: the administration date for
+      Illuminate/college, the student's completion (test) date for state/vendor.
+      A cross-source date cut (e.g. "scores in May") therefore mixes those two
+      date concepts. Filter assessment_date, not date_day, for a single date or
+      a date range: the two return identical rows, but assessment_date filters
+      the fact's own partitioning column and reads only the matching months,
+      while date_day reads every month. Use academic_year_label for school-year
+      filters and the other date members for grouping. Contains direct student
+      identifiers — see access_policy for PII gating.
 
     cubes:
       - join_path: student_assessment_scores
@@ -31,6 +36,7 @@ views:
           - avg_percent_correct
           - avg_scale_score
           - assessment_score_key
+          - assessment_date
           - date_taken
           - enrollment_resolution
           - proficiency_level
@@ -187,6 +193,7 @@ views:
             - is_replacement
         - name: Date
           members:
+            - assessment_date
             - date_day
             - academic_year
             - academic_year_label

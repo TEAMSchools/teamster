@@ -73,6 +73,7 @@ with
 
     prev_yr_iready as (
         select
+            _dbt_source_project,
             student_id,
             `subject`,
             iready_proficiency,
@@ -145,32 +146,6 @@ with
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
-    bucket_programs as (
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            academic_year,
-            enter_date,
-
-            trim(split(specprog_name, '-')[offset(0)]) as bucket,
-            trim(split(specprog_name, '-')[offset(1)]) as discipline,
-
-        from {{ ref("int_powerschool__spenrollments") }}
-        where specprog_name like 'Bucket%'
-    ),
-
-    bucket_dedupe as (
-        {{
-            dbt_utils.deduplicate(
-                relation="bucket_programs",
-                partition_by="_dbt_source_relation, studentid, academic_year, discipline",
-                order_by="enter_date desc",
-            )
-        }}
-    ),
-
-    -- trunk-ignore(sqlfluff/ST03)
     mtss as (
         select
             sp._dbt_source_relation,
@@ -216,6 +191,11 @@ select
     dr.measure_standard_level_int as dibels_most_recent_composite_int,
 
     a.values_column as ps_grad_path_code,
+
+    b.bucket_store,
+
+    cc.sections_section_number as course_section_number,
+    cc.teacher_lastfirst as course_teacher_lastfirst,
 
     coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
@@ -285,6 +265,7 @@ left join
     {{ ref("int_assessments__fast_previous_year") }} as fp
     on co.academic_year = fp.academic_year
     and co.student_number = fp.student_number
+    and co._dbt_source_project = fp._dbt_source_project
     and sj.discipline = fp.discipline
 left join
     prev_yr_state_test as py
@@ -297,6 +278,7 @@ left join
     prev_yr_iready as pr
     on co.student_number = pr.student_id
     and co.academic_year = pr.academic_year_plus
+    and co._dbt_source_project = pr._dbt_source_project
     and sj.iready_subject = pr.subject
 left join
     dibels as db
@@ -323,11 +305,19 @@ left join
     and co._dbt_source_project = nj._dbt_source_project
     and sj.iready_subject = nj.iready_subject
 left join
-    bucket_dedupe as b
-    on co.studentid = b.studentid
+    {{ ref("int_students__bucket_assignments") }} as b
+    on co.student_number = b.student_number
     and co.academic_year = b.academic_year
     and co._dbt_source_project = b._dbt_source_project
-    and sj.discipline = b.discipline
+    and sj.iready_subject = b.subject
+left join
+    {{ ref("int_students__course_enrollments") }} as cc
+    on co.studentid = cc.cc_studentid
+    and co.yearid = cc.cc_yearid
+    and co._dbt_source_project = cc._dbt_source_project
+    and sj.illuminate_subject_area = cc.illuminate_subject_area
+    and not cc.is_dropped_section
+    and cc.rn_student_year_illuminate_subject_desc = 1
 left join
     mtss_dedupe as mtss
     on co.studentid = mtss.studentid

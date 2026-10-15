@@ -5,17 +5,25 @@ on:
     types: [opened, ready_for_review]
     branches:
       - main
+    # Skip only PRs whose every file is excluded below: docs, generated
+    # lockfiles, data, and editor or docs-site config where a mistake is
+    # cosmetic. Config that can break builds or weaken guardrails stays in.
     paths:
-      - src/**
-      - tests/**
-      - scripts/**
-      # A PR editing a workflow runs that PR's own version of it, so a change
-      # here reviews itself. Kept in scope anyway: CI-config defects are exactly
-      # the class this workflow was silently failing to catch.
-      - .github/workflows/**
+      - "**"
       - "!**/*.md"
+      - "!**/*.csv"
       - "!**/package.json"
       - "!**/package-lock.json"
+      - "!**/package-lock.yml"
+      - "!**/uv.lock"
+      - "!**/.gitignore"
+      - "!.github/ISSUE_TEMPLATE/**"
+      - "!.vscode/extensions.json"
+      - "!.vscode/launch.json"
+      - "!.vscode/settings.json"
+      - "!docs/images/**"
+      - "!LICENSE"
+      - "!mkdocs.yml"
 
 jobs:
   claude-review:
@@ -37,7 +45,7 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@cab360f6565aa35a51d6ce9e43f1f4287c0a32ea # v1.0.241
+        uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -88,6 +96,23 @@ jobs:
             adds; an edge the model already had is known backlog. Apply A11 only
             to a folder the PR adds, and A7 only to an entity that already has a
             key macro under src/dbt/kipptaf/macros/.
+
+            For each int_ or rpt_ model the PR adds, write a ledger in the
+            fold-out: one line per rule below, even when the answer is "none". A
+            model with no ledger means you skipped it, so never leave one out.
+            This ledger replaces a free-form "checked and fine" note for added
+            models.
+
+            A4 line: the model's grain, and every model in the same folder at
+            that grain, including one whose grain columns carry different names
+            (assessment_subject vs subject).
+
+            A5 line: every row-pick (dbt_utils.deduplicate, or row_number()
+            filtered to 1), and the standard_exempt reason if there is one.
+
+            A10 line: every join between 2 regional models (unions of district
+            models), with its join keys and whether _dbt_source_project is one
+            of them.
 
             Also check model altitude: derive a model in the source-system
             package at the same layer the source system derives it, not at

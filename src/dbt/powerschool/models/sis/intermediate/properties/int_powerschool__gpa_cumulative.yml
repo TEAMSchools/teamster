@@ -419,7 +419,13 @@ unit_tests:
               rn_year: 1,
             }
       - input: ref('stg_powerschool__students')
-        rows: []
+        rows:
+          - { id: 1 }
+          - { id: 2 }
+          - { id: 3 }
+          - { id: 4 }
+          - { id: 5 }
+          - { id: 6 }
       - input: ref('stg_powerschool__schools')
         rows: []
     expect:

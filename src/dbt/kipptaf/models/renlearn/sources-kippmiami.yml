@@ -22,15 +22,6 @@ sources:
                 - kippmiami
                 - renlearn
                 - stg_renlearn__fast_star
-      - name: stg_renlearn__star_dashboard_standards
-        config:
-          meta:
-            dagster:
-              group: renlearn
-              asset_key:
-                - kippmiami
-                - renlearn
-                - stg_renlearn__star_dashboard_standards
       - name: stg_renlearn__star_skill_area
         config:
           meta:

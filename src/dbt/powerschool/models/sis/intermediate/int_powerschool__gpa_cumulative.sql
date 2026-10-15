@@ -346,6 +346,6 @@ select
     round(ng.gpa_needed_raw, 2)
     <= round(ng.gpa_max_current_raw, 2) as is_cumulative_3_0_attainable,
 from needed_gpa as ng
-left join {{ ref("stg_powerschool__students") }} as s on ng.studentid = s.id
+inner join {{ ref("stg_powerschool__students") }} as s on ng.studentid = s.id
 left join
     {{ ref("stg_powerschool__schools") }} as sch on ng.schoolid = sch.school_number

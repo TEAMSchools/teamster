@@ -89,5 +89,5 @@ columns at once — dbt reports only the first.
   `test_int_powerschool__ps_enrollment_all__fteid_belongs_to_school_year`.
 - **`schoolid = 999999`**: graduated-students sentinel, not a "no school"
   marker. Already excluded in `int_powerschool__district_entry_date`. Students
-  at 999999 commonly retain a real-school FTE from prior placement — the
-  fteid-belongs-to-school-year test treats this as a cleanup target.
+  at 999999 commonly retain a real-school FTE from prior placement. They get no
+  membership days, so the fteid-belongs-to-school-year test excludes them.

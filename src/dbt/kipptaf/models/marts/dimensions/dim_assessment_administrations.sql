@@ -10,8 +10,7 @@ with
 
             title,
 
-            'illuminate' as assessment_type,
-
+            source as assessment_type,
             canonical_assessment_id as source_assessment_id,
 
             cast(null as string) as administration_period,

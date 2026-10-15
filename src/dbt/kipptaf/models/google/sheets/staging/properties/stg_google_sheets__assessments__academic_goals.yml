@@ -50,3 +50,9 @@ models:
       - name: Assessment_Band_Goal
         data_type: float64
         description: Assessment-band goal.
+      - name: Region_Grade_Goal
+        data_type: float64
+        description: >-
+          Region-level goal for this one grade, set only where it differs from
+          the grade-band goal (for example a city grade 3 goal inside a grades
+          3-8 band); null otherwise.

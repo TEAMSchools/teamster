@@ -16,7 +16,10 @@ models:
       scaffold row and response. `assessment_id` here is the canonical id, not
       the per-row member id; `assessment_ids` (array) preserves the underlying
       member ids for drilldown. Performance band labels and the reporting terms
-      of the administered and taken dates are joined last.
+      of the administered and taken dates are joined last. Apex rows (`source =
+      'apex'`) skip the Illuminate responses and bands: each takes its points,
+      percent, band, and mastery from `int_focus__apex_results`, one row per
+      scaffold row and response, and carries the scaffold's section match.
     config:
       materialized: table
       meta:
@@ -40,7 +43,8 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - illuminate_student_id
+              - student_number
+              - source
               - assessment_id
               - response_type
               - response_type_id
@@ -64,10 +68,16 @@ models:
           config:
             severity: warn
     columns:
+      - name: source
+        description: >-
+          System the assessment comes from (`illuminate` or `apex`). Part of the
+          key, because the two systems' assessment ids can collide.
       - name: illuminate_student_id
         data_type: int64
-        description: Illuminate student id, from `int_assessments__scaffold`.
-      - name: powerschool_student_number
+        description:
+          Illuminate student id, from `int_assessments__scaffold`. Null on Apex
+          rows.
+      - name: student_number
         data_type: int64
         description: Student number, from `int_assessments__scaffold`.
       - name: academic_year
@@ -176,7 +186,8 @@ models:
           For internal rows, `sum(points) / sum(points_possible) * 100` across
           the rolled-up members, rounded to one decimal. For external rows, the
           per-row `percent_correct` from
-          `int_illuminate__agg_student_responses`.
+          `int_illuminate__agg_student_responses`. For Apex rows, the
+          `percent_correct` from `int_focus__apex_results`.
       - name: title
         data_type: string
         description: >-
@@ -210,18 +221,37 @@ models:
         description: >-
           `canonical_performance_band_set_id` from
           `int_assessments__performance_bands` for the row's response. Null when
-          the scaffold row has no responses.
+          the scaffold row has no responses. On Apex rows, the band set attached
+          to the Apex assessment; null when it has none.
       - name: performance_band_label
         data_type: string
         description: >-
           Label of the band in `int_illuminate__performance_band_sets` whose
-          range contains `percent_correct` for `performance_band_set_id`.
+          range contains `percent_correct` for `performance_band_set_id`. On
+          Apex rows, the band label from `int_focus__apex_results`.
       - name: performance_band_label_number
         data_type: numeric
-        description: Ordinal number of the matched performance band.
+        description: >-
+          Ordinal number of the matched performance band. On Apex rows, from
+          `int_focus__apex_results`.
       - name: is_mastery
         data_type: boolean
-        description: Mastery flag of the matched performance band.
+        description: >-
+          Mastery flag of the matched performance band. On Apex rows, from
+          `int_focus__apex_results` (Level 3 or above); null when the Apex
+          assessment has no band set.
+      - name: cc_dcid
+        data_type: int64
+        description: >-
+          Focus section the Apex result is attributed to, from
+          `int_assessments__scaffold`. Null on Illuminate rows, which resolve
+          their section downstream, and on Apex rows without exactly 1 matching
+          section.
+      - name: section_match_method
+        data_type: string
+        description: >-
+          How the Apex row's section was matched (`single`, `multiple`, or
+          `none`), from `int_assessments__scaffold`. Null on Illuminate rows.
       - name: term_administered
         data_type: string
         description: >-
@@ -250,3 +280,162 @@ models:
         description: >-
           Array of distinct member `assessment_id`s rolled up into this
           canonical row. Use to drill from the canonical to per-member rows.
+
+unit_tests:
+  - name: test_int_assessments__response_rollup_apex_bands
+    description: >-
+      An Apex result and an Illuminate result share assessment id 9001, band set
+      5, and the same session/student-assessment id. The Apex row takes its
+      score and band from the Apex result (Level 3, mastery) and its section
+      from the scaffold; the Illuminate row still takes its score from
+      Illuminate responses and its band from the Illuminate band set
+      (Proficient, not mastery). Neither picks up the other's values, and the
+      Apex score of 72 does not join Illuminate band set 5, so the 2 Illuminate
+      bands that both cover 72 cannot duplicate the Apex row.
+    model: int_assessments__response_rollup
+    given:
+      - input: ref('int_assessments__scaffold')
+        format: sql
+        rows: |
+          select
+              cast(null as int64) as illuminate_student_id,
+              101 as student_number,
+              'apex' as source,
+              9001 as assessment_id,
+              'Apex Math Check' as title,
+              cast(null as string) as scope,
+              'Mathematics' as subject_area,
+              'Math' as discipline,
+              2026 as academic_year,
+              date('2026-09-28') as administered_at,
+              cast(null as string) as module_type,
+              cast(null as string) as module_code,
+              'Miami' as region,
+              'kippmiami' as _dbt_source_project,
+              30200803 as powerschool_school_id,
+              7 as grade_level_id,
+              true as is_internal_assessment,
+              false as is_replacement,
+              1 as student_assessment_id,
+              9001 as canonical_assessment_id,
+              date('2026-10-01') as date_taken,
+              5001 as cc_dcid,
+              'single' as section_match_method
+          union all
+          select
+              201,
+              201,
+              'illuminate',
+              9001,
+              'Illuminate Check',
+              cast(null as string),
+              'Mathematics',
+              'Math',
+              2026,
+              date('2026-09-28'),
+              cast(null as string),
+              cast(null as string),
+              'Newark',
+              'kippnewark',
+              73252,
+              7,
+              false,
+              false,
+              1,
+              9001,
+              date('2026-10-01'),
+              cast(null as int64),
+              cast(null as string)
+      - input: ref('int_focus__apex_results')
+        format: sql
+        rows: |
+          select
+              101 as student_number,
+              9001 as assessment_id,
+              1 as session_id,
+              date('2026-10-01') as date_taken,
+              'overall' as response_type,
+              9001 as response_type_id,
+              cast(null as string) as response_type_code,
+              cast(null as string) as response_type_description,
+              cast(null as string) as response_type_root_description,
+              18.0 as points,
+              25.0 as points_possible,
+              72.0 as percent_correct,
+              5 as performance_band_set_id,
+              'Level 3' as performance_band_label,
+              3 as performance_band_label_number,
+              true as is_mastery,
+              'kippmiami' as _dbt_source_project
+      - input: ref('int_illuminate__agg_student_responses')
+        rows:
+          - {
+              student_assessment_id: 1,
+              response_type: overall,
+              response_type_id: -1,
+              points_possible: 20.0,
+              points: 15.0,
+              percent_correct: 75.0,
+            }
+      - input: ref('int_assessments__performance_bands')
+        rows:
+          - {
+              assessment_id: 9001,
+              response_type: overall,
+              response_type_id: -1,
+              canonical_performance_band_set_id: 5,
+            }
+      - input: ref('int_illuminate__performance_band_sets')
+        rows:
+          - {
+              performance_band_set_id: 5,
+              minimum_value: 70.0,
+              maximum_value: 79.9,
+              label: Proficient,
+              label_number: 4,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 5,
+              minimum_value: 60.0,
+              maximum_value: 72.0,
+              label: Approaching,
+              label_number: 3,
+              is_mastery: false,
+            }
+      - input: ref('int_assessments__assessments_canonical')
+        rows: []
+      - input: ref('stg_google_sheets__reporting__terms')
+        rows: []
+    expect:
+      rows:
+        - {
+            student_number: 101,
+            source: apex,
+            assessment_id: 9001,
+            response_type: overall,
+            percent_correct: 72.0,
+            performance_band_set_id: 5,
+            performance_band_label: Level 3,
+            performance_band_label_number: 3,
+            is_mastery: true,
+            n_assessments: 1,
+            is_multipart_assessment: false,
+            cc_dcid: 5001,
+            section_match_method: single,
+          }
+        - {
+            student_number: 201,
+            source: illuminate,
+            assessment_id: 9001,
+            response_type: overall,
+            percent_correct: 75.0,
+            performance_band_set_id: 5,
+            performance_band_label: Proficient,
+            performance_band_label_number: 4,
+            is_mastery: false,
+            n_assessments: 1,
+            is_multipart_assessment: false,
+            cc_dcid: null,
+            section_match_method: null,
+          }

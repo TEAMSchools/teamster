@@ -298,14 +298,27 @@ data_tests:
           ref:
             name: stg_kippadb__contact_note
 
+  - name: int_assessments__assessments_members__no_cross_source_canonical
+    description: >-
+      Asserts that every assessment's canonical pick comes from its own source.
+      Illuminate and Apex assessment ids share one integer space, so a canonical
+      group keyed on id alone could merge an Apex assessment into an Illuminate
+      one. Returns members whose (source, canonical_assessment_id) matches no
+      member's (source, assessment_id).
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_assessments__assessments_members
+
   - name: int_assessments__resolved_section_enrollments__unique_per_score
     description: >-
       Asserts that int_assessments__resolved_section_enrollments contains one
       row per score. The score grain spans all three source branches (internal,
-      state_nj, state_fl): (powerschool_student_number, _dbt_source_project,
-      source_type, canonical_assessment_id, academic_year,
-      administration_period, subject_area). NULL-safe via format("%T|...") so
-      NULL canonical_assessment_id on state rows and NULL
+      state_nj, state_fl): (student_number, _dbt_source_project, source_type,
+      source, canonical_assessment_id, academic_year, administration_period,
+      subject_area). NULL-safe via format("%T|...") so NULL
+      canonical_assessment_id on state rows and NULL
       academic_year/administration_period on internal rows do not collapse the
       distinct count.
     config:
@@ -898,28 +911,25 @@ data_tests:
           ref:
             name: stg_google_sheets__student_graduation_path_cutoffs
 
-  - name: int_students__student_enrollments__cohort_not_ahead_of_entry
+  - name: int_extracts__student_enrollments__miami_cohort_not_ahead_of_entry
     description: >-
-      A high school student should never be ahead of the cohort they entered
-      with. For grade 9 and up, cohort freezes at the student's first year in
-      the school, which is correct for New Jersey's 4-year adjusted cohort
-      graduation rate. Falling behind that cohort is ordinary retention and is
-      not a defect, so only the other direction is tested -- a student whose
-      grade level implies an earlier graduating class than their recorded
-      cohort. Three causes produce that shape. A skipped grade and a missing
-      enrollment year are records problems, corrected in PowerSchool. Summer
-      credit recovery is not -- a student can advance a grade over the summer
-      with no enrollment row to show for it, because
-      int_powerschool__student_enrollment_union filters out the summer school,
-      so the records are already right. Warn rather than error, because no
-      result here is fixed by a code change, and because the cut score join no
-      longer depends on the two agreeing.
+      Miami's copy of the powerschool package test
+      base_powerschool__student_enrollments__cohort_not_ahead_of_entry, which
+      covers the New Jersey regions. Miami's enrollments come from Focus, and
+      kipptaf derives their cohort the same way, frozen at the student's first
+      year in the school for grade 9 and up. A current high school student whose
+      grade level implies an earlier graduating class (`cohort_primary`) than
+      their recorded cohort has skipped a grade or is missing an enrollment
+      year, both corrected in Focus. Falling behind the cohort is ordinary
+      retention and is not tested. Anchored on this table rather than on
+      int_students__student_enrollments, a view whose tests rerun only when its
+      code changes. Warn, because no result here is fixed by a code change.
     config:
       severity: warn
       meta:
         dagster:
           ref:
-            name: int_students__student_enrollments
+            name: int_extracts__student_enrollments
 
   - name: test_state_assessment_joins_resolve_miami
     description: >-
@@ -1127,3 +1137,29 @@ data_tests:
         dagster:
           ref:
             name: int_iready__diagnostic_results
+
+  - name: stg_google_sheets__ignite__treatment_sections__resolved_rows_match_a_section
+    description: >-
+      Every resolved row on the Ignite treatment sections sheet must name a real
+      PowerSchool section (school, academic year, course number and section
+      number). int_ignite__treatment_assignment inner-joins these rows to
+      sections, so a row that names no section silently drops its treated
+      students rather than raising an error.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__ignite__treatment_sections
+
+  - name: test_kippfwd_goals_resolve_to_scaffold
+    description: >-
+      Every KIPP Forward goal must have a scaffold row for its academic year,
+      test type and score type. Both branches of
+      int_google_sheets__kippfwd__goals_unpivot are driven from the scaffold, so
+      a goal with no scaffold row is dropped entirely rather than reported with
+      a null threshold.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kippfwd__goals

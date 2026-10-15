@@ -36,15 +36,21 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - powerschool_student_number
+              - student_number
               - _dbt_source_project
               - source_type
+              - source
               - canonical_assessment_id
               - academic_year
               - administration_period
               - subject_area
               - anchor_date
     columns:
+      - name: source
+        description: >-
+          System the assessment comes from for internal scores (`illuminate` or
+          `apex`); null for state and benchmark scores. Part of the key, because
+          the two systems' assessment ids can collide.
       - name: source_type
         data_type: string
         description: >-
@@ -52,7 +58,7 @@ models:
           (Illuminate-sourced), state_nj (Pearson NJ), state_fl (FLDOE FL),
           iready (i-Ready diagnostics), star (Renaissance STAR), or dibels
           (Amplify DIBELS benchmark composites).
-      - name: powerschool_student_number
+      - name: student_number
         data_type: int64
         description: >-
           Student number. Sourced from int_assessments__scaffold for internal
@@ -60,7 +66,7 @@ models:
           or int_assessments__benchmark_scores otherwise.
         config:
           meta:
-            source_column: int_assessments__scaffold.powerschool_student_number
+            source_column: int_assessments__scaffold.student_number
             contains_pii: true
       - name: canonical_assessment_id
         data_type: int64
@@ -143,7 +149,8 @@ unit_tests:
       - input: ref('int_assessments__scaffold')
         rows:
           - {
-              powerschool_student_number: 1,
+              student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -151,7 +158,8 @@ unit_tests:
               is_replacement: false,
             }
           - {
-              powerschool_student_number: 1,
+              student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -159,7 +167,8 @@ unit_tests:
               is_replacement: false,
             }
           - {
-              powerschool_student_number: 1,
+              student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -167,7 +176,8 @@ unit_tests:
               is_replacement: true,
             }
           - {
-              powerschool_student_number: 1,
+              student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -176,7 +186,11 @@ unit_tests:
             }
       - input: ref('int_assessments__assessments_canonical')
         rows:
-          - { canonical_assessment_id: 100, administered_date: 2024-03-04 }
+          - {
+              source: illuminate,
+              canonical_assessment_id: 100,
+              administered_date: 2024-03-04,
+            }
       - input: ref('int_assessments__state_scores')
         rows: []
       - input: ref('int_assessments__benchmark_scores')
@@ -184,7 +198,8 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 1,
+            student_number: 1,
+            source: illuminate,
             canonical_assessment_id: 100,
             _dbt_source_project: kippnewark,
             subject_area: Mathematics,
@@ -246,7 +261,7 @@ unit_tests:
     expect:
       rows:
         - {
-            powerschool_student_number: 5,
+            student_number: 5,
             academic_year: 2024,
             administration_period: BOY,
             subject_area: Text Study,
@@ -254,7 +269,7 @@ unit_tests:
             source_type: iready,
           }
         - {
-            powerschool_student_number: 5,
+            student_number: 5,
             academic_year: 2024,
             administration_period: BOY,
             subject_area: Text Study,

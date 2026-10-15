@@ -29,6 +29,7 @@ models:
               - assessment_id
               - response_type
               - response_type_description
+              - standard_domain
     columns:
       - name: source_model
         data_type: string
@@ -108,7 +109,8 @@ models:
         data_type: string
         description: >
           Direct link to the student responses report for this assessment in
-          Illuminate, constructed from the assessment_id.
+          Illuminate, constructed from the assessment_id. Null for Apex
+          assessments, which have no Illuminate report.
       - name: is_current_academic_year
         data_type: boolean
         description: True if this row belongs to the current academic year.

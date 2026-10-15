@@ -57,7 +57,10 @@ specifics live there.
   `git worktree add /workspaces/teamster/.claude/worktrees/<branch> <branch>`.
   The path must be absolute; a relative one nests one worktree inside another.
   Keep worktrees under `.claude/worktrees/`: `.claude/rules/worktrees.md` loads
-  on the first read there and nowhere else.
+  on the first read there and nowhere else. Merging a linked branch's PR closes
+  the issue whatever the body says, so when the issue must outlive the PR (it
+  tracks `standard-baseline.tsv` rows or deferred work), use the no-issue form
+  below and write `Refs #N`.
 - Create, without an issue (user declined):
   `git worktree add -b <branch> <abs-path> origin/main` or
   `git checkout -b <branch>`. Name `origin/main`; local `main` is often behind.
@@ -214,7 +217,7 @@ cells are not.
 ## Superpowers skill overrides
 
 - Branch creation always goes through _Before you start_ and _Branches_,
-  including inside `superpowers:brainstorming` ("Write design doc"),
+  including inside `superpowers:brainstorming` ("Where it goes"),
   `superpowers:writing-plans` ("Save plans to:"), and
   `superpowers:using-git-worktrees`. Pause the skill, run the flow, then write
   the spec or plan on the new branch. The flow's `git worktree add` satisfies
@@ -223,6 +226,8 @@ cells are not.
   (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on the
   issue. `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
   `docs/guides/superpowers.md` never loads into context.
+- `superpowers:brainstorming` "Size the Work": when unsure which size a request
+  is, including whether it is a quick, clear task, ask the user before acting.
 - "The project's suite" (TDD, `finishing-a-development-branch`,
   `using-git-worktrees` baseline) means `uv run pytest <touched tests>` plus
   `uv run dbt build --select <model>+` for modified models. Never bare
