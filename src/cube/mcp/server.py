@@ -273,25 +273,36 @@ async def _request(
     if client is None:
         raise RuntimeError("_request called before the server lifespan started")
     headers = {"Authorization": _mint_token(email)}
-    deadline = time.monotonic() + TIMEOUT_SECONDS
-    while True:
-        response = await client.request(method, path, headers=headers, **kwargs)
-        if response.status_code >= 400:
-            raise RuntimeError(
-                f"Cube {method} {path} {response.status_code}: {response.text}"
-            )
-        if raw:
-            return response.text
-        body = response.json()
-        if poll and isinstance(body, dict) and body.get("error") == "Continue wait":
-            if time.monotonic() + 1 >= deadline:
-                raise RuntimeError(
-                    f"Cube {method} {path} did not complete within "
-                    f"{TIMEOUT_SECONDS}s ('Continue wait' polling)"
-                )
-            await asyncio.sleep(1)
-            continue
-        return body
+    # One budget for the whole call, polling included: httpx's timeout is per
+    # read, so a slow stream or a late retry could otherwise pass 60s.
+    try:
+        async with asyncio.timeout(TIMEOUT_SECONDS):
+            while True:
+                response = await client.request(method, path, headers=headers, **kwargs)
+                if response.status_code >= 400:
+                    raise RuntimeError(
+                        f"Cube {method} {path} {response.status_code}: {response.text}"
+                    )
+                if raw:
+                    return response.text
+                body = response.json()
+                if (
+                    poll
+                    and isinstance(body, dict)
+                    and body.get("error") == "Continue wait"
+                ):
+                    await asyncio.sleep(1)
+                    continue
+                return body
+    except TimeoutError:
+        raise RuntimeError(_deadline_message(method, path)) from None
+
+
+def _deadline_message(method: str, path: str) -> str:
+    return (
+        f"Cube {method} {path} did not complete within {TIMEOUT_SECONDS}s "
+        "('Continue wait' polling)"
+    )
 
 
 def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
@@ -485,7 +496,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     The response carries `data`, the normalized `query`, `annotation`, and
     `usedPreAggregations` (which rollups served the query; empty means the
-    warehouse ran it).
+    warehouse ran it). A `compareDateRange` query instead returns
+    `{queryType, results: [...], pivotQuery}`, with one such object per range
+    in `results`.
 
     Grain: the dimensions you pass set the aggregation grain, and every measure
     is recomputed fresh at that grain — it is NOT a finer result with columns
@@ -586,7 +599,7 @@ def _trim_sql(body: dict[str, Any]) -> dict[str, Any]:
 @mcp.tool()
 async def sql(
     ctx: Context, query: dict[str, Any] | str, full: bool = False
-) -> dict[str, Any]:
+) -> dict[str, Any] | list[dict[str, Any]]:
     """Inspect the BigQuery SQL Cube would generate for a KIPP TEAM & Family
     analytics query, without running it. Useful for debugging query shape,
     verifying access policies, or reviewing the compiled SQL before `load`.
@@ -597,7 +610,9 @@ async def sql(
 
     Query object response, by default:
     {"sql": [query-string, [params]], "external": bool,
-    "preAggregations": [pre-aggregation ids the query would use]}.
+    "preAggregations": [pre-aggregation ids the query would use]}. A
+    `compareDateRange` or blended query returns a list with one such object
+    per query.
     A query a rollup serves compiles to `FROM prod_pre_aggregations.<rollup>`.
     To learn why a query did or did not match a pre-aggregation, use `dry_run`.
     `full=True` returns Cube's raw payload (tens of KB of internals).
@@ -613,13 +628,22 @@ async def sql(
     """
     email = await _get_user_email(ctx)
     if isinstance(query, str):
-        return await _request(
+        body = await _request(
             "POST", "/sql", json={"query": query, "format": "sql"}, email=email
         )
+        # Cube answers a SQL compile failure with HTTP 200 and `{"sql": {"error"}}`.
+        if body.get("sql", {}).get("error"):
+            raise RuntimeError(f"Cube POST /sql: {body['sql']['error']}")
+        return body
     body = await _request(
         "POST", "/sql", json={"query": _with_default_timezone(query)}, email=email
     )
-    return body if full else _trim_sql(body)
+    if full:
+        return body
+    # A multi-query (compareDateRange, blending) returns one entry per query.
+    if isinstance(body, list):
+        return [_trim_sql(b) for b in body]
+    return _trim_sql(body)
 
 
 _SUMMARY_VALUE_MAX_CHARS = 1_000
@@ -732,22 +756,22 @@ async def cubesql(
         "timezone": timezone or DEFAULT_QUERY_TIMEZONE,
         "throwContinueWait": True,
     }
-    deadline = time.monotonic() + TIMEOUT_SECONDS
-    while True:
-        text = await _request("POST", "/cubesql", json=payload, email=email, raw=True)
-        result = _parse_cubesql_stream(text)
-        error = result.get("error")
-        if error == "Continue wait":
-            if time.monotonic() + 1 >= deadline:
-                raise RuntimeError(
-                    f"Cube POST /cubesql did not complete within "
-                    f"{TIMEOUT_SECONDS}s ('Continue wait' polling)"
+    try:
+        async with asyncio.timeout(TIMEOUT_SECONDS):
+            while True:
+                text = await _request(
+                    "POST", "/cubesql", json=payload, email=email, raw=True
                 )
-            await asyncio.sleep(1)
-            continue
-        if error:
-            raise RuntimeError(f"Cube POST /cubesql: {error}")
-        return result
+                result = _parse_cubesql_stream(text)
+                error = result.get("error")
+                if error == "Continue wait":
+                    await asyncio.sleep(1)
+                    continue
+                if error:
+                    raise RuntimeError(f"Cube POST /cubesql: {error}")
+                return result
+    except TimeoutError:
+        raise RuntimeError(_deadline_message("POST", "/cubesql")) from None
 
 
 @mcp.tool()
@@ -757,12 +781,16 @@ async def convert_query(ctx: Context, sql: str) -> dict[str, Any]:
     `sql`, or `dry_run`. Useful when a question is easier to write as SQL but
     you want `load`'s response or `dry_run`'s pre-aggregation check."""
     email = await _get_user_email(ctx)
-    return await _request(
+    body = await _request(
         "POST",
         "/convert-query",
         json={"input": "sql", "output": "rest", "query": sql},
         email=email,
     )
+    # Cube answers a conversion failure with HTTP 200 and an `error` field.
+    if body.get("error") or body.get("status") == "error":
+        raise RuntimeError(f"Cube POST /convert-query: {body.get('error')}")
+    return body
 
 
 @mcp.tool()

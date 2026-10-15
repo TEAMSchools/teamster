@@ -884,3 +884,59 @@ def test_every_tool_sends_minted_token(monkeypatch: pytest.MonkeyPatch) -> None:
     for _, header in seen:
         assert header == token
         assert not header.startswith("Bearer ")
+
+
+def test_sql_trims_each_query_of_a_multi_query(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    fixture = _sql_fixture()
+    # compareDateRange/blending: Cube returns one {sql, dataSource} per query.
+    body = [fixture, fixture]
+    # Wrapped: a list reply is read as a queue of replies.
+    _recording_request(monkeypatch, server, [body])
+    result = asyncio.run(server.sql(MagicMock(), {"measures": ["x.count"]}))
+    assert result == [server._trim_sql(fixture)] * 2
+
+
+def test_sql_string_raises_on_cube_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    _recording_request(monkeypatch, server, {"sql": {"error": "bad sql"}})
+    with pytest.raises(RuntimeError, match="bad sql"):
+        asyncio.run(server.sql(MagicMock(), "SELECT nope"))
+
+
+def test_convert_query_raises_on_cube_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    _recording_request(
+        monkeypatch, server, {"status": "error", "query": None, "error": "bad sql"}
+    )
+    with pytest.raises(RuntimeError, match="bad sql"):
+        asyncio.run(server.convert_query(MagicMock(), "SELECT nope"))
+
+
+def test_request_enforces_total_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx
+
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    server = _load_server(monkeypatch)
+
+    class SlowClient:
+        async def request(self, *args: Any, **kwargs: Any) -> httpx.Response:
+            del args, kwargs
+            await asyncio.sleep(5)
+            raise AssertionError("deadline not enforced")
+
+    monkeypatch.setattr(server, "client", SlowClient())
+    monkeypatch.setattr(server, "TIMEOUT_SECONDS", 0.05)
+    with pytest.raises(RuntimeError, match="did not complete"):
+        asyncio.run(server.load(MagicMock(), {"measures": ["x.count"]}))
+
+
+def test_load_docstring_describes_multi_query_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    assert "`results`" in server.load.__doc__
