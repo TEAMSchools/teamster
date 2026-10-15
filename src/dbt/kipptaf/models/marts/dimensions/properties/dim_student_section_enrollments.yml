@@ -104,7 +104,9 @@ models:
       - name: exit_date
         data_type: date
         description: >-
-          Date the student left this section.
+          Date this section enrollment ends. The date the student left the
+          section, or the section's scheduled end while the student is still
+          enrolled. Never null.
 
       - name: is_dropped_section
         data_type: boolean
