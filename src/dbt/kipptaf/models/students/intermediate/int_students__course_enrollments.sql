@@ -128,6 +128,14 @@ with
             csc.standard_course_name,
             csc.core_subject,
 
+            {{ extract_region("s") }} as region,
+            trim(s.course_title) as courses_course_name,
+            concat(usr.last_name, ', ', usr.first_name) as teacher_lastfirst,
+
+            coalesce(
+                sr_ein.powerschool_teacher_number, sr_email.powerschool_teacher_number
+            ) as teachernumber,
+
             -- TODO(#5750): the crosswalk's Focus ELA and Math rows carry only
             -- core_subject; drop the fallback once the sheet fills
             -- Illuminate_Subject_Area for them
@@ -141,14 +149,6 @@ with
                     then 'Mathematics'
                 end
             ) as illuminate_subject_area,
-
-            {{ extract_region("s") }} as region,
-            trim(s.course_title) as courses_course_name,
-            concat(usr.last_name, ', ', usr.first_name) as teacher_lastfirst,
-
-            coalesce(
-                sr_ein.powerschool_teacher_number, sr_email.powerschool_teacher_number
-            ) as teachernumber,
 
             -- Focus's homeroom boolean is null on every row; identified by
             -- title instead, matching int_focus__advisory. See #4868.
@@ -230,7 +230,11 @@ with
                     students_student_number,
                     cc_academic_year,
                     illuminate_subject_area
-                order by cc_dateenrolled desc, exit_date desc, cc_dcid asc
+                order by
+                    is_dropped_section asc,
+                    cc_dateenrolled desc,
+                    exit_date desc,
+                    cc_dcid asc
             ) as rn_student_year_illuminate_subject_desc,
         from focus_conformed
     ),

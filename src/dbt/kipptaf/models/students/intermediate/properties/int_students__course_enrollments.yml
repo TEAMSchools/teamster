@@ -170,8 +170,9 @@ models:
           `cc_dateenrolled`, `cc_dateleft`, all descending. The Focus branch
           computes its own window over `_dbt_source_project`,
           `students_student_number`, `cc_academic_year`,
-          `illuminate_subject_area` ordered by `cc_dateenrolled`, `exit_date`
-          descending with `cc_dcid` as the tie-break.
+          `illuminate_subject_area` ordered by non-dropped sections first, then
+          `cc_dateenrolled` and `exit_date` descending, with `cc_dcid` as the
+          tie-break.
         data_type: int64
       - name: rn_ap_course_subject_year
         description: >-
