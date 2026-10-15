@@ -7,7 +7,9 @@ models:
       for the benchmark year, and one case names which sources count at that
       region and grade and in what order (a row whose source has no rule at the
       student's grade drops out) - Miami K reads Star BOY, Miami 1-2 prior-year
-      Star EOY, Miami 3 same-year FAST PM1, Miami 4-9 prior-year FAST PM3, NJ
+      Star EOY, Miami 3 same-year FAST PM1, Miami 4-9 prior-year FAST PM3, Miami
+      9 Math prior-year Algebra I EOC after PM3 (last year's grade-8 Algebra I
+      students sat the EOC instead of FAST Math; no ELA equivalent), NJ
       prior-year NJSLA, and i-Ready BOY typical-growth projections are the
       fallback everywhere. The best state-side and fallback-side scores ride
       beside the pick for comparison. One row per _dbt_source_project x student
@@ -55,8 +57,9 @@ models:
       - name: subject
         description: Reading or Math.
       - name: benchmark_assessment_type
-        description:
-          NJSLA, FAST PM1, FAST PM3, Star EOY, Star BOY, or i-Ready BOY.
+        description: >-
+          NJSLA, FAST PM1, FAST PM3, Algebra I EOC, Star EOY, Star BOY, or
+          i-Ready BOY.
       - name: performance_level
         description:
           Performance level on whichever source won the priority pick.
@@ -374,6 +377,127 @@ unit_tests:
           performance_level: 2
           scale_score: 180
           scale_score_state: 180
+          is_proficient_int_state: 0
+          scale_score_iready: null
+          is_proficient_int: 0
+          is_approaching_int: 1
+          is_below_int: 0
+          is_tested_int: 1
+
+  - name: unit_int_assessments__goal_benchmarks_grade9_eoc_fallback
+    description: >-
+      A Miami 9th grader with no prior-year FAST PM3 reads their prior-year
+      Algebra I EOC ahead of same-year i-Ready, while a classmate with both a
+      PM3 and an EOC still reads PM3 first.
+    model: int_assessments__goal_benchmarks
+    given:
+      - input: ref("int_assessments__state_scores")
+        rows:
+          - student_number: 84007777
+            academic_year: 2025
+            scale_score: 505
+            performance_level: 4
+            is_proficient_int: 1
+            is_approaching_int: 0
+            is_below_int: 0
+            source_system: fldoe
+            illuminate_subject_area: Mathematics
+            score_source: state_fl
+            assessment_name: EOC
+            administration_period: PM3
+            test_grade: 8
+            grade_level_when_assessed: 8
+            raw_subject: Algebra I
+            _dbt_source_project: kippmiami
+          - student_number: 84008888
+            academic_year: 2025
+            scale_score: 215
+            performance_level: 2
+            is_proficient_int: 0
+            is_approaching_int: 1
+            is_below_int: 0
+            source_system: fldoe
+            illuminate_subject_area: Mathematics
+            score_source: state_fl
+            assessment_name: FAST
+            administration_period: PM3
+            test_grade: 8
+            grade_level_when_assessed: 8
+            raw_subject: null
+            _dbt_source_project: kippmiami
+          - student_number: 84008888
+            academic_year: 2025
+            scale_score: 498
+            performance_level: 3
+            is_proficient_int: 1
+            is_approaching_int: 0
+            is_below_int: 0
+            source_system: fldoe
+            illuminate_subject_area: Mathematics
+            score_source: state_fl
+            assessment_name: EOC
+            administration_period: PM3
+            test_grade: 8
+            grade_level_when_assessed: 8
+            raw_subject: Algebra I
+            _dbt_source_project: kippmiami
+      - input: ref("int_assessments__iready_diagnostic_results")
+        rows:
+          - student_id: 84007777
+            academic_year_int: 2026
+            subject: Math
+            level_number_with_typical: 3
+            projected_level_number_typical: null
+            projected_is_proficient_typical: null
+            projected_sublevel_number_typical: null
+            sublevel_number_with_typical: 2
+            overall_scale_score: 430
+            annual_typical_growth_measure: 25
+            region: KIPP Miami
+            test_round: BOY
+            rn_subj_round: 1
+            student_grade_int: 9
+            _dbt_source_project: kippmiami
+      - input: ref("stg_renlearn__star")
+        rows: []
+      - input: ref("int_extracts__student_enrollments")
+        rows:
+          - student_number: 84007777
+            academic_year: 2026
+            grade_level: 9
+            region: Miami
+            rn_year: 1
+            _dbt_source_project: kippmiami
+          - student_number: 84008888
+            academic_year: 2026
+            grade_level: 9
+            region: Miami
+            rn_year: 1
+            _dbt_source_project: kippmiami
+    expect:
+      rows:
+        - _dbt_source_project: kippmiami
+          student_number: 84007777
+          academic_year: 2026
+          subject: Math
+          benchmark_assessment_type: Algebra I EOC
+          performance_level: 4
+          scale_score: 505
+          scale_score_state: 505
+          is_proficient_int_state: 1
+          scale_score_iready: 455
+          is_proficient_int: 1
+          is_approaching_int: 0
+          is_below_int: 0
+          is_tested_int: 1
+        - _dbt_source_project: kippmiami
+          student_number: 84008888
+          academic_year: 2026
+          subject: Math
+          benchmark_assessment_type: FAST PM3
+          performance_level: 2
+          scale_score: 215
+          scale_score_state: 215
           is_proficient_int_state: 0
           scale_score_iready: null
           is_proficient_int: 0
