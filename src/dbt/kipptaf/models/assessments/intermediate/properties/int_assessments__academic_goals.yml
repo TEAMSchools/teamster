@@ -58,6 +58,11 @@ models:
       - name: assessment_band_goal
         data_type: float64
         description: Assessment-band goal, from the sheet.
+      - name: region_grade_goal
+        data_type: float64
+        description: >-
+          Region-level goal for this one grade, from the sheet; set only where
+          it differs from the grade-band goal, null otherwise.
       - name: school_level
         data_type: string
         description: School level (ES, MS, HS), from `int_students__schools`.
