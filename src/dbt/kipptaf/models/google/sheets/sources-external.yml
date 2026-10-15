@@ -1358,6 +1358,9 @@ sources:
                 - academic_goals
         # Declared, not autodetected: autodetect drops a column that is empty
         # in the rows it samples, and Region_Grade_Goal is set on few rows.
+        # Order must match sheet columns A:L. BigQuery maps declared columns
+        # by position, so an inserted or reordered sheet column silently
+        # shifts values under the wrong names.
         columns:
           - name: Academic_Year
             data_type: int64
