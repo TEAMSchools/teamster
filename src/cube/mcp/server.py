@@ -46,6 +46,7 @@ from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.mcpserver import Context, MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ClientCapabilities, ElicitationCapability
 from pydantic import BaseModel, Field
 
@@ -79,7 +80,7 @@ class UserEmailPrompt(BaseModel):
     )
 
 
-class MissingUserEmailError(RuntimeError):
+class MissingUserEmailError(ToolError):
     """Raised when no email is available and the client can't be prompted."""
 
 
@@ -280,7 +281,7 @@ async def _request(
             while True:
                 response = await client.request(method, path, headers=headers, **kwargs)
                 if response.status_code >= 400:
-                    raise RuntimeError(
+                    raise ToolError(
                         f"Cube {method} {path} {response.status_code}: {response.text}"
                     )
                 if raw:
@@ -295,7 +296,7 @@ async def _request(
                     continue
                 return body
     except TimeoutError:
-        raise RuntimeError(_deadline_message(method, path, poll)) from None
+        raise ToolError(_deadline_message(method, path, poll)) from None
 
 
 def _deadline_message(method: str, path: str, poll: bool) -> str:
@@ -634,7 +635,7 @@ async def sql(
         )
         # Cube answers a SQL compile failure with HTTP 200 and `{"sql": {"error"}}`.
         if body.get("sql", {}).get("error"):
-            raise RuntimeError(f"Cube GET /sql: {body['sql']['error']}")
+            raise ToolError(f"Cube GET /sql: {body['sql']['error']}")
         return body
     body = await _request(
         "GET",
@@ -723,8 +724,8 @@ def _parse_cubesql_stream(text: str) -> dict[str, Any]:
             chunk = json.loads(line)
         except json.JSONDecodeError:
             # No line excerpt: a data line can carry student rows, and this
-            # message can reach server logs.
-            raise RuntimeError(
+            # message reaches the caller and server logs.
+            raise ToolError(
                 "Cube POST /cubesql returned a truncated stream; retry the query"
             ) from None
         if "error" in chunk:
@@ -785,10 +786,10 @@ async def cubesql(
                     await asyncio.sleep(1)
                     continue
                 if error:
-                    raise RuntimeError(f"Cube POST /cubesql: {error}")
+                    raise ToolError(f"Cube POST /cubesql: {error}")
                 return result
     except TimeoutError:
-        raise RuntimeError(_deadline_message("POST", "/cubesql", True)) from None
+        raise ToolError(_deadline_message("POST", "/cubesql", True)) from None
 
 
 @mcp.tool()
@@ -806,7 +807,7 @@ async def convert_query(ctx: Context, sql: str) -> dict[str, Any]:
     )
     # Cube answers a conversion failure with HTTP 200 and an `error` field.
     if body.get("error") or body.get("status") == "error":
-        raise RuntimeError(f"Cube POST /convert-query: {body.get('error')}")
+        raise ToolError(f"Cube POST /convert-query: {body.get('error')}")
     return body
 
 
@@ -826,7 +827,7 @@ async def graphql_to_json(
     )
     # Cube answers a parse failure with HTTP 200 and `{"jsonQuery": null}`.
     if body.get("jsonQuery") is None:
-        raise RuntimeError("Cube could not parse the GraphQL query")
+        raise ToolError("Cube could not parse the GraphQL query")
     return body["jsonQuery"]
 
 
