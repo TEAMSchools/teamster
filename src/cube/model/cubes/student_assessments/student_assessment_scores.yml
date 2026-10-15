@@ -505,9 +505,9 @@ cubes:
         # vendor window that straddles a quarter boundary splits its scores
         # across two partitions by each score's anchor date: correct per-score
         # attribution, not a fan-out (#4546). Every stored measure is a count or
-        # sum, so splitting rows finer never changes a rate. A query with a date
-        # range on date_day cannot use this rollup; academic_year filters and
-        # assessment_date ranges can.
+        # sum, so splitting rows finer never changes a rate. A query that uses
+        # date_day as its time dimension, as a range or a grouping, cannot use
+        # this rollup; academic_year filters and assessment_date can.
         time_dimension: student_assessment_scores.assessment_date
         granularity: quarter
         partition_granularity: quarter
@@ -536,33 +536,34 @@ cubes:
         # once per partition every 30 minutes, with FILTER_PARAMS bound to that
         # partition's date range. Late state results land in the previous
         # school year at the latest; older partitions return a constant and
-        # never rebuild, so a backfill of
-        # older history needs a manual rebuild in Cube Cloud. If FILTER_PARAMS
-        # fails to bind it renders as 1 = 1, and every partition falls back to
-        # rebuilding on each fact change. last_modified_time also moves on
-        # metadata-only changes (descriptions, labels).
+        # never rebuild, so a backfill of older history needs a manual rebuild
+        # in Cube Cloud. Each July 1 the four quarters leaving the window change
+        # key to 'frozen' and rebuild once; that yearly burst is expected. If
+        # FILTER_PARAMS fails to bind it renders as 1 = 1, and every partition
+        # falls back to rebuilding on each fact change. last_modified_time also
+        # moves on metadata-only changes (descriptions, labels). Literal block
+        # (|-) so the formatter cannot reflow the SQL.
         # test_refresh_key_sql_names_its_cubes_table guards the table name.
         refresh_key:
           every: 30 minute
-          sql: >-
+          sql: |-
             SELECT IF(
               EXISTS (
                 SELECT 1
                 FROM UNNEST(GENERATE_DATE_ARRAY(
                   DATE_ADD(
                     DATE_TRUNC(
-                      DATE_SUB(CURRENT_DATE('America/New_York'), INTERVAL 18
-            MONTH),
+                      DATE_SUB(CURRENT_DATE('America/New_York'), INTERVAL 18 MONTH),
                       YEAR
                     ),
                     INTERVAL 6 MONTH
                   ),
                   CURRENT_DATE('America/New_York')
                 )) AS d
-                WHERE
-            {FILTER_PARAMS.student_assessment_scores.assessment_date.filter('TIMESTAMP(d)')}
+                WHERE {FILTER_PARAMS.student_assessment_scores.assessment_date.filter('TIMESTAMP(d)')}
               ),
               CAST(last_modified_time AS STRING),
               'frozen'
-            ) FROM kipptaf_marts.__TABLES__ WHERE table_id =
-            'fct_assessment_scores_enrollment_scoped'
+            )
+            FROM kipptaf_marts.__TABLES__
+            WHERE table_id = 'fct_assessment_scores_enrollment_scoped'
