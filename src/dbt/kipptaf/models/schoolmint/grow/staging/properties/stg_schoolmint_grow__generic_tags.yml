@@ -2,10 +2,26 @@ models:
   - name: stg_schoolmint_grow__generic_tags
     # Keep the staging folder's table default. A view never rebuilds on new tag
     # loads, so nothing re-stages or refreshes the external tables it reads, and
-    # they read empty. Refs #5931.
+    # they can go stale and read empty. Refs #5931.
     columns:
       - name: tag_id
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          # rpt_schoolmint_grow__users maps course and grade through these tags;
+          # an empty set makes the Grow user sync blank both fields.
+          - dbt_utils.at_least_one:
+              name: stg_schoolmint_grow__generic_tags_has_courses
+              config:
+                severity: error
+                where: tag_type = 'courses'
+          - dbt_utils.at_least_one:
+              name: stg_schoolmint_grow__generic_tags_has_grades
+              config:
+                severity: error
+                where: tag_type = 'grades'
       - name: __v
         data_type: int64
       - name: abbreviation
