@@ -40,8 +40,8 @@ def row_samples(ws, checks) -> list[dict]:
     out = []
     for base, cause in pairs:
         cond = "cause is null" if cause is None else f"cause = '{cause}'"
-        # trunk-ignore(bandit/B608): base and cause are values from the rows table this tool built, never user input
         r = ws.dicts(
+            # trunk-ignore(bandit/B608): base and cause are values from the rows table this tool built, never user input
             f"select * from rows where base = '{base}' and {cond} order by {s}, {d} limit 1"
         )
         out.extend(r)

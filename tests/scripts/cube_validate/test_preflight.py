@@ -94,3 +94,17 @@ def test_planned_queries_include_the_scope_query():
     )
     assert got["scope"]["dimensions"] == ["v.locations_abbreviation"]
     assert got["scope"]["measures"] == ["v.count_students"]
+
+
+def test_estimate_runs_queries_in_parallel():
+    import threading
+
+    gate = threading.Barrier(2, timeout=5)
+
+    class GatedCube(FakeCube):
+        def sql(self, q):
+            gate.wait()  # breaks unless 2 queries are in flight at once
+            return super().sql(q)
+
+    got = preflight.estimate(GatedCube(), FakeBQ(), [("a", {}), ("b", {})])
+    assert got["bytes"] == 2_000_000 and list(got["sql"]) == ["a", "b"]

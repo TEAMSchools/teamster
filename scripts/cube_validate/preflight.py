@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 import re
+from concurrent.futures import ThreadPoolExecutor
 from zoneinfo import ZoneInfo
 
 from . import cells
@@ -130,19 +131,25 @@ def planned_queries(checks, start: dt.date, end: dt.date) -> list[tuple[str, dic
     return out
 
 
-def estimate(cube, bq, queries: list[tuple[str, dict]]) -> dict:
+def estimate(cube, bq, queries: list[tuple[str, dict]], workers: int = 8) -> dict:
     """Compiles each query through Cube's /sql and dry-runs it on BigQuery.
 
     A query with ``total`` set makes Cube run a second count query, so its
     bytes count twice.
     """
-    total, tables, sqls = 0, set(), {}
-    for qid, q in queries:
+
+    def one(item: tuple[str, dict]) -> tuple[str, str, int, set[str]]:
+        qid, q = item
         sql, params = cube.sql(q)
         n, refs = bq.dry_run(sql, params)
-        total += n * (2 if q.get("total") else 1)
-        tables |= refs
-        sqls[qid] = sql
+        return qid, sql, n * (2 if q.get("total") else 1), refs
+
+    total, tables, sqls = 0, set(), {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for qid, sql, n, refs in pool.map(one, queries):
+            total += n
+            tables |= refs
+            sqls[qid] = sql
     return {"bytes": total, "tables": sorted(tables), "sql": sqls, "skipped": []}
 
 

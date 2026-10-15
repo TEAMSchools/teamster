@@ -9,6 +9,8 @@ from pathlib import Path
 
 import yaml
 
+from .snapshot import slug
+
 OWNERS = ("cube", "dashboard", "source", "undecided")
 RESERVED = (
     "match",
@@ -21,6 +23,7 @@ RESERVED = (
 )
 DEFAULT_QUIET = (0, 10)
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_P_REF = re.compile(r"\{p\}([A-Za-z_][A-Za-z0-9_]*)")
 
 
 class ConfigError(ValueError):
@@ -198,6 +201,27 @@ def _cut(i: int, v: dict) -> Cut:
     )
 
 
+def _cube_columns(expr: str | None) -> list[str]:
+    """Cube columns a Cube-side value reads: itself when bare, else each {p}name."""
+    if not expr:
+        return []
+    if _IDENT.match(expr):
+        return [expr]
+    return _P_REF.findall(expr)
+
+
+def _unique_slugs(kind: str, names: list[str]) -> None:
+    """Refuse names that share an export file name, so no export overwrites another."""
+    seen: dict[str, str] = {}
+    for n in names:
+        s = slug(n)
+        if s in seen:
+            raise ConfigError(
+                f"{kind} {seen[s]} and {n} share the export name {s}; rename one"
+            )
+        seen[s] = n
+
+
 def load_checks(path: str | Path) -> Checks:
     """Read a checks file and refuse what the tool cannot use.
 
@@ -208,8 +232,9 @@ def load_checks(path: str | Path) -> Checks:
         The checks as dataclasses.
 
     Raises:
-        ConfigError: A key is missing, a cause is malformed, or the cuts do not
-            start with a bare default.
+        ConfigError: A key is missing, a cause is malformed, the cuts do not
+            start with a bare default, 2 sheets or cuts share an export name, or
+            a Cube-side column is not among cube.members.
     """
     d = yaml.safe_load(Path(path).read_text()) or {}
     w = _req(d, "window")
@@ -287,6 +312,27 @@ def load_checks(path: str | Path) -> Checks:
     for cap in defaults:
         if cap not in filters:
             raise ConfigError(f"defaults: {cap} has no entry under filters")
+    _unique_slugs("sheets", list(sheets))
+    _unique_slugs("cuts", [c.id for c in cuts])
+    compare = _exprs(rows.get("compare"), "rows.compare")
+    labels = _exprs(rows.get("labels"), "rows.labels")
+    members = set(_req(cube, "members", "cube"))
+    uses = [
+        *((f"rows.{part}.{e.name}", e.cube) for part, es in
+          (("key", key), ("compare", compare), ("labels", labels)) for e in es),
+        *((f"filters.{c}", f.cube_column) for c, f in filters.items()),
+        *((f"sheets.{s}.dims.{h}", f.cube_column)
+          for s, sm in sheets.items() for h, f in sm.dims.items()),
+        *((f"params.{c}.{v}", pv.cube_column)
+          for c, vals in params.items() for v, pv in vals.items()),
+    ]  # fmt: skip
+    for where, expr in uses:
+        for col in _cube_columns(expr):
+            if col not in members:
+                raise ConfigError(
+                    f"{where}: Cube column {col} is not in cube.members, "
+                    "so capture never fetches it"
+                )
     quiet = d.get("tableau_quiet_minutes") or DEFAULT_QUIET
     return Checks(
         dashboard=_req(d, "dashboard"),
@@ -312,8 +358,8 @@ def load_checks(path: str | Path) -> Checks:
             tuple(cube.get("filters") or ()),
         ),
         key=key,
-        compare=_exprs(rows.get("compare"), "rows.compare"),
-        labels=_exprs(rows.get("labels"), "rows.labels"),
+        compare=compare,
+        labels=labels,
         student_key=rows["student_key"],
         date_key=rows["date_key"],
         scope_key=scope_key,

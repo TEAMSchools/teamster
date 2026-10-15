@@ -27,7 +27,12 @@ BASE = {
     "cube": {
         "view": "v",
         "date": "attendance_date",
-        "members": ["lea_student_identifier"],
+        "members": [
+            "lea_student_identifier",
+            "attendance_date",
+            "locations_abbreviation",
+            "is_absent",
+        ],
     },
     "rows": {
         "student_key": "student",
@@ -134,3 +139,41 @@ def test_defaults_load_and_need_a_mapped_filter(tmp_path):
     assert c.defaults == {"Year": "2026"}
     with pytest.raises(config.ConfigError, match="defaults: Grade"):
         config.load_checks(_write(tmp_path, filters=filters, defaults={"Grade": 9}))
+
+
+def test_sheets_whose_export_files_would_collide_are_refused(tmp_path):
+    sheets = {"ADA by School": {}, "ADA-by-School": {}}
+    with pytest.raises(config.ConfigError, match="ADA by School.*ADA-by-School"):
+        config.load_checks(_write(tmp_path, sheets=sheets))
+    cuts = [{"id": "default"}, {"id": "a b"}, {"id": "a-b"}]
+    with pytest.raises(config.ConfigError, match="a b.*a-b"):
+        config.load_checks(_write(tmp_path, cuts=cuts))
+
+
+@pytest.mark.parametrize(
+    "over",
+    [
+        {"filters": {"Grade": {"tableau": "g", "cube": "g", "cube_column": "grade"}}},
+        {
+            "sheets": {
+                "S": {"dims": {"Grade": {"tableau": "g", "cube_column": "grade"}}}
+            }
+        },
+        {"params": {"P": {"v": {"cube_column": "grade"}}}},
+        {"params": {"P": {"v": {"cube_column": '"{p}grade" >= 9'}}}},
+        {
+            "rows": {
+                **BASE["rows"],
+                "compare": {"is_absent": {"tableau": "is_absent", "cube": "grade"}},
+            }
+        },
+    ],
+)
+def test_every_cube_column_must_be_captured(tmp_path, over):
+    with pytest.raises(config.ConfigError, match="grade"):
+        config.load_checks(_write(tmp_path, **over))
+
+
+def test_cube_sql_over_captured_columns_is_accepted(tmp_path):
+    params = {"P": {"v": {"cube_column": '"{p}is_absent" = 1'}}}
+    assert config.load_checks(_write(tmp_path, params=params)).params["P"]["v"]
