@@ -21,6 +21,13 @@ models:
       signal, so filtering on a non-null scale_score drops real rows.
     config:
       materialized: table
+      # Monthly, nested inside the Cube proficiency_rollup's quarterly
+      # partitions (BigQuery has no quarter grain): each rollup partition
+      # build filters on assessment_date_key and reads three partitions.
+      partition_by:
+        field: assessment_date_key
+        data_type: date
+        granularity: month
       meta:
         dagster:
           # Cron table instead of an eager view. As a view, every reader of
@@ -33,8 +40,9 @@ models:
           # response_rollup builds first. Eager is not an option: the other
           # upstreams are eager and would rebuild this constantly (#4559).
           # Accepted trade-off: Cube queries that miss the rollup are only as
-          # fresh as the last tick. Cube's rollup refreshes less often than
-          # that anyway, so a view bought no freshness Cube consumed.
+          # fresh as the last tick. The rollup follows this table's rebuilds,
+          # so it is never fresher either; a view bought no freshness Cube
+          # consumed.
           # Refs #4821
           automation_condition:
             cron_schedule: 30 0,10,13,15,17 * * *

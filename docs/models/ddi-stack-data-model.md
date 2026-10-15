@@ -92,7 +92,10 @@ A new score therefore reaches a consumer only after:
 3. The consumer refreshes: the DDI Suite Tableau extracts at 1am and 6pm daily
    plus Friday 4pm (exposure `ddi_suite` cron, Dagster-owned); the DeansList
    SFTP extracts at 1:25am daily; Cube's `proficiency_rollup` pre-aggregation
-   daily.
+   within about 30 minutes plus one partition build of each scores-fact rebuild,
+   for the quarterly partitions from July 1 of the previous school year on.
+   Older partitions are frozen and need a manual rebuild in Cube Cloud after a
+   historical backfill.
 
 ## Terms
 
@@ -432,8 +435,10 @@ What the Illuminate branch contributes:
   Illuminate rows is the join path
   `assessment_administration_key -> dim_assessment_administrations.assessment_key -> dim_assessments.type = 'illuminate'`.
 - The public surface is `student_assessment_scores_view`, row-level-secured per
-  viewer; its `proficiency_rollup` pre-aggregation refreshes daily, which is why
-  the intraday star rebuilds are invisible in Cube.
+  viewer; its `proficiency_rollup` pre-aggregation picks up each star rebuild
+  within about 30 minutes plus one partition build, for the quarterly partitions
+  from July 1 of the previous school year on. Filter `assessment_date` rather
+  than `date_day` for date ranges: it prunes the month-partitioned scores fact.
 
 ## Supporting models
 
