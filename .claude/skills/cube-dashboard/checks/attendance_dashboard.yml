@@ -1,0 +1,64 @@
+# Attendance Dashboard: what `cube_validate` compares. Committed, so it never
+# holds a person's name. `plan` drafts sheets, filters and cuts; the analyst
+# approves each mapping and cause.
+dashboard: attendance_dashboard
+workbook: Attendance Dashboard # confirm against `plan`'s download
+workbook_luid: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+review_project_luid: ddc817c2-6bc7-4bca-8be9-e385f95b9ebc
+dashboards: [] # tabs in scope, from plan.yml
+datasource: "" # the extract's caption, from plan.yml
+dashboard_table: teamster-332318.kipptaf_tableau.rpt_tableau__attendance_dashboard
+period_start: 2026-07-01
+# Extract refreshes 6:00 AM and 3:00 PM; Cube's facts rebuild ~6:15 AM and
+# ~3:05 PM. Only the evening pairs like for like.
+window:
+  start: "15:30"
+  end: 06:00
+  extract_after: "15:00"
+  tz: America/New_York
+cost_cap_gb: 50
+tableau_quiet_minutes: [0, 10]
+cube:
+  view: student_attendance_enrollment_daily_view
+  date: attendance_date
+  members:
+    - lea_student_identifier
+    - attendance_date
+    - locations_abbreviation
+    - regions_region_name
+    - grade_level
+    - attendance_value
+    - membership_value
+    - attendance_code
+    - is_absent
+    - is_tardy
+    - is_iss
+    - is_oss
+    - is_in_session_day
+  filters: []
+rows:
+  student_key: student
+  date_key: day
+  scope_key: school
+  key:
+    student:
+      tableau: student_number
+      cube: cast("{p}lea_student_identifier" as bigint)
+    day: { tableau: calendardate, cube: attendance_date }
+    school: { tableau: school_abbreviation, cube: locations_abbreviation }
+  compare:
+    attendance_value: { tableau: is_present, cube: attendance_value }
+    is_absent: { tableau: is_absent, cube: is_absent }
+    is_tardy: { tableau: is_tardy, cube: is_tardy }
+    is_iss: { tableau: is_iss, cube: is_iss }
+    is_oss: { tableau: is_oss, cube: is_oss }
+    grade_level: { tableau: grade_level, cube: grade_level }
+  labels:
+    region: { tableau: region, cube: regions_region_name }
+causes: []
+filters: {}
+params: {}
+sheets: {}
+cuts:
+  - id: default
+excluded_sheets: {}
