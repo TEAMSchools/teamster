@@ -38,23 +38,21 @@ with
         -- alumni placeholder rows (enroll_status=3) have NULL entrydate/exitdate
         -- and match no stint here, producing a NULL student_enrollment_key
         --
-        -- The ~10.6% of Miami rows still unmatched is an accepted residual
-        -- within the NJ completed-year orphan-rate norm -- see the rate test in
+        -- Miami rows still unmatched are an accepted residual within the NJ
+        -- completed-year orphan-rate norm -- see the rate test in
         -- tests/test_miami_section_enrollment_orphan_rate.sql.
         --
-        -- That residual is attributed, not unexplained. Of the orphaned
-        -- Miami AY2026 rows, 1,886 hold a stint at the same school and fail the
-        -- overlap; re-measured 2026-08-27 they split three ways:
-        -- * 1,332 -- the STINT window is degenerate, with an exitdate on or
-        -- before its entrydate. Nothing can overlap a window of zero or
-        -- negative length, so no schedule date would fix these (#5024).
-        -- * 478 -- the schedule row was closed on or before the stint's
-        -- entrydate, so the student never attended the section.
-        -- * 76 -- a future-term row (Semester 2, Quarter 2) for a student who
-        -- already exited. cc_dateenrolled is the term start, so it lands
-        -- after the exit by design (#5002).
-        -- Zero rows have cc_dateenrolled before the stint's entrydate, which
-        -- rules out the mid-term-joiner mechanism #4970 proposed.
+        -- Orphans holding a stint at the same school fail the overlap three
+        -- ways:
+        -- * the STINT window is degenerate, with an exitdate on or before its
+        -- entrydate, so nothing can overlap it (#5024).
+        -- * the schedule row was closed on or before the stint's entrydate,
+        -- so the student never attended the section.
+        -- * a future-term row for a student who already exited.
+        -- cc_dateenrolled is the term start, so it lands after the exit by
+        -- design (#5002).
+        -- None has cc_dateenrolled before the stint's entrydate, which rules
+        -- out the mid-term-joiner mechanism #4970 proposed.
         --
         -- The rest sit at a different campus: stale schedule rows left open
         -- after a reassignment, and courses taken at a second campus where
