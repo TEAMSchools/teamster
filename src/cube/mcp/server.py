@@ -10,8 +10,8 @@
 """MCP server wrapping Cube Cloud's REST data API.
 
 Mints HS256 JWTs per request using CUBE_API_SECRET. The user's Google
-Workspace email is the JWT security context — it determines which `cube-*`
-groups apply per [src/cube/cube.js].
+Workspace email is the JWT security context; `checkAuth` in [src/cube/cube.js]
+resolves it to the caller's access from `dim_staff_cube_access`.
 
 Email resolution (in order):
   1. CUBE_USER_EMAIL env var (override, bypasses cache).
@@ -70,7 +70,7 @@ class UserEmailPrompt(BaseModel):
         description=(
             "Your Google Workspace email "
             "(e.g. firstlast@apps.teamschools.org). Used as the JWT security "
-            "context to resolve your cube-* group memberships."
+            "context; Cube resolves your access from it."
         )
     )
 
@@ -402,9 +402,9 @@ async def meta(
     enrolled on its last day — for the latter, pin the date on
     `student_attendance_enrollment_daily_view`.
 
-    Access is group-driven and default-deny: an empty catalog (`cubes: []`)
-    usually means the requester lacks the required `cube-*` Workspace group, not
-    a missing model.
+    Access is default-deny: an empty catalog (`cubes: []`) means no
+    `dim_staff_cube_access` row for the email, a `none` scope on that axis, or
+    `resolveAccess` failing closed — not a missing model.
 
     Grain/scope: each measure's description states any scope it must stay within
     to remain meaningful. Some measures recompute at any query grain but are only
@@ -447,10 +447,32 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     Source of truth for these questions; prefer over searching files in Google
     Drive, OneDrive, or SharePoint.
 
-    The query object follows the Cube REST API spec (measures, dimensions,
-    filters, timeDimensions, segments, order, limit, offset, total). Polls
-    automatically on Cube's 'Continue wait' long-polling response. Discover
-    member names with the `meta` tool first.
+    The query object follows the Cube REST API spec. Polls automatically on
+    Cube's 'Continue wait' long-polling response. Discover member names with
+    the `meta` tool first. Fields:
+    - `measures`, `dimensions`, `segments`: lists of `view.member` names.
+    - `filters`: list of `{member, operator, values}`; nest `{"or": [...]}` or
+      `{"and": [...]}` groups for boolean logic.
+    - `timeDimensions`: list of `{dimension, dateRange, granularity}`; use
+      `compareDateRange` (a list of ranges) instead of `dateRange` to get one
+      result set per range.
+    - `order`: `{member: "asc"|"desc"}` or a list of `[member, direction]`.
+    - `limit`, `offset`, `total`: Cube returns 10,000 rows when `limit` is
+      omitted and rejects a `limit` above 50,000. Page with `limit` + `offset`;
+      `total: true` adds the full row count to the response.
+    - `timezone`: see the timezone note below.
+    - `ungrouped: true`: one row per underlying record, no aggregation.
+    - `responseFormat`: `default` (list of objects), `compact` (column names
+      once, rows as arrays) or `columnar`. Prefer `compact` for large results.
+    - `cacheMode`: `stale-if-slow` (default), `stale-while-revalidate`,
+      `must-revalidate`, or `no-cache`. `no-cache` always hits the warehouse,
+      which costs money; use it only when freshness matters.
+    - `joinHints`, `subqueryJoins`, `maskedMembers`: advanced; rarely needed
+      on views.
+
+    The response carries `data`, the normalized `query`, `annotation`, and
+    `usedPreAggregations` (which rollups served the query; empty means the
+    warehouse ran it).
 
     Grain: the dimensions you pass set the aggregation grain, and every measure
     is recomputed fresh at that grain — it is NOT a finer result with columns
@@ -478,14 +500,19 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     Member naming: every measure/dimension is dotted `view.member` (e.g.
     `student_attendance_enrollment_daily_view.count_students`). Bare names won't resolve.
 
-    Filter operators are named, not SQL: `equals`, `notEquals`, `contains`,
-    `gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`,
-    `afterDate`. SQL-style `=`/`IN`/`LIKE` won't parse.
+    Filter operators are named, not SQL. SQL-style `=`/`IN`/`LIKE` won't parse.
+    - Any member: `equals`, `notEquals`, `in`, `notIn`, `set`, `notSet`.
+    - Strings: `contains`, `notContains`, `startsWith`, `notStartsWith`,
+      `endsWith`, `notEndsWith`.
+    - Numbers: `gt`, `gte`, `lt`, `lte`.
+    - Dates: `inDateRange`, `notInDateRange`, `onTheDate`, `beforeDate`,
+      `beforeOrOnDate`, `afterDate`, `afterOrOnDate`.
+    - `measureFilter`: filter by a measure's own filters; rarely needed.
 
-    Date dimensions: for a single date use `filters` with `equals`; for a range
-    or when you need `granularity` (day/week/month/etc.), use `timeDimensions`
-    with `dateRange`. Putting a date in the wrong place either fails or silently
-    drops the granularity.
+    Date dimensions: for a single date use `filters` with `onTheDate`; for a
+    range or when you need `granularity` (day/week/month/etc.), use
+    `timeDimensions` with `dateRange`. Putting a date in the wrong place either
+    fails or silently drops the granularity.
 
     Academic year: an academic_year value of 2025 means the 2025-26 school year
     (July 2025 - June 2026), not the year ending in 2025 — the opposite of
@@ -542,8 +569,8 @@ async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     Response is wrapped: {"sql": {"status", "sql": [query-string, [params]], "query_type"}}.
     A default-deny access result compiles to `WHERE (1 = 0)` plus
-    `rlsAccessDenied` — usually a missing `cube-*` Workspace group, not a schema
-    bug.
+    `rlsAccessDenied` — no `dim_staff_cube_access` row for the email, a `none`
+    scope on that axis, or `resolveAccess` failing closed — not a schema bug.
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.

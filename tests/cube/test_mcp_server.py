@@ -516,3 +516,59 @@ def test_load_and_sql_send_utc_timezone_by_default(
         server.load(ctx, {"measures": ["x.count"], "timezone": "America/New_York"})
     )
     assert sent[2]["json"]["query"]["timezone"] == "America/New_York"
+
+
+def test_no_docstring_names_cube_groups(monkeypatch: pytest.MonkeyPatch) -> None:
+    server = _load_server(monkeypatch)
+    texts = [
+        server.__doc__,
+        server.UserEmailPrompt.model_fields["email"].description,
+    ]
+    texts += [t.description for t in server.mcp._tool_manager.list_tools()]
+    for text in texts:
+        assert "cube-*" not in (text or "")
+
+
+def test_load_docstring_lists_every_operator_and_field(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    doc = server.load.__doc__
+    for op in [
+        "equals",
+        "notEquals",
+        "contains",
+        "notContains",
+        "startsWith",
+        "notStartsWith",
+        "endsWith",
+        "notEndsWith",
+        "in",
+        "notIn",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "set",
+        "notSet",
+        "inDateRange",
+        "notInDateRange",
+        "onTheDate",
+        "beforeDate",
+        "beforeOrOnDate",
+        "afterDate",
+        "afterOrOnDate",
+        "measureFilter",
+    ]:
+        assert f"`{op}`" in doc, op
+    for field in [
+        "ungrouped",
+        "responseFormat",
+        "cacheMode",
+        "compareDateRange",
+        "joinHints",
+        "subqueryJoins",
+        "maskedMembers",
+        "usedPreAggregations",
+    ]:
+        assert field in doc, field
