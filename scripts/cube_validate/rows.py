@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass
 
 from .config import Checks, lit, side_sql
@@ -9,7 +10,15 @@ from .config import Checks, lit, side_sql
 TAB = '"tab"."Extract"."Extract"'
 CUB = '"cub"."cube"."rows"'
 CAUSED = ("value_differs", "dashboard_only", "cube_only")
-T_BUCKETS = ("match", "value_differs", "dashboard_only", "outside_scope")
+T_BUCKETS = (
+    "match",
+    "value_differs",
+    "dashboard_only",
+    "outside_scope",
+    "outside_period",
+)
+# Buckets the tool's own capture choices explain; no cause may claim them.
+UNCLAIMABLE = ("outside_scope", "outside_period")
 C_BUCKETS = ("match", "value_differs", "cube_only")
 
 
@@ -63,7 +72,12 @@ def _side(ws, checks: Checks, alias: str, schema: str, table: str, p: str) -> st
     return f"select {sel} from {src}"
 
 
-def build(ws, checks: Checks, scope: list[str]) -> RowsResult:
+def build(
+    ws,
+    checks: Checks,
+    scope: list[str],
+    period: tuple[dt.date, dt.date] | None = None,
+) -> RowsResult:
     """Join both sides into table `rows` with a base bucket and a cause per row.
 
     Args:
@@ -72,6 +86,9 @@ def build(ws, checks: Checks, scope: list[str]) -> RowsResult:
         checks: The checks file.
         scope: The scope key's values Cube can see; dashboard-only rows outside
             it are "outside_scope".
+        period: The first and last day capture asked Cube for. Dashboard-only
+            rows dated outside it are "outside_period", since Cube was never
+            asked for them. None when the snapshot recorded no period.
 
     Returns:
         Totals, bucket counts, differing-column counts and the 2 balance
@@ -109,9 +126,16 @@ def build(ws, checks: Checks, scope: list[str]) -> RowsResult:
         outside = f"{k} is null or {k} not in ({', '.join(lit(s) for s in scope)})"
     else:
         outside = "false"
+    if period:
+        d = f"cast(j.{_q(f'k_{checks.date_key}')} as date)"
+        lo, hi = (f"cast({lit(p.isoformat())} as date)" for p in period)
+        before = f"({d} < {lo} or {d} > {hi})"
+    else:
+        before = "false"
     base = (
         f"case when j.in_t and j.in_c then case when {any_diff} then 'value_differs' else 'match' end "
-        f"when j.in_t then case when {outside} then 'outside_scope' else 'dashboard_only' end "
+        f"when j.in_t then case when {before} then 'outside_period' "
+        f"when {outside} then 'outside_scope' else 'dashboard_only' end "
         "else 'cube_only' end"
     )
     ws.execute(
@@ -142,10 +166,8 @@ def build(ws, checks: Checks, scope: list[str]) -> RowsResult:
                 "causes overlap, so a row would get 2 causes: " + "; ".join(msgs)
             )
     whens = " ".join(f"when ({x.where}) then {lit(x.id)}" for x in checks.causes)
-    cause = (
-        "case when base = 'match' then null when base = 'outside_scope' then 'outside_scope' "
-        f"{whens} else 'unexplained' end"
-    )
+    fixed = " ".join(f"when base = {lit(b)} then {lit(b)}" for b in UNCLAIMABLE)
+    cause = f"case when base = 'match' then null {fixed} {whens} else 'unexplained' end"
     ws.execute(
         # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
         f"create temporary table rows as select *, {cause} as cause from rows_base"

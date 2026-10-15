@@ -77,13 +77,13 @@ def _checks(causes=()):
     )
 
 
-def _run(tmp_path, tab, cub, checks=None, scope=("Rise", "TEAM")):
+def _run(tmp_path, tab, cub, checks=None, scope=("Rise", "TEAM"), period=None):
     hyper.write_table(tmp_path / "e.hyper", "Extract", "Extract", TAB_COLS, tab)
     hyper.write_table(tmp_path / "c.hyper", "cube", "rows", CUB_COLS, cub)
     with hyper.Workspace(
         tmp_path / "a.hyper", {"tab": tmp_path / "e.hyper", "cub": tmp_path / "c.hyper"}
     ) as ws:
-        res = rows.build(ws, checks or _checks(), list(scope))
+        res = rows.build(ws, checks or _checks(), list(scope), period)
         by = {}
         for b in res.buckets:
             by[(b["base"], b["cause"])] = by.get((b["base"], b["cause"]), 0) + b["rows"]
@@ -177,3 +177,18 @@ def test_duplicates_pair_by_value_so_reruns_agree(tmp_path):
         runs.append(res.buckets)
     assert by == {("match", None): 12, ("dashboard_only", "unexplained"): 1}
     assert runs[0] == runs[1]
+
+
+def test_last_year_extract_row_is_outside_the_period_not_dashboard_only(tmp_path):
+    tab = _tab_rows() + [(101, dt.date(2025, 10, 6), "Rise", "Newark", 0.0)]
+    res, by = _run(tmp_path, tab, _cub_rows(), period=(D[0], D[2]))
+    assert by == {("match", None): 12, ("outside_period", "outside_period"): 1}
+    assert all(res.invariants.values())
+
+
+def test_outside_period_wins_over_outside_scope_and_is_unclaimable(tmp_path):
+    tab = _tab_rows() + [(105, dt.date(2025, 10, 6), "Hatch", "Newark", 0.0)]
+    cause = config.Cause("any", "claims anything", "true", "cube")
+    res, by = _run(tmp_path, tab, _cub_rows(), _checks([cause]), period=(D[0], D[2]))
+    assert by == {("match", None): 12, ("outside_period", "outside_period"): 1}
+    assert all(res.invariants.values())

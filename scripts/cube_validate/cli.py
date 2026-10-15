@@ -67,7 +67,7 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
     with hyper.Workspace(
         snap.analysis / "analysis.hyper", {"tab": snap.extract, "cub": snap.cube}
     ) as ws:
-        rr = rows.build(ws, checks, m.get("scope") or [])
+        rr = rows.build(ws, checks, m.get("scope") or [], _manifest_period(m))
         cs = cells.judge(
             ws, checks, m, answers, lambda cut, sheet: _export(snap, cut, sheet)
         )
@@ -85,6 +85,14 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
     path = snap.analysis / "report.md"
     path.write_text(text)
     return path, report.trust({**(m.get("invariants") or {}), **rr.invariants}, results)
+
+
+def _manifest_period(m: dict) -> tuple[dt.date, dt.date] | None:
+    """The period capture asked Cube for, from the manifest's START:END."""
+    if not m.get("period"):
+        return None
+    a, b = m["period"].split(":")
+    return dt.date.fromisoformat(a), dt.date.fromisoformat(b)
 
 
 def _export(snap, cut: str, sheet: str) -> bytes | None:
@@ -165,8 +173,10 @@ def _resume_checks(
             f"this snapshot captured period {m['period']}; "
             f"start a new run for {period_arg}"
         )
-    a, b = m["period"].split(":")
-    return dt.date.fromisoformat(a), dt.date.fromisoformat(b)
+    period = _manifest_period(m)
+    if period is None:
+        raise preflight.PreflightError("this snapshot has no recorded period")
+    return period
 
 
 def _run(checks, args) -> int:

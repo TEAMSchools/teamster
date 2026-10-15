@@ -16,6 +16,7 @@ RESERVED = (
     "dashboard_only",
     "cube_only",
     "outside_scope",
+    "outside_period",
     "unexplained",
 )
 DEFAULT_QUIET = (0, 10)

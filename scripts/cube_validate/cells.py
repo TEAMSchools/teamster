@@ -25,7 +25,15 @@ NEVER_CUBE = (FILTER_IGNORED, UNPROVEN, NO_COUNTERPART, NO_ROWS)
 ORDER = (ROW_GAP, FORMULA_GAP, COINCIDENTAL, PASS, *NEVER_CUBE)
 
 CUBE_SIDE = ("match", "value_differs", "cube_only")
-DASHBOARD_SIDE = ("match", "value_differs", "dashboard_only", "outside_scope")
+DASHBOARD_SIDE = (
+    "match",
+    "value_differs",
+    "dashboard_only",
+    "outside_scope",
+    "outside_period",
+)
+OUTSIDE_PERIOD = "some of this cell's rows fall outside the captured period"
+OUTSIDE_SCOPE = "rows outside Cube's scope for this identity"
 ALL = "(All)"
 NULLS = ("", "Null", "(Blank)", "%null%")
 TOTALS = ("Total", "Grand Total")
@@ -489,4 +497,12 @@ def _status(ws, checks, sheet, dims, ignored, proof, base_t, base_c, ans, studen
         f"select count(distinct case when {t_and} then {student} end), "
         f"count(distinct case when {c_and} then {student} end) from rows where {where}"
     )[0]
-    return "", "", buckets, (int(studs[0]), int(studs[1]))
+    counts = (int(studs[0]), int(studs[1]))
+    # Rows Cube was never asked for (capture's period or scope) are the tool's
+    # choice, so they never make a Cube finding.
+    bases = {b[0] for b in buckets}
+    if "outside_period" in bases:
+        return NO_ROWS, OUTSIDE_PERIOD, buckets, counts
+    if "outside_scope" in bases:
+        return UNPROVEN, OUTSIDE_SCOPE, buckets, counts
+    return "", "", buckets, counts

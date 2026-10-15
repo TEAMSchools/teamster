@@ -223,3 +223,39 @@ def test_resume_checks_refuse_a_missing_extract_time(tmp_path):
     del m["extract_at"]
     with pytest.raises(cli.preflight.PreflightError, match="no recorded extract time"):
         _resume(tmp_path, m)
+
+
+def test_analyze_reads_the_period_from_the_manifest(tmp_path):
+    checks_path = _write_checks(tmp_path)
+    snap = snapshot.new_snapshot("d", dt.datetime(2026, 10, 15, 16, 0), root=tmp_path)
+    d = dt.date(2026, 10, 6)
+    hyper.write_table(
+        snap.extract,
+        "Extract",
+        "Extract",
+        [
+            ("student_number", "bigint"),
+            ("calendardate", "date"),
+            ("school_abbreviation", "text"),
+        ],
+        [(1, d, "Rise"), (1, dt.date(2025, 10, 6), "Rise")],
+    )
+    hyper.write_table(
+        snap.cube,
+        "cube",
+        "rows",
+        [
+            ("lea_student_identifier", "double"),
+            ("attendance_date", "date"),
+            ("locations_abbreviation", "text"),
+        ],
+        [(1.0, d, "Rise")],
+    )
+    snapshot.write_manifest(
+        snap,
+        {"scope": ["Rise"], "period": "2026-10-05:2026-10-15", "cuts": {"default": {}}},
+    )
+    path, _ = cli.analyze_snapshot(cli.config.load_checks(checks_path), snap)
+    text = path.read_text()
+    assert "| outside_period | outside_period |" in text
+    assert "dashboard_only" not in text

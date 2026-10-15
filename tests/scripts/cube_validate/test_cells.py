@@ -427,3 +427,36 @@ def test_click_target_sheet_without_a_count_is_not_proven_by_another_sheet(tmp_p
         for c in tgt
     )
     assert all(c.verdict == cells.PASS for c in got if c.sheet == "ADA")
+
+
+@pytest.mark.parametrize("cube_ada", ["0.942", "0.95"])
+def test_cell_with_rows_outside_the_period_has_no_captured_rows(tmp_path, cube_ada):
+    extra = [
+        "(true, false, 4, '2025-10-06', 'outside_period', 'outside_period', 'Newark', 'Rise', null, null)"
+    ]
+    exports = {("default", "ADA"): b"School,ADA,Students\nRise,94.2%,3\n"}
+    answers = _ans(
+        "default",
+        [{"v.locations_abbreviation": "Rise", "v.avg_daily_attendance": cube_ada}],
+    )
+    (c,) = _judge(tmp_path, exports, answers, _with_sheet(), extra)
+    assert (c.verdict, c.reason) == (
+        cells.NO_ROWS,
+        "some of this cell's rows fall outside the captured period",
+    )
+
+
+def test_cell_with_rows_outside_cube_scope_is_unproven(tmp_path):
+    extra = [
+        "(true, false, 4, '2026-10-06', 'outside_scope', 'outside_scope', 'Newark', 'Rise', null, null)"
+    ]
+    exports = {("default", "ADA"): b"School,ADA,Students\nRise,94.2%,3\n"}
+    answers = _ans(
+        "default",
+        [{"v.locations_abbreviation": "Rise", "v.avg_daily_attendance": "0.95"}],
+    )
+    (c,) = _judge(tmp_path, exports, answers, _with_sheet(), extra)
+    assert (c.verdict, c.reason) == (
+        cells.UNPROVEN,
+        "rows outside Cube's scope for this identity",
+    )
