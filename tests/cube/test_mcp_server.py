@@ -979,3 +979,22 @@ def test_cube_error_reaches_the_caller(monkeypatch: pytest.MonkeyPatch) -> None:
         asyncio.run(
             server.mcp.call_tool("graphql_to_json", {"query": "{ nope"}, MagicMock())
         )
+
+
+def test_request_raises_tool_error_on_http_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import httpx
+
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    server = _load_server(monkeypatch)
+
+    class RejectingClient:
+        async def request(self, *args: Any, **kwargs: Any) -> httpx.Response:
+            del args, kwargs
+            return httpx.Response(400, text='{"error": "Cube member not found"}')
+
+    monkeypatch.setattr(server, "client", RejectingClient())
+    with pytest.raises(server.ToolError, match="400.*member not found"):
+        asyncio.run(server.load(MagicMock(), {"measures": ["x.count"]}))
