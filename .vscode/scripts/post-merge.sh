@@ -12,8 +12,9 @@ cd "${toplevel}" || {
 }
 
 # linked worktrees have no dbt_packages/ and defer to the main checkout's manifests
-git_dirs="$(git rev-parse --path-format=absolute --git-dir --git-common-dir)"
-[[ "$(sed -n 1p <<<"${git_dirs}")" == "$(sed -n 2p <<<"${git_dirs}")" ]] || exit 0
+git_dir="$(git rev-parse --path-format=absolute --git-dir)"
+common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
+[[ ${git_dir} == "${common_dir}" ]] || exit 0
 
 # trunk-ignore(shellcheck/SC1091): sourced file created at runtime by uv installer
 source "${HOME}/.local/bin/env"
