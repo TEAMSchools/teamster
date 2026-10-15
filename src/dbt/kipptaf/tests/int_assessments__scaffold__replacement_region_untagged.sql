@@ -5,6 +5,9 @@ select
     sc.assessment_id,
     sc.region,
     sc.powerschool_school_id,
+    sc.student_number,
+    sc.illuminate_student_id,
+    sc.student_assessment_id,
 
     a.canonical_assessment_id,
 from {{ ref("int_assessments__scaffold") }} as sc

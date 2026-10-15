@@ -66,7 +66,10 @@ unit_tests:
       out. Feeds a tagged replacement row, an untagged replacement row, a
       replacement row with no region, and an untagged non-replacement row for
       one assessment tagged Camden and Newark; asserts both replacement rows
-      outside the tags are dropped and the non-replacement row is kept.
+      outside the tags are dropped and the non-replacement row is kept. A
+      non-replacement row takes its region from the assessment's own tags
+      upstream, so an untagged one cannot occur; row 1003 only shows the filter
+      leaves non-replacement rows alone.
     model: bridge_assessment_expectations_student_scoped
     given:
       - input: ref('int_assessments__scaffold')
