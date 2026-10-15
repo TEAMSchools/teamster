@@ -57,8 +57,9 @@ cubes:
             the most recent diagnostic; administration_period covers that. To
             filter by date use assessment_date; for year and calendar rollups
             use date_day and academic_year. All 3 read the administration date
-            for Illuminate and college and the test date for state tests and
-            vendor diagnostics (i-Ready, DIBELS, STAR).
+            for the internal sources (Illuminate and Apex) and college, and the
+            test date for state tests and vendor diagnostics (i-Ready, DIBELS,
+            STAR).
 
       - name: assessment_date
         description: >-
@@ -106,28 +107,28 @@ cubes:
           Expectations, Partially Met Expectations, Approached Expectations, Met
           Expectations, Exceeded Expectations. NJSLA Science: the same without
           Partially Met Expectations. NJGPA: Graduation Ready, Not Yet
-          Graduation Ready. Illuminate: the performance band label.
-          Tier-movement rates are not comparable across instruments: fewer,
-          wider tiers mechanically raise the stayed-the-same rate.
+          Graduation Ready. Illuminate and Apex: the performance band label,
+          whose spelling varies by band set (for example Level 1, Low Level 1,
+          Low 1). Tier-movement rates are not comparable across instruments:
+          fewer, wider tiers mechanically raise the stayed-the-same rate.
         sql: proficiency_level
         type: string
         public: true
         meta:
           ai_context: >-
-            On Illuminate standard and group rows, a band can carry more than
-            one label spelling; group by performance_band_label_number there.
-            For STAR rows with no proficiency level, filter it with notSet;
-            equals "null" matches the literal string and returns zero rows.
-            DIBELS rows with no verdict nearly all carry Tested Out here, not
-            null. To find every row with no verdict, filter is_mastery with
-            notSet.
+            On Illuminate and Apex rows, a band can carry more than one label
+            spelling; group by performance_band_label_number there. For STAR
+            rows with no proficiency level, filter it with notSet; equals "null"
+            matches the literal string and returns zero rows. DIBELS rows with
+            no verdict nearly all carry Tested Out here, not null. To find every
+            row with no verdict, filter is_mastery with notSet.
 
       - name: performance_band_label_number
         description: >-
           Position of the score's band within the performance band set it was
-          scored against. Illuminate only; null for every other source. Band
-          sets differ in cut points, in band count, and in which band starts
-          mastery, so band 5 is not always the top. Not comparable across
+          scored against. Illuminate and Apex only; null for every other source.
+          Band sets differ in cut points, in band count, and in which band
+          starts mastery, so band 5 is not always the top. Not comparable across
           assessments, or across response types within one assessment: standard
           and group rows can carry different band labels than the assessment's
           overall rows.
@@ -149,26 +150,27 @@ cubes:
           and Above Benchmark; STAR and FL, Level 3 and up; NJSLA, Met and
           Exceeded Expectations; NJGPA, Graduation Ready; Illuminate, set by
           each assessment's band set, so an Illuminate rate mixes different
-          bars. Null where the source gives no verdict: Illuminate not_taken
-          rows, DIBELS Tested Out subtests, STAR rows with no level, and a few
-          Illuminate and DIBELS rows with no band or level.
+          bars; Apex, Level 3 and up in the assessment's band set. Null where
+          the source gives no verdict: Illuminate not_taken rows, DIBELS Tested
+          Out subtests, STAR rows with no level, Apex assessments with no band
+          set, and a few Illuminate, Apex and DIBELS rows with no band or level.
         sql: is_mastery
         type: boolean
         public: true
         meta:
           ai_context: >-
             For i-Ready at or above grade level, filter proficiency_level to Mid
-            or Above Grade Level instead. When reporting an Illuminate rate, say
-            which assessments it covers.
+            or Above Grade Level instead. When reporting an Illuminate or Apex
+            rate, say which assessments it covers.
 
       - name: scale_score
         description: >-
-          Scale score achieved. Every source except Illuminate, which reports
-          percent_correct instead; also null on some i-Ready and DIBELS group
-          rows. Scales differ by source and are not comparable across sources or
-          subjects; within i-Ready the scale also compresses at higher grades,
-          so a change in score is not comparable between elementary and middle
-          grades.
+          Scale score achieved. Every source except Illuminate and Apex, which
+          report percent_correct instead; also null on some i-Ready and DIBELS
+          group rows. Scales differ by source and are not comparable across
+          sources or subjects; within i-Ready the scale also compresses at
+          higher grades, so a change in score is not comparable between
+          elementary and middle grades.
         sql: scale_score
         type: number
         public: true
@@ -181,8 +183,8 @@ cubes:
 
       - name: percent_correct
         description: >-
-          Percent of questions answered correctly. Illuminate only; null for
-          every other source.
+          Percent of questions answered correctly, on a 0 to 100 scale.
+          Illuminate and Apex only; null for every other source.
         sql: percent_correct
         type: number
         public: true
@@ -192,9 +194,9 @@ cubes:
           Response-type breakdown. Never null; 4 values: overall (a subject,
           course-level or composite score; every source), group (a strand or
           domain rollup within a subject; Illuminate, i-Ready and DIBELS),
-          standard (one Illuminate standard; Illuminate only) and not_taken (an
+          standard (one standard; Illuminate and Apex only) and not_taken (an
           Illuminate assessment a student was assigned and never sat, with no
-          recorded response). Not additive across values.
+          recorded response; Illuminate only). Not additive across values.
         sql: response_type
         type: string
         public: true
@@ -205,10 +207,11 @@ cubes:
 
       - name: response_type_code
         description: >-
-          Breakdown identifier — the standard code on Illuminate standard rows,
-          the domain on i-Ready group rows, the subtest on DIBELS group rows.
-          Null on Illuminate group rows and on every overall and not_taken row.
-          Some CCSS Math standards carry 2 spellings
+          Breakdown identifier — the standard code on Illuminate and Apex
+          standard rows (a Florida B.E.S.T. code on Apex, for example
+          ELA.3.V.1.3), the domain on i-Ready group rows, the subtest on DIBELS
+          group rows. Null on Illuminate group rows and on every overall and
+          not_taken row. Some CCSS Math standards carry 2 spellings
           (CCSS.Math.Content.8.EE.C.8.b and CCSS.Math.Content.8.EE.C.8b), and a
           small share of older rows have an empty code (an empty string, not
           null).
@@ -230,28 +233,35 @@ cubes:
           Human-readable breakdown label. Populated on standard rows and every
           group row; null on overall and not_taken. A few labels, on standard
           and group rows, carry punctuation, capitalization or spacing variants
-          of the same text.
+          of the same text. On Apex standard rows it repeats response_type_code.
         sql: response_type_description
         type: string
         public: true
 
       - name: response_type_root_description
         description: >-
-          CCSS domain the standard rolls up to. Populated on every Illuminate
-          standard row and null on every other row. Unreliable for Illuminate
-          content aligned to Florida's own standards, whose codes do not fit the
-          CCSS hierarchy.
+          Top level the standard rolls up to. Populated on every Illuminate and
+          Apex standard row and null on every other row. On Illuminate rows, the
+          CCSS domain; unreliable for Illuminate content aligned to Florida's
+          own standards, whose codes do not fit the CCSS hierarchy. On Apex
+          rows, the whole subject framework (for example Mathematics
+          (B.E.S.T.)(Focus)), not a domain.
         sql: response_type_root_description
         type: string
         public: true
+        meta:
+          ai_context: >-
+            Use it for a domain rollup on Illuminate rows only; on Apex rows it
+            returns 1 row per subject.
 
       - name: is_replacement
         description: >-
-          Illuminate-only flag. TRUE when a K-8 student sat a
-          replacement-curriculum assessment off their enrolled grade level. Null
-          for every other source (the state tests and the i-Ready, DIBELS and
-          STAR diagnostics), which have no replacement-curriculum concept. Never
-          TRUE here: no replacement-curriculum sitting resolves to a section
+          Replacement-curriculum flag, set on Illuminate and Apex rows. TRUE
+          when a K-8 student sat a replacement-curriculum Illuminate assessment
+          off their enrolled grade level; FALSE on every Apex row. Null for
+          every other source (the state tests and the i-Ready, DIBELS and STAR
+          diagnostics), which have no replacement-curriculum concept. Never TRUE
+          here: no replacement-curriculum sitting resolves to a section
           enrollment, so none survive enrollment scoping.
         sql: is_replacement
         type: boolean
@@ -338,8 +348,8 @@ cubes:
       # well inside the MCP deadline, so it carries no timeout caveat.
       - name: count_assessments
         description: >-
-          Distinct Illuminate assessments in the filtered set — not sittings,
-          not scored responses. Illuminate only: every other source has no
+          Distinct internal assessments in the filtered set — not sittings, not
+          scored responses. Illuminate and Apex only: every other source has no
           source_assessment_id, so it reads 0 there.
         sql: "{student_assessment_administrations.source_assessment_id}"
         type: count_distinct
@@ -351,9 +361,10 @@ cubes:
           - sql: "{regions.region_key} IS NOT NULL"
         meta:
           ai_context: >-
-            Use this for "how many times was this assessed". A standard resting
-            on 1 assessment is a thin base for a trend; say so rather than
-            trending it.
+            Use this for "how many times was this assessed", with
+            assessment_type filtered to 1 source: each source numbers its own
+            assessments. A standard resting on 1 assessment is a thin base for a
+            trend; say so rather than trending it.
 
       - name: count_scored
         description: >-
@@ -391,14 +402,16 @@ cubes:
         description: >-
           Grain: meaningful only within Illuminate; pooling across sources is a
           silent-failure trap. Participation rate: assessments sat / assessments
-          assigned. Every other source reads 100% by construction.
+          assigned. Every other source reads 100% by construction, Apex
+          included: Apex has rows only for students who tested.
         sql: "1.0 * {count_taken} / NULLIF({count_assigned}, 0)"
         type: number
         format: percent
         public: true
         meta:
           ai_context: >-
-            Filter assessment_type to illuminate before reporting it.
+            Filter assessment_type to illuminate before reporting it. There is
+            no participation rate for Apex; say so rather than reporting 100%.
 
       # Built from additive primitives (_sum_proficient / count_scored) so
       # pre-aggregations roll it up to any grain.
@@ -439,9 +452,9 @@ cubes:
           Grain: recomputes at any query grain, but meaningful only within a
           single subject/standard — pooling percent-correct across assessments
           is a silent-failure trap (numerically valid, semantically
-          meaningless). Average percent correct. Illuminate only; null for every
-          other source. Built from additive primitives so pre-aggregations roll
-          it up.
+          meaningless). Average percent correct. Illuminate and Apex only; null
+          for every other source. Built from additive primitives so
+          pre-aggregations roll it up.
         sql: "{_sum_percent_correct} / NULLIF({_count_percent_correct}, 0)"
         type: number
         public: true
@@ -457,7 +470,7 @@ cubes:
       - name: _count_scale_score
         description: >-
           Count of rows with a non-null scale_score (every source except
-          Illuminate). Building block for avg_scale_score.
+          Illuminate and Apex). Building block for avg_scale_score.
         type: count
         public: false
         filters:
@@ -504,9 +517,10 @@ cubes:
       - name: pct_proficient_formative
         description: >-
           Proficiency rate across the QA, MQQ and CRQ module types only;
-          excludes every other module type (TP, UA, ET, WPP and older types).
-          Its denominator counts only rows with a proficiency verdict, as in
-          pct_proficient. CRQ is also available alone as pct_proficient_crq.
+          excludes every other module type (TP, UA, ET, BL, WPP and older
+          types). Pools Illuminate and Apex rows, which share the QA and MQQ
+          types. Its denominator counts only rows with a proficiency verdict, as
+          in pct_proficient. CRQ is also available alone as pct_proficient_crq.
         sql:
           "1.0 * {_sum_proficient_formative} / NULLIF({_count_scored_formative},
           0)"
@@ -517,7 +531,7 @@ cubes:
           ai_context: >-
             Not "all internal checkpoints". For that, build the rollup from the
             intended module types and flag the pooling choice as an open
-            decision.
+            decision. Filter assessment_type to compare 1 source's rate.
 
       - name: _sum_proficient_crq
         description: >-

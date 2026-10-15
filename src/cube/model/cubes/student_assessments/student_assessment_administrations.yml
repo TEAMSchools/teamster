@@ -36,9 +36,9 @@ cubes:
           routine retake window) and Spring. NJSLA and NJSLA Science: Spring. FL
           FAST: PM1 to PM3; FL end-of-course and science: PM3. College: the
           sitting's month and 2-digit year (for example Apr 24), for SAT, ACT
-          and PSAT. Null for Illuminate and AP. i-Ready EOY falls after spring
-          state testing and DIBELS EOY overlaps it; MOY is the last named round
-          before it.
+          and PSAT. Null for Illuminate, Apex and AP. i-Ready EOY falls after
+          spring state testing and DIBELS EOY overlaps it; MOY is the last named
+          round before it.
         sql: administration_period
         type: string
         public: true
@@ -56,19 +56,22 @@ cubes:
       - name: test_type
         description: >-
           Official vs Practice for college-entrance administrations. Null for
-          Illuminate, state, and AP.
+          Illuminate, Apex, state, and AP.
         sql: test_type
         type: string
         public: true
 
       - name: source_assessment_id
         description: >-
-          Illuminate assessment id at the administration grain (the canonical
-          id). Illuminate only; null for every other source.
+          The source system's own assessment id at the administration grain (the
+          canonical id). Illuminate and Apex only; null for every other source.
+          Each source numbers its assessments separately, so an id names an
+          assessment only together with assessment_type.
         sql: source_assessment_id
         type: number
         public: true
         meta:
           ai_context: >-
             "How many times was this assessed" is a distinct count of this, not
-            a row count; count_assessments is that count.
+            a row count; count_assessments is that count. Filter assessment_type
+            to 1 source before counting or matching ids.

@@ -5,8 +5,9 @@ each member's description, and its `ai_context` where it has one, come back from
 the `meta` tool. Read them there. The session protocol and the open decisions
 are in `assessment-cube-orchestrator.md`.
 
-This file holds one thing Cube does not carry yet: the Illuminate performance
-band sets. #5573 adds band-set members to Cube and deletes this file.
+This file holds one thing Cube does not carry yet: the performance band sets of
+the 2 internal sources, Illuminate and Apex. #5573 adds band-set members to Cube
+and deletes this file.
 
 ## Illuminate performance band sets (interim)
 
@@ -36,3 +37,20 @@ The most-used configurations:
 - The same cut points do not imply the same mastery band: CIAs for non-AP
   courses share KIPP Performance Levels' cut points and start mastery at band 5,
   not 4.
+
+## Apex performance band sets (interim)
+
+Apex marks mastery at the band labeled `Level 3` and above in each set. Each
+band runs from its cut point up to the next one. Band numbers do not compare
+across sets: `Level 3` is band 3 in a 5-band set and band 6 in an 8-band set.
+
+| Band set                                | Cut points                           | Mastery starts |
+| --------------------------------------- | ------------------------------------ | -------------- |
+| K-12 Progress Monitors (PETs, MQQ, TPQ) | 0 / 50 / 70 / 80 / 90                | band 3         |
+| EOCs                                    | 0 / 50 / 70 / 80 / 90                | band 3         |
+| 6-12 FAST (QAs)                         | 0 / 30 / 40 / 50 / 60 / 70 / 80 / 85 | band 6         |
+| K-4 FAST (QAs)                          | 0 / 30 / 40 / 50 / 60 / 70 / 80 / 85 | band 6         |
+
+- Cut points are percent correct.
+- An Apex assessment with no band set has no band and no mastery verdict, so it
+  drops out of `pct_proficient`.
