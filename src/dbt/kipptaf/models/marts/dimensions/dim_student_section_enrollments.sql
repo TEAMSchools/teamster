@@ -179,7 +179,7 @@ with
                     se._dbt_source_project, se.student_enrollment_key, se.is_homeroom
                 order by
                     (se.is_dropped_section or se.is_dropped_course) asc,
-                    se.exit_date desc,
+                    coalesce(se.exit_date, cast('9999-12-31' as date)) desc,
                     se.entry_date desc,
                     se.student_section_enrollment_key asc
             ) as homeroom_rank,
