@@ -747,7 +747,7 @@ def test_parse_cubesql_stream_error_line(monkeypatch: pytest.MonkeyPatch) -> Non
 
 def test_parse_cubesql_stream_truncated_line(monkeypatch: pytest.MonkeyPatch) -> None:
     server = _load_server(monkeypatch)
-    with pytest.raises(RuntimeError, match="/cubesql"):
+    with pytest.raises(server.ToolError, match="/cubesql"):
         server._parse_cubesql_stream('{"schema":[]}\n{"data":[[1')
 
 
@@ -801,7 +801,7 @@ def test_cubesql_raises_at_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
     # A zero budget puts the first 'Continue wait' past the deadline. Patching
     # time.monotonic instead would freeze asyncio's own clock and hang.
     monkeypatch.setattr(server, "TIMEOUT_SECONDS", 0)
-    with pytest.raises(RuntimeError, match="did not complete"):
+    with pytest.raises(server.ToolError, match="did not complete"):
         asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
 
 
@@ -809,7 +809,7 @@ def test_cubesql_raises_cube_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
     server = _load_server(monkeypatch)
     _recording_request(monkeypatch, server, '{"error":"Table not found"}\n')
-    with pytest.raises(RuntimeError, match="Table not found"):
+    with pytest.raises(server.ToolError, match="Table not found"):
         asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
 
 
@@ -844,7 +844,7 @@ def test_graphql_to_json_raises_on_null(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
     server = _load_server(monkeypatch)
     _recording_request(monkeypatch, server, {"jsonQuery": None})
-    with pytest.raises(RuntimeError, match="could not parse"):
+    with pytest.raises(server.ToolError, match="could not parse"):
         asyncio.run(server.graphql_to_json(MagicMock(), "{ nope"))
 
 
@@ -912,7 +912,7 @@ def test_sql_string_raises_on_cube_error(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
     server = _load_server(monkeypatch)
     _recording_request(monkeypatch, server, {"sql": {"error": "bad sql"}})
-    with pytest.raises(RuntimeError, match="bad sql"):
+    with pytest.raises(server.ToolError, match="bad sql"):
         asyncio.run(server.sql(MagicMock(), "SELECT nope"))
 
 
@@ -922,7 +922,7 @@ def test_convert_query_raises_on_cube_error(monkeypatch: pytest.MonkeyPatch) -> 
     _recording_request(
         monkeypatch, server, {"status": "error", "query": None, "error": "bad sql"}
     )
-    with pytest.raises(RuntimeError, match="bad sql"):
+    with pytest.raises(server.ToolError, match="bad sql"):
         asyncio.run(server.convert_query(MagicMock(), "SELECT nope"))
 
 
@@ -941,11 +941,11 @@ def test_request_enforces_total_deadline(monkeypatch: pytest.MonkeyPatch) -> Non
 
     monkeypatch.setattr(server, "client", SlowClient())
     monkeypatch.setattr(server, "TIMEOUT_SECONDS", 0.05)
-    with pytest.raises(RuntimeError, match="did not complete"):
+    with pytest.raises(server.ToolError, match="did not complete"):
         asyncio.run(server.load(MagicMock(), {"measures": ["x.count"]}))
 
     # A tool that does not poll must not blame 'Continue wait' polling.
-    with pytest.raises(RuntimeError, match="did not complete") as excinfo:
+    with pytest.raises(server.ToolError, match="did not complete") as excinfo:
         asyncio.run(server.sql(MagicMock(), {"measures": ["x.count"]}))
     assert "Continue wait" not in str(excinfo.value)
 
@@ -968,3 +968,14 @@ def test_load_docstring_describes_multi_query_response(
 ) -> None:
     server = _load_server(monkeypatch)
     assert "`results`" in server.load.__doc__
+
+
+def test_cube_error_reaches_the_caller(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The SDK replaces any non-ToolError exception text with a generic message.
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    _recording_request(monkeypatch, server, {"jsonQuery": None})
+    with pytest.raises(server.ToolError, match="could not parse"):
+        asyncio.run(
+            server.mcp.call_tool("graphql_to_json", {"query": "{ nope"}, MagicMock())
+        )

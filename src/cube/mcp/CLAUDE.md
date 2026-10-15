@@ -92,6 +92,10 @@ Cloud Run service via `--set-secrets`).
 
 ## MCP SDK gotchas
 
+- **Raise `ToolError` for any failure the caller should read.** The SDK replaces
+  every other exception's text with "Error executing tool <name>", so a
+  `RuntimeError` from Cube hides the reason from the model. Keep `RuntimeError`
+  for real crashes, such as a startup misconfiguration.
 - **Verified bearer-token claims** live behind `get_access_token()` from
   `mcp.server.auth.middleware.auth_context`. `ctx.request_context.user` does not
   exist on `Context`.
