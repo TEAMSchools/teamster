@@ -131,5 +131,7 @@ unit_tests:
         rows: []
     expect:
       rows:
+        # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
         - assessment_expectation_key: 26e913105f4ab32f98c5a17a5a538725
+        # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
         - assessment_expectation_key: 5e6753698640e0de72f3cf353f2d238e
