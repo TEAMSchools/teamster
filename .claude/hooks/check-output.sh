@@ -92,22 +92,6 @@ while read -r asana_url; do
 	combined=${combined//"${cursor}"/}
 done <<<"${asana_urls}"
 
-# Google Drive pagination cursors: search_files returns nextPageToken, an opaque
-# ~!!~-prefixed token (590-790 chars) with no separator break, so the entropy
-# heuristic below redacted every multi-page result. Exempt a token only in
-# Google Drive MCP output, only as a "nextPageToken" value, and only in the ~!!~
-# shape, then delete that exact token from the corpus. Runs before the decode
-# pass for the same reason as the Asana cursor above.
-if [[ ${tool_name} == mcp__claude_ai_google_drive__* ]]; then
-	drive_re='"nextPageToken"[[:space:]]*:[[:space:]]*"(~!!~[A-Za-z0-9_=!~-]{16,})"'
-	drive_rest=${combined}
-	while [[ ${drive_rest} =~ ${drive_re} ]]; do
-		drive_token=${BASH_REMATCH[1]}
-		combined=${combined//"${drive_token}"/}
-		drive_rest=${drive_rest#*"${drive_token}"}
-	done
-fi
-
 # Google API pagination cursors: a googleapiclient HttpError message quotes the
 # request URL, and a users.list page past the first carries pageToken=<opaque
 # cursor>. The Directory cursor is base64 of userdir_tkn_st<base64>userdir_tkn_end,
@@ -198,7 +182,9 @@ for page_token in "${page_tokens[@]}"; do
 	entropy_input=${entropy_input//"${page_token}"/pageToken=}
 done
 
+# MCP output skips this heuristic: connector ids and cursors (Outlook, Drive,
+# Context7) are long opaque runs. Named patterns above still scan it.
 long_runs=$(echo "${entropy_input}" | grep -oE '[A-Za-z0-9+/=_-]{120,}' || true)
-if [[ -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$|^[^a-z]*$|^[^A-Z]*$|^([^_]{0,23}_+)*[^_]{0,23}$|^([^_/-]{0,15}[_/-]+)*[^_/-]{0,15}$'; then
+if [[ ${tool_name} != mcp__* && -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$|^[^a-z]*$|^[^A-Z]*$|^([^_]{0,23}_+)*[^_]{0,23}$|^([^_/-]{0,15}[_/-]+)*[^_/-]{0,15}$'; then
 	emit_redacted "⛔ Tool output contained a high-entropy string (possible encoded secret) — redacted by check-output.sh"
 fi
