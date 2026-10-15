@@ -126,3 +126,11 @@ def test_scope_key_needs_a_bare_cube_member(tmp_path):
     }
     with pytest.raises(config.ConfigError, match="scope_key"):
         config.load_checks(_write(tmp_path, rows=rows))
+
+
+def test_defaults_load_and_need_a_mapped_filter(tmp_path):
+    filters = {"Year": {"tableau": "academic_year", "cube": "academic_year"}}
+    c = config.load_checks(_write(tmp_path, filters=filters, defaults={"Year": 2026}))
+    assert c.defaults == {"Year": "2026"}
+    with pytest.raises(config.ConfigError, match="defaults: Grade"):
+        config.load_checks(_write(tmp_path, filters=filters, defaults={"Grade": 9}))

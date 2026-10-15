@@ -133,6 +133,8 @@ class Checks:
     sheets: dict[str, SheetMap]
     cuts: tuple[Cut, ...]
     excluded_sheets: dict[str, str]
+    # The dashboard's own filter values, applied to every cut before its filters.
+    defaults: dict[str, str] = field(default_factory=dict)
 
 
 def side_sql(expr: str, prefix: str) -> str:
@@ -280,6 +282,11 @@ def load_checks(path: str | Path) -> Checks:
         }
         for cap, vals in (d.get("params") or {}).items()
     }
+    filters = {cap: _field(cap, v or {}) for cap, v in (d.get("filters") or {}).items()}
+    defaults = {str(k): str(v) for k, v in (d.get("defaults") or {}).items()}
+    for cap in defaults:
+        if cap not in filters:
+            raise ConfigError(f"defaults: {cap} has no entry under filters")
     quiet = d.get("tableau_quiet_minutes") or DEFAULT_QUIET
     return Checks(
         dashboard=_req(d, "dashboard"),
@@ -311,13 +318,12 @@ def load_checks(path: str | Path) -> Checks:
         date_key=rows["date_key"],
         scope_key=scope_key,
         causes=tuple(causes),
-        filters={
-            cap: _field(cap, v or {}) for cap, v in (d.get("filters") or {}).items()
-        },
+        filters=filters,
         params=params,
         sheets=sheets,
         cuts=cuts,
         excluded_sheets={
             str(k): str(v) for k, v in (d.get("excluded_sheets") or {}).items()
         },
+        defaults=defaults,
     )

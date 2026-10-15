@@ -466,3 +466,43 @@ def test_display_equal_accepts_exact_halves_despite_float_noise():
     assert cells.display_equal("94.3%", 377 / 400)
     assert cells.display_equal("0.5%", 0.0045)
     assert not cells.display_equal("94.2%", 0.9436)
+
+
+def test_defaults_apply_to_every_cut_and_a_cut_filter_overrides_them():
+    import dataclasses
+
+    checks = dataclasses.replace(_checks(), defaults={"Region": "Newark"})
+    sm = "ADA"
+    q = cells.cube_query(checks, sm, config.Cut("default"), {})
+    assert q["filters"] == [
+        {"member": "v.regions_region_name", "operator": "equals", "values": ["Newark"]}
+    ]
+    q = cells.cube_query(checks, sm, config.Cut("c", {"Region": "Camden"}), {})
+    assert q["filters"] == [
+        {"member": "v.regions_region_name", "operator": "equals", "values": ["Camden"]}
+    ]
+    assert cells._cut_preds(checks, config.Cut("default"), {}, "t") == [
+        "(\"t_region\" = 'Newark')"
+    ]
+    assert cells._cut_preds(checks, config.Cut("c", {"Region": "Camden"}), {}, "c") == [
+        "(\"c_regions_region_name\" = 'Camden')"
+    ]
+
+
+def test_default_filter_values_prove_the_default_cut_and_its_repeats(tmp_path):
+    import dataclasses
+
+    checks = dataclasses.replace(
+        _with_sheet(dims={}),
+        defaults={"Region": "Newark"},
+        cuts=(config.Cut("default"), config.Cut("same", {"Region": "Newark"})),
+    )
+    total = b"ADA,Students\n94.2%,2\n"
+    exports = {("default", "ADA"): total, ("same", "ADA"): total}
+    row = [{"v.avg_daily_attendance": "0.942"}]
+    answers = {**_ans("default", row), **_ans("same", row)}
+    got = _judge(tmp_path, exports, answers, checks)
+    assert [(c.cut, c.verdict) for c in got] == [
+        ("default", cells.PASS),
+        ("same", cells.PASS),
+    ]

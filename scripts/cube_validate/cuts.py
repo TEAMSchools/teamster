@@ -7,6 +7,8 @@ import yaml
 from .snapshot import slug
 from .workbook import Workbook
 
+ALL = "(All)"
+
 
 def _non_default(values: list[str], defaults: tuple[str, ...]) -> str | None:
     return next((v for v in values if v not in defaults), None)
@@ -65,12 +67,19 @@ def plan_yaml(
 ) -> str:
     """The draft the analyst edits into the checks file: sheets, columns, cuts."""
     sheets = {s: {} for d in dashboards for s in wb.dashboards.get(d, [])}
+    defaults: dict[str, str | list[str]] = {}
+    for f in wb.filters:
+        if f.dashboard in dashboards and f.caption not in defaults:
+            defaults[f.caption] = (
+                ALL if f.default_all or not f.default_values else list(f.default_values)
+            )
     draft = {
         "sheets": sheets,
         "extract_columns": columns,
-        "filter_cards": sorted(
-            {f.caption for f in wb.filters if f.dashboard in dashboards}
-        ),
+        "filter_cards": sorted(defaults),
+        # what each card shows before anyone touches it; copy the ones that are
+        # not (All) into the checks file's defaults
+        "filter_card_defaults": dict(sorted(defaults.items())),
         "params": sorted({p.caption for p in wb.params if p.dashboard in dashboards}),
         "cuts": draft_cuts(wb, dashboards, values),
     }

@@ -154,7 +154,7 @@ def cube_query(
     )
     dimensions = [f"{v}.{d.cube}" for d in sm.dims.values() if d.cube]
     filters: list[dict] = []
-    for caption, label in {**cut.filters, **click_filters}.items():
+    for caption, label in _cut_filters(checks, cut, click_filters).items():
         if label == ALL:
             continue
         fm = checks.filters.get(caption)
@@ -204,9 +204,14 @@ class Cell:
     students: tuple[int, int] = (0, 0)
 
 
+def _cut_filters(checks: Checks, cut: Cut, click: dict[str, str]) -> dict[str, str]:
+    """The dashboard's defaults, then the cut's own filters, then the click's."""
+    return {**checks.defaults, **cut.filters, **click}
+
+
 def _cut_preds(checks: Checks, cut: Cut, click: dict[str, str], side: str) -> list[str]:
     out = []
-    for caption, label in {**cut.filters, **click}.items():
+    for caption, label in _cut_filters(checks, cut, click).items():
         fm = checks.filters.get(caption)
         if fm is None:
             raise MappingGap(caption)
@@ -266,6 +271,10 @@ def judge(
     """
     student = f'"k_{checks.student_key}"'
     default = checks.cuts[0]
+    try:
+        default_t = _cut_preds(checks, default, {}, "t")
+    except MappingGap:
+        default_t = None
     out: list[Cell] = []
     for cut in checks.cuts:
         meta = (manifest.get("cuts") or {}).get(cut.id, {})
@@ -289,8 +298,13 @@ def judge(
         if cut.id != default.id and not gap:
             for s, data in exports.items():
                 if data is not None and data == export(default.id, s):
+                    if default_t is None:
+                        # the default view's rows are unknown, so the equal
+                        # export cannot count as data
+                        ignored.add(s)
+                        continue
                     n_cut = ws.count("rows where " + " and ".join(["in_t", *base_t[s]]))
-                    n_def = ws.count("rows where in_t")
+                    n_def = ws.count("rows where " + " and ".join(["in_t", *default_t]))
                     if n_cut != n_def:
                         ignored.add(s)
         proof = (
