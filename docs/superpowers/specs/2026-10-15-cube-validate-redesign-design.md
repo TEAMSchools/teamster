@@ -143,13 +143,15 @@ cut definition never needs a new capture.
 
 ### Storage
 
-`~/.cache/cube-validate/<dashboard>/<snapshot>/`: parquet files and
-`manifest.json`. Student-level and local only.
+`~/.cache/cube-validate/<dashboard>/<snapshot>/`: the downloaded extract, Cube's
+rows and answers written to a `.hyper` file of their own with the Hyper API, the
+exports, and `manifest.json`. Student-level and local only. Hyper is already
+required to read the extract, so the snapshot adds no dependency.
 
 ## Rows layer
 
-- Full outer join, in DuckDB over the parquet files, of the `.hyper` rows
-  (`student_number`, `calendardate`, school) and Cube's rows
+- Full outer join, in Hyper with both `.hyper` files attached, of the extract's
+  rows (`student_number`, `calendardate`, school) and Cube's rows
   (`lea_student_identifier`, `attendance_date`, school). School is in the key
   because a student can hold 2 schools on 1 day.
 - Every row gets exactly 1 bucket:
@@ -163,8 +165,9 @@ cut definition never needs a new capture.
   | outside scope  | School outside Cube's recorded scope for the caller |
 
 - The last 4 split further by cause. A cause in the config has an id, a
-  plain-language description, a predicate over the joined row, and an owner
-  (`cube`, `dashboard`, `source`, `undecided`).
+  plain-language description, a SQL predicate over the joined row (Hyper's
+  Postgres-style dialect), and an owner (`cube`, `dashboard`, `source`,
+  `undecided`).
 - Causes must not overlap. A row matching 2 causes is a tool error. No order
   decides anything.
 - Rows no cause claims are "unexplained", listed by key.
