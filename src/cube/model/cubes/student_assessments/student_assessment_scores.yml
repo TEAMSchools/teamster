@@ -48,12 +48,30 @@ cubes:
           Date the assessment was taken (completion date), as a standalone date
           dimension not joined to a calendar cube. date_taken is corrupt for a
           small share of internal rows, so calendar and academic-year rollups
-          use the date_day / academic_year members instead (backed by
+          use assessment_date, date_day, or academic_year instead (backed by
           assessment_date_key: the administration date for internal and college,
           the reliable test date for state and vendor). Populated for state and
           vendor rows; nullable for a small share of internal rows lacking a
           recorded sitting.
         sql: CAST(test_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: assessment_date
+        description: >-
+          The date each score is anchored to: the administration date for
+          internal and college assessments, the test date for state and vendor
+          assessments. Holds the same date as date_day, read from this fact
+          rather than through the dates join. Filter assessment_date, not
+          date_day, for a single date or a date range: it filters the fact's own
+          partitioning column, so only the matching years are read, while a
+          date_day filter reads every year. Use date_day and the other dates
+          members for grouping by calendar parts, and academic_year_label for
+          school-year filters.
+        # {CUBE} is required: an unqualified column inside an expression is
+        # ambiguous against same-named columns on joined cubes, and filters on
+        # the member then fail (see attendance_date).
+        sql: CAST({CUBE}.assessment_date_key AS TIMESTAMP)
         type: time
         public: true
 
@@ -475,18 +493,17 @@ cubes:
           - student_section_enrollments.lead_teacher_staff_key
           - staff_lead_teacher.full_name
         # Partitioned build: Cube builds each yearly partition as its own job,
-        # in parallel, so a refresh takes one partition's build time. It does
-        # not limit what a refresh rebuilds: the refresh_key below has one value
-        # for every partition, so a change rebuilds all of them, and each scans
-        # the whole fact because the partition filter sits on joined dim_dates
-        # (#5557). The anchor is dates.date_day, keyed on assessment_date_key
-        # (the administration date where present, else the test date), not the
-        # cube's own date_taken, which is corrupt for a small share of rows.
-        # Partitions are calendar years, so a state or vendor window that
+        # in parallel. The anchor is assessment_date, a fact-side column, so
+        # each partition's filter prunes to one BigQuery partition of the fact
+        # (partition_by in its properties yml). Anchoring on dates.date_day
+        # would put the filter on joined dim_dates and scan the whole fact per
+        # partition. Not date_taken either: it is corrupt for a small share of
+        # rows. Partitions are calendar years, so a state or vendor window that
         # straddles January 1 splits its scores across two partitions by each
         # score's anchor date: correct per-score attribution, not a fan-out
-        # (#4546).
-        time_dimension: dates.date_day
+        # (#4546). A query with a date range on date_day cannot use this
+        # rollup; academic_year filters and assessment_date ranges can.
+        time_dimension: student_assessment_scores.assessment_date
         granularity: year
         partition_granularity: year
         # Serve a date range only when it aligns with the year grain. Cube's
@@ -498,24 +515,40 @@ cubes:
         # January-to-December ranges hit the rollup.
         allow_non_strict_date_range_match: false
         # Bound the build range to real assessment history. Without it, Cube
-        # derives the range from the time_dimension, and dates.date_day resolves
-        # through dim_dates, whose calendar spine runs to 9999, so the refresh
-        # worker enumerates thousands of empty yearly partitions (#4460). The
-        # floor sits below the earliest assessment_date_key carrying a score;
-        # rows outside [floor, today] fall back to the fact.
+        # derives the range from the time_dimension's min and max, so one stray
+        # far-past or far-future assessment_date_key would add empty yearly
+        # partitions (#4460). The floor sits below the earliest
+        # assessment_date_key carrying a score; rows outside [floor, today] fall
+        # back to the fact.
         build_range_start:
           sql: SELECT DATE('2015-07-01')
         build_range_end:
           sql: SELECT CURRENT_DATE('America/New_York')
-        # Rebuild when the fact rebuilds (a full CREATE OR REPLACE, several
-        # times a day) rather than on a fixed timer. Cube runs this metadata
-        # query (0 bytes billed) every 30 minutes, so answers trail the fact by
-        # at most the interval plus one build. last_modified_time also moves on
-        # metadata-only changes (descriptions, labels), and would move on every
-        # load if the fact became incremental; each triggers a full rebuild.
+        # Rebuild a partition when the fact rebuilds (a full CREATE OR REPLACE,
+        # on the cron in its properties yml), but only partitions that overlap
+        # the last 2 years. Cube runs this key once per partition every 30
+        # minutes, with FILTER_PARAMS bound to that partition's date range.
+        # Late state results land in the current or previous calendar year;
+        # older partitions return a constant and never rebuild, so a backfill of
+        # older history needs a manual rebuild in Cube Cloud. If FILTER_PARAMS
+        # fails to bind it renders as 1 = 1, and every partition falls back to
+        # rebuilding on each fact change. last_modified_time also moves on
+        # metadata-only changes (descriptions, labels).
         # test_refresh_key_sql_names_its_cubes_table guards the table name.
         refresh_key:
           every: 30 minute
           sql: >-
-            SELECT last_modified_time FROM kipptaf_marts.__TABLES__ WHERE
-            table_id = 'fct_assessment_scores_enrollment_scoped'
+            SELECT IF(
+              EXISTS (
+                SELECT 1
+                FROM UNNEST(GENERATE_DATE_ARRAY(
+                  DATE_SUB(CURRENT_DATE('America/New_York'), INTERVAL 2 YEAR),
+                  CURRENT_DATE('America/New_York')
+                )) AS d
+                WHERE
+            {FILTER_PARAMS.student_assessment_scores.assessment_date.filter('TIMESTAMP(d)')}
+              ),
+              CAST(last_modified_time AS STRING),
+              'frozen'
+            ) FROM kipptaf_marts.__TABLES__ WHERE table_id =
+            'fct_assessment_scores_enrollment_scoped'

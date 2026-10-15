@@ -147,10 +147,14 @@ Marts default to `materialized: view`. Exception: `dim_assessments`,
 `dim_courses`, `dim_dates`, `dim_regions`, `dim_staff`, `dim_students`, the six
 assessment-star marts, and the four assessment intermediates are
 `materialized: table`. All seven assessment marts share
-`int_assessments__response_rollup`'s cron tick — Cube is their only consumer and
-its `proficiency_rollup` pre-aggregation refreshes daily, so intraday rebuilds
-are invisible ([#4559](https://github.com/TEAMSchools/teamster/issues/4559),
+`int_assessments__response_rollup`'s cron tick — Cube is their only consumer,
+and its `proficiency_rollup` pre-aggregation follows the scores fact's rebuilds,
+so an eager view would buy no freshness
+([#4559](https://github.com/TEAMSchools/teamster/issues/4559),
 [#4821](https://github.com/TEAMSchools/teamster/issues/4821)).
+`fct_assessment_scores_enrollment_scoped` is partitioned by year on
+`assessment_date_key` to match the rollup's yearly partitions; keep the two
+aligned.
 
 **A table mart carries NO outgoing `foreign_key` constraints.** A table child
 renders its declared FKs into the CTAS DDL, and BigQuery aborts when the parent
