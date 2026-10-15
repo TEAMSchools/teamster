@@ -216,6 +216,7 @@ kipptaf.rpt_deanslist__transcript_grades	A1	kipptaf.stg_powerschool__storedgrade
 kipptaf.rpt_deanslist__transcript_grades	A1	kipptaf.stg_powerschool__students	#5810
 kipptaf.rpt_egencia__users	A1	kipptaf.stg_google_sheets__egencia__travel_managers	#5810
 kipptaf.rpt_egencia__users	A1	kipptaf.stg_google_sheets__egencia__traveler_groups	#5810
+kipptaf.rpt_extracts__survey_reminder	A1	kipptaf.rpt_tableau__survey_completion	#5812
 kipptaf.rpt_focus__addresses	A1	kipptaf.int_finalsite__contact_id_attributes	#5810
 kipptaf.rpt_focus__addresses	A1	kipptaf.int_finalsite__enrollment_lifecycle	#5810
 kipptaf.rpt_focus__addresses	A1	kipptaf.int_finalsite__student_address_of_record	#5810
