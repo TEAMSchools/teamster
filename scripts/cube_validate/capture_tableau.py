@@ -192,6 +192,14 @@ class Session:
         self.copy = item
         return item.id
 
+    def attach(self, luid: str) -> None:
+        """Reuse a review copy published earlier, when a capture resumes."""
+        item = self.call(lambda: self.server.workbooks.get_by_id(luid))
+        if item.project_id != self.project:
+            raise SessionError(f"{luid} is not in the review project")
+        self.copy = item
+        self._views = {}
+
     def export_view(
         self, sheet: str, filters: list[tuple[str, str]], params=()
     ) -> bytes:
@@ -306,10 +314,15 @@ def capture(checks, snap, session, now: dt.datetime) -> dict:
             f"{checks.datasource} has no embedded extract in the workbook; a published "
             "data source would refresh under the review copy, so the snapshot would not hold"
         )
-    (snap.dir / extracts[checks.datasource]["file"]).rename(snap.extract)
+    target = extracts[checks.datasource]["file"]
+    (snap.dir / target).rename(snap.extract)
+    for info in extracts.values():
+        if info["file"] != target:
+            (snap.dir / info["file"]).unlink(missing_ok=True)
     text = workbook.twb_text(snap.twbx)
     wb = workbook.read_workbook(text)
     if "review_copy" not in m:
+        session.wait_out_refreshes()
         open_guard(session, checks.workbook)
         listed = set(checks.sheets) | {
             c.click.source_sheet for c in checks.cuts if c.click
@@ -322,8 +335,11 @@ def capture(checks, snap, session, now: dt.datetime) -> dict:
         m["review_copy"] = {
             "name": name,
             "url": getattr(session.copy, "webpage_url", ""),
+            "id": session.copy.id,
         }
         snapshot.write_manifest(snap, m)
+    else:
+        session.attach(m["review_copy"]["id"])
     m["extract_refreshed"] = extracts[checks.datasource]["refreshed"]
     cuts = m.setdefault("cuts", {})
     for cut in checks.cuts:

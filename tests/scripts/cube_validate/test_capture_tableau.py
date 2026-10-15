@@ -153,3 +153,64 @@ def test_click_targets_follow_the_action_and_its_exclusions():
         ],
     )
     assert capture_tableau.click_targets(wb, ["Overview"], "ADA by School") == ["Trend"]
+
+
+def test_capture_resumes_without_publishing_again(tmp_path):
+    import json
+    import zipfile
+
+    # trunk-ignore(pyright/reportAttributeAccessIssue): conftest registers cube_validate at runtime
+    from cube_validate import config, snapshot
+
+    twb = (
+        "<workbook><datasources><datasource caption='DS'>"
+        "<extract><connection class='hyper' dbname='x.hyper'/></extract>"
+        "</datasource></datasources></workbook>"
+    )
+    snap = snapshot.Snapshot(tmp_path)
+    with zipfile.ZipFile(snap.twbx, "w") as z:
+        z.writestr("w.twb", twb)
+        z.writestr("Data/Extracts/x.hyper", b"stub")
+    snap.manifest_path.write_text(
+        json.dumps(
+            {
+                "review_copy": {"name": "ZZ-REVIEW n", "url": "u", "id": "copy-1"},
+                "cuts": {"default": {"sheets": {"S1": "exports/default/s1.csv"}}},
+            }
+        )
+    )
+    checks = SimpleNamespace(
+        workbook="W",
+        datasource="DS",
+        dashboards=("Overview",),
+        sheets=("S1",),
+        cuts=(
+            config.Cut("default"),
+            config.Cut("filter-x", filters={"School": "Alpha"}),
+        ),
+    )
+
+    class Fake:
+        def __init__(self):
+            self.attached, self.published, self.exported = [], [], []
+
+        def attach(self, luid):
+            self.attached.append(luid)
+
+        def publish(self, *a):
+            self.published.append(a)
+
+        def wait_out_refreshes(self):
+            pass
+
+        def export_view(self, sheet, filters, params=()):
+            self.exported.append((sheet, list(filters)))
+            return b"A\r\n1\r\n"
+
+    session = Fake()
+    m = capture_tableau.capture(checks, snap, session, dt.datetime(2026, 10, 15, 16, 5))
+    assert session.published == [] and session.attached == ["copy-1"]
+    assert session.exported == [("S1", [("School", "Alpha")])]
+    assert set(m["cuts"]) == {"default", "filter-x"}
+    assert set(snapshot.read_manifest(snap)["cuts"]) == {"default", "filter-x"}
+    assert snap.extract.exists() and not (tmp_path / "x.hyper").exists()
