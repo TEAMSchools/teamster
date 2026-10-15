@@ -281,16 +281,19 @@ legitimately-superseded inactive rows that repeat the key.
   Intermediate tests may omit the override where a warning is acceptable.
 - Marts and `rpt_` models carry only `error` tests and unit tests (#5948). Until
   a folder's default flips, set `config: severity: error` on each new test
-  there. Every mart and `rpt_` model keeps its grain test as the backstop, plus
-  `not_null` on natural-key grain columns (`unique` skips nulls); a
-  `generate_surrogate_key` PK needs only `unique`. Sort any other test: the
-  model's own logic → a unit test; a promise an upstream model makes → `error`
-  on that model; source data → the earliest model that sees it, either `warn`
-  with a downstream defense and a description naming the source system, what is
-  wrong, and what to change there, or an `error` gate when no business rule can
-  handle it; build timing → delete. A new gate lands as `warn` and flips after
-  it passes in prod. A failing test skips only downstream tables; a view between
-  a gate and its consumers still reads the bad rows.
+  there. Every mart and `rpt_` model carries its grain test as the backstop,
+  plus `not_null` on natural-key grain columns (`unique` skips nulls) unless
+  non-null by construction; a `generate_surrogate_key` PK needs only `unique`. A
+  cross-model `relationships` test is not a regression test: key drift is the
+  key macros' job (A7), a population mismatch becomes a shared upstream model or
+  a unit test, and real orphans become an upstream `warn`. Sort any other test:
+  the model's own logic → a unit test; a promise an upstream model makes →
+  `error` on that model; source data → the earliest model that sees it, either
+  `warn` with a downstream defense and a description naming the source system,
+  what is wrong, and what to change there, or an `error` gate when no business
+  rule can handle it; build timing → delete. A new gate lands as `warn` and
+  flips after it passes in prod. A failing test skips only downstream tables; a
+  view between a gate and its consumers still reads the bad rows.
 - Removing a `severity: warn` override reverts to the project default: `warn` in
   a district or kipptaf, `error` in a source package. To force `error`, set
   `config: severity: error` explicitly.
