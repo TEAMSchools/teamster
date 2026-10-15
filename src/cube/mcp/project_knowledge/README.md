@@ -33,7 +33,11 @@ New session logs drive updates. Where each finding goes:
 - A field fact (what a member means, which values exist, how to use it) goes to
   the Cube YAML: the member's `description:` or `meta.ai_context:`.
 - A query mechanic that holds on every view goes to the `load` or `meta`
-  docstring in `src/cube/mcp/server.py`.
+  docstring in `src/cube/mcp/server.py`. Three of them are also copied into the
+  orchestrator's _Routing_ section on purpose: a claude.ai connector appears to
+  keep its old tool descriptions until each user reconnects it, so the Project
+  carries them too. Edit both together. Drop the copy once a session on an
+  unrefreshed connector is shown to see the new `load` description.
 - Only session protocol and unratified policy go to these files.
 - A model or data defect becomes a `src/cube/` issue.
 

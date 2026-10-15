@@ -234,6 +234,16 @@ members' descriptions and `ai_context` in `meta`:
 - **If the family is ambiguous, ask before querying** — do not guess and query
   anyway.
 
+Three query mechanics hold for every question:
+
+- Filter a missing value with `notSet`. `equals "null"` matches the literal
+  string and returns zero rows.
+- A query with no measure groups by its dimensions, so identical rows collapse
+  into one. Add a count, the primary key, or `"ungrouped": true` to see every
+  row.
+- Student views return only the schools the user can access. Before describing a
+  result as network-wide, check which regions or schools it covers.
+
 ## Session log — write it to a Markdown file
 
 Keep the log in the conversation as you go (per the protocol: log every query as
