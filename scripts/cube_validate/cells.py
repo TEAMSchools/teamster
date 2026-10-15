@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import csv
 import io
-import math
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from decimal import ROUND_HALF_UP, Decimal
 
 from .config import Checks, Cut, FieldMap, lit, side_sql
 
@@ -86,13 +84,16 @@ def parse_display(s: str | None) -> Display | None:
 
 
 def display_equal(tableau: str | None, cube: float | None, scale: float = 1.0) -> bool:
-    """Cube's value rounded the way Tableau displayed its own (half up)."""
+    """Cube's value is within half a displayed step of what Tableau shows.
+
+    The half-step bound keeps half-up rounding and absorbs float noise at exact
+    halves (0.0045 is 0.44999999999999996% in floats; Tableau shows 0.5%).
+    """
     d = parse_display(tableau)
     if d is None or cube is None:
         return d is None and cube is None
-    v = Decimal(repr(cube * scale * (100 if d.percent else 1)))
-    shown = float(v.quantize(Decimal(1).scaleb(-d.decimals), rounding=ROUND_HALF_UP))
-    return math.isclose(shown, d.value, rel_tol=1e-9, abs_tol=1e-9)
+    scaled = cube * scale * (100 if d.percent else 1)
+    return abs(scaled - d.value) <= 0.5 * 10**-d.decimals + 1e-9
 
 
 def parse_export(data: bytes) -> list[dict[str, str]]:

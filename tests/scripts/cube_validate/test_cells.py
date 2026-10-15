@@ -460,3 +460,9 @@ def test_cell_with_rows_outside_cube_scope_is_unproven(tmp_path):
         cells.UNPROVEN,
         "rows outside Cube's scope for this identity",
     )
+
+
+def test_display_equal_accepts_exact_halves_despite_float_noise():
+    assert cells.display_equal("94.3%", 377 / 400)
+    assert cells.display_equal("0.5%", 0.0045)
+    assert not cells.display_equal("94.2%", 0.9436)
