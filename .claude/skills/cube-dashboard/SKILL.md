@@ -76,7 +76,9 @@ refuses otherwise.
    `datasource`, `sheets` (stubs) and `cuts`; list under `excluded_sheets`, with
    the reason, every sheet with no Cube counterpart, every sheet on another data
    source ("separate run"), and every sheet that blends 2 data sources
-   ("blended, not checked"). Never list a sheet with a name column.
+   ("blended, not checked"). Never list a sheet with a name or student-ID
+   column. Copy each `filter_card_defaults` value other than `(All)` into
+   `defaults`.
 2. Evening 1: `run <checks>`. Rows layer and exports are now frozen. Cells are
    mostly "mapping unproven" or "no Cube counterpart" until mapping.
 3. Map from the exports in `<snapshot>/exports/` (see _Mapping a sheet_).
@@ -96,6 +98,10 @@ rows "no Cube counterpart".
   read "mapping unproven".
 - A measure with no Cube member is declared with `cube: null`.
 - Each filter caption goes under `filters`.
+- `defaults` holds the values the dashboard's filter cards start on. Every cut
+  applies them first, then its own filters, so the default cut stays bare.
+  Without them every cut selects rows the dashboard hides, and the student-count
+  proof fails.
 - A sheet without a student count is proven only by another sheet in the same
   cut that has one and the same filters; otherwise its cells read "mapping
   unproven".
@@ -116,10 +122,14 @@ one row stop the report; never order them to make it pass.
   "capture completeness" (which `run` records), and every hand check agrees. A
   disagreeing hand check outranks pending ones. Findings stay held until then.
 - **Row buckets:** match, value differs, dashboard only, Cube only, outside
-  scope; each split by cause or "unexplained".
+  scope, outside period; each split by cause or "unexplained". Outside scope
+  (schools Cube does not show this identity) and outside period (days the run
+  did not capture) take no cause.
 - **Cells:** pass, coincidental match, row gap, formula gap. Filter ignored,
   mapping unproven, no Cube counterpart and no captured rows are the tool's
   limits, never Cube findings.
+- **Formulas not tested:** mapped measures with no cut whose rows all match.
+  Their formulas are unproven either way.
 - Counts under 10 show as `<10`, so the report can go to `#data_team`.
 
 ## Hand checks
