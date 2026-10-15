@@ -46,6 +46,7 @@ models:
               - _dbt_source_project
           config:
             where: student_number is not null
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
