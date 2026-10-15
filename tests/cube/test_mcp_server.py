@@ -519,7 +519,7 @@ def test_load_and_sql_send_utc_timezone_by_default(
     assert sent[0]["json"]["query"]["timezone"] == "UTC"
 
     asyncio.run(server.sql(ctx, {"measures": ["x.count"]}))
-    assert sent[1]["json"]["query"]["timezone"] == "UTC"
+    assert json.loads(sent[1]["params"]["query"])["timezone"] == "UTC"
 
     # Caller-provided timezone passes through untouched on both tools.
     asyncio.run(
@@ -638,8 +638,12 @@ def test_sql_posts_object_query_and_trims(monkeypatch: pytest.MonkeyPatch) -> No
 
     result = asyncio.run(server.sql(ctx, {"measures": ["x.count"]}))
     method, path, kwargs = calls[0]
-    assert (method, path) == ("POST", "/sql")
-    assert kwargs["json"] == {"query": {"measures": ["x.count"], "timezone": "UTC"}}
+    # GET, the method the deployed tool has always used against Cube Cloud.
+    assert (method, path) == ("GET", "/sql")
+    assert json.loads(kwargs["params"]["query"]) == {
+        "measures": ["x.count"],
+        "timezone": "UTC",
+    }
     assert result == server._trim_sql(fixture)
 
     assert asyncio.run(server.sql(ctx, {"measures": ["x.count"]}, full=True)) == fixture
@@ -653,8 +657,8 @@ def test_sql_posts_sql_string_with_format_sql(monkeypatch: pytest.MonkeyPatch) -
 
     result = asyncio.run(server.sql(MagicMock(), "SELECT MEASURE(x.count) FROM x"))
     method, path, kwargs = calls[0]
-    assert (method, path) == ("POST", "/sql")
-    assert kwargs["json"] == {
+    assert (method, path) == ("GET", "/sql")
+    assert kwargs["params"] == {
         "query": "SELECT MEASURE(x.count) FROM x",
         "format": "sql",
     }
@@ -933,6 +937,24 @@ def test_request_enforces_total_deadline(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(server, "TIMEOUT_SECONDS", 0.05)
     with pytest.raises(RuntimeError, match="did not complete"):
         asyncio.run(server.load(MagicMock(), {"measures": ["x.count"]}))
+
+    # A tool that does not poll must not blame 'Continue wait' polling.
+    with pytest.raises(RuntimeError, match="did not complete") as excinfo:
+        asyncio.run(server.sql(MagicMock(), {"measures": ["x.count"]}))
+    assert "Continue wait" not in str(excinfo.value)
+
+
+def test_summarize_transformed_query_marks_omitted_values(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    wide = [f"v.dimension_{i}" for i in range(200)]
+    summary = server._summarize_transformed_query(
+        {"sortedDimensions": wide, "granularityHierarchies": {"x": []}}
+    )
+    # Too large to inline, but the key stays so the caller knows to ask for it.
+    assert "full=True" in summary["sortedDimensions"]
+    assert "granularityHierarchies" not in summary
 
 
 def test_load_docstring_describes_multi_query_response(

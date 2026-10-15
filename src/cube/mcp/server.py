@@ -295,14 +295,12 @@ async def _request(
                     continue
                 return body
     except TimeoutError:
-        raise RuntimeError(_deadline_message(method, path)) from None
+        raise RuntimeError(_deadline_message(method, path, poll)) from None
 
 
-def _deadline_message(method: str, path: str) -> str:
-    return (
-        f"Cube {method} {path} did not complete within {TIMEOUT_SECONDS}s "
-        "('Continue wait' polling)"
-    )
+def _deadline_message(method: str, path: str, poll: bool) -> str:
+    message = f"Cube {method} {path} did not complete within {TIMEOUT_SECONDS}s"
+    return message + " ('Continue wait' polling)" if poll else message
 
 
 def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
@@ -618,6 +616,7 @@ async def sql(
     `full=True` returns Cube's raw payload (tens of KB of internals).
 
     SQL string response: {"sql": ...}, Cube's compiled SQL for that query.
+    It is already small, so `full` has no effect on it.
 
     A default-deny access result compiles to `WHERE (1 = 0)` plus
     `rlsAccessDenied` — no `dim_staff_cube_access` row for the email, a `none`
@@ -627,16 +626,21 @@ async def sql(
     explicit `timezone` only when wall-clock conversion is intended.
     """
     email = await _get_user_email(ctx)
+    # GET, not POST: the gateway serves both, and GET is the method proven
+    # against Cube Cloud.
     if isinstance(query, str):
         body = await _request(
-            "POST", "/sql", json={"query": query, "format": "sql"}, email=email
+            "GET", "/sql", params={"query": query, "format": "sql"}, email=email
         )
         # Cube answers a SQL compile failure with HTTP 200 and `{"sql": {"error"}}`.
         if body.get("sql", {}).get("error"):
-            raise RuntimeError(f"Cube POST /sql: {body['sql']['error']}")
+            raise RuntimeError(f"Cube GET /sql: {body['sql']['error']}")
         return body
     body = await _request(
-        "POST", "/sql", json={"query": _with_default_timezone(query)}, email=email
+        "GET",
+        "/sql",
+        params={"query": json.dumps(_with_default_timezone(query))},
+        email=email,
     )
     if full:
         return body
@@ -657,12 +661,18 @@ def _summarize_transformed_query(
     other value too large to read at a glance."""
     if transformed is None:
         return None
-    return {
-        k: v
-        for k, v in transformed.items()
-        if k != "granularityHierarchies"
-        and len(json.dumps(v)) <= _SUMMARY_VALUE_MAX_CHARS
-    }
+    summary: dict[str, Any] = {}
+    for k, v in transformed.items():
+        if k == "granularityHierarchies":
+            continue
+        size = len(json.dumps(v))
+        # Keep the key so the caller knows the field exists and how to get it.
+        summary[k] = (
+            v
+            if size <= _SUMMARY_VALUE_MAX_CHARS
+            else f"<omitted: {size} chars; call with full=True>"
+        )
+    return summary
 
 
 @mcp.tool()
@@ -771,7 +781,7 @@ async def cubesql(
                     raise RuntimeError(f"Cube POST /cubesql: {error}")
                 return result
     except TimeoutError:
-        raise RuntimeError(_deadline_message("POST", "/cubesql")) from None
+        raise RuntimeError(_deadline_message("POST", "/cubesql", True)) from None
 
 
 @mcp.tool()

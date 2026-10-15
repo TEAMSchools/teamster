@@ -131,8 +131,9 @@ Cloud Run service via `--set-secrets`).
 
 ## Cube REST quirks
 
-- `/load`, `/sql`, and `/dry-run` accept POST with a JSON body. `/sql` with
-  `"format": "sql"` takes a SQL API string instead of a query object.
+- `/load` and `/dry-run` take POST with a JSON body. `sql` uses GET (the method
+  proven against Cube Cloud) with `query` as a JSON-string param; adding
+  `format=sql` makes `query` a SQL API string instead of a query object.
 - `/cubesql` returns newline-delimited JSON (schema line, then `data` chunks),
   not one object; `_request(raw=True)` returns the text for
   `_parse_cubesql_stream`.
