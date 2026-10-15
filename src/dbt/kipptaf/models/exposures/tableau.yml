@@ -1,4 +1,19 @@
 exposures:
+  - name: academic_goal_rollup_dashboard
+    label: Academic Goal Roll-Up
+    type: dashboard
+    owner:
+      name: Data Team - awalters
+    depends_on:
+      - ref("rpt_tableau__academic_goals_dashboard")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 15cb4859-ab6d-46a7-8e4f-1aa786785aa3
   - name: crdc_dashboard
     label: CRDC Dashboard
     type: dashboard
