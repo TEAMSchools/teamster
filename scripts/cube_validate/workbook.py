@@ -1,0 +1,520 @@
+"""Read a Tableau workbook, build its review copy, unpack its extracts.
+
+Ported from the cell-first tool (68c59490a5); proven on the DDI Suite run.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import re
+import subprocess
+import zipfile
+from dataclasses import dataclass, field
+from pathlib import Path
+
+import defusedxml.ElementTree as SafeET
+
+_FIELD = re.compile(r"^\[([^\]]+)\]\.\[([^\]]+)\]$")
+_DERIVED = re.compile(r"^[a-z]+:(.+):[a-z]+$")
+_LITERAL = re.compile(r"\"([^\"]*)\"|'([^']*)'")
+_USER = "{http://www.tableausoftware.com/xml/user}"
+
+
+def _is_number(s: str) -> bool:
+    try:
+        float(s.replace(",", "").rstrip("%"))
+    except ValueError:
+        return False
+    return True
+
+
+@dataclass(frozen=True)
+class FilterCard:
+    dashboard: str
+    field: str
+    caption: str
+    datasource: str
+    calculated: bool
+    default_all: bool
+    values: tuple[str, ...] = ()
+    # What the card's sheet saves as selected when default_all is False.
+    default_values: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class Param:
+    dashboard: str
+    caption: str
+    values: tuple[str, ...]
+    default: str
+
+
+@dataclass(frozen=True)
+class Action:
+    dashboard: str
+    caption: str
+    source_sheet: str
+    kind: str
+    target: str
+    exclude: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class SheetFilter:
+    """A filter a worksheet saves, which Tableau applies before any export."""
+
+    sheet: str
+    field: str  # the extract column (a group's underlying column)
+    caption: str
+    datasource: str
+    op: str  # "in", "not_in" or "range"
+    values: tuple[str, ...] = ()  # "%null%" stands for blank
+    low: str | None = None
+    high: str | None = None
+    numeric: bool = False
+    # A calculation the extract has no column for: only a Cube member, or the
+    # checks file's ignore_sheet_filters, can account for it.
+    calculated: bool = False
+
+
+@dataclass
+class Workbook:
+    dashboards: dict[str, list[str]]
+    filters: list[FilterCard]
+    params: list[Param]
+    actions: list[Action]
+    sheet_filters: dict[str, list[SheetFilter]] = field(default_factory=dict)
+    groups: dict[str, dict] = field(default_factory=dict)
+
+
+def caption_of(el, field: str) -> str:
+    """The caption Tableau shows for a column: its stored caption, else the raw
+    field name. vf takes this caption, and ignores any other silently."""
+    caption = el.get("caption") if el is not None else None
+    return caption or field
+
+
+def _unquote(v: str) -> str:
+    return v[1:-1] if len(v) >= 2 and v[0] == v[-1] == '"' else v
+
+
+def _split(param: str) -> tuple[str, str]:
+    m = _FIELD.match(param)
+    if not m:
+        raise ValueError(f"not a field reference: {param}")
+    inner = m.group(2)
+    d = _DERIVED.match(inner)
+    return m.group(1), d.group(1) if d else inner
+
+
+def read_workbook(twb_text: str) -> Workbook:
+    root = SafeET.fromstring(twb_text)
+    columns: dict[tuple[str, str], object] = {}
+    ds_caption: dict[str, str] = {}
+    groups: dict[str, dict] = {}
+    for ds in root.iter("datasource"):
+        name = ds.get("name") or ""
+        if ds.get("caption"):
+            ds_caption[name] = ds.get("caption") or name
+        for c in ds.findall("column"):
+            col_name = (c.get("name") or "").strip("[]")
+            columns[(name, col_name)] = c
+            calc = c.find("calculation")
+            if calc is not None and calc.get("class") == "categorical-bin":
+                groups[caption_of(c, col_name)] = {
+                    "datasource": ds.get("caption") or name,
+                    "field": (calc.get("column") or "").strip("[]"),
+                    "bins": {
+                        _unquote(b.get("value") or ""): [
+                            _unquote(v.text or "") for v in b.findall("value")
+                        ]
+                        for b in calc.findall("bin")
+                    },
+                    "other": _unquote(calc.get("default") or ""),
+                }
+
+    dashboards: dict[str, list[str]] = {}
+    filters: list[FilterCard] = []
+    params: list[Param] = []
+    for d in root.iter("dashboard"):
+        dash = d.get("name") or ""
+        sheets: list[str] = []
+        for z in d.iter("zone"):
+            kind = z.get("type-v2")
+            if kind is None and z.get("name") and z.get("name") not in sheets:
+                sheets.append(z.get("name") or "")
+            elif kind == "filter":
+                filters.append(_card(root, columns, ds_caption, dash, z))
+            elif kind == "paramctrl":
+                params.append(_param(columns, dash, z.get("param") or ""))
+        dashboards[dash] = sheets
+    actions = [_action(a) for a in root.iter("action")]
+    sheet_filters = {
+        w.get("name") or "": _saved_filters(w, columns, ds_caption)
+        for w in root.iter("worksheet")
+    }
+    return Workbook(dashboards, filters, params, actions, sheet_filters, groups)
+
+
+def _saved_filters(w, columns, ds_caption) -> list[SheetFilter]:
+    sheet, out = w.get("name") or "", []
+    for f in w.iter("filter"):
+        col = f.get("column") or ""
+        if "[Action (" in col or "Measure Names" in col or not _FIELD.match(col):
+            continue
+        ds, name = _split(col)
+        el = columns.get((ds, name))
+        calc = el.find("calculation") if el is not None else None
+        formula = (calc.get("formula") or "") if calc is not None else ""
+        if formula and not re.sub(r"\[Parameters\]\.\[[^\]]+\]", "", formula).count(
+            "["
+        ):
+            continue  # reads only a parameter: a sheet swap, not a data filter
+        caption = caption_of(el, name)
+        numeric = el is not None and el.get("datatype") in ("integer", "real")
+        common = {
+            "sheet": sheet,
+            "field": name,
+            "caption": caption,
+            "datasource": ds_caption.get(ds, ds),
+            "numeric": numeric,
+            "calculated": bool(formula),
+        }
+        if f.get("class") == "quantitative":
+            lo, hi = f.find("min"), f.find("max")
+            if lo is None and hi is None:
+                continue  # a range with no bounds filters nothing
+            out.append(
+                SheetFilter(
+                    **common,
+                    op="range",
+                    low=lo.text if lo is not None else None,
+                    high=hi.text if hi is not None else None,
+                )
+            )
+            continue
+        top = f.find("groupfilter")
+        if top is None or top.get("function") not in ("member", "union", "except"):
+            continue  # all members, or a user filter (row-level security)
+        members = tuple(
+            _unquote(g.get("member") or "")
+            for g in f.iter("groupfilter")
+            if g.get("member")
+        )
+        if calc is not None and calc.get("class") == "categorical-bin":
+            bins = {
+                _unquote(b.get("value") or ""): tuple(
+                    _unquote(v.text or "") for v in b.findall("value")
+                )
+                for b in calc.findall("bin")
+            }
+            if not all(m in bins for m in members):
+                continue  # the group's default bin: no fixed member list
+            common.update(
+                field=(calc.get("column") or "").strip("[]"), calculated=False
+            )
+            members = tuple(v for m in members for v in bins[m])
+        common["numeric"] = numeric and all(
+            _is_number(m) for m in members if m != "%null%"
+        )
+        out.append(
+            SheetFilter(
+                **common,
+                op="not_in" if top.get("function") == "except" else "in",
+                values=members,
+            )
+        )
+    return out
+
+
+def _card(root, columns, ds_caption, dash: str, z) -> FilterCard:
+    ds, field = _split(z.get("param") or "")
+    col = columns.get((ds, field))
+    calc = col.find("calculation") if col is not None else None
+    caption = caption_of(col, field)
+    values: tuple[str, ...] = ()
+    if calc is not None:
+        found = [a or b for a, b in _LITERAL.findall(calc.get("formula") or "")]
+        values = tuple(dict.fromkeys(found))
+    return FilterCard(
+        dashboard=dash,
+        field=field,
+        caption=caption,
+        datasource=ds_caption.get(ds, ds),
+        calculated=calc is not None,
+        default_all=_default_all(root, z.get("name") or "", z.get("param") or ""),
+        values=values,
+        default_values=_default_values(root, z.get("name") or "", z.get("param") or ""),
+    )
+
+
+def _default_all(root, sheet: str, param: str) -> bool:
+    """True unless the card's own sheet saves a member selection for the field."""
+    for w in root.iter("worksheet"):
+        if w.get("name") != sheet:
+            continue
+        for f in w.iter("filter"):
+            if f.get("column") != param:
+                continue
+            g = f.find("groupfilter")
+            if g is None:
+                return True
+            return (
+                g.get("function") == "level-members"
+                or g.get(f"{_USER}ui-enumeration") == "all"
+            )
+    return True
+
+
+def _default_values(root, sheet: str, param: str) -> tuple[str, ...]:
+    """The members a card's sheet saves as selected (empty when it saves All)."""
+    if _default_all(root, sheet, param):
+        return ()
+    for w in root.iter("worksheet"):
+        if w.get("name") != sheet:
+            continue
+        for f in w.iter("filter"):
+            if f.get("column") == param:
+                found = [_unquote(g.get("member") or "") for g in f.iter("groupfilter")]
+                return tuple(v for v in found if v)
+    return ()
+
+
+def _param(columns, dash: str, ref: str) -> Param:
+    _, name = _split(ref)
+    col = columns[("Parameters", name)]
+    caption = col.get("caption") or name
+    default = _unquote(col.get("value") or "")
+    if col.get("param-domain-type") != "list":
+        return Param(dash, caption, (), default)
+    values = tuple(_unquote(m.get("value") or "") for m in col.iter("member"))
+    return Param(dash, caption, values, default)
+
+
+def _action(a) -> Action:
+    src = a.find("source")
+    dash = src.get("dashboard") if src is not None else ""
+    sheet = src.get("worksheet") if src is not None else ""
+    cmd = a.find("command")
+    if cmd is None:
+        return Action(dash or "", a.get("caption") or "", sheet or "", "link", "", ())
+    p = {x.get("name"): x.get("value") or "" for x in cmd.findall("param")}
+    kind = {"tsc:tsl-filter": "filter", "tsc:brush": "highlight"}.get(
+        cmd.get("command") or "", "link"
+    )
+    exclude = tuple(s for s in p.get("exclude", "").split(",") if s)
+    return Action(
+        dash or "",
+        a.get("caption") or "",
+        sheet or "",
+        kind,
+        p.get("target", ""),
+        exclude,
+    )
+
+
+class ReviewCopyError(ValueError):
+    """The review copy could not be built safely."""
+
+
+_SELF_CLOSING_ACTION = re.compile(r"<filter [^>]*\[Action \([^>]*/>\s*")
+_PAIRED_ACTION = re.compile(r"<filter [^>]*\[Action \([^>]*[^/]>.*?</filter>\s*", re.S)
+_ACTION_SLICE = re.compile(r"<column>\[[^\]]+\]\.\[Action \([^\]]*\]</column>\s*")
+
+
+def _hidden(text: str) -> dict[str, bool]:
+    root = SafeET.fromstring(text)
+    return {
+        w.get("name") or "": w.get("hidden") == "true"
+        for w in root.iter("window")
+        if w.get("class") == "worksheet"
+    }
+
+
+def _expose(text: str, sheets: list[str]) -> str:
+    for name in sheets:
+        pattern = re.compile(
+            r"(<window class='worksheet') hidden='true'( name='"
+            + re.escape(name)
+            + r"')"
+        )
+        text, n = pattern.subn(r"\1\2", text)
+        if n > 1:
+            raise ReviewCopyError(f"{name}: {n} windows matched, expected at most 1")
+    return text
+
+
+def _strip_click_filters(text: str, sheet: str) -> str:
+    start = text.find(f"<worksheet name='{sheet}'>")
+    if start < 0:
+        return text
+    end = text.index("</worksheet>", start)
+    block = _SELF_CLOSING_ACTION.sub("", text[start:end])
+    block = _PAIRED_ACTION.sub("", block)
+    block = _ACTION_SLICE.sub("", block)
+    if "[Action (" in block:
+        raise ReviewCopyError(f"{sheet}: a saved click filter survived")
+    return text[:start] + block + text[end:]
+
+
+def review_copy(
+    twb_text: str, dashboards: list[str], sheets: set[str] | None = None
+) -> str:
+    """The workbook with each named dashboard's sheets (only `sheets`, when given)
+    exposed and clicks reproducible."""
+    wb = read_workbook(twb_text)
+    missing = [d for d in dashboards if d not in wb.dashboards]
+    if missing:
+        raise ReviewCopyError(f"no dashboard named {', '.join(missing)}")
+    exposed = [
+        s for d in dashboards for s in wb.dashboards[d] if sheets is None or s in sheets
+    ]
+    before = _hidden(twb_text)
+
+    out = _expose(twb_text, exposed)
+    n_none = out.count("<param name='on-empty' value='none' />")
+    out = out.replace(
+        "<param name='on-empty' value='none' />",
+        "<param name='on-empty' value='all' />",
+    )
+    if out.count("<param name='on-empty' value='none' />"):
+        raise ReviewCopyError("an on-empty setting is still none")
+    targets = {
+        s
+        for a in wb.actions
+        if a.kind == "filter" and a.dashboard in dashboards
+        for s in wb.dashboards.get(a.target, [])
+        if s not in a.exclude
+    }
+    for s in sorted(targets):
+        out = _strip_click_filters(out, s)
+
+    after = _hidden(out)
+    still = [s for s in exposed if after.get(s)]
+    if still:
+        raise ReviewCopyError(f"still hidden: {', '.join(still)}")
+    changed = [s for s in before if s not in exposed and before[s] != after.get(s)]
+    if changed:
+        raise ReviewCopyError(f"other windows changed: {', '.join(changed)}")
+    if n_none and "<param name='on-empty' value='all' />" not in out:
+        raise ReviewCopyError("on-empty edit did not land")
+    return out
+
+
+def views_to_hide(twb_text: str, keep: set[str]) -> list[str]:
+    """Publishable windows to hide on publish, so only the review views go live."""
+    root = SafeET.fromstring(twb_text)
+    publishable = [
+        w.get("name") or ""
+        for w in root.iter("window")
+        if w.get("class") in ("worksheet", "dashboard") and w.get("hidden") != "true"
+    ]
+    return sorted(n for n in publishable if n not in keep)
+
+
+REPO = Path(__file__).resolve().parents[2]
+XML_SCRIPTS = REPO / "docs" / "tableau-xml" / "scripts"
+
+
+def _run(args: list[str]) -> None:
+    # trunk-ignore(bandit/B603,bandit/B607): fixed repo scripts run through uv, no shell
+    r = subprocess.run(  # noqa: S603 - fixed repo scripts, no shell
+        ["uv", "run", "python", *args], capture_output=True, text=True, check=False
+    )
+    if r.returncode:
+        raise ReviewCopyError(
+            f"{Path(args[0]).name} failed:\n{r.stdout[-2000:]}{r.stderr[-2000:]}"
+        )
+
+
+def build_review_twbx(
+    live_twbx: Path,
+    out_dir: Path,
+    dashboards: list[str],
+    listed: set[str] | None = None,
+) -> tuple[Path, list[str]]:
+    """Edit the live workbook into a review copy and pass the tableau-workbook-xml gates."""
+    with zipfile.ZipFile(live_twbx) as z:
+        twb_name = next(n for n in z.namelist() if n.endswith(".twb"))
+        base = z.read(twb_name).decode("utf-8")
+    (out_dir / "base.twb").write_text(base, encoding="utf-8", newline="")
+    wb0 = read_workbook(base)
+    sheets = None
+    if listed is not None:
+        sheets = set(listed) | {
+            a.source_sheet
+            for a in wb0.actions
+            if a.kind == "filter" and a.dashboard in dashboards
+        }
+    review = review_copy(base, dashboards, sheets)
+    (out_dir / "review.twb").write_text(review, encoding="utf-8", newline="")
+    _run(
+        [
+            str(XML_SCRIPTS / "check_twb.py"),
+            str(out_dir / "review.twb"),
+            "--ref",
+            str(out_dir / "base.twb"),
+        ]
+    )
+    out = out_dir / "review.twbx"
+    _run(
+        [
+            str(XML_SCRIPTS / "repack.py"),
+            str(out_dir / "review.twb"),
+            str(live_twbx),
+            str(out),
+        ]
+    )
+    wb = read_workbook(review)
+    keep = set(dashboards) | {
+        s for d in dashboards for s in wb.dashboards[d] if sheets is None or s in sheets
+    }
+    return out, views_to_hide(review, keep)
+
+
+def unpack_extracts(twbx: Path, out_dir: Path) -> dict[str, dict]:
+    """Each datasource's .hyper from a downloaded .twbx, with its refresh time (UTC)."""
+    out = {}
+    with zipfile.ZipFile(twbx) as z:
+        twb = z.read(next(n for n in z.namelist() if n.endswith(".twb"))).decode(
+            "utf-8"
+        )
+        root = SafeET.fromstring(twb)
+        for ds in root.iter("datasource"):
+            conn = ds.find("extract/connection")
+            if conn is None or conn.get("class") != "hyper" or not ds.get("caption"):
+                continue
+            name = Path(conn.get("dbname") or "").name
+            member = next(n for n in z.namelist() if Path(n).name == name)
+            (out_dir / name).write_bytes(z.read(member))
+            raw = conn.get("update-time") or ""
+            at = (
+                dt.datetime.strptime(raw, "%m/%d/%Y %I:%M:%S %p")
+                .replace(tzinfo=dt.UTC)
+                .isoformat()
+                if raw
+                else None
+            )
+            out[ds.get("caption")] = {"file": name, "refreshed": at}
+    return out
+
+
+def twb_text(twbx: Path) -> str:
+    """The .twb inside a .twbx."""
+    with zipfile.ZipFile(twbx) as z:
+        return z.read(next(n for n in z.namelist() if n.endswith(".twb"))).decode(
+            "utf-8"
+        )
+
+
+def formulas(twb_text: str) -> dict[str, str]:
+    """Each calculated column's caption and formula, for formula-gap cells."""
+    root = SafeET.fromstring(twb_text)
+    out: dict[str, str] = {}
+    for c in root.iter("column"):
+        calc = c.find("calculation")
+        if calc is None or not calc.get("formula"):
+            continue
+        name = (c.get("name") or "").strip("[]")
+        out.setdefault(caption_of(c, name), calc.get("formula") or "")
+    return out
