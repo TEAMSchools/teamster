@@ -214,3 +214,27 @@ def test_capture_resumes_without_publishing_again(tmp_path):
     assert set(m["cuts"]) == {"default", "filter-x"}
     assert set(snapshot.read_manifest(snap)["cuts"]) == {"default", "filter-x"}
     assert snap.extract.exists() and not (tmp_path / "x.hyper").exists()
+
+
+def test_download_with_a_signed_in_server_does_not_sign_in_again(tmp_path):
+    calls = []
+
+    class Workbooks:
+        def get_by_id(self, luid):
+            return SimpleNamespace(updated_at=dt.datetime(2026, 10, 15, 20, 0))
+
+        def download(self, luid, filepath, include_extract):
+            calls.append("download")
+            return str(tmp_path / "live.twbx")
+
+    class Auth:
+        def sign_in(self, auth):
+            calls.append("sign_in")
+
+        def sign_out(self):
+            calls.append("sign_out")
+
+    server = SimpleNamespace(workbooks=Workbooks(), auth=Auth())
+    path, at = capture_tableau.download("l", tmp_path, server=server)
+    assert calls == ["download"]
+    assert path == tmp_path / "live.twbx" and at.startswith("2026-10-15T20:00")

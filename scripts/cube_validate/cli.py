@@ -11,6 +11,7 @@ import argparse
 import datetime as dt
 import json
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from . import (
     capture_cube,
@@ -94,7 +95,9 @@ def _export(snap, cut: str, sheet: str) -> bytes | None:
 def _plan(checks) -> int:
     root = snapshot.SNAPSHOT_ROOT / checks.dashboard / "plan"
     root.mkdir(parents=True, exist_ok=True)
-    twbx, _ = capture_tableau.download(checks.workbook_luid, root)
+    server, auth = capture_tableau.server_from_env()
+    with capture_tableau.signed_in(server, auth):
+        twbx, _ = capture_tableau.download(checks.workbook_luid, root, server=server)
     text = workbook.twb_text(twbx)
     wb = workbook.read_workbook(text)
     extracts = workbook.unpack_extracts(twbx, root)
@@ -127,46 +130,67 @@ def _built_at(clock: dict[str, str], tables: list[str]) -> dt.datetime:
 
 def _run(checks, args) -> int:
     now = dt.datetime.now(dt.UTC)
-    start, end, tag = _period(checks, args.period, now.date())
-    snap = (
-        snapshot.Snapshot(Path(args.snapshot))
-        if args.snapshot
-        else snapshot.new_snapshot(checks.dashboard, now, tag)
-    )
-    m = snapshot.read_manifest(snap)
+    today = now.astimezone(ZoneInfo(checks.window.tz)).date()
+    start, end, tag = _period(checks, args.period, today)
+    snap = snapshot.Snapshot(Path(args.snapshot)) if args.snapshot else None
+    m = snapshot.read_manifest(snap) if snap else {}
+    # a flag left by an earlier attempt must not survive a failed resume
+    (m.get("invariants") or {}).pop("capture completeness", None)
+    resuming = bool(m.get("extract_refreshed"))
     m["period"] = f"{start}:{end}"
 
+    cube = capture_cube.client_from_env()
+    bq = preflight.BigQuery()
     server, auth = capture_tableau.server_from_env()
     with capture_tableau.signed_in(server, auth):
-        live = server.workbooks.get_by_id(checks.workbook_luid)
-        if live.updated_at is None:
-            raise preflight.PreflightError("Tableau reports no extract refresh time")
-        why = preflight.check_window(now, live.updated_at, checks.window)
+        if resuming:
+            extract_at = dt.datetime.fromisoformat(m["extract_refreshed"])
+        else:
+            live = server.workbooks.get_by_id(checks.workbook_luid)
+            if live.updated_at is None:
+                raise preflight.PreflightError(
+                    "Tableau reports no extract refresh time"
+                )
+            extract_at = live.updated_at
+        why = preflight.check_window(now, extract_at, checks.window)
         if why:
             raise preflight.PreflightError(why)
-        cube = capture_cube.client_from_env()
-        bq = preflight.BigQuery()
-        est = preflight.estimate(
-            cube, bq, preflight.planned_queries(checks, start, end)
-        )
-        # trunk-ignore(bandit/B608): table name comes from the reviewed checks file
-        _, dash_tables = bq.dry_run(f"select * from `{checks.dashboard_table}`", [])
-        tables = sorted(set(est["tables"]) | dash_tables)
-        before = m.get("clock_before") or preflight.clock_map(bq, tables)
-        gb = est["bytes"] / 1e9
-        m.update(
-            cost=f"{gb:.2f} GB planned, cap {checks.cost_cap_gb} GB",
-            clock_before=before,
-            clock_tables=tables,
-        )
-        snapshot.write_manifest(snap, m)
-        if gb > checks.cost_cap_gb:
-            raise preflight.PreflightError(
-                f"planned {gb:.2f} GB is over the cap of {checks.cost_cap_gb} GB"
+
+        if resuming:
+            tables = m["clock_tables"]
+            before = m["clock_before"]
+            moved = preflight.changed(before, preflight.clock_map(bq, tables))
+            if moved:
+                raise preflight.PreflightError(
+                    f"tables changed since capture began: {', '.join(moved)}; "
+                    "run a new capture"
+                )
+        else:
+            est = preflight.estimate(
+                cube, bq, preflight.planned_queries(checks, start, end)
             )
+            # trunk-ignore(bandit/B608): table name comes from the reviewed checks file
+            _, dash_tables = bq.dry_run(f"select * from `{checks.dashboard_table}`", [])
+            tables = sorted(set(est["tables"]) | dash_tables)
+            gb = est["bytes"] / 1e9
+            if gb > checks.cost_cap_gb:
+                raise preflight.PreflightError(
+                    f"planned {gb:.2f} GB is over the cap of {checks.cost_cap_gb} GB"
+                )
+            before = preflight.clock_map(bq, tables)
+            m.update(
+                cost=f"{gb:.2f} GB planned, cap {checks.cost_cap_gb} GB",
+                clock_before=before,
+                clock_tables=tables,
+            )
+        if snap is None:
+            snap = snapshot.new_snapshot(checks.dashboard, now, tag)
+        snapshot.write_manifest(snap, m)
 
         if not snap.twbx.exists():
-            twbx, _ = capture_tableau.download(checks.workbook_luid, snap.dir)
+            twbx, _ = capture_tableau.download(
+                checks.workbook_luid, snap.dir, server=server
+            )
             Path(twbx).rename(snap.twbx)
         session = capture_tableau.Session(
             server, checks.review_project_luid, auth=auth, quiet=checks.quiet_minutes
@@ -182,6 +206,7 @@ def _run(checks, args) -> int:
         snap, checks, cube.member_types(checks.cube.view)
     )
     capture_cube.capture_answers(cube, snap, checks, m, built)
+    _print_failed_answers(snap)
     after = preflight.clock_map(bq, tables)
     moved = preflight.changed(before, after)
     m.update(
@@ -198,7 +223,18 @@ def _run(checks, args) -> int:
     return 0
 
 
+def _print_failed_answers(snap) -> None:
+    """Name each answer Cube could not give; its cells show as unproven."""
+    if not snap.answers.exists():
+        return
+    for key, entry in json.loads(snap.answers.read_text()).items():
+        if isinstance(entry, dict) and entry.get("error"):
+            print(f"Cube answer failed: {key}: {entry['error']}")
+
+
 def _answers(checks, args) -> int:
+    if not args.snapshot:
+        raise SystemExit("answers needs --snapshot <dir>")
     snap = snapshot.Snapshot(Path(args.snapshot))
     m = snapshot.read_manifest(snap)
     now = dt.datetime.now(dt.UTC)
@@ -220,6 +256,7 @@ def _answers(checks, args) -> int:
         m,
         _built_at(m["clock_before"], m["clock_tables"]),
     )
+    _print_failed_answers(snap)
     path, trust = analyze_snapshot(checks, snap)
     print(f"{trust}\nReport: {path}")
     return 0

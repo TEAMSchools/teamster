@@ -129,3 +129,45 @@ def test_analyze_writes_report_and_hand_checks(tmp_path):
     text = report.read_text()
     assert "| pass | <10 |" in text and trust.startswith("Pending")
     assert (snap.analysis / "hand_checks.md").exists()
+
+
+def _write_checks(tmp_path):
+    p = tmp_path / "c.yml"
+    p.write_text(yaml.safe_dump(CHECKS))
+    return str(p)
+
+
+def test_main_analyze_dispatches_on_a_snapshot(tmp_path, capsys):
+    checks_path = _write_checks(tmp_path)
+    snap = snapshot.new_snapshot("d", dt.datetime(2026, 10, 15, 16, 0), root=tmp_path)
+    d = dt.date(2026, 10, 6)
+    hyper.write_table(
+        snap.extract,
+        "Extract",
+        "Extract",
+        [
+            ("student_number", "bigint"),
+            ("calendardate", "date"),
+            ("school_abbreviation", "text"),
+        ],
+        [(1, d, "Rise")],
+    )
+    hyper.write_table(
+        snap.cube,
+        "cube",
+        "rows",
+        [
+            ("lea_student_identifier", "double"),
+            ("attendance_date", "date"),
+            ("locations_abbreviation", "text"),
+        ],
+        [(1.0, d, "Rise")],
+    )
+    snapshot.write_manifest(snap, {"scope": ["Rise"], "cuts": {"default": {}}})
+    assert cli.main(["analyze", checks_path, "--snapshot", str(snap.dir)]) == 0
+    assert "Report:" in capsys.readouterr().out
+
+
+def test_main_answers_needs_a_snapshot(tmp_path):
+    with pytest.raises(SystemExit, match="answers needs --snapshot"):
+        cli.main(["answers", _write_checks(tmp_path)])

@@ -257,16 +257,35 @@ def server_from_env():
     ), auth
 
 
-def download(luid: str, out_dir: Path) -> tuple[Path, str]:
-    server, auth = server_from_env()
+def download(luid: str, out_dir: Path, server=None) -> tuple[Path, str]:
+    """Download a workbook with its extract.
+
+    Args:
+        luid: The workbook's LUID.
+        out_dir: Where the file goes.
+        server: An already signed-in server. Pass it from inside a signed_in
+            block: a second sign-in on the shared token ends the first session.
+            When omitted, download signs in and out itself.
+
+    Returns:
+        The downloaded path and the workbook's updated_at as ISO text.
+    """
+
+    def fetch_with(srv):
+        at = srv.workbooks.get_by_id(luid).updated_at
+        path = srv.workbooks.download(
+            luid, filepath=str(out_dir / "live"), include_extract=True
+        )
+        return Path(path), at.isoformat() if at else ""
+
+    if server is not None:
+        return retry(lambda: fetch_with(server))
+
+    own, auth = server_from_env()
 
     def fetch():
-        with signed_in(server, auth):
-            at = server.workbooks.get_by_id(luid).updated_at
-            path = server.workbooks.download(
-                luid, filepath=str(out_dir / "live"), include_extract=True
-            )
-        return Path(path), at.isoformat() if at else ""
+        with signed_in(own, auth):
+            return fetch_with(own)
 
     return retry(fetch)
 
