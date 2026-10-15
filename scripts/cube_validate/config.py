@@ -201,6 +201,18 @@ def _cut(i: int, v: dict) -> Cut:
     )
 
 
+def _default(caption: str, value) -> str:
+    """A filter card's default as 1 value; plan.yml prints single values as lists."""
+    if isinstance(value, list):
+        if len(value) != 1:
+            raise ConfigError(
+                f"defaults.{caption} must be a single value; "
+                "multi-value defaults are not supported"
+            )
+        value = value[0]
+    return str(value)
+
+
 def _cube_columns(expr: str | None) -> list[str]:
     """Cube columns a Cube-side value reads: itself when bare, else each {p}name."""
     if not expr:
@@ -308,7 +320,9 @@ def load_checks(path: str | Path) -> Checks:
         for cap, vals in (d.get("params") or {}).items()
     }
     filters = {cap: _field(cap, v or {}) for cap, v in (d.get("filters") or {}).items()}
-    defaults = {str(k): str(v) for k, v in (d.get("defaults") or {}).items()}
+    defaults = {
+        str(k): _default(str(k), v) for k, v in (d.get("defaults") or {}).items()
+    }
     for cap in defaults:
         if cap not in filters:
             raise ConfigError(f"defaults: {cap} has no entry under filters")

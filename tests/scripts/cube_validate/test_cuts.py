@@ -60,4 +60,4 @@ def test_plan_yaml_lists_sheets_columns_and_cuts():
 
 def test_plan_yaml_prints_each_cards_default_values():
     d = yaml.safe_load(cuts.plan_yaml(_wb(), ["Overview"], [], {}))
-    assert d["filter_card_defaults"] == {"Region": "(All)", "Year": ["2026"]}
+    assert d["filter_card_defaults"] == {"Region": "(All)", "Year": "2026"}

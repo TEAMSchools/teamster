@@ -177,3 +177,20 @@ def test_every_cube_column_must_be_captured(tmp_path, over):
 def test_cube_sql_over_captured_columns_is_accepted(tmp_path):
     params = {"P": {"v": {"cube_column": '"{p}is_absent" = 1'}}}
     assert config.load_checks(_write(tmp_path, params=params)).params["P"]["v"]
+
+
+def test_a_single_item_list_default_loads_as_its_value(tmp_path):
+    filters = {"Year": {"tableau": "Year"}}
+    c = config.load_checks(
+        _write(tmp_path, filters=filters, defaults={"Year": ["2026"]})
+    )
+    assert c.defaults == {"Year": "2026"}
+
+
+@pytest.mark.parametrize("bad", [[], ["2025", "2026"]])
+def test_a_multi_value_or_empty_list_default_is_refused(tmp_path, bad):
+    filters = {"Year": {"tableau": "Year"}}
+    with pytest.raises(
+        config.ConfigError, match="defaults.Year must be a single value"
+    ):
+        config.load_checks(_write(tmp_path, filters=filters, defaults={"Year": bad}))
