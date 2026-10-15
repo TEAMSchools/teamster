@@ -311,6 +311,22 @@ data_tests:
           ref:
             name: int_assessments__assessments_members
 
+  - name: int_assessments__scaffold__replacement_region_untagged
+    description: >-
+      Returns students on a replacement curriculum who took an Illuminate
+      assessment that is not tagged for their region. Fix each row in one of two
+      ways. If the region should give this assessment, add the region to the
+      assessment's regions_assessed in the AppSheet Illuminate assessments
+      extension. If the student should not have taken it, remove the student's
+      assessment in Illuminate. Until then,
+      bridge_assessment_expectations_student_scoped leaves the row out, because
+      dim_assessment_administrations has no administration for that region.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_assessments__scaffold
+
   - name: int_assessments__resolved_section_enrollments__unique_per_score
     description: >-
       Asserts that int_assessments__resolved_section_enrollments contains one
