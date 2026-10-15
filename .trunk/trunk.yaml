@@ -107,3 +107,12 @@ actions:
     - trunk-check-pre-push
     - trunk-fmt-pre-commit
     - trunk-upgrade-available
+    - dbt-prod-manifests
+  definitions:
+    # trunk owns core.hooksPath, so a script copied into .git/hooks never runs
+    - id: dbt-prod-manifests
+      display_name: dbt prod manifests
+      description: Regenerate target/prod manifests for dbt --defer
+      run: bash ${workspace}/.vscode/scripts/post-merge.sh
+      triggers:
+        - git_hooks: [post-merge]

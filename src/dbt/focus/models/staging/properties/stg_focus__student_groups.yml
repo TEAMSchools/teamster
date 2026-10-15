@@ -1,10 +1,11 @@
 models:
   - name: stg_focus__student_groups
     description: >-
-      Focus student groups — one row per group definition. Miami's groups are
-      all `dynamic`, meaning membership is recomputed from a saved search rather
-      than assigned by hand; `stg_focus__students_join_groups` holds the
-      resolved membership.
+      Focus student groups — one row per group definition. Miami holds a mix of
+      `dynamic` groups (membership recomputed from a saved search) and `custom`
+      groups (members assigned by hand, as the bucket groups are);
+      `stg_focus__students_join_groups` holds the membership rows for both
+      kinds.
     columns:
       - name: id
         description: Primary key — Focus student group id.
@@ -34,7 +35,7 @@ models:
       - name: assignment_type
         description: >-
           How membership is assigned — `dynamic` (recomputed from
-          `saved_search_id`) or assigned by hand.
+          `saved_search_id`) or `custom` (members assigned by hand).
         data_type: string
       - name: assignment_values
         description: Serialized assignment criteria for the group.

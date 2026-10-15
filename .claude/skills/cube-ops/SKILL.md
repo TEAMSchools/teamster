@@ -18,10 +18,11 @@ compute-bound (#4464 moved the assessment star to tables for this).
 
 ## Diagnostic surfaces
 
-- `/meta` returning `{"cubes": []}` ≠ model not deployed. With no matching
-  `cube-*` group, access policies hide every cube — looks identical to an
-  unpopulated branch. Compile a query via `/sql` to verify model presence before
-  assuming the deployment is empty.
+- `/meta` returning `{"cubes": []}` ≠ model not deployed. With no
+  `dim_staff_cube_access` row for the email, or a `none` scope on every axis,
+  access policies hide every cube — looks identical to an unpopulated branch.
+  Compile a query via `/sql` to verify model presence before assuming the
+  deployment is empty.
 - **Empty `/meta` (or `WHERE (1 = 0)` / `rlsAccessDenied`) can also mean
   `resolveAccess` THREW and fail-closed to an empty context (`cube.js` `catch`),
   not that the viewer legitimately has no scope.** A BigQuery error inside

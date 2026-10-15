@@ -220,6 +220,16 @@ Rationale and background go in the model's YAML `description:`.
 - Bad: a paragraph explaining what the model is for.
 - Enforced by: review.
 
+#### S19. Avoid `full join`
+
+- Why: every column can be null from either side, so each key and attribute
+  needs a `coalesce`, and a key that differs between the sides silently splits 1
+  entity into 2 rows.
+- Good: the rows come from 1 named set, such as a driving model or a
+  `union all`.
+- Bad: `from a full join b on ...`, then `coalesce(a.x, b.x)` for every column.
+- Enforced by: review.
+
 ### Review rubric
 
 Reviewers, human or Claude, check these and cite the rule ID:
@@ -229,7 +239,8 @@ Reviewers, human or Claude, check these and cite the rule ID:
    S12).
 3. The model sits in the right layer and is the right kind (A1, A3).
 4. An `rpt_` reads a mart when 1 exists (A2).
-5. Join types are right; filters sit in `on` or `where` correctly (S10, S11).
+5. Join types are right, with no `full join`; filters sit in `on` or `where`
+   correctly (S10, S11, S19).
 6. Date-range joins are half-open where ranges touch (S13).
 7. Nested logic is split into named columns past 1 level (S8, S9).
 8. Comments say only what the line cannot show (S18).

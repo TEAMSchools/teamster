@@ -73,6 +73,16 @@ with
                 order by a.cc_termid desc, a.cc_dateenrolled desc, a.cc_dateleft desc
             ) as rn_student_year_illuminate_subject_desc,
 
+            row_number() over (
+                partition by a._dbt_source_project, a.cc_studyear, cx.ap_course_subject
+                order by
+                    a.is_dropped_section asc,
+                    a.cc_termid desc,
+                    a.cc_dateenrolled desc,
+                    a.cc_dateleft desc,
+                    a.cc_dcid desc
+            ) as rn_ap_course_subject_year,
+
         from {{ ref("int_powerschool__course_enrollments_union") }} as a
         cross join focus_academic_year_boundary as fay
         left join
@@ -473,6 +483,7 @@ with
             standardized_discipline,
             is_homeroom,
             rn_student_year_illuminate_subject_desc,
+            rn_ap_course_subject_year,
         from powerschool_conformed
 
         union all
@@ -724,6 +735,7 @@ with
             cast(null as string) as standardized_discipline,
             is_homeroom,
             rn_student_year_illuminate_subject_desc,
+            cast(null as int64) as rn_ap_course_subject_year,
         from focus_course_dropped
     ),
 
@@ -990,6 +1002,7 @@ select
     standardized_discipline,
     is_homeroom,
     rn_student_year_illuminate_subject_desc,
+    rn_ap_course_subject_year,
 
     if(
         is_core_section_candidate,

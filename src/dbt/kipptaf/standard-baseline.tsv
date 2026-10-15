@@ -31,7 +31,6 @@ kipptaf.bridge_course_section_terms	A1	kipptaf.stg_google_sheets__reporting__ter
 kipptaf.bridge_survey_questions	A1	kipptaf.int_google_forms__form__items	#5806
 kipptaf.bridge_survey_questions	A1	kipptaf.stg_google_sheets__surveys__scd_question_crosswalk	#5806
 kipptaf.bridge_survey_questions	A1	source.alchemer.stg_alchemer__survey_question	#5809
-kipptaf.bridge_survey_questions	A1	source.surveys.stg_surveys__manager_survey_detail_archive	#5809
 kipptaf.dim_assessment_administrations	A1	kipptaf.int_amplify__all_assessments	#5809
 kipptaf.dim_assessment_administrations	A1	kipptaf.int_fldoe__all_assessments	#5809
 kipptaf.dim_assessment_administrations	A1	kipptaf.stg_renlearn__star	#5809
@@ -217,6 +216,7 @@ kipptaf.rpt_deanslist__transcript_grades	A1	kipptaf.stg_powerschool__storedgrade
 kipptaf.rpt_deanslist__transcript_grades	A1	kipptaf.stg_powerschool__students	#5810
 kipptaf.rpt_egencia__users	A1	kipptaf.stg_google_sheets__egencia__travel_managers	#5810
 kipptaf.rpt_egencia__users	A1	kipptaf.stg_google_sheets__egencia__traveler_groups	#5810
+kipptaf.rpt_extracts__survey_reminder	A1	kipptaf.rpt_tableau__survey_completion	#5812
 kipptaf.rpt_focus__addresses	A1	kipptaf.int_finalsite__contact_id_attributes	#5810
 kipptaf.rpt_focus__addresses	A1	kipptaf.int_finalsite__enrollment_lifecycle	#5810
 kipptaf.rpt_focus__addresses	A1	kipptaf.int_finalsite__student_address_of_record	#5810
@@ -387,7 +387,6 @@ kipptaf.rpt_schoolmint_grow__users	A1	kipptaf.stg_schoolmint_grow__roles	#5810
 kipptaf.rpt_schoolmint_grow__users	A1	kipptaf.stg_schoolmint_grow__schools	#5810
 kipptaf.rpt_schoolmint_grow__users	A1	kipptaf.stg_schoolmint_grow__users	#5810
 kipptaf.rpt_tableau__adp_pension_and_benefits_enrollments	A1	kipptaf.stg_adp_workforce_now__pension_and_benefits_enrollments	#5812
-kipptaf.rpt_tableau__ap_assessment_dashboard	A1	kipptaf.base_powerschool__course_enrollments	#5812
 kipptaf.rpt_tableau__ap_assessment_dashboard	A1	kipptaf.stg_google_sheets__collegeboard__ap_course_crosswalk	#5812
 kipptaf.rpt_tableau__assessment_dashboard	A1	kipptaf.base_powerschool__course_enrollments	#5812
 kipptaf.rpt_tableau__assessment_entry_audit	A1	kipptaf.int_illuminate__agg_student_responses	#5812

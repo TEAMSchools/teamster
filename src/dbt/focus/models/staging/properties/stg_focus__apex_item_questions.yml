@@ -3,6 +3,14 @@ models:
     description: >-
       Focus Apex item-question links — one row per question inside an item, with
       its order.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - item_id
+              - question_id
+          config:
+            severity: error
     columns:
       - name: id
         description: Primary key — Focus apex_item_questions id.

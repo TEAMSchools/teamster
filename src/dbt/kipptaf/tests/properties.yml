@@ -911,28 +911,25 @@ data_tests:
           ref:
             name: stg_google_sheets__student_graduation_path_cutoffs
 
-  - name: int_students__student_enrollments__cohort_not_ahead_of_entry
+  - name: int_extracts__student_enrollments__miami_cohort_not_ahead_of_entry
     description: >-
-      A high school student should never be ahead of the cohort they entered
-      with. For grade 9 and up, cohort freezes at the student's first year in
-      the school, which is correct for New Jersey's 4-year adjusted cohort
-      graduation rate. Falling behind that cohort is ordinary retention and is
-      not a defect, so only the other direction is tested -- a student whose
-      grade level implies an earlier graduating class than their recorded
-      cohort. Three causes produce that shape. A skipped grade and a missing
-      enrollment year are records problems, corrected in PowerSchool. Summer
-      credit recovery is not -- a student can advance a grade over the summer
-      with no enrollment row to show for it, because
-      int_powerschool__student_enrollment_union filters out the summer school,
-      so the records are already right. Warn rather than error, because no
-      result here is fixed by a code change, and because the cut score join no
-      longer depends on the two agreeing.
+      Miami's copy of the powerschool package test
+      base_powerschool__student_enrollments__cohort_not_ahead_of_entry, which
+      covers the New Jersey regions. Miami's enrollments come from Focus, and
+      kipptaf derives their cohort the same way, frozen at the student's first
+      year in the school for grade 9 and up. A current high school student whose
+      grade level implies an earlier graduating class (`cohort_primary`) than
+      their recorded cohort has skipped a grade or is missing an enrollment
+      year, both corrected in Focus. Falling behind the cohort is ordinary
+      retention and is not tested. Anchored on this table rather than on
+      int_students__student_enrollments, a view whose tests rerun only when its
+      code changes. Warn, because no result here is fixed by a code change.
     config:
       severity: warn
       meta:
         dagster:
           ref:
-            name: int_students__student_enrollments
+            name: int_extracts__student_enrollments
 
   - name: test_state_assessment_joins_resolve_miami
     description: >-

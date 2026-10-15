@@ -362,7 +362,9 @@ models:
         description: >-
           Where the student stands against the graduation requirement overall,
           combining both subjects and FAFSA. One value per student, repeated on
-          every row.
+          every row. Awaiting Results and the "/ Awaiting" labels mark 11th
+          graders whose NJGPA results are still due; the rules are on
+          int_students__graduation_path_codes.
         config:
           meta:
             contains_pii: true
