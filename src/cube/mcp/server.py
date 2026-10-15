@@ -719,7 +719,14 @@ def _parse_cubesql_stream(text: str) -> dict[str, Any]:
     for line in text.splitlines():
         if not line.strip():
             continue
-        chunk = json.loads(line)
+        try:
+            chunk = json.loads(line)
+        except json.JSONDecodeError:
+            # No line excerpt: a data line can carry student rows, and this
+            # message can reach server logs.
+            raise RuntimeError(
+                "Cube POST /cubesql returned a truncated stream; retry the query"
+            ) from None
         if "error" in chunk:
             return {"error": chunk["error"]}
         rows.extend(chunk.pop("data", []))

@@ -745,6 +745,12 @@ def test_parse_cubesql_stream_error_line(monkeypatch: pytest.MonkeyPatch) -> Non
     assert out == {"error": "boom"}
 
 
+def test_parse_cubesql_stream_truncated_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    server = _load_server(monkeypatch)
+    with pytest.raises(RuntimeError, match="/cubesql"):
+        server._parse_cubesql_stream('{"schema":[]}\n{"data":[[1')
+
+
 def test_cubesql_posts_sql_with_utc_and_continue_wait(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
