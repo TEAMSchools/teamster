@@ -183,9 +183,13 @@ def _ts(s: str | None) -> dt.datetime | None:
 def _current(client, query: dict, built_at: dt.datetime) -> tuple[LoadResult, str]:
     """An answer no older than built_at, asking once more if needed."""
     r = client.load(query)
-    if (_ts(r.last_refresh) or built_at) < built_at:
+    stamp = _ts(r.last_refresh)
+    if stamp is None or stamp < built_at:
         r = client.load(query, renew=True)
-        if (_ts(r.last_refresh) or built_at) < built_at:
+        stamp = _ts(r.last_refresh)
+        if stamp is None:
+            return r, "answer has no lastRefreshTime"
+        if stamp < built_at:
             return (
                 r,
                 f"answer from {r.last_refresh} is older than the build at {built_at.isoformat()}",
@@ -222,11 +226,13 @@ def pull_rows(
             return pid, {"status": "failed", "why": f"{len(r.data)} of {r.total} rows"}
         if len(r.data) >= CUBE_LIMIT:
             return pid, {"status": "failed", "why": f"hit the {CUBE_LIMIT}-row limit"}
-        path.write_text(
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(
             json.dumps(
                 {"rows": r.data, "total": r.total, "last_refresh": r.last_refresh}
             )
         )
+        os.replace(tmp, path)
         return pid, {
             "status": "captured",
             "rows": len(r.data),
@@ -297,12 +303,16 @@ def capture_answers(
         except cells.MappingGap as e:
             return key, {"error": f"not mapped: {e.args[0]}"}
         try:
-            r, stale = _current(client, q, built_at)
+            r, stale = _current(client, {**q, "total": True}, built_at)
+            if stale:
+                return key, {"query": q, "error": stale}
+            if r.total is None or len(r.data) != r.total:
+                return key, {"query": q, "error": f"{len(r.data)} of {r.total} rows"}
+            if len(r.data) >= CUBE_LIMIT:
+                return key, {"query": q, "error": f"hit the {CUBE_LIMIT}-row limit"}
             sql, _ = client.sql(q)
         except CubeError as e:
             return key, {"query": q, "error": str(e)}
-        if stale:
-            return key, {"query": q, "error": stale}
         return key, {
             "query": q,
             "data": r.data,

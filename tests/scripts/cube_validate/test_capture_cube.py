@@ -29,7 +29,7 @@ class FakeHttp:
 
 def _client(answer):
     return capture_cube.CubeClient(
-        "https://cube/x", "s", "me@x", http=FakeHttp(answer), sleep=lambda s: None
+        "https://cube/x", "s" * 32, "me@x", http=FakeHttp(answer), sleep=lambda s: None
     )
 
 
@@ -122,3 +122,56 @@ def test_finished_parts_are_kept_and_skipped(tmp_path):
 def test_sql_returns_the_compiled_query_and_params():
     c = _client(lambda u, q: {"sql": {"sql": ["SELECT ?", ["x"]]}})
     assert c.sql({"measures": []}) == ("SELECT ?", ["x"])
+
+
+def test_answer_without_a_refresh_stamp_fails_and_writes_nothing(tmp_path):
+    snap = snapshot.Snapshot(tmp_path)
+    c = _client(lambda u, q: {"data": [], "total": 0})
+    parts = capture_cube.row_queries(
+        _checks(), dt.date(2026, 10, 5), dt.date(2026, 10, 5)
+    )
+    with pytest.raises(capture_cube.CaptureError, match="no lastRefreshTime"):
+        capture_cube.pull_rows(c, snap, parts, BUILT)
+    assert not list(snap.cube_parts.iterdir())
+
+
+def _answers_setup(tmp_path, monkeypatch, answer):
+    monkeypatch.setattr(
+        capture_cube.cells, "cube_query", lambda checks, sheet, cut, click: {"m": 1}
+    )
+    monkeypatch.setattr(capture_cube.cells, "answer_key", lambda cid, sheet: "k")
+    checks = SimpleNamespace(cuts=[SimpleNamespace(id="c")], sheets=["s1"])
+    return snapshot.Snapshot(tmp_path), checks, _client(answer)
+
+
+def test_short_aggregate_answer_is_stored_with_an_error(tmp_path, monkeypatch):
+    snap, checks, c = _answers_setup(
+        tmp_path,
+        monkeypatch,
+        lambda u, q: {
+            "data": [{"a": 1}],
+            "lastRefreshTime": "2026-10-15T20:00:00.000Z",
+            "total": 2,
+        },
+    )
+    out = capture_cube.capture_answers(c, snap, checks, {}, BUILT)
+    assert out["k"]["error"] == "1 of 2 rows" and out["k"]["query"] == {"m": 1}
+    assert "data" not in out["k"]
+
+
+def test_complete_aggregate_answer_is_stored_with_data_and_sql(tmp_path, monkeypatch):
+    def answer(u, q):
+        if u.endswith("/sql"):
+            return {"sql": {"sql": ["SELECT 1", []]}}
+        assert q["total"] is True
+        return {
+            "data": [{"a": 1}],
+            "lastRefreshTime": "2026-10-15T20:00:00.000Z",
+            "total": 1,
+        }
+
+    snap, checks, c = _answers_setup(tmp_path, monkeypatch, answer)
+    out = capture_cube.capture_answers(c, snap, checks, {}, BUILT)
+    assert out["k"]["data"] == [{"a": 1}] and out["k"]["sql"] == "SELECT 1"
+    assert out["k"]["query"] == {"m": 1}
+    assert json.loads(snap.answers.read_text())["k"]["sql"] == "SELECT 1"
