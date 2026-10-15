@@ -557,17 +557,40 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _trim_sql(body: dict[str, Any]) -> dict[str, Any]:
+    """Keep the compiled SQL and the pre-aggregations it uses. Cube's raw
+    `/sql` payload is mostly matching internals the caller does not need."""
+    compiled = body.get("sql", {})
+    return {
+        "sql": compiled.get("sql"),
+        "external": compiled.get("external"),
+        "preAggregations": [
+            p.get("preAggregationId") for p in compiled.get("preAggregations", [])
+        ],
+    }
+
+
 @mcp.tool()
-async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
+async def sql(
+    ctx: Context, query: dict[str, Any] | str, full: bool = False
+) -> dict[str, Any]:
     """Inspect the BigQuery SQL Cube would generate for a KIPP TEAM & Family
     analytics query, without running it. Useful for debugging query shape,
     verifying access policies, or reviewing the compiled SQL before `load`.
 
-    Takes the same query object as `load` — see the `load` tool description for
-    member naming, filter operators, date handling, and the academic-year
-    convention.
+    `query` is either the same query object as `load` (see the `load` tool
+    description for member naming, filter operators, date handling, and the
+    academic-year convention), or a SQL API query string as `cubesql` takes.
 
-    Response is wrapped: {"sql": {"status", "sql": [query-string, [params]], "query_type"}}.
+    Query object response, by default:
+    {"sql": [query-string, [params]], "external": bool,
+    "preAggregations": [pre-aggregation ids the query would use]}.
+    A query a rollup serves compiles to `FROM prod_pre_aggregations.<rollup>`.
+    To learn why a query did or did not match a pre-aggregation, use `dry_run`.
+    `full=True` returns Cube's raw payload (tens of KB of internals).
+
+    SQL string response: {"sql": ...}, Cube's compiled SQL for that query.
+
     A default-deny access result compiles to `WHERE (1 = 0)` plus
     `rlsAccessDenied` — no `dim_staff_cube_access` row for the email, a `none`
     scope on that axis, or `resolveAccess` failing closed — not a schema bug.
@@ -576,12 +599,14 @@ async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     explicit `timezone` only when wall-clock conversion is intended.
     """
     email = await _get_user_email(ctx)
-    return await _request(
-        "GET",
-        "/sql",
-        params={"query": json.dumps(_with_default_timezone(query))},
-        email=email,
+    if isinstance(query, str):
+        return await _request(
+            "POST", "/sql", json={"query": query, "format": "sql"}, email=email
+        )
+    body = await _request(
+        "POST", "/sql", json={"query": _with_default_timezone(query)}, email=email
     )
+    return body if full else _trim_sql(body)
 
 
 def main() -> None:

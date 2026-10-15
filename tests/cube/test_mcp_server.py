@@ -509,7 +509,7 @@ def test_load_and_sql_send_utc_timezone_by_default(
     assert sent[0]["json"]["query"]["timezone"] == "UTC"
 
     asyncio.run(server.sql(ctx, {"measures": ["x.count"]}))
-    assert json.loads(sent[1]["params"]["query"])["timezone"] == "UTC"
+    assert sent[1]["json"]["query"]["timezone"] == "UTC"
 
     # Caller-provided timezone passes through untouched on both tools.
     asyncio.run(
@@ -572,3 +572,80 @@ def test_load_docstring_lists_every_operator_and_field(
         "usedPreAggregations",
     ]:
         assert field in doc, field
+
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def _sql_fixture() -> dict[str, Any]:
+    return json.loads((FIXTURES / "cube_sql_response.json").read_text())
+
+
+def _recording_request(
+    monkeypatch: pytest.MonkeyPatch, server: ModuleType, reply: Any
+) -> list[tuple[str, str, dict[str, Any]]]:
+    """Replace server._request with a fake that records (method, path, kwargs)
+    and returns `reply` (or `reply.pop(0)` when it is a list of replies)."""
+    calls: list[tuple[str, str, dict[str, Any]]] = []
+
+    async def fake_request(method: str, path: str, **kwargs: Any) -> Any:
+        calls.append((method, path, kwargs))
+        return reply.pop(0) if isinstance(reply, list) else reply
+
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    monkeypatch.setattr(server, "_request", fake_request)
+    return calls
+
+
+def test_trim_sql_is_small_and_keeps_sql_and_preaggs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    raw = _sql_fixture()
+    trimmed = server._trim_sql(raw)
+    assert len(json.dumps(raw)) > 40_000
+    assert len(json.dumps(trimmed)) < 5_000
+    assert trimmed["sql"] == raw["sql"]["sql"]
+    assert trimmed["external"] == raw["sql"]["external"]
+    assert trimmed["preAggregations"] == [
+        p["preAggregationId"] for p in raw["sql"]["preAggregations"]
+    ]
+    assert "canUseTransformedQuery" not in json.dumps(trimmed)
+
+
+def test_trim_sql_without_preaggregations(monkeypatch: pytest.MonkeyPatch) -> None:
+    server = _load_server(monkeypatch)
+    trimmed = server._trim_sql({"sql": {"sql": ["SELECT 1", []]}})
+    assert trimmed["preAggregations"] == []
+
+
+def test_sql_posts_object_query_and_trims(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    fixture = _sql_fixture()
+    calls = _recording_request(monkeypatch, server, fixture)
+    ctx = MagicMock()
+
+    result = asyncio.run(server.sql(ctx, {"measures": ["x.count"]}))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("POST", "/sql")
+    assert kwargs["json"] == {"query": {"measures": ["x.count"], "timezone": "UTC"}}
+    assert result == server._trim_sql(fixture)
+
+    assert asyncio.run(server.sql(ctx, {"measures": ["x.count"]}, full=True)) == fixture
+
+
+def test_sql_posts_sql_string_with_format_sql(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    reply = {"sql": {"sql": "SELECT 1"}}
+    calls = _recording_request(monkeypatch, server, reply)
+
+    result = asyncio.run(server.sql(MagicMock(), "SELECT MEASURE(x.count) FROM x"))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("POST", "/sql")
+    assert kwargs["json"] == {
+        "query": "SELECT MEASURE(x.count) FROM x",
+        "format": "sql",
+    }
+    assert result == reply
