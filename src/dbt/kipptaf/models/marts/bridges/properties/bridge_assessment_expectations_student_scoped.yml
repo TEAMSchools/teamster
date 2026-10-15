@@ -63,9 +63,10 @@ unit_tests:
     description:
       A replacement row whose region is not tagged on the assessment has no
       administration in dim_assessment_administrations, so the bridge leaves it
-      out. Feeds a tagged replacement row, an untagged replacement row, and an
-      untagged non-replacement row for one assessment tagged Camden and Newark;
-      asserts only the untagged replacement row is dropped.
+      out. Feeds a tagged replacement row, an untagged replacement row, a
+      replacement row with no region, and an untagged non-replacement row for
+      one assessment tagged Camden and Newark; asserts both replacement rows
+      outside the tags are dropped and the non-replacement row is kept.
     model: bridge_assessment_expectations_student_scoped
     given:
       - input: ref('int_assessments__scaffold')
@@ -96,6 +97,15 @@ unit_tests:
             _dbt_source_project: kipppaterson
             is_internal_assessment: true
             is_replacement: false
+            cc_dcid: null
+          - student_number: 1004
+            source: illuminate
+            assessment_id: 1
+            administered_at: 2025-10-08
+            region: null
+            _dbt_source_project: null
+            is_internal_assessment: true
+            is_replacement: true
             cc_dcid: null
       - input: ref('int_assessments__assessments_members')
         rows:

@@ -19,4 +19,4 @@ inner join
 where
     sc.is_internal_assessment
     and sc.is_replacement
-    and sc.region not in unnest(c.regions_array)
+    and not coalesce(sc.region in unnest(c.regions_array), false)
