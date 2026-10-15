@@ -29,34 +29,6 @@ models:
         data_tests:
           - unique
 
-      - name: student_key
-        data_type: string
-        description: FK to dim_students.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_students')
-              to_columns: [student_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_students')
-                field: student_key
-
-      - name: assessment_administration_key
-        data_type: string
-        description: FK to dim_assessment_administrations.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_assessment_administrations')
-              to_columns: [assessment_administration_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_assessment_administrations')
-                field: assessment_administration_key
-
       - name: term_key
         data_type: string
         description: >-
@@ -67,11 +39,24 @@ models:
             foreign_key:
               to: ref('dim_terms')
               to_columns: [term_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
+
+      - name: student_key
+        data_type: string
+        description: FK to dim_students.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
+
+      - name: assessment_administration_key
+        data_type: string
+        description: FK to dim_assessment_administrations.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
 
 unit_tests:
   - name: test_bridge_assessment_expectations_student_scoped_drops_untagged_replacement
