@@ -1,0 +1,136 @@
+"""report.md: trust verdict first, held findings second. Aggregates only."""
+
+from __future__ import annotations
+
+from collections import Counter
+
+from .cells import FORMULA_GAP, ORDER, ROW_GAP, answer_key
+
+SMALL = 10
+
+
+def small(n: int) -> str:
+    """Counts 1 to 9 show as <10, so the report can go to #data_team."""
+    return "<10" if 0 < n < SMALL else f"{n:,}"
+
+
+def trust(invariants: dict[str, bool], results: dict[str, str]) -> str:
+    broken = [k for k, v in invariants.items() if not v]
+    if broken:
+        return f"Not trusted: invariant broken: {', '.join(broken)}."
+    if not results:
+        return "Pending: no hand checks recorded yet."
+    pending = sum(1 for v in results.values() if v == "pending")
+    if pending:
+        return f"Pending: {pending} of {len(results)} hand checks still open."
+    bad = sum(1 for v in results.values() if v == "disagree")
+    if bad:
+        return f"Not trusted: {bad} hand check{'s' if bad > 1 else ''} disagree."
+    return "Trusted for this run: invariants hold and every hand check agrees."
+
+
+def render(
+    checks,
+    manifest: dict,
+    rows_result,
+    cells: list,
+    results: dict,
+    formulas: dict[str, str],
+    answers: dict,
+) -> str:
+    inv = {**(manifest.get("invariants") or {}), **rows_result.invariants}
+    out = [f"# {checks.dashboard}: Cube validation", ""]
+    out += [
+        "## Trust verdict",
+        "",
+        trust(inv, results),
+        "",
+        "Unit tests are part of trust: `uv run --with tableauhyperapi pytest tests/scripts/cube_validate`.",
+        "",
+    ]
+    out += ["## Invariants", "", "| Invariant | Holds |", "| --- | --- |"]
+    out += [f"| {k} | {'yes' if v else '**no**'} |" for k, v in inv.items()]
+    out += ["", "## Capture", ""]
+    for k in (
+        "period",
+        "extract_refreshed",
+        "cube_refresh",
+        "cost",
+        "scope_size",
+        "clock_risk",
+    ):
+        if k in manifest:
+            out.append(f"- {k.replace('_', ' ')}: {manifest[k]}")
+    out += [
+        "",
+        "## Findings (held until the tool is trusted)",
+        "",
+        "### Row buckets",
+        "",
+    ]
+    t = rows_result.totals
+    out.append(
+        f"Dashboard rows {small(t['tableau'])}, Cube rows {small(t['cube'])}, joined {small(t['joined'])}."
+    )
+    out.append("")
+    if rows_result.buckets:
+        keys = [k for k in rows_result.buckets[0] if k not in ("rows", "students")]
+        out += [
+            "| " + " | ".join(keys) + " | rows | students |",
+            "| " + " | ".join("---" for _ in keys) + " | --- | --- |",
+        ]
+        for b in rows_result.buckets:
+            out.append(
+                "| "
+                + " | ".join(str(b[k]) for k in keys)
+                + f" | {small(b['rows'])} | {small(b['students'])} |"
+            )
+    if rows_result.differing_columns:
+        out += [
+            "",
+            "Value differences by column: "
+            + ", ".join(
+                f"{k} {small(v)}" for k, v in rows_result.differing_columns.items()
+            ),
+        ]
+    out += ["", "### Cell verdicts", "", "| Verdict | Cells |", "| --- | --- |"]
+    counts = Counter(c.verdict for c in cells)
+    out += [f"| {v} | {small(counts[v])} |" for v in ORDER if counts[v]]
+    gaps = [c for c in cells if c.verdict in (ROW_GAP, FORMULA_GAP)]
+    if gaps:
+        out += [
+            "",
+            "| Cut | Sheet | Measure | Marks | Verdict | Tableau | Cube |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+        ]
+        for c in gaps:
+            marks = ", ".join(f"{k}={v}" for k, v in c.dims.items())
+            out.append(
+                f"| {c.cut} | {c.sheet} | {c.measure} | {marks} | {c.verdict} | {c.tableau} | {c.cube} |"
+            )
+    shown = set()
+    for c in cells:
+        if c.verdict != FORMULA_GAP or (c.sheet, c.measure) in shown:
+            continue
+        shown.add((c.sheet, c.measure))
+        out += [
+            "",
+            f"#### Formula gap: {c.sheet} / {c.measure}",
+            "",
+            "Workbook formula:",
+            "",
+            "```text",
+            formulas.get(c.measure, "(no calculation found)"),
+            "```",
+            "",
+            "Cube SQL:",
+            "",
+            "```sql",
+            (answers.get(answer_key(c.cut, c.sheet)) or {}).get("sql", ""),
+            "```",
+        ]
+    out += ["", "## Not checked", ""]
+    out += [f"- {s}: {why}" for s, why in checks.excluded_sheets.items()] or [
+        "- (none)"
+    ]
+    return "\n".join(out) + "\n"
