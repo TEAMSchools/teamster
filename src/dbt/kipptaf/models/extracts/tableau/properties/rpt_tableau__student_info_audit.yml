@@ -1,8 +1,10 @@
 models:
   - name: rpt_tableau__student_info_audit
     description: >-
-      Network-wide data quality audit, Miami included. Miami held 12,294 rows in
-      prod as of 2026-08-27. Ratified on #4996.
+      Network-wide student data quality audit for the current academic year, one
+      row per student and check. Miami is included except for the FTEID check,
+      because Focus has no FTE. Name Spelling allows letters in any script,
+      including accented ones, plus apostrophes, hyphens, and commas.
     columns:
       - name: db_name
         data_type: string
