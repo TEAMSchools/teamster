@@ -277,17 +277,22 @@ check_output "different opaque blob beside a valid cursor is redacted" deny \
 # trunk-ignore-end(shellcheck/SC2312)
 
 echo ""
-echo -e "${YELLOW}PostToolUse: MCP output skips the entropy heuristic${NC}"
+echo -e "${YELLOW}PostToolUse: connector MCP output skips the entropy heuristic${NC}"
 # Connector ids and cursors (Outlook AAMk... ids, Drive ~!!~ tokens, Context7
-# docs) are long opaque runs, so MCP output gets named patterns only. Bash,
-# Read and the other built-in tools keep the heuristic.
+# docs) are long opaque runs, so claude.ai connector and Context7 output gets
+# named patterns only. Project MCP servers (logs, file contents) and built-in
+# tools keep the heuristic.
 # trunk-ignore-begin(shellcheck/SC2312)
 opaque_blob=$(printf 'aB3xZ9qL%.0s' {1..20})
 mcp_page="{\"uri\":\"mail:///messages/${opaque_blob}\",\"subject\":\"SFTP allowlist\"}"
-check_output "opaque blob in MCP output is clean" clean \
+check_output "opaque blob in connector output is clean" clean \
 	mcp__claude_ai_Microsoft_365__outlook_email_search "${mcp_page}"
+check_output "opaque blob in Context7 output is clean" clean \
+	mcp__context7__query-docs "${mcp_page}"
 check_output "same opaque blob in Bash output is redacted" deny "${mcp_page}"
-check_output "named secret in MCP output is redacted" deny mcp__context7__query-docs \
+check_output "same opaque blob in project MCP output is redacted" deny \
+	mcp__dagster-plus__get_run_logs "${mcp_page}"
+check_output "named secret in connector output is redacted" deny mcp__context7__query-docs \
 	"token: gh""p_$(printf 'A1b2C3d4E5f6%.0s' {1..3})"
 # trunk-ignore-end(shellcheck/SC2312)
 
@@ -297,9 +302,8 @@ echo -e "${YELLOW}PostToolUse: Google API pageToken exemption${NC}"
 # cursor is base64 of userdir_tkn_st<base64>userdir_tkn_end, percent-encoded, so
 # the decode pass unwraps a 400-char inner run that trips the entropy heuristic.
 # It is exempt only as the pageToken param of a https://*.googleapis.com/ URL.
-# Tested as Bash (a pytest traceback): MCP output skips the heuristic anyway.
 # trunk-ignore-begin(shellcheck/SC2312)
-g_tool=Bash
+g_tool=mcp__dagster-plus__get_run_logs
 g_url=https://admin.googleapis.com/admin/directory/v1/users
 g_cursor=$(printf 'userdir_tkn_st%s==userdir_tkn_end' "$(printf 'kR7+ZqLm3Xw9TbPaVn2Y%.0s' {1..20})" | base64 | tr -d '\n')
 g_cursor=${g_cursor//+/%2B}
