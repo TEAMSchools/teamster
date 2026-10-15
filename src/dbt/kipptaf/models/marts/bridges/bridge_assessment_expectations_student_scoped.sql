@@ -37,7 +37,12 @@ with
             and sc.powerschool_school_id = rt.school_id
             and sc.region = rt.region
             and rt.type = 'RT'
-        where sc.is_internal_assessment and (sc.is_replacement or sc.cc_dcid is null)
+        where
+            sc.is_internal_assessment
+            and (sc.is_replacement or sc.cc_dcid is null)
+            -- the warn test int_assessments__scaffold__replacement_region_untagged
+            -- lists the rows this drops
+            and not (sc.is_replacement and sc.region not in unnest(c.regions_array))
     )
 
 select

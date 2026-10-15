@@ -72,3 +72,64 @@ models:
               arguments:
                 to: ref('dim_terms')
                 field: term_key
+
+unit_tests:
+  - name: test_bridge_assessment_expectations_student_scoped_drops_untagged_replacement
+    description:
+      A replacement row whose region is not tagged on the assessment has no
+      administration in dim_assessment_administrations, so the bridge leaves it
+      out. Feeds a tagged replacement row, an untagged replacement row, and an
+      untagged non-replacement row for one assessment tagged Camden and Newark;
+      asserts only the untagged replacement row is dropped.
+    model: bridge_assessment_expectations_student_scoped
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows:
+          - student_number: 1001
+            source: illuminate
+            assessment_id: 1
+            administered_at: 2025-10-08
+            region: Newark
+            _dbt_source_project: kippnewark
+            is_internal_assessment: true
+            is_replacement: true
+            cc_dcid: null
+          - student_number: 1002
+            source: illuminate
+            assessment_id: 1
+            administered_at: 2025-10-08
+            region: Paterson
+            _dbt_source_project: kipppaterson
+            is_internal_assessment: true
+            is_replacement: true
+            cc_dcid: null
+          - student_number: 1003
+            source: illuminate
+            assessment_id: 1
+            administered_at: 2025-10-08
+            region: Paterson
+            _dbt_source_project: kipppaterson
+            is_internal_assessment: true
+            is_replacement: false
+            cc_dcid: null
+      - input: ref('int_assessments__assessments_members')
+        rows:
+          - source: illuminate
+            assessment_id: 1
+            module_code: QA1
+            academic_year: 2026
+            canonical_assessment_id: 1
+      - input: ref('int_assessments__assessments_canonical')
+        format: sql
+        rows: |
+          select
+            'illuminate' as source,
+            1 as canonical_assessment_id,
+            date '2025-10-08' as administered_date,
+            ['Camden', 'Newark'] as regions_array
+      - input: ref('stg_google_sheets__reporting__terms')
+        rows: []
+    expect:
+      rows:
+        - assessment_expectation_key: 26e913105f4ab32f98c5a17a5a538725
+        - assessment_expectation_key: 5e6753698640e0de72f3cf353f2d238e
