@@ -47,8 +47,16 @@ def _side(ws, checks: Checks, alias: str, schema: str, table: str, p: str) -> st
         for e in checks.labels
     ]
     part = ", ".join(f"({side_sql(getattr(e, side), '')})" for e in checks.key)
+    # Order by the compare values, then every raw column, so equal-valued
+    # duplicates pair first and a rerun on one snapshot gives the same buckets.
+    order = ", ".join(
+        [
+            *(f"({side_sql(getattr(e, side), '')})" for e in checks.compare),
+            *(_q(c) for c in ws.columns(alias, schema, table)),
+        ]
+    )
     dup = (
-        f"row_number() over (partition by {part} order by {part}) as {_q(f'{p}__dup')}"
+        f"row_number() over (partition by {part} order by {order}) as {_q(f'{p}__dup')}"
     )
     sel = ", ".join([*cols, *keys, *vals, *labs, dup, f"true as {_q(f'{p}__in')}"])
     # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
@@ -106,8 +114,8 @@ def build(ws, checks: Checks, scope: list[str]) -> RowsResult:
         f"when j.in_t then case when {outside} then 'outside_scope' else 'dashboard_only' end "
         "else 'cube_only' end"
     )
-    # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
     ws.execute(
+        # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
         f"create temporary table rows_base as select j.*, {base} as base from ({joined}) j"
     )
 
@@ -119,8 +127,8 @@ def build(ws, checks: Checks, scope: list[str]) -> RowsResult:
         )
         total = " + ".join(_q(f"z_{i}") for i in range(len(checks.causes)))
         cols = ", ".join(_q(f"z_{i}") for i in range(len(checks.causes)))
-        # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
         over = ws.query(
+            # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
             f"select {cols}, count(*) from (select {flags} from rows_base) z where {total} > 1 group by {cols}"
         )
         if over:
@@ -138,8 +146,8 @@ def build(ws, checks: Checks, scope: list[str]) -> RowsResult:
         "case when base = 'match' then null when base = 'outside_scope' then 'outside_scope' "
         f"{whens} else 'unexplained' end"
     )
-    # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
     ws.execute(
+        # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
         f"create temporary table rows as select *, {cause} as cause from rows_base"
     )
     ws.execute("drop table rows_base")

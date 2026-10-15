@@ -165,3 +165,15 @@ def test_buckets_carry_labels_month_and_students(tmp_path):
         "cube": 12,
         "joined": 12,
     }
+
+
+def test_duplicates_pair_by_value_so_reruns_agree(tmp_path):
+    tab = _tab_rows() + [(101, D[0], "Rise", "Newark", 1.0)]
+    runs = []
+    for name in ("one", "two"):
+        sub = tmp_path / name
+        sub.mkdir()
+        res, by = _run(sub, tab, _cub_rows())
+        runs.append(res.buckets)
+    assert by == {("match", None): 12, ("dashboard_only", "unexplained"): 1}
+    assert runs[0] == runs[1]
