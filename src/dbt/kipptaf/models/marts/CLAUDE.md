@@ -152,9 +152,9 @@ and its `proficiency_rollup` pre-aggregation follows the scores fact's rebuilds,
 so an eager view would buy no freshness
 ([#4559](https://github.com/TEAMSchools/teamster/issues/4559),
 [#4821](https://github.com/TEAMSchools/teamster/issues/4821)).
-`fct_assessment_scores_enrollment_scoped` is partitioned by year on
-`assessment_date_key` to match the rollup's yearly partitions; keep the two
-aligned.
+`fct_assessment_scores_enrollment_scoped` is partitioned by month on
+`assessment_date_key` so each of the rollup's quarterly partitions reads exactly
+three; keep the fact's grain no coarser than the rollup's.
 
 **A table mart carries NO outgoing `foreign_key` constraints.** A table child
 renders its declared FKs into the CTAS DDL, and BigQuery aborts when the parent

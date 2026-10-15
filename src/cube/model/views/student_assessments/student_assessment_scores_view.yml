@@ -16,8 +16,8 @@ views:
       A cross-source date cut (e.g. "scores in May") therefore mixes those two
       date concepts. Filter assessment_date, not date_day, for a single date or
       a date range: the two return identical rows, but assessment_date filters
-      the fact's own partitioning column and reads only the matching years,
-      while date_day reads every year. Use academic_year_label for school-year
+      the fact's own partitioning column and reads only the matching months,
+      while date_day reads every month. Use academic_year_label for school-year
       filters and the other date members for grouping. Contains direct student
       identifiers — see access_policy for PII gating.
 

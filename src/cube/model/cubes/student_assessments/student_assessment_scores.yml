@@ -64,8 +64,8 @@ cubes:
           assessments. Holds the same date as date_day, read from this fact
           rather than through the dates join. Filter assessment_date, not
           date_day, for a single date or a date range: it filters the fact's own
-          partitioning column, so only the matching years are read, while a
-          date_day filter reads every year. Use date_day and the other dates
+          partitioning column, so only the matching months are read, while a
+          date_day filter reads every month. Use date_day and the other dates
           members for grouping by calendar parts, and academic_year_label for
           school-year filters.
         # {CUBE} is required: an unqualified column inside an expression is
@@ -492,31 +492,36 @@ cubes:
           # name-grouped query falls back to the fact.
           - student_section_enrollments.lead_teacher_staff_key
           - staff_lead_teacher.full_name
-        # Partitioned build: Cube builds each yearly partition as its own job,
-        # in parallel. The anchor is assessment_date, a fact-side column, so
-        # each partition's filter prunes to one BigQuery partition of the fact
-        # (partition_by in its properties yml). Anchoring on dates.date_day
-        # would put the filter on joined dim_dates and scan the whole fact per
-        # partition. Not date_taken either: it is corrupt for a small share of
-        # rows. Partitions are calendar years, so a state or vendor window that
-        # straddles January 1 splits its scores across two partitions by each
-        # score's anchor date: correct per-score attribution, not a fan-out
-        # (#4546). A query with a date range on date_day cannot use this
-        # rollup; academic_year filters and assessment_date ranges can.
+        # Partitioned build: Cube builds each quarterly partition as its own
+        # job, in parallel. Quarters, not years, because Cube's Q3 starts July 1,
+        # so a school year is exactly four partitions and the refresh window
+        # below can start on a school-year boundary; Cube partitions only on
+        # built-in grains, so a July-June year is not available. The anchor is
+        # assessment_date, a fact-side column, so each partition's filter
+        # prunes to three monthly BigQuery partitions of the fact (partition_by
+        # in its properties yml). Anchoring on dates.date_day would put the
+        # filter on joined dim_dates and scan the whole fact per partition. Not
+        # date_taken either: it is corrupt for a small share of rows. A state or
+        # vendor window that straddles a quarter boundary splits its scores
+        # across two partitions by each score's anchor date: correct per-score
+        # attribution, not a fan-out (#4546). Every stored measure is a count or
+        # sum, so splitting rows finer never changes a rate. A query with a date
+        # range on date_day cannot use this rollup; academic_year filters and
+        # assessment_date ranges can.
         time_dimension: student_assessment_scores.assessment_date
-        granularity: year
-        partition_granularity: year
-        # Serve a date range only when it aligns with the year grain. Cube's
+        granularity: quarter
+        partition_granularity: quarter
+        # Serve a date range only when it aligns with the quarter grain. Cube's
         # default (true, via
         # CUBEJS_PRE_AGGREGATIONS_ALLOW_NON_STRICT_DATE_RANGE_MATCH) compares
-        # any range to each row's January 1 bucket, so a Sep-Oct range returns
-        # 0 rows and a July-June school year the wrong calendar year (#5744).
-        # Misaligned ranges read the fact; academic_year filters and
-        # January-to-December ranges hit the rollup.
+        # any range to each row's bucket start, so a Sep-Oct range returns 0
+        # rows (#5744). Misaligned ranges read the fact; academic_year filters
+        # and quarter-aligned ranges, July-June school years included, hit the
+        # rollup.
         allow_non_strict_date_range_match: false
         # Bound the build range to real assessment history. Without it, Cube
         # derives the range from the time_dimension's min and max, so one stray
-        # far-past or far-future assessment_date_key would add empty yearly
+        # far-past or far-future assessment_date_key would add empty
         # partitions (#4460). The floor sits below the earliest
         # assessment_date_key carrying a score; rows outside [floor, today] fall
         # back to the fact.
@@ -525,11 +530,13 @@ cubes:
         build_range_end:
           sql: SELECT CURRENT_DATE('America/New_York')
         # Rebuild a partition when the fact rebuilds (a full CREATE OR REPLACE,
-        # on the cron in its properties yml), but only partitions that overlap
-        # the last 2 years. Cube runs this key once per partition every 30
-        # minutes, with FILTER_PARAMS bound to that partition's date range.
-        # Late state results land in the current or previous calendar year;
-        # older partitions return a constant and never rebuild, so a backfill of
+        # on the cron in its properties yml), but only partitions on or after
+        # July 1 of the previous school year. The window start is today minus
+        # 18 months, truncated to January 1, plus 6 months. Cube runs this key
+        # once per partition every 30 minutes, with FILTER_PARAMS bound to that
+        # partition's date range. Late state results land in the previous
+        # school year at the latest; older partitions return a constant and
+        # never rebuild, so a backfill of
         # older history needs a manual rebuild in Cube Cloud. If FILTER_PARAMS
         # fails to bind it renders as 1 = 1, and every partition falls back to
         # rebuilding on each fact change. last_modified_time also moves on
@@ -542,7 +549,14 @@ cubes:
               EXISTS (
                 SELECT 1
                 FROM UNNEST(GENERATE_DATE_ARRAY(
-                  DATE_SUB(CURRENT_DATE('America/New_York'), INTERVAL 2 YEAR),
+                  DATE_ADD(
+                    DATE_TRUNC(
+                      DATE_SUB(CURRENT_DATE('America/New_York'), INTERVAL 18
+            MONTH),
+                      YEAR
+                    ),
+                    INTERVAL 6 MONTH
+                  ),
                   CURRENT_DATE('America/New_York')
                 )) AS d
                 WHERE

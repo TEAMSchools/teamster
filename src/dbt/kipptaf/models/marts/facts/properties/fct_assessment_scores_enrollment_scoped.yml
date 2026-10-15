@@ -21,12 +21,13 @@ models:
       signal, so filtering on a non-null scale_score drops real rows.
     config:
       materialized: table
-      # Yearly, matching the Cube proficiency_rollup's partitions: each rollup
-      # partition build filters on assessment_date_key and reads one partition.
+      # Monthly, nested inside the Cube proficiency_rollup's quarterly
+      # partitions (BigQuery has no quarter grain): each rollup partition
+      # build filters on assessment_date_key and reads three partitions.
       partition_by:
         field: assessment_date_key
         data_type: date
-        granularity: year
+        granularity: month
       meta:
         dagster:
           # Cron table instead of an eager view. As a view, every reader of
