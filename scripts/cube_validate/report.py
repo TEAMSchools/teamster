@@ -14,18 +14,35 @@ def small(n: int) -> str:
     return "<10" if 0 < n < SMALL else f"{n:,}"
 
 
+def _mask(value) -> str:
+    """A gap-table value, with whole counts from 1 to 9 shown as <10."""
+    if value is None:
+        return "None"
+    if isinstance(value, str):
+        t = value.strip().replace(",", "")
+        if t.isdigit() and 0 < int(t) < SMALL:
+            return "<10"
+        return value
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if float(value).is_integer() and 0 < value < SMALL:
+            return "<10"
+    return str(value)
+
+
 def trust(invariants: dict[str, bool], results: dict[str, str]) -> str:
     broken = [k for k, v in invariants.items() if not v]
     if broken:
         return f"Not trusted: invariant broken: {', '.join(broken)}."
-    if not results:
-        return "Pending: no hand checks recorded yet."
-    pending = sum(1 for v in results.values() if v == "pending")
-    if pending:
-        return f"Pending: {pending} of {len(results)} hand checks still open."
     bad = sum(1 for v in results.values() if v == "disagree")
     if bad:
         return f"Not trusted: {bad} hand check{'s' if bad > 1 else ''} disagree."
+    if "capture completeness" not in invariants:
+        return "Pending: capture completeness was not recorded for this snapshot."
+    if not results:
+        return "Pending: no hand checks recorded yet."
+    open_checks = sum(1 for v in results.values() if v != "agree")
+    if open_checks:
+        return f"Pending: {open_checks} of {len(results)} hand checks still open."
     return "Trusted for this run: invariants hold and every hand check agrees."
 
 
@@ -106,7 +123,7 @@ def render(
         for c in gaps:
             marks = ", ".join(f"{k}={v}" for k, v in c.dims.items())
             out.append(
-                f"| {c.cut} | {c.sheet} | {c.measure} | {marks} | {c.verdict} | {c.tableau} | {c.cube} |"
+                f"| {c.cut} | {c.sheet} | {c.measure} | {marks} | {c.verdict} | {_mask(c.tableau)} | {_mask(c.cube)} |"
             )
     shown = set()
     for c in cells:
