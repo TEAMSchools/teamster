@@ -697,7 +697,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
-            sheet_range: Scale Score Conversion
+            sheet_range: src_google_sheets__kippfwd__practice_scale_score_conversion_v2
             skip_leading_rows: 1
         config:
           meta:
@@ -732,6 +732,8 @@ sources:
           - name: score_type
             data_type: string
           - name: expected_total_subjects_tested
+            data_type: int64
+          - name: uses_bands_of
             data_type: int64
       - name: src_google_sheets__kippfwd__scaffold
         external:
