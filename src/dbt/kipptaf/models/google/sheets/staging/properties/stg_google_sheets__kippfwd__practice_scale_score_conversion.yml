@@ -30,10 +30,13 @@ models:
           before conversion, so their points together span that assessment's raw
           range. Blank on band rows.
         data_tests:
-          - relationships:
+          # the target must be a band row; Apex module ids share assessment_id
+          - dbt_utils.relationships_where:
               arguments:
                 to: ref('stg_google_sheets__kippfwd__practice_scale_score_conversion')
                 field: assessment_id
+                to_condition:
+                  uses_bands_of is null and raw_score_low is not null
               config:
                 severity: error
       - name: assessment_id
