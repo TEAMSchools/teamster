@@ -121,35 +121,6 @@ models:
         data_tests:
           - unique
 
-      - name: student_enrollment_key
-        data_type: string
-        description: >-
-          FK to dim_student_enrollments, the enrollment stint that was active on
-          period_end_date_key. Read from that day's row on
-          fct_student_attendance_enrollment_daily rather than resolved here, so
-          every attribute reached through it -- grade level, IEP and ELL status,
-          meal eligibility, homeroom teacher -- is the one that applied as of
-          period end, consistent with every other value on the row.
-
-          This is what lets a rate on this fact be cut by the same student and
-          enrollment attributes as the daily fact, and it is also the single
-          canonical path to dim_locations, matching how the daily cube reaches
-          it. Measured against this fact's rows the two possible location routes
-          agree on 4,363,667 of 4,363,672 and disagree on none; the five
-          exceptions are one enrollment stint absent from
-          dim_student_enrollments, which resolves a null location and is
-          therefore hidden from a location-scoped viewer rather than exposed.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_student_enrollments')
-              to_columns: [student_enrollment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_student_enrollments')
-                field: student_enrollment_key
-
       - name: term_key
         data_type: string
         description: >-
@@ -222,6 +193,30 @@ models:
               arguments:
                 to: ref('dim_dates')
                 field: date_key
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments, the enrollment stint that was active on
+          period_end_date_key. Read from that day's row on
+          fct_student_attendance_enrollment_daily rather than resolved here, so
+          every attribute reached through it -- grade level, IEP and ELL status,
+          meal eligibility, homeroom teacher -- is the one that applied as of
+          period end, consistent with every other value on the row.
+
+          This is what lets a rate on this fact be cut by the same student and
+          enrollment attributes as the daily fact, and it is also the single
+          canonical path to dim_locations, matching how the daily cube reaches
+          it. Measured against this fact's rows the two possible location routes
+          agree on 4,363,667 of 4,363,672 and disagree on none; the five
+          exceptions are one enrollment stint absent from
+          dim_student_enrollments, which resolves a null location and is
+          therefore hidden from a location-scoped viewer rather than exposed.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
 
       - name: academic_year
         data_type: int64
