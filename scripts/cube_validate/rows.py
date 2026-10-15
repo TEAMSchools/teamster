@@ -75,7 +75,7 @@ def _side(ws, checks: Checks, alias: str, schema: str, table: str, p: str) -> st
 def build(
     ws,
     checks: Checks,
-    scope: list[str],
+    scope: list[str] | None,
     period: tuple[dt.date, dt.date] | None = None,
 ) -> RowsResult:
     """Join both sides into table `rows` with a base bucket and a cause per row.
@@ -85,7 +85,8 @@ def build(
             as "cub".
         checks: The checks file.
         scope: The scope key's values Cube can see; dashboard-only rows outside
-            it are "outside_scope".
+            it are "outside_scope"; with an empty list they all are. None skips
+            the check.
         period: The first and last day capture asked Cube for. Dashboard-only
             rows dated outside it are "outside_period", since Cube was never
             asked for them. None when the snapshot recorded no period.
@@ -121,7 +122,10 @@ def build(
         + f" from ({t}) t full outer join ({c}) c on {on}"
     )
     any_diff = " or ".join(f"j.{_q(f'd_{e.name}')}" for e in checks.compare) or "false"
-    if checks.scope_key and scope:
+    if checks.scope_key and scope is not None and not scope:
+        # Cube shows this identity no school, so no dashboard row can be its gap
+        outside = "true"
+    elif checks.scope_key and scope:
         k = f"j.{_q(f'k_{checks.scope_key}')}"
         outside = f"{k} is null or {k} not in ({', '.join(lit(s) for s in scope)})"
     else:

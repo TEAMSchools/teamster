@@ -83,7 +83,9 @@ def _run(tmp_path, tab, cub, checks=None, scope=("Rise", "TEAM"), period=None):
     with hyper.Workspace(
         tmp_path / "a.hyper", {"tab": tmp_path / "e.hyper", "cub": tmp_path / "c.hyper"}
     ) as ws:
-        res = rows.build(ws, checks or _checks(), list(scope), period)
+        res = rows.build(
+            ws, checks or _checks(), None if scope is None else list(scope), period
+        )
         by = {}
         for b in res.buckets:
             by[(b["base"], b["cause"])] = by.get((b["base"], b["cause"]), 0) + b["rows"]
@@ -134,6 +136,20 @@ def test_school_outside_cube_scope(tmp_path):
     tab = _tab_rows() + [(105, D[0], "Hatch", "Newark", 0.0)]
     _, by = _run(tmp_path, tab, _cub_rows())
     assert by[("outside_scope", "outside_scope")] == 1
+
+
+def test_empty_scope_puts_every_dashboard_only_row_outside_scope(tmp_path):
+    tab = _tab_rows() + [(105, D[0], "Hatch", "Newark", 0.0)]
+    _, by = _run(tmp_path, tab, _cub_rows(), scope=())
+    assert not [k for k in by if k[0] == "dashboard_only"]
+    assert by[("outside_scope", "outside_scope")] >= 1
+
+
+def test_no_scope_means_no_scope_check(tmp_path):
+    tab = _tab_rows() + [(105, D[0], "Hatch", "Newark", 0.0)]
+    _, by = _run(tmp_path, tab, _cub_rows(), scope=None)
+    assert by[("dashboard_only", "unexplained")] >= 1
+    assert not [k for k in by if k[0] == "outside_scope"]
 
 
 def test_cause_claims_only_its_rows(tmp_path):

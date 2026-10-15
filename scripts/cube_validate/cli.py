@@ -67,7 +67,7 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
     with hyper.Workspace(
         snap.analysis / "analysis.hyper", {"tab": snap.extract, "cub": snap.cube}
     ) as ws:
-        rr = rows.build(ws, checks, m.get("scope") or [], _manifest_period(m))
+        rr = rows.build(ws, checks, m.get("scope"), _manifest_period(m))
         cs = cells.judge(
             ws, checks, m, answers, lambda cut, sheet: _export(snap, cut, sheet)
         )
@@ -260,6 +260,11 @@ def _run(checks, args) -> int:
         cube, snap, capture_cube.row_queries(checks, start, end), built
     )
     scope = capture_cube.capture_scope(cube, checks)
+    if checks.scope_key and not scope:
+        print(
+            "WARNING: Cube returned an empty scope for this identity; every "
+            "dashboard-only row reads outside scope, never as a Cube finding."
+        )
     n = capture_cube.write_cube_hyper(snap, checks, cube.member_types(checks.cube.view))
     capture_cube.capture_answers(cube, snap, checks, m, built)
     _print_failed_answers(snap)

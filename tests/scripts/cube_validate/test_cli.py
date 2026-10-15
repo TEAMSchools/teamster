@@ -309,6 +309,15 @@ def test_run_records_the_scope_cube_reports(tmp_path, monkeypatch):
     assert m["invariants"]["capture completeness"] is True
 
 
+def test_run_warns_when_cube_reports_an_empty_scope(tmp_path, monkeypatch, capsys):
+    snap, run = _fake_run(tmp_path, monkeypatch, lambda *a: {})
+    monkeypatch.setattr(cli.capture_cube, "capture_scope", lambda cube, checks: [])
+    assert run() == 0
+    out = capsys.readouterr().out
+    assert "empty scope" in out and "outside scope" in out
+    assert snapshot.read_manifest(snap)["scope"] == []
+
+
 def test_failed_resume_leaves_no_stale_completeness_flag(tmp_path, monkeypatch):
     def fail(*a):
         raise cli.capture_cube.CaptureError("2026-10-05: 1 of 2 rows")
