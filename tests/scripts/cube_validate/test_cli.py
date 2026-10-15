@@ -171,3 +171,55 @@ def test_main_analyze_dispatches_on_a_snapshot(tmp_path, capsys):
 def test_main_answers_needs_a_snapshot(tmp_path):
     with pytest.raises(SystemExit, match="answers needs --snapshot"):
         cli.main(["answers", _write_checks(tmp_path)])
+
+
+def _resume_manifest():
+    return {
+        "extract_at": "2026-10-15T19:30:00+00:00",
+        "clock_before": {"t": "2026-10-15T18:00:00"},
+        "period": "2026-10-05:2026-10-15",
+    }
+
+
+def _resume(tmp_path, m, period=None, now=None, after=None):
+    window = cli.config.load_checks(_write_checks(tmp_path)).window
+    return cli._resume_checks(
+        m,
+        period,
+        now or dt.datetime(2026, 10, 15, 20, 0, tzinfo=dt.UTC),
+        window,
+        after or {"t": "2026-10-15T18:00:00"},
+    )
+
+
+def test_resume_checks_returns_the_captured_period(tmp_path):
+    assert _resume(tmp_path, _resume_manifest(), "2026-10-05:2026-10-15") == (
+        dt.date(2026, 10, 5),
+        dt.date(2026, 10, 15),
+    )
+
+
+def test_resume_checks_refuse_outside_the_window(tmp_path):
+    with pytest.raises(cli.preflight.PreflightError, match="outside the capture"):
+        _resume(
+            tmp_path,
+            _resume_manifest(),
+            now=dt.datetime(2026, 10, 15, 14, 0, tzinfo=dt.UTC),
+        )
+
+
+def test_resume_checks_refuse_a_changed_table(tmp_path):
+    with pytest.raises(cli.preflight.PreflightError, match="tables changed"):
+        _resume(tmp_path, _resume_manifest(), after={"t": "2026-10-15T19:00:00"})
+
+
+def test_resume_checks_refuse_a_different_period(tmp_path):
+    with pytest.raises(cli.preflight.PreflightError, match="captured period"):
+        _resume(tmp_path, _resume_manifest(), "2025-07-01:2026-06-30")
+
+
+def test_resume_checks_refuse_a_missing_extract_time(tmp_path):
+    m = _resume_manifest()
+    del m["extract_at"]
+    with pytest.raises(cli.preflight.PreflightError, match="no recorded extract time"):
+        _resume(tmp_path, m)

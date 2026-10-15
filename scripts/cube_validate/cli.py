@@ -128,44 +128,80 @@ def _built_at(clock: dict[str, str], tables: list[str]) -> dt.datetime:
     return max(dt.datetime.fromisoformat(clock[t]) for t in cube_tables)
 
 
+def _resume_checks(
+    m: dict, period_arg: str | None, now: dt.datetime, window, clock_after: dict
+) -> tuple[dt.date, dt.date]:
+    """Gate a resumed capture: still in the window, tables unmoved, same period.
+
+    Args:
+        m: The snapshot's manifest, which already holds clock_before.
+        period_arg: The --period given on this run, if any.
+        now: The current time.
+        window: The capture window.
+        clock_after: The tables' modified times, read just now.
+
+    Returns:
+        The period start and end the snapshot captured.
+
+    Raises:
+        PreflightError: Outside the window, a table changed, or the period differs.
+    """
+    if not m.get("extract_at"):
+        raise preflight.PreflightError(
+            "this snapshot has no recorded extract time; run a new capture"
+        )
+    why = preflight.check_window(
+        now, dt.datetime.fromisoformat(m["extract_at"]), window
+    )
+    if why:
+        raise preflight.PreflightError(why)
+    moved = preflight.changed(m["clock_before"], clock_after)
+    if moved:
+        raise preflight.PreflightError(
+            f"tables changed since capture began: {', '.join(moved)}; run a new capture"
+        )
+    if period_arg and period_arg != m["period"]:
+        raise preflight.PreflightError(
+            f"this snapshot captured period {m['period']}; "
+            f"start a new run for {period_arg}"
+        )
+    a, b = m["period"].split(":")
+    return dt.date.fromisoformat(a), dt.date.fromisoformat(b)
+
+
 def _run(checks, args) -> int:
     now = dt.datetime.now(dt.UTC)
-    today = now.astimezone(ZoneInfo(checks.window.tz)).date()
-    start, end, tag = _period(checks, args.period, today)
     snap = snapshot.Snapshot(Path(args.snapshot)) if args.snapshot else None
     m = snapshot.read_manifest(snap) if snap else {}
     # a flag left by an earlier attempt must not survive a failed resume
     (m.get("invariants") or {}).pop("capture completeness", None)
-    resuming = bool(m.get("extract_refreshed"))
-    m["period"] = f"{start}:{end}"
+    resuming = bool(m.get("clock_before"))
 
     cube = capture_cube.client_from_env()
     bq = preflight.BigQuery()
     server, auth = capture_tableau.server_from_env()
     with capture_tableau.signed_in(server, auth):
         if resuming:
-            extract_at = dt.datetime.fromisoformat(m["extract_refreshed"])
+            tables = m["clock_tables"]
+            before = m["clock_before"]
+            start, end = _resume_checks(
+                m,
+                args.period,
+                now,
+                checks.window,
+                preflight.clock_map(bq, tables),
+            )
         else:
+            today = now.astimezone(ZoneInfo(checks.window.tz)).date()
+            start, end, tag = _period(checks, args.period, today)
             live = server.workbooks.get_by_id(checks.workbook_luid)
             if live.updated_at is None:
                 raise preflight.PreflightError(
                     "Tableau reports no extract refresh time"
                 )
-            extract_at = live.updated_at
-        why = preflight.check_window(now, extract_at, checks.window)
-        if why:
-            raise preflight.PreflightError(why)
-
-        if resuming:
-            tables = m["clock_tables"]
-            before = m["clock_before"]
-            moved = preflight.changed(before, preflight.clock_map(bq, tables))
-            if moved:
-                raise preflight.PreflightError(
-                    f"tables changed since capture began: {', '.join(moved)}; "
-                    "run a new capture"
-                )
-        else:
+            why = preflight.check_window(now, live.updated_at, checks.window)
+            if why:
+                raise preflight.PreflightError(why)
             est = preflight.estimate(
                 cube, bq, preflight.planned_queries(checks, start, end)
             )
@@ -179,14 +215,18 @@ def _run(checks, args) -> int:
                 )
             before = preflight.clock_map(bq, tables)
             m.update(
+                period=f"{start}:{end}",
+                extract_at=live.updated_at.isoformat(),
                 cost=f"{gb:.2f} GB planned, cap {checks.cost_cap_gb} GB",
                 clock_before=before,
                 clock_tables=tables,
             )
-        if snap is None:
-            snap = snapshot.new_snapshot(checks.dashboard, now, tag)
-        snapshot.write_manifest(snap, m)
+            if snap is None:
+                snap = snapshot.new_snapshot(checks.dashboard, now, tag)
+            snapshot.write_manifest(snap, m)
 
+        if snap is None:  # a resume always names its snapshot
+            raise preflight.PreflightError("run needs a snapshot to resume")
         if not snap.twbx.exists():
             twbx, _ = capture_tableau.download(
                 checks.workbook_luid, snap.dir, server=server
@@ -238,7 +278,11 @@ def _answers(checks, args) -> int:
     snap = snapshot.Snapshot(Path(args.snapshot))
     m = snapshot.read_manifest(snap)
     now = dt.datetime.now(dt.UTC)
-    extract_at = dt.datetime.fromisoformat(m["extract_refreshed"])
+    if not m.get("extract_at"):
+        raise preflight.PreflightError(
+            "this snapshot has no recorded extract time; run a new capture"
+        )
+    extract_at = dt.datetime.fromisoformat(m["extract_at"])
     why = preflight.check_window(now, extract_at, checks.window)
     if why:
         raise preflight.PreflightError(why)
