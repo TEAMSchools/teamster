@@ -27,6 +27,8 @@ models:
               - schoolid
               - term_name
               - _dbt_source_project
+          config:
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
