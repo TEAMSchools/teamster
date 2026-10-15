@@ -263,24 +263,57 @@ def _cast(value, cube_type: str):
     return str(value)
 
 
-def write_cube_hyper(snap, checks, types: dict[str, str]) -> tuple[int, list[str]]:
-    """cube.hyper from every part file; returns rows written and the scope."""
+def write_cube_hyper(snap, checks, types: dict[str, str]) -> int:
+    """cube.hyper from every part file; returns the rows written."""
     v, members = checks.cube.view, list(checks.cube.members)
     columns = [(m, HYPER_TYPES[types[m]]) for m in members]
-    scope_member = next(
-        (e.cube for e in checks.key if e.name == checks.scope_key), None
-    )
-    scope: set[str] = set()
 
     def rows():
         for f in sorted(snap.cube_parts.glob("*.json")):
             for r in json.loads(f.read_text())["rows"]:
-                if scope_member and r.get(f"{v}.{scope_member}") is not None:
-                    scope.add(str(r[f"{v}.{scope_member}"]))
                 yield [_cast(r.get(f"{v}.{m}"), types[m]) for m in members]
 
-    n = write_table(snap.cube, "cube", "rows", columns, rows())
-    return n, sorted(scope)
+    return write_table(snap.cube, "cube", "rows", columns, rows())
+
+
+def scope_query(checks) -> dict | None:
+    """1 grouped, undated count by the scope member; None without a scope key.
+
+    Cube rewrites every query to the caller's schools, so the values it returns
+    are the scope. Rows captured for a period cannot stand in for it: a school
+    with no rows that period would look out of scope.
+    """
+    if not checks.scope_key:
+        return None
+    member = next(e.cube for e in checks.key if e.name == checks.scope_key)
+    v = checks.cube.view
+    return {
+        "dimensions": [f"{v}.{member}"],
+        "measures": [f"{v}.count_students"],
+        "limit": CUBE_LIMIT,
+        "total": True,
+    }
+
+
+def capture_scope(client, checks) -> list[str]:
+    """The scope key's values Cube shows this identity, sorted.
+
+    Raises:
+        CaptureError: The scope answer failed, was short or hit the row limit.
+    """
+    q = scope_query(checks)
+    if q is None:
+        return []
+    try:
+        r = client.load(q)
+    except CubeError as e:
+        raise CaptureError(f"Cube scope query failed: {e}") from e
+    if r.total is None or len(r.data) != r.total:
+        raise CaptureError(f"Cube scope query returned {len(r.data)} of {r.total} rows")
+    if len(r.data) >= CUBE_LIMIT:
+        raise CaptureError(f"Cube scope query hit the {CUBE_LIMIT}-row limit")
+    col = q["dimensions"][0]
+    return sorted({str(x[col]) for x in r.data if x.get(col) is not None})
 
 
 def capture_answers(

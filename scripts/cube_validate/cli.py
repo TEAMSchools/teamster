@@ -179,12 +179,17 @@ def _resume_checks(
     return period
 
 
+def _drop_completeness(m: dict) -> None:
+    """Forget an earlier attempt's capture completeness; only pull_rows sets it."""
+    (m.get("invariants") or {}).pop("capture completeness", None)
+
+
 def _run(checks, args) -> int:
     now = dt.datetime.now(dt.UTC)
     snap = snapshot.Snapshot(Path(args.snapshot)) if args.snapshot else None
     m = snapshot.read_manifest(snap) if snap else {}
     # a flag left by an earlier attempt must not survive a failed resume
-    (m.get("invariants") or {}).pop("capture completeness", None)
+    _drop_completeness(m)
     resuming = bool(m.get("clock_before"))
 
     cube = capture_cube.client_from_env()
@@ -245,16 +250,17 @@ def _run(checks, args) -> int:
         session = capture_tableau.Session(
             server, checks.review_project_luid, auth=auth, quiet=checks.quiet_minutes
         )
+        # capture re-reads the manifest on disk, which may still hold the flag
         m.update(capture_tableau.capture(checks, snap, session, now))
+        _drop_completeness(m)
         snapshot.write_manifest(snap, m)
 
     built = _built_at(before, tables)
     parts = capture_cube.pull_rows(
         cube, snap, capture_cube.row_queries(checks, start, end), built
     )
-    n, scope = capture_cube.write_cube_hyper(
-        snap, checks, cube.member_types(checks.cube.view)
-    )
+    scope = capture_cube.capture_scope(cube, checks)
+    n = capture_cube.write_cube_hyper(snap, checks, cube.member_types(checks.cube.view))
     capture_cube.capture_answers(cube, snap, checks, m, built)
     _print_failed_answers(snap)
     after = preflight.clock_map(bq, tables)

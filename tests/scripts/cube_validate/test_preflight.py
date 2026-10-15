@@ -57,3 +57,40 @@ def test_clock_map_and_changes():
     before = preflight.clock_map(FakeBQ(), ["p.marts.fct", "p.marts.dim"])
     after = {**before, "p.marts.dim": "2026-10-15T23:00:00+00:00"}
     assert preflight.changed(before, after) == ["p.marts.dim"]
+
+
+def test_planned_queries_include_the_scope_query():
+    checks = config.Checks(
+        dashboard="d",
+        workbook="w",
+        workbook_luid="l",
+        review_project_luid="p",
+        dashboards=(),
+        datasource="ds",
+        dashboard_table="p.d.t",
+        period_start=dt.date(2026, 10, 5),
+        window=W,
+        cost_cap_gb=50,
+        quiet_minutes=(0, 10),
+        cube=config.CubeRows("v", "attendance_date", ("locations_abbreviation",)),
+        key=(
+            config.Expr("day", "calendardate", "attendance_date"),
+            config.Expr("school", "school_abbreviation", "locations_abbreviation"),
+        ),
+        compare=(),
+        labels=(),
+        student_key="day",
+        date_key="day",
+        scope_key="school",
+        causes=(),
+        filters={},
+        params={},
+        sheets={},
+        cuts=(config.Cut("default"),),
+        excluded_sheets={},
+    )
+    got = dict(
+        preflight.planned_queries(checks, dt.date(2026, 10, 5), dt.date(2026, 10, 5))
+    )
+    assert got["scope"]["dimensions"] == ["v.locations_abbreviation"]
+    assert got["scope"]["measures"] == ["v.count_students"]

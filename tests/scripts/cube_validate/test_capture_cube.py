@@ -175,3 +175,56 @@ def test_complete_aggregate_answer_is_stored_with_data_and_sql(tmp_path, monkeyp
     assert out["k"]["data"] == [{"a": 1}] and out["k"]["sql"] == "SELECT 1"
     assert out["k"]["query"] == {"m": 1}
     assert json.loads(snap.answers.read_text())["k"]["sql"] == "SELECT 1"
+
+
+def _scope_checks():
+    return SimpleNamespace(
+        cube=config.CubeRows("v", "attendance_date", ()),
+        key=(
+            config.Expr("student", "student_number", "lea_student_identifier"),
+            config.Expr("school", "school_abbreviation", "locations_abbreviation"),
+        ),
+        scope_key="school",
+    )
+
+
+def test_scope_query_is_one_grouped_undated_count():
+    assert capture_cube.scope_query(_scope_checks()) == {
+        "dimensions": ["v.locations_abbreviation"],
+        "measures": ["v.count_students"],
+        "limit": 50000,
+        "total": True,
+    }
+
+
+def test_capture_scope_returns_the_values_cube_sends_back():
+    sent = []
+
+    def answer(u, q):
+        sent.append(q)
+        return {
+            "data": [
+                {"v.locations_abbreviation": "TEAM", "v.count_students": 9},
+                {"v.locations_abbreviation": "Rise", "v.count_students": 4},
+                {"v.locations_abbreviation": None, "v.count_students": 1},
+            ],
+            "total": 3,
+        }
+
+    assert capture_cube.capture_scope(_client(answer), _scope_checks()) == [
+        "Rise",
+        "TEAM",
+    ]
+    assert sent == [capture_cube.scope_query(_scope_checks())]
+
+
+def test_capture_scope_refuses_a_short_answer():
+    c = _client(lambda u, q: {"data": [{"v.locations_abbreviation": "R"}], "total": 2})
+    with pytest.raises(capture_cube.CaptureError, match="scope"):
+        capture_cube.capture_scope(c, _scope_checks())
+
+
+def test_no_scope_key_means_no_scope_query():
+    checks = SimpleNamespace(**{**vars(_scope_checks()), "scope_key": None})
+    assert capture_cube.scope_query(checks) is None
+    assert capture_cube.capture_scope(_client(lambda u, q: pytest.fail()), checks) == []

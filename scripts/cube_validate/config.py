@@ -223,6 +223,13 @@ def load_checks(path: str | Path) -> Checks:
     scope_key = rows.get("scope_key")
     if scope_key is not None and scope_key not in names:
         raise ConfigError("rows.scope_key must name a key part")
+    if scope_key is not None:
+        member = next(e.cube for e in key if e.name == scope_key)
+        if not _IDENT.match(member):
+            # capture asks Cube for the scope by this member
+            raise ConfigError(
+                f"rows.scope_key's cube side must be a bare Cube member, not {member}"
+            )
 
     causes = []
     for i, c in enumerate(d.get("causes") or []):

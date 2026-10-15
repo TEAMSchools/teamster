@@ -7,7 +7,7 @@ import re
 from zoneinfo import ZoneInfo
 
 from . import cells
-from .capture_cube import row_queries
+from .capture_cube import row_queries, scope_query
 
 BQ_PROJECT = "teamster-332318"
 _INT = re.compile(r"^-?\d+$")
@@ -113,6 +113,9 @@ class BigQuery:
 def planned_queries(checks, start: dt.date, end: dt.date) -> list[tuple[str, dict]]:
     """Every query capture will send, clicks left unfiltered (an upper bound)."""
     out = [(f"rows:{p}", q) for p, q in row_queries(checks, start, end)]
+    scope = scope_query(checks)
+    if scope is not None:
+        out.append(("scope", scope))
     for cut in checks.cuts:
         base = cut.__class__(cut.id, cut.filters, cut.params, None)
         for sheet in checks.sheets:

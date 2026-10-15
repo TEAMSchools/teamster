@@ -111,3 +111,18 @@ def test_side_sql_and_lit():
     assert config.side_sql('"{p}grade_level" >= 9', "c_") == '"c_grade_level" >= 9'
     assert config.lit("O'Neil") == "'O''Neil'"
     assert config.lit(None) == "NULL"
+
+
+def test_scope_key_needs_a_bare_cube_member(tmp_path):
+    rows = {
+        **BASE["rows"],
+        "key": {
+            **BASE["rows"]["key"],
+            "school": {
+                "tableau": "school_abbreviation",
+                "cube": 'upper("{p}locations_abbreviation")',
+            },
+        },
+    }
+    with pytest.raises(config.ConfigError, match="scope_key"):
+        config.load_checks(_write(tmp_path, rows=rows))

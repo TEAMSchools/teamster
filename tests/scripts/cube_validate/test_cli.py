@@ -259,3 +259,62 @@ def test_analyze_reads_the_period_from_the_manifest(tmp_path):
     text = path.read_text()
     assert "| outside_period | outside_period |" in text
     assert "dashboard_only" not in text
+
+
+def _fake_run(tmp_path, monkeypatch, pull_rows):
+    """A resumed _run with every outside call faked; returns the snapshot."""
+    import contextlib
+    from types import SimpleNamespace
+
+    snap = snapshot.new_snapshot("d", dt.datetime(2026, 10, 15, 16, 0), root=tmp_path)
+    snap.twbx.write_bytes(b"x")
+    snapshot.write_manifest(
+        snap,
+        {
+            **_resume_manifest(),
+            "clock_tables": ["t"],
+            "invariants": {"capture completeness": True},
+        },
+    )
+    fake_cube = SimpleNamespace(member_types=lambda view: {})
+    cc, ct, pf = cli.capture_cube, cli.capture_tableau, cli.preflight
+    monkeypatch.setattr(cc, "client_from_env", lambda: fake_cube)
+    monkeypatch.setattr(pf, "BigQuery", lambda: None)
+    monkeypatch.setattr(pf, "clock_map", lambda bq, t: {"t": "2026-10-15T18:00:00"})
+    monkeypatch.setattr(ct, "server_from_env", lambda: (None, None))
+    monkeypatch.setattr(ct, "signed_in", lambda s, a: contextlib.nullcontext())
+    monkeypatch.setattr(ct, "Session", lambda *a, **k: None)
+    # capture re-reads the manifest on disk, as the real one does
+    monkeypatch.setattr(
+        ct, "capture", lambda c, s, sess, now: snapshot.read_manifest(s)
+    )
+    monkeypatch.setattr(
+        cli, "_resume_checks", lambda *a: (dt.date(2026, 10, 5), dt.date(2026, 10, 15))
+    )
+    monkeypatch.setattr(cc, "pull_rows", pull_rows)
+    monkeypatch.setattr(cc, "capture_scope", lambda cube, checks: ["Rise", "TEAM"])
+    monkeypatch.setattr(cc, "write_cube_hyper", lambda s, c, t: 0)
+    monkeypatch.setattr(cc, "capture_answers", lambda *a: {})
+    monkeypatch.setattr(cli, "analyze_snapshot", lambda c, s: (s.dir, "ok"))
+    checks = cli.config.load_checks(_write_checks(tmp_path))
+    args = SimpleNamespace(snapshot=str(snap.dir), period=None)
+    return snap, lambda: cli._run(checks, args)
+
+
+def test_run_records_the_scope_cube_reports(tmp_path, monkeypatch):
+    snap, run = _fake_run(tmp_path, monkeypatch, lambda *a: {})
+    assert run() == 0
+    m = snapshot.read_manifest(snap)
+    assert m["scope"] == ["Rise", "TEAM"]
+    assert m["invariants"]["capture completeness"] is True
+
+
+def test_failed_resume_leaves_no_stale_completeness_flag(tmp_path, monkeypatch):
+    def fail(*a):
+        raise cli.capture_cube.CaptureError("2026-10-05: 1 of 2 rows")
+
+    snap, run = _fake_run(tmp_path, monkeypatch, fail)
+    with pytest.raises(cli.capture_cube.CaptureError):
+        run()
+    invariants = snapshot.read_manifest(snap).get("invariants") or {}
+    assert "capture completeness" not in invariants
