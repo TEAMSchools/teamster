@@ -791,3 +791,38 @@ def test_cubesql_raises_cube_error(monkeypatch: pytest.MonkeyPatch) -> None:
     _recording_request(monkeypatch, server, '{"error":"Table not found"}\n')
     with pytest.raises(RuntimeError, match="Table not found"):
         asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
+
+
+def test_convert_query_posts_sql_to_rest(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    reply = {"query": {"measures": ["v.m"]}}
+    calls = _recording_request(monkeypatch, server, reply)
+
+    result = asyncio.run(server.convert_query(MagicMock(), "SELECT 1"))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("POST", "/convert-query")
+    assert kwargs["json"] == {"input": "sql", "output": "rest", "query": "SELECT 1"}
+    assert result == reply
+
+
+def test_graphql_to_json_returns_json_query(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    calls = _recording_request(
+        monkeypatch, server, {"jsonQuery": {"measures": ["v.m"]}}
+    )
+
+    result = asyncio.run(server.graphql_to_json(MagicMock(), "{ cube { v { m } } }"))
+    method, path, kwargs = calls[0]
+    assert (method, path) == ("POST", "/graphql-to-json")
+    assert kwargs["json"] == {"query": "{ cube { v { m } } }", "variables": {}}
+    assert result == {"measures": ["v.m"]}
+
+
+def test_graphql_to_json_raises_on_null(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    _recording_request(monkeypatch, server, {"jsonQuery": None})
+    with pytest.raises(RuntimeError, match="could not parse"):
+        asyncio.run(server.graphql_to_json(MagicMock(), "{ nope"))

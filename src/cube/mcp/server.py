@@ -743,6 +743,41 @@ async def cubesql(
         return result
 
 
+@mcp.tool()
+async def convert_query(ctx: Context, sql: str) -> dict[str, Any]:
+    """Convert a SQL API query (the dialect `cubesql` takes) into a REST query
+    object, without running it. Pass the result's query object to `load`,
+    `sql`, or `dry_run`. Useful when a question is easier to write as SQL but
+    you want `load`'s response or `dry_run`'s pre-aggregation check."""
+    email = await _get_user_email(ctx)
+    return await _request(
+        "POST",
+        "/convert-query",
+        json={"input": "sql", "output": "rest", "query": sql},
+        email=email,
+    )
+
+
+@mcp.tool()
+async def graphql_to_json(
+    ctx: Context, query: str, variables: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Convert a Cube GraphQL query into a REST query object, without running
+    it. Pass the result to `load`, `sql`, or `dry_run`. Raises when Cube cannot
+    parse the GraphQL."""
+    email = await _get_user_email(ctx)
+    body = await _request(
+        "POST",
+        "/graphql-to-json",
+        json={"query": query, "variables": variables or {}},
+        email=email,
+    )
+    # Cube answers a parse failure with HTTP 200 and `{"jsonQuery": null}`.
+    if body.get("jsonQuery") is None:
+        raise RuntimeError("Cube could not parse the GraphQL query")
+    return body["jsonQuery"]
+
+
 def main() -> None:
     transport = os.environ.get("TRANSPORT", TRANSPORT_STDIO)
     if transport not in VALID_TRANSPORTS:
