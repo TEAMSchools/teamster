@@ -92,22 +92,6 @@ while read -r asana_url; do
 	combined=${combined//"${cursor}"/}
 done <<<"${asana_urls}"
 
-# Google Drive pagination cursors: search_files returns nextPageToken, an opaque
-# ~!!~-prefixed token (590-790 chars) with no separator break, so the entropy
-# heuristic below redacted every multi-page result. Exempt a token only in
-# Google Drive MCP output, only as a "nextPageToken" value, and only in the ~!!~
-# shape, then delete that exact token from the corpus. Runs before the decode
-# pass for the same reason as the Asana cursor above.
-if [[ ${tool_name} == mcp__claude_ai_google_drive__* ]]; then
-	drive_re='"nextPageToken"[[:space:]]*:[[:space:]]*"(~!!~[A-Za-z0-9_=!~-]{16,})"'
-	drive_rest=${combined}
-	while [[ ${drive_rest} =~ ${drive_re} ]]; do
-		drive_token=${BASH_REMATCH[1]}
-		combined=${combined//"${drive_token}"/}
-		drive_rest=${drive_rest#*"${drive_token}"}
-	done
-fi
-
 # Google API pagination cursors: a googleapiclient HttpError message quotes the
 # request URL, and a users.list page past the first carries pageToken=<opaque
 # cursor>. The Directory cursor is base64 of userdir_tkn_st<base64>userdir_tkn_end,
@@ -160,7 +144,8 @@ stripped=${combined//[[:space:]]/}
 # Slack webhook, and contextual aws_secret_access_key. A generic
 # key/secret/token=<value> rule was trialed but BACKED OUT — it false-positived
 # on doc placeholders (e.g. "password: enter-your-password-here"); the
-# high-entropy heuristic below still catches opaque values.
+# high-entropy heuristic below still catches opaque values (not in connector
+# output; see the heuristic's gate).
 secret_re='op://[^/{}[:space:]]+/|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}|xox[baprs]-[0-9A-Za-z-]{10,}|\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}|hooks\.slack\.com/services/[A-Za-z0-9/]+|aws_secret_access_key["[:space:]:=]+[A-Za-z0-9/+]{40}'
 
 # Asana PAT: 1/<gid>:<32 hex> (legacy) or 2/<gid>/<gid>:<32 hex>. Mirrored in
@@ -198,7 +183,11 @@ for page_token in "${page_tokens[@]}"; do
 	entropy_input=${entropy_input//"${page_token}"/pageToken=}
 done
 
+# Connector output skips this heuristic: claude.ai connector and Context7 ids and
+# cursors (Outlook, Drive) are long opaque runs. Named patterns above still scan
+# it. Project MCP servers (logs, file contents) keep the heuristic.
 long_runs=$(echo "${entropy_input}" | grep -oE '[A-Za-z0-9+/=_-]{120,}' || true)
-if [[ -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$|^[^a-z]*$|^[^A-Z]*$|^([^_]{0,23}_+)*[^_]{0,23}$|^([^_/-]{0,15}[_/-]+)*[^_/-]{0,15}$'; then
+if [[ ${tool_name} != mcp__claude_ai_* && ${tool_name} != mcp__context7__* &&
+	${tool_name} != mcp__plugin_context7_* && -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$|^[^a-z]*$|^[^A-Z]*$|^([^_]{0,23}_+)*[^_]{0,23}$|^([^_/-]{0,15}[_/-]+)*[^_/-]{0,15}$'; then
 	emit_redacted "⛔ Tool output contained a high-entropy string (possible encoded secret) — redacted by check-output.sh"
 fi
