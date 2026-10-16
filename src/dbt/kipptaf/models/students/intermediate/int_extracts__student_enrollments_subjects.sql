@@ -194,8 +194,10 @@ select
 
     b.bucket_store,
 
-    cc.sections_section_number as course_section_number,
     cc.teacher_lastfirst as course_teacher_lastfirst,
+
+    -- Focus rows null sections_section_number and carry cc_section_number
+    coalesce(cc.sections_section_number, cc.cc_section_number) as course_section_number,
 
     coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
