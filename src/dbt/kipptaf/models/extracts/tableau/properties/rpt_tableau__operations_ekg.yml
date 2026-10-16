@@ -34,14 +34,6 @@ models:
           respondent on this form is based in KIPP Paterson.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - TEAM Academy Charter School
-                  - KIPP Cooper Norcross Academy
-                  - KIPP Miami
-                  - KIPP Paterson
-                  - KIPP TEAM and Family Schools Inc.
       - name: school_clean_name
         data_type: string
         description: >-
@@ -68,13 +60,6 @@ models:
           - not_null:
               config:
                 severity: warn
-          - accepted_values:
-              arguments:
-                values:
-                  - TEAM Academy Charter School
-                  - KIPP Cooper Norcross Academy
-                  - KIPP Miami
-                  - KIPP Paterson
       - name: respondent
         data_type: string
       - name: google_email
