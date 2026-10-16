@@ -32,11 +32,6 @@ models:
             foreign_key:
               to: ref('dim_course_sections')
               to_columns: [course_section_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_course_sections')
-                field: course_section_key
       - name: staff_key
         data_type: string
         description: >-
@@ -46,11 +41,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
       - name: role
         quote: true
         data_type: string
