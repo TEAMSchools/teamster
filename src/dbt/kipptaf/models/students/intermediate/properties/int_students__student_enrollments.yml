@@ -17,7 +17,7 @@ models:
       not carry, left null rather than asserted false per #4968), the KIPP
       Forward exit codes (`exit_code_kf`, `exit_code_ts`),
       `advisor_teachernumber` (no network teacher number in Focus), `rn_school`,
-      `rn_undergrad`, `track`, and `cohort_graduated`.
+      `track`, and `cohort_graduated`.
 
       `is_enrolled_y1` and `is_enrolled_recent` are derived for Miami from the
       roster's enrollment dates, using PowerSchool's expressions.
@@ -39,6 +39,21 @@ models:
               - schoolid
               - entrydate
     columns:
+      - name: rn_undergrad
+        data_type: int64
+        description: >-
+          Row number of the enrollment stint within student, ranking
+          non-graduate stints apart from grade 99 graduate placeholders and
+          ordered by latest academic year then latest exit date; 1 marks the
+          student's most recent stint before graduating. Null on grade 99 rows.
+          Consumers filter on 1 for one row per student, so a null on any other
+          row silently drops that student. PowerSchool computes it upstream.
+          Miami takes the Focus roster's `rn_all`, which ranks the same way;
+          Focus has no grade 99 rows.
+        data_tests:
+          - not_null:
+              config:
+                where: grade_level != 99
       - name: is_enrolled_y1
         data_type: boolean
         description: >-
@@ -439,8 +454,6 @@ models:
       - name: grade_level_prev
         data_type: int64
       - name: yearid_prev
-        data_type: int64
-      - name: rn_undergrad
         data_type: int64
       - name: year_in_school
         data_type: int64
