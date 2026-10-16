@@ -343,9 +343,8 @@ cubes:
           - sql: "{regions.region_key} IS NOT NULL"
 
       # Exact count_distinct: non-additive, so proficiency_rollup cannot serve
-      # it and every query using it reads the fact. Measured 2026-09-30 at
-      # standard grain (one year, Illuminate, by response_type_code): 7.5s,
-      # well inside the MCP deadline, so it carries no timeout caveat.
+      # it and every query using it reads the fact. Fast enough at standard
+      # grain that it needs no timeout caveat.
       - name: count_assessments
         description: >-
           Distinct internal assessments in the filtered set — not sittings, not

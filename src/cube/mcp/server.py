@@ -318,16 +318,18 @@ EMPTY_RESULT_NOTE = (
     "not exist for this slice, or your access may not include it. Before "
     "concluding it does not exist, re-run without the narrowing filter, grouped "
     "by region or school, and check the filter values against the values the "
-    "member's `meta` description lists. If `sql` on the same query shows "
-    "`rlsAccessDenied`, your access excludes it."
+    "member's `meta` description lists. If `sql` on the same query object "
+    "(`convert_query` turns SQL into one) shows `rlsAccessDenied`, your access "
+    "excludes it."
 )
 
 
 def _groups_rows(query: dict[str, Any]) -> bool:
-    """True when the query groups by a dimension or a time-dimension grain.
-    Without one, Cube answers an empty slice with 1 row of null measures (a
-    plain count may come back as 0), not with `data: []`."""
-    if query.get("dimensions"):
+    """True when the query groups by a dimension or a time-dimension grain, or
+    returns raw records (`ungrouped`). Otherwise Cube answers an empty slice
+    with 1 row of null measures (a plain count may come back as 0), not with
+    `data: []`."""
+    if query.get("dimensions") or query.get("ungrouped"):
         return True
     return any(
         isinstance(t, dict) and t.get("granularity")
@@ -355,7 +357,9 @@ def _result_rows(data: Any) -> list[Any] | None:
         if isinstance(data.get("dataset"), list):
             return data["dataset"]
         if isinstance(data.get("columns"), list):
-            return list(zip(*data["columns"], strict=True))
+            # Not strict: a malformed payload must still reach the caller,
+            # not fail the tool over this note.
+            return list(zip(*data["columns"], strict=False))
     return None
 
 

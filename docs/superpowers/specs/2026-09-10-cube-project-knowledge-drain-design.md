@@ -1136,4 +1136,5 @@ and documented `responseFormat` on `load`. Review changed the note in 3 ways:
   that case. A partial-scope result still cannot be told apart.
 
 The grain sentence now refers to the `ungrouped` field in the `load` field list
-instead of restating it.
+instead of restating it. The eval was not re-run for that wording change; the
+meaning is unchanged.

@@ -634,6 +634,10 @@ def test_a_grouped_single_row_is_not_empty(monkeypatch: pytest.MonkeyPatch) -> N
     # Two rows are never the empty-slice shape.
     two = {"data": [{"x.count": None}, {"x.count": None}]}
     assert "note" not in server._with_empty_result_note(two, {"measures": ["x.count"]})
+    # An ungrouped query returns raw records; one record of 0 is a real row.
+    raw = {"measures": ["x.count"], "ungrouped": True}
+    zero = {"data": [{"x.count": "0"}]}
+    assert "note" not in server._with_empty_result_note(zero, raw)
 
 
 def test_compact_and_columnar_results_get_the_note(
