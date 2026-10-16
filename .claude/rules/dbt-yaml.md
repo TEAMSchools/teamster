@@ -285,7 +285,10 @@ legitimately-superseded inactive rows that repeat the key.
   after its query returns 0 rows in prod. Sort each test:
   - Grain: the backstop on every mart and `rpt_` model. Add `not_null` on
     natural-key grain columns (`unique` skips nulls) unless non-null by
-    construction; a `generate_surrogate_key` PK needs only `unique`.
+    construction; a `generate_surrogate_key` PK needs only `unique`. If a grain
+    test fails in prod on a source defect that waits on a fix elsewhere, set
+    `severity: warn` on that one test with a `TODO(#N)` comment, and still flip
+    the folder.
   - A `relationships` test from a mart or `rpt_` model to another model is not a
     regression test. Key drift is the key macros' job (A7); a population
     mismatch becomes a shared upstream model or a unit test; real orphans become

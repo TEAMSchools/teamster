@@ -28,11 +28,6 @@ models:
             foreign_key:
               to: ref('dim_student_enrollments')
               to_columns: [student_enrollment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_student_enrollments')
-                field: student_enrollment_key
       - name: communicator_staff_key
         data_type: string
         description: >-
@@ -45,11 +40,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
 
       - name: date_key
         data_type: date
@@ -61,11 +51,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: academic_year
         data_type: int64
         description: >-
