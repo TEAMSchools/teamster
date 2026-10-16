@@ -305,6 +305,8 @@ select
     false as is_replacement,
 
     cast(null as string) as section_match_method,
+
+    null as is_region_tagged,
 from internal_assessments_deduped as ia
 left join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
@@ -358,6 +360,8 @@ select
     true as is_replacement,
 
     cast(null as string) as section_match_method,
+
+    coalesce(str.region in unnest(c.regions_array), false) as is_region_tagged,
 from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
@@ -371,6 +375,10 @@ inner join
     and a.tagged_grade_level_id != ssa.grade_level_id
     and ssa.rn_student_session_desc = 1
 left join school_to_region as str on ssa.site_id = str.powerschool_school_id
+left join
+    {{ ref("int_assessments__assessments_canonical") }} as c
+    on a.source = c.source
+    and a.canonical_assessment_id = c.canonical_assessment_id
 where
     a.is_internal_assessment
     and a.source = 'illuminate'
@@ -425,6 +433,8 @@ select
     false as is_replacement,
 
     cast(null as string) as section_match_method,
+
+    null as is_region_tagged,
 from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
@@ -485,6 +495,8 @@ select
         then 'single'
         else 'multiple'
     end as section_match_method,
+
+    null as is_region_tagged,
 from apex_tested as t
 left join
     apex_sections as sc
