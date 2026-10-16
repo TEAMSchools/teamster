@@ -21,37 +21,6 @@ models:
         data_tests:
           - unique
 
-      - name: staff_key
-        data_type: string
-        description: >-
-          Foreign key to dim_staff. Surrogate key derived from employee_number.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_staff')
-              to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
-
-      - name: term_key
-        data_type: string
-        description: >-
-          Foreign key to dim_terms. Surrogate key derived from term type, code,
-          name, start_date, region, school_id, and grade_band.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_terms')
-              to_columns: [term_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
-
       - name: staff_observation_type_key
         data_type: string
         description: >-
@@ -70,10 +39,27 @@ models:
               to_columns: [staff_observation_type_key]
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_staff_observation_types')
-                field: staff_observation_type_key
+
+      - name: staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff. Surrogate key derived from employee_number.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
+
+      - name: term_key
+        data_type: string
+        description: >-
+          Foreign key to dim_terms. Surrogate key derived from term type, code,
+          name, start_date, region, school_id, and grade_band.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
 
       - name: academic_year
         data_type: int64

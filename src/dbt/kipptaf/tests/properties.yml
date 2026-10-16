@@ -171,6 +171,7 @@ data_tests:
       resolver). Guards the primary-exclusivity invariant that resolver's grain
       depends on.
     config:
+      severity: error
       meta:
         dagster:
           ref:
@@ -184,13 +185,8 @@ data_tests:
       simultaneously-active classifications for the same student in the same
       source — most often caused by EdPlan emitting two snapshot rows with
       overlapping date ranges and different `spedlep` values.
-
-      TODO(#4801): downgraded to warn for one bad Focus record — enrollment
-      771691 carries an end date two years past its school year, so it contains
-      two of the same student's other AY2021 stints. Restore severity: error
-      once Ops corrects it.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -216,12 +212,8 @@ data_tests:
       not overlap. The NJ leg trims each Titan annual window's end to
       day-before-next-row's-start so academic-year boundary overlaps don't
       surface in the dim.
-
-      TODO(#4801): downgraded to warn for the same bad Focus record as the IEP
-      span test — enrollment 771691. Restore severity: error once Ops corrects
-      it.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -398,6 +390,7 @@ data_tests:
       made the test's join, date predicate and drop filter null-safe; earlier
       baselines predate all three and are not comparable.
     config:
+      severity: warn
       meta:
         dagster:
           ref:
