@@ -293,6 +293,7 @@ select
     date(date_submitted) as date_submitted_key,
 
     cast(null as string) as student_enrollment_key,
+    -- TODO(#5978): family forms capture no respondent identifier yet
     cast(null as string) as student_contact_person_key,
     cast(null as string) as staff_key,
     cast(null as string) as subject_staff_key,

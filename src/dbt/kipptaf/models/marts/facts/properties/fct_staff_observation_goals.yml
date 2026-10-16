@@ -45,8 +45,7 @@ models:
         data_type: string
         description: >-
           Foreign key to dim_staff for the person who created the assignment.
-          Surrogate key derived from creator employee_number. May be null if the
-          creator cannot be matched to the staff roster.
+          Null when the creator's observation-platform user has no staff record.
 
         config:
           meta:

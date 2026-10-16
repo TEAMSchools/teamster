@@ -91,8 +91,9 @@ models:
       - name: student_contact_person_key
         data_type: string
         description: >-
-          FK to dim_student_contact_persons for the respondent. Populated when
-          respondent_type is family. Null for staff and student.
+          FK to dim_student_contact_persons for the respondent. Null on every
+          row. Family survey forms capture no respondent identifier that
+          resolves to a single contact person.
 
         config:
           meta:
