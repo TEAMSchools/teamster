@@ -11,6 +11,7 @@ from pathlib import Path
 import yaml
 
 from .cells import NEVER_CUBE, ORDER, PASS, Cell, answer_key
+from .config import lit
 
 
 @dataclass
@@ -20,6 +21,7 @@ class HandCheck:
     title: str
     steps: list[str]
     answer: str = ""  # answer_key of a cell check's Cube query
+    covers: str = ""  # the verdict, or "base / cause", this check stands for
 
 
 RESULTS = ("agree", "disagree", "pending")
@@ -39,10 +41,10 @@ def row_samples(ws, checks) -> list[dict]:
     )
     out = []
     for base, cause in pairs:
-        cond = "cause is null" if cause is None else f"cause = '{cause}'"
+        cond = "cause is null" if cause is None else f"cause = {lit(cause)}"
         r = ws.dicts(
-            # trunk-ignore(bandit/B608): base and cause are values from the rows table this tool built, never user input
-            f"select * from rows where base = '{base}' and {cond} order by {s}, {d} limit 1"
+            # trunk-ignore(bandit/B608): base and cause are values from the rows table this tool built, quoted by lit
+            f"select * from rows where base = {lit(base)} and {cond} order by {s}, {d} limit 1"
         )
         out.extend(r)
     return out
@@ -65,6 +67,7 @@ def _cell_check(c: Cell, answers: dict) -> HandCheck:
             f"The tool says **{c.verdict}**{f' ({c.reason})' if c.reason else ''}. Agree?",
         ],
         key,
+        c.verdict,
     )
 
 
@@ -80,6 +83,7 @@ def _row_check(r: dict) -> HandCheck:
             "Look the day up in PowerSchool (Newark, Camden, Paterson) or Focus (Miami).",
             f"The tool files it as **{r['base']}**, cause **{r['cause']}**. Does the source agree?",
         ],
+        covers=f"{r['base']} / {r['cause']}",
     )
 
 
@@ -127,6 +131,21 @@ def pick(
     return list({h.id: h for h in out}.values())
 
 
+def uncovered(
+    cells: list[Cell], row_samples: list[dict], picked: list[HandCheck]
+) -> list[str]:
+    """Each verdict and (base, cause) bucket the cap left without a hand check."""
+    have = {h.covers for h in picked}
+    verdicts = {c.verdict for c in cells}
+    out = [v for v in ORDER if v in verdicts and v not in have]
+    out += [
+        f"{r['base']} / {r['cause']}"
+        for r in row_samples
+        if f"{r['base']} / {r['cause']}" not in have
+    ]
+    return out
+
+
 def read_results(path: Path) -> dict[str, str]:
     """The analyst's result per check id.
 
@@ -149,9 +168,22 @@ def read_results(path: Path) -> dict[str, str]:
 
 
 def write(
-    dir: Path, checks_list: list[HandCheck], review_copy: str, answers: dict
+    dir: Path,
+    checks_list: list[HandCheck],
+    review_copy: str,
+    answers: dict,
+    uncovered: list[str],
 ) -> tuple[Path, Path]:
-    """Write hand_checks.md (steps) and hand_checks.yml (results to fill in)."""
+    """Write hand_checks.md (steps) and hand_checks.yml (results to fill in).
+
+    Args:
+        dir: The analysis folder.
+        checks_list: The picked hand checks.
+        review_copy: The review copy's name.
+        answers: Cube answers by answer_key.
+        uncovered: Verdicts and buckets the cap left without a hand check; the
+            file ends by naming them so the cap never hides a gap.
+    """
     dir = Path(dir)
     md, yml = dir / "hand_checks.md", dir / "hand_checks.yml"
     old = read_results(yml)
@@ -172,7 +204,12 @@ def write(
             q = (answers.get(h.answer) or {}).get("query")
             if q:
                 lines += ["```json", json.dumps(q, indent=2), "```", ""]
-    md.write_text("\n".join(lines))
+    lines.append(
+        "Not covered by a hand check: " + "; ".join(uncovered)
+        if uncovered
+        else "Every verdict and bucket has a hand check."
+    )
+    md.write_text("\n".join(lines) + "\n")
     yml.write_text(
         yaml.safe_dump(
             [

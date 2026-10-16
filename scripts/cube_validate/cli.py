@@ -71,11 +71,14 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
         cs = cells.judge(
             ws, checks, m, answers, lambda cut, sheet: _export(snap, cut, sheet)
         )
-        picked = handchecks.pick(
-            cs, handchecks.row_samples(ws, checks), seed=snap.dir.name, answers=answers
-        )
+        samples = handchecks.row_samples(ws, checks)
+        picked = handchecks.pick(cs, samples, seed=snap.dir.name, answers=answers)
     handchecks.write(
-        snap.analysis, picked, (m.get("review_copy") or {}).get("name", ""), answers
+        snap.analysis,
+        picked,
+        (m.get("review_copy") or {}).get("name", ""),
+        answers,
+        handchecks.uncovered(cs, samples, picked),
     )
     results = handchecks.read_results(snap.analysis / "hand_checks.yml")
     forms = (
