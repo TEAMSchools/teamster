@@ -668,6 +668,9 @@ models:
         description:
           Has IEP when `spedlep` starts with `SPED`, otherwise No IEP, including
           when `spedlep` is null.
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
         description: Student Limited English Proficiency status.

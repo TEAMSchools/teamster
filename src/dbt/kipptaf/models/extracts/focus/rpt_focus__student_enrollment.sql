@@ -54,6 +54,7 @@ select
     -- enrollment_code is the entry action and does not change on transfer_out;
     -- a withdrawal is expressed by drop_code + end_date, not by clearing the
     -- entry code.
+    -- TODO(#5992): confirm the Florida entry code for pre_k
     case when e.grade_canonical_name = 'k' then 'E05' else 'E01' end as enrollment_code,
 
     -- enrollment_end_date is gated to transfer_out upstream in
