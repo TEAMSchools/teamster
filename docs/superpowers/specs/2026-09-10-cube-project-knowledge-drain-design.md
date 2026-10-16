@@ -1117,3 +1117,23 @@ fact beside its new wording.
 - `pct_proficient_formative` semantics. Whether to widen it or add a
   module-coded rollup is a pooling decision on the open-policy list.
 - Any change to `int_assessments__response_rollup` or the reports that read it.
+
+## Revision, 2026-10-16: the note after the Cube MCP REST coverage work
+
+The Cube MCP REST coverage work merged into this branch after this spec was
+written. It added `cubesql`, which sends SQL API queries over REST `/cubesql`,
+and documented `responseFormat` on `load`. Review changed the note in 3 ways:
+
+- **Every response format.** `compact` and `columnar` results put rows under
+  `data.dataset` and `data.columns`, not a `data` list. The empty check reads
+  rows in all 3 formats.
+- **`cubesql` is on the supported agent path.** An agent using it discovers
+  members through `meta`, so `ai_context` reaches it. `cubesql` gets the note on
+  zero rows only, because grouping is not visible in a SQL string. Its docstring
+  gains the access-scope sentence from `load`.
+- **The note points at `sql` for full denial.** A fully denied query compiles
+  with `rlsAccessDenied`, which answers the open question under _Limits_ for
+  that case. A partial-scope result still cannot be told apart.
+
+The grain sentence now refers to the `ungrouped` field in the `load` field list
+instead of restating it.

@@ -206,8 +206,8 @@ NEW_LOAD_SENTENCES = [
     '`equals "null"` matches the literal string and returns zero rows; filter a'
     " null with `notSet`.",
     "A query with no measure groups by its dimensions, so identical rows collapse"
-    ' into one; add a count, the primary key, or `"ungrouped": true` to see'
-    " every row.",
+    " into one; add a count, the primary key, or the `ungrouped` field above to"
+    " see every row.",
     "Student views return only the schools the user can access; before describing"
     " a result as network-wide, check which regions or schools it covers.",
 ]

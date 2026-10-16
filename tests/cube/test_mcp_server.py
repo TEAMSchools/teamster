@@ -636,6 +636,44 @@ def test_a_grouped_single_row_is_not_empty(monkeypatch: pytest.MonkeyPatch) -> N
     assert "note" not in server._with_empty_result_note(two, {"measures": ["x.count"]})
 
 
+def test_compact_and_columnar_results_get_the_note(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {"measures": ["x.count"], "responseFormat": "compact"}
+    members = ["x.count"]
+    for data in (
+        {"members": members, "dataset": []},
+        {"members": members, "dataset": [[None]]},
+        {"members": members, "columns": [[]]},
+        {"members": members, "columns": [["0"]]},
+    ):
+        out = server._with_empty_result_note({"data": data}, query)
+        assert out["note"] == server.EMPTY_RESULT_NOTE, data
+    for data in (
+        {"members": members, "dataset": [["3"]]},
+        {"members": members, "columns": [["3"]]},
+    ):
+        assert "note" not in server._with_empty_result_note({"data": data}, query)
+
+
+def test_cubesql_zero_rows_get_the_note(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    body = {"text": '{"schema":[]}\n{"data":[]}\n'}
+
+    async def fake_request(*args: object, **kwargs: object) -> str:
+        del args, kwargs
+        return body["text"]
+
+    monkeypatch.setattr(server, "_request", fake_request)
+    out = asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
+    assert out["note"] == server.EMPTY_RESULT_NOTE
+    body["text"] = '{"schema":[]}\n{"data":[["1"]]}\n'
+    assert "note" not in asyncio.run(server.cubesql(MagicMock(), "SELECT 1"))
+
+
 def test_no_docstring_names_cube_groups(monkeypatch: pytest.MonkeyPatch) -> None:
     server = _load_server(monkeypatch)
     texts = [
