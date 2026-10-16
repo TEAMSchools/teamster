@@ -1,0 +1,24 @@
+<!-- @dsCard group="Type" viewport="700x210" name="Body & data figures" subtitle="Sentence-case reading copy and tabular mono for metrics" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 22px 28px; background: var(--surface-card); display:grid; grid-template-columns: 1.4fr 1fr; gap: 28px; align-items:center; }
+  p { font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--text-body); max-width: 40ch; }
+  .metrics { display:flex; flex-direction:column; gap:10px; }
+  .m { display:flex; align-items:baseline; justify-content:space-between; border-bottom:1px solid var(--divider); padding-bottom:6px; }
+  .m b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 24px; color: var(--text-strong); font-weight:700; }
+  .m span { font-family: var(--font-sans); font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+  <p>Ninety-five percent of our graduating seniors went on to a two- or four-year college. Results speak for themselves.</p>
+  <div class="metrics">
+    <div class="m"><b>9,000</b><span>students</span></div>
+    <div class="m"><b>95.2%</b><span>college enrollment</span></div>
+    <div class="m"><b>61.2%</b><span>FRL eligible</span></div>
+  </div>
+</body>
+</html>

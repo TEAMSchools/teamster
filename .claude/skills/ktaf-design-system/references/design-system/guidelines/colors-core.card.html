@@ -1,0 +1,27 @@
+<!-- @dsCard group="Colors" viewport="700x190" name="Brand core palette" subtitle="Six flat, bold network colors — Strong Indigo anchors everything" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface-card); }
+  .row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .sw { border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-subtle); }
+  .chip { height: 78px; }
+  .meta { padding: 8px 10px; }
+  .name { font-family: var(--font-brand); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-strong); }
+  .hex { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background:var(--kipp-indigo)"></div><div class="meta"><div class="name">Indigo</div><div class="hex">#001E62</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--kipp-red)"></div><div class="meta"><div class="name">Red</div><div class="hex">#EE3C37</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--kipp-orange)"></div><div class="meta"><div class="name">Orange</div><div class="hex">#F9A21A</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--kipp-green)"></div><div class="meta"><div class="name">Green</div><div class="hex">#C3D52E</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--kipp-blue)"></div><div class="meta"><div class="name">Blue</div><div class="hex">#57C0E9</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--kipp-white); border-bottom:1px solid var(--border-subtle)"></div><div class="meta"><div class="name">White</div><div class="hex">#FFFFFF</div></div></div>
+  </div>
+</body>
+</html>

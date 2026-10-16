@@ -1,0 +1,132 @@
+/* ============================================================
+   COLORS — KIPP NJ | Miami
+   ------------------------------------------------------------
+   Network palette is six bold, flat brand colors. Accents (red,
+   orange, green, blue) are used interchangeably across the NJ
+   network; regions pin specific pairs (Miami = Indigo + Orange,
+   Paterson = Indigo + Red). Strong Indigo is the anchor.
+   ============================================================ */
+
+:root {
+  /* ---- Brand core (verbatim from the 2025 brand guide) ---- */
+  --kipp-indigo: #001E62;   /* Strong Indigo — PANTONE 2758 C  */
+  --kipp-red:    #EE3C37;   /* Confident Red — PMS Bright Red C */
+  --kipp-orange: #F9A21A;   /* Vibrant Orange — PANTONE 137 C  */
+  --kipp-green:  #C3D52E;   /* Fresh Green — PANTONE 382 C     */
+  --kipp-blue:   #57C0E9;   /* Youthful Blue — PANTONE 2985 C  */
+  --kipp-white:  #FFFFFF;   /* Crisp White                     */
+
+  /* ---- Indigo ramp (anchor / cool neutrals are indigo-tinted) ---- */
+  --indigo-900: #00123c;
+  --indigo-800: #001E62;   /* = brand Strong Indigo */
+  --indigo-700: #0a2f7e;
+  --indigo-600: #1a44a0;
+  --indigo-500: #2f5fc4;
+  --indigo-300: #7fa0e0;
+  --indigo-200: #b9caf0;
+  --indigo-100: #dde6fa;
+  --indigo-50:  #eef3fc;
+
+  /* ---- Accent tints (for fills, banners, chips) ---- */
+  --orange-700: #b96b00;
+  --orange-500: #F9A21A;
+  --orange-200: #fcd99b;
+  --orange-100: #fdeccb;
+  --orange-50:  #fff6e8;
+
+  --blue-700: #1f7fb0;
+  --blue-500: #57C0E9;
+  --blue-200: #bce5f7;
+  --blue-100: #ddf2fb;
+  --blue-50:  #f0fafe;
+
+  --red-700: #b81f1b;
+  --red-500: #EE3C37;
+  --red-200: #f7b9b6;
+  --red-100: #fbdcda;
+  --red-50:  #fef0ef;
+
+  --green-700: #7e8c12;
+  --green-600: #9aac1d;
+  --green-500: #C3D52E;
+  --green-200: #e4eea0;
+  --green-100: #f1f6cf;
+  --green-50:  #f9fbe9;
+
+  /* ---- Neutral ramp (warm-cool slate, reads next to indigo) ---- */
+  --neutral-0:   #ffffff;
+  --neutral-25:  #fafbfc;
+  --neutral-50:  #f4f6f9;
+  --neutral-100: #e9edf3;
+  --neutral-200: #d6dde7;
+  --neutral-300: #b6c0cf;
+  --neutral-400: #8d99ab;
+  --neutral-500: #67738699; /* unused placeholder, see 600 */
+  --neutral-600: #5a6675;
+  --neutral-700: #404a58;
+  --neutral-800: #2a3340;
+  --neutral-900: #161d28;
+
+  /* ============================================================
+     SEMANTIC ALIASES — author against these, not raw ramps
+     ============================================================ */
+
+  /* Surfaces */
+  --surface-page:    var(--neutral-25);
+  --surface-card:    var(--neutral-0);
+  --surface-sunken:  var(--neutral-50);
+  --surface-muted:   var(--neutral-100);
+  --surface-inverse: var(--kipp-indigo);
+  --surface-accent:  var(--orange-50);
+
+  /* Text */
+  --text-strong:   var(--kipp-indigo);   /* headlines, key figures */
+  --text-body:     var(--neutral-800);   /* default reading color  */
+  --text-muted:    var(--neutral-600);   /* captions, meta         */
+  --text-subtle:   var(--neutral-400);   /* placeholders, hints    */
+  --text-inverse:  var(--kipp-white);    /* on indigo / accents    */
+  --text-on-accent:var(--kipp-indigo);   /* text on orange/green/blue */
+  --text-link:     var(--indigo-600);
+
+  /* Borders & dividers */
+  --border-subtle: var(--neutral-200);
+  --border-default:var(--neutral-300);
+  --border-strong: var(--kipp-indigo);
+  --divider:       var(--neutral-100);
+
+  /* Brand roles */
+  --brand-primary:    var(--kipp-indigo);
+  --brand-accent:     var(--kipp-orange);  /* default energy accent */
+  --brand-on-primary: var(--kipp-white);
+  --brand-on-accent:  var(--kipp-indigo);
+
+  /* Focus ring */
+  --focus-ring: var(--kipp-blue);
+
+  /* Status (maps onto the brand palette) */
+  --status-success: var(--green-600);
+  --status-success-surface: var(--green-50);
+  --status-warning: var(--orange-500);
+  --status-warning-surface: var(--orange-50);
+  --status-danger:  var(--red-500);
+  --status-danger-surface: var(--red-50);
+  --status-info:    var(--blue-500);
+  --status-info-surface: var(--blue-50);
+
+  /* Data-viz categorical order (Data team) */
+  --viz-1: var(--kipp-indigo);
+  --viz-2: var(--kipp-orange);
+  --viz-3: var(--kipp-blue);
+  --viz-4: var(--kipp-green);
+  --viz-5: var(--kipp-red);
+  --viz-6: var(--indigo-500);
+}
+
+/* ============================================================
+   REGION THEMES — set the interchangeable accent per region.
+   Apply on any container: <div data-theme="miami"> … </div>
+   ============================================================ */
+[data-theme="miami"]    { --brand-accent: var(--kipp-orange); --brand-on-accent: var(--kipp-indigo); --surface-accent: var(--orange-50); }
+[data-theme="paterson"] { --brand-accent: var(--kipp-red);    --brand-on-accent: var(--kipp-white);  --surface-accent: var(--red-50); }
+[data-theme="newark"]   { --brand-accent: var(--kipp-blue);   --brand-on-accent: var(--kipp-indigo); --surface-accent: var(--blue-50); }
+[data-theme="camden"]   { --brand-accent: var(--kipp-green);  --brand-on-accent: var(--kipp-indigo); --surface-accent: var(--green-50); }
