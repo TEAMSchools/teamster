@@ -11,6 +11,7 @@ import subprocess
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 import defusedxml.ElementTree as SafeET
 
@@ -331,11 +332,16 @@ def _hidden(text: str) -> dict[str, bool]:
     }
 
 
+def _xml_name(name: str) -> str:
+    """A sheet name as the .twb writes it inside a single-quoted attribute."""
+    return escape(name, {"'": "&apos;", '"': "&quot;"})
+
+
 def _expose(text: str, sheets: list[str]) -> str:
     for name in sheets:
         pattern = re.compile(
             r"(<window class='worksheet') hidden='true'( name='"
-            + re.escape(name)
+            + re.escape(_xml_name(name))
             + r"')"
         )
         text, n = pattern.subn(r"\1\2", text)
@@ -345,9 +351,9 @@ def _expose(text: str, sheets: list[str]) -> str:
 
 
 def _strip_click_filters(text: str, sheet: str) -> str:
-    start = text.find(f"<worksheet name='{sheet}'>")
+    start = text.find(f"<worksheet name='{_xml_name(sheet)}'>")
     if start < 0:
-        return text
+        raise ReviewCopyError(f"{sheet}: no worksheet by that name to strip")
     end = text.index("</worksheet>", start)
     block = _SELF_CLOSING_ACTION.sub("", text[start:end])
     block = _PAIRED_ACTION.sub("", block)

@@ -121,3 +121,14 @@ def test_formulas_maps_captions_to_calculations():
     assert workbook.formulas(twb) == {
         "ADA": "SUM([is_present]) / SUM([membershipvalue])"
     }
+
+
+def test_review_copy_strips_click_filters_from_a_sheet_with_an_escaped_name():
+    twb = TWB.replace("Overview - Detail", "Absences &amp; Tardies")
+    out = workbook.review_copy(twb, ["Overview"])
+    assert "[Action (" not in out
+
+
+def test_strip_click_filters_refuses_a_sheet_it_cannot_find():
+    with pytest.raises(workbook.ReviewCopyError, match="Nope"):
+        workbook._strip_click_filters(TWB, "Nope")
