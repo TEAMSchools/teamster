@@ -43,18 +43,21 @@ models:
       - name: lep_status
         data_type: boolean
         description: >-
-          Multilingual learner (ELL) status. False when the student has no
-          status on record, so every row is true or false.
+          English learner status. True or false in the New Jersey regions. In
+          Miami, null means the Focus status is tested, pending or unset, so it
+          is unknown rather than a negative.
       - name: c_504_status
         data_type: boolean
         description: >-
-          Section 504 plan status. False when the student has no status on
-          record, so every row is true or false.
+          Section 504 plan status. True or false in the New Jersey regions. In
+          Miami, null means the Focus field is unset, which does not assert that
+          the student has no plan.
       - name: gifted_and_talented
         data_type: string
         description: >-
           Gifted and talented status, Y or N, from
-          `int_extracts__student_enrollments`.
+          `int_extracts__student_enrollments`. N also covers Miami students
+          whose Focus gifted eligibility field is unset.
       - name: is_pathways
         data_type: boolean
       - name: school
