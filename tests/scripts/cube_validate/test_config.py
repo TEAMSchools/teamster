@@ -137,7 +137,7 @@ def test_scope_key_needs_a_bare_cube_member(tmp_path):
 def test_defaults_load_and_need_a_mapped_filter(tmp_path):
     filters = {"Year": {"tableau": "academic_year", "cube": "academic_year"}}
     c = config.load_checks(_write(tmp_path, filters=filters, defaults={"Year": 2026}))
-    assert c.defaults == {"Year": "2026"}
+    assert c.defaults == {"Year": ("2026",)}
     with pytest.raises(config.ConfigError, match="defaults: Grade"):
         config.load_checks(_write(tmp_path, filters=filters, defaults={"Grade": 9}))
 
@@ -180,21 +180,27 @@ def test_cube_sql_over_captured_columns_is_accepted(tmp_path):
     assert config.load_checks(_write(tmp_path, params=params)).params["P"]["v"]
 
 
-def test_a_single_item_list_default_loads_as_its_value(tmp_path):
+def test_a_single_item_list_default_loads_as_a_one_tuple(tmp_path):
     filters = {"Year": {"tableau": "Year"}}
     c = config.load_checks(
         _write(tmp_path, filters=filters, defaults={"Year": ["2026"]})
     )
-    assert c.defaults == {"Year": "2026"}
+    assert c.defaults == {"Year": ("2026",)}
 
 
-@pytest.mark.parametrize("bad", [[], ["2025", "2026"]])
-def test_a_multi_value_or_empty_list_default_is_refused(tmp_path, bad):
+def test_a_list_default_of_three_loads_as_a_three_tuple(tmp_path):
+    filters = {"Region": {"tableau": "Region"}}
+    regions = ["Camden", "Newark", "Paterson"]
+    c = config.load_checks(
+        _write(tmp_path, filters=filters, defaults={"Region": regions})
+    )
+    assert c.defaults == {"Region": ("Camden", "Newark", "Paterson")}
+
+
+def test_an_empty_list_default_is_refused(tmp_path):
     filters = {"Year": {"tableau": "Year"}}
-    with pytest.raises(
-        config.ConfigError, match="defaults.Year must be a single value"
-    ):
-        config.load_checks(_write(tmp_path, filters=filters, defaults={"Year": bad}))
+    with pytest.raises(config.ConfigError, match="defaults.Year is an empty list"):
+        config.load_checks(_write(tmp_path, filters=filters, defaults={"Year": []}))
 
 
 SKELETON = (

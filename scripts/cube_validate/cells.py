@@ -123,9 +123,13 @@ def _stored(fm: FieldMap, label: str | None, side: str) -> str | None:
     return fm.values.get(label, n)
 
 
-def _pred(fm: FieldMap, label: str | None, side: str) -> str | None:
-    """SQL over table `rows` for field = label on one side; None for (All)."""
-    if label == ALL:
+def _pred(fm: FieldMap, label: str | tuple[str, ...] | None, side: str) -> str | None:
+    """SQL over table `rows` for field = label (or in labels) on one side.
+
+    None for (All). Several labels read as IN, like Cube's equals with a list.
+    """
+    labels = label if isinstance(label, tuple) else (label,)
+    if ALL in labels:
         return None
     expr = fm.tableau if side == "t" else fm.cube_column
     if not expr:
@@ -133,8 +137,17 @@ def _pred(fm: FieldMap, label: str | None, side: str) -> str | None:
             f"{fm.caption}: no {'extract' if side == 't' else 'Cube'} column"
         )
     col = side_sql(expr, f"{side}_")
-    v = _stored(fm, label, side)
-    return f"({col} is null)" if v is None else f"({col} = {lit(v)})"
+    stored = [_stored(fm, x, side) for x in labels]
+    if len(stored) == 1:
+        v = stored[0]
+        return f"({col} is null)" if v is None else f"({col} = {lit(v)})"
+    vals = [lit(v) for v in stored if v is not None]
+    parts = []
+    if vals:
+        parts.append(f"{col} in ({', '.join(vals)})")
+    if None in stored:
+        parts.append(f"{col} is null")
+    return "(" + " or ".join(parts) + ")"
 
 
 def cube_query(
@@ -154,18 +167,21 @@ def cube_query(
     dimensions = [f"{v}.{d.cube}" for d in sm.dims.values() if d.cube]
     filters: list[dict] = []
     for caption, label in _cut_filters(checks, cut, click_filters).items():
-        if label == ALL:
+        if ALL in label:
             continue
         fm = checks.filters.get(caption)
         if fm is None or not fm.cube:
             raise MappingGap(caption)
-        stored = _stored(fm, label, "c")
+        stored = [_stored(fm, x, "c") for x in label]
         member = f"{v}.{fm.cube}"
-        filters.append(
-            {"member": member, "operator": "notSet"}
-            if stored is None
-            else {"member": member, "operator": "equals", "values": [stored]}
-        )
+        if None in stored:
+            # equals cannot match a missing value, so a null in the list
+            # makes the filter unexpressible; refuse rather than guess
+            if len(stored) > 1:
+                raise MappingGap(f"{caption}: a blank among several values")
+            filters.append({"member": member, "operator": "notSet"})
+        else:
+            filters.append({"member": member, "operator": "equals", "values": stored})
     for caption, value in cut.params.items():
         pv = checks.params.get(caption, {}).get(value)
         if pv is None:
@@ -203,9 +219,15 @@ class Cell:
     students: tuple[int, int] = (0, 0)
 
 
-def _cut_filters(checks: Checks, cut: Cut, click: dict[str, str]) -> dict[str, str]:
-    """The dashboard's defaults, then the cut's own filters, then the click's."""
-    return {**checks.defaults, **cut.filters, **click}
+def _cut_filters(
+    checks: Checks, cut: Cut, click: dict[str, str]
+) -> dict[str, tuple[str, ...]]:
+    """The dashboard's defaults, then the cut's own filters, then the click's.
+
+    A cut or click filter holds 1 value and replaces the caption's default.
+    """
+    own = {**cut.filters, **click}
+    return {**checks.defaults, **{k: (v,) for k, v in own.items()}}
 
 
 def _cut_preds(checks: Checks, cut: Cut, click: dict[str, str], side: str) -> list[str]:

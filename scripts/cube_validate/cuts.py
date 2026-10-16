@@ -55,7 +55,10 @@ def draft_cuts(
                     "click": {"source_sheet": a.source_sheet, "mark": "largest"},
                 }
             )
-    return out
+    unique: dict[str, dict] = {}
+    for c in out:
+        unique.setdefault(c["id"], c)
+    return list(unique.values())
 
 
 def plan_yaml(
@@ -79,26 +82,32 @@ def plan_yaml(
         The draft as YAML, led by every dashboard and extract the workbook holds.
     """
     sheets = {s: {} for d in dashboards for s in wb.dashboards.get(d, [])}
-    defaults: dict[str, str | list[str]] = {}
+    # defaults differ by dashboard, so print each dashboard's own
+    defaults: dict[str, dict[str, str | list[str]]] = {}
     for f in wb.filters:
-        if f.dashboard in dashboards and f.caption not in defaults:
-            shown = list(f.default_values)
-            defaults[f.caption] = (
-                ALL
-                if f.default_all or not shown
-                else shown[0]
-                if len(shown) == 1
-                else shown
-            )
+        if f.dashboard not in dashboards:
+            continue
+        shown = list(f.default_values)
+        defaults.setdefault(f.dashboard, {}).setdefault(
+            f.caption,
+            ALL
+            if f.default_all or not shown
+            else shown[0]
+            if len(shown) == 1
+            else shown,
+        )
+    cards = sorted({c for d in defaults.values() for c in d})
     draft = {
         "dashboards": list(wb.dashboards),
         "datasources": list(datasources or []),
         "sheets": sheets,
         "extract_columns": columns,
-        "filter_cards": sorted(defaults),
-        # what each card shows before anyone touches it; copy the single-valued
-        # ones into the checks file's defaults
-        "filter_card_defaults": dict(sorted(defaults.items())),
+        "filter_cards": cards,
+        # what each card shows before anyone touches it, per dashboard; copy
+        # them into the checks file's defaults (a list holds several values)
+        "filter_card_defaults": {
+            d: dict(sorted(v.items())) for d, v in sorted(defaults.items())
+        },
         "params": sorted({p.caption for p in wb.params if p.dashboard in dashboards}),
         "cuts": draft_cuts(wb, dashboards, values),
     }

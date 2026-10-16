@@ -77,8 +77,12 @@ refuses otherwise.
    the reason, every sheet with no Cube counterpart, every sheet on another data
    source ("separate run"), and every sheet that blends 2 data sources
    ("blended, not checked"). Never list a sheet with a name or student-ID
-   column. Copy each single-valued `filter_card_defaults` entry into `defaults`;
-   skip `(All)`. A card that starts on 2 or more values is not supported.
+   column. `filter_card_defaults` lists each card's starting value per
+   dashboard; a list means the card starts on several values. Copy them into
+   `defaults` (a value or a list) and skip `(All)`. A list reads as IN on the
+   extract and Cube sides, and a cut's own filter on that card replaces it.
+   Defaults differ by dashboard, so 1 checks file covers only the dashboards
+   whose defaults match; give the others their own file.
 2. Evening 1: `run <checks>`. Rows layer and exports are now frozen. Cells are
    mostly "mapping unproven" or "no Cube counterpart" until mapping.
 3. Map from the exports in `<snapshot>/exports/` (see _Mapping a sheet_).

@@ -471,7 +471,7 @@ def test_display_equal_accepts_exact_halves_despite_float_noise():
 def test_defaults_apply_to_every_cut_and_a_cut_filter_overrides_them():
     import dataclasses
 
-    checks = dataclasses.replace(_checks(), defaults={"Region": "Newark"})
+    checks = dataclasses.replace(_checks(), defaults={"Region": ("Newark",)})
     sm = "ADA"
     q = cells.cube_query(checks, sm, config.Cut("default"), {})
     assert q["filters"] == [
@@ -494,7 +494,7 @@ def test_default_filter_values_prove_the_default_cut_and_its_repeats(tmp_path):
 
     checks = dataclasses.replace(
         _with_sheet(dims={}),
-        defaults={"Region": "Newark"},
+        defaults={"Region": ("Newark",)},
         cuts=(config.Cut("default"), config.Cut("same", {"Region": "Newark"})),
     )
     total = b"ADA,Students\n94.2%,2\n"
@@ -506,3 +506,45 @@ def test_default_filter_values_prove_the_default_cut_and_its_repeats(tmp_path):
         ("default", cells.PASS),
         ("same", cells.PASS),
     ]
+
+
+def test_multi_value_default_reads_as_in_on_both_sides_and_in_cubes_equals():
+    import dataclasses
+
+    three = ("Camden", "Newark", "Paterson")
+    checks = dataclasses.replace(_checks(), defaults={"Region": three})
+    default = config.Cut("default")
+    q = cells.cube_query(checks, "ADA", default, {})
+    assert q["filters"] == [
+        {
+            "member": "v.regions_region_name",
+            "operator": "equals",
+            "values": list(three),
+        }
+    ]
+    in_list = "('Camden', 'Newark', 'Paterson')"
+    assert cells._cut_preds(checks, default, {}, "t") == [f'("t_region" in {in_list})']
+    assert cells._cut_preds(checks, default, {}, "c") == [
+        f'("c_regions_region_name" in {in_list})'
+    ]
+
+
+def test_a_cut_filter_overrides_a_multi_value_default():
+    import dataclasses
+
+    checks = dataclasses.replace(
+        _checks(), defaults={"Region": ("Camden", "Newark", "Paterson")}
+    )
+    cut = config.Cut("c", {"Region": "Camden"})
+    assert cells.cube_query(checks, "ADA", cut, {})["filters"] == [
+        {"member": "v.regions_region_name", "operator": "equals", "values": ["Camden"]}
+    ]
+    assert cells._cut_preds(checks, cut, {}, "t") == ["(\"t_region\" = 'Camden')"]
+
+
+def test_all_among_defaults_means_no_default():
+    import dataclasses
+
+    checks = dataclasses.replace(_checks(), defaults={"Region": (cells.ALL,)})
+    assert cells.cube_query(checks, "ADA", config.Cut("default"), {})["filters"] == []
+    assert cells._cut_preds(checks, config.Cut("default"), {}, "t") == []

@@ -60,7 +60,49 @@ def test_plan_yaml_lists_sheets_columns_and_cuts():
 
 def test_plan_yaml_prints_each_cards_default_values():
     d = yaml.safe_load(cuts.plan_yaml(_wb(), ["Overview"], [], {}))
-    assert d["filter_card_defaults"] == {"Region": "(All)", "Year": "2026"}
+    assert d["filter_card_defaults"] == {
+        "Overview": {"Region": "(All)", "Year": "2026"}
+    }
+
+
+def test_plan_yaml_prints_defaults_per_dashboard_and_lists_multi_values():
+    wb = workbook.Workbook(
+        dashboards={"A": ["S"], "B": ["S"]},
+        filters=[
+            workbook.FilterCard(
+                "A",
+                "region",
+                "Region",
+                "ds",
+                False,
+                False,
+                default_values=("Camden", "Newark", "Paterson"),
+            ),  # fmt: skip
+            workbook.FilterCard(
+                "B", "region", "Region", "ds", False, False, default_values=("Newark",)
+            ),
+        ],
+        params=[],
+        actions=[],
+    )
+    d = yaml.safe_load(cuts.plan_yaml(wb, ["A", "B"], [], {}))
+    assert d["filter_card_defaults"] == {
+        "A": {"Region": ["Camden", "Newark", "Paterson"]},
+        "B": {"Region": "Newark"},
+    }
+    assert d["filter_cards"] == ["Region"]
+
+
+def test_a_parameter_on_three_dashboards_gives_one_cut():
+    wb = workbook.Workbook(
+        dashboards={"A": ["S"], "B": ["S"], "C": ["S"]},
+        filters=[],
+        params=[workbook.Param(d, "Metric", ("ADA", "Tardy"), "ADA") for d in "ABC"],
+        actions=[],
+    )
+    d = yaml.safe_load(cuts.plan_yaml(wb, ["A", "B", "C"], [], {}))
+    ids = [c["id"] for c in d["cuts"]]
+    assert ids == ["default", "param-metric-tardy"]
 
 
 def test_plan_yaml_lists_every_dashboard_and_extract():

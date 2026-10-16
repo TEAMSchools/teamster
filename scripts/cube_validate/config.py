@@ -140,7 +140,8 @@ class Checks:
     cuts: tuple[Cut, ...]
     excluded_sheets: dict[str, str]
     # The dashboard's own filter values, applied to every cut before its filters.
-    defaults: dict[str, str] = field(default_factory=dict)
+    # A card may start on several values; a cut's own filter replaces them all.
+    defaults: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
 
 def side_sql(expr: str, prefix: str) -> str:
@@ -204,16 +205,13 @@ def _cut(i: int, v: dict) -> Cut:
     )
 
 
-def _default(caption: str, value) -> str:
-    """A filter card's default as 1 value; plan.yml prints single values as lists."""
+def _default(caption: str, value) -> tuple[str, ...]:
+    """A filter card's default as 1 or more values."""
     if isinstance(value, list):
-        if len(value) != 1:
-            raise ConfigError(
-                f"defaults.{caption} must be a single value; "
-                "multi-value defaults are not supported"
-            )
-        value = value[0]
-    return str(value)
+        if not value:
+            raise ConfigError(f"defaults.{caption} is an empty list; name its values")
+        return tuple(str(v) for v in value)
+    return (str(value),)
 
 
 def _cube_columns(expr: str | None) -> list[str]:
