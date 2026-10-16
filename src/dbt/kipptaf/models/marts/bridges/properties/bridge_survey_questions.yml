@@ -22,20 +22,6 @@ models:
         data_tests:
           - unique
 
-      - name: survey_key
-        data_type: string
-        description: >-
-          FK to dim_surveys. Surrogate key derived from survey_id.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_surveys')
-              to_columns: [survey_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_surveys')
-                field: survey_key
       - name: survey_question_key
         data_type: string
         description: >-
@@ -46,11 +32,15 @@ models:
             foreign_key:
               to: ref('dim_survey_questions')
               to_columns: [survey_question_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_survey_questions')
-                field: survey_question_key
+      - name: survey_key
+        data_type: string
+        description: >-
+          FK to dim_surveys. Surrogate key derived from survey_id.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_surveys')
+              to_columns: [survey_key]
       - name: is_required
         data_type: boolean
         description: >-

@@ -502,10 +502,10 @@ models:
       - name: course_section_number
         data_type: string
         description:
-          Enrolled course section for the subject, from PowerSchool course
-          enrollments (null for Miami).
+          Enrolled course section for the subject, from the student's SIS course
+          enrollments (PowerSchool, or the Focus schedule for Miami).
       - name: course_teacher_lastfirst
         data_type: string
         description:
-          Teacher of that course section, from PowerSchool course enrollments
-          (null for Miami).
+          Teacher of that course section, from the student's SIS course
+          enrollments (PowerSchool, or the Focus schedule for Miami).
