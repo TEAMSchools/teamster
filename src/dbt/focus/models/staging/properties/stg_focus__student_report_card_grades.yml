@@ -85,8 +85,10 @@ models:
           gradebook (the live grade, posted by a staff account), DY is
           yesterday's grade (a daily snapshot written by the cron admin
           account), E is an exam. Null on imported course history, which carries
-          no prefix. Part of the grain: DT and DY are two rows for the same
-          student, course period and marking period.
+          no prefix, and on a posted grade — a live posting a school finalizes
+          for a marking period, inferred from the data rather than the vendor
+          documentation. Part of the grain: DT, DY and a posted grade are
+          separate rows for the same student, course period and marking period.
         data_type: string
       - name: percent_grade
         description: >-
