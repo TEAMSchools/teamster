@@ -235,3 +235,21 @@ def test_cost_cap_defaults_to_five_dollars(tmp_path):
 def test_cost_cap_in_gigabytes_is_refused(tmp_path):
     with pytest.raises(config.ConfigError, match="cost_cap_usd"):
         config.load_checks(_write(tmp_path, cost_cap_gb=50))
+
+
+def test_a_cause_is_inert_only_when_it_says_so(tmp_path):
+    causes = [
+        {"id": "a", "description": "d", "where": "true", "owner": "dashboard"},
+        {
+            "id": "b",
+            "description": "d",
+            "where": "true",
+            "owner": "dashboard",
+            "inert": True,
+        },
+    ]
+    c = config.load_checks(_write(tmp_path, causes=causes))
+    assert [x.inert for x in c.causes] == [False, True]
+    bad = [{**causes[1], "inert": "yes"}]
+    with pytest.raises(config.ConfigError, match="inert"):
+        config.load_checks(_write(tmp_path, causes=bad))

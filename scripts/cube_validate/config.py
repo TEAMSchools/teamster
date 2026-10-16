@@ -105,6 +105,8 @@ class Cause:
     description: str
     where: str
     owner: str
+    # Its rows cannot move any mapped measure, so they never block a pass.
+    inert: bool = False
 
 
 @dataclass(frozen=True)
@@ -290,8 +292,17 @@ def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
             raise ConfigError(f"cause id {cid} is reserved for a bucket")
         if c.get("owner") not in OWNERS:
             raise ConfigError(f"cause {cid}: owner must be one of {', '.join(OWNERS)}")
+        inert = c.get("inert", False)
+        if not isinstance(inert, bool):
+            raise ConfigError(f"cause {cid}: inert must be true or false")
         causes.append(
-            Cause(cid, _req(c, "description", cid), _req(c, "where", cid), c["owner"])
+            Cause(
+                cid,
+                _req(c, "description", cid),
+                _req(c, "where", cid),
+                c["owner"],
+                inert,
+            )
         )
     if len({c.id for c in causes}) != len(causes):
         raise ConfigError("cause ids must be unique")

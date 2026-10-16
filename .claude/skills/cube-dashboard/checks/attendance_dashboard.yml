@@ -70,6 +70,10 @@ causes:
       base = 'cube_only' and (c_membership_value <> 1 or c_attendance_value is
       null)
     owner: dashboard
+    # avg_daily_attendance counts only days with membership 1 and an attendance
+    # value (src/cube/model/cubes/students/student_attendance_enrollment_daily.yml),
+    # so these rows cannot move it. Recheck when a sheet maps another measure.
+    inert: true
 # Attendance Rollup's cards start on these values.
 defaults:
   Academic Year: "2026"

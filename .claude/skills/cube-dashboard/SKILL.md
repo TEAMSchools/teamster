@@ -123,6 +123,11 @@ analyst approves it. Causes are SQL over table `rows`: `base`, `k_<key>`,
 `t_<extract column>`, `c_<Cube column>`, `t__dup`, `c__dup`. Two causes claiming
 one row stop the report; never order them to make it pass.
 
+Set `inert: true` on a cause only when its rows cannot move any mapped measure,
+checked against each measure's Cube definition. Its rows then count as matched,
+so a cell they sit under can pass. Without it such a cell reads "coincidental
+match".
+
 ## Reading the report
 
 - **Trust verdict first.** Trusted only when every invariant holds, including

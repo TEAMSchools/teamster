@@ -197,11 +197,14 @@ def cube_query(
     }
 
 
-def verdict(equal: bool, buckets: list) -> str:
-    """The spec's verdict table for a cell whose cut is judgeable."""
+def verdict(equal: bool, buckets: list, inert: frozenset = frozenset()) -> str:
+    """The spec's verdict table for a cell whose cut is judgeable.
+
+    Rows claimed by an inert cause count as matched: they cannot move the measure.
+    """
     if not buckets:
         return NO_ROWS
-    all_match = all(b[0] == "match" for b in buckets)
+    all_match = all(b[0] == "match" or b[1] in inert for b in buckets)
     if equal:
         return PASS if all_match else COINCIDENTAL
     return FORMULA_GAP if all_match else ROW_GAP
@@ -292,6 +295,7 @@ def judge(
     Returns:
         One Cell per exported number, plus one per Cube mark Tableau did not show.
     """
+    inert = frozenset(c.id for c in checks.causes if c.inert)
     student = f'"k_{checks.student_key}"'
     default = checks.cuts[0]
     try:
@@ -391,7 +395,7 @@ def judge(
                         vd, rs = UNPROVEN, "Cube answer has no mark for these labels"
                     else:
                         vd, rs = (
-                            verdict(display_equal(v, cube_v, m.scale), buckets),
+                            verdict(display_equal(v, cube_v, m.scale), buckets, inert),
                             "",
                         )
                     out.append(

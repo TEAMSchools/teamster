@@ -555,3 +555,19 @@ def test_parse_export_drops_all_subtotal_rows():
     assert cells.parse_export(data) == [
         {"Grade Level": "11", "School": "NCA", "ADA": "87%"}
     ]
+
+
+@pytest.mark.parametrize(
+    ("equal", "want"),
+    [(True, cells.PASS), (False, cells.FORMULA_GAP)],
+)
+def test_rows_of_an_inert_cause_do_not_block_a_pass(equal, want):
+    buckets = [("match", None, 5, 2), ("cube_only", "no-membership", 3, 1)]
+    assert cells.verdict(equal, buckets, frozenset({"no-membership"})) == want
+
+
+def test_rows_of_a_cause_that_is_not_inert_still_make_a_coincidental_match():
+    buckets = [("match", None, 5, 2), ("cube_only", "late-entry", 3, 1)]
+    assert cells.verdict(True, buckets, frozenset({"no-membership"})) == (
+        cells.COINCIDENTAL
+    )
