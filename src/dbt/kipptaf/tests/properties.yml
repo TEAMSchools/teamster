@@ -479,6 +479,24 @@ data_tests:
           ref:
             name: int_students__course_enrollments
 
+  - name: int_students__final_grades__enrollment_covers_term
+    description: >-
+      Warns when a graded term grade attaches to a course enrollment whose dates
+      do not overlap the grade's term. Each grade joins one enrollment through
+      cc_dcid; for Focus that is the stint int_focus__schedule kept for the
+      student and course period, so a wrong pick there surfaces here. Blank
+      placeholder rows (no letter or percent grade) are skipped, since
+      PowerSchool writes them for terms the student never reached. exit_date is
+      the first day not enrolled in both SIS, so an enrollment that exits on the
+      term's first day misses it. Any returned row is a failure. Check the
+      student's schedule in the SIS; a re-add in the wrong course period or a
+      backdated drop is the usual cause.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_students__final_grades
+
   - name: test_focus_course_sections_teacher_resolves
     description: >-
       Warns on Focus course periods whose lead teacher does not resolve through
