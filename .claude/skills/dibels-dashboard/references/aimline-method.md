@@ -513,8 +513,21 @@ Before building on any of it:
 - The 490 students below aimline but at benchmark (681 AY2025 rows) sit in
   `Meeting Aimline, Meeting Benchmark`, so the label is false for them.
   Academics knew and chose that on 2026-09-24. Do not move them.
-- Label renames break literal-string calcs in the workbook. Hand the user the
-  old and new values when the extract changes.
+- Label renames break literal-string calcs in the workbook, and its colour map.
+  Category Status colours are keyed on the label string, so a renamed label
+  loses its colour and Tableau fills in a palette default: the two
+  `No Aimline Data` categories rendered green and teal from the 2026-09-24
+  rename until 2026-10-06. Hand the user the old and new values for calcs and
+  colours both when the extract changes.
+- `No Aimline Data, Meeting Benchmark` shares the dark blue of
+  `Meeting Aimline, Meeting Benchmark` on purpose (T&L, 2026-10-06), the same
+  benchmark-wins logic as the category itself. Do not recolour it to set it
+  apart. `No Aimline Data, Not Yet at Benchmark` is light orange `#ffbc79`.
+- Category Sort orders the stacked segments, and the views sort it DESCENDING,
+  so members that tie on it render in reverse alphabetical order. Identify a
+  segment by its label and percentage on a render, never by reasoning from the
+  sort calc: that inference swapped the two `No Aimline Data` categories on
+  2026-10-06.
 - Partial rounds differ by comparison item, on purpose. The Aimline item holds
   them out at Round granularity only and scores each sat measure at Measure
   Standard and Measure. Aimline and Benchmark holds them out as
