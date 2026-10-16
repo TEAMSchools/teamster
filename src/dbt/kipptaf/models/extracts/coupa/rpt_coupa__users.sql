@@ -210,7 +210,7 @@ with
         left join
             {{ ref("stg_coupa__addresses") }} as a
             on anc.coupa_address_name = a.name
-            and a.active
+            and a.is_current_for_name
     )
 
 select

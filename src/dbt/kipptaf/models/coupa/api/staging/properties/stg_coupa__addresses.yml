@@ -1,23 +1,66 @@
 models:
   - name: stg_coupa__addresses
+    description: >-
+      Coupa company addresses from the Coupa API, one row per address record.
+      Every record is kept; `is_current_for_name` marks the one address per name
+      that the Coupa users feed assigns as a default address.
     columns:
       - name: id
         data_type: int64
+        description: Coupa address record id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: name
         data_type: string
+        description:
+          Address name. The address-name crosswalk sheet matches staff locations
+          to this value.
+        data_tests:
+          - unique:
+              name: stg_coupa__addresses_name_unique_active
+              description: >-
+                Two active Coupa addresses share a name. This happens while a
+                school moves buildings and Coupa keeps both open for deliveries.
+                Staff get the newest one (`is_current_for_name`). To fix, rename
+                the old building's address in Coupa so each active name is
+                unique.
+              config:
+                where: active
+                severity: warn
+          - unique:
+              name: stg_coupa__addresses_name_unique_current
+              config:
+                where: is_current_for_name
+                severity: error
+      - name: is_current_for_name
+        data_type: boolean
+        description:
+          True for the active address with the highest `id` among active
+          addresses sharing its name; false for every other row. A higher `id`
+          is the newer record, so during a building move the new building wins.
       - name: location_code
         data_type: string
+        description: Coupa address location code.
       - name: street1
         data_type: string
+        description: First street line.
       - name: city
         data_type: string
+        description: City.
       - name: state
         data_type: string
+        description: State.
       - name: postal_code
         data_type: string
+        description: Postal code.
       - name: active
         data_type: boolean
+        description: Whether the address is active in Coupa.
       - name: street2
         data_type: string
+        description: Second street line; null when blank in Coupa.
       - name: attention
         data_type: string
+        description: Attention line; null when blank in Coupa.
