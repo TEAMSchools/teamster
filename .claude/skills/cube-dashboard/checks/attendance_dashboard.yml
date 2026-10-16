@@ -5,8 +5,8 @@ dashboard: attendance_dashboard
 workbook: Attendance Dashboard # confirm against `plan`'s download
 workbook_luid: 87c13e78-a912-40a4-95dd-33248fc1cbd3
 review_project_luid: ddc817c2-6bc7-4bca-8be9-e385f95b9ebc
-dashboards: [] # tabs in scope, from plan.yml
-datasource: "" # the extract's caption, from plan.yml
+dashboards: [Attendance Rollup]
+datasource: rpt_tableau__attendance_dashboard (kipptaf_tableau)
 dashboard_table: teamster-332318.kipptaf_tableau.rpt_tableau__attendance_dashboard
 period_start: 2026-07-01
 # Extract refreshes 6:00 AM and 3:00 PM; Cube's facts rebuild ~6:15 AM and
@@ -35,6 +35,13 @@ cube:
     - is_iss
     - is_oss
     - is_in_session_day
+    - dates_academic_year
+    - terms_term_name
+    - is_iep
+    - is_ell
+    - gender_identity
+    - race
+    - enrollment_status
   filters: []
 rows:
   student_key: student
@@ -56,9 +63,54 @@ rows:
   labels:
     region: { tableau: region, cube: regions_region_name }
 causes: []
-filters: {}
+# Attendance Rollup's cards start on these values.
+defaults:
+  Academic Year: "2026"
+  Region: [Camden, Newark, Paterson]
+filters:
+  Academic Year:
+    tableau: academic_year
+    cube: dates_academic_year
+    cube_column: dates_academic_year
+  Region:
+    tableau: region
+    cube: regions_region_name
+    cube_column: regions_region_name
+  School:
+    tableau: school_abbreviation
+    cube: locations_abbreviation
+    cube_column: locations_abbreviation
 params: {}
-sheets: {}
+sheets:
+  Y1 ADA - Region: {}
+  Y1 ADA - ES: {}
+  Y1 ADA - MS: {}
+  Y1 ADA - HS: {}
+# One cut per card or parameter value that has a Cube counterpart and falls in
+# this year's capture. Dropped from the draft: past-year dates, and cards with
+# no Cube member (504, counseling, NJ tier, ms_attended, chronic tardiness).
 cuts:
   - id: default
+  - id: filter-region
+    filters: { Region: Miami }
+  - id: filter-school
+    filters: { School: BOLD }
+  - id: filter-term
+    filters: { Term: Q1 }
+  - id: filter-iep-status
+    filters: { Iep Status: No IEP }
+  - id: filter-lep-status
+    filters: { Lep Status: "False" }
+  - id: filter-gender
+    filters: { Gender: F }
+  - id: filter-ethnicity
+    filters: { Ethnicity: A }
+  - id: filter-enroll-status
+    filters: { Enroll Status: "0" }
+  - id: param-attendance-metric-on-time
+    params: { Attendance Metric: \% On-Time }
+  - id: param-attendance-metric-chronic-absenteeism
+    params: { Attendance Metric: Chronic Absenteeism }
+  - id: param-attendance-metric-truant-on-track-for-truancy
+    params: { Attendance Metric: Truant/On Track for Truancy }
 excluded_sheets: {}
