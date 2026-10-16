@@ -284,7 +284,7 @@ def _run(checks, args) -> int:
     parts = capture_cube.pull_rows(
         cube, snap, capture_cube.row_queries(checks, start, end), built
     )
-    scope = capture_cube.capture_scope(cube, checks)
+    scope = capture_cube.capture_scope(cube, checks, built)
     if checks.scope_key and not scope:
         print(
             "WARNING: Cube returned an empty scope for this identity; every "

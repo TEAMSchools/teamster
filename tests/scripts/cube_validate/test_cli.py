@@ -292,7 +292,9 @@ def _fake_run(tmp_path, monkeypatch, pull_rows):
         cli, "_resume_checks", lambda *a: (dt.date(2026, 10, 5), dt.date(2026, 10, 15))
     )
     monkeypatch.setattr(cc, "pull_rows", pull_rows)
-    monkeypatch.setattr(cc, "capture_scope", lambda cube, checks: ["Rise", "TEAM"])
+    monkeypatch.setattr(
+        cc, "capture_scope", lambda cube, checks, built: ["Rise", "TEAM"]
+    )
     monkeypatch.setattr(cc, "write_cube_hyper", lambda s, c, t: 0)
     monkeypatch.setattr(cc, "capture_answers", lambda *a: {})
     monkeypatch.setattr(cli, "analyze_snapshot", lambda c, s: (s.dir, "ok"))
@@ -311,7 +313,9 @@ def test_run_records_the_scope_cube_reports(tmp_path, monkeypatch):
 
 def test_run_warns_when_cube_reports_an_empty_scope(tmp_path, monkeypatch, capsys):
     snap, run = _fake_run(tmp_path, monkeypatch, lambda *a: {})
-    monkeypatch.setattr(cli.capture_cube, "capture_scope", lambda cube, checks: [])
+    monkeypatch.setattr(
+        cli.capture_cube, "capture_scope", lambda cube, checks, built: []
+    )
     assert run() == 0
     out = capsys.readouterr().out
     assert "empty scope" in out and "outside scope" in out

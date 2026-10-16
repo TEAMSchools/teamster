@@ -123,7 +123,13 @@ class CubeClient:
         r = self._http().get(
             f"{self.url}/meta", headers={"Authorization": self._token()}
         )
-        for c in r.json().get("cubes", []):
+        if r.status_code >= 400:
+            raise CubeError(f"HTTP {r.status_code} from /meta")
+        try:
+            body = r.json()
+        except ValueError as e:
+            raise CubeError(f"HTTP {r.status_code} from /meta") from e
+        for c in body.get("cubes", []):
             if c["name"] == view:
                 return {
                     m["name"].split(".", 1)[1]: m["type"]
@@ -299,19 +305,22 @@ def scope_query(checks) -> dict | None:
     }
 
 
-def capture_scope(client, checks) -> list[str]:
+def capture_scope(client, checks, built_at: dt.datetime) -> list[str]:
     """The scope key's values Cube shows this identity, sorted.
 
     Raises:
-        CaptureError: The scope answer failed, was short or hit the row limit.
+        CaptureError: The scope answer failed, was stale, short or hit the row
+            limit.
     """
     q = scope_query(checks)
     if q is None:
         return []
     try:
-        r = client.load(q)
+        r, stale = _current(client, q, built_at)
     except CubeError as e:
         raise CaptureError(f"Cube scope query failed: {e}") from e
+    if stale:
+        raise CaptureError(f"Cube scope query is stale: {stale}")
     if r.total is None or len(r.data) != r.total:
         raise CaptureError(f"Cube scope query returned {len(r.data)} of {r.total} rows")
     if len(r.data) >= CUBE_LIMIT:

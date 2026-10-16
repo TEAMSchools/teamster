@@ -218,9 +218,10 @@ def test_capture_scope_returns_the_values_cube_sends_back():
                 {"v.locations_abbreviation": None, "v.count_students": 1},
             ],
             "total": 3,
+            "lastRefreshTime": "2026-10-15T20:00:00.000Z",
         }
 
-    assert capture_cube.capture_scope(_client(answer), _scope_checks()) == [
+    assert capture_cube.capture_scope(_client(answer), _scope_checks(), BUILT) == [
         "Rise",
         "TEAM",
     ]
@@ -228,12 +229,51 @@ def test_capture_scope_returns_the_values_cube_sends_back():
 
 
 def test_capture_scope_refuses_a_short_answer():
-    c = _client(lambda u, q: {"data": [{"v.locations_abbreviation": "R"}], "total": 2})
+    c = _client(
+        lambda u, q: {
+            "data": [{"v.locations_abbreviation": "R"}],
+            "total": 2,
+            "lastRefreshTime": "2026-10-15T20:00:00.000Z",
+        }
+    )
     with pytest.raises(capture_cube.CaptureError, match="scope"):
-        capture_cube.capture_scope(c, _scope_checks())
+        capture_cube.capture_scope(c, _scope_checks(), BUILT)
+
+
+def test_capture_scope_refuses_a_stale_answer():
+    c = _client(
+        lambda u, q: {
+            "data": [],
+            "total": 0,
+            "lastRefreshTime": "2026-10-15T10:00:00.000Z",
+        }
+    )
+    with pytest.raises(capture_cube.CaptureError, match="older than"):
+        capture_cube.capture_scope(c, _scope_checks(), BUILT)
 
 
 def test_no_scope_key_means_no_scope_query():
     checks = SimpleNamespace(**{**vars(_scope_checks()), "scope_key": None})
     assert capture_cube.scope_query(checks) is None
-    assert capture_cube.capture_scope(_client(lambda u, q: pytest.fail()), checks) == []
+    c = _client(lambda u, q: pytest.fail())
+    assert capture_cube.capture_scope(c, checks, BUILT) == []
+
+
+def _meta_client(status, body):
+    http = SimpleNamespace(
+        get=lambda url, headers: SimpleNamespace(status_code=status, json=body)
+    )
+    return capture_cube.CubeClient("https://cube/x", "s" * 32, "me@x", http=http)
+
+
+def test_member_types_names_an_http_error():
+    with pytest.raises(capture_cube.CubeError, match="HTTP 503 from /meta"):
+        _meta_client(503, lambda: {"error": "down"}).member_types("v")
+
+
+def test_member_types_names_a_body_that_is_not_json():
+    def bad():
+        raise ValueError("no json")
+
+    with pytest.raises(capture_cube.CubeError, match="HTTP 200 from /meta"):
+        _meta_client(200, bad).member_types("v")
