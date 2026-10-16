@@ -253,3 +253,35 @@ def test_a_cause_is_inert_only_when_it_says_so(tmp_path):
     bad = [{**causes[1], "inert": "yes"}]
     with pytest.raises(config.ConfigError, match="inert"):
         config.load_checks(_write(tmp_path, causes=bad))
+
+
+def _metric(values):
+    sheets = {
+        "S": {"measures": {"M": {"cube": "avg_daily_attendance", "param": "Metric"}}}
+    }
+    return {"sheets": sheets, "params": {"Metric": values}}
+
+
+def test_a_parameter_value_loads_its_measure_view_and_renames(tmp_path):
+    chronic = {
+        "measure": "pct_chronically_absent",
+        "view": "p",
+        "rename": {"dates_academic_year": "academic_year"},
+    }
+    c = config.load_checks(_write(tmp_path, **_metric({"Chronic": chronic})))
+    pv = c.params["Metric"]["Chronic"]
+    assert (pv.measure, pv.view) == ("pct_chronically_absent", "p")
+    assert pv.rename == {"dates_academic_year": "academic_year"}
+    assert c.sheets["S"].measures["M"].param == "Metric"
+
+
+def test_a_swapped_measure_needs_a_measure_on_every_listed_value(tmp_path):
+    with pytest.raises(config.ConfigError, match="Metric.*On-Time.*measure"):
+        config.load_checks(_write(tmp_path, **_metric({"On-Time": {"view": "p"}})))
+
+
+def test_a_measure_cannot_name_an_unknown_parameter(tmp_path):
+    over = _metric({})
+    over["params"] = {}
+    with pytest.raises(config.ConfigError, match="param Metric"):
+        config.load_checks(_write(tmp_path, **over))

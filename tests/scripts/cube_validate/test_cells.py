@@ -571,3 +571,77 @@ def test_rows_of_a_cause_that_is_not_inert_still_make_a_coincidental_match():
     assert cells.verdict(True, buckets, frozenset({"no-membership"})) == (
         cells.COINCIDENTAL
     )
+
+
+def _swapped():
+    """ADA by default; Chronic swaps to another view whose region member differs."""
+    sm = _checks().sheets["ADA"]
+    sheet = config.SheetMap(
+        "ADA",
+        "v",
+        dims=sm.dims,
+        measures={
+            "ADA": config.MeasureMap("ADA", "avg_daily_attendance", param="Metric")
+        },
+        students="Students",
+    )
+    period = {"member": "p.period_type", "operator": "equals", "values": ["year"]}
+    params = {
+        "Metric": {
+            "Chronic": config.ParamValue(
+                cube_filters=(period,),
+                measure="pct_chronically_absent",
+                view="p",
+                rename={"regions_region_name": "region"},
+            )
+        }
+    }
+    cuts = (config.Cut("default"), config.Cut("chronic", params={"Metric": "Chronic"}))
+    return _checks(sheets={"ADA": sheet}, params=params, cuts=cuts), period
+
+
+def test_a_parameter_value_swaps_the_measure_view_and_renamed_members():
+    checks, period = _swapped()
+    cut = config.Cut("c", {"Region": "Camden"}, {"Metric": "Chronic"})
+    q = cells.cube_query(checks, "ADA", cut, {})
+    assert q["measures"] == ["p.count_students", "p.pct_chronically_absent"]
+    assert q["dimensions"] == ["p.locations_abbreviation"]
+    assert q["filters"] == [
+        {"member": "p.region", "operator": "equals", "values": ["Camden"]},
+        period,
+    ]
+    default = cells.cube_query(checks, "ADA", config.Cut("default"), {})
+    assert default["measures"] == ["v.avg_daily_attendance", "v.count_students"]
+
+
+def test_a_swapped_cut_is_judged_against_the_swapped_view(tmp_path):
+    checks, _ = _swapped()
+    exports = {
+        ("default", "ADA"): b"School,ADA,Students\nRise,94.2%,2\nLSP,90.0%,1\n",
+        ("chronic", "ADA"): b"School,ADA,Students\nRise,50.0%,2\nLSP,0.0%,1\n",
+    }
+    answers = {
+        **_ans(
+            "default",
+            [
+                {"v.locations_abbreviation": "Rise", "v.avg_daily_attendance": "0.942"},
+                {"v.locations_abbreviation": "LSP", "v.avg_daily_attendance": "0.9"},
+            ],
+        ),
+        cells.answer_key("chronic", "ADA"): {
+            "data": [
+                {"p.locations_abbreviation": "Rise", "p.pct_chronically_absent": "0.5"},
+                {"p.locations_abbreviation": "LSP", "p.pct_chronically_absent": "0"},
+            ],
+            "last_refresh": "x",
+            "sql": "s",
+            "query": {},
+        },
+    }
+    got = _judge(tmp_path, exports, answers, checks=checks)
+    assert [(c.cut, c.verdict) for c in got] == [
+        ("default", cells.PASS),
+        ("default", cells.PASS),
+        ("chronic", cells.PASS),
+        ("chronic", cells.PASS),
+    ]

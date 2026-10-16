@@ -6,9 +6,9 @@ import csv
 import io
 import re
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
-from .config import ALL, Checks, Cut, FieldMap, lit, side_sql
+from .config import ALL, Checks, Cut, FieldMap, ParamValue, SheetMap, lit, side_sql
 
 # trunk-ignore(bandit/B105): a verdict label, not a credential
 PASS = "pass"
@@ -152,6 +152,48 @@ def _pred(fm: FieldMap, label: str | tuple[str, ...] | None, side: str) -> str |
     return "(" + " or ".join(parts) + ")"
 
 
+def _swaps(checks: Checks, cut: Cut) -> list[tuple[str, ParamValue]]:
+    """The cut's parameter values that swap a measure or view."""
+    out = []
+    for caption, value in cut.params.items():
+        pv = checks.params.get(caption, {}).get(value)
+        if pv is not None and (pv.measure or pv.view):
+            out.append((caption, pv))
+    return out
+
+
+def _renames(checks: Checks, cut: Cut) -> dict[str, str]:
+    return {k: v for _, pv in _swaps(checks, cut) for k, v in pv.rename.items()}
+
+
+def resolve(checks: Checks, sheet: str, cut: Cut) -> SheetMap:
+    """The sheet's map under the cut: a parameter value may swap the view, the
+    measures that name that parameter, and member names that differ on the view.
+
+    The query and the judging both read it, so they agree on every member name.
+    """
+    sm = checks.sheets[sheet]
+    ren = _renames(checks, cut)
+    for caption, pv in _swaps(checks, cut):
+        sm = replace(
+            sm,
+            view=pv.view or sm.view,
+            measures={
+                h: replace(m, cube=pv.measure) if m.param == caption else m
+                for h, m in sm.measures.items()
+            },
+        )
+    if ren:
+        sm = replace(
+            sm,
+            dims={
+                h: replace(d, cube=ren.get(d.cube, d.cube)) if d.cube else d
+                for h, d in sm.dims.items()
+            },
+        )
+    return sm
+
+
 def cube_query(
     checks: Checks, sheet: str, cut: Cut, click_filters: dict[str, str]
 ) -> dict:
@@ -160,7 +202,8 @@ def cube_query(
     Raises:
         MappingGap: A filter, click field or parameter value is not mapped.
     """
-    sm = checks.sheets[sheet]
+    sm = resolve(checks, sheet, cut)
+    ren = _renames(checks, cut)
     v = sm.view
     measures = sorted(
         {f"{v}.{m.cube}" for m in sm.measures.values() if m.cube}
@@ -175,7 +218,7 @@ def cube_query(
         if fm is None or not fm.cube:
             raise MappingGap(caption)
         stored = [_stored(fm, x, "c") for x in label]
-        member = f"{v}.{fm.cube}"
+        member = f"{v}.{ren.get(fm.cube, fm.cube)}"
         if None in stored:
             # equals cannot match a missing value, so a null in the list
             # makes the filter unexpressible; refuse rather than guess
@@ -342,7 +385,7 @@ def judge(
         for sheet, data in exports.items():
             if data is None:
                 continue
-            sm = checks.sheets[sheet]
+            sm = resolve(checks, sheet, cut)
             ans = answers.get(answer_key(cut.id, sheet)) or {}
             cdims = [h for h, d in sm.dims.items() if d.cube]
             cube_rows = {

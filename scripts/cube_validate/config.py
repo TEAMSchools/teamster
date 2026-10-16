@@ -67,6 +67,11 @@ class ParamValue:
     tableau: str | None = None
     cube_column: str | None = None
     cube_filters: tuple[dict, ...] = ()
+    # For a measure that names this parameter: the Cube member this value swaps
+    # in, its view, and members whose name differs on that view.
+    measure: str | None = None
+    view: str | None = None
+    rename: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -74,6 +79,8 @@ class MeasureMap:
     column: str
     cube: str | None
     scale: float = 1.0
+    # The parameter whose values swap this measure; `cube` is its default.
+    param: str | None = None
 
 
 @dataclass(frozen=True)
@@ -326,7 +333,10 @@ def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
             dims={h: _field(h, v or {}) for h, v in (s.get("dims") or {}).items()},
             measures={
                 h: MeasureMap(
-                    h, (v or {}).get("cube"), float((v or {}).get("scale", 1.0))
+                    h,
+                    (v or {}).get("cube"),
+                    float((v or {}).get("scale", 1.0)),
+                    (v or {}).get("param"),
                 )
                 for h, v in (s.get("measures") or {}).items()
             },
@@ -338,11 +348,26 @@ def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
                 (pv or {}).get("tableau"),
                 (pv or {}).get("cube_column"),
                 tuple((pv or {}).get("cube_filters") or ()),
+                (pv or {}).get("measure"),
+                (pv or {}).get("view"),
+                {str(k): str(x) for k, x in ((pv or {}).get("rename") or {}).items()},
             )
             for val, pv in (vals or {}).items()
         }
         for cap, vals in (d.get("params") or {}).items()
     }
+    for s, sm in sheets.items():
+        for h, m in sm.measures.items():
+            if m.param is None:
+                continue
+            if m.param not in params:
+                raise ConfigError(f"sheets.{s}.measures.{h}: no param {m.param}")
+            for val, pv in params[m.param].items():
+                if not pv.measure:
+                    # the default member would be compared under this value
+                    raise ConfigError(
+                        f"params.{m.param}.{val}: {s}/{h} swaps on it, so it needs a measure"
+                    )
     filters = {cap: _field(cap, v or {}) for cap, v in (d.get("filters") or {}).items()}
     defaults = {
         str(k): _default(str(k), v) for k, v in (d.get("defaults") or {}).items()
