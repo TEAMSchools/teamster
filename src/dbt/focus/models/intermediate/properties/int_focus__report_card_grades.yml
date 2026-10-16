@@ -23,11 +23,11 @@ models:
               - marking_period_id
               - grade_type_token
           config:
-            # Scoped to live-posted rows, as on the staging model: imported
-            # course history carries no token and no course_period_id and
-            # legitimately repeats a (student, marking period) pair across
-            # transcript courses.
-            where: grade_type_token is not null
+            # Scoped to live-posted rows, posted grades included, as on the
+            # staging model: imported course history carries no
+            # course_period_id and legitimately repeats a (student, marking
+            # period) pair across transcript courses.
+            where: course_period_id is not null
             severity: error
     columns:
       - name: student_report_card_grade_id
@@ -64,9 +64,9 @@ models:
           the running gradebook (the live grade) and E is an exam. Null on
           imported course history, and on a posted grade — a live posting
           (course_period_id populated) that a school finalizes for a marking
-          period, which kipptaf's int_students__final_grades prefers over DT.
-          DY, the cron account's snapshot of yesterday's grade, is filtered out
-          of this model.
+          period. See kipptaf's int_students__final_grades for how it combines
+          with DT. DY, the cron account's snapshot of yesterday's grade, is
+          filtered out of this model.
       - name: report_card_grade_id
         description: >-
           Focus report_card_grades id of the grade definition the posting used.

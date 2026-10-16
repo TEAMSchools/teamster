@@ -243,6 +243,15 @@ unit_tests:
             marking_period_short_name: Q1
             grade_title: C
             _dbt_source_project: kippmiami
+          - student_id: 13
+            course_period_id: 100
+            marking_period_id: 7181
+            grade_type_token: null
+            academic_year: 2026
+            schoolid: 58
+            marking_period_short_name: Q1
+            grade_title: D
+            _dbt_source_project: kippmiami
       - input: ref('int_focus__schedule')
         rows:
           - student_id: 11
@@ -253,12 +262,18 @@ unit_tests:
             course_period_id: 100
             academic_year: 2026
             student_schedule_id: 502
+          - student_id: 13
+            course_period_id: 100
+            academic_year: 2026
+            student_schedule_id: 503
       - input: ref('int_focus__students')
         rows:
           - student_id: 11
             student_number: 1
           - student_id: 12
             student_number: 2
+          - student_id: 13
+            student_number: 3
       - input: ref('int_focus__schools')
         rows:
           - id: 58
@@ -271,3 +286,5 @@ unit_tests:
           term_letter_grade: A
         - cc_dcid: 502
           term_letter_grade: C
+        - cc_dcid: 503
+          term_letter_grade: D

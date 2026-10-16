@@ -33,6 +33,7 @@ with
     focus_posted_grades as (
         -- grain projection, not dup-masking
         select distinct
+            _dbt_source_project,
             student_id,
             course_period_id,
             marking_period_id,
@@ -106,7 +107,8 @@ with
             on fs.school_number = loc.focus_school_id
         left join
             focus_posted_grades as pg
-            on g.student_id = pg.student_id
+            on g._dbt_source_project = pg._dbt_source_project
+            and g.student_id = pg.student_id
             and g.course_period_id = pg.course_period_id
             and g.marking_period_id = pg.marking_period_id
             and g.grade_type_token = pg.superseded_grade_type_token
