@@ -27,6 +27,50 @@
   group: attendance
   status: verified
 
+# Bucket Rosters — one per region, rendered as the `bucket_roster` family in
+# groups.yml. Each is shared to its region's staff groups and Teaching &
+# Learning; none is link-shared.
+
+- id: bucket_roster_camden
+  name: NJ Bucket Rosters [Camden]
+  url: https://docs.google.com/spreadsheets/d/1_NInNzpRN9qxs6HDmL3kYi4Yg9h-Lj9LM5rbgk6bAtw
+  description: Bucket roster for KIPP Camden students.
+  audiences: [leaders, region, teachers]
+  system: google-sheet
+  group: academics
+  regions: [camden]
+  status: verified
+
+- id: bucket_roster_miami
+  name: Bucket Rosters [Miami]
+  url: https://docs.google.com/spreadsheets/d/1ATaYMLlEZnO5Cgi9ODQ3qbtCojDSTapOCIC0U9gpmYQ
+  description: Bucket roster for KIPP Miami students.
+  audiences: [leaders, region, teachers]
+  system: google-sheet
+  group: academics
+  regions: [miami]
+  status: verified
+
+- id: bucket_roster_newark
+  name: NJ Bucket Rosters [Newark]
+  url: https://docs.google.com/spreadsheets/d/1DVJCCHukSVPCUDRHJzMC1miJ-p4e6gbiwZAk09E1AFc
+  description: Bucket roster for KIPP Newark students.
+  audiences: [leaders, region, teachers]
+  system: google-sheet
+  group: academics
+  regions: [newark]
+  status: verified
+
+- id: bucket_roster_paterson
+  name: NJ Bucket Rosters [Paterson]
+  url: https://docs.google.com/spreadsheets/d/1vhiwxDJ3u0JbZX21OL_jcoPrk0r9c24yk8jWSWSfELs
+  description: Bucket roster for KIPP Paterson students.
+  audiences: [leaders, region, teachers]
+  system: google-sheet
+  group: academics
+  regions: [paterson]
+  status: verified
+
 - id: certification_dashboard
   name: Certification Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/NJCertificationDashboardSchoolsView/CertificationDashboard?:embed=y
