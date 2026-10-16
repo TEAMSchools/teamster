@@ -14,7 +14,10 @@ class _FakeOvergrad(OvergradResource):
 
 
 def test_followings_survives_add_dynamic_partitions_failure(monkeypatch):
+    calls = []
+
     def raise_timeout(*_, **__):
+        calls.append(1)
         raise ReadTimeout("Read timed out.")
 
     monkeypatch.setattr(DagsterInstance, "add_dynamic_partitions", raise_timeout)
@@ -32,4 +35,5 @@ def test_followings_survives_add_dynamic_partitions_failure(monkeypatch):
         raise_on_error=False,
     )
 
+    assert calls
     assert result.success

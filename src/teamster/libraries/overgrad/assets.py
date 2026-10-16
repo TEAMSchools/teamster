@@ -50,14 +50,16 @@ def build_overgrad_asset(
                     university_ids.add(str(university_id))
 
             # best-effort: every run re-registers the full id set, so a Dagster
-            # Cloud API blip should not discard an hour of rate-limited pages
+            # Cloud API blip should not discard an hour of rate-limited pages.
+            # ERROR, not WARNING: nothing retries this in-run, and a persistent
+            # failure would otherwise stall new university partitions silently
             try:
                 context.instance.add_dynamic_partitions(
                     partitions_def_name="overgrad__universities__id",
                     partition_keys=list(university_ids),
                 )
             except Exception as e:
-                context.log.warning(f"Skipped registering university partitions: {e}")
+                context.log.error(f"Skipped registering university partitions: {e}")
 
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
 
