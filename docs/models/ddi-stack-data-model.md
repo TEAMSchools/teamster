@@ -199,7 +199,7 @@ A new score therefore reaches a consumer only after:
   (`illuminate` or `apex`) plus `assessment_id`, since the two systems' ids
   collide. The app links the two tables on `assessment_key`, those two values
   joined with a hyphen (`apex-123`). The app's item list comes back out of the
-  warehouse as `rpt_appsheet__assessments`, Miami's Apex assessments included,
+  warehouse as `rpt_appsheet__assessments`, Miami's Focus Assessments included,
   so the loop is: catalog feed → staff tag in the app → tags land in BigQuery →
   tags drive everything. Marya Shukla runs QC; achievement directors tag their
   own assessments.
@@ -479,7 +479,7 @@ The course subject crosswalk's annual audit is worth systematizing (the family
 skill should carry it as a procedure): list new courses with current-year
 enrollments that are missing from the sheet, then hand the list to c3/academic
 ops to confirm which are tested subjects — connected to Illuminate results,
-state testing results, both, or eventually Focus Apex assessments.
+state testing results, both, or eventually Focus Assessments.
 
 [#5656]: https://github.com/TEAMSchools/teamster/issues/5656
 

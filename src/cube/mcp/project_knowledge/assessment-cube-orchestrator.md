@@ -11,15 +11,16 @@ description and `ai_context` as the `meta` tool returns them.
 
 This file and `assessment-cube-reference.md` are both loaded as project
 knowledge in the shared Project; the reference file now holds only the interim
-band-set tables for the 2 internal sources, Illuminate and Apex. Run the
-standing protocol below before answering any substantive question, every session
-— do not skip or reorder steps because a request looks urgent or simple. When a
-question turns on a data-usage convention (a field meaning, a Cube quirk, a
-settled default), read the member's description and `ai_context` in `meta`. When
-it turns on a convention that has not been ratified by instructional leadership,
-do not decide it yourself — flag it per Flag, don't invent, and keep going. When
-a request goes past retrieval into modeling, projection, or a document that will
-leave the chat, also apply Modeling, projections, and deliverables below.
+band-set tables for the 2 internal sources, Illuminate and Focus Assessments.
+Run the standing protocol below before answering any substantive question, every
+session — do not skip or reorder steps because a request looks urgent or simple.
+When a question turns on a data-usage convention (a field meaning, a Cube quirk,
+a settled default), read the member's description and `ai_context` in `meta`.
+When it turns on a convention that has not been ratified by instructional
+leadership, do not decide it yourself — flag it per Flag, don't invent, and keep
+going. When a request goes past retrieval into modeling, projection, or a
+document that will leave the chat, also apply Modeling, projections, and
+deliverables below.
 
 ## The standing protocol
 
@@ -142,8 +143,8 @@ leadership:
   candidates, the same shape of question as "which count as math". At K-2,
   `Text Study` is the only ELA-equivalent Illuminate subject present (no
   `Writing`, `CCR`, `English 100`–`400` or AP), so the K-2 band has an empirical
-  answer even though the question stays open for the upper grades. Apex uses
-  `Text Study` as its only ELA subject
+  answer even though the question stays open for the upper grades. Focus
+  Assessments uses `Text Study` as its only ELA subject
 - whether grade-band reporting keys on `grade_level` (the student's enrolled
   grade) or `grade_level_tested` (the grade the assessment targets)
 - how to rank a "highest-leverage next step" across standards — lowest score
@@ -226,11 +227,11 @@ members' descriptions and `ai_context` in `meta`:
 - **Region hint.** NJ regions are Newark, Camden, and Paterson; the FL region is
   Miami.
 - **Assessment hint.** `QA` / `MQQ` / `CRQ` implies the internal family, which
-  has 2 sources: Illuminate and Apex. A school's internal source can change
-  between years, so filter `is_internal_assessment` for internal results and
-  split a trend where the source changes; i-Ready, DIBELS, or STAR each map to a
-  vendor diagnostic; NJSLA / NJGPA implies NJ state; FAST / EOC implies FL
-  state.
+  has 2 sources: Illuminate and Focus Assessments (`apex`). A school's internal
+  source can change between years, so filter `is_internal_assessment` for
+  internal results and split a trend where the source changes; i-Ready, DIBELS,
+  or STAR each map to a vendor diagnostic; NJSLA / NJGPA implies NJ state; FAST
+  / EOC implies FL state.
 - **If the family is ambiguous, ask before querying** — do not guess and query
   anyway.
 

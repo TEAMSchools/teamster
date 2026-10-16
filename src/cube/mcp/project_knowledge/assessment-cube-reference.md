@@ -6,8 +6,8 @@ the `meta` tool. Read them there. The session protocol and the open decisions
 are in `assessment-cube-orchestrator.md`.
 
 This file holds one thing Cube does not carry yet: the performance band sets of
-the 2 internal sources, Illuminate and Apex. #5573 adds band-set members to Cube
-and deletes this file.
+the 2 internal sources, Illuminate and Focus Assessments. #5573 adds band-set
+members to Cube and deletes this file.
 
 ## Illuminate performance band sets (interim)
 
@@ -38,11 +38,12 @@ The most-used configurations:
   courses share KIPP Performance Levels' cut points and start mastery at band 5,
   not 4.
 
-## Apex performance band sets (interim)
+## Focus Assessments performance band sets (interim)
 
-Apex marks mastery at the band labeled `Level 3` and above in each set. Each
-band runs from its cut point up to the next one. Band numbers do not compare
-across sets: `Level 3` is band 3 in a 5-band set and band 6 in an 8-band set.
+Focus Assessments (Focus's Apex module, `assessment_type` value `apex`) marks
+mastery at the band labeled `Level 3` and above in each set. Each band runs from
+its cut point up to the next one. Band numbers do not compare across sets:
+`Level 3` is band 3 in a 5-band set and band 6 in an 8-band set.
 
 | Band set                                | Cut points                           | Mastery starts |
 | --------------------------------------- | ------------------------------------ | -------------- |
@@ -52,5 +53,5 @@ across sets: `Level 3` is band 3 in a 5-band set and band 6 in an 8-band set.
 | K-4 FAST (QAs)                          | 0 / 30 / 40 / 50 / 60 / 70 / 80 / 85 | band 6         |
 
 - Cut points are percent correct.
-- An Apex assessment with no band set has no band and no mastery verdict, so it
-  drops out of `pct_proficient`.
+- A Focus Assessments test with no band set has no band and no mastery verdict,
+  so it drops out of `pct_proficient`.

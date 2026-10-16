@@ -7,8 +7,8 @@ cubes:
       - name: assessment_key
         description: >-
           Surrogate key (type, module_code, source_assessment_id, test_type).
-          Primary key. Member-grained for Illuminate and Apex; canonical for
-          state/college/AP.
+          Primary key. Member-grained for Illuminate and Focus Assessments;
+          canonical for state/college/AP.
         sql: assessment_key
         type: string
         primary_key: true
@@ -28,11 +28,11 @@ cubes:
           Reading. Illuminate: course-level names, with no English Language Arts
           value; its ELA equivalent is Text Study, alongside Writing, English
           100–400, CCR and AP courses, and math appears as Mathematics and
-          course names such as Algebra I and Geometry. Apex: Text Study,
-          Mathematics, Science and Social Studies. College: Math, EBRW, Reading,
-          English, Science, and score names such as Combined and Composite. AP:
-          the course name (for example Biology, Calculus BC). Distinct from the
-          course's discipline.
+          course names such as Algebra I and Geometry. Focus Assessments: Text
+          Study, Mathematics, Science and Social Studies. College: Math, EBRW,
+          Reading, English, Science, and score names such as Combined and
+          Composite. AP: the course name (for example Biology, Calculus BC).
+          Distinct from the course's discipline.
         sql: academic_subject
         type: string
         public: true
@@ -46,14 +46,15 @@ cubes:
       - name: assessment_type
         description: >-
           Source-system category — illuminate and apex (KIPP-authored internal
-          interims, from Illuminate and from Focus's Apex module); iready,
-          dibels and star (vendor diagnostics); college (SAT, ACT and PSAT,
-          Official and Practice); ap; the NJ state tests state_nj_njsla,
-          state_nj_njsla_science, state_nj_njgpa and state_nj_parcc; the FL
-          state tests state_fl_fast, state_fl_science, state_fl_eoc and
-          state_fl_fsa; and the _unknown fallbacks. An open list. From spring
-          2026, NJSLA and NJGPA are computer-adaptive, and no field separates
-          adaptive from fixed-form scores. NJSLA Science did not change.
+          interims, from Illuminate and from Focus Assessments, Focus's Apex
+          module); iready, dibels and star (vendor diagnostics); college (SAT,
+          ACT and PSAT, Official and Practice); ap; the NJ state tests
+          state_nj_njsla, state_nj_njsla_science, state_nj_njgpa and
+          state_nj_parcc; the FL state tests state_fl_fast, state_fl_science,
+          state_fl_eoc and state_fl_fsa; and the _unknown fallbacks. An open
+          list. From spring 2026, NJSLA and NJGPA are computer-adaptive, and no
+          field separates adaptive from fixed-form scores. NJSLA Science did not
+          change.
         sql: "{CUBE}.`type`"
         type: string
         public: true
@@ -80,20 +81,20 @@ cubes:
       - name: module_code
         description: >-
           Code identifying the assessment within its source. Illuminate and
-          Apex: the checkpoint code within a module type (for example QA1,
-          MQQ2), from tags set in the assessment app; one code spans every
-          subject assessed in that round, and an untagged assessment has none.
-          State tests: subject and grade (for example ELA05, MAT08, ALG01; ELAGP
-          and MATGP for NJGPA). i-Ready and STAR: the subject. DIBELS:
-          Composite. College: the test and score (for example sat_math,
+          Focus Assessments: the checkpoint code within a module type (for
+          example QA1, MQQ2), from tags set in the assessment app; one code
+          spans every subject assessed in that round, and an untagged assessment
+          has none. State tests: subject and grade (for example ELA05, MAT08,
+          ALG01; ELAGP and MATGP for NJGPA). i-Ready and STAR: the subject.
+          DIBELS: Composite. College: the test and score (for example sat_math,
           act_composite, psat10_ebrw). AP: the College Board exam number.
         sql: module_code
         type: string
         public: true
         meta:
           ai_context: >-
-            Not a subject filter on its own for Illuminate or Apex, where one
-            code spans every subject in its round. Always pair it with
+            Not a subject filter on its own for Illuminate or Focus Assessments,
+            where one code spans every subject in its round. Always pair it with
             academic_subject. Which codes exist varies by source, subject, grade
             and region, so check the exact slice before pooling across
             checkpoints. Code names are not reliably chronological; to order
@@ -105,8 +106,9 @@ cubes:
           app. An open list: QA (Quick Assessments), MQQ (Multiple-Choice Quick
           Questions), CRQ (Constructed Response Questions), UA (Unit
           Assessment), TP (Test Prep Quiz), ET (Exit Ticket), WPP (Writing
-          Process Piece), BL, and older types. Illuminate and Apex share the
-          codes. Null for an untagged assessment and for every other source.
+          Process Piece), BL, and older types. Illuminate and Focus Assessments
+          share the codes. Null for an untagged assessment and for every other
+          source.
         sql: module_type
         type: string
         public: true
@@ -116,10 +118,10 @@ cubes:
 
       - name: grade_level_tested
         description: >-
-          Grade the assessment targets; 0 is kindergarten. Illuminate, Apex and
-          state tests only; null for every other source, for the NJSLA
-          end-of-course tests (Algebra I, Geometry, Algebra II), and for a small
-          share of Illuminate and Apex assessments.
+          Grade the assessment targets; 0 is kindergarten. Illuminate, Focus
+          Assessments and state tests only; null for every other source, for the
+          NJSLA end-of-course tests (Algebra I, Geometry, Algebra II), and for a
+          small share of Illuminate and Focus Assessments tests.
         sql: grade_level_tested
         type: number
         public: true
@@ -141,9 +143,9 @@ cubes:
 
       - name: is_internal_assessment
         description: >-
-          TRUE for the KIPP-authored interims, Illuminate and Apex; FALSE for
-          every other source, including the i-Ready, DIBELS and STAR diagnostics
-          KIPP administers itself.
+          TRUE for the KIPP-authored interims, Illuminate and Focus Assessments;
+          FALSE for every other source, including the i-Ready, DIBELS and STAR
+          diagnostics KIPP administers itself.
         sql: is_internal_assessment
         type: boolean
         public: true

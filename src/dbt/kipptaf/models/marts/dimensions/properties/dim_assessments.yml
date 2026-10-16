@@ -2,10 +2,10 @@ models:
   - name: dim_assessments
     description: >-
       Assessment definition dimension. One row per unique assessment definition.
-      Covers internal assessments (Illuminate and Apex), vendor diagnostics
-      (i-Ready, DIBELS, STAR), NJ and FL state assessments, and college-entrance
-      assessments (SAT, ACT, AP). scope indicates whether scores are linked at
-      the enrollment level or student level.
+      Covers internal assessments (Illuminate and Focus Assessments), vendor
+      diagnostics (i-Ready, DIBELS, STAR), NJ and FL state assessments, and
+      college-entrance assessments (SAT, ACT, AP). scope indicates whether
+      scores are linked at the enrollment level or student level.
 
       Two subject-normalization columns coexist for college-entrance comparisons
       (both NULL for other assessment types):
@@ -35,11 +35,11 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from type, module_code, source_assessment_id,
-          and test_type. Primary key. For Illuminate and Apex, member-grained —
-          one row per actual `assessment_id`. For state/college/AP, canonical
-          (`source_assessment_id` is null). Drilldown from
-          `dim_assessment_administrations` (canonical-grain) to this dim goes
-          through `bridge_assessment_administration_members`.
+          and test_type. Primary key. For Illuminate and Focus Assessments,
+          member-grained — one row per actual `assessment_id`. For
+          state/college/AP, canonical (`source_assessment_id` is null).
+          Drilldown from `dim_assessment_administrations` (canonical-grain) to
+          this dim goes through `bridge_assessment_administration_members`.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -53,14 +53,15 @@ models:
         data_type: string
         description: >-
           Source-system category — illuminate and apex (KIPP-authored internal
-          interims, from Illuminate and from Focus's Apex module); iready,
-          dibels and star (vendor diagnostics); college (SAT, ACT and PSAT,
-          Official and Practice); ap; the NJ state tests state_nj_njsla,
-          state_nj_njsla_science, state_nj_njgpa and state_nj_parcc; the FL
-          state tests state_fl_fast, state_fl_science, state_fl_eoc and
-          state_fl_fsa; and the _unknown fallbacks. An open list. From spring
-          2026, NJSLA and NJGPA are computer-adaptive, and no field separates
-          adaptive from fixed-form scores. NJSLA Science did not change.
+          interims, from Illuminate and from Focus Assessments, Focus's Apex
+          module); iready, dibels and star (vendor diagnostics); college (SAT,
+          ACT and PSAT, Official and Practice); ap; the NJ state tests
+          state_nj_njsla, state_nj_njsla_science, state_nj_njgpa and
+          state_nj_parcc; the FL state tests state_fl_fast, state_fl_science,
+          state_fl_eoc and state_fl_fsa; and the _unknown fallbacks. An open
+          list. From spring 2026, NJSLA and NJGPA are computer-adaptive, and no
+          field separates adaptive from fixed-form scores. NJSLA Science did not
+          change.
 
       - name: title
         data_type: string
@@ -79,11 +80,11 @@ models:
           Reading. Illuminate: course-level names, with no English Language Arts
           value; its ELA equivalent is Text Study, alongside Writing, English
           100–400, CCR and AP courses, and math appears as Mathematics and
-          course names such as Algebra I and Geometry. Apex: Text Study,
-          Mathematics, Science and Social Studies. College: Math, EBRW, Reading,
-          English, Science, and score names such as Combined and Composite. AP:
-          the course name (for example Biology, Calculus BC). Distinct from the
-          course's discipline.
+          course names such as Algebra I and Geometry. Focus Assessments: Text
+          Study, Mathematics, Science and Social Studies. College: Math, EBRW,
+          Reading, English, Science, and score names such as Combined and
+          Composite. AP: the course name (for example Biology, Calculus BC).
+          Distinct from the course's discipline.
 
       - name: category
         data_type: string
@@ -96,12 +97,12 @@ models:
         data_type: string
         description: >-
           Code identifying the assessment within its source. Illuminate and
-          Apex: the checkpoint code within a module type (for example QA1,
-          MQQ2), from tags set in the assessment app; one code spans every
-          subject assessed in that round, and an untagged assessment has none.
-          State tests: subject and grade (for example ELA05, MAT08, ALG01; ELAGP
-          and MATGP for NJGPA). i-Ready and STAR: the subject. DIBELS:
-          Composite. College: the test and score (for example sat_math,
+          Focus Assessments: the checkpoint code within a module type (for
+          example QA1, MQQ2), from tags set in the assessment app; one code
+          spans every subject assessed in that round, and an untagged assessment
+          has none. State tests: subject and grade (for example ELA05, MAT08,
+          ALG01; ELAGP and MATGP for NJGPA). i-Ready and STAR: the subject.
+          DIBELS: Composite. College: the test and score (for example sat_math,
           act_composite, psat10_ebrw). AP: the College Board exam number.
 
       - name: module_type
@@ -111,23 +112,24 @@ models:
           app. An open list: QA (Quick Assessments), MQQ (Multiple-Choice Quick
           Questions), CRQ (Constructed Response Questions), UA (Unit
           Assessment), TP (Test Prep Quiz), ET (Exit Ticket), WPP (Writing
-          Process Piece), BL, and older types. Illuminate and Apex share the
-          codes. Null for an untagged assessment and for every other source.
+          Process Piece), BL, and older types. Illuminate and Focus Assessments
+          share the codes. Null for an untagged assessment and for every other
+          source.
 
       - name: grade_level_tested
         data_type: int64
         description: >-
-          Grade the assessment targets; 0 is kindergarten. Illuminate, Apex and
-          state tests only; null for every other source, for the NJSLA
-          end-of-course tests (Algebra I, Geometry, Algebra II), and for a small
-          share of Illuminate and Apex assessments.
+          Grade the assessment targets; 0 is kindergarten. Illuminate, Focus
+          Assessments and state tests only; null for every other source, for the
+          NJSLA end-of-course tests (Algebra I, Geometry, Algebra II), and for a
+          small share of Illuminate and Focus Assessments tests.
 
       - name: is_internal_assessment
         data_type: boolean
         description: >-
-          TRUE for the KIPP-authored interims, Illuminate and Apex; FALSE for
-          every other source, including the i-Ready, DIBELS and STAR diagnostics
-          KIPP administers itself.
+          TRUE for the KIPP-authored interims, Illuminate and Focus Assessments;
+          FALSE for every other source, including the i-Ready, DIBELS and STAR
+          diagnostics KIPP administers itself.
 
       - name: scope
         data_type: string
@@ -162,11 +164,11 @@ models:
         data_type: int64
         description: >-
           The source system's own assessment id for internal assessments
-          (Illuminate and Apex); null for every other source. Each source
-          numbers its assessments separately, so an id is unique only together
-          with type. Used as a discriminator in `assessment_key` so distinct
-          internal assessments hash to different keys even when their other
-          natural-key columns coincide.
+          (Illuminate and Focus Assessments); null for every other source. Each
+          source numbers its assessments separately, so an id is unique only
+          together with type. Used as a discriminator in `assessment_key` so
+          distinct internal assessments hash to different keys even when their
+          other natural-key columns coincide.
 
       - name: test_type
         data_type: string
@@ -174,5 +176,6 @@ models:
           `'Official'` for college-entrance assessments delivered by the test
           vendor (SAT, ACT, PSAT). `'Practice'` for mock administrations of the
           same assessments delivered through Illuminate. Null for Illuminate,
-          Apex, state, and AP rows. Discriminator in `assessment_key` so
-          Official and Practice sittings of the same test family don't collide.
+          Focus Assessments, state, and AP rows. Discriminator in
+          `assessment_key` so Official and Practice sittings of the same test
+          family don't collide.
