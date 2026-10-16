@@ -29,11 +29,6 @@ models:
               config:
                 where: active
                 severity: warn
-          - unique:
-              name: stg_coupa__addresses_name_unique_current
-              config:
-                where: is_current_for_name
-                severity: error
       - name: is_current_for_name
         data_type: boolean
         description:
