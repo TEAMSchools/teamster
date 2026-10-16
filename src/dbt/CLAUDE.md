@@ -92,6 +92,11 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   `google/cloud/bigquery/retry.py`. Every other reason — `notFound`,
   `resourcesExceeded`, `invalidQuery` — fails on attempt 1 at any `job_retries`
   value, so never propose raising it for those.
+- **`job_retries` cannot restart a job BigQuery already failed** on dbt-bigquery
+  1.12.x. `raw_execute` mints one `job_id` for every attempt, so a retry hits
+  409 and `_submit_or_attach` reattaches to the dead job. A retryable reason
+  with `state=DONE` and one job id in `JOBS_BY_PROJECT` fails the model; only
+  the Dagster run-retry recovers it. Upstream: dbt-labs/dbt-adapters#2120.
 - **`job_execution_timeout_seconds`**: Set to `900` on the `prod` output of all
   five kipp\* profiles. Caps each BigQuery job server-side (`job_timeout_ms`) so
   a runaway single model is cancelled by BigQuery before Dagster's run-level
