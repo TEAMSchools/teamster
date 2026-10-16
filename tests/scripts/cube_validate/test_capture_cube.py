@@ -304,3 +304,16 @@ def test_member_types_names_a_body_that_is_not_json():
 
     with pytest.raises(capture_cube.CubeError, match="HTTP 200 from /meta"):
         _meta_client(200, bad).member_types("v")
+
+
+def test_a_continue_wait_retry_resends_the_query():
+    sent = []
+
+    def answer(u, q, body):
+        sent.append(body)
+        if len(sent) == 1:
+            return {"error": "Continue wait"}
+        return {"data": [], "lastRefreshTime": "2026-10-15T20:00:00.000Z", "total": 0}
+
+    _client(answer).load({"measures": ["v.count"]}, renew=True)
+    assert sent[1] == sent[0] and sent[1]["cache"] == "no-cache"

@@ -78,13 +78,15 @@ class CubeClient:
         # Mart dates are UTC dates. Without an explicit zone Cube answers in the
         # deployment's own, which shifts every day filter and date by a day.
         query = {"timezone": "UTC", **query}
-        body = {"query": query} if cache is None else {"query": query, "cache": cache}
+        payload = (
+            {"query": query} if cache is None else {"query": query, "cache": cache}
+        )
         overloaded = 0
         for _ in range(120):
             try:
                 r = self._http().post(
                     f"{self.url}/{path}",
-                    json=body,
+                    json=payload,
                     headers={"Authorization": self._token()},
                 )
             except httpx.TransportError as err:
