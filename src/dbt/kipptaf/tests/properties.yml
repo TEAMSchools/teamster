@@ -347,6 +347,7 @@ data_tests:
       quarters that do not cover the row's own date, which is the #4484 defect.
       Failure rows name the score, its date, and the quarter it landed in.
     config:
+      severity: error
       meta:
         dagster:
           ref:

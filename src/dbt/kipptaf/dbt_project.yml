@@ -27,6 +27,8 @@ data_tests:
     marts:
       bridges:
         +severity: error
+      facts:
+        +severity: error
 
 vars:
   local_timezone: America/New_York
