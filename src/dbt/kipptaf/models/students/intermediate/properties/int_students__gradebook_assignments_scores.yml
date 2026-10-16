@@ -28,6 +28,12 @@ models:
       sentinel.
 
 
+      Focus standards-based rows (non-null `standard_id`) are excluded. Focus
+      writes one per standard for the same student and assignment, so they sit
+      below this model's assignment grain and would repeat its key. PowerSchool
+      has no counterpart.
+
+
       Focus's `due_date` is stored as a UTC timestamp representing a local
       (America/New_York) day boundary — 03:59:59Z is 23:59:59 the previous day
       locally — so the Focus branch's `duedate` casts through `local_timezone`
