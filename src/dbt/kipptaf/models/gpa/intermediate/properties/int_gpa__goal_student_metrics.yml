@@ -31,6 +31,13 @@ models:
       - name: schoolid
         data_type: int64
         description: The School_Number of the student's enrolling school.
+      - name: school
+        data_type: string
+        description:
+          Short school name, as the reporting layer labels a school on an axis.
+      - name: school_name
+        data_type: string
+        description: Canonical full name of the student's enrolling school.
       - name: grade_level
         data_type: int64
         description: The grade level of the enrollment record.
@@ -85,6 +92,8 @@ unit_tests:
               2025 as academic_year,
               'Newark' as region,
               101 as schoolid,
+              'NCA' as school,
+              'KIPP Newark Collegiate Academy' as school_name,
               9 as grade_level,
               90001 as student_number,
               1001 as studentid,
@@ -100,6 +109,8 @@ unit_tests:
               2025,
               'Newark',
               101,
+              'NCA',
+              'KIPP Newark Collegiate Academy',
               9,
               90002,
               1002,
@@ -115,6 +126,8 @@ unit_tests:
               2025,
               'Newark',
               101,
+              'NCA',
+              'KIPP Newark Collegiate Academy',
               9,
               90003,
               1003,
@@ -133,6 +146,8 @@ unit_tests:
               2025,
               'Newark',
               101,
+              'NCA',
+              'KIPP Newark Collegiate Academy',
               12,
               90004,
               1004,
@@ -150,6 +165,8 @@ unit_tests:
               2025,
               'Newark',
               101,
+              'NCA',
+              'KIPP Newark Collegiate Academy',
               10,
               90005,
               1005,
@@ -167,6 +184,8 @@ unit_tests:
               2025,
               'Miami',
               303,
+              'Miami Tech',
+              'KIPP Miami Technical High',
               9,
               90006,
               1006,
@@ -215,6 +234,8 @@ unit_tests:
             academic_year: 2025,
             region: Newark,
             schoolid: 101,
+            school: NCA,
+            school_name: KIPP Newark Collegiate Academy,
             grade_level: 9,
             student_number: 90001,
             cumulative_gpa_unweighted: 3.10,
@@ -227,6 +248,8 @@ unit_tests:
             academic_year: 2025,
             region: Newark,
             schoolid: 101,
+            school: NCA,
+            school_name: KIPP Newark Collegiate Academy,
             grade_level: 9,
             student_number: 90002,
             cumulative_gpa_unweighted: 2.75,
@@ -239,6 +262,8 @@ unit_tests:
             academic_year: 2025,
             region: Newark,
             schoolid: 101,
+            school: NCA,
+            school_name: KIPP Newark Collegiate Academy,
             grade_level: 9,
             student_number: 90003,
             cumulative_gpa_unweighted: 3.40,
@@ -251,6 +276,8 @@ unit_tests:
             academic_year: 2025,
             region: Newark,
             schoolid: 101,
+            school: NCA,
+            school_name: KIPP Newark Collegiate Academy,
             grade_level: 12,
             student_number: 90004,
             cumulative_gpa_unweighted: 2.90,
