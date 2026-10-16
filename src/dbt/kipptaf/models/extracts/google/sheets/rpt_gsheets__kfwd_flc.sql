@@ -195,4 +195,5 @@ left join
     on kt.contact_id = cn.contact_id
     and cn.academic_year = {{ var("current_academic_year") }}
 left join dps_pivot as dps on co.student_email = dps.respondent_email
-where co.rn_undergrad = 1 and co.grade_level != 99
+-- Miami is excluded by design; see the model description.
+where co.rn_undergrad = 1 and co.grade_level != 99 and co.region != 'Miami'
