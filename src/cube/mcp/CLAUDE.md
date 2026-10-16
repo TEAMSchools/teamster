@@ -150,7 +150,9 @@ Cloud Run service via `--set-secrets`).
 ## WorkOS quirks
 
 - Access tokens omit `email` by default. Add a JWT template at Authentication →
-  Sessions → JWT template: `{"email": "{{ user.email }}"}`.
+  Features → JWT Template: `{"email": "{{ user.email }}"}`. The environment has
+  one template shared by every application, so another app's claims get merged
+  in beside `email`, never replace it.
 - DCR/CIMD lives at Connect → Configuration → MCP Auth (tenant-wide toggle), not
   per-application. The advertised `registration_endpoint` returns
   `dynamic_client_registration_disabled` until the toggle is on.
