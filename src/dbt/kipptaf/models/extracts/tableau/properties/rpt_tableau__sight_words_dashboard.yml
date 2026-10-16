@@ -16,6 +16,7 @@ models:
       meta:
         contains_pii: true
     data_tests:
+      # TODO(#5700): placeholder TBD word fields in Illuminate repeat sight_word
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
