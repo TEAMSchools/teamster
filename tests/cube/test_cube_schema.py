@@ -559,12 +559,12 @@ PHRASES.update(
         ],
         "student_assessment_scores.response_type_root_description": [
             "Florida's own standards",
-            "every Illuminate and Apex standard row",
+            "every Illuminate and Focus Assessments standard row",
             "not a domain",
             "1 row per subject",
         ],
         "student_assessment_scores.performance_band_label_number": [
-            "Illuminate and Apex only; null for every other source",
+            "Illuminate and Focus Assessments only; null for every other source",
             "Not comparable across assessments",
             "across response types",
         ],
@@ -579,8 +579,8 @@ PHRASES.update(
         "student_assessment_scores.is_mastery": [
             "Early On is a looser bar",
             "Illuminate rate mixes different bars",
-            "Apex, Level 3 and up",
-            "Apex assessments with no band set",
+            "Focus Assessments, Level 3 and up",
+            "Focus Assessments tests with no band set",
             "Mid or Above Grade Level instead",
         ],
         "student_assessment_scores.scale_score": [
@@ -588,7 +588,7 @@ PHRASES.update(
             "not a percent of the BOY score",
         ],
         "student_assessment_scores.percent_correct": [
-            "Illuminate and Apex only; null for every other source",
+            "Illuminate and Focus Assessments only; null for every other source",
             "0 to 100 scale",
         ],
         "student_assessment_scores.is_replacement": [
@@ -624,7 +624,7 @@ PHRASES.update(
         "student_assessment_scores.pct_taken": [
             "meaningful only within Illuminate",
             "Filter assessment_type to illuminate",
-            "no participation rate for Apex",
+            "no participation rate for Focus Assessments",
         ],
         "student_assessment_scores.pct_proficient": [
             "the mastery bar behind it differs by source",
@@ -637,20 +637,20 @@ PHRASES.update(
         ],
         "student_assessment_scores.count_assessments": [
             "not sittings",
-            "Illuminate and Apex only",
+            "Illuminate and Focus Assessments only",
             "each source numbers its own assessments",
             "thin base",
         ],
         "student_assessment_scores.avg_percent_correct": [
-            "Illuminate and Apex only; null for every other source",
+            "Illuminate and Focus Assessments only; null for every other source",
         ],
         "student_assessment_scores._count_scale_score": [
-            "every source except Illuminate and Apex",
+            "every source except Illuminate and Focus Assessments",
         ],
         "student_assessment_scores.pct_proficient_formative": [
             "excludes every other module type",
             'Not "all internal checkpoints"',
-            "Pools Illuminate and Apex rows",
+            "Pools Illuminate and Focus Assessments rows",
         ],
         # Assessments cube
         "student_assessments.assessment_type": [
@@ -661,7 +661,7 @@ PHRASES.update(
             "carry no scores on this view today",
         ],
         "student_assessments.is_internal_assessment": [
-            "KIPP-authored interims, Illuminate and Apex",
+            "KIPP-authored interims, Illuminate and Focus Assessments",
             "internal source can change between years",
             "filter assessment_type to select an external source",
         ],
@@ -692,10 +692,10 @@ PHRASES.update(
             "use MOY",
             "Fall, Winter or Spring for STAR",
             "never sort by date_taken",
-            "Null for Illuminate, Apex and AP",
+            "Null for Illuminate, Focus Assessments and AP",
         ],
         "student_assessment_administrations.source_assessment_id": [
-            "Illuminate and Apex only; null for every other source",
+            "Illuminate and Focus Assessments only; null for every other source",
             "only together with assessment_type",
             "count_assessments",
         ],
