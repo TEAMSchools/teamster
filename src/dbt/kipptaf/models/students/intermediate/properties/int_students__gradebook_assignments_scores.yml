@@ -28,10 +28,11 @@ models:
       sentinel.
 
 
-      Focus standards-based rows (non-null `standard_id`) are excluded. Focus
-      writes one per standard for the same student and assignment, so they sit
-      below this model's assignment grain and would repeat its key. PowerSchool
-      has no counterpart.
+      Focus standards-based rows (non-null `standard_id`) are excluded. They are
+      scores per student, assignment, and standard, a different fact from this
+      model's assignment-level score, and would repeat its key. Miami does not
+      grade by standard, so these rows are rare ungraded placeholders. If that
+      changes, standards scores need their own model at that grain.
 
 
       Focus's `due_date` is stored as a UTC timestamp representing a local
