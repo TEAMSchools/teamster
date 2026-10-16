@@ -10,12 +10,15 @@ Three identities reach BigQuery here, and they differ in what they can read:
   reads everything that user can, PII included. Default for warehouse
   inspection. Cannot read GOOGLE_SHEETS external tables.
 - **ADC from Python** — carries Drive scope and does not expire. The only client
-  that reads a sheet-backed external live.
+  that reads a sheet-backed external live, and the client for shell contexts
+  such as Monitor poll loops: a Monitor script cannot call an MCP tool, and a
+  loop on `bq` dies when its creds expire. Put the query in a scratchpad script
+  and run it with `uv run python <script.py>` each iteration.
 - **`bq` CLI** — gcloud USER creds that expire mid-session: SELECTs that worked
   early fail later with "Reauthentication failed" or "You do not currently have
   an active account selected" (non-interactive can't `gcloud auth login`); both
   mean expiry, not a missing grant. Switch to the MCP or ADC rather than
-  retrying. For shell contexts (Monitor poll loops) and CSV dumps only.
+  retrying. For one-off CSV dumps only.
 
 ## MCP tools
 
@@ -60,7 +63,7 @@ rows = client.query("select ... from `teamster-332318`.<dataset>.<src_table>")
 Build into a dev/staging table only when something downstream must read it, not
 to look at rows.
 
-`bq` CLI fallback for shell contexts (Monitor poll loops): binary at
+`bq` CLI for one-off CSV dumps: binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
 SELECT-only constraints apply. `bq query` with the SQL passed as a positional
 arg crashes its flag parser when the query text starts with a `--` comment
