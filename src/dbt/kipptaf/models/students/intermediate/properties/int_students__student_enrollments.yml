@@ -38,6 +38,9 @@ models:
               - academic_year
               - schoolid
               - entrydate
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: grade_level != 99 or rn_undergrad is null
     columns:
       - name: rn_undergrad
         data_type: int64
