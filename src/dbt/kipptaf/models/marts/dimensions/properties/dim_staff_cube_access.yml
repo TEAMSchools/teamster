@@ -269,9 +269,10 @@ models:
           region maps 1:1 to legal entity, so the value is still joinable to
           dim_locations.region_key. It also bounds the staff-PII remit when
           staff_location_scope is region or school, which FERPA does not argue
-          for; a model-level warn test flags any viewer who reaches that state.
-          NULL when the employing business unit does not resolve, and for every
-          non-employee grantee, which has no employer; either way it denies.
+          for; a model-level error test fails the build if any viewer reaches
+          that state. NULL when the employing business unit does not resolve,
+          and for every non-employee grantee, which has no employer; either way
+          it denies.
         config:
           meta:
             foreign_key:
@@ -425,28 +426,26 @@ unit_tests:
         format: sql
         rows: |
           select
-            cast(null as string) as google_email,
-            cast(null as string) as status,
-            cast(null as date) as grant_date,
-            cast(null as date) as expiry_date,
+            'd@example.org' as google_email,
+            'active' as status,
+            date '2000-01-01' as grant_date,
+            date '2999-12-31' as expiry_date,
             cast(null as string) as additional_location_name,
             cast(null as string) as additional_location_scope,
-            cast(null as string) as additional_student_location_scope,
-            cast(null as string) as additional_staff_location_scope,
+            'none' as additional_student_location_scope,
+            'none' as additional_staff_location_scope,
             cast(null as string) as staff_department_scope,
             cast(null as string) as staff_pii_scope,
             cast(null as string) as staff_compensation_scope,
             cast(null as string) as staff_observations_scope,
             cast(null as string) as staff_benefits_scope
-          from unnest([1]) where false
       - input: ref('stg_google_directory__users')
         format: sql
         rows: |
           select
-            cast(null as string) as primary_email,
-            cast(null as bool) as suspended,
-            cast(null as bool) as archived
-          from unnest([1]) where false
+            'd@example.org' as primary_email,
+            false as suspended,
+            false as archived
       - input: ref('stg_google_sheets__people__cube_access_department_override')
         format: sql
         rows: |
@@ -462,6 +461,27 @@ unit_tests:
           from unnest([1]) where false
     expect:
       rows:
-        - { staff_key: s1, entity: KTAF, student_location_scope: none }
-        - { staff_key: s2, entity: Region, student_location_scope: none }
-        - { staff_key: s3, entity: unknown, student_location_scope: none }
+        - {
+            google_email: a@example.org,
+            entity: KTAF,
+            is_employee: true,
+            student_location_scope: none,
+          }
+        - {
+            google_email: b@example.org,
+            entity: Region,
+            is_employee: true,
+            student_location_scope: none,
+          }
+        - {
+            google_email: c@example.org,
+            entity: unknown,
+            is_employee: true,
+            student_location_scope: none,
+          }
+        - {
+            google_email: d@example.org,
+            entity: unknown,
+            is_employee: false,
+            student_location_scope: none,
+          }
