@@ -56,6 +56,30 @@ def test_row_queries_one_per_day_with_total():
     }
 
 
+def test_every_query_is_sent_in_utc():
+    # Without it Cube answers in the deployment's zone, so a day filter and its
+    # dates both shift a day (2026-10-06 came back as 2026-10-06T20:00).
+    seen = []
+
+    def answer(u, q):
+        seen.append(q)
+        return {
+            "data": [],
+            "lastRefreshTime": "2026-10-15T20:00:00.000Z",
+            "total": 0,
+            "sql": {"sql": ["SELECT 1", []]},
+        }
+
+    c = _client(answer)
+    c.load({"dimensions": []})
+    c.sql({"measures": []})
+    assert [q["timezone"] for q in seen] == ["UTC", "UTC"]
+
+
+def test_time_values_cast_to_their_utc_date():
+    assert capture_cube._cast("2026-10-06T00:00:00.000", "time") == dt.date(2026, 10, 6)
+
+
 def test_load_returns_the_answers_own_refresh_and_total():
     c = _client(
         lambda u, q: {
@@ -225,7 +249,7 @@ def test_capture_scope_returns_the_values_cube_sends_back():
         "Rise",
         "TEAM",
     ]
-    assert sent == [capture_cube.scope_query(_scope_checks())]
+    assert sent == [{"timezone": "UTC", **capture_cube.scope_query(_scope_checks())}]
 
 
 def test_capture_scope_refuses_a_short_answer():

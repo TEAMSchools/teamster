@@ -203,14 +203,23 @@ def test_an_empty_list_default_is_refused(tmp_path):
         config.load_checks(_write(tmp_path, filters=filters, defaults={"Year": []}))
 
 
-SKELETON = (
+COMMITTED = (
     Path(__file__).parents[3]
     / ".claude/skills/cube-dashboard/checks/attendance_dashboard.yml"
 )
 
 
-def test_the_committed_skeleton_loads_for_plan_only():
-    c = config.load_checks(SKELETON, for_plan=True)
+def test_a_skeleton_loads_for_plan_only(tmp_path):
+    # A checks file as it stands before plan: no data source, no dashboards.
+    data = yaml.safe_load(COMMITTED.read_text())
+    data.update(datasource="", dashboards=[])
+    skeleton = tmp_path / "skeleton.yml"
+    skeleton.write_text(yaml.safe_dump(data, sort_keys=False))
+    c = config.load_checks(skeleton, for_plan=True)
     assert c.datasource == "" and c.dashboards == ()
     with pytest.raises(config.ConfigError, match="datasource"):
-        config.load_checks(SKELETON)
+        config.load_checks(skeleton)
+
+
+def test_the_committed_attendance_checks_file_loads():
+    assert config.load_checks(COMMITTED).dashboards == ("Attendance Rollup",)

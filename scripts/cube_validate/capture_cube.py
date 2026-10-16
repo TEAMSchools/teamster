@@ -75,6 +75,9 @@ class CubeClient:
     def _post(self, path: str, query: dict) -> dict:
         import httpx
 
+        # Mart dates are UTC dates. Without an explicit zone Cube answers in the
+        # deployment's own, which shifts every day filter and date by a day.
+        query = {"timezone": "UTC", **query}
         overloaded = 0
         for _ in range(120):
             try:

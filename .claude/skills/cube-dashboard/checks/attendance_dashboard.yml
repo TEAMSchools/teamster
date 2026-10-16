@@ -16,7 +16,7 @@ window:
   end: 06:00
   extract_after: "15:00"
   tz: America/New_York
-cost_cap_gb: 50
+cost_cap_gb: 100
 tableau_quiet_minutes: [0, 10]
 cube:
   view: student_attendance_enrollment_daily_view
