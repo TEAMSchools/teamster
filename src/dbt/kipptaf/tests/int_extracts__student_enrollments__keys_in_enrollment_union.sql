@@ -29,14 +29,7 @@ with
         from {{ ref("int_students__student_enrollment_union") }}
     )
 
-select e.student_enrollment_key, 'missing from union' as gap,
+select e.student_enrollment_key,
 from extracts_keys as e
 left join union_keys as u on e.student_enrollment_key = u.student_enrollment_key
 where u.student_enrollment_key is null
-
-union all
-
-select u.student_enrollment_key, 'missing from extracts' as gap,
-from union_keys as u
-left join extracts_keys as e on u.student_enrollment_key = e.student_enrollment_key
-where e.student_enrollment_key is null

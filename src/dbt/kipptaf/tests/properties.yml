@@ -938,16 +938,18 @@ data_tests:
           ref:
             name: int_extracts__student_enrollments
 
-  - name: int_extracts__student_enrollments__matches_enrollment_union
+  - name: int_extracts__student_enrollments__keys_in_enrollment_union
     description: >-
-      Fails when a student_enrollment_key exists on only one of the two
-      enrollment models the marts hash it from. The attendance facts build the
-      key from int_extracts__student_enrollments, and dim_student_enrollments
-      builds it from int_students__student_enrollment_union, so a key on one
-      side only is an orphan foreign key in the marts. Both models are tables
-      built from the same Focus and PowerSchool enrollments, so a gap means a
-      filter or join in one lineage diverged from the other, which a code change
-      fixes.
+      Fails when a student_enrollment_key from int_extracts__student_enrollments
+      is missing from int_students__student_enrollment_union. The daily
+      attendance fact, and the periods fact through it, build the key from
+      int_extracts__student_enrollments by way of
+      int_students__enrollment_daily. dim_student_enrollments builds it from the
+      union, so a key missing there is an orphan foreign key in the marts. A
+      union key with no extracts row is a dimension row with no daily facts,
+      which is valid, so it is not tested. Both models read the same Focus and
+      PowerSchool enrollments, so a gap means a filter or join in one lineage
+      diverged from the other, which a code change fixes.
     config:
       severity: error
       meta:
