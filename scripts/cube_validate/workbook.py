@@ -9,7 +9,7 @@ import datetime as dt
 import re
 import subprocess
 import zipfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -60,32 +60,12 @@ class Action:
     exclude: tuple[str, ...]
 
 
-@dataclass(frozen=True)
-class SheetFilter:
-    """A filter a worksheet saves, which Tableau applies before any export."""
-
-    sheet: str
-    field: str  # the extract column (a group's underlying column)
-    caption: str
-    datasource: str
-    op: str  # "in", "not_in" or "range"
-    values: tuple[str, ...] = ()  # "%null%" stands for blank
-    low: str | None = None
-    high: str | None = None
-    numeric: bool = False
-    # A calculation the extract has no column for: only a Cube member, or the
-    # checks file's ignore_sheet_filters, can account for it.
-    calculated: bool = False
-
-
 @dataclass
 class Workbook:
     dashboards: dict[str, list[str]]
     filters: list[FilterCard]
     params: list[Param]
     actions: list[Action]
-    sheet_filters: dict[str, list[SheetFilter]] = field(default_factory=dict)
-    groups: dict[str, dict] = field(default_factory=dict)
 
 
 def caption_of(el, field: str) -> str:
@@ -112,7 +92,6 @@ def read_workbook(twb_text: str) -> Workbook:
     root = SafeET.fromstring(twb_text)
     columns: dict[tuple[str, str], object] = {}
     ds_caption: dict[str, str] = {}
-    groups: dict[str, dict] = {}
     for ds in root.iter("datasource"):
         name = ds.get("name") or ""
         if ds.get("caption"):
@@ -120,19 +99,6 @@ def read_workbook(twb_text: str) -> Workbook:
         for c in ds.findall("column"):
             col_name = (c.get("name") or "").strip("[]")
             columns[(name, col_name)] = c
-            calc = c.find("calculation")
-            if calc is not None and calc.get("class") == "categorical-bin":
-                groups[caption_of(c, col_name)] = {
-                    "datasource": ds.get("caption") or name,
-                    "field": (calc.get("column") or "").strip("[]"),
-                    "bins": {
-                        _unquote(b.get("value") or ""): [
-                            _unquote(v.text or "") for v in b.findall("value")
-                        ]
-                        for b in calc.findall("bin")
-                    },
-                    "other": _unquote(calc.get("default") or ""),
-                }
 
     dashboards: dict[str, list[str]] = {}
     filters: list[FilterCard] = []
@@ -150,82 +116,7 @@ def read_workbook(twb_text: str) -> Workbook:
                 params.append(_param(columns, dash, z.get("param") or ""))
         dashboards[dash] = sheets
     actions = [_action(a) for a in root.iter("action")]
-    sheet_filters = {
-        w.get("name") or "": _saved_filters(w, columns, ds_caption)
-        for w in root.iter("worksheet")
-    }
-    return Workbook(dashboards, filters, params, actions, sheet_filters, groups)
-
-
-def _saved_filters(w, columns, ds_caption) -> list[SheetFilter]:
-    sheet, out = w.get("name") or "", []
-    for f in w.iter("filter"):
-        col = f.get("column") or ""
-        if "[Action (" in col or "Measure Names" in col or not _FIELD.match(col):
-            continue
-        ds, name = _split(col)
-        el = columns.get((ds, name))
-        calc = el.find("calculation") if el is not None else None
-        formula = (calc.get("formula") or "") if calc is not None else ""
-        if formula and not re.sub(r"\[Parameters\]\.\[[^\]]+\]", "", formula).count(
-            "["
-        ):
-            continue  # reads only a parameter: a sheet swap, not a data filter
-        caption = caption_of(el, name)
-        numeric = el is not None and el.get("datatype") in ("integer", "real")
-        common = {
-            "sheet": sheet,
-            "field": name,
-            "caption": caption,
-            "datasource": ds_caption.get(ds, ds),
-            "numeric": numeric,
-            "calculated": bool(formula),
-        }
-        if f.get("class") == "quantitative":
-            lo, hi = f.find("min"), f.find("max")
-            if lo is None and hi is None:
-                continue  # a range with no bounds filters nothing
-            out.append(
-                SheetFilter(
-                    **common,
-                    op="range",
-                    low=lo.text if lo is not None else None,
-                    high=hi.text if hi is not None else None,
-                )
-            )
-            continue
-        top = f.find("groupfilter")
-        if top is None or top.get("function") not in ("member", "union", "except"):
-            continue  # all members, or a user filter (row-level security)
-        members = tuple(
-            _unquote(g.get("member") or "")
-            for g in f.iter("groupfilter")
-            if g.get("member")
-        )
-        if calc is not None and calc.get("class") == "categorical-bin":
-            bins = {
-                _unquote(b.get("value") or ""): tuple(
-                    _unquote(v.text or "") for v in b.findall("value")
-                )
-                for b in calc.findall("bin")
-            }
-            if not all(m in bins for m in members):
-                continue  # the group's default bin: no fixed member list
-            common.update(
-                field=(calc.get("column") or "").strip("[]"), calculated=False
-            )
-            members = tuple(v for m in members for v in bins[m])
-        common["numeric"] = numeric and all(
-            _is_number(m) for m in members if m != "%null%"
-        )
-        out.append(
-            SheetFilter(
-                **common,
-                op="not_in" if top.get("function") == "except" else "in",
-                values=members,
-            )
-        )
-    return out
+    return Workbook(dashboards, filters, params, actions)
 
 
 def _card(root, columns, ds_caption, dash: str, z) -> FilterCard:

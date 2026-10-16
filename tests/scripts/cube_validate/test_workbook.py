@@ -9,7 +9,6 @@ from cube_validate import workbook
 
 FIX = Path(__file__).parents[1] / "fixtures" / "cube_validate"
 TWB = (FIX / "review.twb").read_text(encoding="utf-8", newline="")
-DS = "rpt_demo (kipptaf_tableau)"
 
 
 def test_read_workbook_lists_each_dashboards_sheets():
@@ -64,51 +63,6 @@ def test_views_to_hide_keeps_only_the_named_views():
         out, {"Overview", "Overview - Table", "Overview - Detail"}
     )
     assert hide == ["Scratch Sheet"]
-
-
-def test_read_workbook_reads_each_sheets_saved_filters():
-    sf = {
-        f.caption: f
-        for f in workbook.read_workbook(TWB).sheet_filters["Overview - Table"]
-    }
-    assert set(sf) == {
-        "iep_status",
-        "Subject Group",
-        "response_type",
-        "standard_code",
-        "score",
-        "Pct Done",
-    }
-    assert sf["iep_status"].op == "in" and sf["iep_status"].values == ("No IEP",)
-    # A group becomes its underlying column and the bin's members.
-    assert (sf["Subject Group"].field, sf["Subject Group"].values) == (
-        "subject",
-        ("English", "Writing"),
-    )
-    assert sf["response_type"].values == ("O", "overall")
-    assert sf["standard_code"].op == "not_in" and sf["standard_code"].values == (
-        "Overall",
-    )
-    assert (sf["score"].op, sf["score"].low, sf["score"].high, sf["score"].numeric) == (
-        "range",
-        "0.75",
-        None,
-        True,
-    )
-    # A calculation the extract has no column for is flagged; one that only reads a
-    # parameter (a sheet swap) is left out.
-    assert sf["Pct Done"].calculated is True
-    assert "View Switch" not in sf
-
-
-def test_read_workbook_lists_groups_with_their_bins():
-    g = workbook.read_workbook(TWB).groups["Subject Group"]
-    assert g == {
-        "datasource": DS,
-        "field": "subject",
-        "bins": {"Literacy": ["English", "Writing"]},
-        "other": "Other",
-    }
 
 
 def test_formulas_maps_captions_to_calculations():
