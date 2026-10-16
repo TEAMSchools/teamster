@@ -820,6 +820,11 @@ Performed in the Cube Cloud UI by an admin:
      Superset user impersonation (follow-up integration)
    - `CUBEJS_DB_EXPORT_BUCKET=teamster-cube-exports` and
      `CUBEJS_DB_EXPORT_BUCKET_TYPE=gcp` — see step 7
+   - `CUBEJS_SCHEDULED_REFRESH_TIMEZONES=UTC` — the refresh worker builds
+     pre-aggregation partitions only for these time zones, and a query reads
+     only partitions built for its own time zone. The MCP server and SQL API
+     clients query in UTC, so a refresh worker on any other zone leaves UTC
+     queries reading a one-off build that never refreshes.
 
    Cube Cloud automatically generates `CUBEJS_API_SECRET`, the SQL API username,
    and the SQL API password on deployment creation — find them under the
