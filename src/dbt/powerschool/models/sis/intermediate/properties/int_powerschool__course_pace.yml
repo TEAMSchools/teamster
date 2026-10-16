@@ -5,9 +5,10 @@ models:
       the student needs in each remaining term, exams included, for the course
       Y1 to land on their target cutoff from
       `int_powerschool__student_y1_target`, and the quickest-win ranking of
-      their open courses. A term counts as remaining until its termbin ends, so
-      the in-progress term is in the remaining weight and the pace does not
-      swing with each posted assignment. An ended term with no grade counts
+      their open courses. Section, teacher, and credit type come from the same
+      term row as the live Y1. A term counts as remaining until its termbin
+      ends, so the in-progress term is in the remaining weight and the pace does
+      not swing with each posted assignment. An ended term with no grade counts
       nowhere, matching the Y1 average PowerSchool computes. A course whose
       every term has ended is locked; it has no pace and stays in the GPA. The
       quickest win ranks open courses by unweighted grade points gained at the
@@ -58,6 +59,18 @@ models:
         data_type: string
       - name: course_name
         data_type: string
+      - name: sectionid
+        data_type: int64
+        description: >-
+          Section on the term row the live Y1 is read from, the current termbin
+          else the latest started term, so a mid-year section change shows the
+          new section.
+      - name: teacher_lastfirst
+        data_type: string
+        description: Teacher of `sectionid`, last name first.
+      - name: credittype
+        data_type: string
+        description: PowerSchool credit type of the course, as stored.
       - name: potential_credit_hours
         data_type: float64
         description: GPA credit hours for the course.
@@ -1157,4 +1170,157 @@ unit_tests:
             need_gap: null,
             score: null,
             quickest_win_rank: null,
+          }
+  - name: unit_powerschool_course_pace_current_section
+    description: >-
+      Section, teacher, and credit type come from the row the live Y1 is read
+      from, not from an aggregate over the course's terms. Student 1 took C1
+      with one teacher in section 11 for Q1 and Q2, both ended, and switched to
+      section 12 with another teacher for Q3, in progress, and Q4: the row
+      carries section 12 and the Q3 teacher, where max() over the term rows
+      would pick the alphabetically later teacher. Student 2's Q1 in section 21
+      has ended and Q2 in section 22 has not started, so no term is current and
+      the latest started term, Q1, supplies section 21 and its teacher.
+    model: int_powerschool__course_pace
+    overrides:
+      vars:
+        current_academic_year: 2025
+    given:
+      - input: ref('int_powerschool__student_y1_target')
+        rows:
+          - { studentid: 1, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 2, schoolid: 101, target_cutoff_percent: 87.0 }
+      - input: ref('int_powerschool__gradescaleitem_lookup')
+        rows: []
+      - input: ref('base_powerschool__final_grades')
+        rows:
+          - {
+              studentid: 1,
+              course_number: C1,
+              sectionid: 11,
+              teacher_lastfirst: Zed Teacher,
+              credittype: ENG,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 80.0,
+              y1_percent_grade_adjusted: 80.0,
+            }
+          - {
+              studentid: 1,
+              course_number: C1,
+              sectionid: 11,
+              teacher_lastfirst: Zed Teacher,
+              credittype: ENG,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 2000-06-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 80.0,
+              y1_percent_grade_adjusted: 80.0,
+            }
+          - {
+              studentid: 1,
+              course_number: C1,
+              sectionid: 12,
+              teacher_lastfirst: Abe Teacher,
+              credittype: ENG,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              termbin_start_date: 2000-07-01,
+              termbin_end_date: 9999-09-30,
+              termbin_is_current: true,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 85.0,
+              y1_percent_grade_adjusted: 82.0,
+            }
+          - {
+              studentid: 1,
+              course_number: C1,
+              sectionid: 12,
+              teacher_lastfirst: Abe Teacher,
+              credittype: ENG,
+              course_name: English,
+              academic_year: 2025,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              termbin_start_date: 9999-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+            }
+          - {
+              studentid: 2,
+              course_number: C2,
+              sectionid: 21,
+              teacher_lastfirst: Abe Teacher,
+              credittype: SCI,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 50.0,
+              term_percent_grade_adjusted: 90.0,
+              y1_percent_grade_adjusted: 90.0,
+            }
+          - {
+              studentid: 2,
+              course_number: C2,
+              sectionid: 22,
+              teacher_lastfirst: Zed Teacher,
+              credittype: SCI,
+              course_name: Biology,
+              academic_year: 2025,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              termbin_start_date: 9999-04-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 50.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+            }
+    expect:
+      rows:
+        - {
+            studentid: 1,
+            course_number: C1,
+            sectionid: 12,
+            teacher_lastfirst: Abe Teacher,
+            credittype: ENG,
+          }
+        - {
+            studentid: 2,
+            course_number: C2,
+            sectionid: 21,
+            teacher_lastfirst: Abe Teacher,
+            credittype: SCI,
           }
