@@ -76,7 +76,8 @@ models:
         data_tests:
           # not_null guards the invariant the #4546 fix rests on: a row where
           # both administration and test date are null would silently null
-          # academic_year again, and the unenforced FK constraint misses it.
+          # academic_year again, and nothing else checks this column (the FK is
+          # diagram metadata only).
           - not_null
 
       - name: response_type

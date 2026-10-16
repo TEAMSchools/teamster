@@ -82,8 +82,9 @@ models:
       - name: location_key
         data_type: string
         description: >-
-          Foreign key to dim_locations. Surrogate key derived from the Location
-          custom field value on the ticket.
+          Foreign key to dim_locations, resolved by matching the ticket's
+          Location custom field to int_people__location_crosswalk. Null when the
+          field is blank or has no match.
         config:
           meta:
             foreign_key:
