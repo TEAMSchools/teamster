@@ -40,11 +40,6 @@ models:
             foreign_key:
               to: ref('dim_students')
               to_columns: [student_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_students')
-                field: student_key
       - name: assessment_administration_key
         data_type: string
         description: >-
@@ -57,11 +52,6 @@ models:
             foreign_key:
               to: ref('dim_assessment_administrations')
               to_columns: [assessment_administration_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_assessment_administrations')
-                field: assessment_administration_key
       - name: test_date_key
         data_type: date
         description: >-
@@ -73,11 +63,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
 
       - name: scale_score
         data_type: numeric

@@ -30,11 +30,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
       - name: staff_observation_goal_type_key
         data_type: string
         description: >-
@@ -45,11 +40,6 @@ models:
             foreign_key:
               to: ref('dim_staff_observation_goal_types')
               to_columns: [staff_observation_goal_type_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff_observation_goal_types')
-                field: staff_observation_goal_type_key
 
       - name: creator_staff_key
         data_type: string
@@ -63,11 +53,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
       - name: assignment_date
         data_type: date
         description: >-

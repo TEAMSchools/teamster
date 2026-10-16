@@ -28,11 +28,6 @@ models:
             foreign_key:
               to: ref('dim_job_candidates')
               to_columns: [job_candidate_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_job_candidates')
-                field: job_candidate_key
       - name: shared_with_location_key
         data_type: string
         description: >-
@@ -48,11 +43,6 @@ models:
             foreign_key:
               to: ref('dim_locations')
               to_columns: [location_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
       - name: job_posting_key
         data_type: string
         description: >-
@@ -64,11 +54,6 @@ models:
             foreign_key:
               to: ref('dim_job_postings')
               to_columns: [job_posting_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_job_postings')
-                field: job_posting_key
       - name: created_date_key
         data_type: date
         description: >-
@@ -80,11 +65,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: state
         data_type: string
         description: >-

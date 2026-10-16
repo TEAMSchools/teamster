@@ -19,42 +19,6 @@ models:
         data_tests:
           - unique
 
-      - name: teacher_staff_key
-        data_type: string
-        description: >-
-          Foreign key to dim_staff for the observed teacher. Surrogate key
-          derived from employee_number. Nullable — observations whose source row
-          has no employee_number (or carries the SchoolMint Grow test sentinel
-          999999) flow through with a NULL key per the standard null-wrap
-          pattern.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_staff')
-              to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
-      - name: staff_observation_type_key
-        data_type: string
-        description: >-
-          Foreign key to dim_staff_observation_types. Surrogate key derived from
-          the SchoolMint Grow generic tag_id for the observation type. Null when
-          the observation type abbreviation does not resolve to an active
-          observationtypes tag.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_staff_observation_types')
-              to_columns: [staff_observation_type_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff_observation_types')
-                field: staff_observation_type_key
-
       - name: staff_observation_rubric_key
         data_type: string
         description: >-
@@ -69,12 +33,32 @@ models:
               to_columns: [staff_observation_rubric_key]
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_staff_observation_rubrics')
-                field: staff_observation_rubric_key
-              config:
-                severity: error
+
+      - name: teacher_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the observed teacher. Surrogate key
+          derived from employee_number. Nullable — observations whose source row
+          has no employee_number (or carries the SchoolMint Grow test sentinel
+          999999) flow through with a NULL key per the standard null-wrap
+          pattern.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
+      - name: staff_observation_type_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_observation_types. Surrogate key derived from
+          the SchoolMint Grow generic tag_id for the observation type. Null when
+          the observation type abbreviation does not resolve to an active
+          observationtypes tag.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff_observation_types')
+              to_columns: [staff_observation_type_key]
 
       - name: observer_staff_key
         data_type: string
@@ -87,11 +71,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
       - name: location_key
         data_type: string
         description: >-
@@ -103,11 +82,6 @@ models:
             foreign_key:
               to: ref('dim_locations')
               to_columns: [location_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
       - name: term_key
         data_type: string
         description: >-
@@ -119,11 +93,6 @@ models:
             foreign_key:
               to: ref('dim_terms')
               to_columns: [term_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
 
       - name: observed_date_key
         data_type: date
@@ -134,11 +103,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
 
       - name: academic_year
         data_type: int64

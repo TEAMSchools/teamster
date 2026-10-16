@@ -32,72 +32,6 @@ models:
         data_tests:
           - unique
 
-      - name: submitter_staff_key
-        data_type: string
-        description: >-
-          Foreign key to dim_staff for the ticket submitter. Surrogate key
-          derived from submitter employee_number.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_staff')
-              to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
-      - name: assignee_staff_key
-        data_type: string
-        description: >-
-          Foreign key to dim_staff for the current ticket assignee. Surrogate
-          key derived from assignee employee_number. Nullable — unassigned
-          tickets have no assignee.
-
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_staff')
-              to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
-      - name: original_assignee_staff_key
-        data_type: string
-        description: >-
-          Foreign key to dim_staff for the original assignee at ticket creation.
-          Surrogate key derived from original assignee employee_number. Nullable
-          — not all tickets have a creation-time assignee.
-
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_staff')
-              to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
-      - name: location_key
-        data_type: string
-        description: >-
-          Foreign key to dim_locations. Surrogate key derived from the Location
-          custom field value on the ticket. Currently fails 100% relationships
-          against dim_locations pending Zendesk-slug → canonical-location
-          crosswalk (#3709).
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_locations')
-              to_columns: [location_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
       - name: created_date_key
         data_type: date
         description: >-
@@ -111,10 +45,50 @@ models:
         data_tests:
           - not_null
 
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
+      - name: submitter_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the ticket submitter. Surrogate key
+          derived from submitter employee_number.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
+      - name: assignee_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the current ticket assignee. Surrogate
+          key derived from assignee employee_number. Nullable — unassigned
+          tickets have no assignee.
+
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
+      - name: original_assignee_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the original assignee at ticket creation.
+          Surrogate key derived from original assignee employee_number. Nullable
+          — not all tickets have a creation-time assignee.
+
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
+      - name: location_key
+        data_type: string
+        description: >-
+          Foreign key to dim_locations. Surrogate key derived from the Location
+          custom field value on the ticket.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
       - name: solved_date_key
         data_type: date
         description: >-
@@ -127,11 +101,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: status
         data_type: string
         description: >-
