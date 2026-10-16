@@ -161,15 +161,21 @@ first post-deploy tick.
 **Retry pattern**: Use `tenacity` — standard import set:
 `retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter`.
 Match on a specific exception class (define one if the upstream code raises bare
-`Exception`), never on error message or bare `Exception`. Existing examples:
-`libraries/adp/workforce_now/api/resources.py`,
-`libraries/tableau/resources.py`, `libraries/level_data/grow/resources.py`. Wrap
-the init path (`fetch_token` / `connect` in `setup_for_execution`) too, not just
-the request method. For network-call retries, the predicate must include
+`Exception`), never on error message or bare `Exception`; e.g. `GrowServerError`
+in `libraries/level_data/grow/resources.py`. Wrap the init path (`fetch_token` /
+`connect` in `setup_for_execution`) too, not just the request method. For
+network-call retries, the predicate must include
 `(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
-`ConnectTimeout`. The `tableau` sign-in path is the exception:
-`tableauserverclient` raises its own errors, not `requests.HTTPError`, so its
-predicate is `(RequestsConnectionError, Timeout, InternalServerError)`
+`ConnectTimeout` (examples: `libraries/adp/workforce_now/api/resources.py`,
+`libraries/overgrad/resources.py`). Keep `RequestsConnectionError` whole even
+though `SSLError` includes certificate failures that won't recover: a wasted
+retry costs seconds, while failing fast on a handshake blip can throw away a
+long paginated pull. Let only 429 and 5xx reach the predicate as `HTTPError`;
+raise other 4xx as a non-retried error first, or a 401/404 burns every attempt
+(`overgrad/resources.py` `_request`). The `tableau` sign-in path is the
+exception: `tableauserverclient` raises its own errors, not
+`requests.HTTPError`, so its predicate is
+`(RequestsConnectionError, Timeout, InternalServerError, StaleSessionError)`
 (`InternalServerError` wraps a 5xx) and it fails fast on `FailedSignInError`
 (401) / `ServerResponseError` (other 4xx) — do not "restore" `HTTPError` there.
 For runtime-parameterized retry loops (e.g. `with_powerschool_retry`), use
