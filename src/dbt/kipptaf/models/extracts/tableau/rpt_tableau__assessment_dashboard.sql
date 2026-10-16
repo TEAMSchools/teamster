@@ -54,10 +54,10 @@ with
             if(
                 asr.source = 'apex', ea.sections_expression, enr.sections_expression
             ) as expression,
+            -- Focus rows null sections_section_number; cc_section_number is
+            -- the Focus section number
             if(
-                asr.source = 'apex',
-                ea.sections_section_number,
-                enr.sections_section_number
+                asr.source = 'apex', ea.cc_section_number, enr.sections_section_number
             ) as section_number,
             if(
                 asr.source = 'apex', ea.is_foundations, enr.is_foundations
