@@ -8,7 +8,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from .config import Checks, Cut, FieldMap, lit, side_sql
+from .config import ALL, Checks, Cut, FieldMap, lit, side_sql
 
 # trunk-ignore(bandit/B105): a verdict label, not a credential
 PASS = "pass"
@@ -32,7 +32,6 @@ DASHBOARD_SIDE = (
 )
 OUTSIDE_PERIOD = "some of this cell's rows fall outside the captured period"
 OUTSIDE_SCOPE = "rows outside Cube's scope for this identity"
-ALL = "(All)"
 NULLS = ("", "Null", "(Blank)", "%null%")
 TOTALS = ("Total", "Grand Total")
 _US_DATE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")

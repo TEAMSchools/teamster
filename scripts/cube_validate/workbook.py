@@ -11,6 +11,8 @@ import subprocess
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
+
+# trunk-ignore(bandit/B406): escape only writes entities into a string, it parses no XML
 from xml.sax.saxutils import escape
 
 import defusedxml.ElementTree as SafeET
@@ -21,7 +23,7 @@ _LITERAL = re.compile(r"\"([^\"]*)\"|'([^']*)'")
 _USER = "{http://www.tableausoftware.com/xml/user}"
 
 
-def _is_number(s: str) -> bool:
+def is_number(s: str) -> bool:
     try:
         float(s.replace(",", "").rstrip("%"))
     except ValueError:
@@ -331,9 +333,7 @@ def build_review_twbx(
     listed: set[str] | None = None,
 ) -> tuple[Path, list[str]]:
     """Edit the live workbook into a review copy and pass the tableau-workbook-xml gates."""
-    with zipfile.ZipFile(live_twbx) as z:
-        twb_name = next(n for n in z.namelist() if n.endswith(".twb"))
-        base = z.read(twb_name).decode("utf-8")
+    base = twb_text(live_twbx)
     (out_dir / "base.twb").write_text(base, encoding="utf-8", newline="")
     wb0 = read_workbook(base)
     sheets = None
@@ -372,11 +372,8 @@ def build_review_twbx(
 def unpack_extracts(twbx: Path, out_dir: Path) -> dict[str, dict]:
     """Each datasource's .hyper from a downloaded .twbx, with its refresh time (UTC)."""
     out = {}
+    root = SafeET.fromstring(twb_text(twbx))
     with zipfile.ZipFile(twbx) as z:
-        twb = z.read(next(n for n in z.namelist() if n.endswith(".twb"))).decode(
-            "utf-8"
-        )
-        root = SafeET.fromstring(twb)
         for ds in root.iter("datasource"):
             conn = ds.find("extract/connection")
             if conn is None or conn.get("class") != "hyper" or not ds.get("caption"):

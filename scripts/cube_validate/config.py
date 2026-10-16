@@ -21,6 +21,9 @@ RESERVED = (
     "outside_period",
     "unexplained",
 )
+ALL = "(All)"
+# Minutes past each hour when the dashboard's scheduled refreshes sign in; the
+# checks file's tableau_quiet_minutes overrides it per dashboard.
 DEFAULT_QUIET = (0, 10)
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _P_REF = re.compile(r"\{p\}([A-Za-z_][A-Za-z0-9_]*)")

@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import yaml
 
+from .config import ALL
 from .snapshot import slug
 from .workbook import Workbook
-
-ALL = "(All)"
 
 
 def _non_default(values: list[str], defaults: tuple[str, ...]) -> str | None:

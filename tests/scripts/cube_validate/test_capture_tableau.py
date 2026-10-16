@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest registers cube_validate at runtime
-from cube_validate import capture_tableau, workbook
+from cube_validate import capture_tableau, config, workbook
 
 snap = capture_tableau
 
@@ -260,3 +260,17 @@ def test_pick_click_row_names_a_measure_that_is_blank_on_every_mark():
 def test_pick_click_row_skips_a_mark_with_a_blank_measure():
     data = b"Title,Score\r\nT1,\r\nT2,5\r\nT3,9\r\n"
     assert snap.pick_click_row(data, "small", ["Title"]) == {"Title": "T2"}
+
+
+def test_pick_click_row_stores_dates_and_grouped_numbers_as_the_extract_does():
+    data = b'Day,Count,Score\r\n1/5/2026,"1,234",9\r\n'
+    assert snap.pick_click_row(data, "largest", ["Day", "Count"]) == {
+        "Day": "2026-01-05",
+        "Count": "1234",
+    }
+
+
+def test_one_source_for_the_shared_constants():
+    assert snap.ALL is config.ALL
+    assert snap.DEFAULT_QUIET is config.DEFAULT_QUIET
+    assert workbook.is_number("1,234%") and not workbook.is_number("n/a")

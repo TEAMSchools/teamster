@@ -14,9 +14,9 @@ import re
 import time
 from pathlib import Path
 
-from . import snapshot, workbook
+from . import cells, snapshot, workbook
+from .config import ALL, DEFAULT_QUIET
 
-ALL = "(All)"
 BLANK = "(Blank)"
 
 TEMP_CB = "ddc817c2-6bc7-4bca-8be9-e385f95b9ebc"
@@ -61,7 +61,7 @@ def pick_click_row(export: bytes, mark: str, dims: list[str] | None) -> dict[str
         raise SessionError("the source sheet exported no marks to click")
     cols = list(rows[0])
     dims = dims or [
-        c for c in cols if not all(workbook._is_number(r[c]) for r in rows if r[c])
+        c for c in cols if not all(workbook.is_number(r[c]) for r in rows if r[c])
     ]
     measure = next((c for c in cols if c not in dims), None)
     if measure is None:
@@ -72,7 +72,7 @@ def pick_click_row(export: bytes, mark: str, dims: list[str] | None) -> dict[str
     marks = [r for r in rows if not any(r[d] in ("All", "*") for d in dims)]
     if not marks:
         raise SessionError("every mark on the source sheet is a total")
-    ranked = [r for r in marks if workbook._is_number((r[measure] or "").strip())]
+    ranked = [r for r in marks if workbook.is_number((r[measure] or "").strip())]
     if not ranked:
         raise SessionError(
             f"the source sheet's {measure} is blank or not a number on every mark"
@@ -82,20 +82,7 @@ def pick_click_row(export: bytes, mark: str, dims: list[str] | None) -> dict[str
         return float(r[measure].strip().replace(",", "").rstrip("%"))
 
     row = max(ranked, key=value) if mark == "largest" else min(ranked, key=value)
-    return {d: _plain(row[d]) for d in dims}
-
-
-_US_DATE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")
-_GROUPED_INT = re.compile(r"^-?\d{1,3}(,\d{3})+$")
-
-
-def _plain(v: str) -> str:
-    """A value as the extract stores it: Tableau shows dates M/D/YYYY and 1,234."""
-    if m := _US_DATE.match(v.strip()):
-        return f"{m.group(3)}-{int(m.group(1)):02d}-{int(m.group(2)):02d}"
-    if _GROUPED_INT.match(v.strip()):
-        return v.strip().replace(",", "")
-    return v
+    return {d: cells.norm_value(row[d]) or row[d] for d in dims}
 
 
 def _workbooks_in(server, project: str) -> list:
@@ -108,9 +95,6 @@ def _workbooks_in(server, project: str) -> list:
 # sign-in on it ends this session (401002).
 SIGN_IN_WAIT = 60.0  # seconds before signing in again
 SIGN_IN_TRIES = 5
-# Minutes past each hour when the dashboard's scheduled refreshes sign in; the
-# checks file's tableau_quiet_minutes overrides it per dashboard.
-DEFAULT_QUIET = (0, 10)
 
 
 @contextlib.contextmanager
