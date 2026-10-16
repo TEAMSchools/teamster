@@ -47,8 +47,8 @@ refactor):
 When a fact/bridge joins a parent (members, canonical, dim) purely to read
 hash-input columns, and the `where` filter (`is_internal_assessment`, etc.)
 guarantees the parent row exists, use INNER JOIN. LEFT JOIN silently produces
-null hash inputs that surrogate-key into placeholder hashes — orphans surface
-only at `relationships` test runtime, not at compile.
+null hash inputs that surrogate-key into placeholder hashes, and no mart test
+catches the orphan.
 
 If the parent has more rows than the key needs (e.g. several stints per
 student), project it to the hash inputs with a grain-projection `distinct` in a
@@ -190,8 +190,8 @@ violations.
 `generate_marts_reference.py` derives FK edges **only** from literal
 declarations — never inferred from `relationships` data tests. Every mart must
 declare its outgoing FKs one of two ways, or they vanish from the generated
-reference diagram. A `relationships` data test is still good to keep for orphan
-detection, but it does not feed the diagram.
+reference diagram. Do not add a `relationships` test to a mart; _Test config
+defaults_ in `.claude/rules/dbt-yaml.md` says where an orphan check goes.
 
 - **View marts** — column- or model-level `foreign_key` constraints, inert in
   BigQuery because views hold no constraints.
@@ -290,8 +290,8 @@ Date-grain temporal classifiers (`is_current_academic_year`,
 
 ## Verify FK population, not just compilation
 
-`relationships` tests don't fail on 100%-NULL FKs. After adding or restructuring
-an FK join, sample populated count in prod (or PR-branch schema):
+No mart test fails on a 100%-NULL FK. After adding or restructuring an FK join,
+sample populated count in prod (or PR-branch schema):
 
 ```sql
 select countif(<fk>_key is null) as n_null, count(*) as n_total
