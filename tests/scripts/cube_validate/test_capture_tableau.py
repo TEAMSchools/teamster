@@ -238,3 +238,25 @@ def test_download_with_a_signed_in_server_does_not_sign_in_again(tmp_path):
     path, at = capture_tableau.download("l", tmp_path, server=server)
     assert calls == ["download"]
     assert path == tmp_path / "live.twbx" and at.startswith("2026-10-15T20:00")
+
+
+def test_pick_click_row_names_a_sheet_with_no_measure():
+    data = b"Title,School\r\nT1,Alpha\r\nT2,Beta\r\n"
+    with pytest.raises(snap.SessionError, match="no numeric measure"):
+        snap.pick_click_row(data, "largest", None)
+    with pytest.raises(snap.SessionError, match="no numeric measure"):
+        snap.pick_click_row(data, "largest", ["Title", "School"])
+
+
+def test_pick_click_row_names_a_measure_that_is_blank_on_every_mark():
+    data = b"Title,Score\r\nT1,\r\nT2,\r\n"
+    with pytest.raises(snap.SessionError, match="blank or not a number"):
+        snap.pick_click_row(data, "largest", ["Title"])
+    data = b"Title,Score\r\nT1,n/a\r\nT2,-\r\n"
+    with pytest.raises(snap.SessionError, match="blank or not a number"):
+        snap.pick_click_row(data, "largest", ["Title"])
+
+
+def test_pick_click_row_skips_a_mark_with_a_blank_measure():
+    data = b"Title,Score\r\nT1,\r\nT2,5\r\nT3,9\r\n"
+    assert snap.pick_click_row(data, "small", ["Title"]) == {"Title": "T2"}

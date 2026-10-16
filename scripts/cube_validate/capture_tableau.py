@@ -63,12 +63,25 @@ def pick_click_row(export: bytes, mark: str, dims: list[str] | None) -> dict[str
     dims = dims or [
         c for c in cols if not all(workbook._is_number(r[c]) for r in rows if r[c])
     ]
-    measure = next(c for c in cols if c not in dims)
+    measure = next((c for c in cols if c not in dims), None)
+    if measure is None:
+        raise SessionError(
+            "the source sheet has no numeric measure column to rank its marks by "
+            f"(every column is a dimension: {', '.join(cols)})"
+        )
     marks = [r for r in rows if not any(r[d] in ("All", "*") for d in dims)]
     if not marks:
         raise SessionError("every mark on the source sheet is a total")
-    value = lambda r: float(r[measure].replace(",", "").rstrip("%") or 0)  # noqa: E731
-    row = max(marks, key=value) if mark == "largest" else min(marks, key=value)
+    ranked = [r for r in marks if workbook._is_number((r[measure] or "").strip())]
+    if not ranked:
+        raise SessionError(
+            f"the source sheet's {measure} is blank or not a number on every mark"
+        )
+
+    def value(r: dict) -> float:
+        return float(r[measure].strip().replace(",", "").rstrip("%"))
+
+    row = max(ranked, key=value) if mark == "largest" else min(ranked, key=value)
     return {d: _plain(row[d]) for d in dims}
 
 
