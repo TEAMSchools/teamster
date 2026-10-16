@@ -119,7 +119,11 @@ with
             {{ ref("stg_finalsite__contacts") }} as stu
             on a.finalsite_enrollment_id = stu.finalsite_enrollment_id
             and stu.status = 'enrolled'
-        where a.emrg_1_name_first_name is not null and a.emrg_1_name_first_name != ''
+        where
+            a.emrg_1_name_first_name is not null
+            and a.emrg_1_name_first_name != ''
+            and a.emrg_1_name_last_name is not null
+            and a.emrg_1_name_last_name != ''
 
         union all
 
@@ -167,7 +171,11 @@ with
             {{ ref("stg_finalsite__contacts") }} as stu
             on a.finalsite_enrollment_id = stu.finalsite_enrollment_id
             and stu.status = 'enrolled'
-        where a.emrg_2_name_first_name is not null and a.emrg_2_name_first_name != ''
+        where
+            a.emrg_2_name_first_name is not null
+            and a.emrg_2_name_first_name != ''
+            and a.emrg_2_name_last_name is not null
+            and a.emrg_2_name_last_name != ''
 
         union all
 
@@ -215,7 +223,11 @@ with
             {{ ref("stg_finalsite__contacts") }} as stu
             on a.finalsite_enrollment_id = stu.finalsite_enrollment_id
             and stu.status = 'enrolled'
-        where a.emrg_3_name_first_name is not null and a.emrg_3_name_first_name != ''
+        where
+            a.emrg_3_name_first_name is not null
+            and a.emrg_3_name_first_name != ''
+            and a.emrg_3_name_last_name is not null
+            and a.emrg_3_name_last_name != ''
 
         union all
 
@@ -263,7 +275,11 @@ with
             {{ ref("stg_finalsite__contacts") }} as stu
             on a.finalsite_enrollment_id = stu.finalsite_enrollment_id
             and stu.status = 'enrolled'
-        where a.emrg_4_name_first_name is not null and a.emrg_4_name_first_name != ''
+        where
+            a.emrg_4_name_first_name is not null
+            and a.emrg_4_name_first_name != ''
+            and a.emrg_4_name_last_name is not null
+            and a.emrg_4_name_last_name != ''
     ),
 
     all_contacts as (

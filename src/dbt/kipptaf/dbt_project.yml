@@ -32,8 +32,7 @@ data_tests:
       dimensions:
         +severity: error
     extracts:
-      tableau:
-        +severity: error
+      +severity: error
 
 vars:
   local_timezone: America/New_York

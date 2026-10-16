@@ -27,18 +27,6 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: Relationship
-        data_type: string
-        description:
-          Relationship of the contact to the student, for every slot. Parents
-          (`contact_1` and `contact_2`) carry the Finalsite `rel_type`
-          (`parent`, `stepparent`, `guardian`, `grandparent`, etc.); emergency
-          contacts carry the relationship recorded on their emergency
-          custom-field set (`Mother`, `Grandmother`, `Aunt`, `Neighbor`, etc.),
-          which is populated on nearly every emergency row. Null where Finalsite
-          holds an emergency contact with no relationship recorded.
-        data_tests:
-          - not_null
       - name: IntegrationKey
         data_type: string
         description:
@@ -71,6 +59,16 @@ models:
           - unique:
               config:
                 severity: error
+      - name: Relationship
+        data_type: string
+        description:
+          Relationship of the contact to the student, for every slot. Parents
+          (`contact_1` and `contact_2`) carry the Finalsite `rel_type`
+          (`parent`, `stepparent`, `guardian`, `grandparent`, etc.); emergency
+          contacts carry the relationship recorded on their emergency
+          custom-field set (`Mother`, `Grandmother`, `Aunt`, `Neighbor`, etc.),
+          which is populated on nearly every emergency row. `Unknown` where
+          Finalsite holds an emergency contact with no relationship recorded.
       - name: ParentFirstName
         data_type: string
         description: Parent contact's first name.
@@ -264,6 +262,51 @@ unit_tests:
             ContactType: Emergency,
             Language: null,
             IntegrationKey: 123456-emergency_4,
+          }
+
+  - name: test_family_contacts_null_relationship_unknown
+    description:
+      An emergency contact with no relationship recorded in Finalsite reaches
+      DeansList as `Unknown` rather than blank.
+    model: rpt_deanslist__family_contacts
+    given:
+      - input: ref('int_students__contacts')
+        format: sql
+        rows: |
+          select
+            123456 as student_number,
+            'kippnewark' as _dbt_source_project,
+            'emergency_1' as contact_slot,
+            cast(null as string) as person_identity,
+            cast(null as string) as relationship,
+            'Bob' as contact_first_name,
+            'Smith' as contact_last_name,
+            cast(null as string) as email_current,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_work,
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_untyped
+      - input: ref('stg_powerschool__students')
+        format: sql
+        rows: |
+          select
+            123456 as student_number,
+            0 as enroll_status,
+            'kippnewark' as _dbt_source_project
+    expect:
+      rows:
+        - {
+            StudentID: 123456,
+            ParentFirstName: Bob,
+            ParentLastName: Smith,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: Unknown,
+            ContactType: Emergency,
+            Language: null,
+            IntegrationKey: 123456-emergency_1,
           }
 
   - name: test_family_contacts_excludes_ineligible

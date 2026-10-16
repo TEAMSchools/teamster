@@ -45,9 +45,7 @@ models:
         data_type: int64
         description: School year start year (e.g. 2026 for the 2026-27 year).
         data_tests:
-          - not_null:
-              config:
-                severity: warn
+          - not_null
       - name: school_id
         data_type: string
         description:
@@ -63,9 +61,7 @@ models:
           Focus grade ID translated inline from `grade_canonical_name` — `KG`
           for `k`, otherwise the grade number zero-padded to two digits.
         data_tests:
-          - not_null:
-              config:
-                severity: warn
+          - not_null
       - name: start_date
         data_type: string
         description:

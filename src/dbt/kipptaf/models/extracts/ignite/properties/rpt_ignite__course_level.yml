@@ -62,8 +62,6 @@ models:
           - accepted_values:
               arguments:
                 values: [A, B, C, D, F]
-              config:
-                severity: warn
 
       - name: school_id
         data_type: string
