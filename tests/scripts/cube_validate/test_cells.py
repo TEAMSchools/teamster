@@ -548,3 +548,10 @@ def test_all_among_defaults_means_no_default():
     checks = dataclasses.replace(_checks(), defaults={"Region": (cells.ALL,)})
     assert cells.cube_query(checks, "ADA", config.Cut("default"), {})["filters"] == []
     assert cells._cut_preds(checks, config.Cut("default"), {}, "t") == []
+
+
+def test_parse_export_drops_all_subtotal_rows():
+    data = b"Grade Level,School,ADA\n11,NCA,87%\n11,All,89%\nAll,All,90%\n"
+    assert cells.parse_export(data) == [
+        {"Grade Level": "11", "School": "NCA", "ADA": "87%"}
+    ]

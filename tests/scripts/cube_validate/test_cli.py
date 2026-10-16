@@ -273,6 +273,7 @@ def _fake_run(tmp_path, monkeypatch, pull_rows):
         {
             **_resume_manifest(),
             "clock_tables": ["t"],
+            "cube_tables": ["t"],
             "invariants": {"capture completeness": True},
         },
     )
@@ -408,3 +409,15 @@ def test_draft_plan_reads_columns_from_the_only_extract(tmp_path):
         )
     )
     assert d["extract_columns"] == ["region"]
+
+
+def test_cube_tables_prefers_the_recorded_list():
+    assert cli._cube_tables({"cube_tables": ["p.m.fct"]}, lambda: ["never"]) == [
+        "p.m.fct"
+    ]
+
+
+def test_cube_tables_recomputes_for_older_snapshots():
+    assert cli._cube_tables(
+        {"clock_tables": ["p.f.x", "p.m.fct"]}, lambda: ["p.m.fct"]
+    ) == ["p.m.fct"]

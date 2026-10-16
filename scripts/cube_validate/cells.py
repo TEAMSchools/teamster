@@ -33,7 +33,9 @@ DASHBOARD_SIDE = (
 OUTSIDE_PERIOD = "some of this cell's rows fall outside the captured period"
 OUTSIDE_SCOPE = "rows outside Cube's scope for this identity"
 NULLS = ("", "Null", "(Blank)", "%null%")
-TOTALS = ("Total", "Grand Total")
+# Tableau labels a subtotal row "All" in a crosstab export, and a grand total
+# "Total" or "Grand Total". Such rows are dropped, never judged.
+TOTALS = ("Total", "Grand Total", "All")
 _US_DATE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")
 _ISO_TS = re.compile(r"^(\d{4}-\d{2}-\d{2})T00:00:00(\.0+)?Z?$")
 _GROUPED_INT = re.compile(r"^-?\d{1,3}(,\d{3})+$")

@@ -80,12 +80,64 @@ filters:
     tableau: school_abbreviation
     cube: locations_abbreviation
     cube_column: locations_abbreviation
+  Term: { tableau: term, cube: terms_term_name, cube_column: terms_term_name }
+  Iep Status:
+    tableau: iep_status
+    cube: is_iep
+    cube_column: is_iep
+    cube_values: { No IEP: "false" }
+  Lep Status:
+    tableau: lep_status
+    cube: is_ell
+    cube_column: is_ell
+    cube_values: { "False": "false" }
+  Gender:
+    tableau: gender
+    cube: gender_identity
+    cube_column: gender_identity
+  Ethnicity:
+    tableau: ethnicity
+    cube: race
+    cube_column: race
+    cube_values: { A: Asian }
+  Enroll Status:
+    tableau: enroll_status
+    cube: enrollment_status
+    cube_column: enrollment_status
+    cube_values: { "0": Currently Enrolled }
+# Attendance Metric changes what "Avg. Attendance Metric" means (ADA, on-time,
+# chronic absence, truancy); a sheet column maps to 1 Cube member, so its cuts
+# stay unmapped and read "mapping unproven".
 params: {}
 sheets:
-  Y1 ADA - Region: {}
-  Y1 ADA - ES: {}
-  Y1 ADA - MS: {}
-  Y1 ADA - HS: {}
+  Y1 ADA - Region: &ada
+    students: Distinct count of Student Number
+    dims:
+      Grade Level: &grade
+        tableau: grade_level
+        cube: grade_level
+        cube_column: grade_level
+        values: { K: "0" }
+      Region:
+        tableau: region
+        cube: regions_region_name
+        cube_column: regions_region_name
+    measures:
+      Avg. Attendance Metric: { cube: avg_daily_attendance }
+      "Avg. Formatting - Distance from Goal": { cube: null }
+  Y1 ADA - ES: &school_sheet
+    students: Distinct count of Student Number
+    dims:
+      Grade Level: *grade
+      School:
+        tableau: school_abbreviation
+        cube: locations_abbreviation
+        cube_column: locations_abbreviation
+    measures:
+      Avg. Attendance Metric: { cube: avg_daily_attendance }
+      "Avg. Formatting - Distance from Goal": { cube: null }
+  Y1 ADA - MS: *school_sheet
+  Y1 ADA - HS: *school_sheet
 # One cut per card or parameter value that has a Cube counterpart and falls in
 # this year's capture. Dropped from the draft: past-year dates, and cards with
 # no Cube member (504, counseling, NJ tier, ms_attended, chronic tardiness).

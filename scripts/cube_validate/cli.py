@@ -204,6 +204,25 @@ def _resume_checks(
     return period
 
 
+def _cube_tables(m: dict, recompute) -> list[str]:
+    """The base tables Cube's SQL reads: the only ones that can move its answers.
+
+    The dashboard's tables are frozen in the extract once it refreshes, so a
+    change there after capture began cannot affect a resume or `answers`.
+    Snapshots written before this was recorded get it from fresh dry runs.
+    """
+    return list(m.get("cube_tables") or recompute())
+
+
+def _estimate_tables(checks, m: dict, cube, bq) -> list[str]:
+    """Cube's base tables for the snapshot's period, from free dry runs."""
+    a, b = m["period"].split(":")
+    queries = preflight.planned_queries(
+        checks, dt.date.fromisoformat(a), dt.date.fromisoformat(b)
+    )
+    return sorted(preflight.estimate(cube, bq, queries)["tables"])
+
+
 def _drop_completeness(m: dict) -> None:
     """Forget an earlier attempt's capture completeness; only pull_rows sets it."""
     (m.get("invariants") or {}).pop("capture completeness", None)
@@ -224,12 +243,13 @@ def _run(checks, args) -> int:
         if resuming:
             tables = m["clock_tables"]
             before = m["clock_before"]
+            gate = _cube_tables(m, lambda: _estimate_tables(checks, m, cube, bq))
             start, end = _resume_checks(
                 m,
                 args.period,
                 now,
                 checks.window,
-                preflight.clock_map(bq, tables),
+                preflight.clock_map(bq, gate),
             )
         else:
             today = now.astimezone(ZoneInfo(checks.window.tz)).date()
@@ -260,6 +280,7 @@ def _run(checks, args) -> int:
                 cost=f"{gb:.2f} GB planned, cap {checks.cost_cap_gb} GB",
                 clock_before=before,
                 clock_tables=tables,
+                cube_tables=sorted(est["tables"]),
             )
             if snap is None:
                 snap = snapshot.new_snapshot(checks.dashboard, now, tag)
@@ -333,14 +354,16 @@ def _answers(checks, args) -> int:
     if why:
         raise preflight.PreflightError(why)
     bq = preflight.BigQuery()
-    after = preflight.clock_map(bq, m["clock_tables"])
+    cube = capture_cube.client_from_env()
+    gate = _cube_tables(m, lambda: _estimate_tables(checks, m, cube, bq))
+    after = preflight.clock_map(bq, gate)
     moved = preflight.changed(m["clock_before"], after)
     if moved:
         raise preflight.PreflightError(
-            f"tables changed since capture: {', '.join(moved)}; run a new capture"
+            f"tables Cube reads changed since capture: {', '.join(moved)}; run a new capture"
         )
     capture_cube.capture_answers(
-        capture_cube.client_from_env(),
+        cube,
         snap,
         checks,
         m,
