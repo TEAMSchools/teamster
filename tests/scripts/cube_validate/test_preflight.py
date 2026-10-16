@@ -113,3 +113,34 @@ def test_estimate_runs_queries_in_parallel():
 def test_usd_prices_bytes_at_on_demand_rate():
     assert preflight.usd(1024**4) == 6.25
     assert round(preflight.usd(163.81e9), 2) == 0.93
+
+
+class _Prints:
+    """A fake BigQuery whose table prints differ between then and now on request."""
+
+    def __init__(self, now, then, fail=()):
+        self.now, self.then, self.fail, self.asked = now, then, set(fail), []
+
+    def fingerprint(self, table, at=None):
+        self.asked.append((table, at))
+        if at is not None and table in self.fail:
+            from google.api_core import exceptions
+
+            raise exceptions.BadRequest("outside the time travel window")
+        return (self.then if at else self.now)[table]
+
+
+def test_a_rebuild_with_the_same_rows_is_not_a_change():
+    before = {"same": "2026-10-16T22:16:23+00:00", "moved": "2026-10-16T22:18:00+00:00"}
+    bq = _Prints(
+        now={"same": (5, 1), "moved": (5, 2)}, then={"same": (5, 1), "moved": (5, 3)}
+    )
+    assert preflight.rewritten(bq, before, ["same", "moved"]) == ["moved"]
+    # read 1 second after the modified time the capture recorded
+    assert ("same", dt.datetime(2026, 10, 16, 22, 16, 24, tzinfo=dt.UTC)) in bq.asked
+
+
+def test_a_table_bigquery_cannot_read_back_counts_as_changed():
+    before = {"old": "2026-07-20T22:16:31+00:00"}
+    bq = _Prints(now={"old": (5, 1)}, then={"old": (5, 1)}, fail=["old"])
+    assert preflight.rewritten(bq, before, ["old"]) == ["old"]

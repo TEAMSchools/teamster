@@ -161,8 +161,22 @@ def _built_at(clock: dict[str, str], tables: list[str]) -> dt.datetime:
     return max(dt.datetime.fromisoformat(clock[t]) for t in cube_tables)
 
 
+def _same_rows_noted(bq, before: dict[str, str], moved: list[str]) -> list[str]:
+    """The moved tables whose rows changed; names the ones rebuilt unchanged."""
+    changed = preflight.rewritten(bq, before, moved) if moved else []
+    same = [t for t in moved if t not in changed]
+    if same:
+        print(f"Rebuilt with the same rows since capture: {', '.join(same)}")
+    return changed
+
+
 def _resume_checks(
-    m: dict, period_arg: str | None, now: dt.datetime, window, clock_after: dict
+    m: dict,
+    period_arg: str | None,
+    now: dt.datetime,
+    window,
+    clock_after: dict,
+    rows_changed=lambda moved: moved,
 ) -> tuple[dt.date, dt.date]:
     """Gate a resumed capture: still in the window, tables unmoved, same period.
 
@@ -172,6 +186,7 @@ def _resume_checks(
         now: The current time.
         window: The capture window.
         clock_after: The tables' modified times, read just now.
+        rows_changed: Of the tables whose time moved, those whose rows changed.
 
     Returns:
         The period start and end the snapshot captured.
@@ -188,7 +203,7 @@ def _resume_checks(
     )
     if why:
         raise preflight.PreflightError(why)
-    moved = preflight.changed(m["clock_before"], clock_after)
+    moved = rows_changed(preflight.changed(m["clock_before"], clock_after))
     if moved:
         raise preflight.PreflightError(
             f"tables changed since capture began: {', '.join(moved)}; run a new capture"
@@ -250,6 +265,7 @@ def _run(checks, args) -> int:
                 now,
                 checks.window,
                 preflight.clock_map(bq, gate),
+                lambda moved: _same_rows_noted(bq, m["clock_before"], moved),
             )
         else:
             today = now.astimezone(ZoneInfo(checks.window.tz)).date()
@@ -359,7 +375,9 @@ def _answers(checks, args) -> int:
     cube = capture_cube.client_from_env()
     gate = _cube_tables(m, lambda: _estimate_tables(checks, m, cube, bq))
     after = preflight.clock_map(bq, gate)
-    moved = preflight.changed(m["clock_before"], after)
+    moved = _same_rows_noted(
+        bq, m["clock_before"], preflight.changed(m["clock_before"], after)
+    )
     if moved:
         raise preflight.PreflightError(
             f"tables Cube reads changed since capture: {', '.join(moved)}; run a new capture"

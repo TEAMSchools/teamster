@@ -421,3 +421,22 @@ def test_cube_tables_recomputes_for_older_snapshots():
     assert cli._cube_tables(
         {"clock_tables": ["p.f.x", "p.m.fct"]}, lambda: ["p.m.fct"]
     ) == ["p.m.fct"]
+
+
+def test_resume_checks_pass_a_rebuild_whose_rows_did_not_change(tmp_path):
+    window = cli.config.load_checks(_write_checks(tmp_path)).window
+    seen = []
+
+    def same_rows(moved):
+        seen.append(moved)
+        return []
+
+    got = cli._resume_checks(
+        _resume_manifest(),
+        None,
+        dt.datetime(2026, 10, 15, 20, 0, tzinfo=dt.UTC),
+        window,
+        {"t": "2026-10-15T19:00:00"},
+        same_rows,
+    )
+    assert got == (dt.date(2026, 10, 5), dt.date(2026, 10, 15)) and seen == [["t"]]

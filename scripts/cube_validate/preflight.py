@@ -110,6 +110,25 @@ class BigQuery:
             return int(job.total_bytes_processed or 0), tables
         raise PreflightError(f"dry run failed: {last}")
 
+    def fingerprint(self, table: str, at: dt.datetime | None = None) -> tuple:
+        """Row count and an order-free hash of every row, now or as of `at`.
+
+        `at` reads BigQuery time travel, which survives a dbt rebuild and reaches
+        back 7 days. Unlike a dry run, this scans the table.
+        """
+        from google.cloud import bigquery
+
+        travel = " for system_time as of @at" if at else ""
+        params = [bigquery.ScalarQueryParameter("at", "TIMESTAMP", at)] if at else []
+        job = self.client.query(
+            # trunk-ignore(bandit/B608): the table name comes from BigQuery's own referenced_tables
+            f"select count(*), bit_xor(farm_fingerprint(to_json_string(t))) "
+            f"from `{table}` as t{travel}",
+            job_config=bigquery.QueryJobConfig(query_parameters=params),
+        )
+        row = next(iter(job.result()))
+        return int(row[0]), row[1]
+
     def modified(self, table: str) -> str:
         """Returns the table's last-modified time as an ISO UTC string."""
         modified = self.client.get_table(table).modified
@@ -168,3 +187,24 @@ def clock_map(bq, tables) -> dict[str, str]:
 def changed(before: dict[str, str], after: dict[str, str]) -> list[str]:
     """Tables whose modified time differs between two clock maps."""
     return sorted(t for t in after if before.get(t) != after[t])
+
+
+def rewritten(bq, before: dict[str, str], tables: list[str]) -> list[str]:
+    """Of tables whose modified time moved, those whose rows changed too.
+
+    A dbt rebuild that writes the same rows moves the clock but not the data.
+    The earlier rows are read 1 second after the modified time the capture
+    recorded. A table BigQuery cannot read back that far counts as changed.
+    """
+    from google.api_core import exceptions
+
+    out = []
+    for t in tables:
+        at = dt.datetime.fromisoformat(before[t]) + dt.timedelta(seconds=1)
+        try:
+            same = bq.fingerprint(t, at) == bq.fingerprint(t)
+        except exceptions.GoogleAPIError:
+            same = False
+        if not same:
+            out.append(t)
+    return out
