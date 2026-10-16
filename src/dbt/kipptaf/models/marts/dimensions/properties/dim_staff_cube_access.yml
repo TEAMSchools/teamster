@@ -90,8 +90,9 @@ models:
       # the policy filters on a NULL abbreviation and the viewer is denied every
       # row, which looks exactly like a correct deny at the Cube surface. Warn,
       # not error — the rows are a real upstream gap in the work-assignment
-      # location (9 Miami-employed viewers as of 2026-09-23), so this surfaces
-      # them for Ops rather than blocking a deploy.
+      # location, so this surfaces them for Ops rather than blocking a deploy.
+      # TODO(#5524): flip to error once every school-scoped viewer has a
+      # work-assignment location.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
@@ -107,15 +108,13 @@ models:
       # a location-bounded remit and a non-none PII scope; zero do today,
       # network-wide. This is the tripwire for that: a hit means someone's staff
       # PII remit is now bounded by their employer rather than their desk, which
-      # is a decision to make deliberately, not to discover. Warn, not error —
-      # it constrains a future grant, not current correctness.
+      # is a decision to make deliberately, not to discover, so a hit fails
+      # the build.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
               staff_pii_scope = 'none'
               or staff_location_scope not in ('region', 'school')
-          config:
-            severity: warn
     columns:
       - name: staff_key
         data_type: string
@@ -146,12 +145,8 @@ models:
           meta:
             contains_pii: true
         data_tests:
-          - not_null:
-              config:
-                severity: warn
-          - unique:
-              config:
-                severity: warn
+          - not_null
+          - unique
 
       - name: entity
         data_type: string
@@ -165,9 +160,6 @@ models:
           have no business unit and carry unknown for the same reason.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values: [KTAF, Region, unknown]
 
       - name: student_location_scope
         data_type: string
@@ -338,3 +330,138 @@ models:
           into the person's normal location remit by cube.js/access.js
           (unionAdditionalGrants, once per axis), never replacing
           student_location_scope/staff_location_scope.
+
+unit_tests:
+  - name: test_dim_staff_cube_access_entity_from_business_unit
+    description:
+      Locks how entity derives from the home business unit. Feeds three current,
+      primary staff whose home org unit is KIPP_TAF, a regional business unit,
+      and a business unit dim_regions does not hold. Asserts KTAF, Region and
+      unknown. With no role row, student_location_scope falls through to none,
+      including the KTAF widening branch.
+    model: dim_staff_cube_access
+    given:
+      - input: ref('dim_staff_work_assignments')
+        format: sql
+        rows: |
+          select 's1' as staff_key, 'wa1' as work_assignment_key, true as is_current
+          union all select 's2', 'wa2', true
+          union all select 's3', 'wa3', true
+      - input: ref('dim_work_assignment_primary')
+        format: sql
+        rows: |
+          select 'wa1' as work_assignment_key, true as is_current, true as is_primary_position
+          union all select 'wa2', true, true
+          union all select 'wa3', true, true
+      - input: ref('dim_staff')
+        format: sql
+        rows: |
+          select 's1' as staff_key, 'a@example.org' as google_email
+          union all select 's2', 'b@example.org'
+          union all select 's3', 'c@example.org'
+      - input: ref('dim_work_assignment_organizational_units')
+        format: sql
+        rows: |
+          select
+            'wa1' as work_assignment_key,
+            true as is_current,
+            'home' as assignment_type,
+            'Dept' as department_name,
+            'KIPP_TAF' as business_unit_code
+          union all select 'wa2', true, 'home', 'Dept', 'REGION_BU'
+          union all select 'wa3', true, 'home', 'Dept', 'UNKNOWN_BU'
+      - input: ref('dim_regions')
+        format: sql
+        rows: |
+          select 'r1' as region_key, 'KIPP_TAF' as business_unit_code, 'Network' as legal_entity
+          union all select 'r2', 'REGION_BU', 'Region One'
+      - input: ref('dim_work_assignment_jobs')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current,
+            cast(null as string) as job_function_code
+          from unnest([1]) where false
+      - input: ref('dim_work_assignment_locations')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current,
+            cast(null as string) as location_key
+          from unnest([1]) where false
+      - input: ref('dim_locations')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as location_key,
+            cast(null as string) as abbreviation,
+            cast(null as string) as `name`
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_department_rollup')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as department_name,
+            cast(null as string) as department_group
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_role')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as job_function_code,
+            cast(null as string) as entity,
+            cast(null as string) as job_function_level,
+            cast(null as string) as student_location_scope,
+            cast(null as string) as staff_location_scope,
+            cast(null as string) as staff_department_scope,
+            cast(null as string) as staff_pii_scope,
+            cast(null as string) as staff_compensation_scope,
+            cast(null as string) as staff_observations_scope,
+            cast(null as string) as staff_benefits_scope
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_individual_exceptions')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as google_email,
+            cast(null as string) as status,
+            cast(null as date) as grant_date,
+            cast(null as date) as expiry_date,
+            cast(null as string) as additional_location_name,
+            cast(null as string) as additional_location_scope,
+            cast(null as string) as additional_student_location_scope,
+            cast(null as string) as additional_staff_location_scope,
+            cast(null as string) as staff_department_scope,
+            cast(null as string) as staff_pii_scope,
+            cast(null as string) as staff_compensation_scope,
+            cast(null as string) as staff_observations_scope,
+            cast(null as string) as staff_benefits_scope
+          from unnest([1]) where false
+      - input: ref('stg_google_directory__users')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as primary_email,
+            cast(null as bool) as suspended,
+            cast(null as bool) as archived
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_department_override')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as department,
+            cast(null as string) as student_location_scope,
+            cast(null as string) as staff_location_scope,
+            cast(null as string) as staff_department_scope,
+            cast(null as string) as staff_pii_scope,
+            cast(null as string) as staff_compensation_scope,
+            cast(null as string) as staff_observations_scope,
+            cast(null as string) as staff_benefits_scope
+          from unnest([1]) where false
+    expect:
+      rows:
+        - { staff_key: s1, entity: KTAF, student_location_scope: none }
+        - { staff_key: s2, entity: Region, student_location_scope: none }
+        - { staff_key: s3, entity: unknown, student_location_scope: none }
