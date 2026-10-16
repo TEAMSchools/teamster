@@ -84,7 +84,8 @@ models:
           Last date the schedule row covers; null while the row is open, which
           is the normal state. Focus closes a row by setting this rather than by
           deleting it, so a value here means the student is no longer scheduled
-          into the section. It never falls at or after the marking period's end.
+          into the section. It has not been seen at or after the marking
+          period's end.
       - name: fefp_number
         description: >-
           Florida Education Finance Program funding category code for the

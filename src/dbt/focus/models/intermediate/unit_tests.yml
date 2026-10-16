@@ -645,8 +645,10 @@ unit_tests:
     description: >-
       A drop and re-add leaves several schedule rows for one student and course
       period. Student 10 has a closed stint (1) and the open re-add (2); the
-      open one wins. Student 11 has only closed stints (3, 4); the latest
-      schedule id wins, so the pick is stable across builds.
+      open one wins. Student 11 has only closed term stints (3, 4); the latest
+      schedule id wins, so the pick is stable across builds. Student 12 has a
+      closed full-year stint (5) and a newer closed term stint (6); full-year
+      wins before schedule id is considered.
     given:
       - input: ref('stg_focus__schedule')
         format: sql
@@ -684,6 +686,20 @@ unit_tests:
           union all
           select 4, 2026, 100, 11, 20, 30, 501, 'QTR', cast(null as string),
             cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-09-01', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 5, 2026, 100, 12, 20, 30, 0, 'FY', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-10',
+            date '2026-08-20', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 6, 2026, 100, 12, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-21',
             date '2026-09-01', cast(null as string), cast(null as string),
             cast(null as string), cast(null as string), cast(null as string),
             cast(null as string), cast(null as string), cast(null as string),
@@ -726,6 +742,8 @@ unit_tests:
           student_id: 10
         - student_schedule_id: 4
           student_id: 11
+        - student_schedule_id: 5
+          student_id: 12
 
   - name: test_int_focus__students_iep_from_ese_log
     description: >-
