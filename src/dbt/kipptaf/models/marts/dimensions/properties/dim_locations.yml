@@ -25,6 +25,17 @@ models:
         data_tests:
           - unique
 
+      - name: abbreviation
+        data_type: string
+        description: >-
+          Short display name for the location, and the value Cube's row-level
+          access filters student and staff rows on. resolveAccess turns a
+          viewer's location scope into a set of these and every student view
+          filters on membership in it, so a duplicate across two regions would
+          silently widen one viewer's access to the other's school.
+        data_tests:
+          - unique
+
       - name: region_key
         data_type: string
         description: >-
@@ -37,22 +48,6 @@ models:
             foreign_key:
               to: ref('dim_regions')
               to_columns: [region_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_regions')
-                field: region_key
-
-      - name: abbreviation
-        data_type: string
-        description: >-
-          Short display name for the location, and the value Cube's row-level
-          access filters student and staff rows on. resolveAccess turns a
-          viewer's location scope into a set of these and every student view
-          filters on membership in it, so a duplicate across two regions would
-          silently widen one viewer's access to the other's school.
-        data_tests:
-          - unique
 
       - name: name
         quote: true

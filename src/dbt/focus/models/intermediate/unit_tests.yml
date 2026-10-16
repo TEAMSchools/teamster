@@ -583,7 +583,7 @@ unit_tests:
             cast(null as string) as exclude_from_fte,
             cast(null as string) as pmrn
           union all
-          select 2, 2026, 100, 10, 20, 30, 501, 'QTR', cast(null as string),
+          select 2, 2026, 100, 11, 20, 30, 501, 'QTR', cast(null as string),
             cast(null as string), cast(null as string), cast(null as date),
             cast(null as date), cast(null as string), cast(null as string),
             cast(null as string), cast(null as string), cast(null as string),
@@ -639,6 +639,111 @@ unit_tests:
           marking_period_id: 501
           marking_period_type: quarter
           marking_period_start_date: 2026-08-10
+
+  - name: test_int_focus__schedule_one_stint_per_course_period
+    model: int_focus__schedule
+    description: >-
+      A drop and re-add leaves several schedule rows for one student and course
+      period. Student 10 has a closed stint (1) and the open re-add (2); the
+      open one wins. Student 11 has only closed term stints (3, 4); the latest
+      schedule id wins, so the pick is stable across builds. Student 12 has a
+      closed full-year stint (5) and a newer closed term stint (6); full-year
+      wins before schedule id is considered.
+    given:
+      - input: ref('stg_focus__schedule')
+        format: sql
+        rows: |
+          select 1 as id, 2026 as syear, 100 as school_id, 10 as student_id,
+            20 as course_id, 30 as course_period_id, 501 as marking_period_id,
+            'QTR' as mp, cast(null as string) as course_weight,
+            cast(null as string) as days,
+            cast(null as string) as rotation_days,
+            date '2026-08-10' as start_date, date '2026-09-01' as end_date,
+            cast(null as string) as fefp_number,
+            cast(null as string) as dual_enrollment_indicator,
+            cast(null as string) as class_minutes_weekly,
+            cast(null as string) as reading_intervention_component,
+            cast(null as string) as basic_skills_exam,
+            cast(null as string) as location_of_student,
+            cast(null as string) as eoc_exam_term,
+            cast(null as string) as exempt_from_total_clock_hours,
+            cast(null as string) as exclude_from_fte,
+            cast(null as string) as pmrn
+          union all
+          select 2, 2026, 100, 10, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-09-15',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 3, 2026, 100, 11, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-10',
+            date '2026-08-10', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 4, 2026, 100, 11, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-09-01', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 5, 2026, 100, 12, 20, 30, 0, 'FY', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-10',
+            date '2026-08-20', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 6, 2026, 100, 12, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-21',
+            date '2026-09-01', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+      - input: ref('stg_focus__marking_periods')
+        format: sql
+        rows: |
+          select 501 as marking_period_id, 2026 as syear, 100 as school_id,
+            'Quarter 1' as title, 'Q1' as short_name, 'quarter' as type,
+            date '2026-08-10' as start_date, date '2026-10-16' as end_date
+      - input: ref('stg_focus__course_periods')
+        format: sql
+        rows: |
+          select 30 as course_period_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as string) as custom_title,
+            cast(null as int64) as teacher_id, cast(null as string) as room,
+            cast(null as int64) as period_id,
+            cast(null as int64) as calendar_id,
+            cast(null as int64) as team_id,
+            cast(null as int64) as grade_scale_id,
+            cast(null as string) as credits,
+            cast(null as string) as does_attendance,
+            cast(null as string) as does_grades,
+            cast(null as string) as does_gpa
+      - input: ref('stg_focus__courses')
+        format: sql
+        rows: |
+          select 20 as course_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as int64) as subject_id,
+            cast(null as int64) as grad_subject_id,
+            cast(null as string) as grade_level,
+            cast(null as numeric) as credit_hours,
+            cast(null as numeric) as course_hours,
+            cast(null as string) as homeroom
+    expect:
+      rows:
+        - student_schedule_id: 2
+          student_id: 10
+        - student_schedule_id: 4
+          student_id: 11
+        - student_schedule_id: 5
+          student_id: 12
 
   - name: test_int_focus__students_iep_from_ese_log
     description: >-

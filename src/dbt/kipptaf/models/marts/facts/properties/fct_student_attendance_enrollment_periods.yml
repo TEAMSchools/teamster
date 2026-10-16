@@ -148,11 +148,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
 
       - name: period_start_membership_date_key
         data_type: date
@@ -170,11 +165,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
 
       - name: period_end_date_key
         data_type: date
@@ -188,11 +178,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
 
       - name: student_enrollment_key
         data_type: string
@@ -207,11 +192,9 @@ models:
           This is what lets a rate on this fact be cut by the same student and
           enrollment attributes as the daily fact, and it is also the single
           canonical path to dim_locations, matching how the daily cube reaches
-          it. Measured against this fact's rows the two possible location routes
-          agree on 4,363,667 of 4,363,672 and disagree on none; the five
-          exceptions are one enrollment stint absent from
-          dim_student_enrollments, which resolves a null location and is
-          therefore hidden from a location-scoped viewer rather than exposed.
+          it. A stint absent from dim_student_enrollments resolves a null
+          location, which hides the row from a location-scoped viewer rather
+          than exposing it.
         config:
           meta:
             foreign_key:

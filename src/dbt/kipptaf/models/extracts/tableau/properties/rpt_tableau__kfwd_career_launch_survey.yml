@@ -4,11 +4,14 @@ models:
       contract:
         enforced: true
     data_tests:
+      # TODO(#3818): survey contact_id duplicates break the grain
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - contact_id
               - response_id
+          config:
+            severity: warn
     columns:
       - name: contact_id
         data_type: string

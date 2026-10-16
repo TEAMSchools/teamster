@@ -7,7 +7,7 @@ select
 
     {{ staff_key("gu.internal_id_int") }} as teacher_staff_key,
 
-    {{ staff_key("sr_creator.employee_number", nullable=true) }} as creator_staff_key,
+    {{ staff_key("cu.internal_id_int", nullable=true) }} as creator_staff_key,
 
     {{ staff_observation_goal_type_key("m.tag_id") }}
     as staff_observation_goal_type_key,
@@ -28,7 +28,5 @@ inner join
     {{ ref("int_schoolmint_grow__assignments__tags") }} as t
     on a.assignment_id = t.assignment_id
 inner join {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id
-left join
-    {{ ref("int_people__staff_roster") }} as sr_creator
-    on a.creator_name = sr_creator.formatted_name
+left join {{ ref("stg_schoolmint_grow__users") }} as cu on a.creator_id = cu.user_id
 where gu.internal_id_int is not null
