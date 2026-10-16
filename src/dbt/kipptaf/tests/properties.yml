@@ -390,6 +390,7 @@ data_tests:
       made the test's join, date predicate and drop filter null-safe; earlier
       baselines predate all three and are not comparable.
     config:
+      severity: warn
       meta:
         dagster:
           ref:

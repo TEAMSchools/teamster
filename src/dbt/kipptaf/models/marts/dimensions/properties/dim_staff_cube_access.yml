@@ -413,7 +413,7 @@ unit_tests:
           select
             cast(null as string) as job_function_code,
             cast(null as string) as entity,
-            cast(null as string) as job_function_level,
+            cast(null as int64) as job_function_level,
             cast(null as string) as student_location_scope,
             cast(null as string) as staff_location_scope,
             cast(null as string) as staff_department_scope,
