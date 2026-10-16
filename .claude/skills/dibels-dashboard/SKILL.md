@@ -21,6 +21,16 @@ description: >-
 
 # DIBELS Dashboard
 
+## Owner
+
+Anthony Walters (`anthonygwalters`, awalters) is the interim owner of the
+Literacy Dashboard and this model family since 2026-10-02. "The owner" and "the
+dashboard owner" in these pages name whoever holds the role at the time an entry
+was written; owner decisions recorded before that date stand. Route new owner
+decisions, the _Ask before every push_ check, and workbook publishes to him. The
+Tableau workbook itself may still sit under the previous owner's account: check
+the owner on Tableau Cloud before a publish and transfer it first.
+
 ## Why this skill exists
 
 T&L's source doc gives goals as **ranges** ("62 - 66%") and, starting AY2025, as
@@ -58,6 +68,7 @@ reading the page end to end.
 | Explaining a number that looks wrong, or verifying a change before reporting it                                                                                                                                                                                   | [references/diagnosing.md](references/diagnosing.md)                                                                                              |
 | A dbt test on a family model fired (for example `rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none`): the diagnosis query and fix are with the model's section                                                                                          | [references/model-architecture.md](references/model-architecture.md)                                                                              |
 | Finishing a change -- what to check, and what else must be updated                                                                                                                                                                                                | [references/diagnosing.md](references/diagnosing.md)                                                                                              |
+| A PM tab's stacked-bar percentages sum past 100%, or changing the `PM - Met Goal Selector` in the Literacy Dashboard workbook                                                                                                                                     | [references/workbook-met-goal-selector.md](references/workbook-met-goal-selector.md)                                                              |
 | The sight words dashboard (`rpt_tableau__sight_words_dashboard`): data flows from Illuminate on its own; upkeep is asking the MD of Teaching & Learning (Sabine Vilsaint) at rollover whether it is still used, then moving the dashboard's academic year forward | the reference doc, [`rpt_tableau__sight_words_dashboard`](../../../docs/models/dibels-dashboard-data-model.md#rpt_tableau__sight_words_dashboard) |
 | The NJDOE universal screener extract (`rpt_gsheets__njdoe_universal_screener_data`): in this family until the data team has a data-sharing agreement for NJDOE to pull from the vendor                                                                            | its own reference page, [docs/models/njdoe-universal-screener-data-model.md](../../../docs/models/njdoe-universal-screener-data-model.md)         |
 
