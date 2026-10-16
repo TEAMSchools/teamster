@@ -61,7 +61,15 @@ rows:
     grade_level: { tableau: grade_level, cube: grade_level }
   labels:
     region: { tableau: region, cube: regions_region_name }
-causes: []
+causes:
+  - id: not-a-membership-day
+    description:
+      Cube keeps every enrolled day; the dashboard keeps only days with
+      membership 1 and a recorded attendance value.
+    where:
+      base = 'cube_only' and (c_membership_value <> 1 or c_attendance_value is
+      null)
+    owner: dashboard
 # Attendance Rollup's cards start on these values.
 defaults:
   Academic Year: "2026"
