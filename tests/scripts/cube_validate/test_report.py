@@ -16,28 +16,32 @@ def test_small_hides_counts_under_ten():
 
 def test_trust_reads_invariants_then_hand_checks():
     ok = {"a": True, "capture completeness": True}
-    assert report.trust({"a": False}, {}).startswith("Not trusted: invariant broken: a")
-    assert report.trust(ok, {}).startswith("Pending: no hand checks")
-    assert report.trust(ok, {"C1": "pending", "C2": "agree"}).startswith(
+    assert report.trust({"a": False}, {}, 0).startswith(
+        "Not trusted: invariant broken: a"
+    )
+    assert report.trust(ok, {}, 5).startswith("Pending: no hand checks")
+    assert report.trust(ok, {"C1": "pending", "C2": "agree"}, 5).startswith(
         "Pending: 1 of 2"
     )
-    assert report.trust(ok, {"C1": "disagree"}).startswith("Not trusted: 1 hand check")
-    assert report.trust(ok, {"C1": "agree"}).startswith("Trusted for this run")
-    assert report.trust({"a": True}, {"C1": "agree"}).startswith(
+    assert report.trust(ok, {"C1": "disagree"}, 5).startswith(
+        "Not trusted: 1 hand check"
+    )
+    assert report.trust(ok, {"C1": "agree"}, 5).startswith("Trusted for this run")
+    assert report.trust({"a": True}, {"C1": "agree"}, 5).startswith(
         "Pending: capture completeness"
     )
 
 
 def test_trust_disagreement_wins_over_pending():
     ok = {"a": True, "capture completeness": True}
-    assert report.trust(ok, {"C1": "pending", "C2": "disagree"}).startswith(
+    assert report.trust(ok, {"C1": "pending", "C2": "disagree"}, 5).startswith(
         "Not trusted: 1 hand check"
     )
 
 
 def test_trust_counts_unknown_status_as_open():
     ok = {"a": True, "capture completeness": True}
-    assert report.trust(ok, {"C1": "Agree"}).startswith("Pending: 1 of 1")
+    assert report.trust(ok, {"C1": "Agree"}, 5).startswith("Pending: 1 of 1")
 
 
 def _gap_row(tableau: str, cube: float) -> str:
@@ -183,3 +187,19 @@ def test_formulas_not_tested_lists_mapped_measures_with_no_clean_cut():
     section = text.split("### Formulas not tested", 1)[1].split("##", 1)[0]
     assert "- ADA / Tardy" in section
     assert "ADA / ADA" not in section and "Other" not in section
+
+
+def test_trust_is_pending_when_no_cell_was_compared():
+    ok = {"a": True, "capture completeness": True}
+    got = report.trust(ok, {"C1": "agree"}, 0)
+    assert got.startswith("Pending: no cell was compared yet")
+    # a broken invariant and a disagreement still win
+    assert report.trust({"a": False}, {}, 0).startswith("Not trusted")
+    assert report.trust(ok, {"C1": "disagree"}, 0).startswith("Not trusted")
+
+
+def test_compared_counts_judged_verdicts_only():
+    from types import SimpleNamespace as N
+
+    cells = [N(verdict=v) for v in (report.PASS, report.ROW_GAP, "never in cube")]
+    assert report.compared(cells) == 2

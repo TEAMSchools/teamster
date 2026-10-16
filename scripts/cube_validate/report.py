@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from .cells import FORMULA_GAP, ORDER, PASS, ROW_GAP, answer_key
+from .cells import COINCIDENTAL, FORMULA_GAP, ORDER, PASS, ROW_GAP, answer_key
 
 SMALL = 10
 
@@ -29,7 +29,20 @@ def _mask(value) -> str:
     return str(value)
 
 
-def trust(invariants: dict[str, bool], results: dict[str, str]) -> str:
+def compared(cells: list) -> int:
+    """Cells where Cube's number was set against the dashboard's and judged."""
+    judged = (PASS, COINCIDENTAL, ROW_GAP, FORMULA_GAP)
+    return sum(1 for c in cells if c.verdict in judged)
+
+
+def trust(invariants: dict[str, bool], results: dict[str, str], compared: int) -> str:
+    """The verdict line.
+
+    Args:
+        invariants: Each balance or capture check and whether it holds.
+        results: Each hand check's recorded status.
+        compared: How many cells were judged against Cube; see `compared`.
+    """
     broken = [k for k, v in invariants.items() if not v]
     if broken:
         return f"Not trusted: invariant broken: {', '.join(broken)}."
@@ -38,6 +51,10 @@ def trust(invariants: dict[str, bool], results: dict[str, str]) -> str:
         return f"Not trusted: {bad} hand check{'s' if bad > 1 else ''} disagree."
     if "capture completeness" not in invariants:
         return "Pending: capture completeness was not recorded for this snapshot."
+    if compared == 0:
+        return (
+            "Pending: no cell was compared yet (map the sheets, then capture answers)"
+        )
     if not results:
         return "Pending: no hand checks recorded yet."
     open_checks = sum(1 for v in results.values() if v != "agree")
@@ -95,7 +112,7 @@ def render(
     out += [
         "## Trust verdict",
         "",
-        trust(inv, results),
+        trust(inv, results, compared(cells)),
         "",
         "Unit tests are part of trust: `uv run --with tableauhyperapi pytest tests/scripts/cube_validate`.",
         "",

@@ -84,7 +84,11 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
     text = report.render(checks, m, rr, cs, results, forms, answers)
     path = snap.analysis / "report.md"
     path.write_text(text)
-    return path, report.trust({**(m.get("invariants") or {}), **rr.invariants}, results)
+    return path, report.trust(
+        {**(m.get("invariants") or {}), **rr.invariants},
+        results,
+        report.compared(cs),
+    )
 
 
 def _manifest_period(m: dict) -> tuple[dt.date, dt.date] | None:
