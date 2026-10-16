@@ -53,11 +53,11 @@ select
     c.phone_home as `HomePhone`,
     c.phone_work as `WorkPhone`,
     c.email_current as `Email`,
-    c.relationship as `Relationship`,
     c.contact_type as `ContactType`,
 
     cast(null as string) as `Language`,
 
+    coalesce(c.relationship, 'Unknown') as `Relationship`,
     coalesce(c.phone_mobile, c.phone_untyped) as `CellPhone`,
 
     -- person_identity is null on emergency slots, so the slot stands in there.
