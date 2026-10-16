@@ -190,8 +190,9 @@ violations.
 `generate_marts_reference.py` derives FK edges **only** from literal
 declarations — never inferred from `relationships` data tests. Every mart must
 declare its outgoing FKs one of two ways, or they vanish from the generated
-reference diagram. Do not add a `relationships` test to a mart; _Test config
-defaults_ in `.claude/rules/dbt-yaml.md` says where an orphan check goes.
+reference diagram. Do not add a `relationships` test to a mart; _Tests on marts
+and `rpt_` models_ in `.claude/rules/dbt-yaml.md` says where an orphan check
+goes.
 
 - **View marts** — column- or model-level `foreign_key` constraints, inert in
   BigQuery because views hold no constraints.
