@@ -938,6 +938,23 @@ data_tests:
           ref:
             name: int_extracts__student_enrollments
 
+  - name: int_extracts__student_enrollments__matches_enrollment_union
+    description: >-
+      Fails when a student_enrollment_key exists on only one of the two
+      enrollment models the marts hash it from. The attendance facts build the
+      key from int_extracts__student_enrollments, and dim_student_enrollments
+      builds it from int_students__student_enrollment_union, so a key on one
+      side only is an orphan foreign key in the marts. Both models are tables
+      built from the same Focus and PowerSchool enrollments, so a gap means a
+      filter or join in one lineage diverged from the other, which a code change
+      fixes.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_extracts__student_enrollments
+
   - name: test_state_assessment_joins_resolve_miami
     description: >-
       Fails when either state-assessment model holds zero Miami rows. The

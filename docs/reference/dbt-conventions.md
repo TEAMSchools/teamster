@@ -1,9 +1,9 @@
 # dbt Conventions
 
 This page is built from the rule files Claude reads
-(`.claude/rules/dbt-architecture.md`, `.claude/rules/dbt-marts.md`, and
-`.claude/rules/dbt-sql.md`), so people and Claude review against the same text.
-Cite rules by ID (`A2`, `S10`) in review.
+(`.claude/rules/dbt-architecture.md`, `.claude/rules/dbt-marts.md`,
+`.claude/rules/dbt-yaml.md`, and `.claude/rules/dbt-sql.md`), so people and
+Claude review against the same text. Cite rules by ID (`A2`, `S10`) in review.
 
 A rule changes through a PR to its rule file. If you disagree with a rule in
 review, open an issue; the feature PR follows the current rule.
@@ -14,6 +14,8 @@ in a model are left alone, and existing models are not swept.
 --8<-- ".claude/rules/dbt-architecture.md:architecture"
 
 --8<-- ".claude/rules/dbt-marts.md:marts"
+
+--8<-- ".claude/rules/dbt-yaml.md:tests"
 
 --8<-- ".claude/rules/dbt-sql.md:sql-style"
 

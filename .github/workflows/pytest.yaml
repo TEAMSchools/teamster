@@ -8,6 +8,7 @@ on:
       - docs/reference/dbt-conventions.md
       - .claude/rules/dbt-architecture.md
       - .claude/rules/dbt-marts.md
+      - .claude/rules/dbt-yaml.md
       - .claude/rules/dbt-sql.md
       - tests/launch/**
       - mkdocs.yml
