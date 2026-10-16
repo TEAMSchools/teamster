@@ -52,11 +52,6 @@ models:
             foreign_key:
               to: ref('dim_assessments')
               to_columns: [assessment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_assessments')
-                field: assessment_key
 
       - name: administered_date_key
         data_type: date
