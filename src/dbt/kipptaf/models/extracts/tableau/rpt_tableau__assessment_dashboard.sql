@@ -11,8 +11,7 @@ with
             co.enroll_status,
             co.cohort,
             co.spedlep as iep_status,
-            co.lep_status,
-            co.is_504 as c_504_status,
+            co.gifted_and_talented,
             co.is_self_contained as is_pathways,
             co.school,
             co.school_level,
@@ -39,6 +38,10 @@ with
             asr.performance_band_label,
             asr.is_replacement,
             asr.is_internal_assessment as is_normed_scope,
+
+            -- Focus leaves these null for students without the status
+            coalesce(co.lep_status, false) as lep_status,
+            coalesce(co.is_504, false) as c_504_status,
 
             -- Apex rows take the section the scaffold matched, Illuminate rows
             -- the student's latest section in the subject
@@ -106,6 +109,7 @@ select
     d.iep_status,
     d.lep_status,
     d.c_504_status,
+    d.gifted_and_talented,
     d.is_pathways,
     d.school,
     d.school_level,

@@ -13,9 +13,9 @@ models:
       (K-8) or course credit type (grades 9-12), and are null for subjects other
       than ELA and Math.
 
-      The model applies no region filter; Miami's Illuminate responses no longer
-      match an enrollment after the Focus cutover, and Miami left this stack
-      after SY25-26, so no new Miami data lands.
+      The model applies no region filter. Miami rows from SY26-27 on are Focus
+      Apex assessments, whose course and teacher columns come from the section
+      the assessment scaffold matched.
     config:
       meta:
         contains_pii: true
@@ -42,8 +42,19 @@ models:
         data_type: string
       - name: lep_status
         data_type: boolean
+        description: >-
+          Multilingual learner (ELL) status. False when the student has no
+          status on record, so every row is true or false.
       - name: c_504_status
         data_type: boolean
+        description: >-
+          Section 504 plan status. False when the student has no status on
+          record, so every row is true or false.
+      - name: gifted_and_talented
+        data_type: string
+        description: >-
+          Gifted and talented status, Y or N, from
+          `int_extracts__student_enrollments`.
       - name: is_pathways
         data_type: boolean
       - name: school
