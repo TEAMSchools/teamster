@@ -123,6 +123,7 @@ data_tests:
       the same school/grade -- that row is being silently dropped from
       int_tableau__fresh_goals_scaffold's inner join.
     config:
+      severity: warn
       meta:
         dagster:
           ref:
@@ -563,6 +564,7 @@ data_tests:
       means the latest-graded-year CTE fanned out; zero means no year has posted
       Y1 grades, which would leave the dashboard with no default year.
     config:
+      severity: error
       meta:
         dagster:
           ref:
@@ -1030,11 +1032,10 @@ data_tests:
       reported zero mismatches. This test reproduces that failure at 13,886
       rows.
 
-      Warn rather than error because a mismatch makes the string misleading
-      rather than the extract unbuildable, and because the fix is a reporting
-      correction that wants triage rather than a blocked deploy.
+      Error, like every test on the Tableau extracts: a mismatch makes the
+      string misleading, and a passing build is the promise that it is not.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -1060,11 +1061,11 @@ data_tests:
       Overview build showed category shares summing to 114% because of it, with
       no error and plausible-looking bars.
 
-      Warn rather than error because a split makes a distribution misleading
-      rather than the extract unbuildable, and triage wants the extract
-      readable.
+      Error, like every test on the Tableau extracts: a split makes a
+      distribution misleading, and a passing build is the promise that it is
+      not.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -1086,12 +1087,10 @@ data_tests:
       the whole measure's -- so a student who sat Decoding, met it, and never
       sat Letter Sounds would read as having met NWF. Wrong, and silent.
 
-      Warn rather than error because the condition is a source-behaviour change,
-      not a build failure, and the extract is still usable while it is triaged.
-      What to do when it fires is in the dibels-dashboard skill,
-      references/model-architecture.md.
+      Error, like every test on the Tableau extracts. What to do when it fires
+      is in the dibels-dashboard skill, references/model-architecture.md.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:

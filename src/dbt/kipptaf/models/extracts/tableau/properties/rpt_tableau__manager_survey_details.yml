@@ -25,9 +25,7 @@ models:
           subject_df_employee_number, '_', campaign_reporting_term)` — the
           natural key that uniquely identifies an archive submission.
         data_tests:
-          - not_null:
-              config:
-                severity: warn
+          - not_null
       - name: location_clean_name
         data_type: string
         description: >-
