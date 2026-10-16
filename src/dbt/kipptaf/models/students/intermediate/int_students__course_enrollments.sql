@@ -110,7 +110,9 @@ with
             -- Term dates, not event dates -- see the column descriptions. A
             -- future-term row therefore carries a future date. #5002
             s.start_date as cc_dateenrolled,
-            s.end_date as cc_dateleft,
+            -- Focus end dates are the last day enrolled; PowerSchool's are the
+            -- first day not enrolled. Shift Focus onto PowerSchool's convention.
+            date_add(s.end_date, interval 1 day) as cc_dateleft,
             s.course_period_short_name as cc_section_number,
             s.teacher_id as cc_teacherid,
 
@@ -118,7 +120,9 @@ with
             -- facts; PowerSchool conflates them into cc_dateleft. Resolve the
             -- neutral column from whichever this SIS actually has, rather than
             -- back-filling PowerSchool's conflated column. #5043
-            coalesce(s.end_date, s.marking_period_end_date) as exit_date,
+            date_add(
+                coalesce(s.end_date, s.marking_period_end_date), interval 1 day
+            ) as exit_date,
             st.student_number as students_student_number,
             loc.powerschool_school_id as sections_schoolid,
             loc.powerschool_school_id as cc_schoolid,
