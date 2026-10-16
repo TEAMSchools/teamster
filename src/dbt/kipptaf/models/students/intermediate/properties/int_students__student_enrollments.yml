@@ -14,10 +14,10 @@ models:
       Also carries the demographic data and student identifiers the enrollment
       consumers read. Columns PowerSchool supplies and Focus does not are null
       for Miami -- `is_self_contained` (a SPED service-delivery fact Focus does
-      not carry, left null rather than asserted false per #4968), the KIPP
-      Forward exit codes (`exit_code_kf`, `exit_code_ts`),
-      `advisor_teachernumber` (no network teacher number in Focus), `rn_school`,
-      `track`, and `cohort_graduated`.
+      not carry, left null rather than asserted false), the KIPP Forward exit
+      codes (`exit_code_kf`, `exit_code_ts`), `advisor_teachernumber` (no
+      network teacher number in Focus), `rn_school`, `track`, and
+      `cohort_graduated`.
 
       `is_enrolled_y1` and `is_enrolled_recent` are derived for Miami from the
       roster's enrollment dates, using PowerSchool's expressions.
@@ -25,11 +25,9 @@ models:
       environment, with `reporting_schoolid`, `reporting_school_name` and
       `school_level` branching on the same match -- PowerSchool derives all
       four from one special-programs record, so Focus branches all four on one
-      option (#5041). Every Miami student holds `custom_863`'s default today,
-      so the flag resolves false for every Miami row, exactly as it did while
-      it was a literal. `is_enrolled_y1`, `is_enrolled_recent` and
-      `is_out_of_district` were all null before #4996, which silently removed
-      Miami from every consumer that filtered on them.
+      option. Every Miami student holds `custom_863`'s default today, so the
+      flag resolves false for every Miami row. A null in any of these three
+      flags silently removes Miami from every consumer that filters on it.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -41,6 +39,14 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: grade_level != 99 or rn_undergrad is null
+          name: int_students__student_enrollments_rn_undergrad_null_on_grade_99
+          description: >-
+            Grade 99 graduate placeholder rows must carry a null rn_undergrad.
+            PowerSchool nulls it on those rows. Miami copies the Focus roster's
+            rn_all, which is correct only while Focus sends no grade 99 rows. A
+            failure means Focus now sends them, which is not an error in Focus.
+            Fix it in the Focus branch of this model by ranking grade 99 rows
+            apart and nulling rn_undergrad on them, as PowerSchool does.
     columns:
       - name: rn_undergrad
         data_type: int64
@@ -51,12 +57,14 @@ models:
           student's most recent stint before graduating. Null on grade 99 rows.
           Consumers filter on 1 for one row per student, so a null on any other
           row silently drops that student. PowerSchool computes it upstream.
-          Miami takes the Focus roster's `rn_all`, which ranks the same way;
-          Focus has no grade 99 rows.
+          Miami takes the Focus roster's `rn_all`, which orders the same way
+          through exit date and breaks ties differently; Focus has no grade 99
+          rows.
         data_tests:
           - not_null:
               config:
-                where: grade_level != 99
+                where: grade_level is distinct from 99
+                severity: error
       - name: is_enrolled_y1
         data_type: boolean
         description: >-
