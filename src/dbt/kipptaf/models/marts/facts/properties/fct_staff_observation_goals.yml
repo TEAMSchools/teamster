@@ -45,8 +45,7 @@ models:
         data_type: string
         description: >-
           Foreign key to dim_staff for the person who created the assignment.
-          Surrogate key derived from creator employee_number. May be null if the
-          creator cannot be matched to the staff roster.
+          Null when the creator's observation-platform user has no staff id.
 
         config:
           meta:
@@ -67,3 +66,47 @@ models:
         data_type: int64
         description: >-
           Academic year derived from the assignment creation date.
+
+unit_tests:
+  - name: test_fct_staff_observation_goals_creator_resolves_by_user_id
+    description:
+      Locks the creator lookup on the observation-platform user id. A name match
+      against the staff roster once left creator_staff_key null on every row.
+      Feeds one assignment whose creator has a staff id and one whose creator
+      does not; asserts the first carries the hashed staff id and the second is
+      null.
+    model: fct_staff_observation_goals
+    given:
+      - input: ref('stg_schoolmint_grow__assignments')
+        rows:
+          - assignment_id: a1
+            user_id: u1
+            creator_id: u2
+            created_date_local: 2025-09-15
+          - assignment_id: a2
+            user_id: u1
+            creator_id: u3
+            created_date_local: 2025-09-15
+      - input: ref('stg_schoolmint_grow__users')
+        rows:
+          - user_id: u1
+            internal_id_int: 101
+          - user_id: u2
+            internal_id_int: 202
+          - user_id: u3
+            internal_id_int: null
+      - input: ref('int_schoolmint_grow__assignments__tags')
+        rows:
+          - assignment_id: a1
+            tag_id: t1
+          - assignment_id: a2
+            tag_id: t1
+      - input: ref('int_schoolmint_grow__microgoals')
+        rows:
+          - tag_id: t1
+    expect:
+      rows:
+        # md5 of internal id 202, the staff_key macro's hash
+        # trunk-ignore(gitleaks/generic-api-key): md5 test fixture, not a secret
+        - creator_staff_key: 854d6fae5ee42911677c739ee1734486
+        - creator_staff_key: null
