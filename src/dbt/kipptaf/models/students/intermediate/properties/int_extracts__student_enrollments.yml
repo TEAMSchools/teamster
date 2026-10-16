@@ -42,6 +42,22 @@ models:
             where: rn_year = 1
             severity: warn
     columns:
+      - name: iep_status
+        data_type: string
+        description:
+          Database extension field associated to the Students table. Conditional
+          on spedlep.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - Has IEP
+                  - No IEP
+              config:
+                severity: error
       - name: _dbt_source_project
         data_type: string
       - name: studentid
@@ -877,11 +893,6 @@ models:
         description:
           The enrollment status of the student. Conditional on enroll_status,
           grad_iep_exempt_overall.
-      - name: iep_status
-        data_type: string
-        description:
-          Database extension field associated to the Students table. Conditional
-          on spedlep.
       - name: ml_status
         data_type: string
         description:

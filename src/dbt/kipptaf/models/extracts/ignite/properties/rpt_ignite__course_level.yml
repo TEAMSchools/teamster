@@ -58,12 +58,6 @@ models:
           both become `A` and `F*` becomes `F`. Sourced from the `Y1` store code
           with transfer grades excluded, since a transfer grade was not earned
           in the KIPP course. Null where no year grade was stored.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [A, B, C, D, F]
-              config:
-                severity: warn
 
       - name: school_id
         data_type: string

@@ -292,7 +292,10 @@ legitimately-superseded inactive rows that repeat the key.
   - A `relationships` test from a mart or `rpt_` model to another model is not a
     regression test. Key drift is the key macros' job (A7); a population
     mismatch becomes a shared upstream model or a unit test; real orphans become
-    an upstream `warn`. The pre-join FK check below still applies.
+    an upstream `warn`. The pre-join FK check below still applies. Exception: an
+    outbound feed whose rows reference another feed's file (ParentSquare,
+    Clever) keeps its file-to-file check, because the target system rejects a
+    dangling id.
   - The model's own logic → a unit test.
   - A promise an upstream model makes → `error` on that model.
   - Source data → the earliest model that sees it: a `warn` with a downstream
