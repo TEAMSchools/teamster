@@ -239,6 +239,15 @@ models:
       - name: is_replacement
         data_type: boolean
         description: True on the replacement branch only.
+      - name: is_region_tagged
+        data_type: boolean
+        description: >-
+          Replacement rows only — true when the row's region is one of the
+          assessment's tagged regions (int_assessments__assessments_canonical
+          regions_array), the regions dim_assessment_administrations builds
+          administrations for. False when the region is untagged or null. Null
+          on every other branch, whose region comes from the assessment's own
+          tags or is not reported against a tagged administration.
       - name: canonical_assessment_id
         data_type: int64
         description: >-
@@ -437,6 +446,8 @@ unit_tests:
         rows: []
       - input: ref('stg_illuminate__dna_assessments__students_assessments')
         rows: []
+      - input: ref('int_assessments__assessments_canonical')
+        rows: []
     expect:
       rows:
         - {
@@ -514,4 +525,120 @@ unit_tests:
             section_match_method: single,
             is_internal_assessment: true,
             is_replacement: false,
+          }
+
+  - name: test_replacement_region_tagged
+    description: >-
+      Three students take a grade 5 Illuminate Math assessment from a different
+      grade, so each lands on the replacement branch. The assessment is tagged
+      Camden and Newark. The Newark student is tagged; the Paterson student is
+      not; the student whose school is missing from the locations sheet has no
+      region and counts as untagged.
+    model: int_assessments__scaffold
+    given:
+      - input: ref('int_assessments__assessments_members')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              1 as assessment_id,
+              'Math Unit 1' as title,
+              2027 as academic_year,
+              2026 as academic_year_clean,
+              date('2026-10-08') as administered_at,
+              'Mathematics' as subject_area,
+              7 as performance_band_set_id,
+              cast(null as string) as scope,
+              cast(null as string) as module_type,
+              cast(null as string) as module_code,
+              1 as canonical_assessment_id,
+              6 as tagged_grade_level_id,
+              6 as grade_level_id,
+              ['Newark'] as regions_assessed_array,
+              true as is_internal_assessment
+      - input: ref('int_assessments__assessments_canonical')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              1 as canonical_assessment_id,
+              ['Camden', 'Newark'] as regions_array
+      - input: ref('stg_illuminate__dna_assessments__students_assessments')
+        rows:
+          - { student_assessment_id: 21, student_id: 11, assessment_id: 1 }
+          - { student_assessment_id: 22, student_id: 12, assessment_id: 1 }
+          - { student_assessment_id: 23, student_id: 13, assessment_id: 1 }
+      - input: ref('stg_illuminate__public__students')
+        rows:
+          - { student_id: 11, local_student_id: 1001 }
+          - { student_id: 12, local_student_id: 1002 }
+          - { student_id: 13, local_student_id: 1003 }
+      - input: ref('int_illuminate__student_session_aff')
+        rows:
+          - {
+              student_id: 11,
+              academic_year: 2027,
+              grade_level_id: 4,
+              site_id: 100,
+              rn_student_session_desc: 1,
+            }
+          - {
+              student_id: 12,
+              academic_year: 2027,
+              grade_level_id: 4,
+              site_id: 200,
+              rn_student_session_desc: 1,
+            }
+          - {
+              student_id: 13,
+              academic_year: 2027,
+              grade_level_id: 4,
+              site_id: 999,
+              rn_student_session_desc: 1,
+            }
+      - input: ref('stg_google_sheets__people__locations')
+        rows:
+          - {
+              powerschool_school_id: 100,
+              dagster_code_location: kippnewark,
+              city: Newark,
+              is_campus: false,
+              is_pathways: false,
+              location_name: Newark School,
+            }
+          - {
+              powerschool_school_id: 200,
+              dagster_code_location: kipppaterson,
+              city: Paterson,
+              is_campus: false,
+              is_pathways: false,
+              location_name: Paterson School,
+            }
+      - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
+        rows: []
+      - input: ref('int_assessments__course_enrollments')
+        rows: []
+      - input: ref('int_extracts__student_enrollments')
+        rows: []
+      - input: ref('int_focus__apex_results')
+        rows: []
+    expect:
+      rows:
+        - {
+            student_number: 1001,
+            region: Newark,
+            is_replacement: true,
+            is_region_tagged: true,
+          }
+        - {
+            student_number: 1002,
+            region: Paterson,
+            is_replacement: true,
+            is_region_tagged: false,
+          }
+        - {
+            student_number: 1003,
+            region: null,
+            is_replacement: true,
+            is_region_tagged: false,
           }
