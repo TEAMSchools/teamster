@@ -167,13 +167,14 @@ in `libraries/level_data/grow/resources.py`. Wrap the init path (`fetch_token` /
 network-call retries, the predicate must include
 `(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
 `ConnectTimeout` (examples: `libraries/adp/workforce_now/api/resources.py`,
-`libraries/overgrad/resources.py`). Keep `RequestsConnectionError` whole: its
-`SSLError` / `ProxyError` subclasses are usually transient (handshake resets,
-proxy blips), unlike the paramiko config errors below. Let only 429 and 5xx
-reach the predicate as `HTTPError`; raise other 4xx as a non-retried error
-first, or a 401/404 burns every attempt (`overgrad/resources.py` `_request`).
-The `tableau` sign-in path is the exception: `tableauserverclient` raises its
-own errors, not `requests.HTTPError`, so its predicate is
+`libraries/overgrad/resources.py`). Keep `RequestsConnectionError` whole even
+though `SSLError` includes certificate failures that won't recover: a wasted
+retry costs seconds, while failing fast on a handshake blip can throw away a
+long paginated pull. Let only 429 and 5xx reach the predicate as `HTTPError`;
+raise other 4xx as a non-retried error first, or a 401/404 burns every attempt
+(`overgrad/resources.py` `_request`). The `tableau` sign-in path is the
+exception: `tableauserverclient` raises its own errors, not
+`requests.HTTPError`, so its predicate is
 `(RequestsConnectionError, Timeout, InternalServerError, StaleSessionError)`
 (`InternalServerError` wraps a 5xx) and it fails fast on `FailedSignInError`
 (401) / `ServerResponseError` (other 4xx) — do not "restore" `HTTPError` there.
