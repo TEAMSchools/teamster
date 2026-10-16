@@ -64,8 +64,21 @@ def plan_yaml(
     dashboards: list[str],
     columns: list[str],
     values: dict[str, list[str]],
+    datasources: list[str] | None = None,
 ) -> str:
-    """The draft the analyst edits into the checks file: sheets, columns, cuts."""
+    """The draft the analyst edits into the checks file: sheets, columns, cuts.
+
+    Args:
+        wb: The parsed workbook.
+        dashboards: The dashboard tabs in scope.
+        columns: The chosen extract's columns.
+        values: Each card caption's distinct extract values.
+        datasources: Every embedded extract's caption, so the analyst can name
+            the one to compare.
+
+    Returns:
+        The draft as YAML, led by every dashboard and extract the workbook holds.
+    """
     sheets = {s: {} for d in dashboards for s in wb.dashboards.get(d, [])}
     defaults: dict[str, str | list[str]] = {}
     for f in wb.filters:
@@ -79,6 +92,8 @@ def plan_yaml(
                 else shown
             )
     draft = {
+        "dashboards": list(wb.dashboards),
+        "datasources": list(datasources or []),
         "sheets": sheets,
         "extract_columns": columns,
         "filter_cards": sorted(defaults),

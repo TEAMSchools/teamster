@@ -106,13 +106,36 @@ def _plan(checks) -> int:
     server, auth = capture_tableau.server_from_env()
     with capture_tableau.signed_in(server, auth):
         twbx, _ = capture_tableau.download(checks.workbook_luid, root, server=server)
-    text = workbook.twb_text(twbx)
-    wb = workbook.read_workbook(text)
+    wb = workbook.read_workbook(workbook.twb_text(twbx))
     extracts = workbook.unpack_extracts(twbx, root)
+    out = root / "plan.yml"
+    out.write_text(draft_plan(checks, wb, extracts, root))
+    print(
+        f"Draft written to {out}. Edit sheets, mappings and cuts into the checks file."
+    )
+    return 0
+
+
+def draft_plan(checks, wb, extracts: dict[str, dict], root: Path) -> str:
+    """The plan.yml text for a downloaded workbook, from a skeleton checks file.
+
+    Args:
+        checks: The checks file, loaded for plan: it may name no datasource or
+            dashboards yet.
+        wb: The parsed workbook.
+        extracts: Each embedded extract's caption and file, from unpack_extracts.
+        root: The folder holding the unpacked extracts.
+
+    Returns:
+        The draft YAML. Columns and values come from the named datasource, or
+        from the workbook's only extract; with neither, they stay empty.
+    """
+    dashboards = list(checks.dashboards) or list(wb.dashboards)
+    name = checks.datasource or (next(iter(extracts)) if len(extracts) == 1 else "")
     values: dict[str, list[str]] = {}
     columns: list[str] = []
-    if checks.datasource in extracts:
-        path = root / extracts[checks.datasource]["file"]
+    if name in extracts:
+        path = root / extracts[name]["file"]
         with hyper.Workspace(root / "scratch.hyper", {"tab": path}) as ws:
             columns = ws.columns("tab", "Extract", "Extract")
             for f in wb.filters:
@@ -123,12 +146,7 @@ def _plan(checks) -> int:
                         "order by 1 limit 50"
                     )
                     values[f.caption] = [str(r[0]) for r in got if r[0] is not None]
-    out = root / "plan.yml"
-    out.write_text(cuts.plan_yaml(wb, list(checks.dashboards), columns, values))
-    print(
-        f"Draft written to {out}. Edit sheets, mappings and cuts into the checks file."
-    )
-    return 0
+    return cuts.plan_yaml(wb, dashboards, columns, values, list(extracts))
 
 
 def _built_at(clock: dict[str, str], tables: list[str]) -> dt.datetime:
@@ -343,7 +361,7 @@ def _close(checks) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    checks = config.load_checks(args.checks)
+    checks = config.load_checks(args.checks, for_plan=args.command == "plan")
     if args.command == "plan":
         return _plan(checks)
     if args.command == "run":

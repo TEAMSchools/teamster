@@ -234,11 +234,13 @@ def _unique_slugs(kind: str, names: list[str]) -> None:
         seen[s] = n
 
 
-def load_checks(path: str | Path) -> Checks:
+def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
     """Read a checks file and refuse what the tool cannot use.
 
     Args:
         path: The checks YAML file.
+        for_plan: Allow an empty datasource, as in the committed skeleton that
+            `plan` runs on to draft the rest.
 
     Returns:
         The checks as dataclasses.
@@ -354,7 +356,7 @@ def load_checks(path: str | Path) -> Checks:
         workbook_luid=_req(d, "workbook_luid"),
         review_project_luid=_req(d, "review_project_luid"),
         dashboards=tuple(_req(d, "dashboards")),
-        datasource=_req(d, "datasource"),
+        datasource=(d.get("datasource") or "") if for_plan else _req(d, "datasource"),
         dashboard_table=_req(d, "dashboard_table"),
         period_start=dt.date.fromisoformat(str(_req(d, "period_start"))),
         window=Window(

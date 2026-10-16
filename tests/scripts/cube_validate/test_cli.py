@@ -364,3 +364,43 @@ def test_analyze_stops_on_a_mistyped_hand_check_result(tmp_path):
     y.write_text(yaml.safe_dump(data))
     with pytest.raises(ValueError, match=f"{data[0]['id']}: yes"):
         cli.analyze_snapshot(checks, snap)
+
+
+def _skeleton_checks(tmp_path):
+    p = tmp_path / "skeleton.yml"
+    p.write_text(yaml.safe_dump({**CHECKS, "datasource": "", "dashboards": []}))
+    return cli.config.load_checks(p, for_plan=True)
+
+
+def _plan_wb():
+    return cli.workbook.Workbook(
+        dashboards={"Overview": ["ADA"], "Other": ["Trend"]},
+        filters=[],
+        params=[],
+        actions=[],
+    )
+
+
+def test_draft_plan_with_no_datasource_or_dashboards_still_drafts(tmp_path):
+    extracts = {"a (x)": {"file": "a"}, "b (y)": {"file": "b"}}
+    d = yaml.safe_load(
+        cli.draft_plan(_skeleton_checks(tmp_path), _plan_wb(), extracts, tmp_path)
+    )
+    assert set(d["sheets"]) == {"ADA", "Trend"}
+    assert d["dashboards"] == ["Overview", "Other"]
+    assert d["datasources"] == ["a (x)", "b (y)"] and d["extract_columns"] == []
+
+
+def test_draft_plan_reads_columns_from_the_only_extract(tmp_path):
+    hyper.write_table(
+        tmp_path / "only.hyper", "Extract", "Extract", [("region", "text")], [("A",)]
+    )
+    d = yaml.safe_load(
+        cli.draft_plan(
+            _skeleton_checks(tmp_path),
+            _plan_wb(),
+            {"only (x)": {"file": "only.hyper"}},
+            tmp_path,
+        )
+    )
+    assert d["extract_columns"] == ["region"]

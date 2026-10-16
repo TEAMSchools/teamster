@@ -1,6 +1,7 @@
 """Checks file loading."""
 
 import datetime as dt
+from pathlib import Path
 
 import pytest
 import yaml
@@ -194,3 +195,16 @@ def test_a_multi_value_or_empty_list_default_is_refused(tmp_path, bad):
         config.ConfigError, match="defaults.Year must be a single value"
     ):
         config.load_checks(_write(tmp_path, filters=filters, defaults={"Year": bad}))
+
+
+SKELETON = (
+    Path(__file__).parents[3]
+    / ".claude/skills/cube-dashboard/checks/attendance_dashboard.yml"
+)
+
+
+def test_the_committed_skeleton_loads_for_plan_only():
+    c = config.load_checks(SKELETON, for_plan=True)
+    assert c.datasource == "" and c.dashboards == ()
+    with pytest.raises(config.ConfigError, match="datasource"):
+        config.load_checks(SKELETON)

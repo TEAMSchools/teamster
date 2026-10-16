@@ -61,3 +61,10 @@ def test_plan_yaml_lists_sheets_columns_and_cuts():
 def test_plan_yaml_prints_each_cards_default_values():
     d = yaml.safe_load(cuts.plan_yaml(_wb(), ["Overview"], [], {}))
     assert d["filter_card_defaults"] == {"Region": "(All)", "Year": "2026"}
+
+
+def test_plan_yaml_lists_every_dashboard_and_extract():
+    d = yaml.safe_load(cuts.plan_yaml(_wb(), [], [], {}, ["rpt (ds)", "other (ds)"]))
+    assert d["dashboards"] == ["Overview"]
+    assert d["datasources"] == ["rpt (ds)", "other (ds)"]
+    assert list(d)[:2] == ["dashboards", "datasources"]
