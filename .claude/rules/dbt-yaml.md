@@ -444,13 +444,14 @@ Sort each test by what it guards:
   [#5990](https://github.com/TEAMSchools/teamster/issues/5990) has no grain test
   yet: add one in any PR that modifies it, and check it off there.
 - A `relationships` test from a mart or `rpt_` model to another model is not a
-  regression test. Key drift is the key macros' job (A7). A population mismatch
-  between two models becomes a shared upstream model, or an `error` test on the
-  upstream models that compares their key sets. Real orphans become an upstream
-  `warn`. A column `relationships` test on the model that feeds a join, before
-  the join drops unmatched rows, is still the right FK check. Exception: an
-  outbound feed whose rows reference another feed's file (ParentSquare, Clever)
-  keeps its file-to-file check, because the target system rejects a dangling id.
+  regression test. Key drift is the key macros' job (A7). When two models must
+  cover the same population, have both read one shared upstream model. A test
+  comparing two separately built models also catches the gap between their
+  rebuild times. Real orphans become an upstream `warn`. A column
+  `relationships` test on the model that feeds a join, before the join drops
+  unmatched rows, is still the right FK check. Exception: an outbound feed whose
+  rows reference another feed's file (ParentSquare, Clever) keeps its
+  file-to-file check, because the target system rejects a dangling id.
 - The model's own logic: a unit test.
 - A promise an upstream model makes: an `error` test on that model.
 - Source data: a test on the earliest model that sees it. Either a `warn` with a
