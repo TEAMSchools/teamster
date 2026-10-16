@@ -27,10 +27,12 @@ models:
         description: >-
           Legal entity of the worker's home assignment, from ADP Workforce Now.
           Older records carry the short codes TEAM, KCNA, MIA, and KNJ, which
-          the Tableau extracts decode to full names. A business unit outside the
-          accepted list needs adding to that decode and to this test before it
-          reaches a dashboard.
+          the Tableau extracts decode to full names.
         data_tests:
+          # Covers int_people__staff_roster too, which reads the current rows of
+          # this model. A new business unit passes the Tableau extract decodes
+          # unchanged and reads as Region there: add it to those decodes and to
+          # this list.
           - accepted_values:
               arguments:
                 values:

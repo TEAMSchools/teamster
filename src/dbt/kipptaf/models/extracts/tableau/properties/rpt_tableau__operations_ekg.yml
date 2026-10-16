@@ -40,8 +40,10 @@ models:
           The walked school resolved to its canonical name via
           int_people__location_crosswalk, so every alias of one school collapses
           to a single value. This is the column a Tableau location gate scopes
-          on. Null when the form label is absent from the crosswalk, which is
-          also when school_business_unit_name and grade_band are null.
+          on. Null when the form's school label is missing from
+          int_people__location_crosswalk, which hides the row from every
+          location gate; add the label to the crosswalk sheet.
+          school_business_unit_name and grade_band are null on the same rows.
         data_tests:
           - not_null
       - name: school_business_unit_name
@@ -51,9 +53,7 @@ models:
           int_people__location_crosswalk. This is the column a Tableau entity
           gate scopes on, NOT home_business_unit_name — that one is the
           respondent's own entity, and central-office staff walk schools in
-          every region. Takes four values, not the five home_business_unit_name
-          takes — KIPP TEAM and Family Schools Inc. owns no school, so it never
-          appears here. Null when the form label is absent from the crosswalk.
+          every region. Null on the same rows as school_clean_name.
         data_tests:
           - not_null
       - name: respondent
