@@ -208,3 +208,29 @@ def test_outside_period_wins_over_outside_scope_and_is_unclaimable(tmp_path):
     res, by = _run(tmp_path, tab, _cub_rows(), _checks([cause]), period=(D[0], D[2]))
     assert by == {("match", None): 12, ("outside_period", "outside_period"): 1}
     assert all(res.invariants.values())
+
+
+def test_a_compare_pair_of_clashing_types_names_the_join_not_cube(tmp_path):
+    tab_cols = [(n, "bigint" if n == "is_absent" else t) for n, t in TAB_COLS]
+    cub_cols = [(n, "bool" if n == "is_absent" else t) for n, t in CUB_COLS]
+    hyper.write_table(
+        tmp_path / "e.hyper",
+        "Extract",
+        "Extract",
+        tab_cols,
+        [(1, D[0], "Rise", "Newark", 0)],
+    )
+    hyper.write_table(
+        tmp_path / "c.hyper",
+        "cube",
+        "rows",
+        cub_cols,
+        [(1.0, D[0], "Rise", "Newark", False, 1.0)],
+    )
+    with hyper.Workspace(
+        tmp_path / "a.hyper", {"tab": tmp_path / "e.hyper", "cub": tmp_path / "c.hyper"}
+    ) as ws:
+        with pytest.raises(rows.RowsError, match="the rows join failed") as e:
+            rows.build(ws, _checks(), ["Rise"])
+    assert "integer vs boolean cannot compare" in str(e.value)
+    assert "cannot compare 'bigint'" in str(e.value)

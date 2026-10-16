@@ -6,6 +6,7 @@ import datetime as dt
 from dataclasses import dataclass
 
 from .config import Checks, lit, side_sql
+from .hyper import _api
 
 TAB = '"tab"."Extract"."Extract"'
 CUB = '"cub"."cube"."rows"'
@@ -142,10 +143,17 @@ def build(
         f"when {outside} then 'outside_scope' else 'dashboard_only' end "
         "else 'cube_only' end"
     )
-    ws.execute(
-        # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
-        f"create temporary table rows_base as select j.*, {base} as base from ({joined}) j"
-    )
+    try:
+        ws.execute(
+            # trunk-ignore(bandit/B608): identifiers are quoted and values come from the checks file, never user input
+            f"create temporary table rows_base as select j.*, {base} as base from ({joined}) j"
+        )
+    except _api().HyperException as e:
+        raise RowsError(
+            "the rows join failed: check that each key and compare pair has "
+            "comparable types (integer vs boolean cannot compare): "
+            + (str(e.main_message) or str(e)).splitlines()[0]
+        ) from e
 
     caused = ", ".join(lit(b) for b in CAUSED)
     if checks.causes:
