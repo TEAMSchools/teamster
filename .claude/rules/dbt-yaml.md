@@ -288,7 +288,8 @@ legitimately-superseded inactive rows that repeat the key.
     construction; a `generate_surrogate_key` PK needs only `unique`. If a grain
     test fails in prod on a source defect that waits on a fix elsewhere, set
     `severity: warn` on that one test with a `TODO(#N)` comment, and still flip
-    the folder.
+    the folder. A kipptaf `rpt_` model listed on #5990 has no grain test yet:
+    add one in any PR that modifies it, and check it off there.
   - A `relationships` test from a mart or `rpt_` model to another model is not a
     regression test. Key drift is the key macros' job (A7); a population
     mismatch becomes a shared upstream model or a unit test; real orphans become
