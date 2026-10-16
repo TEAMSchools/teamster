@@ -5,11 +5,12 @@ description:
   Desktop refuses to open a file Server published (`no declaration found for
   element`, `missing elements in content model`, `not allowed for content
   model`, `D2E8DA72`); a render shows `####`, blank or literal placeholder text,
-  a clipped caption, a 200% percent-of-total axis, or overlapping zones; a
-  hand-edited .twb or .twbx is about to be repacked, published, republished or
-  rolled back with tableauserverclient; or you are hand-editing tooltips,
-  titles, captions, mark-label text, dashboard zones, number formats, or copying
-  an element between workbooks."
+  a clipped caption or `..` header, default colours instead of a palette, marks
+  that do not fill a table cell, a 200% percent-of-total axis, or overlapping
+  zones; a hand-edited .twb or .twbx is about to be repacked, published,
+  republished or rolled back with tableauserverclient; or you are hand-editing
+  tooltips, titles, captions, mark-label text, dashboard zones or pop-outs,
+  palettes, number formats, or copying an element between workbooks."
 ---
 
 # tableau-workbook-xml
@@ -64,7 +65,11 @@ redirect, never through a pipe.
    assertion catches it. For a dashboard-zone change use `mutate.py`, running
    `control` before the mutating op (it must be byte-identical or every mutant
    result is void). `mutate.py` only mutates zones inside one dashboard; for a
-   worksheet, manifest, or format edit, hand-write the broken variant.
+   worksheet, manifest, or format edit, hand-write the broken variant. Count a
+   catch only when the mutant file exists and differs from its source and the
+   assertion's log holds its own `FAIL:` line; a non-zero exit alone counted a
+   mutant that was never written. Runner snippet:
+   [references/build-workflow.md](references/build-workflow.md).
 3. **Edit** with `encoding="utf-8", newline=""` on both read and write. Anchor
    every substitution and assert it matched exactly once; a unique anchor can
    still land an element in the wrong content-model position, which is what step
@@ -78,7 +83,10 @@ redirect, never through a pipe.
    [references/formatting.md](references/formatting.md).
 4. **Check.** `--ref` and `--baseline` are the untouched base from step 1, never
    an earlier edit of your own. Run `check_geometry.py` once per dashboard that
-   contains an edited zone; it checks only the one you name.
+   contains an edited zone; it checks only the one you name and skips hidden
+   zones, so run it once more per pop-out holding an edited zone, with
+   `--show <pop-out container id>`
+   ([references/layout-and-zones.md](references/layout-and-zones.md)).
 
    ```bash
    uv run python docs/tableau-xml/scripts/check_twb.py out.twb --ref base.twb >/tmp/o1 2>&1; rc1=$?
@@ -87,8 +95,8 @@ redirect, never through a pipe.
 
    Without `--ref` the two reference checks are skipped. Without `--baseline`
    every gap is checked against an absolute 0 to 3000 bound instead of the
-   baseline's exact value, which is far weaker; the script prints which mode it
-   ran in.
+   baseline's exact value, which is far weaker, and every floating zone fails as
+   an overlap; the script prints which mode it ran in.
 
 5. **Repack** with `repack.py`. It swaps only the `.twb` into a donor `.twbx`
    and asserts the packaged bytes match the source with zero bare LF. The donor
@@ -124,9 +132,11 @@ redirect, never through a pipe.
    or ellipsised text, a legend or axis missing entries, a blank line where text
    should be, a literal `[federated…]` token, and overlapping zones. Sample
    pixels to assert colour. A render-API parameter set bypasses the domain check
-   a real click performs, and a render cannot show a hover or a click. If the
-   edit touched a row-level-security calculation, your own render proves nothing
-   when your token sees every row: run the differential probe in
+   a real click performs, and a render cannot show a hover or a click, so a
+   pop-out renders closed; see a pop-out through a probe build
+   ([references/build-workflow.md](references/build-workflow.md)). If the edit
+   touched a row-level-security calculation, your own render proves nothing when
+   your token sees every row: run the differential probe in
    [references/build-workflow.md](references/build-workflow.md).
 8. **Hand over** the `.twbx` plus the scratch copy, and delete the throwaway
    test file. Report what was verified, what was inferred, which regions you
@@ -169,9 +179,10 @@ Renders blank or literal. Matrix, examples, and the open question:
 - **Title renders nothing, no error.** The zone has `show-title='false'`. Flip
   it in `<zones>`; an assertion on the title must also check that attribute.
 - **Mark label has a blank line, or vanishes entirely.** A parameter token in
-  `<customized-label>` renders blank (Verified); a calc added to the Text shelf
-  made the whole mark label vanish (Verified). Use static text or the title
-  surface.
+  `<customized-label>` renders blank (Verified); a parameter-routed calc added
+  to the Text shelf made the whole mark label vanish (Verified). Use static text
+  or the title surface. Five field calcs on Text, one colour per status in one
+  label, did render (Verified); what separates the two cases is not established.
 - **Tooltip prints raw `[federated…].[usr:…:qk]`.** **Open question.** Two
   encodings exist: form A, the whole line in one CDATA run, on a sheet whose
   tooltips the owner called excellent; form B, the instance alone in a bare run
@@ -183,7 +194,8 @@ Renders blank or literal. Matrix, examples, and the open question:
 - **Text in a dashboard text zone does not resolve.** It never does (Verified).
   Move it to a worksheet title or caption.
 
-Layout. Numbers, their measurement conditions, and the card idiom:
+Layout. Numbers, their measurement conditions, pop-outs, and the card and
+cell-fill idioms:
 [references/layout-and-zones.md](references/layout-and-zones.md).
 
 - **`####`.** Text does not fit. Removing one `<run>` line from the mark label
@@ -195,8 +207,17 @@ Layout. Numbers, their measurement conditions, and the card idiom:
   the constant.
 - **Legend shows some of its entries.** Height, not width: 40px fits one swatch
   row, 70px fits two.
+- **Table headers cut off with `..`.** They truncate and never wrap. Size each
+  field's width at about 6.7 px per character, or shorten the label; under
+  `fit-width` zoom, widths summing past the zone narrow every column.
+- **Square marks leave gaps in a table cell, or spill into the next row.**
+  Square marks stay square at every size. Use a `Bar` on a fixed hidden axis,
+  the `Your sections grid` idiom.
 - **Two zones overlap.** A zone at the wrong nesting depth; valid XML, no error.
   `check_geometry.py --baseline`.
+- **A pop-out overlaps when opened, though `check_geometry.py` passed.** It
+  skips hidden zones, and every zone in a pop-out is hidden. Rerun with
+  `--show <pop-out container id>` and `--baseline`.
 - **Percent-of-total axis reads 200%.** A `<lod>` on Detail changed the mark
   grain (Verified). The shipped fix put the field on Tooltip (Inferred safe).
 
@@ -207,6 +228,9 @@ Formats and edits: [references/formatting.md](references/formatting.md).
   Desktop.
 - **Parameter action fires, nothing changes.** A blanket replace rewrote the
   `<member>` domain. Every substitution asserts one match.
+- **Marks draw default colours (`#4e79a7`, `#f28e2b`) instead of the palette.**
+  The palette's field has no `<column-instance>` directly under its
+  `<datasource>`. Add one beside the raw columns; `check_twb.py` flags it.
 
 Process: [references/build-workflow.md](references/build-workflow.md) and
 [references/failure-catalog.md](references/failure-catalog.md).
@@ -216,6 +240,11 @@ Process: [references/build-workflow.md](references/build-workflow.md) and
 - **Whole-file diff, `.twbx.twbx`, tiny download, wrong exit code.** CRLF
   flattened by `read_text`; `filepath` gets an extension appended;
   `include_extract=False`; status read through a pipe.
+- **`check_geometry.py` fails the untouched base with an overlap at top-level.**
+  A floating zone over the tiled root; pass `--baseline`.
+- **A mutant reports caught, but its log has no `FAIL:` line.** The mutant was
+  never written: its anchor matched several times, and the assertion failed on
+  the missing file. Scope the replacement to one worksheet block.
 
 Everything observed, with exact error strings and numbers:
 [references/failure-catalog.md](references/failure-catalog.md). Risks a Tableau
@@ -228,18 +257,22 @@ All in `docs/tableau-xml/scripts/`; the README there has per-check tables.
 
 - **`check_twb.py`**:
   `uv run python docs/tableau-xml/scripts/check_twb.py <twb> --ref <base.twb>`.
-  Six checks over the whole file: missing `<simple-id>`, undeclared feature for
-  one of the eight elements in its `FEATURE_FOR_ELEMENT` map (any other element
-  passes silently; add yours to the map), `<view>` without `<aggregation>`, pane
-  children out of model order, and with `--ref` manifest entries lost since the
-  reference plus a weak diff of elements absent from it. The first four cover
-  five of the six Desktop refusals in the catalog; the diff says what changed,
-  not what is legal.
+  Seven checks over the whole file: missing `<simple-id>`, undeclared feature
+  for one of the eight elements in its `FEATURE_FOR_ELEMENT` map (any other
+  element passes silently; add yours to the map), `<view>` without
+  `<aggregation>`, pane children out of model order, a data source palette field
+  with no data-source-level `<column-instance>`, and with `--ref` manifest
+  entries lost since the reference plus a weak diff of elements absent from it.
+  The first four cover five of the six Desktop refusals in the catalog; the
+  palette check covers a render failure; the diff says what changed, not what is
+  legal.
 - **`check_geometry.py`**:
-  `uv run python docs/tableau-xml/scripts/check_geometry.py <twb> "<dashboard>" --baseline <base.twb>`.
-  One dashboard per run. Catches visible sibling zones that overlap, a flow
-  container whose parent-minus-children gap differs from the baseline's, and a
-  top-level `layout-basic` zone not spanning the 100000-unit canvas.
+  `uv run python docs/tableau-xml/scripts/check_geometry.py <twb> "<dashboard>" --baseline <base.twb> [--show <zone-id>]`.
+  One dashboard per run. Catches visible sibling zones that overlap where the
+  baseline's do not, a flow container whose parent-minus-children gap differs
+  from the baseline's, and a top-level `layout-basic` zone not spanning the
+  100000-unit canvas. Skips hidden zones unless `--show` names the pop-out
+  container to un-hide, in both files.
 - **`mutate.py`**:
   `uv run python docs/tableau-xml/scripts/mutate.py <src> <out> "<dashboard>" <op> [args]`.
   Builds a broken zone copy (`duplicate`, `reparent`, `move-after`, `swap`,
