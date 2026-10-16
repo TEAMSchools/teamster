@@ -321,11 +321,6 @@ data_tests:
       assessment in Illuminate. Until then,
       bridge_assessment_expectations_student_scoped leaves the row out, because
       dim_assessment_administrations has no administration for that region.
-    config:
-      meta:
-        dagster:
-          ref:
-            name: int_assessments__scaffold
 
   - name: int_assessments__resolved_section_enrollments__unique_per_score
     description: >-

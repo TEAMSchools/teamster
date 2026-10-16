@@ -42,10 +42,7 @@ with
             and (sc.is_replacement or sc.cc_dcid is null)
             -- the warn test int_assessments__scaffold__replacement_region_untagged
             -- lists the rows this drops
-            and (
-                not sc.is_replacement
-                or coalesce(sc.region in unnest(c.regions_array), false)
-            )
+            and (not sc.is_replacement or sc.is_region_tagged)
     )
 
 select

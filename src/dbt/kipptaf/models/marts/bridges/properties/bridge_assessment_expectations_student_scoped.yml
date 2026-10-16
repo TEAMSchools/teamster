@@ -63,13 +63,10 @@ unit_tests:
     description:
       A replacement row whose region is not tagged on the assessment has no
       administration in dim_assessment_administrations, so the bridge leaves it
-      out. Feeds a tagged replacement row, an untagged replacement row, a
-      replacement row with no region, and an untagged non-replacement row for
-      one assessment tagged Camden and Newark; asserts both replacement rows
-      outside the tags are dropped and the non-replacement row is kept. A
-      non-replacement row takes its region from the assessment's own tags
-      upstream, so an untagged one cannot occur; row 1003 only shows the filter
-      leaves non-replacement rows alone.
+      out. Feeds a tagged replacement row, an untagged replacement row, and a
+      non-replacement row, whose is_region_tagged is null; asserts the untagged
+      replacement row is dropped and the other two are kept. The scaffold's own
+      unit test covers how is_region_tagged is computed.
     model: bridge_assessment_expectations_student_scoped
     given:
       - input: ref('int_assessments__scaffold')
@@ -82,6 +79,7 @@ unit_tests:
             _dbt_source_project: kippnewark
             is_internal_assessment: true
             is_replacement: true
+            is_region_tagged: true
             cc_dcid: null
           - student_number: 1002
             source: illuminate
@@ -91,6 +89,7 @@ unit_tests:
             _dbt_source_project: kipppaterson
             is_internal_assessment: true
             is_replacement: true
+            is_region_tagged: false
             cc_dcid: null
           - student_number: 1003
             source: illuminate
@@ -100,15 +99,7 @@ unit_tests:
             _dbt_source_project: kipppaterson
             is_internal_assessment: true
             is_replacement: false
-            cc_dcid: null
-          - student_number: 1004
-            source: illuminate
-            assessment_id: 1
-            administered_at: 2025-10-08
-            region: null
-            _dbt_source_project: null
-            is_internal_assessment: true
-            is_replacement: true
+            is_region_tagged: null
             cc_dcid: null
       - input: ref('int_assessments__assessments_members')
         rows:
@@ -123,8 +114,7 @@ unit_tests:
           select
             'illuminate' as source,
             1 as canonical_assessment_id,
-            date '2025-10-08' as administered_date,
-            ['Camden', 'Newark'] as regions_array
+            date '2025-10-08' as administered_date
       - input: ref('stg_google_sheets__reporting__terms')
         rows: []
     expect:
