@@ -20,14 +20,12 @@ models:
               - marking_period_id
               - grade_type_token
           config:
-            # Scoped to live-posted rows. Imported course history carries no
-            # token and no course_period_id, and legitimately repeats a
-            # (student, marking period) pair across transcript courses -- 15,278
-            # historical rows collapse to 2,160 on this combination. On the
-            # tokened rows the grain is exact: 3,074 rows, 3,074 distinct. This
-            # is the test that catches a token strip -- without grade_type_token
-            # the same 3,074 rows collapse to 1,542.
-            where: grade_type_token is not null
+            # Scoped to live-posted rows, posted grades included. Imported
+            # course history carries no course_period_id and legitimately
+            # repeats a (student, marking period) pair across transcript
+            # courses. This is the test that catches a token strip: without
+            # grade_type_token, DT and DY rows collapse onto one key.
+            where: course_period_id is not null
             severity: error
     columns:
       - name: id
@@ -85,8 +83,10 @@ models:
           gradebook (the live grade, posted by a staff account), DY is
           yesterday's grade (a daily snapshot written by the cron admin
           account), E is an exam. Null on imported course history, which carries
-          no prefix. Part of the grain: DT and DY are two rows for the same
-          student, course period and marking period.
+          no prefix, and on a posted grade — a live posting a school finalizes
+          for a marking period, inferred from the data rather than the vendor
+          documentation. Part of the grain: DT, DY and a posted grade are
+          separate rows for the same student, course period and marking period.
         data_type: string
       - name: percent_grade
         description: >-
