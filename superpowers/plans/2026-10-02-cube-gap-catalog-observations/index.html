@@ -1,0 +1,3312 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Cube Gap Catalog — Observations - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cube-gap-catalog-observations" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cube Gap Catalog — Observations
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-10-02-cube-gap-catalog-observations.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="cube-gap-catalog-observations">Cube Gap Catalog — Observations</h1>
+<p>Part of the <a href="../2026-10-02-cube-gap-catalog/">Cube Connector Gap Catalog</a>. Refs</p>
+<h1 id="5673-one-section-per-core-set-dashboard-tables-and-notes-are-the-per-workbook">5673. One section per core-set dashboard; tables and notes are the per-workbook</h1>
+<p>inventory extracted from the production .twb and classified against the dbt
+marts and Cube model YAML as of 2026-10-02.</p>
+<h2 id="grow-dashboard-grow_dashboard">Grow Dashboard (<code>grow_dashboard</code>)</h2>
+<ul>
+<li>workbook: SchoolMint Grow Dashboard | contentUrl
+  <code>SchoolMintGrowDashboard_17226096936880</code> | luid
+  <code>b529ca04-3560-4cff-8898-fd0a65f3e994</code> | project Production</li>
+<li>upstream datasources (all embedded, none published separately):
+  <code>rpt_tableau__schoolmint_grow_goals</code>,
+  <code>rpt_tableau__schoolmint_grow_observation_details</code>,
+  <code>rpt_tableau__teacher_observations</code></li>
+<li>rpt_/source models in use (from datasource captions + SQL):
+  <code>rpt_tableau__schoolmint_grow_goals</code>,
+  <code>rpt_tableau__schoolmint_grow_observation_details</code>,
+  <code>rpt_tableau__teacher_observations</code>. Upstream of the latter two:
+  <code>int_performance_management__overall_scores</code>,
+  <code>int_performance_management__observation_details</code>,
+  <code>int_people__staff_roster_history</code>, <code>int_people__location_crosswalk</code>,
+  <code>int_students__teacher_grade_levels</code>, <code>stg_google_sheets__reporting__terms</code>.</li>
+<li>published dashboards inventoried: Home, Microgoals, O3s, PM Details, PM
+  Norming, PM Trends, Performance Management, Walkthrough Details, Walkthrough
+  Trends, Walkthroughs (all 10 server views; none hidden)</li>
+<li>sheets excluded as hidden/scratch: 0 hidden dashboards. 8 worksheets exist in
+  the .twb but are <strong>not placed on any dashboard zone and are not server views</strong>
+  (<code>pulse_checker__*</code> x6, <code>pulsechecker ban1</code>/<code>ban2</code>) — WIP sheets for an
+  "Outlier Observers" feature (titles reference "27 PM metrics", a PCA scatter
+  plot). These map to the Asana-named <code>rpt_tableau__pm_outlier_detection</code>
+  replacement target but are out of scope for this inventory since nothing
+  displays them today.</li>
+<li>regions served by this dashboard overall: <strong>all</strong> (Newark/TEAM, Camden/KCNA,
+  Miami, Paterson) — confirmed via the Home dashboard's RLS calcs
+  (<code>RLS - Entity Gate</code>), which explicitly gate on all four
+  <code>home_business_unit_name</code> values plus a KTAF all-access group. One dashboard
+  (<code>Walkthroughs</code> → <code>walkthrough_met_goal</code>) is titled "MIA Phase Goals" but
+  carries no business-unit filter restricting it to Miami — see Notes.</li>
+</ul>
+<h3 id="measures">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Observation Score</td>
+<td>avg</td>
+<td><code>observation_score</code></td>
+<td>Walkthroughs (scores/top/bottom/met_goal/individual/BAN), Walkthrough Details (dept/grade/n_kids/observer/individual), PM Trends (timeline), PM Details (teammates)</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.score</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Row Score / Indicator Score</td>
+<td>avg</td>
+<td><code>row_score</code> (per rubric measurement item)</td>
+<td>Walkthrough Details (all 5 sheets), Walkthrough Trends, PM Details (dept/grade/observers/teammates), PM Trends (rows_timeline)</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observation_scores.score_value</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>ETR Row Score / Self &amp; Others (S&amp;O) Row Score</td>
+<td>avg</td>
+<td><code>{FIXED observation_id: AVG(IF [Rubric Row (group)]='ETR' and academic_year&gt;=2024 then row_score...)}</code> (and S&amp;O variant)</td>
+<td>PM Norming (dept/bottom/top20/school/etr_so_bottom/etr_so_top20), PM Details (BAN, teammates)</td>
+<td>mart-ready*</td>
+<td><code>fct_staff_observation_scores.score_value</code> filtered via <code>dim_staff_observation_rubric_measurements.strand_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Final Score</td>
+<td>avg</td>
+<td><code>final_score</code> — FIXED per employee+academic_year (avg of PM2+PM3 rounds)</td>
+<td>PM Details (teammates, BAN), PM Norming (dept/grade)</td>
+<td>mart-missing</td>
+<td><code>int_performance_management__overall_scores</code> (via <code>rpt_tableau__schoolmint_grow_observation_details</code>) — no mart/fact carries this yet</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Final Tier / round(AVG(Final Tier))</td>
+<td>avg</td>
+<td><code>final_tier</code> (tiered from Final Score)</td>
+<td>PM Details (teammates, BAN), PM Norming (dept/grade)</td>
+<td>mart-missing</td>
+<td>same as Final Score</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Tier / Overall Tier</td>
+<td>avg</td>
+<td><code>overall_tier</code> (per-observation)</td>
+<td>PM Details (teammates), PM Norming (race, etr_so_bottom, etr_so_top20)</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.overall_rating</code> (renamed from <code>overall_tier</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Observation Score (Group) / Rank (window calcs)</td>
+<td>usr</td>
+<td><code>WINDOW_AVG(AVG(observation_score))</code>; <code>RANK(AVG(observation_score))</code></td>
+<td>PM Details (dept/grade/observers)</td>
+<td>workbook-only</td>
+<td>table calc layered on the mart-ready Observation Score; no new data</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Jitter</td>
+<td>avg</td>
+<td><code>RANDOM()</code></td>
+<td>PM Norming (race_whisker)</td>
+<td>workbook-only</td>
+<td>pure chart viz helper</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Has Observation (base completion flag)</td>
+<td>sum/avg</td>
+<td><code>{FIXED employee_number,type,period: MAX(is_observed)}</code>; PM variant <code>iif({FIXED employee_number: countd(observation_id)}&gt;0,1,0)</code></td>
+<td>O3s (BAN, tracking_location), Walkthroughs (BAN, tracking_location), Performance Management (tracking_BAN)</td>
+<td>mart-ready</td>
+<td>existence of a row in <code>fct_staff_observations</code> joined to <code>dim_staff_observation_expectations</code> by staff/term/type</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Observations/Expected (completion %)</td>
+<td>usr</td>
+<td><code>sum(Has Observation)/COUNTD(expected)</code></td>
+<td>O3s (BAN, tracking_location), Walkthroughs (BAN, tracking_location)</td>
+<td>mart-ready</td>
+<td>count(<code>fct_staff_observations</code>) / count(<code>dim_staff_observation_expectations</code>), joined staff+term+type</td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Observed (PM)</td>
+<td>usr</td>
+<td><code>SUM(Observed Employees)/COUNTD(eligible)</code></td>
+<td>Performance Management (tracking_location)</td>
+<td>mart-ready</td>
+<td>same construction as above, PM term type</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Is Observed</td>
+<td>max</td>
+<td>raw <code>is_observed</code> flag</td>
+<td>Performance Management (tracking_table)</td>
+<td>mart-ready</td>
+<td>existence in <code>fct_staff_observations</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Meeting Goal</td>
+<td>avg</td>
+<td><code>IF {FIXED employee_number,type,code: MAX(observation_score)}&gt;=0.83 THEN 1 ELSEIF job_title='Teacher in Residence' AND ...&gt;=0.50 THEN 1 ELSE 0</code></td>
+<td>Walkthroughs (met_goal)</td>
+<td>mart-missing</td>
+<td>hardcoded threshold logic in the .twb calc only; lives nowhere in dbt</td>
+<td>flagged — title says "MIA Phase Goals | Goal = 85%" but the calc hardcodes 0.83/0.50 and carries no business-unit filter; see Notes</td>
+</tr>
+<tr>
+<td>Teachers with Microgoals</td>
+<td>sum</td>
+<td><code>{fixed employee_number: Max(is_assigned)}</code></td>
+<td>Microgoals (BAN, tracking)</td>
+<td>mart-ready</td>
+<td>existence in <code>fct_staff_observation_goals</code> (countd teacher_staff_key)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Assigned (pct_assigned_goals)</td>
+<td>usr</td>
+<td><code>Sum(Teachers with Microgoals)/COUNTD(employee_number)</code></td>
+<td>Microgoals (BAN, tracking)</td>
+<td>mart-missing</td>
+<td>numerator is mart-ready (<code>fct_staff_observation_goals</code>); denominator "teachers expected to receive Microgoals" population is not materialized anywhere. <strong>This is the open Asana measure task <code>staff_observations.pct_assigned_goals</code>.</strong></td>
+<td>all</td>
+</tr>
+<tr>
+<td>CNTD(employee_number) — teacher headcount</td>
+<td>ctd</td>
+<td><code>employee_number</code></td>
+<td>O3s/Microgoals/Walkthrough/PM BANs, PM Norming (race)</td>
+<td>mart-ready</td>
+<td><code>dim_staff</code> / <code>dim_staff_work_assignments</code> distinct count</td>
+<td>all</td>
+</tr>
+<tr>
+<td>CNTD(assignment_id) — microgoal assignment count</td>
+<td>ctd</td>
+<td><code>assignment_id</code></td>
+<td>Microgoals (BAN, distribution, tracking_individual)</td>
+<td>mart-missing</td>
+<td><code>assignment_id</code> is dropped as join-only plumbing (R8) from <code>fct_staff_observation_goals</code>'s final select — no equivalent distinct-count column exposed</td>
+<td>all</td>
+</tr>
+<tr>
+<td>CNTD(goal_name) — distinct Microgoals assigned</td>
+<td>ctd</td>
+<td><code>goal_name</code></td>
+<td>Microgoals (BAN, distribution)</td>
+<td>mart-ready</td>
+<td><code>countd(staff_observation_goal_type_key)</code> on <code>fct_staff_observation_goals</code>, joined to <code>dim_staff_observation_goal_types.goal_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>CNTD(observation_id)</td>
+<td>ctd</td>
+<td><code>observation_id</code></td>
+<td>O3_tracking_table, Walkthrough (tracking_table, rows_timeline, timeline)</td>
+<td>mart-ready</td>
+<td><code>countd(staff_observation_key)</code> on <code>fct_staff_observations</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Rank (Top 20 / Bottom 20)</td>
+<td>usr</td>
+<td><code>RANK(AVG(observation_score))</code></td>
+<td>PM Norming (bottom_20, top_20, etr_so_bottom, etr_so_top_20)</td>
+<td>workbook-only</td>
+<td>table calc over mart-ready Observation Score</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dimensions">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Teammate / Observer Name / Manager</td>
+<td>row/filter</td>
+<td>mart-ready</td>
+<td><code>dim_staff.full_name</code> via <code>fct_staff_observations.teacher_staff_key</code>/<code>observer_staff_key</code>; manager via <code>dim_staff_reporting_chain</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Location (<code>location_clean_name</code>)</td>
+<td>row/filter</td>
+<td>mart-ready</td>
+<td><code>dim_locations.location_clean_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>home_business_unit_name / Region</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td><code>dim_regions</code>/<code>dim_locations</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>home_department_name</td>
+<td>row (dept comparison)</td>
+<td>mart-ready*</td>
+<td><code>dim_staff_work_assignments</code> (not individually verified column name)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Job Title</td>
+<td>row/filter</td>
+<td>mart-ready*</td>
+<td><code>dim_staffing_positions</code> / <code>dim_staff_work_assignments</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Grade Band</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td><code>dim_staff_observation_expectations.position_title</code> / roster <code>home_work_location_grade_band</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Grade Taught</td>
+<td>row (grade comparison)</td>
+<td>mart-missing</td>
+<td>computed in <code>rpt_tableau__schoolmint_grow_observation_details</code>/<code>__teacher_observations</code> from <code>int_students__teacher_grade_levels</code> (highest count of students taught, per PowerSchool) — not in any mart</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Number Of Kids (class size)</td>
+<td>row</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__teacher_observations</code> only (observer-entered dropdown) — not in any mart</td>
+<td>all</td>
+</tr>
+<tr>
+<td>race_ethnicity_reporting</td>
+<td>row/filter</td>
+<td>mart-ready*</td>
+<td><code>dim_staff.race</code> + <code>is_hispanic</code> (split fields; Tableau's single reporting category isn't an exact 1:1 match — verify mapping)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Measurement Name</td>
+<td>row/filter</td>
+<td>mart-ready</td>
+<td><code>dim_staff_observation_rubric_measurements.name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Strand Name</td>
+<td>row/filter</td>
+<td>mart-ready</td>
+<td><code>dim_staff_observation_rubric_measurements.strand_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Microgoal (goal_name) / goal_type_name / bucket_name</td>
+<td>row/filter</td>
+<td>mart-ready</td>
+<td><code>dim_staff_observation_goal_types</code> (<code>goal_name</code>, <code>goal_type</code>, <code>bucket_name</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>tracking_code / tracking_rubric / tracking_type / tracking_academic_year</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td><code>dim_terms</code> (<code>code</code>/<code>name</code>/<code>type</code>/<code>academic_year</code>) via <code>dim_staff_observation_expectations.term_key</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Term Code / Academic Year</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td><code>dim_terms</code> / <code>fct_staff_observations.academic_year</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Type (observation type: O3/Walkthrough/PM)</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td><code>dim_staff_observation_types</code> (<code>name</code>/<code>abbreviation</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Code / Period (weekly period label, O3 &amp; Walkthrough only)</td>
+<td>row/filter</td>
+<td>mart-missing</td>
+<td>ad hoc weekly bucketing built in <code>rpt_tableau__teacher_observations</code>; no equivalent in <code>dim_terms</code> or any mart</td>
+<td>all</td>
+</tr>
+<tr>
+<td>current_assignment_status</td>
+<td>filter</td>
+<td>mart-ready*</td>
+<td>likely <code>dim_staff_status</code> (not individually verified)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>pm_round_eligible</td>
+<td>filter</td>
+<td>mart-missing</td>
+<td>custom leave-adjusted CASE logic (<code>recent_leave</code> CTE) in <code>rpt_tableau__schoolmint_grow_observation_details</code>; close to but not the same as <code>dim_staff_observation_expectations.is_current</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Observed At / Assignment Date</td>
+<td>detail</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.observed_timestamp</code> / <code>fct_staff_observation_goals.assignment_date</code></td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes">Notes</h3>
+<ul>
+<li><strong>No observations/performance-management cube exists at all</strong>
+  (<code>src/cube/model/cubes/</code> has only <code>conformed</code>, <code>courses</code>, <code>staff</code>,
+  <code>student_assessments</code>, <code>students</code>). Every row above that is <code>cube-covered</code>
+  would be zero — confirmed by grepping <code>src/cube/model/</code> for "schoolmint",
+  "observation", "microgoal", "walkthrough": the only hit is a one-line comment
+  in <code>staff_reporting_relationships.yml</code> saying this cube is "retained for
+  future fact cubes (observations, gradebook, ...)". So <strong>0 measures and 0
+  dimensions are cube-covered</strong>; this dashboard's entire Cube-connector gap is
+  "build the cube," not "fix a mismatch."</li>
+<li>The Asana task's named blockers (<code>fct_observations</code>, <code>fct_microgoals</code>,
+  <code>fct_performance_evaluations</code>, <code>dim_staff</code>, <code>dim_locations</code>,
+  <code>dim_observation_rubrics</code>) are <strong>stale names</strong>. The marts that actually ship
+  today are <code>fct_staff_observations</code>, <code>fct_staff_observation_scores</code>,
+  <code>fct_staff_observation_goals</code>, <code>dim_staff</code>, <code>dim_locations</code>,
+  <code>dim_staff_observation_rubrics</code> (+
+  <code>dim_staff_observation_rubric_measurements</code>, <code>dim_staff_observation_types</code>,
+  <code>dim_staff_observation_goal_types</code>, <code>dim_staff_observation_expectations</code>).
+  These cover observation scoring and microgoal assignment well (12/20 measures,
+  15/19 dimensions mart-ready) — the real remaining gaps are narrower than Asana
+  implies: (1) PM <code>final_score</code>/<code>final_tier</code> (PM2/PM3 round averaging), (2) the
+  microgoal "% Assigned" denominator population (the explicitly open
+  <code>staff_observations.pct_assigned_goals</code> task), (3)
+  <code>grade_taught</code>/<code>number_of_kids</code> teacher-context attributes, (4) the ad hoc
+  weekly <code>code</code>/<code>period</code> bucketing for O3/Walkthrough, and (5) the
+  leave-adjusted <code>pm_round_eligible</code> flag.</li>
+<li><strong>ETR/S&amp;O row-score grouping</strong> (strand name → "ETR" vs "S&amp;O" category) is a
+  hardcoded Tableau <code>IF...IN(...)</code> grouping, not a materialized column anywhere.
+  <code>dim_staff_observation_rubric_measurements.strand_name</code> has the raw strand
+  names needed to rebuild the grouping, so this is marked mart-ready with a
+  caveat rather than mart-missing — but the mapping itself needs to be
+  re-authored (in Cube or dbt) from the Tableau calc, not just referenced.</li>
+<li><strong>Discrepancy worth flagging to the business owner</strong>: <code>walkthrough_met_goal</code>'s
+  title says "MIA Phase Goals... Goal = 85%" but the underlying calc hardcodes
+  <code>&gt;=0.83</code> (83%) for most staff and <code>&gt;=0.50</code> for Teachers in Residence, and the
+  worksheet carries no <code>home_business_unit_name</code> filter — so today it silently
+  applies an undocumented Miami-labeled threshold to every region's walkthrough
+  scores. Confirm intent before porting this measure into Cube.</li>
+<li><code>rpt_tableau__teacher_observations</code> (O3s + Walkthroughs) and
+  <code>rpt_tableau__schoolmint_grow_observation_details</code> (PM + Norming) both draw
+  from the same underlying
+  <code>fct_staff_observations</code>/<code>fct_staff_observation_scores</code> grain, differentiated
+  only by <code>dim_staff_observation_types</code> — i.e., the three datasources this
+  workbook embeds are largely the same fact table sliced three ways, which is
+  good news for a single unified Cube.</li>
+<li>RLS/permission fields (<code>RLS - Entity Gate</code>, <code>RLS - Location Gate</code>,
+  <code>RLS - Role Gate</code>, <code>Permissions</code>/<code>User_test</code>, <code>Lockbox</code>, <code>Program Filter</code>,
+  <code>No Null Term Filters</code>) and multi-field <code>Action (...)</code> dashboard-click-filter
+  combiners are access-control/interactivity plumbing, not metrics — excluded
+  from the tables above by design.</li>
+<li>47 worksheets are in scope (sum of each dashboard's zone count = 47, verified
+  against the parsed <code>&lt;dashboards&gt;</code> XML); the 8 <code>pulse_checker*</code> sheets (not
+  zoned, not server views) are out of scope per Step 0 but noted above since
+  they map directly to the Asana-named <code>rpt_tableau__pm_outlier_detection</code> work.</li>
+<li><code>home_department_name</code>, <code>job_title</code>, <code>current_assignment_status</code>, and
+  <code>race_ethnicity_reporting</code> mart locations are marked <code>mart-ready*</code> (asterisk)
+  because I located the field conceptually on a staff dimension/roster model but
+  did not individually open every dim YAML to confirm the exact column name —
+  flagged for verification during actual Cube build, not a blocker to
+  classification.</li>
+</ul>
+<h3 id="verification">Verification</h3>
+<ul>
+<li><strong>cube-covered spot-check</strong>: none exist to check — confirmed by
+  <code>find src/cube/model -iname "*observ*"</code> returning only
+  <code>staff_reporting_relationships.yml</code>, which contains a single comment line
+  (<code># ... Retained for future fact cubes (observations, gradebook, ...)</code>) and no
+  actual cube.</li>
+<li><strong>mart-ready spot-check</strong>: <code>Row Score</code> →
+  <code>/workspaces/teamster/src/dbt/kipptaf/models/marts/facts/properties/fct_staff_observation_scores.yml</code>,
+  column <code>score_value</code> ("Numeric score assigned to this measurement item"), PK
+  <code>generate_surrogate_key(["sd.observation_id", "sd.measurement_id"])</code>.</li>
+<li><strong>mart-missing spot-check</strong>: <code>Final Score</code>/<code>Final Tier</code> → traced via
+  <code>grep -n "final_score\|final_tier" src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__schoolmint_grow_observation_details.sql</code>
+  to <code>os.final_score</code>/<code>os.final_tier</code> sourced
+  <code>from {{ ref("int_performance_management__overall_scores") }} as os</code> — an
+  intermediate model, with no corresponding column on <code>fct_staff_observations</code>
+  or any other mart file under <code>src/dbt/kipptaf/models/marts/</code>.</li>
+</ul>
+<h2 id="coaching-conversation-tool-coaching_conversation_tool">Coaching Conversation Tool (<code>coaching_conversation_tool</code>)</h2>
+<ul>
+<li>workbook: Coaching Conversation Tool | contentUrl <code>CoachingConversationTool</code> |
+  luid <code>db88d328-0d54-4dac-8003-6197841e1432</code> (verified, matches hint) | project
+  Production</li>
+<li>upstream datasources: <code>rpt_tableau__schoolmint_grow_observation_details</code>
+  (embedded, single datasource for the whole workbook)</li>
+<li>rpt_/source models in use: <code>rpt_tableau__schoolmint_grow_observation_details</code>
+  (the only one — matches Asana's named replacement target). Its own sources:
+  <code>int_people__staff_roster_history</code>, <code>int_people__staff_roster</code>,
+  <code>int_people__location_crosswalk</code>, <code>stg_google_sheets__reporting__terms</code>,
+  <code>int_performance_management__overall_scores</code>,
+  <code>int_performance_management__observation_details</code>,
+  <code>int_students__teacher_grade_levels</code>,
+  <code>int_adp_workforce_now__employee_memberships_by_year</code></li>
+<li>published dashboards inventoried: <code>Coaching Conversation Tool</code> (the single
+  server view; matches <code>get-workbook</code>'s one-entry <code>views</code> list)</li>
+<li>sheets excluded as hidden/scratch: 3 — <code>coaching_convo_BAN</code> (worksheet defined
+  but placed on neither dashboard; orphaned), <code>Easy Download</code>,
+  <code>Easy Download (2)</code> (both only on <code>Dashboard 2</code>, a second dashboard in the
+  .twb not returned by <code>get-workbook</code>'s views list — no <code>hidden='true'</code> marker
+  exists in the XML for either dashboard/window, but the server content API
+  lists only one published view, so <code>Dashboard 2</code> is treated as not
+  server-published; <strong>flagged</strong> per instructions since <code>showTabs: true</code> means it
+  could in principle surface as a tab — recommend the dashboard owner confirm)</li>
+<li>regions served by this dashboard overall: <strong>all</strong> (network-wide staff
+  performance management) — confirmed via the workbook's own RLS calcs
+  (<code>RLS - Entity Gate</code> / <code>RLS - Location Gate</code> / <code>RLS - Role Gate</code> /
+  <code>Permissions</code>), which explicitly enumerate all four regions' business units
+  (TEAM Academy Charter School = Newark, KIPP Cooper Norcross Academy = Camden,
+  KIPP Miami, KIPP Paterson) and every school location, gated by AD group
+  membership + self/manager/role tiers. No region is excluded; access is
+  row-level per viewer, not dashboard-scoped.</li>
+</ul>
+<h3 id="measures_1">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Observation Score</td>
+<td>Avg (FIXED LOD)</td>
+<td><code>{FIXED [observation_id]:AVG([observation_score])}</code></td>
+<td>coaching_term_table</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.score</code> (already 1 row/observation_id; plain AVG equivalent)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Observation Score (group)</td>
+<td>Avg / CountD</td>
+<td><code>[observation_score]</code> avg; <code>[observation_id]</code> CountD</td>
+<td>coaching_overall_table, coaching_term_table (filter/context)</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.score</code> / <code>staff_observation_key</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Tier (overall_tier)</td>
+<td>Avg</td>
+<td><code>od.overall_tier</code> — tier bucket of observation_score (3.495/2.745/1.745 cutoffs)</td>
+<td>coaching_term_table</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.overall_rating</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Row Score</td>
+<td>Avg</td>
+<td><code>od.row_score</code> / <code>os.value_score</code>, per rubric-row (indicator) measurement</td>
+<td>coaching_row_table</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observation_scores.score_value</code> (join via <code>staff_observation_rubric_measurement_key</code> → <code>dim_staff_observation_rubric_measurements.strand_name</code>/<code>name</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>ETR Row Score</td>
+<td>Avg (FIXED LOD)</td>
+<td><code>{FIXED [observation_id]: AVG(IF [Rubric Row (group)]='ETR' and academic_year&gt;=2024 then [row_score] ELSE [etr_score] END)}</code> — blends current SchoolMint Grow row_score with archived etr_score pre-2024</td>
+<td>coaching_overall_table, coaching_term_table</td>
+<td>mart-missing</td>
+<td>no mart computes this blended/archive-aware average; current-year half is <code>fct_staff_observation_scores.score_value</code>, archive half (<code>etr_score</code>) lives only in <code>int_performance_management__observation_details</code> (intermediate, archive branch) — rpt model: <code>rpt_tableau__schoolmint_grow_observation_details.sql</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Self &amp; Others Row Score</td>
+<td>Avg (FIXED LOD)</td>
+<td>same pattern as ETR Row Score, strand <code>S&amp;O</code> / archive <code>so_score</code></td>
+<td>coaching_overall_table, coaching_term_table</td>
+<td>mart-missing</td>
+<td>same as above — <code>etr_score</code>/<code>so_score</code> only in <code>int_performance_management__observation_details</code>; rpt model: <code>rpt_tableau__schoolmint_grow_observation_details.sql</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Final Score</td>
+<td>Avg</td>
+<td><code>os.final_score</code> — avg of PM2/PM3 <code>observation_score</code> (current) union archive final_score</td>
+<td>coaching_overall_table</td>
+<td>mart-missing</td>
+<td><code>int_performance_management__overall_scores</code> (intermediate only; no mart exposes final_score/final_tier)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Final Tier</td>
+<td>Avg</td>
+<td><code>os.final_tier</code> — tier bucket of final_score, same cutoffs as overall_tier</td>
+<td>coaching_overall_table</td>
+<td>mart-missing</td>
+<td><code>int_performance_management__overall_scores</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Is Observed</td>
+<td>(dependency only)</td>
+<td><code>is_observed</code> = 1 if observation_id not null</td>
+<td>all 4 data sheets (column dependency; not found encoded on rows/cols/text/color/size in any in-scope sheet)</td>
+<td>workbook-only</td>
+<td>listed <code>tooltip-only</code>-equivalent / unused-encoding; not a displayed metric in the published dashboard</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<p>Variants note: ETR/Self &amp; Others Row Score and Final Score/Final Tier appear
+identically on both <code>coaching_overall_table</code> ("past scores and tiers," grouped
+by academic year) and <code>coaching_term_table</code> ("scores and tiers by term," grouped
+by term) — same measures, different time grain; collapsed to one row each above.</p>
+<h3 id="dimensions_1">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Academic Year</td>
+<td>row/dashboard filter (all 5 sheets)</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.academic_year</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Term Code</td>
+<td>row/dashboard filter</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.term_key</code> → <code>dim_terms.code</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Business Unit (home_business_unit_name)</td>
+<td>dashboard filter</td>
+<td>mart-ready</td>
+<td>staff work assignment → <code>dim_regions.business_unit_name</code>/<code>legal_entity</code> (via <code>dim_staff</code>/<code>dim_locations</code> chain)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Location (location_clean_name)</td>
+<td>dashboard filter</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.location_key</code> → <code>dim_locations.location_clean_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Teammate</td>
+<td>dashboard filter, row grouping</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.teacher_staff_key</code> → <code>dim_staff</code> (formatted name)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Manager</td>
+<td>dimension (RLS / display)</td>
+<td>mart-ready</td>
+<td><code>dim_staff.manager</code> / reports-to chain</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Job Title / Job Function</td>
+<td>dimension (RLS role gate)</td>
+<td>mart-ready</td>
+<td><code>dim_staff.job_title</code> / <code>job_function</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Observation Type / Abbreviation</td>
+<td>filter, grouping</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.staff_observation_type_key</code> → <code>dim_staff_observation_types</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Measurement Name</td>
+<td>filter, row grouping (coaching_row_table rows)</td>
+<td>mart-ready</td>
+<td><code>dim_staff_observation_rubric_measurements.name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Strand Name</td>
+<td>filter, row grouping</td>
+<td>mart-ready</td>
+<td><code>dim_staff_observation_rubric_measurements.strand_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Rubric Strand (group) — "ETR"/"S&amp;O"/"Coach Comments"/"Pre-2023 Self &amp; Others Comments"</td>
+<td>calculated bin over <code>measurement_name</code>, drives which FIXED-LOD branch is used</td>
+<td>workbook-only</td>
+<td>large hand-maintained <code>categorical-bin</code> calc (~90 named values) spanning both current and legacy/archive measurement-name spellings; no mart equivalent groups current+archive names this way (mart <code>strand_name</code> only covers current SchoolMint Grow rubric, not the archive)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Locked</td>
+<td>RLS release-gate input, not displayed as a metric</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.is_locked</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Lockbox Date</td>
+<td>RLS release-gate input</td>
+<td>mart-ready</td>
+<td><code>stg_google_sheets__reporting__terms.lockbox_date</code> (not yet on a mart; terms are intermediate/staging only) → mart-ready via upstream, not mart-missing, since a simple term lookup suffices</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Measurement Comments</td>
+<td>text display (coaching_convo_comments)</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observation_scores.text_box_content</code> / <code>response_text</code> (field-name only; contents are free text, handle per PII rules if ever surfaced outside Tableau)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Teammate (exclude null)</td>
+<td>filter helper calc</td>
+<td>workbook-only</td>
+<td>trivial <code>IFNULL</code>-style display calc, no mart equivalent needed</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Permissions / RLS gates (4 boolean calcs)</td>
+<td>row-level security, not displayed</td>
+<td>workbook-only</td>
+<td>Tableau-native RLS; a Cube cube would need <code>row_level_security</code> filters wired to these same AD-group/business-unit/location rules — no cube exists today</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes_1">Notes</h3>
+<ul>
+<li>No <code>observations</code> Cube cube exists (confirmed again here: no cube/view file
+  under <code>src/cube/model/</code> references <code>fct_staff_observations</code>,
+  <code>fct_staff_observation_scores</code>, or <code>dim_staff_observation_*</code>). Every measure
+  here is at best <code>mart-ready</code>, never <code>cube-covered</code>.</li>
+<li>The Asana-listed blocker names (<code>fct_observations</code>, <code>dim_staff</code>,
+  <code>dim_locations</code>, <code>dim_observation_rubrics</code>) are stale; the real marts are
+  <code>fct_staff_observations</code>, <code>fct_staff_observation_scores</code>,
+  <code>dim_staff_observation_rubrics</code>, <code>dim_staff_observation_rubric_measurements</code>,
+  plus the generic <code>dim_staff</code> / <code>dim_locations</code> / <code>dim_regions</code> / <code>dim_terms</code>
+  for roster and reference attributes. Confirmed via
+  <code>src/dbt/kipptaf/models/marts/{facts,dimensions}/</code>.</li>
+<li><strong><code>final_score</code>/<code>final_tier</code> and the archive-aware ETR/S&amp;O row scores have NO
+  mart at all</strong> — they live only in <code>int_performance_management__overall_scores</code>
+  and inside the <code>rpt_tableau__schoolmint_grow_observation_details</code> SQL itself
+  (as Tableau FIXED-LOD calcs reading <code>etr_score</code>/<code>so_score</code>, which only the
+  archive branch populates). Building a Cube connector for this dashboard would
+  require either (a) a new mart wrapping
+  <code>int_performance_management__overall_scores</code>, or (b) porting the FIXED-LOD
+  blend logic into dbt — the bigger lift of the two gaps found.</li>
+<li><strong>How far back the data goes</strong>: not fully determinable from SQL alone. The
+  rpt_ model's second UNION branch applies no <code>academic_year</code> filter, so it
+  carries the full history in <code>int_performance_management__observation_details</code>,
+  which itself is
+  <code>current SchoolMint Grow (stg_schoolmint_grow__observations, is_published) UNION ALL stg_performance_management__observation_details_archive</code>
+  (archive sourced from an external Avro/GCS table,
+  <code>src_performance_management__observation_details_archive</code>). The existence of a
+  dedicated legacy archive table is consistent with the launch page's
+  "2018-present" claim, but no file states the archive's earliest
+  <code>academic_year</code> value — confirming the exact boundary would need a BigQuery
+  row query (out of scope: no PII risk in an aggregate min(academic_year), but
+  it was not run here per the "parse once" scope of this pass; recommend a
+  follow-up <code>select min(academic_year)</code> against
+  <code>int_performance_management__observation_details_archive</code>/<code>stg_performance_management__observation_details_archive</code>
+  if the exact start year needs to be pinned down).</li>
+<li>The workbook's "Rubric Strand" bin is the single largest piece of Tableau-only
+  logic: it re-maps ~90 historical/legacy measurement-name strings (several
+  terminology eras of the same rubric) onto 4 canonical strands (ETR, S&amp;O, Coach
+  Comments, Pre-2023 S&amp;O Comments). The mart's <code>strand_name</code> only covers the
+  current rubric's own strand labels — it does not backfill the archive era's
+  differently-worded measurement names into the same buckets. Porting this
+  dashboard to Cube would need that bin logic moved into dbt (most likely as a
+  new column on <code>dim_staff_observation_rubric_measurements</code> or a dedicated
+  crosswalk model), not just a Cube view over the existing mart.</li>
+<li>Excluded calcs not counted as metrics: the 4 boolean RLS gate calculations
+  (<code>Permissions</code>, <code>RLS - Entity/Location/Role/Release Gate</code>) are access-control
+  plumbing, not displayed data — flagged <code>workbook-only</code> under Dimensions
+  because a Cube migration would need to reimplement equivalent
+  <code>row_level_security</code> rules, not because they're calculable from a mart column.</li>
+<li><code>coaching_convo_BAN</code> (a "Big Ass Number" style worksheet, likely "Employees
+  with Observations") is defined in the .twb but placed on neither dashboard —
+  treated as scratch/orphaned and excluded from the measure inventory, though
+  its one measure (<code>Calculation_1125055535464185861</code>, "Employees with
+  Observations", <code>{fixed [employee_number]: Max([is_observed])}</code>) would map to a
+  <code>mart-ready</code> COUNT/MAX over <code>fct_staff_observations.staff_observation_key</code>
+  distinct <code>teacher_staff_key</code> if it were ever surfaced.</li>
+</ul>
+<h3 id="verification_1">Verification</h3>
+<ul>
+<li>cube-covered: <strong>none found</strong> — spot-check performed by grepping
+  <code>src/cube/model/cubes/**/*.yml</code> and <code>views/**/*.yml</code> for any reference to
+  <code>fct_staff_observation</code>, <code>dim_staff_observation</code>, or
+  <code>rpt_tableau__schoolmint_grow</code>; zero matches. No row in the
+  Measures/Dimensions tables above can be marked cube-covered.</li>
+<li>mart-ready spot-check: <strong>Row Score</strong> →
+  <code>src/dbt/kipptaf/models/marts/facts/fct_staff_observation_scores.sql</code>, column
+  <code>score_value</code> (aliased from <code>os.value_score</code> in the model's <code>scores</code> CTE),
+  joined to the observation via <code>staff_observation_key</code> and to the rubric/strand
+  via <code>staff_observation_rubric_measurement_key</code>.</li>
+<li>mart-missing spot-check: <strong>Final Score</strong> → no mart file in
+  <code>src/dbt/kipptaf/models/marts/{facts,dimensions}/</code> selects <code>final_score</code>;
+  confirmed by <code>grep -rl "final_score" src/dbt/kipptaf/models/marts/</code> returning
+  only <code>fct_grades_assignments.sql</code> (an unrelated gradebook model whose
+  <code>final_score</code> is a different, course-grade concept). The real source is
+  <code>src/dbt/kipptaf/models/performance_management/intermediate/int_performance_management__overall_scores.sql</code>,
+  line 12 (<code>final_score</code>) / lines 14-23 (<code>final_tier</code> CASE expression).</li>
+</ul>
+<h2 id="teacher-development-dashboard-teacher_development_dashboard">Teacher Development Dashboard (<code>teacher_development_dashboard</code>)</h2>
+<ul>
+<li>workbook: Teacher Development Dashboard | contentUrl
+  <code>TeacherDevelopmentDashboard_16994705799120</code> | luid
+  <code>8977a813-36c8-48df-8a61-479f374ae78a</code> (verified — matches the expected luid
+  given in the task) | project Production</li>
+<li>upstream datasources: <code>rpt_tableau__teacher_development</code> (single embedded
+  federated datasource; no published/shared datasource)</li>
+<li>rpt_/source models in use: <code>rpt_tableau__teacher_development</code> (direct extract)
+  → upstream <code>int_performance_management__observations</code>,
+  <code>int_performance_management__observation_details</code>,
+  <code>int_performance_management__teacher_development</code> (archive union branch),
+  <code>int_performance_management__overall_scores</code>, <code>int_people__staff_roster</code>,
+  <code>int_people__staff_roster_history</code>, <code>int_students__teacher_grade_levels</code></li>
+<li>published dashboards inventoried: Details, Heat Map, Snapshots, Year in
+  Review, Home (Home is a nav/landing page — image, title text, and
+  navigate-to-dashboard buttons only; zero worksheet zones, so it contributes no
+  measures/dimensions)</li>
+<li>sheets excluded as hidden/scratch: 5 — <code>heat_map_school</code> (standalone
+  worksheet, not placed in any dashboard zone — orphaned/scratch, not hidden at
+  the window level) plus 4 title-text worksheets with no datasource dependencies
+  (<code>details_title</code>, <code>heat_map_title</code>, <code>snapshots_title</code>, <code>yoy_title</code> — pure
+  caption text, no fields). None of the 5 real dashboards (Details/Heat
+  Map/Snapshots/Year in Review/Home) are server-hidden.</li>
+<li>regions served by this dashboard overall: <strong>Newark, Camden, Miami</strong> (no
+  Paterson). Evidence: the row-level-security calc <code>Permissions Group Filter</code>
+  (on every data worksheet) enumerates exactly three <code>[entity]</code> values —
+  <code>TEAM Academy Charter School</code>, <code>KIPP Cooper Norcross Academy</code>, <code>KIPP Miami</code> —
+  and its school-based-staff branch lists only Newark/Camden/Miami school names.
+  No Paterson entity or location appears anywhere in the filter or the workbook.
+  This tracks the task hint: the dashboard covers the TDT
+  (Teacher-Development-Tool) rubric used by TiR/New Lead programs, which are not
+  yet run in Paterson.</li>
+</ul>
+<h3 id="measures_2">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td># Teammates</td>
+<td>CountD</td>
+<td><code>employee_number</code></td>
+<td>Heat Map, Year in Review</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.teacher_staff_key</code> (CountD)</td>
+<td>all (Newark/Camden/Miami)</td>
+</tr>
+<tr>
+<td># Observations</td>
+<td>CountD</td>
+<td><code>observation_id</code></td>
+<td>Heat Map, Year in Review</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.staff_observation_key</code> (CountD / row count)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Evidence</td>
+<td>Sum / Avg</td>
+<td><code>IIF([row_score]=1,1,0)</code>-sibling calc on the score row: <code>IIF([row_score]&gt;=2,1,0)</code></td>
+<td>Heat Map</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observation_scores.score_value &gt;= 2</code> (flag, then sum/avg)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Evidence</td>
+<td>Avg</td>
+<td><code>{fixed [observation_id]: sum([Evidence])/COUNT([row_score])}</code> — core rubric-completion rate per observation</td>
+<td>Heat Map, Snapshots, Details, Year in Review</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observation_scores.score_value</code> grouped by <code>staff_observation_key</code>, joined to <code>fct_staff_observations</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Evidence by Month</td>
+<td>Avg</td>
+<td>Same as % Evidence but <code>fixed [observation_id],[strand_name]</code></td>
+<td>Details</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observation_scores.score_value</code> + <code>dim_staff_observation_rubric_measurements.strand_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Opportunity</td>
+<td>Avg</td>
+<td><code>IIF([row_score]=1,1,0)</code> — rate of rows scored exactly 1 (growth-needed)</td>
+<td>Heat Map</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observation_scores.score_value = 1</code> (flag, avg)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Growth Area Count</td>
+<td>Sum</td>
+<td><code>{ FIXED [observation_id] : COUNTD([growth_area]) }</code>; <code>growth_area</code> itself = <code>max(if(measurement_name like '%Grow%', measurement_dropdown_selection, null))</code> per observation</td>
+<td>Snapshots</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__teacher_development.sql</code> (<code>smg_glows_grows</code> CTE, lines 2–36) — the Glow/Grow measurement-name classification is not materialized on any mart</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Pm1 / Pm2 (variants: PM1, PM2 term rounds)</td>
+<td>Avg</td>
+<td><code>max(case when term_code='PM1' then observation_score end)</code> (and PM2)</td>
+<td>Year in Review</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.score</code> filtered/grouped by <code>dim_terms.term_code</code> ('PM1'/'PM2') and <code>staff_observation_type_key</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Smg Etr Pm1 / Pm2 (variants: PM1, PM2)</td>
+<td>Avg</td>
+<td><code>avg(row_score)</code> where <code>observation_type_abbreviation in ('PM','PMS')</code> and <code>measurement_name not like '%S&amp;O%'</code>, by term</td>
+<td>Year in Review</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observation_scores.score_value</code> + <code>dim_staff_observation_rubric_measurements.name</code> (exclude <code>%S&amp;O%</code>) joined via <code>dim_terms.term_code</code></td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<p>Excluded as internal-only inputs (never independently shelved, only feed the
+calcs above): raw <code>row_score</code> (basis for Evidence/% Evidence/Opportunity);
+<code>tir_etr_pm1/2/3</code>, <code>tir_so_pm1/2/3</code>, <code>tir_pm1/2/3</code> (the .8/.2 blended TiR score
+columns exist in <code>rpt_tableau__teacher_development.sql</code> but are not referenced
+by any Measure Names filter on any of the 4 data dashboards).</p>
+<h3 id="dimensions_2">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Teammate (observed staff name)</td>
+<td>row/detail</td>
+<td>mart-ready</td>
+<td><code>dim_staff.full_name</code> via <code>fct_staff_observations.teacher_staff_key</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Observer Name</td>
+<td>row/detail, filter</td>
+<td>mart-ready</td>
+<td><code>dim_staff.full_name</code> via <code>fct_staff_observations.observer_staff_key</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Observer Team (TDT / NTNC)</td>
+<td>row/detail, filter</td>
+<td>mart-ready</td>
+<td>derived <code>if(department_name='Teacher Development','TDT','NTNC')</code> off <code>dim_staff_work_assignments</code> department, simple case not yet materialized</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Entity (business unit / region)</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td><code>dim_locations</code> / <code>dim_regions</code> via <code>fct_staff_observations.location_key</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Location (school)</td>
+<td>row/detail, filter</td>
+<td>mart-ready</td>
+<td><code>dim_locations.location_clean_name</code> via <code>location_key</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Job Title</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td><code>dim_work_assignment_jobs</code> via <code>dim_staff_work_assignments</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Measurement Name</td>
+<td>row, filter, action source</td>
+<td>mart-ready</td>
+<td><code>dim_staff_observation_rubric_measurements.name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Microgoal Month (<code>strand_name</code>)</td>
+<td>row, filter, action source</td>
+<td>mart-ready</td>
+<td><code>dim_staff_observation_rubric_measurements.strand_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>TiR/New Lead (<code>rubric_name</code>)</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td><code>dim_staff_observation_rubrics.name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Observed At / Week Start</td>
+<td>row, color (month/day/week grains)</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.observed_date_key</code> / <code>observed_timestamp</code>; week grain = <code>date_trunc(..., week(monday))</code>, not yet a mart column but a 1-line derivation off the date FK</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Academic Year</td>
+<td>filter, column header</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observations.academic_year</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Employee Number</td>
+<td>filter (also feeds # Teammates)</td>
+<td>mart-ready</td>
+<td><code>dim_staff.staff_unique_id</code> / <code>teacher_staff_key</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Row Score (group) — "Met"/"Not Met"</td>
+<td>shape encoding on Details grid</td>
+<td>mart-ready</td>
+<td>1-line bin on <code>fct_staff_observation_scores.score_value</code> (2–3→Met, 1→Not Met); not yet materialized</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Glow Area / Glow Notes, Growth Area / Growth Notes</td>
+<td>row/detail text columns</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__teacher_development.sql</code> <code>smg_glows_grows</code> CTE — Glow/Grow classification by <code>measurement_name LIKE '%Glow%'/'%Grow%'</code> has no mart equivalent</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Observation Subject, Observation Grade</td>
+<td>(column-dependency only; not seen shelved in the 4 data dashboards beyond Details' implicit detail grain)</td>
+<td>mart-missing</td>
+<td>sourced from <code>int_performance_management__observations.observation_course</code> / <code>observation_grade</code>; not projected on <code>fct_staff_observations</code> today</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Glow / Grow (formatted note display: area + "Note: " + notes)</td>
+<td>shape/text concat helper</td>
+<td>workbook-only</td>
+<td>Tableau display calc wrapping Glow Area/Notes and Growth Area/Notes</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Up to Week</td>
+<td>filter (gates to weeks ≤ today)</td>
+<td>workbook-only</td>
+<td><code>iif([week_start]&lt;=TODAY(),[week_start],null)</code> — display/filter convenience</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Permissions Group Filter</td>
+<td>row-level security filter on every data worksheet</td>
+<td>workbook-only</td>
+<td>Tableau user-group RLS calc (see regions note above)</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes_2">Notes</h3>
+<ul>
+<li>This workbook has exactly one datasource and one upstream rpt_ model
+  (<code>rpt_tableau__teacher_development</code>), so every measure/dimension traces back
+  to the same extract; "mart-ready" status reflects that the raw inputs now live
+  on <code>fct_staff_observations</code> / <code>fct_staff_observation_scores</code> /
+  <code>dim_staff_observation_rubric*</code> marts (shipped after this rpt_ model was
+  built), but the specific aggregations (FIXED-per-observation rates, PM-term
+  pivots, Glow/Grow-by-measurement-name) aren't materialized as columns or views
+  yet — they'd need a new reporting layer (or Cube measures) over the marts.</li>
+<li>No Cube measure or dimension covers anything on this dashboard — confirmed no
+  <code>*observation*</code> cube exists under <code>src/cube/model/cubes/</code>, and the <code>staff</code>
+  cube family (<code>staff.yml</code>, <code>staff_work_history.yml</code>, etc.) has no join path to
+  an observation fact, so none of these rows can be <code>cube-covered</code> without a new
+  observations cube.</li>
+<li>"% Evidence" is the dashboard's core KPI (rubric-row completion rate per
+  observation) and appears with 4 near-identical FIXED-LOD variants across
+  worksheets; grouped into 2 rows above (plain % Evidence, and the by-month
+  variant used only in Details).</li>
+<li>"Growth Area Count" is the only measure classified <code>mart-missing</code> — it depends
+  on text-matching <code>measurement_name</code> against <code>%Glow%</code>/<code>%Grow%</code> to decide which
+  dropdown response is "the" glow/grow area for an observation, logic that lives
+  only in the rpt_ SQL today.</li>
+<li>Judgment call: <code>Row Score (group)</code>, <code>Observer Team</code>, and <code>Week Start</code> are
+  marked <code>mart-ready</code> rather than <code>mart-missing</code> because each is a single
+  <code>CASE</code>/<code>date_trunc</code> away from an already-materialized mart column, not a
+  multi-step derivation like the Glow/Grow classification.</li>
+<li><code>Home</code> dashboard contributes nothing measure/dimension-wise — it's pure
+  navigation (title, logo image, buttons to the other 4 dashboards).</li>
+</ul>
+<h3 id="verification_2">Verification</h3>
+<ul>
+<li>mart-ready spot-check: "# Observations" → <code>fct_staff_observations.yml</code>
+  declares <code>staff_observation_key</code> as the surrogate PK
+  (<code>src/dbt/kipptaf/models/marts/facts/properties/fct_staff_observations.yml</code>,
+  generated from <code>o.observation_id</code>), so <code>CountD(observation_id)</code> in the
+  workbook is exactly <code>COUNT(staff_observation_key)</code> / <code>CountD</code> on that column.</li>
+<li>mart-missing spot-check: "Growth Area Count" → confirmed by reading
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__teacher_development.sql</code>
+  lines 2–36 (<code>smg_glows_grows</code> CTE): <code>growth_area</code> is
+  <code>max(if(od.measurement_name like '%Grow%', od.measurement_dropdown_selection, null))</code>
+  per <code>observation_id</code> — this exact classification does not appear in
+  <code>dim_staff_observation_rubric_measurements.yml</code> or any other mart properties
+  file.</li>
+<li>cube-covered spot-check (negative result, confirmed):
+  <code>find src/cube/model/cubes -iname "*observation*"</code> returned no files, and
+  <code>src/cube/model/cubes/staff/*.yml</code> (staff, staff_work_history,
+  staff_reporting_relationships, staff_cube_access, staff_manager,
+  staff_lead_teacher, staff_homeroom_teacher) expose staff attributes with no
+  join to an observation fact — so zero rows in this inventory can be
+  <code>cube-covered</code> as things stand.</li>
+</ul>
+<h2 id="leader-pm-dashboard-leadership-development-leader_pm_dashboard">Leader PM Dashboard (Leadership Development) (<code>leader_pm_dashboard</code>)</h2>
+<ul>
+<li>workbook: Leadership Development | contentUrl
+  <code>LeadershipDevelopment_17017220456180</code> | luid
+  <code>8f8b058f-2408-470d-95b0-681d6c8b65f4</code> | project Production</li>
+<li>upstream datasources: <code>rpt_tableau__leadership_development (kipptaf_tableau)</code>
+  (embedded) — the ONLY datasource; every worksheet reads it</li>
+<li>rpt_/source models in use: <code>rpt_tableau__leadership_development</code> (its own
+  upstreams: <code>rpt_appsheet__leadership_development_roster</code>,
+  <code>stg_google_appsheet__leadership_development__active_users</code>,
+  <code>stg_google_appsheet__leadership_development__output</code>,
+  <code>stg_google_sheets__performance_management__leadership_development_metrics</code>,
+  <code>int_people__staff_roster</code>, <code>int_people__location_crosswalk</code>)</li>
+<li>published dashboards inventoried: Completion Tracking, Overall Results,
+  Competencies, Narrative Questions, Domains (these 5 exactly match the server's
+  <code>get-workbook</code> views list)</li>
+<li>sheets excluded: 2 legacy dashboards present in the .twb but <strong>absent from the
+  server's view list</strong> — <code>Completion Tracking 23-24</code>, <code>Overall Results 23-24</code>
+  (prior-year archived copies, superseded by the current-year dashboards of the
+  same name minus suffix; not hidden in the XML, just not published as tabs).
+  Also 5 pure-text title worksheets with zero fields (<code>*_title</code>) and 2 orphan
+  worksheets referenced by no dashboard zone (<code>9box</code>,
+  <code>detailed_results_table (2)</code> — their <code>repository-location</code> points at a
+  different workbook, <code>LeadershipDevelopment24-25Preview</code>/ <code>-MOYedit</code>, i.e.
+  leftover scratch copies from an edit session).</li>
+<li>regions served by this dashboard overall: <strong>all</strong> (Newark/<code>TEAM</code>,
+  Camden/<code>KCNA</code>, Miami/<code>MIA</code>, Paterson, plus KTAF-entity) — the
+  <code>home_business_unit_name</code> filter is <code>level-members</code> with
+  <code>ui-enumeration='all'</code> (no hard-coded region restriction), and the mart's
+  <code>accepted_values</code> test lists all 4 regions +
+  <code>KIPP TEAM and Family Schools Inc.</code>. Row-level security (not a region filter)
+  narrows what any one viewer sees.</li>
+</ul>
+<h3 id="asana-lifecycle-flag-read-before-acting-on-anything-below">⚠️ ASANA / LIFECYCLE FLAG — read before acting on anything below</h3>
+<ol>
+<li><strong>No Asana task exists</strong> for this dashboard in the Data Marts + Semantic
+   Layer project — coverage gap, confirmed by this inventory (searched by
+   dashboard name / workbook luid with no hit given to this agent; flag for
+   whoever triages the gap catalog).</li>
+<li><strong>The entire source model is disabled and archived.</strong>
+   <code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__leadership_development.yml</code>
+   carries <code>config.enabled: false</code> and this description verbatim: "Archive only,
+   disabled 2026-07-30. Leadership Development moved to Lattice. This fed
+   Tableau workbook 8f8b058f-2408-470d-95b0-681d6c8b65f4, which is archive only;
+   any remaining extract refresh is a Tableau-side schedule, not Dagster." (Refs
+   #4627)</li>
+<li><strong>Recommendation implied by the above</strong>: this is very likely NOT a candidate
+   for new Cube coverage — the system of record moved to Lattice. Every
+   "mart-missing" status below should be read as "logic existed here, now
+   frozen/archived," not as a build backlog item.</li>
+</ol>
+<h3 id="measures_3">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PM score (competency/domain rating)</td>
+<td>Avg</td>
+<td><code>Column Value (Int)</code>: <code>IF REGEXP_MATCH([column_value], '^[0-9]+$') THEN INT([column_value]) ELSE NULL END</code></td>
+<td>Competencies, Domains</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__leadership_development.column_value</code> (cast to int; <strong>source model archived/disabled</strong>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Self-completion rate</td>
+<td>Avg (0/1 flag)</td>
+<td><code>round_completion_self</code>: BOY needs ≥2 self response rows, MOY/EOY need ≥3 (computed upstream in the rpt_ SQL, not a Tableau calc)</td>
+<td>Completion Tracking (<code>group_completion</code>, <code>individual_completion</code>)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__leadership_development.round_completion_self</code> (archived/disabled)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Manager-completion rate</td>
+<td>Avg (0/1 flag)</td>
+<td><code>round_completion_manager</code>: BOY needs ≥2 self rows, MOY/EOY need ≥10 manager-rating rows</td>
+<td>Completion Tracking (<code>group_completion</code>, <code>individual_completion</code>)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__leadership_development.round_completion_manager</code> (archived/disabled)</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<p>Variants collapsed: <code>round_completion_self</code> / <code>round_completion_manager</code> each
+appear twice (once per worksheet, <code>group_completion</code> cut-by-group vs
+<code>individual_completion</code> per-person), identical formula — one row each above.</p>
+<p>No tooltip-only numeric measures found. <code>Overall Results</code> and
+<code>Narrative Questions</code> display raw <code>column_value</code> as <strong>text</strong>, not an aggregated
+measure (role=dimension, derivation=none) — listed under Dimensions instead.</p>
+<h3 id="dimensions_3">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Teammate (<code>preferred_name_lastfirst</code>)</td>
+<td>row header, all 5 dashboards</td>
+<td>cube-covered</td>
+<td><code>src/cube/model/views/staff/staff_directory.yml</code> → <code>full_name</code> (via <code>staff_work_history.staff</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Manager (<code>manager</code>)</td>
+<td>row header (Completion Tracking, Competencies, Domains)</td>
+<td>cube-covered</td>
+<td><code>staff_directory.yml</code> → <code>staff_manager_full_name</code> (via <code>staff_work_history.staff_manager</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Location (<code>location_clean_name</code>)</td>
+<td>filter + <code>Cut By</code> dimension option</td>
+<td>cube-covered</td>
+<td><code>staff_directory.yml</code> → <code>locations_location_name</code> (via <code>staff_work_history.locations</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Business Unit / Entity (<code>home_business_unit_name</code>)</td>
+<td>filter + <code>Cut By</code> dimension option</td>
+<td>cube-covered</td>
+<td><code>staff_directory.yml</code> → <code>business_unit_name</code>, defined in <code>src/cube/model/cubes/staff/staff_work_history.yml:119</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Department (<code>home_department_name</code>)</td>
+<td>filter + <code>Cut By</code> dimension option</td>
+<td>cube-covered (approximate — verify <code>department_name</code> grain matches <code>home_department_name</code>)</td>
+<td><code>staff_directory.yml</code> → <code>department_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Job Title (<code>job_title</code>)</td>
+<td>filter + <code>Cut By</code> dimension option</td>
+<td>cube-covered (approximate — PM field is free-text <code>job_title</code>, cube exposes <code>position_title</code>/<code>job_code</code>; same meaning, unverified exact grain match)</td>
+<td><code>staff_directory.yml</code> → <code>position_title</code> (<code>staff_work_history.yml:87</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Academic Year (<code>academic_year</code>)</td>
+<td>filter</td>
+<td>cube-covered (approximate — PM cycle year vs. employment-record year; verify semantics before reuse)</td>
+<td><code>staff_directory.yml</code> → <code>staff_work_history.dates.academic_year</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Term (BOY/MOY/EOY)</td>
+<td>row/col header, all 5 dashboards</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__leadership_development.term</code> (archived/disabled)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Type (Competencies / Domains / Narrative Questions / Goals)</td>
+<td>filter (<code>Type (group)</code>), gates which rows show on which dashboard</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__leadership_development.type</code> (joined from <code>stg_google_sheets__performance_management__leadership_development_metrics</code>; archived/disabled)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Description (competency/domain/goal label)</td>
+<td>col header / text</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__leadership_development.description</code> (archived/disabled)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Column Name (pivot key, e.g. <code>rating_moy</code>, <code>manager_notes_eoy</code>)</td>
+<td>filter (mostly ETL/pivot plumbing, not a reporting field)</td>
+<td>mart-missing, workbook-only in practice</td>
+<td><code>rpt_tableau__leadership_development.column_name</code> (archived/disabled)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Assignment Status / Active</td>
+<td>filter</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__leadership_development.assignment_status</code> / <code>.active</code> (archived/disabled)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>PM response text (raw <code>column_value</code>, un-aggregated)</td>
+<td>text display (Overall Results, Narrative Questions)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__leadership_development.column_value</code> (archived/disabled)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Cut By (parameter: Location/Entity/Department/Job Title/All)</td>
+<td>parameter-driven row axis</td>
+<td>workbook-only</td>
+<td>Tableau parameter + calc switching between the cube-covered dims above</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Display Name (<code>name - dept - location</code> concat)</td>
+<td>row label</td>
+<td>workbook-only</td>
+<td>concat of <code>preferred_name_lastfirst</code> + <code>home_department_name</code> + <code>location_clean_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Notes (tooltip, <code>column_value</code> where <code>column_name</code> contains "notes")</td>
+<td>tooltip-only</td>
+<td>workbook-only</td>
+<td>derived from <code>column_name</code>/<code>column_value</code> (archived/disabled underlying fields)</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes_3">Notes</h3>
+<ul>
+<li><strong>Judgment call</strong>: statuses above treat "cube-covered" generously for staff
+  attributes (location/department/business unit/job title/manager/academic year)
+  because <code>staff_directory</code> genuinely exposes the same real-world concept, even
+  though no PM-specific cube exists and field names don't match 1:1. Flagged
+  three as "approximate" where grain/semantics weren't verified against actual
+  query results (no row-level querying was done per the no-PII rule).</li>
+<li><strong>Excluded from the tables above</strong>: 5 row-level-security gating calculations
+  present on every worksheet (<code>RLS - Subject Is Senior Leader</code>,
+  <code>RLS - Entity Gate</code>, <code>RLS - Location Gate</code>, <code>RLS - Role Gate</code>,
+  <code>Permissions</code>/<code>User_test</code>) — these are access-control predicates, not
+  reporting dimensions, so they're omitted as pure infrastructure rather than
+  padding the table.</li>
+<li><strong>Excluded as formatting/layout helpers</strong>: the 5 <code>*_title</code> worksheets (zero
+  fields — pure text captions) and the <code>Parameter 1</code> control itself (the literal
+  parameter object; its effect is captured as the "Cut By" row).</li>
+<li>The 2 non-published legacy dashboards (<code>Completion Tracking 23-24</code>,
+  <code>Overall Results 23-24</code>) were inventoried for completeness but excluded from
+  all counts below — they're prior-year frozen copies no longer served.</li>
+<li>Biggest uncertainty isn't classification — it's <strong>whether this dashboard
+  should be in the Cube Connector Gap Catalog at all</strong>, given it's archive-only
+  and the real system of record (Lattice) is outside this codebase entirely.
+  Recommend the catalog owner confirm with whoever filed #4627 before treating
+  any row here as backlog.</li>
+</ul>
+<h3 id="verification_3">Verification</h3>
+<ul>
+<li><strong>cube-covered spot check</strong>: <code>Business Unit / Entity</code> row →
+  <code>src/cube/model/views/staff/staff_directory.yml</code> includes <code>business_unit_name</code>
+  from <code>staff_work_history</code> (join_path <code>staff_work_history</code>), and the measure
+  itself is defined at <code>src/cube/model/cubes/staff/staff_work_history.yml:119</code>
+  (<code>sql: business_unit_name</code>).</li>
+<li><strong>mart-ready spot check</strong>: <strong>none found.</strong> Every PM-domain-specific
+  measure/dimension lives only on the disabled
+  <code>rpt_tableau__leadership_development</code> extract (not in <code>models/marts/</code>), and
+  every staff-attribute dimension is already cube-covered via <code>staff_directory</code>
+  — so no row in this inventory lands in the middle "mart has it, cube doesn't"
+  tier. Noting the gap explicitly rather than forcing a row into this status.</li>
+<li><strong>mart-missing spot check</strong>: <code>PM score</code> row → source logic lives in
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__leadership_development.sql</code>
+  (the <code>pivot</code> CTE unnesting <code>rating_moy</code>/<code>rating_eoy</code>/etc. from
+  <code>stg_google_appsheet__leadership_development__output</code>), confirmed disabled via
+  <code>config.enabled: false</code> in
+  <code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__leadership_development.yml</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

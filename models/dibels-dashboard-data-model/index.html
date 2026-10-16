@@ -1,0 +1,4438 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../hs-early-warning-data-model/">
+      
+      
+        <link rel="next" href="../stat-dashboard-data-model/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>DIBELS Dashboard Data Model - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dibels-dashboard-data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DIBELS Dashboard Data Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-fits-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it fits together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#assessments-and-seasons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assessments and seasons
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-pm-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two PM methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expectations-and-rounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expectations and rounds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing states
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goals-and-verdicts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals and verdicts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-literacy-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard: Literacy Dashboard
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboard: Literacy Dashboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__dibels_dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__dibels_dashboard
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="rpt_tableau__dibels_dashboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bm-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BM branch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal branch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aimline-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aimline branch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__sight_words_dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__sight_words_dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-pm-goal-setting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process: PM goal setting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Process: PM goal setting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-triggers-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What triggers it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-runs-it-and-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who runs it and when
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-bm-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process: BM goals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Process: BM goals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-triggers-it_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What triggers it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inputs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#steps_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-runs-it-and-when_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who runs it and when
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-njdoe-universal-screener-extract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process: NJDOE universal screener extract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supporting models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#family-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-upstreams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared upstreams
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#also-read-by" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Also read by
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-the-model-is-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the model is built
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goals-and-padding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals and padding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#labels-and-reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Labels and reporting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#academics-answers-on-labels-and-the-roster-2026-09-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Academics' answers on labels and the roster, 2026-09-24
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known issues, need to fix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-sc-section-exclusion-over-matches-on-miamis-powerschool-archive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The %SC% section exclusion over-matches on Miami's PowerSchool archive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cancelled-pm-rounds-still-count-in-the-internal-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cancelled PM rounds still count in the internal method
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-dashboard-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate dashboard rows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-sight-words-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate sight words rows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-student-benchmarked-at-two-grades-gets-blended-composite-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A student benchmarked at two grades gets blended composite levels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-archived-api-staging-models-have-no-uniqueness-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The archived API staging models have no uniqueness test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-pm_round_status-varies-within-a-round" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal pm_round_status varies within a round
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-roster-undercounts-a-round-sat-at-another-grade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The roster undercounts a round sat at another grade
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aimline-goals-missing-for-whole-school-grade-cells" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aimline goals missing for whole school-grade cells
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-measure-assigned-outside-its-grade-range-has-no-standard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A measure assigned outside its grade range has no standard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iep-and-mll-foundation-goals-are-missing-or-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IEP and MLL foundation goals are missing or placeholders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-completed-year-shows-only-students-who-are-still-enrolled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A completed year shows only students who are still enrolled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#camdens-last-ay2025-round-has-no-grade-3-8-scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Camden's last AY2025 round has no grade 3-8 scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outside-the-warehouse-the-workbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outside the warehouse: the workbook
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yearly-upkeep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yearly upkeep
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pending-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pending work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#owner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Owner
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-fits-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it fits together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#assessments-and-seasons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assessments and seasons
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-pm-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two PM methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expectations-and-rounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expectations and rounds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing states
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goals-and-verdicts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals and verdicts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-literacy-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard: Literacy Dashboard
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboard: Literacy Dashboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__dibels_dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__dibels_dashboard
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="rpt_tableau__dibels_dashboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bm-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BM branch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal branch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aimline-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aimline branch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__sight_words_dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__sight_words_dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-pm-goal-setting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process: PM goal setting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Process: PM goal setting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-triggers-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What triggers it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-runs-it-and-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who runs it and when
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-bm-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process: BM goals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Process: BM goals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-triggers-it_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What triggers it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inputs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#steps_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-runs-it-and-when_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who runs it and when
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-njdoe-universal-screener-extract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process: NJDOE universal screener extract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supporting models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#family-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-upstreams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared upstreams
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#also-read-by" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Also read by
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-the-model-is-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the model is built
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goals-and-padding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals and padding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#labels-and-reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Labels and reporting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#academics-answers-on-labels-and-the-roster-2026-09-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Academics' answers on labels and the roster, 2026-09-24
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known issues, need to fix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-sc-section-exclusion-over-matches-on-miamis-powerschool-archive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The %SC% section exclusion over-matches on Miami's PowerSchool archive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cancelled-pm-rounds-still-count-in-the-internal-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cancelled PM rounds still count in the internal method
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-dashboard-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate dashboard rows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-sight-words-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate sight words rows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-student-benchmarked-at-two-grades-gets-blended-composite-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A student benchmarked at two grades gets blended composite levels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-archived-api-staging-models-have-no-uniqueness-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The archived API staging models have no uniqueness test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-pm_round_status-varies-within-a-round" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal pm_round_status varies within a round
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-roster-undercounts-a-round-sat-at-another-grade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The roster undercounts a round sat at another grade
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aimline-goals-missing-for-whole-school-grade-cells" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aimline goals missing for whole school-grade cells
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-measure-assigned-outside-its-grade-range-has-no-standard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A measure assigned outside its grade range has no standard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iep-and-mll-foundation-goals-are-missing-or-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IEP and MLL foundation goals are missing or placeholders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-completed-year-shows-only-students-who-are-still-enrolled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A completed year shows only students who are still enrolled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#camdens-last-ay2025-round-has-no-grade-3-8-scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Camden's last AY2025 round has no grade 3-8 scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outside-the-warehouse-the-workbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outside the warehouse: the workbook
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yearly-upkeep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yearly upkeep
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pending-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pending work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#owner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Owner
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/models/dibels-dashboard-data-model.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="dibels-dashboard-data-model">DIBELS Dashboard Data Model</h1>
+<h2 id="what-it-is">What it is</h2>
+<p>DIBELS 8 is a K-8 literacy assessment from the University of Oregon, given
+through Amplify mCLASS. KTAF gives it three times a year to every student
+(Benchmark) and in shorter rounds between those administrations to students who
+scored below grade level (progress monitoring, PM). This family of models turns
+Amplify's files and a handful of hand-maintained Google Sheets into the Tableau
+Literacy Dashboard, the goal sheets academics set targets from, and the NJDOE
+universal screener extract. School and regional leaders use the dashboard to see
+who tested, who is on track, and who needs intervention.</p>
+<p>The Data Team owns the models, with Anthony Walters as owner. Teaching and
+Learning (T&amp;L), through Marya Tambawala, decides the definitions and labels. For
+the procedures behind anything on this page, see the <code>dibels-dashboard</code> skill in
+<code>.claude/skills/dibels-dashboard/</code>.</p>
+<h2 id="how-it-fits-together">How it fits together</h2>
+<pre class="mermaid"><code>flowchart LR
+    subgraph SRC ["Sources"]
+        amp_bm["Amplify BM files\n(SFTP, archived API, SY24 DDS)"]
+        amp_pm["Amplify PM files\n(SFTP, archived API)"]
+        amp_aim["Amplify aimline file\n(SFTP)"]
+        gs_exp["Expected Assessments\nV1 and by-levels"]
+        gs_terms["reporting__terms"]
+        gs_long["goals_long\n(UO benchmark goals)"]
+        gs_found["Foundation goals"]
+        gs_bmg["BM Goals (frozen)"]
+        gs_pmg["PM goals (frozen)"]
+        ill["Illuminate\nSight Words Quiz"]
+    end
+
+    bss["int_amplify__benchmark_student_summary"]
+    all["int_amplify__all_assessments"]
+    gate_i["internal gate\nint_google_sheets__dibels_expected_assessments"]
+    gate_a["aimline gate\nint_google_sheets__dibels__expected_assessments_by_levels"]
+    pmexp["int_google_sheets__dibels_pm_expectations"]
+    roster["int_students__dibels_participation_roster"]
+    crit_i["int_amplify__pm_met_criteria"]
+    crit_a["int_amplify__pm_met_criteria_aimline"]
+
+    rpt["rpt_tableau__dibels_dashboard"]
+    sw["rpt_tableau__sight_words_dashboard"]
+    pmset["rpt_gsheets__dibels_pm_goal_setting"]
+    bmcalc["rpt_gsheets__dibels_bm_goals_calculations"]
+    njdoe["rpt_gsheets__njdoe_universal_screener_data"]
+    tab(["Literacy Dashboard"])
+
+    amp_bm --&gt; bss
+    gs_exp --&gt; gate_i
+    gs_exp --&gt; gate_a
+    gs_terms --&gt; gate_i
+    gs_terms --&gt; gate_a
+    gs_long --&gt; gate_a
+    gs_long --&gt; pmexp
+    gs_terms --&gt; pmexp
+    gate_i --&gt; bss
+    gate_i --&gt; pmexp
+    bss --&gt; all
+    amp_pm --&gt; all
+    amp_aim --&gt; all
+    gate_i --&gt; all
+    gate_a --&gt; all
+    all --&gt; roster
+    gate_i --&gt; roster
+    gate_a --&gt; roster
+    all --&gt; pmset
+    pmexp --&gt; pmset
+    pmset -. "paste" .-&gt; gs_pmg
+    gs_pmg --&gt; crit_i
+    all --&gt; crit_i
+    roster --&gt; crit_i
+    all --&gt; crit_a
+    gate_a --&gt; crit_a
+    roster --&gt; crit_a
+    gs_found --&gt; bmcalc
+    all --&gt; bmcalc
+    bmcalc -. "paste" .-&gt; gs_bmg
+    amp_bm --&gt; njdoe
+
+    bss --&gt; rpt
+    all --&gt; rpt
+    gate_i --&gt; rpt
+    gate_a --&gt; rpt
+    pmexp --&gt; rpt
+    gs_pmg --&gt; rpt
+    gs_bmg --&gt; rpt
+    roster --&gt; rpt
+    crit_i --&gt; rpt
+    crit_a --&gt; rpt
+    ill --&gt; sw
+    gs_terms --&gt; sw
+    rpt --&gt; tab
+    sw --&gt; tab
+    gs_pmg --&gt; tab</code></pre>
+<p>Dotted arrows are people copying rows from a calculation into a sheet. Those
+pastes are deliberate: they freeze a goal once it is set.</p>
+<p>Most models in the family are views. The tables are the Google Sheets staging
+models and the four Amplify mCLASS intermediates
+(<code>int_amplify__mclass__benchmark_student_summary</code> and its <code>_unpivot</code>,
+<code>int_amplify__mclass__pm_student_summary</code> and its <code>_aimline</code>). A view is only as
+fresh as the tables under it, so a new paste into a sheet reaches the dashboard
+only after its staging table rebuilds.</p>
+<p>The diagram leaves out two shared models every branch uses: the enrollment spine
+(<code>int_extracts__student_enrollments_subjects</code>), which drives the dashboard's
+three branches and the participation roster, and the school calendar
+(<code>int_students__calendar_day</code>), which
+<code>int_google_sheets__dibels_pm_expectations</code> counts school days from together
+with <code>reporting__terms</code>. Dagster refreshes the Literacy Dashboard extract each
+morning.</p>
+<h2 id="terms">Terms</h2>
+<h3 id="assessments-and-seasons">Assessments and seasons</h3>
+<ul>
+<li>Benchmark (BM): the three administrations every student sits, BOY, MOY and EOY
+  (beginning, middle and end of year).</li>
+<li>Progress monitoring (PM): short probes between benchmarks, in two PM seasons,
+  <code>BOY-&gt;MOY</code> and <code>MOY-&gt;EOY</code>. EOY opens no PM season.</li>
+<li>Composite: the overall benchmark score and level (At/Above, Below or Well
+  Below Benchmark). PM has no composite.</li>
+<li>Measure name code and measure standard: a measure name code is the skill
+  (<code>NWF</code>, <code>ORF</code>, <code>PSF</code>, <code>WRF</code>, <code>Maze</code>); a measure standard is one score under
+  it. <code>NWF</code> has two standards (Letter Sounds and Decoding) and <code>ORF</code> has two
+  (Reading Fluency and Reading Accuracy). The rest have one.</li>
+<li>Academic year: labelled by the fall, so SY26-27 is <code>academic_year = 2026</code>.
+  Academics label documents by the spring, so their "SY27" document describes
+  <code>academic_year = 2026</code>.</li>
+</ul>
+<h3 id="the-two-pm-methods">The two PM methods</h3>
+<p>Academics run both methods across K-8. They are not a primary and a fallback,
+and results from both sit side by side in the dashboard.</p>
+<ul>
+<li>Internal method: our own goal. Each cohort (a region, grade, measure and
+  season) gets one target line from its average benchmark score up to the grade
+  level standard plus a pad, spread across the season by school days.</li>
+<li>Aimline method: Amplify's goal. Each student gets their own aimline from their
+  own starting score, and Amplify publishes whether each probe is at or above
+  it.</li>
+<li><code>model_type</code>: which method a row belongs to, <code>BM</code>, <code>Internal</code> or <code>Aimline</code>.
+  Every PM student appears once per method, so any PM count must filter
+  <code>model_type</code>. <code>assessment_type = 'PM'</code> covers both methods.</li>
+<li>Probe-eligible: a student whose composite on the benchmark that opens the
+  season was Below or Well Below Benchmark. Only probe-eligible students are
+  held to PM goals.</li>
+<li>Cohort (<code>measure_standard_level</code>): on the aimline method, Below Benchmark and
+  Well Below Benchmark students are separate cohorts, and each round can test a
+  different set of measures for each. Benchmark has no cohorts, because
+  Benchmark is what assigns students to them.</li>
+</ul>
+<h3 id="expectations-and-rounds">Expectations and rounds</h3>
+<ul>
+<li>Expected Assessments: the Google Sheet that says which measures each region
+  and grade is expected to sit in each administration and round. It has two
+  ranges: V1, which feeds Benchmark and the internal method, and by-levels,
+  which feeds the aimline method and adds the cohort column.</li>
+<li>Gate: the intermediate model over each range. Every downstream model joins a
+  gate to decide what a student owed.</li>
+<li><code>assessment_include</code>: blank means live. Any value switches the row off, for
+  example a round cancelled mid-year. Consumers filter
+  <code>assessment_include is null</code>.</li>
+<li><code>pm_goal_include</code>: blank means the measure is tested that round. <code>false</code> marks
+  a scaffold row: a round where the measure was not tested but which still holds
+  school days, so the internal method's target line stays continuous across the
+  season.</li>
+<li><code>pm_goal_criteria</code>: <code>AND</code> means a student must meet every measure the round
+  tested. Blank means the older OR rule, where meeting any one complete measure
+  was enough. The column never holds the string <code>OR</code>. From SY26-27 every row is
+  <code>AND</code>.</li>
+<li><code>LIT</code> and <code>PLIT</code>: codes on the <code>type = 'LIT'</code> rows of <code>reporting__terms</code>. A
+  Benchmark window is named <code>BOY</code>, <code>MOY</code> or <code>EOY</code> with code <code>LIT1</code>, <code>LIT2</code> or
+  <code>LIT3</code>. A PM round is named by its season with code <code>LITn</code> for round n, so the
+  name is what tells a Benchmark window from a PM round with the same code.
+  <code>PLITn</code> covers the school days between round n-1 and round n. The internal
+  method counts school days in both, so every grade band on the internal method
+  needs <code>PLIT</code> rows.</li>
+<li>Round number: one continuous sequence per region and year across both PM
+  seasons (for example 1-4 then 5-8). Regions run different numbers of rounds on
+  different dates, so round 4 can be in different seasons in different regions.</li>
+<li><code>expected_round_label</code>: the season plus the round (<code>BOY-&gt;MOY: R4</code>). Use it,
+  not the bare number, when comparing regions.</li>
+<li><code>expected_round_selection</code>: reads <code>Current</code> on the latest round whose window
+  has opened for that region and grade, and the round label everywhere else, so
+  one filter follows each region to where it actually is. A PM round stays
+  <code>Current</code> until the next round opens. A benchmark window is <code>Current</code> only
+  while it is open, so after BOY closes, <code>Current</code> shows the PM round alone and
+  a school that has not tested in that round reads 0%. A region with no opened
+  round yet (Miami before its first PM round) has no <code>Current</code> rows at all.</li>
+<li>The <code>expected_*</code> columns: dimensions taken from the gate, filled on every row
+  whether or not the student tested. The score-side columns (<code>period</code>,
+  <code>measure_standard</code>, <code>assessment_grade</code> and so on) are null when nothing was
+  sat.</li>
+</ul>
+<h3 id="testing-states">Testing states</h3>
+<ul>
+<li>Fully Tested: the student sat every measure the round expected. A Benchmark
+  round also counts as complete when the student has a composite score, even
+  with a measure missing.</li>
+<li>Round Incomplete: the student sat some but not all of the round's expected
+  measures.</li>
+<li>Not Tested: the student sat nothing in the round, or, at measure grain, did
+  not sit that measure.</li>
+<li><code>round_test_status</code> carries the round states; <code>measure_test_status</code> carries
+  Tested or Not Tested per measure.</li>
+<li><code>participation_group</code>: <code>Combo</code> marks the blend academics asked to see, every
+  Benchmark row, the internal method for K-2, and the aimline method for grades
+  3-8. Filter to <code>Combo</code> for one network participation rate without counting a
+  student under both methods. The K-2 and 3-8 split is fixed in SQL.</li>
+</ul>
+<h3 id="goals-and-verdicts">Goals and verdicts</h3>
+<ul>
+<li><code>benchmark_goal</code>: the University of Oregon's grade-level standard for a
+  measure, grade and season. It is the same for every student and is taken from
+  the <code>goals_long</code> sheet. A PM round is measured against the next benchmark's
+  standard, so a <code>BOY-&gt;MOY</code> round uses the MOY standard.</li>
+<li><code>benchmark_goal_padded</code>: <code>benchmark_goal</code> plus 3 words, academics' planning
+  pad for the internal method. The internal method's at-grade-level verdict uses
+  the padded figure; the aimline method uses the unpadded one.</li>
+<li><code>starting_words</code>: a cohort's average benchmark score on a measure, the start
+  of the internal target line.</li>
+<li><code>cumulative_growth_words</code>: the internal target a score is compared against in
+  each round. It climbs across the season and lands on <code>benchmark_goal_padded</code>
+  in the season's last round.</li>
+<li><code>aimline_value_by_date</code>: the point on the student's aimline on the day of the
+  probe. Amplify judges the probe against this value. It climbs across the
+  season.</li>
+<li><code>aimline_season_student_goal</code>: Amplify's per-student target for the end of the
+  season. It is not the grade-level standard and not what the verdict is judged
+  against.</li>
+<li><code>goal</code> (dashboard column): the moving target for either method,
+  <code>cumulative_growth_words</code> on Internal rows and <code>aimline_value_by_date</code> on
+  Aimline rows.</li>
+<li><code>aimline_status</code>: Amplify's own verdict, <code>At or Above</code> or <code>Below</code>. It stops at
+  the aimline criteria model; the dashboard shows the same verdict in academics'
+  words.</li>
+<li>Meeting Aimline: Amplify says the student is at or above their aimline as of
+  this round, that is, on pace. It does not mean they have reached their
+  end-of-season goal.</li>
+<li>No Aimline Data: the student sat the probe but Amplify published no aimline
+  verdict.</li>
+<li>Aimline categories: <code>Meeting Aimline, Meeting Benchmark</code>,
+  <code>Meeting Aimline, Not Yet at Benchmark</code>, <code>Below Aimline</code>,
+  <code>No Aimline Data, Meeting Benchmark</code>, <code>No Aimline Data, Not Yet at Benchmark</code>,
+  <code>Round Incomplete</code>, plus <code>Not Tested</code> on the dashboard. At or above benchmark
+  wins outright, so a student at benchmark but below their aimline still reads
+  <code>Meeting Aimline, Meeting Benchmark</code>.</li>
+<li>Trajectory: a comparison item (<code>aimline_trajectory_category</code> and two round and
+  code columns) that academics' rules made identical to Aimline and Benchmark.
+  It is being dropped.</li>
+<li>Grains: each verdict exists at measure standard, measure name code and round.
+  Coarser grains are stricter, because a code needs every standard under it met
+  and a round every code.</li>
+<li>Aimline history (<code>measure_standard_round_verdicts</code>): the season on one row,
+  one character per round, <code>A</code> at or above (or Met on Internal), <code>B</code> below (or
+  Not Met), <code>?</code> no aimline data, <code>.</code> not tested. For example <code>B-B-A</code>.</li>
+<li>Foundation goals: the percentage of students academics want At/Above (and the
+  most they want Well Below) by MOY and EOY, per region, grade and population.</li>
+<li>BM goals: the counts of students each school and region must move to meet the
+  foundation goals, frozen in the BM Goals sheet.</li>
+<li>Pads: <code>+3</code> words on the internal PM target; <code>+5</code> students on the expected
+  At/Above count at BOY only; <code>x1.5</code> on the BM goal gap every season.</li>
+<li><code>matching_season</code>: points the other way depending on the model. On
+  <code>int_amplify__benchmark_student_summary</code> it is the PM season a benchmark opens
+  (BOY gives <code>BOY-&gt;MOY</code>). On a PM row of <code>int_amplify__all_assessments</code> it is
+  the benchmark season the round aims at (<code>BOY-&gt;MOY</code> gives <code>MOY</code>).</li>
+</ul>
+<h2 id="where-the-data-comes-from">Where the data comes from</h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Owner</th>
+<th>Reaches</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Amplify mCLASS BM file, SFTP (Newark account)</td>
+<td>Amplify; landed by Dagster</td>
+<td><code>int_amplify__mclass__benchmark_student_summary</code> → <code>int_amplify__benchmark_student_summary</code> → <code>int_amplify__all_assessments</code> → every view below</td>
+</tr>
+<tr>
+<td>Amplify mCLASS BM and PM, archived API tables</td>
+<td>Data Team (frozen history)</td>
+<td>Same chains as the SFTP files for earlier years, except PM: the aimline model reads only the SFTP PM file, so archived PM reaches the internal chain only</td>
+</tr>
+<tr>
+<td>Amplify DDS, SY24 grades 7-8 benchmark</td>
+<td>Data Team (frozen history)</td>
+<td><code>int_amplify__benchmark_student_summary</code> only</td>
+</tr>
+<tr>
+<td>Amplify mCLASS PM file, SFTP</td>
+<td>Amplify; landed by Dagster</td>
+<td><code>int_amplify__mclass__pm_student_summary</code> (internal) and <code>int_amplify__mclass__pm_student_summary_aimline</code> → <code>int_amplify__all_assessments</code></td>
+</tr>
+<tr>
+<td>Amplify aimline file, SFTP</td>
+<td>Amplify; landed by Dagster</td>
+<td><code>int_amplify__mclass__pm_student_summary_aimline</code> → Aimline rows</td>
+</tr>
+<tr>
+<td>Expected Assessments V1 and by-levels</td>
+<td>Data Team enters; T&amp;L decides the content</td>
+<td>The two gates → all three dashboard branches, the roster, goal setting</td>
+</tr>
+<tr>
+<td><code>reporting__terms</code></td>
+<td>Data Team enters; T&amp;L sets PM dates</td>
+<td>Both gates (round windows) and <code>int_google_sheets__dibels_pm_expectations</code> (school days); the sight words term names</td>
+</tr>
+<tr>
+<td><code>goals_long</code></td>
+<td>Data Team (copy of UO's published goals)</td>
+<td><code>benchmark_goal</code> on both methods</td>
+</tr>
+<tr>
+<td>Foundation goals</td>
+<td>T&amp;L provides; Data Team enters</td>
+<td><code>rpt_gsheets__dibels_bm_goals_calculations</code> only</td>
+</tr>
+<tr>
+<td>BM Goals (frozen)</td>
+<td>Data Team pastes</td>
+<td>Dashboard BM branch goal columns</td>
+</tr>
+<tr>
+<td>PM goals (frozen)</td>
+<td>Data Team pastes; T&amp;L edits values</td>
+<td><code>int_amplify__pm_met_criteria</code> and the dashboard Internal branch; the workbook also reads it directly</td>
+</tr>
+<tr>
+<td>Illuminate Sight Words Quiz repositories</td>
+<td>Schools enter in Illuminate</td>
+<td><code>rpt_tableau__sight_words_dashboard</code> only</td>
+</tr>
+<tr>
+<td>Enrollment, school calendar, location crosswalk</td>
+<td>SIS (PowerSchool, Focus for Miami); Ops sheet</td>
+<td>See <em>Supporting models</em></td>
+</tr>
+</tbody>
+</table>
+<p>Amplify exports one network account, and its files land in the Newark district's
+bucket (the SFTP models also union Paterson's copy). Region comes from matching
+the file's school name to <code>int_people__location_crosswalk</code>, not from which
+bucket a file landed in. A school the crosswalk does not know reads as a null
+region rather than as missing rows; Ops fixes it by adding the school to the
+locations sheet.</p>
+<p>The aimline file is only unioned from the Newark account. The aimline model also
+reads <code>aimline_status</code> and <code>aimline_value_by_date</code> from the base PM file and
+takes whichever file carries them, because Amplify has moved those columns
+between files before.</p>
+<h2 id="dashboard-literacy-dashboard">Dashboard: Literacy Dashboard</h2>
+<p>The Tableau workbook is the <code>literacy_dashboard</code> exposure in
+<code>src/dbt/kipptaf/models/exposures/tableau.yml</code>. It reads two extracts,
+<code>rpt_tableau__dibels_dashboard</code> and <code>rpt_tableau__sight_words_dashboard</code>, and
+<code>stg_google_sheets__dibels_pm_goals</code> directly.</p>
+<h3 id="rpt_tableau__dibels_dashboard"><code>rpt_tableau__dibels_dashboard</code></h3>
+<ul>
+<li>What it shows: for every enrolled student, each DIBELS measure they were
+  expected to sit in each Benchmark administration and PM round, the score if
+  they sat it, whether they tested, and their verdicts against each goal.</li>
+<li>Grain: one row per student, expected measure standard, administration or
+  round, and method (<code>model_type</code>). Rows are not guaranteed unique: the ELA
+  course join can match more than one section, and overlapping enrollment stints
+  can repeat a row.</li>
+<li>Reads: the enrollment spine (<code>int_extracts__student_enrollments_subjects</code>,
+  Reading only, enrolled statuses 0, 2 and 3, not self-contained, not out of
+  district), then one <code>UNION ALL</code> branch per method, below. All three branches
+  also left join <code>int_students__course_enrollments</code> for the ELA teacher, course
+  and section: each student's primary ELA section (<code>core_subject = 'ELA'</code>,
+  <code>rn_core_subject_year = 1</code>, section number not like <code>%SC%</code>), for both
+  PowerSchool and Focus (Miami). <code>course_name</code> is the course-subject crosswalk
+  sheet's standard label, and the Florida course codes live on that sheet, not
+  in SQL. Miami's schedule comes from Focus from AY2026 and from the frozen
+  PowerSchool archive before that. Do not swap the crosswalk join for a
+  course-title search: ACCESS course titles shorten Language Arts to <code>LA</code>, so
+  <code>LIKE '%LANG%'</code> misses them.</li>
+<li>Worth knowing:</li>
+<li>Filter every PM view on <code>model_type</code>. Both PM methods emit a row for the
+    same student.</li>
+<li>Slice and filter on the <code>expected_*</code> columns, <code>region</code>, <code>school</code>,
+    <code>grade_level_int</code> and the testing states. A score-side column (<code>period</code>,
+    <code>measure_name_code</code>, <code>assessment_grade</code>) is null for untested students, so
+    using it silently drops them and raises every rate.</li>
+<li>Bind views to the <code>*_status</code> and <code>*_category</code> strings, not the numeric
+    <code>met_*</code> flags. The flags are null for different reasons on each method; the
+    strings name every state and are never null on a PM row.</li>
+<li>The <code>*_status</code> and <code>*_category</code> columns form a grid: three grains (measure
+    standard, measure name code, round) by four lenses (the method's own goal,
+    benchmark, aimline and benchmark, trajectory). The last two lenses exist on
+    Aimline rows only. Move the view's dimension with the grain, or a
+    round-grain value repeats across measures and looks like a difference.</li>
+<li>State the grain on every rate. "% not meeting aimline" at measure standard,
+    at measure name code and at round are different numbers, and <code>ORF</code> at code
+    grain runs well below <code>ORF</code> at standard grain because its two standards
+    often disagree.</li>
+<li>Report percent tested per measure standard per round, not pooled across the
+    year. Reading Accuracy is only tested in <code>BOY-&gt;MOY</code> and Maze only in a few
+    rounds, so a pooled or code-grain rate mixes different denominators.</li>
+<li>Round-grain columns hold one value per student and round, forced by a window
+    over the round and checked by the warn test
+    <code>rpt_tableau__dibels_dashboard__round_columns_single_valued</code>.</li>
+<li>The spine filter is <code>is_self_contained is not true</code>, not
+    <code>not is_self_contained</code>. Focus records no self-contained placement, so the
+    flag is null for every Miami student, and <code>not</code> would drop all of them.
+    Consequence: NJ self-contained students are excluded, Miami's are not.</li>
+<li>Round numbers are not unique across regions: Miami runs a different number
+    of rounds per season, so filter on <code>expected_round_label</code>, not the bare
+    round number.</li>
+<li>On the Aimline dashboards the BAN tiles always count <code>aimline_category</code>,
+    while the bars and the Category Status Over Time line follow the Comparison
+    Item. The default is <code>Aimline and Benchmark</code>, which reads the same column as
+    the BANs. Under <code>Aimline</code> the bars read <code>measure_standard_goal_status</code>,
+    which has no Round Incomplete, so they show a higher below-aimline rate than
+    the BAN on the same page.</li>
+<li>The Category Status Over Time line shows every round of one season, chosen
+    by its own Trend Window control, not by the Admin Window filter.</li>
+<li>The workbook filters <code>enroll_status = 0</code>, the student's status today, so a
+    completed year shows only students who are still enrolled; see <em>Known
+    issues</em>.</li>
+</ul>
+<h4 id="bm-branch">BM branch</h4>
+<ul>
+<li>What it shows: each Benchmark measure a student was expected to sit, their
+  score and level, whether they completed the administration, and the school and
+  region benchmark goal counts.</li>
+<li>Grain: student, expected measure standard, administration (BOY, MOY, EOY).</li>
+<li>Reads: the internal gate (<code>assessment_type = 'Benchmark'</code>, live rows, a window
+  that overlaps the student's enrollment); <code>stg_google_sheets__dibels_bm_goals</code>
+  by school, grade and season (left join, so goal columns are null until the BM
+  Goals paste lands); <code>int_amplify__all_assessments</code> for the score (left join);
+  the participation roster for completion (left join).</li>
+<li>Worth knowing: PM columns are null here. The goal columns come only from the
+  frozen BM Goals sheet; nothing on the dashboard reads the foundation goals
+  sheet, which is why the BM goals process has two pastes.</li>
+</ul>
+<h4 id="internal-branch">Internal branch</h4>
+<ul>
+<li>What it shows: each measure a probe-eligible student was expected to sit in
+  each internal PM round, the score, the round's target (<code>goal</code>), and the
+  verdicts from <code>int_amplify__pm_met_criteria</code>.</li>
+<li>Grain: student, expected measure standard, PM season, round.</li>
+<li>Reads: <code>int_google_sheets__dibels_pm_expectations</code> (tested rounds only);
+  <code>stg_google_sheets__dibels_pm_goals</code> (inner join, so a region and season with
+  no pasted goals has no Internal rows); the student's composite row in
+  <code>int_amplify__all_assessments</code> with <code>overall_probe_eligible = 'Yes'</code> (inner
+  join); then left joins to the Internal scores, the roster's Internal rows and
+  <code>int_amplify__pm_met_criteria</code>.</li>
+<li>Worth knowing: <code>goal</code> is <code>cumulative_growth_words</code>. <code>benchmark_goal_gap</code> is
+  the score minus the unpadded standard, so its sign follows
+  <code>met_admin_benchmark_goal_unpadded</code>, not the padded <code>met_admin_benchmark_goal</code>
+  the Internal verdicts use. <code>met_admin_benchmark_goal_unpadded</code> is not bound to
+  any view on purpose. A cancelled round still appears here; see <em>Known issues</em>.</li>
+</ul>
+<h4 id="aimline-branch">Aimline branch</h4>
+<ul>
+<li>What it shows: each measure an eligible student's cohort was expected to sit
+  in each aimline PM round, the score, the aimline target, and the verdicts and
+  categories from <code>int_amplify__pm_met_criteria_aimline</code>.</li>
+<li>Grain: student, expected measure standard, PM season, round.</li>
+<li>Reads: <code>int_amplify__benchmark_student_summary</code> (one row per measure, filtered
+  to <code>rn_pm_eligibility = 1</code> for one row per student per benchmark
+  administration) for eligibility and cohort;
+  <code>int_google_sheets__dibels__expected_assessments_by_levels</code> matched on the
+  student's own cohort (inner join); then left joins to the Aimline scores, the
+  roster's Aimline rows and <code>int_amplify__pm_met_criteria_aimline</code>.</li>
+<li>Worth knowing: <code>goal</code> is <code>aimline_value_by_date</code>. The season goal and its gap
+  (<code>aimline_season_student_goal</code>, <code>aimline_season_student_goal_gap</code>) stay in the
+  extract but academics asked that they not be shown anywhere; the roster view
+  shows <code>benchmark_goal</code> and <code>benchmark_goal_gap</code> instead.
+  <code>aimline_cohort_level</code> names the student's cohort. <code>aimline_round_category</code>
+  takes Not Tested and Round Incomplete from the roster, so a student who
+  skipped a measure still gets a round state on that row.
+  <code>aimline_trajectory_category</code> is computed in this branch and is being dropped
+  with Trajectory.</li>
+</ul>
+<h3 id="rpt_tableau__sight_words_dashboard"><code>rpt_tableau__sight_words_dashboard</code></h3>
+<ul>
+<li>What it shows: Sight Words Quiz results from Illuminate, each sight word on
+  each quiz, for the students in the quiz's grade.</li>
+<li>Grain: one row per quiz, sight word and student. Students in the quiz's grade
+  get a row whether or not they took it (<code>value</code> is null if not). A second set
+  of rows, <code>is_replacement = true</code>, carries students who took a quiz written for
+  a different grade than their own.</li>
+<li>Reads: <code>int_illuminate__repositories</code> (scope <code>Sight Words Quiz</code>) with its
+  fields, grade levels and <code>int_illuminate__repository_data</code>;
+  <code>stg_google_sheets__reporting__terms</code> (network <code>RT</code> terms) for the term name;
+  <code>int_extracts__student_enrollments_subjects</code> (Reading, one row per student per
+  year).</li>
+<li>Worth knowing: it is not DIBELS data; it shares the workbook. Paterson is
+  excluded. Its data flows automatically from Illuminate, so upkeep is only
+  asking the Managing Director of Teaching &amp; Learning (Sabine Vilsaint) at
+  rollover whether it is still used, then moving the dashboard's academic year
+  to the current year in the workbook. It has no year filter in SQL.</li>
+</ul>
+<h2 id="process-pm-goal-setting">Process: PM goal setting</h2>
+<p>Sets the internal method's per-round targets for one PM season, and freezes
+them. <code>rpt_gsheets__dibels_pm_goal_setting</code> (the
+<code>google_sheets__dibels_pm_goals</code> exposure in <code>google-sheets.yml</code>) computes them;
+<code>stg_google_sheets__dibels_pm_goals</code> holds the frozen copy.</p>
+<h3 id="what-triggers-it">What triggers it</h3>
+<p>A region's BOY Benchmark window closes (for the <code>BOY-&gt;MOY</code> season) or its MOY
+window closes (for <code>MOY-&gt;EOY</code>). The window dates are in <code>reporting__terms</code>.
+Regions close on different days, so each region is set separately. The season's
+PM rows must already be in Expected Assessments V1 and <code>reporting__terms</code>, or
+the view returns nothing.</p>
+<h3 id="inputs">Inputs</h3>
+<ul>
+<li>Benchmark scores for the current academic year from
+  <code>int_amplify__all_assessments</code>: Benchmark rows only, measures only (not the
+  composite), probe-eligible students only.</li>
+<li><code>int_google_sheets__dibels_pm_expectations</code>: each round's measures, school
+  days (<code>pm_round_days</code>, counted from <code>LIT</code> and <code>PLIT</code> windows on the
+  SIS-neutral school calendar), the season's total days (<code>pm_days</code>), and
+  <code>benchmark_goal</code> from <code>goals_long</code>.</li>
+</ul>
+<h3 id="steps">Steps</h3>
+<ol>
+<li>Check the date against <code>reporting__terms</code>. Include only regions whose window
+   has closed, and tell the requester which regions are left and when each
+   closes.</li>
+<li>Query the view in BigQuery, filtered to the current year, the season the
+   finished benchmark opens, and the ready regions. It is a view, so nothing
+   needs running first.</li>
+<li>Confirm the result has one row per region, season, grade, measure and round.</li>
+<li>Paste the rows into the PM goals sheet, appending. Never regenerate a region
+   and season already there.</li>
+<li>After the staging table rebuilds, run the paste checks in the skill's
+   <code>references/diagnosing.md</code>: rows equal distinct rows, each season's last
+   round equals <code>benchmark_goal_padded</code>, earlier rounds equal the running sum,
+   and <code>benchmark_goal</code> matches <code>goals_long</code>.</li>
+</ol>
+<p>The calculation, per region, grade, measure and round:</p>
+<ul>
+<li><code>starting_words</code> = the average benchmark score of probe-eligible students.</li>
+<li><code>required_growth_words</code> = <code>benchmark_goal_padded</code> minus <code>starting_words</code>.</li>
+<li><code>round_growth_words_goal</code> = the round's share of the growth, in proportion to
+  its school days out of the season's; the season's first round also adds
+  <code>starting_words</code>, so every running total is a level a raw score can be held
+  against.</li>
+<li><code>cumulative_growth_words</code> = the running total, with the season's last round
+  set to <code>benchmark_goal_padded</code> exactly.</li>
+</ul>
+<p>A worked example, grade 1 Decoding in one region: the cohort averaged 3 words at
+BOY, the padded standard is 17, so 14 words are owed across 70 school days.
+Round 1 (28 days) gets about 6 words of growth plus the starting 3, so a target
+of 9; rounds 2 and 3 add 4 and 1; round 4 lands on 17. Decoding was not tested
+in rounds 1 and 2 (<code>pm_goal_include = false</code>), but those rows still carry their
+days, which is why round 3, the first round it was tested, already sits at 14.</p>
+<h3 id="outputs">Outputs</h3>
+<p><code>stg_google_sheets__dibels_pm_goals</code>, read by <code>int_amplify__pm_met_criteria</code>
+(which compares each score to <code>cumulative_growth_words</code>), by the dashboard's
+Internal branch, and by the workbook directly.</p>
+<h3 id="who-runs-it-and-when">Who runs it and when</h3>
+<p>The Data Team, twice a year per region, the day after that region's BOY and MOY
+windows close. Once pasted, a season's goals are never recalculated, even if a
+round is later cancelled. If a goal value has to change, academics edit it on
+the sheet. The procedure, including the query to hand over, is in the skill's
+<code>references/goal-setting.md</code>.</p>
+<h2 id="process-bm-goals">Process: BM goals</h2>
+<p>Turns academics' foundation goals into the counts of students each school and
+region must move, and freezes them for the dashboard. The loop passes through a
+person twice.</p>
+<div class="highlight"><pre><span></span><code>Foundation goals sheet            &lt;- first paste, once a year
+  -&gt; stg_google_sheets__dibels_foundation_goals
+    -&gt; rpt_gsheets__dibels_bm_goals_calculations
+      -&gt; BM Goals sheet           &lt;- second paste, per region, BOY and MOY
+        -&gt; stg_google_sheets__dibels_bm_goals
+          -&gt; rpt_tableau__dibels_dashboard (BM branch)
+</code></pre></div>
+<p><code>rpt_gsheets__dibels_bm_goals_calculations</code> is the
+<code>google_sheets__dibels_bm_goals</code> exposure in <code>google-sheets.yml</code>.</p>
+<h3 id="what-triggers-it_1">What triggers it</h3>
+<p>T&amp;L shares the year's foundation goals (the first paste). Then each region's BOY
+and MOY Benchmark windows closing (the second paste, per region).</p>
+<h3 id="inputs_1">Inputs</h3>
+<ul>
+<li>Foundation goals: T&amp;L's goal sheet gives each goal as a range. The At/Above
+  goal takes the low end and the Well Below goal the high end. A generator
+  script in the skill turns T&amp;L's sheet into rows.</li>
+<li>Composite scores for the current year from <code>int_amplify__all_assessments</code>, BOY
+  and MOY only.</li>
+<li><code>int_extracts__student_enrollments</code> for school, IEP status and MLL status.</li>
+</ul>
+<h3 id="steps_1">Steps</h3>
+<ol>
+<li>Generate foundation goal rows from T&amp;L's sheet with the skill's script,
+   resolve every warning, and paste them into the foundation goals sheet.</li>
+<li>Rebuild and check the staging table by year, region and population.</li>
+<li>For each region whose window has closed, query
+   <code>rpt_gsheets__dibels_bm_goals_calculations</code> (current year only) and check
+   which regions the BM Goals sheet already holds for the year.</li>
+<li>Paste only the missing regions into the BM Goals sheet. A region already
+   there stays frozen.</li>
+<li>Check the dashboard by year: a year with Benchmark rows and no <code>admin_goal</code>
+   is a missing second paste.</li>
+</ol>
+<p>The calculation, per school and per region, grade and season, for All students,
+students with IEPs and MLL students:</p>
+<ul>
+<li>Counts of students At/Above and Below or Well Below, from the composite.</li>
+<li>Expected At/Above = <code>ceiling(students x foundation goal)</code>, plus 5 at BOY.</li>
+<li>Gap = (expected minus actual At/Above) x 1.5. A negative gap means the school
+  already meets the goal.</li>
+<li>A BOY row is measured against the MOY goal and an MOY row against EOY. Grades
+  6-8 have EOY goals only, so the model reuses the EOY goal at BOY for them.</li>
+</ul>
+<h3 id="outputs_1">Outputs</h3>
+<p><code>stg_google_sheets__dibels_bm_goals</code>, joined into the dashboard's BM branch as
+<code>admin_goal</code>, <code>admin_goal_grade_range</code>, <code>admin_goal_season</code> and the
+<code>n_admin_season_*</code> counts.</p>
+<h3 id="who-runs-it-and-when_1">Who runs it and when</h3>
+<p>The Data Team: foundation goals once a year when T&amp;L sends them, BM Goals per
+region after its BOY and MOY windows close. The headcounts come from live data,
+so regenerating a region later silently replaces figures already reported
+against. Replace a whole year only when the calculation itself was wrong. Miami
+has foundation goals from AY2026 and follows the same process; its earlier BM
+goals rows were entered by hand. The procedure is in the skill's
+<code>references/goal-setting.md</code>.</p>
+<h2 id="process-njdoe-universal-screener-extract">Process: NJDOE universal screener extract</h2>
+<p><code>rpt_gsheets__njdoe_universal_screener_data</code> reshapes the current year's NJ K-3
+benchmark results into the layout NJDOE's universal screener collection asks
+for, with each region's district and school codes. It belongs to this family
+until the Data Team has a data-sharing agreement with NJDOE that lets the state
+pull directly from Amplify. It has its own reference page,
+<a href="../njdoe-universal-screener-data-model/">NJDOE universal screener</a>.</p>
+<h2 id="supporting-models">Supporting models</h2>
+<h3 id="family-models">Family models</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stg_amplify__mclass__{api,sftp}__benchmark_student_summary</code></td>
+<td>Amplify BM files, one union per feed</td>
+</tr>
+<tr>
+<td><code>stg_amplify__mclass__{api,sftp}__pm_student_summary</code>, <code>..._sftp__pm_student_summary_aimline</code></td>
+<td>Amplify PM and aimline files</td>
+</tr>
+<tr>
+<td><code>int_amplify__mclass__benchmark_student_summary</code>, <code>..._unpivot</code></td>
+<td>BM wide and one row per measure, with region from the crosswalk</td>
+</tr>
+<tr>
+<td><code>int_amplify__benchmark_student_summary</code></td>
+<td>Benchmark scores through the internal gate, composites, eligibility, cohort</td>
+</tr>
+<tr>
+<td><code>int_amplify__mclass__pm_student_summary</code>, <code>..._aimline</code></td>
+<td>PM probes for each method, with region and Miami's id mapping</td>
+</tr>
+<tr>
+<td><code>int_amplify__all_assessments</code></td>
+<td>The one place to read valid DIBELS scores: Benchmark plus both PM methods, scored rows</td>
+</tr>
+<tr>
+<td><code>stg_google_sheets__dibels_expected_assessments</code>, <code>stg_google_sheets__dibels__expected_assessments_by_levels</code></td>
+<td>The two Expected Assessments ranges</td>
+</tr>
+<tr>
+<td><code>int_google_sheets__dibels_expected_assessments</code>, <code>int_google_sheets__dibels__expected_assessments_by_levels</code></td>
+<td>The two gates, with round windows from <code>reporting__terms</code></td>
+</tr>
+<tr>
+<td><code>int_google_sheets__dibels_pm_expectations</code></td>
+<td>Internal PM rounds with school days and <code>benchmark_goal</code></td>
+</tr>
+<tr>
+<td><code>stg_google_sheets__dibels_goals_long</code>, <code>_foundation_goals</code>, <code>_bm_goals</code>, <code>_pm_goals</code></td>
+<td>The goal sheets</td>
+</tr>
+<tr>
+<td><code>int_students__dibels_participation_roster</code></td>
+<td>Did each student sit what they owed, per round and method</td>
+</tr>
+<tr>
+<td><code>int_amplify__pm_met_criteria</code>, <code>int_amplify__pm_met_criteria_aimline</code></td>
+<td>The verdicts and labels for each PM method</td>
+</tr>
+</tbody>
+</table>
+<p><code>int_amplify__all_assessments</code> carries scored rows only. An expected round with
+no score does not become a row there; the roster and the dashboard, which drive
+off the gates, supply Not Tested.</p>
+<h3 id="shared-upstreams">Shared upstreams</h3>
+<ul>
+<li><code>int_extracts__student_enrollments_subjects</code>: the enrollment spine for the
+  dashboard, the roster and sight words; also carries each student's DIBELS
+  composites and eligibility.</li>
+<li><code>stg_google_sheets__reporting__terms</code>: Benchmark and PM round windows, and
+  sight words term names.</li>
+<li><code>int_students__calendar_day</code>: in-session days, from PowerSchool for NJ and
+  Focus for Miami, for the internal method's day counts.</li>
+<li><code>int_people__location_crosswalk</code>: maps Amplify school names to school and
+  region.</li>
+<li><code>int_students__school_directory</code>: which schools count toward a region's day
+  counts (K-8, not recruiting-only rows).</li>
+</ul>
+<h3 id="also-read-by">Also read by</h3>
+<ul>
+<li><code>int_amplify__all_assessments</code> is also read by
+  <code>dim_assessment_administrations</code>, <code>dim_assessments</code>,
+  <code>fct_assessment_scores_enrollment_scoped</code>, <code>rpt_tableau__mtss_rti</code>,
+  <code>rpt_gsheets__mtss_rti</code>, <code>rpt_gsheets__kippmiami_payout_roster</code>,
+  <code>rpt_gsheets__assessment_roster</code>,
+  <code>int_extracts__student_enrollments_subjects</code>,
+  <code>int_reporting__promotional_status</code>, <code>rpt_deanslist__reading_levels</code>, and
+  <code>int_assessments__score_anchors</code>. Most are safe from the one-row-per-method
+  change only because they filter Benchmark or the composite; when touching one,
+  state its <code>model_type</code> scope.</li>
+<li><code>int_amplify__benchmark_student_summary</code> is also read by
+  <code>int_extracts__student_enrollments_subjects</code>.</li>
+<li><code>int_amplify__mclass__benchmark_student_summary</code> is also read by
+  <code>rpt_gsheets__njdoe_universal_screener_data</code>.</li>
+</ul>
+<h2 id="inputs_2">Inputs</h2>
+<p>All of these are Google Sheets. For access or a link, ask the data team. Every
+staging model over them is a table, so a change shows up after it rebuilds. When
+changing existing rows, hand over the whole corrected tab rather than a list of
+edits; adding a new year's rows can be an append.</p>
+<ul>
+<li>Foundation goals: one row per year, region, grade, period (MOY or EOY),
+  population (All, IEP, MLL) and goal type (At/Above or Well Below), with the
+  range T&amp;L gave and the single goal taken from it. Newark, Camden and Paterson
+  only. Grades 6-8 carry EOY only.</li>
+<li>BM Goals: the frozen output of <code>rpt_gsheets__dibels_bm_goals_calculations</code>,
+  one row per year, region, school, grade and period, with columns for All, IEP
+  and MLL. Earlier years were hand-filled, so treat them as a record, not a
+  specification.</li>
+<li>Expected Assessments V1: 16 columns, one row per year, region, grade,
+  administration or round, and measure. Carries Benchmark rows and the internal
+  method's PM rows, including scaffold rows.</li>
+<li>Expected Assessments by-levels: 18 columns, PM rows only, one per cohort, with
+  <code>assessment_type</code> and <code>measure_standard_level</code> written on the sheet. No
+  Benchmark rows, ever.</li>
+<li><code>reporting__terms</code>: shared with other domains. DIBELS reads <code>type = 'LIT'</code>
+  rows: Benchmark windows and PM rounds (<code>LIT</code> codes) and pre-round day windows
+  (<code>PLIT</code>), per region and grade band. Sight words reads the network <code>RT</code> rows.</li>
+<li>PM goals: the frozen output of <code>rpt_gsheets__dibels_pm_goal_setting</code>, one row
+  per year, region, season, grade, measure and round. Academics may edit goal
+  values here.</li>
+<li><code>goals_long</code>: the University of Oregon's DIBELS 8 benchmark goals by measure,
+  grade and season. It carries no year and has not changed since 2020. A missing
+  goal means UO sets none for that measure at that grade.</li>
+</ul>
+<h2 id="decisions">Decisions</h2>
+<h3 id="how-the-model-is-built">How the model is built</h3>
+<ul>
+<li>Both PM methods run in parallel across K-8, at academics' request. Neither is
+  a fallback, and neither chain may be folded into the other.</li>
+<li>The two methods' chains share no gate. An earlier design put both ranges
+  behind one gate with a flag, and every consumer that forgot the flag counted
+  twice. Splitting at the source removed the hazard.</li>
+<li>Benchmark lives on the internal chain only. It has no cohorts, and emitting it
+  from both ranges doubled every Benchmark row.</li>
+<li><code>int_amplify__all_assessments</code> carries scored rows only. Not Tested is the
+  roster's and the dashboard's job, because they already drive off the gates.</li>
+<li>The dashboard drives off the expectation gate so untested students keep their
+  row. That is the owner's design, so a view that binds a score-side dimension
+  is a mistake to correct.</li>
+<li><code>assessment_include</code> and <code>pm_goal_include</code> are filtered by consumers, never in
+  the gates. Filtering in the gate would change the season's first and last
+  round.</li>
+<li>A PM round is measured against the next benchmark's standard. The join that
+  looks one season off is the point.</li>
+<li>A student who changes grade mid-year keeps both grades: <code>assessment_grade</code> is
+  where they sat the probe, <code>assessment_grade_int</code> where they sat the benchmark.
+  Neither is wrong.</li>
+<li>Retired models are disabled, not deleted.</li>
+</ul>
+<h3 id="goals-and-padding">Goals and padding</h3>
+<ul>
+<li>The internal PM target is derived from the cohort; nobody chooses the numbers.
+  T&amp;L decides which rounds exist, their dates, the measures and the cohort that
+  tests them; the data team computes every number.</li>
+<li>Goals are frozen by pasting, per region and season, because a cohort-derived
+  goal moves as scores arrive. Frozen goals are never recalculated.</li>
+<li>The internal at-grade-level verdict uses <code>benchmark_goal_padded</code> (+3); the
+  aimline verdict uses the unpadded standard. Academics chose this and re-review
+  kept it on 2026-09-19. The two methods' at-grade-level columns must not be
+  compared or unioned.</li>
+<li>BM goals: BOY is double padded (+5 and x1.5); from SY26-27 MOY keeps only the
+  x1.5, per T&amp;L. Confirm both pads with T&amp;L before each year's BOY run.</li>
+<li>Grades 6-8 are goal-set at EOY only, by academics. The BM calculation reuses
+  that EOY goal at BOY.</li>
+<li><code>pm_goal_criteria</code> is <code>AND</code> on every row from SY26-27, per T&amp;L. Blank rows in
+  earlier years are the OR rule and still apply to that history.</li>
+<li>A round cancelled after goals are set keeps its frozen goals. Whether a
+  cancelled round should still count toward the season's days is an open
+  question for academics.</li>
+</ul>
+<h3 id="labels-and-reporting">Labels and reporting</h3>
+<ul>
+<li>T&amp;L (Marya Tambawala) decides definitions and labels. The model follows T&amp;L's
+  "Definitions Needed" table except in two places, both deliberate:
+  <code>Meeting Aimline, Meeting Benchmark</code> (the document says "On Track and Meeting
+  Aimline"), and splitting Not Tested from Round Incomplete (the document
+  defines Not Tested as missing one or more measures). The split lets schools
+  find and finish partial rounds, which the percent-tested reporting Alisha
+  Fairfax asked for needs.</li>
+<li>Meeting Aimline keeps Amplify's definition: judged against
+  <code>aimline_value_by_date</code>, not the season goal. Academics reviewed the
+  difference and accepted it on 2026-09-24. A student can read Meeting Aimline
+  every round and still finish below their season goal. A season-goal reading
+  would be a second measure, not a correction.</li>
+<li>At benchmark wins in the aimline categories, per T&amp;L's rule, so the label can
+  overstate what it checks.</li>
+<li>Below Aimline outranks No Aimline Data at the round and code grains. Academics
+  confirmed on 2026-09-22.</li>
+<li>On the aimline method any unfinished round reads <code>Round Incomplete</code>, even if a
+  measure the student sat was below, so schools finish testing first (academics,
+  2026-09-24). The internal method still settles a round when the missing
+  measures could not change the answer.</li>
+<li>The status column names are inconsistent (<code>&lt;grain&gt;_&lt;lens&gt;_status</code> on the newer
+  five). Aligning all nine was deferred because three are shared with the
+  internal tabs.</li>
+<li><code>met_admin_benchmark_goal_unpadded</code> exists on Internal rows and is unused.
+  Binding it to a view raises Internal attainment and is T&amp;L's call.</li>
+</ul>
+<h3 id="academics-answers-on-labels-and-the-roster-2026-09-24">Academics' answers on labels and the roster, 2026-09-24</h3>
+<p>Returned in the label crosswalk workbook. Blank answers were read as keep
+today's label.</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Decision</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aimline and Benchmark labels</td>
+<td><code>Meeting Aimline, On-Track</code> becomes <code>Meeting Aimline, Meeting Benchmark</code>; <code>Meeting Aimline, Off-Track</code> becomes <code>Meeting Aimline, Not Yet at Benchmark</code>; the two <code>No Aimline Data</code> labels change the same way; <code>Below Aimline</code> and <code>Round Incomplete</code> unchanged</td>
+<td>Built at all three grains</td>
+</tr>
+<tr>
+<td>Trajectory comparison item</td>
+<td>Dropped by the dashboard owner, to be confirmed with academics. Under academics' rules it sorts every student exactly as Aimline and Benchmark does, and without the aimline a round-to-round rule could not judge about half of below-benchmark rows</td>
+<td>Removal from the workbook pending. <code>aimline_trajectory_category</code>, <code>measure_name_code_trajectory_status</code> and <code>round_trajectory_status</code> stay in the extract until the workbook stops using them, then retire</td>
+</tr>
+<tr>
+<td>Students below aimline but at benchmark</td>
+<td>Leave as is</td>
+<td>Built. Several hundred students read <code>Meeting Aimline, Meeting Benchmark</code>, which is false for them; academics chose that knowingly</td>
+</tr>
+<tr>
+<td>Partial rounds</td>
+<td>Hold them out as <code>Round Incomplete</code> at Round granularity on every comparison item. At Measure Standard and Measure, keep scoring each measure the student sat, except on Aimline and Benchmark, which keeps <code>Round Incomplete</code> at every grain</td>
+<td>Built on the aimline method. <code>round_trajectory_status</code> still scores them and goes with Trajectory. Internal round columns unchanged</td>
+</tr>
+<tr>
+<td>Uncoloured No Aimline Data categories</td>
+<td>Existing grey</td>
+<td>Workbook</td>
+</tr>
+<tr>
+<td>Aimline comparison item labels</td>
+<td>No change</td>
+<td>Keep all four, plus <code>Round Incomplete</code> at Round granularity</td>
+</tr>
+<tr>
+<td>What "Meeting Aimline" measures</td>
+<td>Keep Amplify's definition: judged against the aimline value by date (the round target), not the student's season goal</td>
+<td>Decided</td>
+</tr>
+<tr>
+<td>Roster</td>
+<td>Season Verdicts renamed Aimline History; Benchmark Goal and Benchmark Gap added</td>
+<td>Built; <code>benchmark_goal_gap</code> supplies Benchmark Gap</td>
+</tr>
+<tr>
+<td>Season goal and season gap</td>
+<td>Not shown anywhere on the dashboard, including the roster</td>
+<td>Decided. The columns stay in the extract, unbound</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-issues-need-to-fix">Known issues, need to fix</h2>
+<p>Each query returns aggregates only. Datasets are in the <code>teamster-332318</code>
+project. Some results break down to a school or grade with only a few students;
+do not paste raw output anywhere public.</p>
+<h3 id="the-sc-section-exclusion-over-matches-on-miamis-powerschool-archive">The <code>%SC%</code> section exclusion over-matches on Miami's PowerSchool archive</h3>
+<p>The ELA join drops sections whose number contains <code>SC</code>, a rule inherited from NJ
+self-contained sections. A Miami section in the frozen PowerSchool archive whose
+name contains those letters for another reason (a homeroom named after a college
+such as USC) reads unscheduled too, which is why Miami AY2024 shows a lower
+<code>scheduled</code> rate than other years.</p>
+<h3 id="cancelled-pm-rounds-still-count-in-the-internal-method">Cancelled PM rounds still count in the internal method</h3>
+<p><code>int_google_sheets__dibels_pm_expectations</code> does not carry <code>assessment_include</code>,
+so a cancelled round keeps its school days in goal setting and still appears in
+the dashboard's Internal branch. Fixing it changes whether a cancelled round
+bounds the season, which is academics' decision.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">admin_season</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">switched_off_pm_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">int_google_sheets__dibels_expected_assessments</span>
+<span class="k">where</span><span class="w"> </span><span class="n">assessment_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PM'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">assessment_include</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">admin_season</span>
+</code></pre></div>
+<h3 id="duplicate-dashboard-rows">Duplicate dashboard rows</h3>
+<p>Two overlapping enrollment stints repeat a row, and more than one matching ELA
+section repeats a row on every branch. The Benchmark branch has the most
+repeated keys; it uses the same <code>between</code> check on enrollment stints as the PM
+branches. The fix is one shared enrollment date predicate, applied to all three
+branches together.</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">keyed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">model_type</span><span class="p">,</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">expected_test</span><span class="p">,</span>
+<span class="w">            </span><span class="n">expected_round_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">expected_measure_standard</span><span class="p">,</span>
+<span class="w">            </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__dibels_dashboard</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span>
+<span class="w">            </span><span class="n">model_type</span><span class="p">,</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">expected_test</span><span class="p">,</span>
+<span class="w">            </span><span class="n">expected_round_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">expected_measure_standard</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="n">model_type</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">duplicated_keys</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">keyed</span>
+<span class="k">where</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">model_type</span>
+</code></pre></div>
+<h3 id="duplicate-sight-words-rows">Duplicate sight words rows</h3>
+<p>A few thousand quiz, student and sight word keys repeat in
+<code>rpt_tableau__sight_words_dashboard</code>, even with the replacement flag and grade
+in the key. The uniqueness test warns on it. Start from the replacement branch,
+which joins on <code>grade_level != co.grade_level</code>, and the enrollment join.</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">keyed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">repository_id</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">sight_word</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__sight_words_dashboard</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">repository_id</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">sight_word</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">duplicated_keys</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">keyed</span>
+<span class="k">where</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<h3 id="a-student-benchmarked-at-two-grades-gets-blended-composite-levels">A student benchmarked at two grades gets blended composite levels</h3>
+<p>In <code>int_amplify__benchmark_student_summary</code> the composite pivot is keyed on year
+and student with no grade, so a student with two sittings in one period carries
+both sittings' levels mixed together. Rare: a handful of student-periods a year.</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">grades</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="o">`</span><span class="k">period</span><span class="o">`</span><span class="p">,</span>
+<span class="w">            </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">assessment_grade_int</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_grades</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_amplify</span><span class="p">.</span><span class="n">int_amplify__benchmark_student_summary</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="o">`</span><span class="k">period</span><span class="o">`</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">n_grades</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">two_grade_student_periods</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">grades</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span>
+</code></pre></div>
+<h3 id="the-archived-api-staging-models-have-no-uniqueness-test">The archived API staging models have no uniqueness test</h3>
+<p><code>stg_amplify__mclass__api__benchmark_student_summary</code> and
+<code>stg_amplify__mclass__api__pm_student_summary</code> are frozen history, and their
+only candidate key (<code>surrogate_key</code>) is dropped in the SQL. A test needs a
+natural key agreed first.</p>
+<h3 id="internal-pm_round_status-varies-within-a-round">Internal <code>pm_round_status</code> varies within a round</h3>
+<p>In <code>int_amplify__pm_met_criteria</code> a few dozen AY2025 student-rounds carry both
+<code>Met</code> and <code>Not Met</code>. The dashboard hides it by taking one value per round. The
+cause is not yet found; start from the <code>met_pm_round_criteria</code> window
+partitions, which omit region and grade.</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">per_round</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">admin_season</span><span class="p">,</span>
+<span class="w">            </span><span class="n">round_number</span><span class="p">,</span>
+<span class="w">            </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">pm_round_status</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_amplify</span><span class="p">.</span><span class="n">int_amplify__pm_met_criteria</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">admin_season</span><span class="p">,</span><span class="w"> </span><span class="n">round_number</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">split_rounds</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">per_round</span>
+<span class="k">where</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span>
+</code></pre></div>
+<h3 id="the-roster-undercounts-a-round-sat-at-another-grade">The roster undercounts a round sat at another grade</h3>
+<p>The roster joins scores on the benchmark grade, so a student whose probes were
+sat at a different grade reads 0 actual measures for that round. Rare, and no
+reported verdict moves.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">model_type</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">mismatched_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_amplify</span><span class="p">.</span><span class="n">int_amplify__all_assessments</span>
+<span class="k">where</span>
+<span class="w">    </span><span class="n">assessment_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PM'</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">assessment_grade</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">assessment_grade_int</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">model_type</span>
+</code></pre></div>
+<h3 id="aimline-goals-missing-for-whole-school-grade-cells">Aimline goals missing for whole school-grade cells</h3>
+<p>Amplify published no aimline goal for nearly every student in a couple of
+school-grade cells in AY2025, though the students sat the probes. It looks like
+an mCLASS setup condition. Nobody has asked Amplify yet.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">region</span><span class="p">,</span>
+<span class="w">    </span><span class="n">school</span><span class="p">,</span>
+<span class="w">    </span><span class="n">grade_level_int</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">measure_standard_score</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">scored</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">        </span><span class="n">goal</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">measure_standard_score</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">scored_no_goal</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__dibels_dashboard</span>
+<span class="k">where</span><span class="w"> </span><span class="n">model_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Aimline'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">school</span><span class="p">,</span><span class="w"> </span><span class="n">grade_level_int</span>
+</code></pre></div>
+<h3 id="a-measure-assigned-outside-its-grade-range-has-no-standard">A measure assigned outside its grade range has no standard</h3>
+<p>UO sets no <code>benchmark_goal</code> where a measure is not given at a grade (Word
+Reading above grade 3, Reading Accuracy in kindergarten). A row like that on
+Expected Assessments makes the at-grade-level verdict unevaluable. The aimline
+model returns null for it; raise it with academics as an assignment error.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_without_standard</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">int_google_sheets__dibels__expected_assessments_by_levels</span>
+<span class="k">where</span>
+<span class="w">    </span><span class="n">benchmark_goal</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">assessment_include</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">pm_goal_include</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">region</span>
+</code></pre></div>
+<h3 id="iep-and-mll-foundation-goals-are-missing-or-placeholders">IEP and MLL foundation goals are missing or placeholders</h3>
+<p>AY2026 foundation goals cover the All population only, so the IEP and MLL
+columns of the BM goals calculation are null this year. The AY2025 MLL values
+were entered as a stopgap, not from T&amp;L. Ask T&amp;L for both populations' goals
+before anyone reports on them.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">population</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">goal_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">stg_google_sheets__dibels_foundation_goals</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">population</span>
+</code></pre></div>
+<h3 id="a-completed-year-shows-only-students-who-are-still-enrolled">A completed year shows only students who are still enrolled</h3>
+<p><code>enroll_status</code> is the student's status today, copied onto every year's row, in
+every region. For Miami that holds since
+<a href="https://github.com/TEAMSchools/teamster/pull/5607">#5607</a>; before it, Focus
+drop codes put almost every Miami student at 2 on past years. The workbook
+filters <code>enroll_status = 0</code>, so a completed year keeps only students still
+enrolled today and drops everyone who has left since, in NJ and Miami alike. The
+current year is unaffected. Filtering past years on <code>is_enrolled_recent</code> instead
+is the follow-up #5607 names.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">enroll_status</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">student_number</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">students</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__dibels_dashboard</span>
+<span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2025</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">model_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Aimline'</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">enroll_status</span>
+</code></pre></div>
+<h3 id="camdens-last-ay2025-round-has-no-grade-3-8-scores">Camden's last AY2025 round has no grade 3-8 scores</h3>
+<p>Camden's <code>MOY-&gt;EOY</code> R8 (27 April to 1 May 2026) is expected for grades 3-8, but
+no student in those grades has a score on any measure, while K-2 tested. It
+reads as a round that was not given and was not switched off with
+<code>assessment_include</code>, the same shape as <em>Cancelled PM rounds</em> above. Confirm
+with academics before switching it off; until then the last point of the
+<code>MOY-&gt;EOY</code> trend line reads Not Tested for every Camden grade 3-8 student.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">grade_level_int</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">student_number</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">expected</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span>
+<span class="w">        </span><span class="k">distinct</span><span class="w"> </span><span class="k">if</span><span class="p">(</span><span class="n">aimline_category</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'Not Tested'</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">tested</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__dibels_dashboard</span>
+<span class="k">where</span>
+<span class="w">    </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">model_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Aimline'</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Camden'</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">expected_test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'MOY-&gt;EOY'</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">expected_round_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'8'</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">grade_level_int</span>
+</code></pre></div>
+<h3 id="outside-the-warehouse-the-workbook">Outside the warehouse: the workbook</h3>
+<p>Tracked in the skill's <code>references/aimline-method.md</code>. Every PM view in the
+Literacy Dashboard must filter <code>model_type</code>, and the <code>PM - Met Goal Selector</code>
+calc should return the <code>*_status</code> strings, with its No Data alias moved from
+null to <code>Not Tested</code>. The Trajectory item left the workbook on 2026-09-28; its
+three columns are still in the extract. The workbook's datasource is embedded,
+so these checks need Tableau Desktop.</p>
+<h2 id="yearly-upkeep">Yearly upkeep</h2>
+<p>The procedures, scripts and checks are in the <code>dibels-dashboard</code> skill:
+<code>references/rollover.md</code> for the calendar and expectations,
+<code>references/goal-setting.md</code> for goals, and <code>references/sheets-and-sources.md</code>
+for editing the sheets safely.</p>
+<ol>
+<li>After July 1, confirm <code>current_academic_year</code> has rolled. The goal-setting
+   views, the BM goals calculation and the NJDOE extract read the current year
+   only.</li>
+<li><code>reporting__terms</code>, Benchmark: add each region's <code>LIT1</code>, <code>LIT2</code> and <code>LIT3</code>
+   windows. No T&amp;L sign-off needed.</li>
+<li>Get T&amp;L's PM rounds document for the year. Check its dates against
+   <code>reporting__terms</code>, since its title names the spring year.</li>
+<li><code>reporting__terms</code>, PM: add each region's round (<code>LIT</code>) and pre-round
+   (<code>PLIT</code>) rows for every grade band on the internal method, which is K-8.
+   Check each region's grade bands against current enrollment; they change.</li>
+<li>Expected Assessments V1: roll the Benchmark rows forward with <code>month_round</code>
+   set from each region's <code>reporting__terms</code> start date, and add the PM rows
+   with scaffold rows, <code>pm_goal_criteria = 'AND'</code>.</li>
+<li>Expected Assessments by-levels: add the PM rows per cohort from the same
+   rounds document. No Benchmark rows.</li>
+<li>Rebuild the staging tables and confirm row counts per region.</li>
+<li>Confirm the BM pads (+5 at BOY, x1.5) with T&amp;L, then paste the year's
+   foundation goals, including real MLL values.</li>
+<li>After each region's BOY window: set PM goals for <code>BOY-&gt;MOY</code> and paste BM
+   goals for that region. Repeat after MOY for <code>MOY-&gt;EOY</code>, and republish the
+   workbook with the Aimline dashboards' Trend Window on <code>MOY-&gt;EOY</code>.</li>
+<li>Mid-year cancellations: switch rows off with <code>assessment_include</code> (whole
+    round) or <code>pm_goal_include</code> (one measure), and keep <code>pm_goal_include</code>
+    matching between Expected Assessments and the PM goals sheet.</li>
+<li>Sight words: ask the Managing Director of Teaching &amp; Learning (Sabine
+    Vilsaint) whether the dashboard is still used, then move its academic year
+    to the current year in the workbook.</li>
+<li>NJDOE screener: see its own page,
+    <a href="../njdoe-universal-screener-data-model/">NJDOE universal screener</a>.</li>
+</ol>
+<h2 id="pending-work">Pending work</h2>
+<ul>
+<li>Bright Spots tracker: on hold, not in prod
+  (<a href="https://github.com/TEAMSchools/teamster/issues/4952">#4952</a>,
+  <a href="https://github.com/TEAMSchools/teamster/pull/4964">PR #4964</a>).</li>
+<li>Camden benchmark completion tracking: pending
+  (<a href="https://github.com/TEAMSchools/teamster/issues/4896">#4896</a>,
+  <a href="https://github.com/TEAMSchools/teamster/pull/4902">PR #4902</a>).</li>
+</ul>
+<h2 id="owner">Owner</h2>
+<p>The Data Team, with Anthony Walters as owner. T&amp;L (Marya Tambawala) decides
+definitions and labels.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

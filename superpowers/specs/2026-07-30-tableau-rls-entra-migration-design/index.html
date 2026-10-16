@@ -1,0 +1,3391 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Tableau RLS rebuild for the Entra ID identity migration - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tableau-rls-rebuild-for-the-entra-id-identity-migration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tableau RLS rebuild for the Entra ID identity migration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-1-the-dbt-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 1 — the dbt contract
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 1 — the dbt contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#three-rules-the-contract-enforces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three rules the contract enforces
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#models-in-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Models in scope
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Models in scope">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__pm_outlier_detection-is-deferred-2026-07-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__pm_outlier_detection is deferred, 2026-07-31
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-extract-and-exposure-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New extract and exposure work
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-2-the-permissions-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 2 — the Permissions block
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 2 — the Permissions block">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tier-1-self-and-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1 — self and manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-2-all-access-functional-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 2 — all-access functional groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-3-regional-ops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 3 — regional ops
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-4-regional-leaders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 4 — regional leaders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-5-school-based" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 5 — school-based
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tier 5 — school-based">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-ktaf-branch-is-scoped-to-the-regions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The KTAF branch is scoped to the regions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#historical-entity-values-are-abbreviations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Historical entity values are abbreviations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-entity-gate-reads-group-membership-not-the-viewers-own-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The entity gate reads group membership, not the viewer's own entity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retired-location-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retired-location bridge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removed-entirely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Removed entirely
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-3-validation-and-rollout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 3 — validation and rollout
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 3 — validation and rollout">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#invariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invariant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dbt-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dbt tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preview-as-user-personas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preview as User personas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#blocking-pre-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blocking pre-check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rollout-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollout order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#federal-grants-timesheet-approval-carries-a-defect-not-a-variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Federal Grants Timesheet Approval carries a defect, not a variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-4-the-intent-to-return-variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 4 — the Intent to Return variant
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 4 — the Intent to Return variant">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-title-tests-rather-than-job_function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why title tests rather than job_function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-one-helper-matches-patterns-and-the-other-enumerates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why one helper matches patterns and the other enumerates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-the-helpers-deliberately-leave-visible" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who the helpers deliberately leave visible
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-branch-3-splits-into-three" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why branch 3 splits into three
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#branch-6-the-two-departmental-director-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch 6 — the two departmental director groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#branch-7-the-team-council-shield-is-approximate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch 7 — the TEAM Council shield is approximate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-extract-looks-like" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the extract looks like
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#re-audit-after-each-survey-wave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-audit after each survey wave
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#follow-ups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Follow-ups
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="tableau-rls-rebuild-for-the-entra-id-identity-migration">Tableau RLS rebuild for the Entra ID identity migration</h1>
+<p>Refs #4638</p>
+<blockquote>
+<p><strong>Authoritative reference for calc text:</strong> the playbook,
+<code>docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md</code>. This spec
+is the design reasoning behind those fields;
+<a href="../../../guides/tableau-permissions/">the Tableau people-data permissions guide</a>
+describes the resulting behaviour for a non-technical reader. Where this spec
+and the playbook disagree about the text of a field, the playbook wins.</p>
+<p>Two parts of the design landed after this spec was first written and are
+documented in the playbook: the <strong>Tier 2 senior-leader shield</strong> (the fifth
+calculated field, used on Manager Survey Reports, Manager Survey Rollup, and
+Leadership Development), and the fact that the shield and the entity gate are
+<strong>coupled</strong> — the shield is sufficient only because the entity gate excludes
+KTAF-on-KTAF. A shield inside one branch of an <code>OR</code> chain does nothing about
+the other branches.</p>
+<p><em>Section 4</em> below was added 2026-08-05 and covers the Intent to Return
+variant.</p>
+</blockquote>
+<h2 id="problem">Problem</h2>
+<p>KIPP Tableau Server is migrating identities from Active Directory usernames to
+email addresses. Tableau's <code>USERNAME()</code> will return <code>mail</code> after cutover, which
+breaks every row-level-security calculated field comparing it against a
+<code>samaccountname</code>-style column.</p>
+<p>An external audit surfaced 85 flagged content items network-wide. 21 belong to
+cbaldor; 8 are already tagged <code>entra-broken-accepted</code> (TEMP and Archive
+throwaways), leaving <strong>13 Production workbooks</strong>.</p>
+<p>The identity break is the trigger, not the whole problem. Reading the flagged
+calcs surfaced three compounding defects:</p>
+<ol>
+<li><strong>Identity.</strong> Comparisons resolve against <code>sam_account_name</code> /
+   <code>report_to_sam_account_name</code>, and the backing extracts carry no email column
+   to dual-match against.</li>
+<li><strong>Stale org model.</strong> Calcs reference retired locations and retired groups,
+   and omit 5 currently-active locations entirely. <code>KIPP Paterson</code> appears in no
+   entity gate anywhere, so the 96 active staff whose entity is <code>KIPP Paterson</code>
+   resolve to deny regardless of group membership.</li>
+<li><strong>Hardcoded individuals.</strong> 12 individual usernames grant access directly,
+   bypassing groups. (The list is held in <code>.claude/scratch/</code>, not committed —
+   staff usernames are identifiers.)</li>
+</ol>
+<h2 id="goals">Goals</h2>
+<ul>
+<li>Every gated workbook keeps working before <strong>and</strong> after cutover, with no
+  coordination against IT's switch window.</li>
+<li>One canonical Permissions block, pasted unmodified across the 13 workbooks
+  apart from documented per-workbook tiers.</li>
+<li>Location and department become separate access axes.</li>
+<li>Zero individual username grants remain.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>The 64 flagged items owned by other authors.</li>
+<li>Renaming <code>location_clean_name</code> upstream (see <em>Follow-ups</em>).</li>
+<li>Normalizing role logic beyond the AP predicate. This is a migration, not an
+  access redesign.</li>
+<li>Moving row-level decisions out of Tableau groups into the data. Considered and
+  rejected: an entitlements join changes extract grain, and a Virtual Connection
+  data policy needs Data Management licensing.</li>
+</ul>
+<h2 id="decisions">Decisions</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identity attribute</td>
+<td><code>mail</code>, dual-matched with <code>sam_account_name</code> through cutover</td>
+</tr>
+<tr>
+<td>UPN hedge</td>
+<td>Also match <code>user_principal_name</code> (differs from <code>mail</code> for 3 staff)</td>
+</tr>
+<tr>
+<td>Individual grants</td>
+<td>Gut entirely, no replacement</td>
+</tr>
+<tr>
+<td>Access mechanism</td>
+<td>Tableau groups stay; the calc is restructured around them</td>
+</tr>
+<tr>
+<td>Location value source</td>
+<td><code>int_people__location_crosswalk.location_clean_name</code>, unchanged</td>
+</tr>
+<tr>
+<td>Entity value source</td>
+<td><code>int_people__staff_roster.home_business_unit_name</code></td>
+</tr>
+<tr>
+<td>Paterson entity group</td>
+<td><code>KNJ-SG-Tableau All Staff Paterson</code></td>
+</tr>
+<tr>
+<td>Group naming rule</td>
+<td><code>KNJ-SG-Tableau All Staff</code> + exact location name</td>
+</tr>
+<tr>
+<td>Rooms</td>
+<td>Excluded from location scoping; central office is department-based</td>
+</tr>
+<tr>
+<td>AP role predicate</td>
+<td><code>job_function</code>, with a NULL fallback to <code>job_title</code></td>
+</tr>
+<tr>
+<td>Tier 4 on norming / pulse</td>
+<td>Left ungated — cross-region norming is deliberate</td>
+</tr>
+</tbody>
+</table>
+<h2 id="section-1-the-dbt-contract">Section 1 — the dbt contract</h2>
+<p>Every model backing a gated workbook emits these columns under these names.
+Contract columns always describe <strong>the person whose access is being decided</strong>;
+anyone else on the row keeps a descriptive prefix (e.g. <code>respondent_*</code>).</p>
+<p>Columns keep their <strong>real source names</strong> — no aliasing. Uniformity comes from
+every model selecting the same source columns, so a rename in one place cannot
+drift from another. Legacy aliases (<code>entity</code>, <code>`location`</code>, <code>legal_entity</code>,
+<code>region</code>, <code>department</code>, <code>report_to_sam_account_name</code>) are deleted, not retained
+for compatibility.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Source</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>location_clean_name</code></td>
+<td>location crosswalk</td>
+<td>Location gate</td>
+</tr>
+<tr>
+<td><code>campus_name</code></td>
+<td>location crosswalk</td>
+<td>Available axis, not gated</td>
+</tr>
+<tr>
+<td><code>home_business_unit_name</code></td>
+<td>staff roster</td>
+<td>Entity gate</td>
+</tr>
+<tr>
+<td><code>home_department_name</code></td>
+<td>staff roster</td>
+<td>Department axis</td>
+</tr>
+<tr>
+<td><code>job_function</code></td>
+<td>staff roster</td>
+<td>AP role predicate</td>
+</tr>
+<tr>
+<td><code>job_title</code></td>
+<td>staff roster</td>
+<td>NULL-<code>job_function</code> fallback</td>
+</tr>
+<tr>
+<td><code>mail</code></td>
+<td>staff roster</td>
+<td>Post-cutover identity</td>
+</tr>
+<tr>
+<td><code>user_principal_name</code></td>
+<td>staff roster</td>
+<td>UPN hedge</td>
+</tr>
+<tr>
+<td><code>sam_account_name</code></td>
+<td>staff roster</td>
+<td>Pre-cutover identity</td>
+</tr>
+<tr>
+<td><code>reports_to_mail</code></td>
+<td>staff roster</td>
+<td>Manager, post-cutover</td>
+</tr>
+<tr>
+<td><code>reports_to_sam_account_name</code></td>
+<td>staff roster</td>
+<td>Manager, pre-cutover</td>
+</tr>
+</tbody>
+</table>
+<p>Note the plural <code>reports_to_*</code>. The old extracts aliased these to singular
+<code>report_to_*</code>; the real column is plural, and every calc referencing the
+singular must be updated.</p>
+<h3 id="three-rules-the-contract-enforces">Three rules the contract enforces</h3>
+<p><strong>Entity comes from the person, location from the place.</strong> <code>location_region</code> is
+a property of the location, not the viewer: Room 9's region is
+<code>TEAM Academy Charter School</code>, but 130 of its 203 occupants are KTAF central
+office. Using <code>location_region</code> for entity gating would hand central-office
+staff a region's access.</p>
+<p>This governs <strong>person-grain</strong> extracts, where the gated row describes a member
+of staff. On an <strong>event-grain</strong> extract the row describes something that
+happened at a place, and both gates come from that place, not from whoever
+recorded it. <code>rpt_tableau__operations_ekg</code> is the case: a row is a walkthrough
+of a school, so it gates on <code>school_clean_name</code> and <code>school_business_unit_name</code>,
+both resolved from the walked school through <code>int_people__location_crosswalk</code>.
+Gating it on the respondent instead shows a school leader the walkthroughs they
+performed rather than the ones of their school, and no respondent on that form
+is based in KIPP Paterson, so a Paterson leader sees nothing at all. The Room 9
+failure above cannot reach an event-grain extract whose place is always a real
+school — the walkthrough form's dropdown lists no Rooms — and the gate still
+requires group membership, so sourcing entity from the place widens nothing.
+Before applying this carve-out to another extract, confirm its place column
+cannot resolve to a Room.</p>
+<p><strong>Location and department stay separate columns.</strong> This is the structural idea
+borrowed from <code>dim_staff_cube_access</code> (#4269), and it is what stops Rooms from
+granting location-wide visibility.</p>
+<p><strong><code>location_clean_name</code> values pass through untouched.</strong> No renaming, no
+override macro. The 5 naming mismatches are bridged in the Tableau block.</p>
+<h3 id="models-in-scope">Models in scope</h3>
+<p>Derived from <code>models/exposures/tableau.yml</code>, deduplicated across the 13
+workbooks:</p>
+<div class="highlight"><pre><span></span><code>rpt_tableau__leadership_development
+rpt_tableau__schoolmint_grow_observation_details
+rpt_tableau__schoolmint_grow_goals
+rpt_tableau__teacher_observations
+rpt_tableau__pm_outlier_detection   (DEFERRED - see below)
+rpt_tableau__content_team
+rpt_tableau__survey_responses
+rpt_tableau__survey_completion
+rpt_tableau__grants_timesheets
+rpt_tableau__stipend_and_bonus_app
+rpt_tableau__operations_pm
+rpt_tableau__operations_ekg
+rpt_tableau__manager_survey_details   (new)
+</code></pre></div>
+<p>Not every model is confirmed to carry location or entity today —
+<code>__survey_completion</code>, <code>__grants_timesheets</code>, <code>__pm_outlier_detection</code> and
+<code>__operations_ekg</code> are unaudited. Where a column is missing, add it by joining
+<code>int_people__staff_roster</code>. That audit is task one of the implementation plan.</p>
+<h4 id="rpt_tableau__pm_outlier_detection-is-deferred-2026-07-31"><code>rpt_tableau__pm_outlier_detection</code> is deferred, 2026-07-31</h4>
+<p>Dropped from scope by user decision after the contract work surfaced two
+independent grain defects in it, one of them pre-existing and structural:
+<code>score_dates</code> joins <code>stg_google_sheets__reporting__terms</code> with no region
+predicate, while that sheet holds one row per region per term. The SchoolMint
+Grow Dashboard will not be rebuilt for a while, so the model does not justify
+holding up the other twelve. All of its changes were reverted to the merge base
+and its remaining problems are tracked separately.</p>
+<p>Twelve models carry the contract. The Permissions block still targets 13
+workbooks — the SchoolMint Grow Dashboard reads three other contract-carrying
+models alongside this one, so it is gated regardless; it simply cannot gate on
+this model's rows until the deferred work lands.</p>
+<h3 id="new-extract-and-exposure-work">New extract and exposure work</h3>
+<ul>
+<li><strong><code>rpt_tableau__manager_survey_details</code></strong> — new. Manager Survey Reports and
+  Manager Survey Rollup currently point at
+  <code>int_surveys__manager_survey_details</code>, an intermediate model. The new extract
+  wraps it, applies the contract, and adds <code>mail</code> (absent upstream). Both
+  workbook data sources get repointed in Desktop.</li>
+<li><strong>Exposures added:</strong> <code>content_team_dashboard</code> → <code>rpt_tableau__content_team</code>,
+  and <code>manager_survey_rollup</code> → the new extract. Both omit <code>url</code> (only 3 of the
+  file's 47 exposures carry one) and omit <code>cron_schedule</code>, since a cron there
+  becomes a real Dagster refresh schedule and neither workbook is
+  Dagster-refreshed today.</li>
+<li><strong>Exposure updated:</strong> <code>manager_survey_reports</code>, repointed to the new extract.</li>
+<li><strong><code>teacher_goals</code> — skipped by decision, 2026-07-30.</strong> All 13 workbooks use
+  embedded extracts rather than published datasources, and the read-only Tableau
+  MCP exposes no workbook-to-table mapping, so its model could not be
+  determined. The workbook was last modified 2024-09-19 and drew 3 views in a
+  month. Guessing would have created a false lineage edge and a wrong Dagster
+  dependency. Not deferred — declined.</li>
+</ul>
+<h2 id="section-2-the-permissions-block">Section 2 — the Permissions block</h2>
+<p>Five tiers in one <code>OR</code> chain, same order in every workbook so they diff by eye.</p>
+<h3 id="tier-1-self-and-manager">Tier 1 — self and manager</h3>
+<p>The only tier that changes at cutover, and the reason deployment needs no
+coordination with IT: both the old and new identity forms match.</p>
+<div class="highlight"><pre><span></span><code>LOWER(USERNAME()) = LOWER([sam_account_name])
+OR LOWER(USERNAME()) = LOWER([mail])
+OR LOWER(USERNAME()) = LOWER([user_principal_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_sam_account_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_mail])
+</code></pre></div>
+<p><code>user_principal_name</code> is a hedge, not a widening. <code>mail</code> is the expected value
+of <code>USERNAME()</code> after cutover, but that is an expectation rather than a
+confirmation, and Entra sign-in commonly presents UPN. For 1,623 of 1,627 active
+staff the two agree; for 3 they do not, and those 3 would silently fail a
+mail-only match if Server presents UPN. One of them is in the validation matrix.</p>
+<h3 id="tier-2-all-access-functional-groups">Tier 2 — all-access functional groups</h3>
+<p><code>All Data</code>, <code>TC</code>, <code>All HR</code>, <code>All T&amp;L</code>, <code>Recruiting</code>, <code>New Teacher Development</code>,
+<code>Leadership Development</code>. Membership varies per workbook; this is the only tier
+that legitimately differs across the 13. <code>Syndicate</code> is removed. <strong>No individual
+usernames</strong> — this tier is where all 12 hardcoded grants used to live.</p>
+<h3 id="tier-3-regional-ops">Tier 3 — regional ops</h3>
+<div class="highlight"><pre><span></span><code>OR ([home_business_unit_name] IN ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
+    AND ISMEMBEROF('Group Staff NJ Regional'))
+OR ([home_business_unit_name] = 'KIPP Miami' AND ISMEMBEROF('Group Staff MIA Regional'))
+</code></pre></div>
+<h3 id="tier-4-regional-leaders">Tier 4 — regional leaders</h3>
+<div class="highlight"><pre><span></span><code>OR ((ISMEMBEROF('KNJ-SG-Tableau All MDSO') OR ISMEMBEROF('KNJ-SG-Tableau All HOS')
+     OR ISMEMBEROF('KNJ-SG-Tableau All MDO') OR ISMEMBEROF('KNJ-SG-Tableau AcOps'))
+    AND [the Tier 5 entity gate, reproduced below])
+</code></pre></div>
+<p><strong>Two documented variants.</strong> On main <code>Permissions</code> blocks the entity gate
+applies. On <code>Permissions - Norming*</code> and <code>Permissions - PulseChecker</code> blocks the
+tier is <strong>ungated and additionally includes <code>KNJ-SG-Tableau All SL</code></strong>, because
+cross-region norming is intentional. Both variants must carry an inline comment
+saying which they are and why — an undocumented difference is what gets
+"corrected" by the next reader.</p>
+<h3 id="tier-5-school-based">Tier 5 — school-based</h3>
+<p>Requires all three of location, entity, and role.</p>
+<p>Entity gate:</p>
+<div class="highlight"><pre><span></span><code>IF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools') AND [home_business_unit_name] = 'TEAM Academy Charter School' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KCNA')     AND [home_business_unit_name] = 'KIPP Cooper Norcross Academy' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff MIA')      AND [home_business_unit_name] = 'KIPP Miami' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [home_business_unit_name] = 'KIPP Paterson' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF')
+       AND [home_business_unit_name] IN (
+           'TEAM Academy Charter School',
+           'KIPP Cooper Norcross Academy',
+           'KIPP Miami',
+           'KIPP Paterson'
+       ) THEN TRUE
+ELSE FALSE END
+</code></pre></div>
+<p>The Paterson branch is new and unblocks 96 staff (55 Prep Elementary, 33 Prep
+Middle, 8 in Room 12). A further 3 staff sit in Room 12 under the
+<code>TEAM Academy Charter School</code> entity and gate through that branch instead.</p>
+<h4 id="the-ktaf-branch-is-scoped-to-the-regions">The KTAF branch is scoped to the regions</h4>
+<p>An earlier revision of this design kept the KTAF branch unconditional to
+preserve existing behavior. <strong>That was wrong.</strong> Central office oversees the
+regions; it does not get visibility into itself, and the unconditional form
+returned TRUE on every row including other central office rows.</p>
+<p>The leak was found live in Manager Survey Rollup: two senior leaders at the same
+level, both KTAF, both reporting to the same manager, could see each other.
+Tiers 1, 3, and 5 all correctly returned FALSE and the Tier 2 shield correctly
+returned FALSE — Tier 4 was the sole TRUE, because the viewer sat in a
+regional-leadership group and the unconditional branch made the entity gate TRUE
+on every row.</p>
+<p>The non-obvious part: KTAF staff sit in Rooms, Rooms are absent from the
+location gate by design, so Tier 5 can never fire for them and <strong>Tier 4 is their
+only route</strong>. That makes any regional-leadership group membership equal to
+whole-extract access. Scoping the branch to the four regions closes it, and is a
+no-op wherever there are no KTAF subjects — 0.0% in the three teacher-population
+extracts.</p>
+<h4 id="historical-entity-values-are-abbreviations">Historical entity values are abbreviations</h4>
+<p><code>int_people__staff_roster_history</code> carries pre-2021 abbreviations rather than
+full entity names: <code>TEAM</code> (9,551 rows, 2002-2020), <code>KCNA</code> (2,328), <code>KNJ</code>
+(1,486), and <code>MIA</code> (658). Any view that surfaces rows from 2020 or earlier will
+fail the entity gate above, because none of those values match a full name.</p>
+<p>The old calcs handled this by hand — several tested
+<code>[home_business_unit_name] = 'TEAM' OR [home_business_unit_name] = 'TEAM Academy Charter Schools' OR [home_business_unit_name] = 'TEAM Academy Charter School'</code>.
+That is why those triple comparisons exist; they were not redundancy.</p>
+<p><strong>Superseded 2026-07-30: dbt now normalizes entity, so the Tableau gate compares
+one form only.</strong> Every one of the 13 extracts maps the abbreviations to full
+names with a <code>case</code> in its select list, aliased back to
+<code>home_business_unit_name</code>, so no extract can emit <code>TEAM</code>, <code>KCNA</code>, <code>MIA</code>, or
+<code>KNJ</code> any more. Each entity branch therefore takes a single equality:</p>
+<div class="highlight"><pre><span></span><code>ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools')
+   AND [home_business_unit_name] = 'TEAM Academy Charter School' THEN TRUE
+</code></pre></div>
+<p><strong>Delete the triple comparisons rather than carrying them forward.</strong> An
+abbreviation branch cannot match anything post-normalization, and leaving one in
+place tells the next reader the extracts still carry abbreviations.</p>
+<p>This was not a cosmetic change.
+<code>rpt_tableau__schoolmint_grow_observation_details</code> alone was emitting 276,048
+un-normalized rows — <code>TEAM</code> 189,391, <code>KCNA</code> 79,525, <code>MIA</code> 7,132 — and its
+<code>accepted_values</code> test was failing until the <code>case</code> was added. Any entity gate
+on that data was matching nothing.</p>
+<p><code>KNJ</code> is different: it was the <strong>network</strong> entity, KIPP New Jersey, which is
+today's KTAF rather than any region. Evidence, not inference: of the 327 staff
+who ever carried <code>KNJ</code>, 262 (80%) next appear under
+<code>KIPP TEAM and Family Schools Inc.</code>, and 1,204 of the 1,486 <code>KNJ</code> rows (81%) sit
+at Room 9, the network office. The two figures agree.</p>
+<p><strong>Decision: <code>KNJ</code> maps flatly to KTAF.</strong> In practice that means adding it to no
+region branch at all, so region viewers correctly do not see historical network
+staff.</p>
+<p>Note what scoping the KTAF branch to the four regions changed here. When that
+branch was unconditional it also covered these rows for network viewers. It no
+longer does: <code>KIPP TEAM and Family Schools Inc.</code> is not in the four-region list,
+so historical <code>KNJ</code> rows now fail the entity gate for everyone, and reach a
+viewer only through Tier 1 (self or manager) or a Tier 2 all-access group. That
+follows directly from central office not getting visibility into central office
+rows — these are network rows. It is a deliberate consequence, not an oversight.</p>
+<p>Two things this deliberately accepts:</p>
+<ul>
+<li>The 64 staff who later moved to a region have their <code>KNJ</code>-era rows attributed
+  to the network, so their own region cannot see them. 64 historical rows is a
+  cheaper error than the alternative.</li>
+<li>The alternative — deriving entity from the location crosswalk — was rejected
+  precisely because it fails the wrong way. Room 9's <code>location_region</code> is
+  <code>TEAM Academy Charter School</code>, so a location-derived entity would put 1,204
+  network-staff rows into TEAM and expose them to every TEAM region viewer. The
+  flat map fails closed; the location map fails open.</li>
+</ul>
+<p>In dbt this is the <code>KNJ</code> branch of the entity <code>case</code>, which rewrites it to
+<code>KIPP TEAM and Family Schools Inc.</code>. Region branches then never match it — the
+same outcome the flat map describes, reached in the view rather than in the
+calc.</p>
+<p>Because normalization happens in dbt, no workbook needs a second entity form
+regardless of how far back its data reaches.</p>
+<h4 id="the-entity-gate-reads-group-membership-not-the-viewers-own-entity">The entity gate reads group membership, not the viewer's own entity</h4>
+<p><code>ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [home_business_unit_name] = 'KIPP Paterson'</code>
+asks whether the viewer is <strong>in the Paterson staff group</strong> — never whether the
+viewer is a Paterson employee. Membership of an entity group is deliberately not
+the same population as employment by that entity.</p>
+<p>This is load-bearing, not incidental. It is how cross-entity supervision is
+expressed: a TEAM employee who oversees Paterson schools gets Paterson
+visibility by being added to the Paterson group, with <strong>no calc change</strong>. Dual
+membership resolves correctly because the gate is an <code>IF</code>/<code>ELSEIF</code> chain of
+<code>group AND matching-entity</code> pairs — a Paterson row falls through the TEAM branch
+(entity does not match), then lands on the Paterson branch.</p>
+<p>The tempting "cleanup" is to derive entity from the viewer's own roster row
+instead of from group membership. <strong>Do not.</strong> It would silently revoke access
+from every cross-entity supervisor, and silent revocation is the failure mode
+this whole rebuild exists to eliminate.</p>
+<p>Location gate — 26 explicit branches, one per school location:</p>
+<div class="highlight"><pre><span></span><code>OR ([location_clean_name] = 'KIPP TEAM Academy' AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP TEAM Academy'))
+</code></pre></div>
+<p>The one-line form
+<code>ISMEMBEROF('KNJ-SG-Tableau All Staff ' + [location_clean_name])</code> was the
+original hope. It does not work: <code>ISMEMBEROF()</code> takes a literal string only, so
+the concatenation does not validate. A parameter does not rescue it either — a
+parameter holds one value per view, so the calc would evaluate once instead of
+per row and degenerate to all-rows-or-none, a bypass rather than a gate. The
+same limitation is why subject-side seniority has to come from the data:
+<code>ISMEMBEROF()</code> only ever answers for the current viewer, never for the row's
+person.</p>
+<p>The full 26-branch block, including the five retired-location bridges, is in the
+playbook, <code>docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md</code>.</p>
+<p>Rooms are absent by design. Central office reaches data through Tiers 2 and 4,
+never through location.</p>
+<p>Role gate:</p>
+<div class="highlight"><pre><span></span><code>ISMEMBEROF('KNJ-SG-Tableau All DSO')
+OR ISMEMBEROF('KNJ-SG-Tableau All SL')
+OR (ISMEMBEROF('KNJ-SG-Tableau All AP')
+    AND ([job_function] IN ('Teacher', 'Teacher in Residence')
+         OR (ISNULL([job_function])
+             AND (CONTAINS([job_title], 'Teacher') OR [job_title] = 'Learning Specialist'))))
+</code></pre></div>
+<p>Per-workbook role variants, both deliberate: Content Team and Miami
+Instructional Rubrics add <code>TS-DL-NTN Coordinators</code>; Stipend and Bonus and
+Operations Systems omit the AP branch entirely.</p>
+<h3 id="retired-location-bridge">Retired-location bridge</h3>
+<p>Five locations where the canonical clean name and the group name disagree. Each
+bridge branch carries a comment referencing the follow-up issue that deletes it.</p>
+<table>
+<thead>
+<tr>
+<th><code>location_clean_name</code></th>
+<th>Group</th>
+<th>Staff</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KIPP Hatch Middle</code></td>
+<td><code>...All Staff KIPP Hatch Academy</code></td>
+<td>33</td>
+</tr>
+<tr>
+<td><code>KIPP Sumner Elementary</code></td>
+<td><code>...All Staff KIPP Sumner Academy</code></td>
+<td>48</td>
+</tr>
+<tr>
+<td><code>Paterson Prep Elementary School</code></td>
+<td><code>...All Staff KIPP Paterson Prep Elementary</code></td>
+<td>55</td>
+</tr>
+<tr>
+<td><code>Paterson Prep Middle School</code></td>
+<td><code>...All Staff KIPP Paterson Prep Middle</code></td>
+<td>33</td>
+</tr>
+<tr>
+<td><code>KIPP Miami - Poinciana Campus</code></td>
+<td><code>...All Staff Poinciana Campus</code></td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<h3 id="removed-entirely">Removed entirely</h3>
+<p>All individual usernames; <code>Syndicate</code> from all-access; the three campus groups
+(<code>Norfolk St Campus</code>, <code>Lanning Sq Campus</code>, <code>18th Ave Campus</code>);
+<code>Group Staff Hatch Middle</code>; <code>Group Staff Sumner Elementary</code>; every retired
+location string; the dead <code>Learning Specialist Coordinator</code> title (0 active
+staff); the redundant explicit <code>ESE Teacher</code>; and the
+<code>KNJ-SG-Tableau All Staff KIPP Whittier MIddle</code> typo, which has never matched
+anything.</p>
+<p><code>Group Staff NJ Regional</code> and <code>Group Staff MIA Regional</code> are kept.</p>
+<h2 id="section-3-validation-and-rollout">Section 3 — validation and rollout</h2>
+<h3 id="invariant">Invariant</h3>
+<p><strong>A <code>location_clean_name</code> change and a Tableau group rename must happen
+together.</strong> Once the calc compares clean-name values against group names, a
+one-sided change breaks access silently. Worth a monitored check later.</p>
+<h3 id="dbt-tests">dbt tests</h3>
+<p>Column names below are the shipped contract names, not the working names this
+spec used before Section 2 settled: <code>location_clean_name</code>, not <code>location_name</code>;
+<code>home_business_unit_name</code>, not <code>entity</code>; <code>mail</code>, not <code>email</code>.</p>
+<p>Per-column, on each of the 13 extracts:</p>
+<ul>
+<li><code>location_clean_name</code> — <code>not_null</code></li>
+<li><code>home_business_unit_name</code> — <code>not_null</code>, plus <code>accepted_values</code> on the 5 real
+  values including <code>KIPP Paterson</code></li>
+</ul>
+<p>Singular tests, in <code>src/dbt/kipptaf/tests/</code>, all three anchored on
+<code>int_people__staff_roster</code> via <code>meta.dagster.ref</code> so each reports as one asset
+check rather than observations across both parents:</p>
+<ul>
+<li><code>int_people__staff_roster__locations_resolve_to_crosswalk</code> — every active
+  roster location resolves to a canonical clean name. This is the 100%-coverage
+  invariant, and it is what catches a new school before it silently denies
+  staff.</li>
+<li><code>int_people__staff_roster__tableau_location_set_expected</code> — the active
+  clean-name set matches the 30 expected, so an addition surfaces rather than
+  passing as a gap. Update the expected set in the same change that creates the
+  group.</li>
+<li><code>int_people__staff_roster__mail_populated_with_sam</code> — <code>mail</code> populated
+  wherever <code>sam_account_name</code> is populated. Warn-level, via the project default
+  rather than an override.</li>
+</ul>
+<p>All three pass against production: 0 unresolved locations, exactly 30 locations,
+0 records holding a <code>sam_account_name</code> without a <code>mail</code>.</p>
+<p>The <code>not_null</code> tests are warn-level and 5 of the 13 extracts carry non-zero
+counts, every one of them a roster-join miss rather than an unmapped location —
+verified by the absence of any row where a location is null while a
+roster-sourced column is populated. Shares: <code>operations_ekg</code> 6.57%,
+<code>content_team</code> 1.60%, <code>teacher_observations</code> 0.55%, <code>leadership_development</code>
+0.11%, <code>stipend_and_bonus_app</code> 0.01%, the rest zero.</p>
+<h3 id="preview-as-user-personas">Preview as User personas</h3>
+<table>
+<thead>
+<tr>
+<th>Persona</th>
+<th>Proves</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Teacher</td>
+<td>self-only, Tier 1</td>
+</tr>
+<tr>
+<td>Manager</td>
+<td>self plus direct reports</td>
+</tr>
+<tr>
+<td>Miami AP</td>
+<td>the 9 ESE teachers are visible (job_function)</td>
+</tr>
+<tr>
+<td>School Leader</td>
+<td>cross-region norming access is present</td>
+</tr>
+<tr>
+<td>DSO</td>
+<td>Tier 5 role gate</td>
+</tr>
+<tr>
+<td>MDSO / MDO / HOS</td>
+<td>entity-wide, no location</td>
+</tr>
+<tr>
+<td>Paterson school staff</td>
+<td>the new branch; currently denied entirely</td>
+</tr>
+<tr>
+<td>KTAF person sitting in Room 9</td>
+<td>entity from person, not location</td>
+</tr>
+<tr>
+<td>One of the 3 UPN-mismatch staff</td>
+<td>the Tier 1 hedge</td>
+</tr>
+<tr>
+<td>A NULL-<code>job_function</code> teacher</td>
+<td>the fallback clause</td>
+</tr>
+<tr>
+<td>A formerly-hardcoded individual</td>
+<td>still has access via groups</td>
+</tr>
+</tbody>
+</table>
+<h3 id="blocking-pre-check">Blocking pre-check</h3>
+<p><strong>All 12 formerly-hardcoded individuals need their group coverage confirmed
+before any edit lands.</strong> Gutting an individual grant assumes the person is
+covered by a group. If any were hardcoded <em>because</em> they were not in the right
+group, gutting silently removes their access. Tableau group membership is not
+readable through the MCP — there is no group tool — so this is a manual check by
+the author or IT.</p>
+<h3 id="rollout-order">Rollout order</h3>
+<ol>
+<li>dbt merged and built first. A calc referencing <code>[mail]</code> before the column
+   exists breaks the workbook.</li>
+<li>The four simple workbooks — Teacher Goals, Manager Survey Reports, Manager
+   Survey Rollup, Personalized Survey Links — to shake out the contract on
+   low-risk surfaces.</li>
+<li>The remaining complex ones, SchoolMint Grow (6 calcs) last.</li>
+<li>Tag <code>entra-ready</code> per item. Completion is auditable read-only via the Tableau
+   MCP with <code>tags:eq:entra-ready</code>.</li>
+</ol>
+<h3 id="federal-grants-timesheet-approval-carries-a-defect-not-a-variant">Federal Grants Timesheet Approval carries a defect, not a variant</h3>
+<p>Its <code>userattribute</code> field calls <code>USERATTRIBUTE('username')</code>. That is a mistake
+in the workbook, not a deliberate embedding pattern — it should be <code>USERNAME()</code>
+like every other item. Replace the call and apply the standard block; no
+separate fix path is needed.</p>
+<p>Worth verifying while in there: <code>USERATTRIBUTE()</code> returns NULL unless a
+Connected App or JWT supplies that attribute, and a NULL comparison excludes the
+row. If nothing has been supplying <code>username</code>, this field has been inert and
+whatever it gates has been failing closed for ordinary viewers. Confirm with
+Preview as User what the dashboard shows <strong>before</strong> the edit, so the change in
+behavior is understood rather than discovered later.</p>
+<h3 id="rollback">Rollback</h3>
+<p>Capture each workbook's current calc text before editing, so a bad publish has a
+known-good string to restore. Tableau revision history is the backstop.</p>
+<h2 id="section-4-the-intent-to-return-variant">Section 4 — the Intent to Return variant</h2>
+<p>Added 2026-08-05, when the design settled. The field text is in the playbook;
+this section is why it has the shape it has.</p>
+<p>The five tiers assume a viewer's group membership implies a legitimate interest
+in everyone at their site or region. A confidential self-report survey breaks
+that at one level only: a respondent's <strong>peers</strong>. So the variant keeps the
+tiers, adds a peer exclusion per tier, and drops the network-wide groups that
+exist for analysis rather than administration.</p>
+<h3 id="why-title-tests-rather-than-job_function">Why title tests rather than <code>job_function</code></h3>
+<p>This is the one place the design contradicts <code>RLS - Subject Is Senior Leader</code>,
+and the reason is data rather than preference. <code>job_function</code> is populated on
+<strong>0.06%</strong> of <code>rpt_tableau__survey_responses</code> and <strong>0% for 2019 through 2024</strong>.
+<code>School Leader</code> appears on 63,644 rows of that extract with a job function set
+on 34 of them. Keying these helpers on <code>job_function</code> would be a no-op dressed
+as a principle.</p>
+<p><code>RLS - Subject Is Senior Leader</code> is also unusable here for a second, independent
+reason: its <code>ISNULL</code> fallback matches the bare string <code>Executive</code>, which catches
+an executive assistant. On an extract where the fallback fires on essentially
+every row, that false positive would be the rule rather than the exception.</p>
+<p>Revisit after <a href="https://github.com/TEAMSchools/teamster/issues/4631">#4631</a>
+backfills history, at which point every title test collapses to a job-function
+test.</p>
+<h3 id="why-one-helper-matches-patterns-and-the-other-enumerates">Why one helper matches patterns and the other enumerates</h3>
+<p>The asymmetry is not an oversight. The two levels fail in opposite directions.</p>
+<p><strong>Regional titles proliferate.</strong> New chief and managing-director variants appear
+regularly, and a list would be stale the week after it was written — the current
+roster already holds eight distinct <code>Managing Director</code> forms and eleven <code>Chief</code>
+forms. <code>CONTAINS</code> absorbs the next one automatically, and no non-leadership
+title on the roster contains <code>CHIEF</code>, <code>PRESIDENT</code>, or <code>MANAGING DIRECTOR</code>, so it
+over-reaches nowhere.</p>
+<p><strong>School peer titles have near-miss neighbours that must stay visible.</strong> Here
+<code>CONTAINS</code> cannot express the policy without collapsing under exceptions.
+<code>CONTAINS('SCHOOL LEADER')</code> catches <code>School Leader</code>, but also
+<code>Assistant School Leader</code> and <code>School Leader in Residence</code>, so it needs
+<code>AND NOT ... 'ASSISTANT' AND NOT ... 'RESIDENCE'</code>. The DSO clause is worse: the
+title exists as both <code>Director School Operations</code> and
+<code>Fellow School Operations Director</code>, so a phrase test misses one while a
+two-word test catches both and then needs <code>NOT ... 'ASSOCIATE'</code> and
+<code>NOT ... 'FELLOW'</code> bolted on. Four negations to express four titles, each one a
+place to be wrong. Enumerated, the list reads as the policy and can be checked
+against an org chart.</p>
+<p><code>HEAD OF SCHOOLS</code> uses <code>=</code> inside the pattern-matching helper for the same
+reason: <code>CONTAINS('HEAD OF SCHOOL')</code> would catch <code>Head of Schools in Residence</code>,
+which must stay visible. The cost is that a future variant such as
+<code>Head of Schools, Elementary</code> would not be caught. If those appear, the robust
+equivalent is
+<code>CONTAINS(UPPER([job_title]), 'HEAD OF SCHOOL') AND NOT CONTAINS(UPPER([job_title]), 'RESIDENCE')</code>.</p>
+<p><code>SCHOOL LEADER</code> appears only in the school helper, and <strong>the school helper
+composes the regional one</strong>. School leaders and DSOs are subordinates of
+regional leadership, so putting them in the regional helper would hide the 2,003
+rows regional leaders most need; composing the other way keeps a school leader
+from seeing above their own level.</p>
+<h3 id="who-the-helpers-deliberately-leave-visible">Who the helpers deliberately leave visible</h3>
+<p>A viewer is blocked from their <strong>own level only</strong>. Every rank below a peer, and
+every developing or associate version of a peer role, stays visible — those are
+the people whose retention their leader is responsible for.</p>
+<table>
+<thead>
+<tr>
+<th>Title</th>
+<th>ITR rows</th>
+<th>People</th>
+<th>Visible to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>School Leader in Residence</code></td>
+<td>96</td>
+<td>6</td>
+<td>School leaders, DSOs, regional</td>
+</tr>
+<tr>
+<td><code>Head of Schools in Residence</code></td>
+<td>16</td>
+<td>1</td>
+<td>Regional leadership</td>
+</tr>
+<tr>
+<td><code>Fellow School Operations Director</code></td>
+<td>48</td>
+<td>2</td>
+<td>School leaders, DSOs, regional</td>
+</tr>
+<tr>
+<td><code>Associate Director of School Operations</code></td>
+<td>209</td>
+<td>6</td>
+<td>School leaders, DSOs, regional</td>
+</tr>
+<tr>
+<td><code>Assistant School Leader</code> and its two variants</td>
+<td>4,568</td>
+<td>149</td>
+<td>School leaders, DSOs, regional</td>
+</tr>
+<tr>
+<td><code>School Operations Manager</code></td>
+<td>899</td>
+<td>27</td>
+<td>School leaders, DSOs, regional</td>
+</tr>
+<tr>
+<td><code>Fellow</code> (unqualified)</td>
+<td>81</td>
+<td>4</td>
+<td>School leaders, DSOs, regional</td>
+</tr>
+</tbody>
+</table>
+<h3 id="why-branch-3-splits-into-three">Why branch 3 splits into three</h3>
+<p>One shared exclusion helper cannot serve viewer groups that sit at different
+levels. <code>RLS - ITR Respondent Is Regional Leadership</code> describes the MDSO / HOS /
+MDO level, so applying it alone to the Syndicate and to School Support Directors
+would have hidden the wrong people:</p>
+<ul>
+<li><strong>3a — MDSO / HOS / MDO</strong> sit above every director, so directors stay visible.
+  The helper alone is the right exclusion.</li>
+<li><strong>3b — The Syndicate</strong> is at director rank, so director-rank peers are
+  excluded too — except school operations directors, who are the Syndicate's own
+  line of report and must stay visible. That is what
+  <code>RLS - ITR Respondent Is a School Operations Director</code> exists for.</li>
+<li><strong>3c — School Support Directors</strong> are at director rank with no line of report
+  among directors, so every director rank is excluded.</li>
+</ul>
+<p><code>AcOps</code> was removed from this branch. <code>The Syndicate</code> appears here and nowhere
+else — that reverses the migration's network-wide removal of the group, and this
+paragraph is the record of that decision.</p>
+<h3 id="branch-6-the-two-departmental-director-groups">Branch 6 — the two departmental director groups</h3>
+<p><code>Special Education Directors</code> and <code>KIPP Forward Directors</code> are scoped by
+<strong>department and region</strong>, and exclude director-rank peers while leaving
+associate directors visible. <code>RLS - ITR Respondent Is a Department Director</code> is
+exact rather than approximate here, because neither department contains a chief,
+head of schools, managing director or executive director. The
+<code>NOT ... 'ASSOCIATE'</code> clause keeps <code>Associate Director</code> visible — 112 rows from
+6 people in KIPP Forward, and none in Special Education, which has no associate
+directors.</p>
+<table>
+<thead>
+<tr>
+<th>Department</th>
+<th>Region</th>
+<th>Rows</th>
+<th>People</th>
+<th>Peer rows excluded</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Special Education</td>
+<td>TEAM</td>
+<td>11,161</td>
+<td>327</td>
+<td>144</td>
+</tr>
+<tr>
+<td>Special Education</td>
+<td>KCNA</td>
+<td>2,896</td>
+<td>94</td>
+<td>32</td>
+</tr>
+<tr>
+<td>Special Education</td>
+<td>Miami</td>
+<td>627</td>
+<td>20</td>
+<td>48</td>
+</tr>
+<tr>
+<td>KIPP Forward</td>
+<td>TEAM</td>
+<td>896</td>
+<td>28</td>
+<td>96</td>
+</tr>
+<tr>
+<td>KIPP Forward</td>
+<td>KCNA</td>
+<td>451</td>
+<td>13</td>
+<td>48</td>
+</tr>
+<tr>
+<td>KIPP Forward</td>
+<td>Miami</td>
+<td>64</td>
+<td>3</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>If a third department group is added, it reuses
+<code>RLS - ITR Respondent Is a Department Director</code> unchanged.</p>
+<div class="admonition warning">
+<p class="admonition-title">Miami KIPP Forward staff have no departmental viewer</p>
+<p>Miami has 3 KIPP Forward respondents and <strong>no</strong> KIPP Forward director of its
+own — the zero in the last column is the tell. Before the entity gate was
+added, TEAM's and KCNA's directors covered them; now nobody in branch 6 does,
+and those 3 people reach only their manager and the three admin groups. Either
+add Miami's KIPP Forward lead to the group once one exists, or accept the gap
+knowingly.</p>
+<p>The same applies to the KIPP Forward <code>Achievement Director</code> row, which sits in
+the central office entity and so fails the four-region list.</p>
+</div>
+<h3 id="branch-7-the-team-council-shield-is-approximate">Branch 7 — the TEAM Council shield is approximate</h3>
+<p>The council sees every response network-wide except other chief-level
+respondents. <code>RLS - ITR Respondent Is Chief Level</code> covers 64 rows from 4 people:
+<code>Chief Academic Officer</code>, <code>Chief of Staff</code> and <code>Deputy Chief</code>. The <code>PRESIDENT</code>
+clause matches nothing in the current waves and is there for the <code>Co-President</code>
+title, which exists on the roster. <code>Deputy Chief</code> is included even though its
+<code>job_function</code> is <code>EDs, HOSs, MDOs</code> rather than <code>Chief Level</code>, so this test is
+marginally broader than the canonical shield — the safe direction for a
+confidential survey.</p>
+<div class="admonition warning">
+<p class="admonition-title">The shield hides chief-level titles, not council membership</p>
+<p>Tableau cannot ask whether <strong>the respondent</strong> belongs to a group, so council
+membership has to be approximated from the title. If the council includes heads
+of schools or managing directors, and it plausibly does, their responses stay
+visible to fellow council members: <strong>720 rows from 23 people</strong> hold a senior
+title that is not chief level (<code>Executive Director</code>, <code>Head of Schools</code>,
+<code>Head of Schools in Residence</code>, and five <code>Managing Director</code> variants).</p>
+<p>Widening the shield is one clause —
+<code>OR [RLS - ITR Respondent Is Regional Leadership]</code> — but it costs regional
+oversight nothing and council visibility a great deal, so it should be a
+decision rather than a default. Settle it by reading the council roster against
+that list of eight titles.</p>
+</div>
+<h3 id="what-the-extract-looks-like">What the extract looks like</h3>
+<p>63,648 Intent to Return rows across 2023–2025, roughly 1,250 respondents a year.</p>
+<table>
+<thead>
+<tr>
+<th>Respondent level</th>
+<th>Rows</th>
+<th>People</th>
+<th>At a Room</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Regional leadership</td>
+<td>784</td>
+<td>27</td>
+<td>784 — all of them</td>
+</tr>
+<tr>
+<td>School leadership</td>
+<td>2,003</td>
+<td>62</td>
+<td>96</td>
+</tr>
+<tr>
+<td>Assistant school leaders</td>
+<td>4,568</td>
+<td>130</td>
+<td>16</td>
+</tr>
+<tr>
+<td>Teachers and learning specialists</td>
+<td>34,928</td>
+<td>1,049</td>
+<td>497</td>
+</tr>
+<tr>
+<td>Everyone else</td>
+<td>21,365</td>
+<td>598</td>
+<td>3,156</td>
+</tr>
+</tbody>
+</table>
+<p>Every regional-leadership response sits at a Room, and Rooms are absent from the
+location gate, so branches 4 and 5 cannot reach them regardless. The composed
+<code>OR [RLS - ITR Respondent Is Regional Leadership]</code> inside the school helper is
+insurance against a leader later being assigned a school location, not a live
+fix.</p>
+<p>The extract also carries <code>respondent_name</code>, <code>race_ethnicity</code>, and <code>gender</code>. With
+~1,250 respondents across 22 school locations, a single-school view plus a
+demographic breakdown re-identifies people whether or not the name field is on
+the sheet.</p>
+<p>Two unresolved title cases, both from the 2026-08-05 audit:</p>
+<ul>
+<li><code>Fellow</code> unqualified — 4 people, 81 rows, rank unresolvable from title.</li>
+<li><code>Director</code> bare — 33 people, most in Special Education, Student Support, KIPP
+  Forward and Teaching and Learning, who are not anyone's regional peer.</li>
+</ul>
+<p>Both are why #4631 matters: it collapses every title test to
+<code>job_function_code</code>.</p>
+<p>Also worth confirming rather than assuming: <code>Chief of Staff</code> sits in the TEAM
+entity (1 person, 16 rows), the only chief-level row inside a region's entity
+gate. That may be roster drift rather than a real assignment.</p>
+<h3 id="re-audit-after-each-survey-wave">Re-audit after each survey wave</h3>
+<p>Both peer helpers fail silently in the unsafe direction — an uncaught peer title
+is visible to that person's peers until someone notices. The school list goes
+stale when a title is added; the regional patterns go stale if a peer title
+arrives using none of their five markers. This returns every leadership-looking
+title that <strong>neither</strong> helper catches:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">job_title</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__survey_responses</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">survey_title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Intent to Return Survey'</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="k">upper</span><span class="p">(</span><span class="n">job_title</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'HEAD OF SCHOOLS'</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">contains_substr</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">job_title</span><span class="p">),</span><span class="w"> </span><span class="s1">'MANAGING DIRECTOR'</span><span class="p">)</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">contains_substr</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">job_title</span><span class="p">),</span><span class="w"> </span><span class="s1">'CHIEF'</span><span class="p">)</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">contains_substr</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">job_title</span><span class="p">),</span><span class="w"> </span><span class="s1">'PRESIDENT'</span><span class="p">)</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">contains_substr</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">job_title</span><span class="p">),</span><span class="w"> </span><span class="s1">'EXECUTIVE DIRECTOR'</span><span class="p">)</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="k">upper</span><span class="p">(</span><span class="n">job_title</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="s1">'SCHOOL LEADER'</span><span class="p">,</span>
+<span class="w">    </span><span class="s1">'DIRECTOR SCHOOL OPERATIONS'</span><span class="p">,</span>
+<span class="w">    </span><span class="s1">'DIRECTOR CAMPUS OPERATIONS'</span><span class="p">,</span>
+<span class="w">    </span><span class="s1">'DIRECTOR OF CAMPUS OPERATIONS'</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">regexp_contains</span><span class="p">(</span>
+<span class="w">    </span><span class="k">upper</span><span class="p">(</span><span class="n">job_title</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="s1">'DIRECTOR|LEADER|HEAD|PRINCIPAL|SUPERINTENDENT'</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">job_title</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">rows_</span><span class="w"> </span><span class="k">desc</span>
+</code></pre></div>
+<p>Today every row it returns is a rank that should be visible. Anything in the
+output that is a <strong>full peer</strong> is a live gap.</p>
+<h2 id="risks">Risks</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gutting individuals removes access someone needs</td>
+<td>Blocking pre-check above</td>
+</tr>
+<tr>
+<td>A mistyped group name fails silently rather than erroring</td>
+<td>Persona matrix; verify names against Server</td>
+</tr>
+<tr>
+<td><code>ISMEMBEROF()</code> may reject a non-literal argument</td>
+<td>Fall back to 26 explicit branches</td>
+</tr>
+<tr>
+<td>Redesign compressed against the cutover date</td>
+<td>Dual-match lets workbooks ship one at a time</td>
+</tr>
+<tr>
+<td>25 teachers have NULL <code>job_function</code></td>
+<td>Documented fallback clause</td>
+</tr>
+</tbody>
+</table>
+<h2 id="open-questions">Open questions</h2>
+<ul>
+<li>Does <code>ISMEMBEROF()</code> accept an expression on this Server version? Two minutes
+  in Desktop settles it.</li>
+<li>Confirm <code>KNJ-SG-Tableau All Staff Room 12</code> against Server. Rooms 9, 10 and 11
+  use <code>KNJ-SG-Tableau All Room N</code>, so the <code>All Staff</code> form may be a typo. Rooms
+  are not gated on, so this may be moot.</li>
+<li>Teacher Goals and Manager Survey Rollup datasources need confirming from the
+  workbooks.</li>
+<li>5 staff carry <code>job_function = 'Teacher'</code> with titles of Assistant School
+  Leader, Dean, or Director of Orchestra and Music. Looks like an ADP mapping
+  error that would expose an ASL's data to APs. Refer to People Operations.</li>
+</ul>
+<h2 id="follow-ups">Follow-ups</h2>
+<ul>
+<li><strong>Rename canonical clean names</strong> to current school names, coordinated with the
+  three lookup sheets that join on them —
+  <code>stg_google_sheets__coupa__address_name_crosswalk</code>,
+  <code>stg_google_sheets__egencia__traveler_groups</code>,
+  <code>stg_google_sheets__zendesk_org_lookup</code>. When this lands, delete the five
+  bridge branches. Deliberately excluded here: 33 models consume the crosswalk,
+  which is too wide a blast radius for cutover week.</li>
+<li><strong>Populate <code>job_function</code></strong> for the 25 affected teachers, then delete the
+  fallback clause.</li>
+<li><strong>Ops sheet fixes:</strong> <code>KIPP Miami - Poinciana Campus</code> carries
+  <code>campus_name = 'KIPP Miami - North Campus'</code>, which looks wrong.
+  <code>N. 13th St. Campus</code> (Purpose and Upper Roseville, 131 staff) has no Tableau
+  group.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
