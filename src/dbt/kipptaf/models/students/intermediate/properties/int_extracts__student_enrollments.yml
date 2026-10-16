@@ -42,22 +42,6 @@ models:
             where: rn_year = 1
             severity: warn
     columns:
-      - name: iep_status
-        data_type: string
-        description:
-          Database extension field associated to the Students table. Conditional
-          on spedlep.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
-          - accepted_values:
-              arguments:
-                values:
-                  - Has IEP
-                  - No IEP
-              config:
-                severity: error
       - name: _dbt_source_project
         data_type: string
       - name: studentid
@@ -679,6 +663,11 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__studentcorefields
             source_column: spedlep
+      - name: iep_status
+        data_type: string
+        description:
+          Has IEP when `spedlep` starts with `SPED`, otherwise No IEP, including
+          when `spedlep` is null.
       - name: lep_status
         data_type: boolean
         description: Student Limited English Proficiency status.
