@@ -11,10 +11,10 @@ changed file(s) to the Project.
   hard gate, force-refresh `meta`, explicit `response_type`, confidence and
   inference flagging, PII gate, flag-don't-invent), question routing, and the
   session-log and handoff templates.
-- `assessment-cube-reference.md` — the interim Illuminate and Apex performance
-  band-set tables, until #5573 adds band-set members to Cube and deletes this
-  file. Every other field fact now lives in Cube: each member's description and
-  `ai_context`, returned by the `meta` tool.
+- `assessment-cube-reference.md` — the interim Illuminate and Focus Assessments
+  performance band-set tables, until #5573 adds band-set members to Cube and
+  deletes this file. Every other field fact now lives in Cube: each member's
+  description and `ai_context`, returned by the `meta` tool.
 
 ## Setup (per Project)
 
@@ -57,7 +57,7 @@ knowledge.
 Two project-knowledge files govern the work — follow them, don't restate them:
 - assessment-cube-orchestrator.md — the session protocol (run it every session),
   how to route a question, and the exact session-log and handoff formats.
-- assessment-cube-reference.md — the interim Illuminate and Apex band-set
+- assessment-cube-reference.md — the interim Illuminate and Focus Assessments band-set
   tables. Every
   other field meaning and quirk comes back from the Cube `meta` tool, in each
   member's description and ai_context.
