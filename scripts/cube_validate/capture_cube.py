@@ -72,18 +72,19 @@ class CubeClient:
             algorithm="HS256",
         )
 
-    def _post(self, path: str, query: dict) -> dict:
+    def _post(self, path: str, query: dict, cache: str | None = None) -> dict:
         import httpx
 
         # Mart dates are UTC dates. Without an explicit zone Cube answers in the
         # deployment's own, which shifts every day filter and date by a day.
         query = {"timezone": "UTC", **query}
+        body = {"query": query} if cache is None else {"query": query, "cache": cache}
         overloaded = 0
         for _ in range(120):
             try:
                 r = self._http().post(
                     f"{self.url}/{path}",
-                    json={"query": query},
+                    json=body,
                     headers={"Authorization": self._token()},
                 )
             except httpx.TransportError as err:
@@ -110,8 +111,8 @@ class CubeClient:
 
     def load(self, query: dict, renew: bool = False) -> LoadResult:
         """Rows with this answer's own lastRefreshTime and total."""
-        q = {**query, "renewQuery": True} if renew else query
-        body = self._post("load", q)
+        # A renew skips Cube's cache and asks BigQuery again.
+        body = self._post("load", query, cache="no-cache" if renew else None)
         return LoadResult(
             body.get("data", []), body.get("lastRefreshTime"), body.get("total")
         )
