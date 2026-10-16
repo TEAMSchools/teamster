@@ -70,7 +70,7 @@ def test_planned_queries_include_the_scope_query():
         dashboard_table="p.d.t",
         period_start=dt.date(2026, 10, 5),
         window=W,
-        cost_cap_gb=50,
+        cost_cap_usd=5.0,
         quiet_minutes=(0, 10),
         cube=config.CubeRows("v", "attendance_date", ("locations_abbreviation",)),
         key=(
@@ -108,3 +108,8 @@ def test_estimate_runs_queries_in_parallel():
 
     got = preflight.estimate(GatedCube(), FakeBQ(), [("a", {}), ("b", {})])
     assert got["bytes"] == 2_000_000 and list(got["sql"]) == ["a", "b"]
+
+
+def test_usd_prices_bytes_at_on_demand_rate():
+    assert preflight.usd(1024**4) == 6.25
+    assert round(preflight.usd(163.81e9), 2) == 0.93

@@ -26,7 +26,7 @@ CHECKS = {
         "extract_after": "15:00",
         "tz": "America/New_York",
     },
-    "cost_cap_gb": 50,
+    "cost_cap_usd": 5,
     "cube": {
         "view": "v",
         "date": "attendance_date",

@@ -11,7 +11,14 @@ from . import cells
 from .capture_cube import row_queries, scope_query
 
 BQ_PROJECT = "teamster-332318"
+# BigQuery on-demand price per TiB billed.
+USD_PER_TIB = 6.25
 _INT = re.compile(r"^-?\d+$")
+
+
+def usd(n_bytes: float) -> float:
+    """Dollars BigQuery bills on demand for scanning n_bytes."""
+    return n_bytes / 1024**4 * USD_PER_TIB
 
 
 class PreflightError(RuntimeError):

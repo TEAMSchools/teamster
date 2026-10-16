@@ -24,7 +24,7 @@ BASE = {
         "extract_after": "15:00",
         "tz": "America/New_York",
     },
-    "cost_cap_gb": 50,
+    "cost_cap_usd": 5,
     "cube": {
         "view": "v",
         "date": "attendance_date",
@@ -223,3 +223,15 @@ def test_a_skeleton_loads_for_plan_only(tmp_path):
 
 def test_the_committed_attendance_checks_file_loads():
     assert config.load_checks(COMMITTED).dashboards == ("Attendance Rollup",)
+
+
+def test_cost_cap_defaults_to_five_dollars(tmp_path):
+    data = {k: v for k, v in BASE.items() if k != "cost_cap_usd"}
+    p = tmp_path / "c.yml"
+    p.write_text(yaml.safe_dump(data, sort_keys=False))
+    assert config.load_checks(p).cost_cap_usd == 5.0
+
+
+def test_cost_cap_in_gigabytes_is_refused(tmp_path):
+    with pytest.raises(config.ConfigError, match="cost_cap_usd"):
+        config.load_checks(_write(tmp_path, cost_cap_gb=50))

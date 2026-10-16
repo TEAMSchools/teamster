@@ -58,7 +58,10 @@ outside the window or when the extract predates this window's refresh. A run
 that fails its preflight (window or cost cap) creates no snapshot.
 
 - No Tableau MCP calls during a run: they sign in with the same token.
-- A capture costs money; analysis is free and can be repeated.
+- A capture costs money; analysis is free and can be repeated. Preflight prices
+  every query with free dry runs, and a run under the checks file's
+  `cost_cap_usd` (default $5) goes ahead without asking. Above it, preflight
+  stops and names the dollars and GB.
 
 ## Snapshots and resuming
 

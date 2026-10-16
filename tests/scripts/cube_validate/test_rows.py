@@ -51,7 +51,7 @@ def _checks(causes=()):
         window=config.Window(
             dt.time(15, 30), dt.time(6), dt.time(15), "America/New_York"
         ),
-        cost_cap_gb=50,
+        cost_cap_usd=5.0,
         quiet_minutes=(0, 10),
         cube=config.CubeRows("v", "attendance_date", ()),
         key=(

@@ -25,6 +25,8 @@ ALL = "(All)"
 # Minutes past each hour when the dashboard's scheduled refreshes sign in; the
 # checks file's tableau_quiet_minutes overrides it per dashboard.
 DEFAULT_QUIET = (0, 10)
+# A run priced under this many dollars of BigQuery goes ahead without asking.
+DEFAULT_COST_CAP_USD = 5.0
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _P_REF = re.compile(r"\{p\}([A-Za-z_][A-Za-z0-9_]*)")
 
@@ -124,7 +126,7 @@ class Checks:
     dashboard_table: str
     period_start: dt.date
     window: Window
-    cost_cap_gb: float
+    cost_cap_usd: float
     quiet_minutes: tuple[int, int]
     cube: CubeRows
     key: tuple[Expr, ...]
@@ -233,6 +235,14 @@ def _unique_slugs(kind: str, names: list[str]) -> None:
                 f"{kind} {seen[s]} and {n} share the export name {s}; rename one"
             )
         seen[s] = n
+
+
+def _cost_cap(d: dict) -> float:
+    if "cost_cap_gb" in d:
+        raise ConfigError(
+            "cost_cap_gb is replaced by cost_cap_usd (dollars of BigQuery)"
+        )
+    return float(d.get("cost_cap_usd", DEFAULT_COST_CAP_USD))
 
 
 def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
@@ -366,7 +376,7 @@ def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
             _time(_req(w, "extract_after", "window")),
             _req(w, "tz", "window"),
         ),
-        cost_cap_gb=float(_req(d, "cost_cap_gb")),
+        cost_cap_usd=_cost_cap(d),
         quiet_minutes=(int(quiet[0]), int(quiet[1])),
         cube=CubeRows(
             view,

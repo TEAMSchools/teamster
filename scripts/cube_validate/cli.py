@@ -269,15 +269,17 @@ def _run(checks, args) -> int:
             _, dash_tables = bq.dry_run(f"select * from `{checks.dashboard_table}`", [])
             tables = sorted(set(est["tables"]) | dash_tables)
             gb = est["bytes"] / 1e9
-            if gb > checks.cost_cap_gb:
+            dollars = preflight.usd(est["bytes"])
+            if dollars > checks.cost_cap_usd:
                 raise preflight.PreflightError(
-                    f"planned {gb:.2f} GB is over the cap of {checks.cost_cap_gb} GB"
+                    f"planned {gb:.2f} GB (about ${dollars:.2f}) is over the cap of "
+                    f"${checks.cost_cap_usd:.2f}"
                 )
             before = preflight.clock_map(bq, tables)
             m.update(
                 period=f"{start}:{end}",
                 extract_at=live.updated_at.isoformat(),
-                cost=f"{gb:.2f} GB planned, cap {checks.cost_cap_gb} GB",
+                cost=f"{gb:.2f} GB planned (about ${dollars:.2f}), cap ${checks.cost_cap_usd:.2f}",
                 clock_before=before,
                 clock_tables=tables,
                 cube_tables=sorted(est["tables"]),
