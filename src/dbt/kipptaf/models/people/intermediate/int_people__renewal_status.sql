@@ -81,7 +81,7 @@ left join
     and y.academic_year = p.academic_year
 left join
     {{ ref("int_students__teacher_grade_levels") }} as tgl
-    on c.powerschool_teacher_number = tgl.teachernumber
+    on c.sis_teacher_number = tgl.teachernumber
     and c.home_work_location_dagster_code_location = tgl._dbt_source_project
     and y.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1

@@ -72,7 +72,7 @@ left join
     on sr.home_work_location_reporting_name = lc.home_work_location_reporting_name
 left join
     {{ ref("int_students__teacher_grade_levels") }} as tgl
-    on sr.powerschool_teacher_number = tgl.teachernumber
+    on sr.sis_teacher_number = tgl.teachernumber
     and tgl.academic_year = {{ var("current_academic_year") }}
     and tgl.grade_level_rank = 1
 where
