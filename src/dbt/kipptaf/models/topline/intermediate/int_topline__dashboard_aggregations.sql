@@ -41,6 +41,8 @@ with
             g.aggregation_hash,
             g.aggregation_display,
             g.goal,
+            g.goal_numeric,
+            g.goal_integer,
 
             case
                 g.aggregation_type
@@ -80,7 +82,9 @@ with
             g.aggregation_type,
             g.aggregation_hash,
             g.aggregation_display,
-            g.goal
+            g.goal,
+            g.goal_numeric,
+            g.goal_integer
 
         union all
 
@@ -108,6 +112,8 @@ with
             g.aggregation_hash,
             g.aggregation_display,
             g.goal,
+            g.goal_numeric,
+            g.goal_integer,
 
             case
                 g.aggregation_type
@@ -144,7 +150,9 @@ with
             g.aggregation_type,
             g.aggregation_hash,
             g.aggregation_display,
-            g.goal
+            g.goal,
+            g.goal_numeric,
+            g.goal_integer
 
         union all
 
@@ -172,6 +180,8 @@ with
             g.aggregation_hash,
             g.aggregation_display,
             g.goal,
+            g.goal_numeric,
+            g.goal_integer,
 
             case
                 g.aggregation_type
@@ -206,7 +216,9 @@ with
             g.aggregation_type,
             g.aggregation_hash,
             g.aggregation_display,
-            g.goal
+            g.goal,
+            g.goal_numeric,
+            g.goal_integer
     ),
 
     enrollment as (
@@ -289,6 +301,8 @@ with
             tg.aggregation_hash,
             tg.aggregation_display,
             tg.goal,
+            tg.goal_numeric,
+            tg.goal_integer,
 
             round(
                 safe_divide(tu.metric_aggregate_value, tu.goal), 3
@@ -324,6 +338,8 @@ with
             aggregation_hash,
             aggregation_display,
             goal,
+            goal_numeric,
+            goal_integer,
             metric_aggregate_value,
         from pre_agg_union_student
 
@@ -350,6 +366,8 @@ with
             aggregation_hash,
             aggregation_display,
             goal,
+            goal_numeric,
+            goal_integer,
             metric_aggregate_value,
         from target_goals
 
@@ -378,6 +396,8 @@ with
             aggregation_hash,
             aggregation_display,
             goal,
+            goal_numeric,
+            goal_integer,
             metric_aggregate_value,
         from {{ ref("int_topline__student_retention_weekly_aggregations") }}
     ),
@@ -407,6 +427,8 @@ with
             g.aggregation_hash,
             g.aggregation_display,
             g.goal,
+            g.goal_numeric,
+            g.goal_integer,
 
             case
                 g.aggregation_type
@@ -444,7 +466,9 @@ with
             g.aggregation_type,
             g.aggregation_hash,
             g.aggregation_display,
-            g.goal
+            g.goal,
+            g.goal_numeric,
+            g.goal_integer
 
         union all
 
@@ -474,6 +498,8 @@ with
             g.aggregation_hash,
             g.aggregation_display,
             g.goal,
+            g.goal_numeric,
+            g.goal_integer,
 
             case
                 g.aggregation_type
@@ -508,7 +534,9 @@ with
             g.aggregation_type,
             g.aggregation_hash,
             g.aggregation_display,
-            g.goal
+            g.goal,
+            g.goal_numeric,
+            g.goal_integer
 
         union all
 
@@ -538,6 +566,8 @@ with
             g.aggregation_hash,
             g.aggregation_display,
             g.goal,
+            g.goal_numeric,
+            g.goal_integer,
 
             case
                 g.aggregation_type
@@ -571,7 +601,9 @@ with
             g.aggregation_type,
             g.aggregation_hash,
             g.aggregation_display,
-            g.goal
+            g.goal,
+            g.goal_numeric,
+            g.goal_integer
 
         union all
 
@@ -600,6 +632,8 @@ with
             aggregation_hash,
             aggregation_display,
             goal,
+            goal_numeric,
+            goal_integer,
             metric_aggregate_value,
         from {{ ref("int_topline__seats_staffed_weekly_aggregations") }}
     )
