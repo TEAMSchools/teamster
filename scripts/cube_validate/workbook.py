@@ -256,6 +256,59 @@ def _strip_click_filters(text: str, sheet: str) -> str:
     return text[:start] + block + text[end:]
 
 
+_COLUMN = re.compile(r"<column [^>]*>")
+_FORMAT = re.compile(r" default-format='[^']*'")
+
+
+def _strip_measure_formats(text: str) -> tuple[str, int]:
+    """Drops each measure column's own number format, which the CSV export uses.
+
+    A parameter column keeps its format: it is not a measure anyone compares.
+    """
+    n = 0
+
+    def one(m: re.Match) -> str:
+        nonlocal n
+        tag = m.group(0)
+        if "role='measure'" not in tag or "param-domain-type" in tag:
+            return tag
+        out, k = _FORMAT.subn("", tag)
+        n += k
+        return out
+
+    return _COLUMN.sub(one, text), n
+
+
+def display_formats(twb_text: str) -> dict[tuple[str, str], str]:
+    """Each worksheet measure's number format as the dashboard shows it.
+
+    A sheet's own text-format on the field wins over the column's
+    default-format, which only the CSV export follows.
+
+    Returns:
+        The format by (sheet, measure caption).
+    """
+    root = SafeET.fromstring(twb_text.encode("utf-8"))
+    out: dict[tuple[str, str], str] = {}
+    for ws in root.iter("worksheet"):
+        sheet = ws.get("name") or ""
+        own = {}
+        for f in ws.iter("format"):
+            field = f.get("field") or ""
+            if f.get("attr") == "text-format" and f.get("value"):
+                m = re.search(r"\]\.\[[a-z]+:([^:\]]+):", field)
+                if m:
+                    own[m.group(1)] = f.get("value")
+        for col in ws.iter("column"):
+            if col.get("role") != "measure" or col.get("param-domain-type"):
+                continue
+            name = (col.get("name") or "").strip("[]")
+            fmt = own.get(name) or col.get("default-format")
+            if fmt:
+                out[(sheet, col.get("caption") or name)] = fmt
+    return out
+
+
 def review_copy(
     twb_text: str, dashboards: list[str], sheets: set[str] | None = None
 ) -> str:
@@ -287,6 +340,11 @@ def review_copy(
     }
     for s in sorted(targets):
         out = _strip_click_filters(out, s)
+
+    # Exports then carry the raw value; cells round it the way the dashboard does.
+    out, _ = _strip_measure_formats(out)
+    if _strip_measure_formats(out)[1]:
+        raise ReviewCopyError("a measure column still carries a number format")
 
     after = _hidden(out)
     still = [s for s in exposed if after.get(s)]

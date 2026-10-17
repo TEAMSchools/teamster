@@ -7,6 +7,7 @@ import io
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from decimal import ROUND_HALF_UP, Decimal
 
 from .config import ALL, Checks, Cut, FieldMap, ParamValue, SheetMap, lit, side_sql
 
@@ -68,6 +69,30 @@ class Display:
     percent: bool
 
 
+@dataclass(frozen=True)
+class Format:
+    """How many decimals the dashboard shows, and whether as a percent."""
+
+    decimals: int
+    percent: bool
+
+
+def parse_format(s: str | None) -> Format | None:
+    """A Tableau number format such as `p0.0%` or `n#,##0.00`."""
+    if not s:
+        return None
+    first = re.sub(r'"[^"]*"', "", s.split(";", 1)[0])
+    places = first.split(".", 1)[1] if "." in first else ""
+    return Format(len(re.match(r"[0#]*", places).group(0)), first.startswith("p"))
+
+
+def _half_up(x: float, decimals: int) -> Decimal:
+    # 9 places first, so float noise at an exact half (0.44999999999999996) rounds up
+    return Decimal(repr(round(x, 9))).quantize(
+        Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP
+    )
+
+
 def parse_display(s: str | None) -> Display | None:
     """A number as Tableau exported it, with its decimals and percent sign."""
     if s is None:
@@ -84,15 +109,30 @@ def parse_display(s: str | None) -> Display | None:
     return Display(value, len(t.split(".", 1)[1]) if "." in t else 0, percent)
 
 
-def display_equal(tableau: str | None, cube: float | None, scale: float = 1.0) -> bool:
-    """Cube's value is within half a displayed step of what Tableau shows.
+def display_equal(
+    tableau: str | None,
+    cube: float | None,
+    scale: float = 1.0,
+    fmt: Format | None = None,
+) -> bool | None:
+    """Whether Cube's value shows the same as Tableau's.
 
-    The half-step bound keeps half-up rounding and absorbs float noise at exact
+    With the dashboard's format, both round half up to the decimals it shows;
+    None when the export carries fewer decimals than that, so it cannot say.
+    Without one, Cube's value is within half a step of the exported text. The
+    half-step bound keeps half-up rounding and absorbs float noise at exact
     halves (0.0045 is 0.44999999999999996% in floats; Tableau shows 0.5%).
     """
     d = parse_display(tableau)
     if d is None or cube is None:
         return d is None and cube is None
+    if fmt is not None:
+        shown = d.value if d.percent or not fmt.percent else d.value * 100
+        places = d.decimals if d.percent or not fmt.percent else d.decimals - 2
+        if places < fmt.decimals:
+            return None
+        c = cube * scale * (100 if fmt.percent else 1)
+        return _half_up(shown, fmt.decimals) == _half_up(c, fmt.decimals)
     scaled = cube * scale * (100 if d.percent else 1)
     return abs(scaled - d.value) <= 0.5 * 10**-d.decimals + 1e-9
 
@@ -319,12 +359,24 @@ def _cube_labels(sm, key: tuple) -> dict[str, str | None]:
     return labels
 
 
+def _format(formats, sheet: str, header: str) -> Format | None:
+    """The dashboard's format for an export column, by the caption it ends with
+    (Tableau heads an average `Avg. <caption>`)."""
+    hits = [
+        (len(cap), f)
+        for (s, cap), f in (formats or {}).items()
+        if s == sheet and (header == cap or header.endswith(" " + cap))
+    ]
+    return parse_format(max(hits)[1]) if hits else None
+
+
 def judge(
     ws,
     checks: Checks,
     manifest: dict,
     answers: dict,
     export: Callable[[str, str], bytes | None],
+    formats: dict[tuple[str, str], str] | None = None,
 ) -> list[Cell]:
     """Every exported number's verdict.
 
@@ -334,6 +386,8 @@ def judge(
         manifest: The snapshot manifest (click filters per cut).
         answers: Cube answers by answer_key.
         export: Reads a cut's sheet export, or None when it was not exported.
+        formats: Each (sheet, measure caption)'s number format on the dashboard;
+            cells compare at the decimals it shows.
 
     Returns:
         One Cell per exported number, plus one per Cube mark Tableau did not show.
@@ -437,10 +491,18 @@ def judge(
                     elif crow is None and any(b[0] in CUBE_SIDE for b in buckets):
                         vd, rs = UNPROVEN, "Cube answer has no mark for these labels"
                     else:
-                        vd, rs = (
-                            verdict(display_equal(v, cube_v, m.scale), buckets, inert),
-                            "",
-                        )
+                        fmt = _format(formats, sheet, h)
+                        eq = display_equal(v, cube_v, m.scale, fmt)
+                        if eq is None:
+                            vd, rs = (
+                                UNPROVEN,
+                                (
+                                    f"the export shows fewer decimals than the "
+                                    f"dashboard's {fmt.decimals} decimal"
+                                ),
+                            )
+                        else:
+                            vd, rs = verdict(eq, buckets, inert), ""
                     out.append(
                         Cell(cut.id, sheet, dims, h, v, cube_v, vd, rs, buckets, studs)
                     )

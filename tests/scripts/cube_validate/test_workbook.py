@@ -86,3 +86,37 @@ def test_review_copy_strips_click_filters_from_a_sheet_with_an_escaped_name():
 def test_strip_click_filters_refuses_a_sheet_it_cannot_find():
     with pytest.raises(workbook.ReviewCopyError, match="Nope"):
         workbook._strip_click_filters(TWB, "Nope")
+
+
+SHEET_FORMATS = """<?xml version='1.0' encoding='utf-8' ?>
+<workbook><worksheets>
+<worksheet name='ADA'><table><view><datasource-dependencies datasource='ds'>
+<column caption='Metric' datatype='real' default-format='p0%' name='[Calc_1]' role='measure' type='quantitative' />
+<column caption='Count' datatype='integer' default-format='n#,##0' name='[Calc_2]' role='measure' type='quantitative' />
+<column caption='School' datatype='string' name='[school]' role='dimension' type='nominal' />
+</datasource-dependencies></view>
+<style><style-rule element='cell'>
+<format attr='text-format' field='[ds].[avg:Calc_1:qk]' value='p0.0%' />
+</style-rule></style></table></worksheet>
+</worksheets></workbook>"""
+
+
+def test_display_formats_prefer_the_sheet_over_the_column_default():
+    got = workbook.display_formats(SHEET_FORMATS)
+    assert got == {("ADA", "Metric"): "p0.0%", ("ADA", "Count"): "n#,##0"}
+
+
+def test_review_copy_strips_measure_formats_so_exports_carry_full_precision():
+    twb = TWB.replace(
+        "<column caption='Pct Done' datatype='real' name='[Calculation_8]'",
+        "<column caption='Pct Done' datatype='real' default-format='p0%' name='[Calculation_8]'",
+        1,
+    ).replace(
+        "<column caption='Group By' datatype='string'",
+        "<column caption='Group By' datatype='string' default-format='x'",
+        1,
+    )
+    assert twb.count("default-format=") == 2
+    out = workbook.review_copy(twb, ["Overview"])
+    # the measure loses its format; a parameter keeps its own
+    assert "default-format='p0%'" not in out and "default-format='x'" in out

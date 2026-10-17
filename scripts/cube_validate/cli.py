@@ -68,8 +68,19 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
         snap.analysis / "analysis.hyper", {"tab": snap.extract, "cub": snap.cube}
     ) as ws:
         rr = rows.build(ws, checks, m.get("scope"), _manifest_period(m))
+        base = snap.dir / "base.twb"
+        formats = (
+            workbook.display_formats(base.read_text(encoding="utf-8", newline=""))
+            if base.exists()
+            else {}
+        )
         cs = cells.judge(
-            ws, checks, m, answers, lambda cut, sheet: _export(snap, cut, sheet)
+            ws,
+            checks,
+            m,
+            answers,
+            lambda cut, sheet: _export(snap, cut, sheet),
+            formats,
         )
         samples = handchecks.row_samples(ws, checks)
         picked = handchecks.pick(cs, samples, seed=snap.dir.name, answers=answers)

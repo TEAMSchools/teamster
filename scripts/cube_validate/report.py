@@ -52,9 +52,7 @@ def trust(invariants: dict[str, bool], results: dict[str, str], compared: int) -
     if "capture completeness" not in invariants:
         return "Pending: capture completeness was not recorded for this snapshot."
     if compared == 0:
-        return (
-            "Pending: no cell was compared yet (map the sheets, then capture answers)"
-        )
+        return "Pending: no cell was compared yet (see the mapping unproven reasons)"
     if not results:
         return "Pending: no hand checks recorded yet."
     open_checks = sum(1 for v in results.values() if v != "agree")

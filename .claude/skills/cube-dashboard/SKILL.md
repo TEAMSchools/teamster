@@ -140,6 +140,10 @@ match".
 - **Cells:** pass, coincidental match, row gap, formula gap. Filter ignored,
   mapping unproven, no Cube counterpart and no captured rows are the tool's
   limits, never Cube findings.
+- **Precision:** a cell compares at the decimals its sheet shows on the
+  dashboard. The review copy drops each measure's number format so exports carry
+  the raw value. "Export shows fewer decimals than the dashboard" means that
+  drop did not reach the export; the cell is unproven, not equal.
 - **Formulas not tested:** mapped measures with no cut whose rows all match.
   Their formulas are unproven either way.
 - Counts under 10 show as `<10`, so the report can go to `#data_team`.

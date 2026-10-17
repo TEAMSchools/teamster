@@ -645,3 +645,65 @@ def test_a_swapped_cut_is_judged_against_the_swapped_view(tmp_path):
         ("chronic", cells.PASS),
         ("chronic", cells.PASS),
     ]
+
+
+def test_parse_format_reads_decimals_and_percent():
+    assert cells.parse_format("p0.0%") == cells.Format(1, True)
+    assert cells.parse_format("p0%") == cells.Format(0, True)
+    assert cells.parse_format('n#,##0"%";-#,##0"%"') == cells.Format(0, False)
+    assert cells.parse_format("n#,##0.00") == cells.Format(2, False)
+    assert cells.parse_format(None) is None
+
+
+@pytest.mark.parametrize(
+    ("export", "cube", "want"),
+    [
+        ("0.965056526", 0.9670103, False),  # 96.5% shown vs 96.7%
+        ("0.965056526", 0.9651, True),
+        ("96.5%", 0.96549, True),
+        ("97%", 0.9670103, None),  # the export is rounder than the dashboard
+        ("0.0045", 0.0045, True),  # an exact half rounds up on both sides
+    ],
+)
+def test_display_equal_at_the_dashboards_precision(export, cube, want):
+    assert cells.display_equal(export, cube, 1.0, cells.Format(1, True)) is want
+
+
+def test_a_cell_whose_export_is_rounder_than_the_dashboard_is_unproven(tmp_path):
+    exports = {
+        ("default", "ADA"): b"School,ADA,Students\nRise,94%,2\nLSP,90%,1\n",
+        ("filter-region", "ADA"): b"School,ADA,Students\nLSP,0.900000000,1\n",
+    }
+    answers = {
+        **_ans(
+            "default",
+            [
+                {"v.locations_abbreviation": "Rise", "v.avg_daily_attendance": "0.942"},
+                {"v.locations_abbreviation": "LSP", "v.avg_daily_attendance": "0.9"},
+            ],
+        ),
+        **_ans(
+            "filter-region",
+            [{"v.locations_abbreviation": "LSP", "v.avg_daily_attendance": "0.9"}],
+        ),
+    }
+    pytest.importorskip("tableauhyperapi")
+    # trunk-ignore(pyright/reportAttributeAccessIssue)
+    from cube_validate import hyper
+
+    with hyper.Workspace(tmp_path / "a.hyper", {}) as ws:
+        _rows_table(ws)
+        got = cells.judge(
+            ws,
+            _checks(),
+            {"cuts": {}},
+            answers,
+            lambda cut, sheet: exports.get((cut, sheet)),
+            {("ADA", "ADA"): "p0.0%"},
+        )
+    assert [(c.cut, c.verdict) for c in got] == [
+        ("default", cells.UNPROVEN),
+        ("default", cells.UNPROVEN),
+        ("filter-region", cells.PASS),
+    ]
+    assert "1 decimal" in got[0].reason
