@@ -1,4 +1,19 @@
 with
+    finished_years as (
+        select
+            studentid,
+            schoolid,
+            _dbt_source_project,
+
+            count(distinct academic_year) as years_finished_at_school,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where
+            academic_year < {{ var("current_academic_year") }}
+            and rn_year = 1
+            and is_enrolled_recent
+        group by studentid, schoolid, _dbt_source_project
+    ),
+
     gpa_with_enrollment as (
         select
             g.studentid,
@@ -13,12 +28,19 @@ with
             e.lastfirst,
             e.grade_level,
             e.year_in_school,
+
+            coalesce(f.years_finished_at_school, 0) as years_finished_at_school,
         from {{ ref("int_powerschool__gpa_cumulative") }} as g
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as e
             on g.studentid = e.studentid
             and g.schoolid = e.schoolid
             and g._dbt_source_project = e._dbt_source_project
+        left join
+            finished_years as f
+            on g.studentid = f.studentid
+            and g.schoolid = f.schoolid
+            and g._dbt_source_project = f._dbt_source_project
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.enroll_status = 0
@@ -57,7 +79,7 @@ where
     cumulative_y1_gpa is null
     and schoolid != 999999
     and grade_level >= 9
-    and year_in_school > 1
+    and years_finished_at_school >= 1
     and current_date(
         '{{ var("local_timezone") }}'
     ) between date({{ var("current_academic_year") }}, 10, 15) and date(

@@ -1,16 +1,17 @@
 models:
   - name: rpt_gsheets__gpa_flags_report
     description: >
-      Surfaces potential cumulative GPA data quality issues for currently
-      enrolled students to support review by the academics and operations teams.
-      Each row represents a student flagged for one of two conditions: their
-      unweighted cumulative GPA exceeds their weighted GPA, or their cumulative
-      GPA is null despite meeting eligibility criteria defined by grade level,
-      year in school, and academic calendar thresholds. Flags are only surfaced
-      during defined windows of the school year, aligned to the grading calendar
-      for each region. This report is also the source of truth for the
-      corresponding dbt data quality test, which alerts the data team via Slack
-      when weighted/unweighted inversions are detected.
+      Lists currently enrolled PowerSchool students whose cumulative GPA looks
+      wrong, for Teaching and Learning to review. One row per student per flag.
+      A student is flagged when their unweighted cumulative GPA is higher than
+      their weighted one, or when they are in grade 9 or above, finished at
+      least one earlier school year at their current school, and still have no
+      cumulative GPA there. Finishing a year means being enrolled at the school
+      on its last calendar day, which is when PowerSchool stores year-end (Y1)
+      grades; a student who left partway through a year has no stored grades for
+      it and is not flagged. The missing-GPA flag only appears between October
+      15 and June 15, the same window in every region. Feeds the GPA Flags
+      Report Google Sheet.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -22,21 +23,53 @@ models:
     columns:
       - name: academic_year
         data_type: int64
+        description: >
+          Current academic year, as the year the school year starts in.
       - name: region
         data_type: string
+        description: Region of the student's current enrollment.
       - name: school_name
         data_type: string
+        description: School of the student's current enrollment.
       - name: student_number
         data_type: int64
+        description: PowerSchool student number.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
+        description: Student name, last name first.
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa
         data_type: float64
+        description: >
+          Weighted cumulative GPA from stored year-end grades at the current
+          school. Null when the student has no stored grades there that count
+          toward GPA.
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_unweighted
         data_type: float64
+        description: >
+          Unweighted cumulative GPA from the same stored year-end grades.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
+        description: Current grade level.
       - name: year_in_school
         data_type: int64
+        description: >
+          Which year this is for the student at the current school, counting any
+          earlier enrollment, however short. Shown for context; the missing-GPA
+          flag uses finished years instead.
       - name: test_failure_reason
         data_type: string
+        description: >
+          Why the student is flagged — "unweighted exceeds weighted" or
+          "cumulative gpa is null".
