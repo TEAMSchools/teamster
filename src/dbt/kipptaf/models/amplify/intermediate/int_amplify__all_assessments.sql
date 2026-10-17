@@ -235,6 +235,12 @@ select
     overall_probe_eligible,
     actual_row_count,
 
+    case
+        when `period` = 'BOY'
+        then null
+        else measure_semester_growth in ('Above Average', 'Well Above Average')
+    end as is_above_average_growth,
+
 from {{ ref("int_amplify__benchmark_student_summary") }}
 
 union all
@@ -293,6 +299,10 @@ select
     -- branching on a column that is always null.
     cast(null as string) as aggregated_measure_standard_level,
     cast(null as string) as foundation_measure_standard_level,
+
+    -- Benchmark-only (see is_above_average_growth above). measure_semester_growth
+    -- is always 'NA' on PM rows, so the concept doesn't apply here.
+    cast(null as bool) as is_above_average_growth,
 
     -- pm_eligible already resolved to this round's season. Position matters:
     -- UNION ALL binds by position and every column here is STRING, so a
