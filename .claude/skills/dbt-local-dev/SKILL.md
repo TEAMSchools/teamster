@@ -63,9 +63,10 @@ Strip leading `--` comment lines first.
 ### Local dev schema naming
 
 Local dev builds land in `zz_<GITHUB_USER>_<district>[_<source>]` (repo
-`.dbt/profiles.yml` dev target, e.g. `zz_cbini_kippnewark_finalsite`) — NOT the
-shipped `src/dbt/*/profiles.yml` `zz_dagster_*` schema. Find where a model
-actually built with:
+`.dbt/profiles.yml` dev target, e.g. `zz_cbini_kippnewark_finalsite`), with any
+hyphen in the username turned into an underscore because BigQuery dataset names
+cannot contain one — NOT the shipped `src/dbt/*/profiles.yml` `zz_dagster_*`
+schema. Find where a model actually built with:
 
 ```sql
 select schema_name

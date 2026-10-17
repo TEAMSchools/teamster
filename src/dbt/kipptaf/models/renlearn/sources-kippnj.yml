@@ -8,8 +8,8 @@ sources:
       readable via source(). Renaissance still drops NJ Accelerated Reader on
       the SFTP, so reviving ingestion is a live option.
     schema:
-      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      endif -%}kippnewark_renlearn"
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') |
+      replace('-', '_') }}_{%- endif -%}kippnewark_renlearn"
     tables:
       - name: stg_renlearn__accelerated_reader
         description: >-
