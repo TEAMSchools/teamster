@@ -33,7 +33,7 @@ models:
         data_type: int64
         description: >-
           Section the student is in for the course now: the current term's, else
-          the latest started term's.
+          the latest started term's, else the last-ending term's.
       - name: teacher_name
         data_type: string
         description: >-
@@ -49,7 +49,7 @@ models:
           Course credit type (subject area) as PowerSchool stores it. Named to
           match `rpt_tableau__student_course_grades`, which also maps Paterson's
           spelled-out values (ELA, Math, Science, Homeroom) to codes; this
-          column does not, and no Paterson student is in this extract.
+          column does not.
       - name: _dbt_source_project
         data_type: string
         description: District code location the row came from.

@@ -63,11 +63,14 @@ models:
         data_type: int64
         description: >-
           Section on the term row the live Y1 is read from, the current termbin
-          else the latest started term, so a mid-year section change shows the
-          new section.
+          else the latest started term else the term that ends last, so a
+          mid-year section change shows the new section.
       - name: teacher_lastfirst
         data_type: string
         description: Teacher of `sectionid`, last name first.
+        config:
+          meta:
+            contains_pii: true
       - name: credittype
         data_type: string
         description: PowerSchool credit type of the course, as stored.
