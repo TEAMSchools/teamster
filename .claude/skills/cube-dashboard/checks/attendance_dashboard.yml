@@ -1,0 +1,213 @@
+# Attendance Dashboard: what `cube_validate` compares. Committed, so it never
+# holds a person's name. `plan` drafts sheets, filters and cuts; the analyst
+# approves each mapping and cause.
+dashboard: attendance_dashboard
+workbook: Attendance Dashboard # confirm against `plan`'s download
+workbook_luid: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+review_project_luid: ddc817c2-6bc7-4bca-8be9-e385f95b9ebc
+dashboards: [Attendance Rollup]
+datasource: rpt_tableau__attendance_dashboard (kipptaf_tableau)
+dashboard_table: teamster-332318.kipptaf_tableau.rpt_tableau__attendance_dashboard
+period_start: 2026-07-01
+# Extract refreshes 6:00 AM and 3:00 PM; Cube's facts rebuild ~6:15 AM and
+# ~3:05 PM. Only the evening pairs like for like.
+window:
+  start: "15:30"
+  end: 06:00
+  extract_after: "15:00"
+  tz: America/New_York
+tableau_quiet_minutes: [0, 10]
+cube:
+  view: student_attendance_enrollment_daily_view
+  date: attendance_date
+  members:
+    - lea_student_identifier
+    - attendance_date
+    - locations_abbreviation
+    - regions_region_name
+    - grade_level
+    - attendance_value
+    - membership_value
+    - attendance_code
+    - is_absent
+    - is_tardy
+    - is_iss
+    - is_oss
+    - is_in_session_day
+    - dates_academic_year
+    - terms_term_name
+    - is_iep
+    - is_ell
+    - gender_identity
+    - race
+    - enrollment_status
+  filters: []
+rows:
+  student_key: student
+  date_key: day
+  scope_key: school
+  key:
+    student:
+      tableau: student_number
+      cube: cast("{p}lea_student_identifier" as bigint)
+    day: { tableau: calendardate, cube: attendance_date }
+    school: { tableau: school_abbreviation, cube: locations_abbreviation }
+  compare:
+    attendance_value: { tableau: is_present, cube: attendance_value }
+    is_absent: { tableau: is_absent, cube: is_absent }
+    is_tardy: { tableau: is_tardy, cube: is_tardy }
+    is_iss: { tableau: is_iss, cube: is_iss }
+    is_oss: { tableau: is_oss, cube: is_oss }
+    grade_level: { tableau: grade_level, cube: grade_level }
+    membership_value: { tableau: membershipvalue, cube: membership_value }
+    attendance_code: { tableau: att_code, cube: attendance_code }
+  labels:
+    region: { tableau: region, cube: regions_region_name }
+causes:
+  - id: not-a-membership-day
+    description:
+      Cube keeps every enrolled day; the dashboard keeps only days with
+      membership 1 and a recorded attendance value.
+    where:
+      base = 'cube_only' and (c_membership_value <> 1 or c_attendance_value is
+      null)
+    owner: dashboard
+    # Every mapped measure counts only days with membership 1 and an attendance
+    # value: avg_daily_attendance and pct_ontime on the daily cube, and the
+    # periods cube's rates through n_membership_days_ytd. So these rows cannot
+    # move any of them. Recheck when a sheet maps another measure.
+    inert: true
+  - id: no-cube-rows-for-student
+    description:
+      The dashboard has days for a student who has no Cube rows anywhere in the
+      period.
+    where:
+      base = 'dashboard_only' and not exists (select 1 from rows_base c where
+      c.in_c and c."k_student" = rows_base."k_student")
+    owner: undecided
+  - id: after-last-cube-day
+    description:
+      The dashboard has a day after the student's last Cube day at that school.
+    where:
+      base = 'dashboard_only' and "k_day" > (select max(c."k_day") from
+      rows_base c where c.in_c and c."k_student" = rows_base."k_student" and
+      c."k_school" = rows_base."k_school")
+    owner: undecided
+# Attendance Rollup's cards start on these values.
+defaults:
+  Academic Year: "2026"
+  Region: [Camden, Newark, Paterson]
+filters:
+  Academic Year:
+    tableau: academic_year
+    cube: dates_academic_year
+    cube_column: dates_academic_year
+  Region:
+    tableau: region
+    cube: regions_region_name
+    cube_column: regions_region_name
+  School:
+    tableau: school_abbreviation
+    cube: locations_abbreviation
+    cube_column: locations_abbreviation
+  Term: { tableau: term, cube: terms_term_name, cube_column: terms_term_name }
+  Iep Status:
+    tableau: iep_status
+    cube: is_iep
+    cube_column: is_iep
+    cube_values: { No IEP: "false" }
+  Lep Status:
+    tableau: lep_status
+    cube: is_ell
+    cube_column: is_ell
+    cube_values: { "False": "false" }
+  Gender:
+    tableau: gender
+    cube: gender_identity
+    cube_column: gender_identity
+  Ethnicity:
+    tableau: ethnicity
+    cube: race
+    cube_column: race
+    cube_values: { A: Asian }
+  Enroll Status:
+    tableau: enroll_status
+    cube: enrollment_status
+    cube_column: enrollment_status
+    cube_values: { "0": Currently Enrolled }
+# Attendance Metric swaps what "Avg. Attendance Metric" means. Its default is ADA
+# (the sheet's cube); each value listed here swaps in its own Cube member and
+# view. An unlisted value's cut reads "mapping unproven".
+params:
+  Attendance Metric:
+    \% On-Time: { measure: pct_ontime }
+    Chronic Absenteeism: &periods
+      measure: pct_chronically_absent
+      view: student_attendance_enrollment_periods_view
+      rename: { dates_academic_year: academic_year }
+      cube_filters:
+        - member: student_attendance_enrollment_periods_view.period_type
+          operator: equals
+          values: [year]
+    Truant/On Track for Truancy:
+      <<: *periods
+      measure: pct_truant
+sheets:
+  Y1 ADA - Region: &ada
+    students: Distinct count of Student Number
+    dims:
+      Grade Level: &grade
+        tableau: grade_level
+        cube: grade_level
+        cube_column: grade_level
+        values: { K: "0" }
+      Region:
+        tableau: region
+        cube: regions_region_name
+        cube_column: regions_region_name
+    measures:
+      Avg. Attendance Metric:
+        { cube: avg_daily_attendance, param: Attendance Metric }
+      "Avg. Formatting - Distance from Goal": { cube: null }
+  Y1 ADA - ES: &school_sheet
+    students: Distinct count of Student Number
+    dims:
+      Grade Level: *grade
+      School:
+        tableau: school_abbreviation
+        cube: locations_abbreviation
+        cube_column: locations_abbreviation
+    measures:
+      Avg. Attendance Metric:
+        { cube: avg_daily_attendance, param: Attendance Metric }
+      "Avg. Formatting - Distance from Goal": { cube: null }
+  Y1 ADA - MS: *school_sheet
+  Y1 ADA - HS: *school_sheet
+# One cut per card or parameter value that has a Cube counterpart and falls in
+# this year's capture. Dropped from the draft: past-year dates, and cards with
+# no Cube member (504, counseling, NJ tier, ms_attended, chronic tardiness).
+cuts:
+  - id: default
+  - id: filter-region
+    filters: { Region: Miami }
+  - id: filter-school
+    filters: { School: BOLD }
+  - id: filter-term
+    filters: { Term: Q1 }
+  - id: filter-iep-status
+    filters: { Iep Status: No IEP }
+  - id: filter-lep-status
+    filters: { Lep Status: "False" }
+  - id: filter-gender
+    filters: { Gender: F }
+  - id: filter-ethnicity
+    filters: { Ethnicity: A }
+  - id: filter-enroll-status
+    filters: { Enroll Status: "0" }
+  - id: param-attendance-metric-on-time
+    params: { Attendance Metric: \% On-Time }
+  - id: param-attendance-metric-chronic-absenteeism
+    params: { Attendance Metric: Chronic Absenteeism }
+  - id: param-attendance-metric-truant-on-track-for-truancy
+    params: { Attendance Metric: Truant/On Track for Truancy }
+excluded_sheets: {}
