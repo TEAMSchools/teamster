@@ -18,11 +18,14 @@ import sys
 from pathlib import Path
 
 from google.cloud import bigquery
-from submission_query import UNGRADED_WORKLIST_COLUMNS, UNGRADED_WORKLIST_SQL
+from submission_query import REGIONS_IN_SCOPE as REGIONS
+from submission_query import (
+    UNGRADED_WORKLIST_COLUMNS,
+    UNGRADED_WORKLIST_SQL,
+)
 
 PROJECT = "teamster-332318"
 VIEW = "teamster-332318.cokafor.rpt_student_course_ungraded"
-REGIONS = ("newark", "camden")
 
 
 def create_view(client):

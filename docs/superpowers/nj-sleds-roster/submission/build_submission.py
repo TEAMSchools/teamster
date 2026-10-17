@@ -19,12 +19,15 @@ import sys
 from pathlib import Path
 
 from google.cloud import bigquery
-from submission_query import SUBMISSION_COLUMNS, SUBMISSION_SQL
+from submission_query import REGIONS_IN_SCOPE as REGIONS
+from submission_query import (
+    SUBMISSION_COLUMNS,
+    SUBMISSION_SQL,
+)
 from validate_submission import base_table_row_count, run_checks
 
 PROJECT = "teamster-332318"
 VIEW = "teamster-332318.cokafor.rpt_student_course_submission"
-REGIONS = ("newark", "camden")
 
 
 def create_view(client):
