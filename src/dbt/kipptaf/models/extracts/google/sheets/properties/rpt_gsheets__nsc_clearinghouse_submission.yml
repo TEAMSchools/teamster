@@ -1,0 +1,85 @@
+models:
+  - name: rpt_gsheets__nsc_clearinghouse_submission
+    description: >
+      NSC StudentTracker Non-Consent Request file rows in H1/D1/T1 format for
+      manual upload to the National Student Clearinghouse. One H1 header record,
+      one D1 inquiry record per KIPP alum within the 6-year HS graduation
+      window, and one T1 trailer record. Sort ascending by row_order before
+      downloading and exclude row_order from the submitted file.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - field_1
+              - field_12
+          config:
+            severity: error
+    columns:
+      - name: row_order
+        data_type: int64
+        description: >
+          Sort key for NSC file ordering. 1 is the H1 header, 2 is for D1 detail
+          records, 3 is for the T1 trailer. Sort ascending before downloading
+          and omit from the submitted file.
+      - name: field_1
+        data_type: string
+        description:
+          Record type identifier. H1 for header, D1 for detail, T1 for trailer.
+      - name: field_2
+        data_type: string
+        description: >
+          Header row contains the 6-digit NSC entity code (601193). Detail rows
+          are blank. Trailer row contains the row number of the trailer record
+          (total student count plus 2).
+      - name: field_3
+        data_type: string
+        description: >
+          Header row contains the branch code (00). Detail rows contain the
+          student first name. Trailer row is blank.
+      - name: field_4
+        data_type: string
+        description: >
+          Header row contains the organization name. Detail rows contain the
+          middle initial (blank). Trailer row is blank.
+      - name: field_5
+        data_type: string
+        description: >
+          Header row contains the file creation date in YYYYMMDD format. Detail
+          rows contain the student last name. Trailer row is blank.
+      - name: field_6
+        data_type: string
+        description: >
+          Header row contains the inquiry purpose (DA). Detail rows contain the
+          name suffix (blank). Trailer row is blank.
+      - name: field_7
+        data_type: string
+        description: >
+          Header row contains the enrollment type (S). Detail rows contain the
+          student date of birth in YYYYMMDD format. Trailer row is blank.
+      - name: field_8
+        data_type: string
+        description: >
+          Header row is blank. Detail rows contain the search begin date in
+          YYYYMMDD format, representing the start of the enrollment period to
+          query. Defaults to the start of the most recently completed submission
+          window (Jul through Nov maps to June 1, Dec maps to Nov 1, Apr through
+          Jun maps to Mar 1, Jan through Mar maps to Nov 1 of the prior year).
+          Override with the nsc_search_begin_date dbt variable. Trailer row is
+          blank.
+      - name: field_9
+        data_type: string
+        description: Blank for all row types.
+      - name: field_10
+        data_type: string
+        description: Blank for all row types.
+      - name: field_11
+        data_type: string
+        description: >
+          Header row is blank. Detail rows contain the NSC school code search
+          scope (00 for all schools). Trailer row is blank.
+      - name: field_12
+        data_type: string
+        description: >
+          Header row is blank. Detail rows contain the Salesforce Contact ID
+          used as the requester return field, returned as-is in the NSC response
+          for student matching. Trailer row is blank.
