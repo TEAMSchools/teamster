@@ -44,7 +44,7 @@ class DriveApi(Protocol):
         mime_type: str,
         *,
         media_path: Path | None = None,
-        app_properties: Mapping[str, str] | None = None,
+        properties: Mapping[str, str] | None = None,
         shortcut_target: str | None = None,
     ) -> DriveFile: ...
 
@@ -193,7 +193,7 @@ class GoogleDriveApi:
         mime_type: str,
         *,
         media_path: Path | None = None,
-        app_properties: Mapping[str, str] | None = None,
+        properties: Mapping[str, str] | None = None,
         shortcut_target: str | None = None,
     ) -> DriveFile:
         body: dict[str, Any] = {
@@ -202,8 +202,8 @@ class GoogleDriveApi:
             "parents": [parent_id],
         }
 
-        if app_properties:
-            body["appProperties"] = dict(app_properties)
+        if properties:
+            body["properties"] = dict(properties)
 
         if shortcut_target is not None:
             body["shortcutDetails"] = {"targetId": shortcut_target}
@@ -244,7 +244,7 @@ class GoogleDriveApi:
     def list_tagged(self, parent_id: str, key: str, value: str) -> list[DriveFile]:
         return self._list(
             f"'{escape_query_value(parent_id)}' in parents"
-            f" and appProperties has {{ key='{escape_query_value(key)}'"
+            f" and properties has {{ key='{escape_query_value(key)}'"
             f" and value='{escape_query_value(value)}' }}"
             " and trashed = false"
         )

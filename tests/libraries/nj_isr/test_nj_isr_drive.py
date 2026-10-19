@@ -100,7 +100,7 @@ def test_list_follows_next_page_token(api):
     assert second_request.execute.called
 
 
-def test_list_tagged_queries_app_properties_across_pages(api):
+def test_list_tagged_queries_properties_across_pages(api):
     files = api._drive.files.return_value
     first_request, second_request = MagicMock(), MagicMock()
     files.list.return_value = first_request
@@ -117,7 +117,7 @@ def test_list_tagged_queries_app_properties_across_pages(api):
 
     kwargs = files.list.call_args.kwargs
     assert "'folder1' in parents" in kwargs["q"]
-    assert "appProperties has { key='isr_key' and value='it\\'s' }" in kwargs["q"]
+    assert "properties has { key='isr_key' and value='it\\'s' }" in kwargs["q"]
     assert "trashed = false" in kwargs["q"]
     assert kwargs["supportsAllDrives"] is True
     assert kwargs["corpora"] == "allDrives"
@@ -139,7 +139,7 @@ def test_create_sends_parents_tag_and_shortcut(api):
     assert body["name"] == "00 - Find"
     assert body["mimeType"] == SHORTCUT_MIME
     assert body["shortcutDetails"] == {"targetId": "sheet1"}
-    assert "appProperties" not in body
+    assert "properties" not in body
     assert kwargs["supportsAllDrives"] is True
     assert "media_body" not in kwargs
     assert result == DriveFile(
@@ -147,7 +147,7 @@ def test_create_sends_parents_tag_and_shortcut(api):
     )
 
 
-def test_create_uploads_pdf_with_app_properties(api, tmp_path):
+def test_create_uploads_pdf_with_properties(api, tmp_path):
     api._drive.files.return_value.create.return_value.execute.return_value = {
         "id": "f1",
         "name": "r.pdf",
@@ -159,11 +159,11 @@ def test_create_uploads_pdf_with_app_properties(api, tmp_path):
         "r.pdf",
         PDF_MIME,
         media_path=_pdf(tmp_path / "r.pdf"),
-        app_properties={"isr_key": "abc"},
+        properties={"isr_key": "abc"},
     )
 
     kwargs = api._drive.files.return_value.create.call_args.kwargs
-    assert kwargs["body"]["appProperties"] == {"isr_key": "abc"}
+    assert kwargs["body"]["properties"] == {"isr_key": "abc"}
     assert kwargs["media_body"].mimetype() == PDF_MIME
     assert kwargs["media_body"].resumable() is True
 

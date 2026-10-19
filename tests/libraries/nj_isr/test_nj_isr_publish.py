@@ -76,7 +76,7 @@ class Item:
     name: str
     mime_type: str
     parent: str
-    app_properties: dict[str, str]
+    properties: dict[str, str]
     trashed: bool = False
     web_view_link: str = ""
 
@@ -93,7 +93,7 @@ class FakeDrive:
         parent: str,
         name: str,
         mime_type: str,
-        app_properties: Mapping[str, str] | None = None,
+        properties: Mapping[str, str] | None = None,
     ) -> Item:
         self._next_id += 1
         item_id = f"id{self._next_id}"
@@ -102,7 +102,7 @@ class FakeDrive:
             name=name,
             mime_type=mime_type,
             parent=parent,
-            app_properties=dict(app_properties or {}),
+            properties=dict(properties or {}),
             web_view_link=f"https://drive.test/{item_id}",
         )
         self.items[item_id] = item
@@ -138,12 +138,12 @@ class FakeDrive:
         mime_type: str,
         *,
         media_path: Path | None = None,
-        app_properties: Mapping[str, str] | None = None,
+        properties: Mapping[str, str] | None = None,
         shortcut_target: str | None = None,
     ) -> DriveFile:
         self.writes.append(("create", name))
 
-        return self._file(self._add(parent_id, name, mime_type, app_properties))
+        return self._file(self._add(parent_id, name, mime_type, properties))
 
     def update_media(self, file_id: str, media_path: Path) -> DriveFile:
         self.writes.append(("update_media", self.items[file_id].name))
@@ -154,7 +154,7 @@ class FakeDrive:
         return [
             self._file(i)
             for i in self._live_children(parent_id)
-            if i.app_properties.get(key) == value
+            if i.properties.get(key) == value
         ]
 
     def trash(self, file_id: str) -> None:
@@ -187,7 +187,7 @@ class FakeDrive:
         return [i for i in self.items.values() if i.name == name and not i.trashed]
 
     def tag_of(self, name: str) -> dict[str, str]:
-        return self.named(name)[0].app_properties
+        return self.named(name)[0].properties
 
     def sheet_values(self, name: str) -> dict[str, list[list[str]]]:
         return self.sheets[self.named(name)[0].id]
@@ -244,7 +244,7 @@ def test_shortcuts_and_folders_are_not_tagged():
 
     for item in drive.items.values():
         if item.mime_type in (FOLDER_MIME, SHORTCUT_MIME):
-            assert item.app_properties == {}
+            assert item.properties == {}
 
 
 def test_sheet_links_point_at_the_uploaded_pdf():
@@ -448,3 +448,102 @@ def test_index_sheet_mime_is_a_google_sheet():
     publish(drive, "root", [team_file], PDFS, ROWS, **KW)
 
     assert drive.named(SHEET)[0].mime_type == SHEET_MIME
+
+
+TEAM_YEAR = f"{NEWARK}/TEAM Report Cards/{YEAR}"
+
+
+def test_duplicate_school_yearly_folder_stops_before_any_write():
+    drive = fake_drive_with_existing(
+        NEWARK, f"{NEWARK}/TEAM Report Cards", TEAM_YEAR, TEAM_YEAR
+    )
+
+    with pytest.raises(MissingFolderError, match=YEAR):
+        publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+
+    assert drive.writes == []
+
+
+def test_duplicate_region_yearly_folder_stops_before_any_write():
+    drive = fake_drive_with_existing(
+        NEWARK,
+        f"{NEWARK}/TEAM Report Cards",
+        f"{NEWARK}/{YEAR}",
+        f"{NEWARK}/{YEAR}",
+    )
+
+    with pytest.raises(MissingFolderError, match=YEAR):
+        publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+
+    assert drive.writes == []
+
+
+def test_duplicate_transfer_folder_stops_before_any_write():
+    drive = fake_drive_with_existing(
+        NEWARK,
+        f"{NEWARK}/TEAM Report Cards",
+        f"{NEWARK}/{YEAR}/{TRANSFER}",
+        f"{NEWARK}/{YEAR}/{TRANSFER}",
+    )
+
+    with pytest.raises(MissingFolderError, match=TRANSFER):
+        publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+
+    assert drive.writes == []
+
+
+def test_duplicate_shortcut_stops_before_any_write_on_a_rerun():
+    drive = newark_drive()
+    publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+    team_year_id = drive.ids_by_path()[TEAM_YEAR]
+    drive._add(team_year_id, SHORTCUT, SHORTCUT_MIME)
+    drive.writes.clear()
+
+    with pytest.raises(MissingFolderError, match="Find a student"):
+        publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+
+    assert drive.writes == []
+
+
+def test_duplicate_yearly_folder_of_a_school_without_files_is_skipped():
+    drive = fake_drive_with_existing(
+        NEWARK,
+        f"{NEWARK}/TEAM Report Cards",
+        f"{NEWARK}/SPARK Report Cards/{YEAR}",
+        f"{NEWARK}/SPARK Report Cards/{YEAR}",
+    )
+
+    result = publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+
+    assert result.trashed == []
+
+
+def test_file_without_a_local_pdf_stops_before_any_write():
+    drive = newark_drive()
+    pdfs = {k: v for k, v in PDFS.items() if k != SPARK_PDF}
+
+    with pytest.raises(MissingFolderError, match="SPARK Academy"):
+        publish(drive, "root", [team_file, spark_file], pdfs, ROWS, **KW)
+
+    assert drive.writes == []
+
+
+class SheetWriteFails(RuntimeError):
+    pass
+
+
+def test_failed_sheet_write_leaves_nothing_trashed():
+    drive = newark_drive()
+    publish(drive, "root", [team_file, team_science_file], PDFS, ROWS, **KW)
+
+    def fail(spreadsheet_id: str, tabs: Mapping[str, list[list[str]]]) -> None:
+        raise SheetWriteFails
+
+    drive.write_sheet = fail  # type: ignore[method-assign]
+    drive.writes.clear()
+
+    with pytest.raises(SheetWriteFails):
+        publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+
+    assert [w for w in drive.writes if w[0] == "trash"] == []
+    assert len(drive.named(TEAM_SCIENCE_PDF)) == 1
