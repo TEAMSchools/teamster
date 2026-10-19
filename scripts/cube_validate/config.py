@@ -78,6 +78,9 @@ class ParamValue:
     measure: str | None = None
     view: str | None = None
     rename: dict[str, str] = field(default_factory=dict)
+    # The YAML gave `measure`, even as null: the value swaps the measure, and a
+    # null one leaves no Cube member to compare.
+    swaps_measure: bool = False
 
 
 @dataclass(frozen=True)
@@ -423,6 +426,8 @@ def _decisions(
                 f"{where}: owner must be one of {', '.join(DECISION_OWNERS)}"
             )
         probe = e.get("probe")
+        if probe is None and owner in ("dashboard", "cube"):
+            raise ConfigError(f"{where}: a {owner} decision needs a probe")
         if probe is not None and probe not in probe_ids:
             raise ConfigError(f"{where}: probe {probe} is not under probes")
         dcuts = tuple(str(c) for c in (e.get("cuts") or ()))
@@ -555,6 +560,7 @@ def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
                 _measure((pv or {}).get("measure", MISSING)),
                 (pv or {}).get("view"),
                 {str(k): str(x) for k, x in ((pv or {}).get("rename") or {}).items()},
+                (pv or {}).get("measure", MISSING) is not MISSING,
             )
             for val, pv in (vals or {}).items()
         }

@@ -1,6 +1,7 @@
 """Cells layer: display precision, verdicts, predicates, and planted cell gaps."""
 
 import datetime as dt
+from dataclasses import replace
 
 import pytest
 
@@ -591,6 +592,7 @@ def _swapped():
             "Chronic": config.ParamValue(
                 cube_filters=(period,),
                 measure="pct_chronically_absent",
+                swaps_measure=True,
                 view="p",
                 rename={"regions_region_name": "region"},
             )
@@ -707,3 +709,44 @@ def test_a_cell_whose_export_is_rounder_than_the_dashboard_is_unproven(tmp_path)
         ("filter-region", cells.PASS),
     ]
     assert "1 decimal" in got[0].reason
+
+
+def _null_measure():
+    checks, _ = _swapped()
+    params = {"Metric": {"HS Alt": config.ParamValue(measure=None, swaps_measure=True)}}
+    cuts = (config.Cut("default"), config.Cut("alt", params={"Metric": "HS Alt"}))
+    return replace(checks, params=params, cuts=cuts)
+
+
+def test_a_null_measure_value_drops_the_default_member_from_the_query():
+    checks = _null_measure()
+    q = cells.cube_query(
+        checks, "ADA", config.Cut("alt", params={"Metric": "HS Alt"}), {}
+    )
+    assert q["measures"] == ["v.count_students"]
+
+
+def test_a_null_measure_cut_has_no_counterpart_for_its_measure(tmp_path):
+    checks = _null_measure()
+    exports = {
+        ("default", "ADA"): b"School,ADA,Students\nRise,94.2%,2\nLSP,90.0%,1\n",
+        ("alt", "ADA"): b"School,ADA,Students\nRise,50.0%,2\nLSP,0.0%,1\n",
+    }
+    answers = {
+        **_ans(
+            "default",
+            [
+                {"v.locations_abbreviation": "Rise", "v.avg_daily_attendance": "0.942"},
+                {"v.locations_abbreviation": "LSP", "v.avg_daily_attendance": "0.9"},
+            ],
+        ),
+        **_ans(
+            "alt",
+            [
+                {"v.locations_abbreviation": "Rise", "v.avg_daily_attendance": "0.942"},
+                {"v.locations_abbreviation": "LSP", "v.avg_daily_attendance": "0.9"},
+            ],
+        ),
+    }
+    got = _judge(tmp_path, exports, answers, checks=checks)
+    assert {c.verdict for c in got if c.cut == "alt"} == {cells.NO_COUNTERPART}

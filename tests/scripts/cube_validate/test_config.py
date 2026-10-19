@@ -413,3 +413,17 @@ def test_a_selector_value_may_carry_a_null_measure(tmp_path):
     assert c.params["Metric"]["HS Alt"].measure is None
     with pytest.raises(config.ConfigError, match="needs a measure"):
         config.load_checks(_write(tmp_path, **_metric({"HS Alt": {"view": "p"}})))
+
+
+@pytest.mark.parametrize("owner", ["dashboard", "cube"])
+def test_a_dashboard_or_cube_decision_needs_a_probe(tmp_path, owner):
+    over = _coverage()
+    over["decisions"][0].update(owner=owner, probe=None)
+    with pytest.raises(config.ConfigError, match=f"decisions.*{owner}.*probe"):
+        config.load_checks(_write(tmp_path, **over))
+
+
+def test_a_selector_value_records_whether_it_gave_a_measure(tmp_path):
+    over = _metric({"HS Alt": {"measure": None}, "Chronic": {"measure": "m"}})
+    pvs = config.load_checks(_write(tmp_path, **over)).params["Metric"]
+    assert (pvs["HS Alt"].swaps_measure, pvs["Chronic"].swaps_measure) == (True, True)

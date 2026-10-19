@@ -197,7 +197,7 @@ def _swaps(checks: Checks, cut: Cut) -> list[tuple[str, ParamValue]]:
     out = []
     for caption, value in cut.params.items():
         pv = checks.params.get(caption, {}).get(value)
-        if pv is not None and (pv.measure or pv.view):
+        if pv is not None and (pv.swaps_measure or pv.view):
             out.append((caption, pv))
     return out
 
@@ -219,7 +219,9 @@ def resolve(checks: Checks, sheet: str, cut: Cut) -> SheetMap:
             sm,
             view=pv.view or sm.view,
             measures={
-                h: replace(m, cube=pv.measure) if m.param == caption else m
+                h: replace(m, cube=pv.measure)
+                if m.param == caption and pv.swaps_measure
+                else m
                 for h, m in sm.measures.items()
             },
         )
