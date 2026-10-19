@@ -120,6 +120,7 @@ def render(
     twb_text: str,
     answers: dict,
     decisions: list[dict] | None = None,
+    coverage: list[dict] | None = None,
 ) -> str:
     inv = {**(manifest.get("invariants") or {}), **rows_result.invariants}
     out = [f"# {checks.dashboard}: Cube validation", ""]
@@ -131,6 +132,18 @@ def render(
         "Unit tests are part of trust: `uv run --with tableauhyperapi pytest tests/scripts/cube_validate`.",
         "",
     ]
+    if checks.must_cover:
+        out += [
+            "## Coverage",
+            "",
+            "| Measure | Status | Detail | Source |",
+            "| --- | --- | --- | --- |",
+        ]
+        out += [
+            f"| {c['name']} | {c['status']} | {c['detail']} | {c['source']} |"
+            for c in coverage or []
+        ]
+        out.append("")
     out += ["## Invariants", "", "| Invariant | Holds |", "| --- | --- |"]
     out += [f"| {k} | {'yes' if v else '**no**'} |" for k, v in inv.items()]
     out += ["", "## Capture", ""]

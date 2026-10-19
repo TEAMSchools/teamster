@@ -148,3 +148,9 @@ def test_review_copy_strips_measure_formats_so_exports_carry_full_precision():
     out = workbook.review_copy(twb, ["Overview"])
     # the measure loses its format; a parameter keeps its own
     assert "default-format='p0%'" not in out and "default-format='x'" in out
+
+
+def test_sheets_showing_lists_worksheets_with_the_caption():
+    got = workbook.sheets_showing(SHEET_FORMATS, "Metric")
+    assert got == ["ADA"]
+    assert workbook.sheets_showing(SHEET_FORMATS, "Nope") == []

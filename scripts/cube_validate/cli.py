@@ -18,6 +18,7 @@ from . import (
     capture_tableau,
     cells,
     config,
+    coverage,
     cuts,
     decisions,
     handchecks,
@@ -91,7 +92,10 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
         handchecks.uncovered(cs, samples, picked),
     )
     results = handchecks.read_results(snap.analysis / "hand_checks.yml")
-    text = report.render(checks, m, rr, cs, results, twb, answers, decided)
+    cover = coverage.lines(checks, cs, rr, twb) if checks.must_cover else None
+    text = report.render(
+        checks, m, rr, cs, results, twb, answers, decided, coverage=cover
+    )
     path = snap.analysis / "report.md"
     path.write_text(text)
     return path, report.trust(

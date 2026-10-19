@@ -479,6 +479,30 @@ _BRANCH = re.compile(
 )
 
 
+def measure_caption(twb_text: str, header: str) -> str:
+    """The caption behind an export header.
+
+    A header carries an aggregation word ("Avg. Attendance Metric"); it is
+    stripped only when the whole header is not itself a calculation's caption.
+    """
+    if header in formulas(twb_text):
+        return header
+    return _AGGREGATION.sub("", header, count=1)
+
+
+def sheets_showing(twb_text: str, caption: str) -> list[str]:
+    """The worksheets whose columns include the caption, in workbook order."""
+    root = SafeET.fromstring(twb_text)
+    out = []
+    for ws in root.iter("worksheet"):
+        for c in ws.iter("column"):
+            name = (c.get("name") or "").strip("[]")
+            if caption_of(c, name) == caption:
+                out.append(ws.get("name") or "")
+                break
+    return out
+
+
 def measure_formula(
     twb_text: str, header: str, param: tuple[str, str] | None
 ) -> str | None:
@@ -499,9 +523,7 @@ def measure_formula(
         when the formula is a selector; None when no calculation matches.
     """
     by_caption = formulas(twb_text)
-    caption = header
-    if caption not in by_caption:
-        caption = _AGGREGATION.sub("", header, count=1)
+    caption = measure_caption(twb_text, header)
     formula = by_caption.get(caption)
     if formula is None or param is None:
         return formula

@@ -6,7 +6,7 @@ from dataclasses import replace
 
 from . import cells as cells_mod
 from .cells import Cell
-from .config import Checks, Decision
+from .config import Checks, Decision, param_matches
 from .probes import ProbeResult
 
 _VERDICT = {
@@ -23,9 +23,7 @@ def _key(cut: str, sheet: str, dims: dict[str, str]) -> tuple:
 def _applies(d: Decision, cell: Cell, params: dict[str, str]) -> bool:
     if cell.measure != d.measure:
         return False
-    if d.param is None:
-        return not params
-    return params.get(d.param[0]) == d.param[1]
+    return param_matches(d.param, params)
 
 
 def _label(d: Decision) -> str:

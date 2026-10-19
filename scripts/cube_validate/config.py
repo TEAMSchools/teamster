@@ -125,6 +125,16 @@ class Cause:
     inert: bool = False
 
 
+def param_matches(want: tuple[str, str] | None, params: dict[str, str]) -> bool:
+    """Whether a cut's parameters pick the selector value an entry names.
+
+    No selector means the cut sets none.
+    """
+    if want is None:
+        return not params
+    return params.get(want[0]) == want[1]
+
+
 @dataclass(frozen=True)
 class MustCover:
     """A measure the dashboard owner needs Cube to answer, and where it maps."""
