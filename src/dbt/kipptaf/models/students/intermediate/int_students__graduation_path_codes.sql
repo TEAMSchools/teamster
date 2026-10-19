@@ -97,6 +97,15 @@ with
             coalesce(m.met_ela, false) as met_ela,
             coalesce(m.met_math, false) as met_math,
 
+            /* a null pathway_option means the sheet has no cut score row for the
+               student's cut score cohort in that subject */
+            logical_or(s.discipline = 'ELA' and s.pathway_option is null) over (
+                partition by s.student_number
+            ) as is_missing_cutoffs_ela,
+            logical_or(s.discipline = 'Math' and s.pathway_option is null) over (
+                partition by s.student_number
+            ) as is_missing_cutoffs_math,
+
         from {{ ref("int_students__graduation_pathway_scores") }} as s
         left join
             calcs as u
@@ -120,6 +129,11 @@ with
             (
                 not r.attempted_njgpa_ela and not r.attempted_njgpa_math
             ) as attempted_nothing,
+
+            (
+                (r.attempted_njgpa_ela and r.is_missing_cutoffs_ela)
+                or (r.attempted_njgpa_math and r.is_missing_cutoffs_math)
+            ) as is_cutoff_pending,
 
             /* the alternative pathways, in the order New Jersey prefers them.
                coalesce returns the first that was met. */
@@ -157,6 +171,9 @@ select
         fafsa_required,
         is_awaiting_results,
         attempted_nothing,
+        is_cutoff_pending,
+        is_missing_cutoffs_ela,
+        is_missing_cutoffs_math,
         best_alternative_code
     ),
 
@@ -201,6 +218,8 @@ select
         then 'No FAFSA'
         when r.counts_ela and r.counts_math
         then 'Grad Eligible'
+        when r.is_cutoff_pending
+        then 'Pending Cut Score'
         when r.counts_ela and r.is_awaiting_results and not r.attempted_njgpa_math
         then 'ELA Only / Awaiting Math'
         when r.counts_math and r.is_awaiting_results and not r.attempted_njgpa_ela
