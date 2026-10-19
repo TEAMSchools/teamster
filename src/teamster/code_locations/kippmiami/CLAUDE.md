@@ -108,8 +108,11 @@ resources and their secrets stay wired so turning it on is the 2-line edit the
 comment there describes. Turn it on only to re-pull tables for an archive
 rebuild (dbt recipe: `src/dbt/kippmiami/CLAUDE.md`), then off again in the same
 PR. While on, the location also carries the dbt `kippmiami/powerschool/*`
-assets. kipptaf reads the archive as a BQ-native source. Do not drop either
-dataset or the GCS files under
+assets. The `dlt_powerschool_kippmiami` pool must stay at limit 1 (Dagster+
+deployment setting): runs are launched by hand with no in-flight guard, so the
+pool is the only thing keeping two launches from opening two tunnels and racing
+on the same pipeline state. kipptaf reads the archive as a BQ-native source. Do
+not drop either dataset or the GCS files under
 `gs://teamster-kippmiami/dagster/kippmiami/powerschool/`.
 
 DeansList is retired the same way (#5110): Miami stopped using it, and this

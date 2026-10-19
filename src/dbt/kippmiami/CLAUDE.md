@@ -19,17 +19,26 @@ column, or the server's data needs a fix. The loop: turn the Dagster assets on
 (`src/teamster/code_locations/kippmiami/CLAUDE.md`), materialize the tables that
 need a fresh pull, re-include the package, build, then remove it again.
 
-The recipe is in #6012's commits `6ba0e7f2a9` and `4dd892c2b5`: add
-`- local: ../powerschool` to `packages.yml`; a top-level `powerschool:` block
-with the dlt staging variant on and odbc off, the 11 contact staging models
-enabled, and 16 post-hooks — the 8400 Focus prefix on `student_number`
-(`stg_powerschool__students`), 14 staging models dropping rows past AY2025
-(`yearid > 35`), and `stg_powerschool__calendar_day` deleting
-`date_value >= '2026-07-01'`; disables for package models Miami never loaded;
-and a `kippmiami: powerschool:` block (`+schema: powerschool`, table, contract)
-for the local `stg_powerschool__u_studentsuserfields` override, or it builds as
-a view in the wrong dataset. Build with `--target dev` first and compare every
-table against the archive before the prod build.
+Restore the recipe from #6012 rather than rewriting it: the PR ref outlives the
+squash merge, and `063c2a5414` is the commit that removed the working config.
+
+```bash
+git fetch origin pull/6012/head
+git checkout 063c2a5414^ -- src/dbt/kippmiami/
+```
+
+That restores `packages.yml` (`- local: ../powerschool`), the local
+`stg_powerschool__u_studentsuserfields` override, and `dbt_project.yml`. The
+`dbt_project.yml` has two blocks. The top-level `powerschool:` block turns the
+dlt variant on and odbc off, enables every model the package disables by
+default, disables the package models Miami never loaded, and carries the
+post-hooks: the 8400 Focus prefix on `student_number`, `yearid > 35` deletes
+that drop rows past AY2025, and the `stg_powerschool__calendar_day` cut at
+`date_value >= '2026-07-01'`. The `kippmiami: powerschool:` block
+(`+schema: powerschool`, table, contract) is required, or the local override
+builds as a view in the wrong dataset. Run `uv run dbt deps`, build with
+`--target dev` first, and compare every table against the archive before the
+prod build.
 
 Five archive tables are never rebuilt and stay at their frozen copies:
 `int_powerschool__student_contacts` and `_pivot` (the package disables them at
