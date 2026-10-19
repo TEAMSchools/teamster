@@ -24,14 +24,18 @@ models:
         data_type: string
         description: >-
           Google Workspace email address, built from the Active Directory mail
-          attribute in LDAP. IdAuto creates the account the morning a staff
-          member first appears in the IdAuto roster feed
-          (rpt_idauto__staff_roster), so it reaches LDAP by the next pull. The
-          warning mirrors that feed's filter and lists staff who have been in it
-          since before today but still have no account; IT checks the IdAuto
-          provisioning for them. Downstream, a null email matches no Cube login,
-          so the viewer sees no data until the account exists.
+          attribute in LDAP. Null until IdAuto creates the account. A warning
+          lists active staff who have been in the IdAuto roster feed for at
+          least a day and still have no account; IT checks IdAuto provisioning
+          for them. A null email matches no Cube login.
+        config:
+          meta:
+            contains_pii: true
         data_tests:
+          # Mirrors the filter in rpt_idauto__staff_roster.sql, which owns the
+          # 10-day hire window. Interval 9 (one less) skips staff who entered the
+          # feed today, since IdAuto creates the account the morning it first
+          # sees them. Keep the two in step.
           - not_null:
               config:
                 where: |
@@ -39,7 +43,6 @@ models:
                   and assigned_business_unit_name is not null
                   and assigned_department_name is not null
                   and worker_hire_date_recent <= date_add(current_date('{{ var("local_timezone") }}'), interval 9 day)
-                  and effective_date_start < current_date('{{ var("local_timezone") }}')
       - name: effective_date_start
         data_type: date
       - name: effective_date_end
