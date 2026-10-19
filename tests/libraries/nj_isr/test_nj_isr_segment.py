@@ -202,6 +202,32 @@ def test_apply_corrections():
     assert unpaired == [stray] and stray in kept
 
 
+def test_duplicates_inside_a_correction_file_are_kept_and_reported():
+    orig = rec(state_id="1000000001")
+    fix_name = "2026_Spring_7325-965_ISR_SLA_Combined_100226.pdf"
+    first = rec(state_id="1000000001", file=fix_name, seq=1)
+    second = rec(state_id="1000000001", file=fix_name, seq=2)
+
+    kept, replaced, unpaired = apply_corrections([orig, first, second])
+
+    assert kept == [first, second]
+    assert replaced == [orig]
+    assert unpaired == []
+    assert find_duplicate_state_ids(kept) == [first, second]
+
+
+def test_duplicates_inside_an_unpaired_correction_file_are_kept():
+    fix_name = "2026_Spring_7325-965_ISR_SLA_Combined_100226.pdf"
+    first = rec(state_id="1000000001", file=fix_name, seq=1)
+    second = rec(state_id="1000000001", file=fix_name, seq=2)
+
+    kept, replaced, unpaired = apply_corrections([first, second])
+
+    assert kept == [first, second]
+    assert replaced == []
+    assert unpaired == [first, second]
+
+
 def test_apply_corrections_does_not_cross_variants():
     combined = rec(state_id="1000000001")
     single_fix = rec(

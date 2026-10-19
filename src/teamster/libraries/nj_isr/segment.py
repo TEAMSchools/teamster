@@ -268,8 +268,10 @@ def apply_corrections(
     """Replace original records with the state's corrected ones.
 
     A corrected record replaces every original with the same district, program,
-    variant, and state ID. When several corrections share that key, the latest
-    reissue date wins.
+    variant, and state ID. When several correction files share that key, the
+    file with the latest reissue date wins (ties go to the later filename) and
+    every record from that file stays, so a repeat inside it is still reported
+    by `find_duplicate_state_ids`.
 
     Args:
         records: Records from every file, originals and corrections.
@@ -277,21 +279,19 @@ def apply_corrections(
     Returns:
         A tuple of `(kept, replaced_originals, unpaired_corrections)`, each in
         input order. `replaced_originals` also holds the corrections that a
-        later correction superseded. An unpaired correction has no original to
+        later correction file superseded. An unpaired correction has no original to
         replace and stays in `kept`.
     """
-    latest: dict[tuple[str, str, str, str], int] = {}
-    for index, record in enumerate(records):
+    winning_file: dict[tuple[str, str, str, str], tuple[date, Path]] = {}
+    for record in records:
         reissue_date = record.source.reissue_date
         if reissue_date is None:
             continue
 
         key = _correction_key(record)
-        current = latest.get(key)
-        if current is None or reissue_date >= (
-            records[current].source.reissue_date or date.min
-        ):
-            latest[key] = index
+        candidate = (reissue_date, record.source.path)
+        if key not in winning_file or candidate > winning_file[key]:
+            winning_file[key] = candidate
 
     originals = {
         _correction_key(record)
@@ -302,12 +302,12 @@ def apply_corrections(
     kept: list[Record] = []
     replaced: list[Record] = []
     unpaired: list[Record] = []
-    for index, record in enumerate(records):
+    for record in records:
         key = _correction_key(record)
 
         if record.source.reissue_date is None:
-            (replaced if key in latest else kept).append(record)
-        elif latest[key] != index:
+            (replaced if key in winning_file else kept).append(record)
+        elif (record.source.reissue_date, record.source.path) != winning_file[key]:
             replaced.append(record)
         else:
             kept.append(record)
