@@ -79,9 +79,11 @@ refuses otherwise.
    `datasource`, `sheets` (stubs) and `cuts`; list under `excluded_sheets`, with
    the reason, every sheet with no Cube counterpart, every sheet on another data
    source ("separate run"), and every sheet that blends 2 data sources
-   ("blended, not checked"). Never list a sheet with a name or student-ID
-   column. `filter_card_defaults` lists each card's starting value per
-   dashboard; a list means the card starts on several values. Copy them into
+   ("blended, not checked"). List every sheet with a name or student-ID column
+   too, with a reason starting `names:` that names the column type, never a
+   person (`names: student name column`); coverage reads only those as "only on
+   sheets with names". `filter_card_defaults` lists each card's starting value
+   per dashboard; a list means the card starts on several values. Copy them into
    `defaults` (a value or a list) and skip `(All)`. A list reads as IN on the
    extract and Cube sides, and a cut's own filter on that card replaces it.
    Defaults differ by dashboard, so 1 checks file covers only the dashboards
@@ -145,7 +147,11 @@ run still checks everything mapped.
 must_cover:
   - name: Chronic Absenteeism
     source: https://app.asana.com/0/1/2
-    cube: { member: pct_chronically_absent, view: student_attendance_view }
+    cube:
+      {
+        member: pct_chronically_absent,
+        view: student_attendance_enrollment_periods_view,
+      }
     tableau:
       {
         column: Avg. Attendance Metric,
@@ -158,13 +164,17 @@ must_cover:
     rows: [late_flag]
 ```
 
+- Every value in the example is a placeholder: take the member and view from the
+  catalog (the view shown is one the attendance dashboard uses).
 - Required: `name`, `source`, `tableau.column`. `param` is a selector caption
-  and value, when a selector picks the measure.
+  and value, when a selector picks the measure: a value listed under `params`
+  for a mapped measure with that column, or the config fails. Omit `param` for
+  the selector's default value (the sheet's own `cube`).
 - `cube` comes from the catalog's "where" column; `null` when no Cube measure
   exists. The config refuses a `null` entry with no `rows:` (the `rows.compare`
   columns behind the measure).
 - An entry's Cube member and view must equal the sheet mapping's for that column
-  and value, or the config fails.
+  and value, or the config fails; so does a member where the mapping is `null`.
 - A selector value with no Cube measure may carry `measure: null` under
   `params`, so its cut is captured and reads "no Cube counterpart".
 
@@ -181,20 +191,23 @@ probes:
     candidate: select avg(pct) from (select ... from {extract} where {where})
 ```
 
+- The SQL above is a placeholder; write the measure's own.
 - `id` (unique), `measure`, `dashboard` and `candidate` are required. `param` is
   optional.
 - Each of `dashboard` and `candidate` is a full query over the raw extract that
   returns 1 value. `{extract}` is the extract table; `{where}` is filled with
   the cut's and the mark's predicates. The tool runs it for every cut, sheet and
-  mark the measure appears in.
+  mark the measure appears in, except Cube-only marks (no export to reproduce).
+- Return the value in the export's units: a fraction when the format is a
+  percent (0.942 for 94.2%).
 - Proof: `dashboard` reproduces the export in every judged cell at display
   precision. Without the proof the report shows nothing else.
 
 Steps:
 
 1. Write the probe, then `analyze`.
-2. Bring the analyst the proof and how many cells `candidate` matches Cube in,
-   with the rest listed.
+2. Bring the analyst `### Probes`: the proof, how many cells `candidate` matches
+   Cube in, and the table of the rest.
 3. Record the analyst's decision (below).
 
 ## Decisions
@@ -212,17 +225,19 @@ decisions:
     task: ""
 ```
 
-- `owner`: `dashboard`, `cube`, or `accepted` (a difference both sides keep on
-  purpose). `measure` and `rule` are required; `task` is the follow-up link,
-  empty until filed.
+- `owner`, `measure` and `rule` are required. `owner` is `dashboard`, `cube`, or
+  `accepted` (a difference both sides keep on purpose). `measure` must be a
+  mapped sheet measure and `param` a value listed under `params` for it. `task`
+  is the follow-up link, empty until filed.
 - `dashboard` and `cube` need a `probe`. They relabel only the cells where the
   probe's `candidate` matches Cube, as `fix-dashboard` or `fix-cube`. Other
   cells stay "formula gap", so a new gap is never hidden.
 - `accepted` needs `cuts` or `sheets` and relabels formula gaps there as
   `accepted difference`.
 - Row gaps are not decided here; causes cover them.
-- A cell that passes under a decision reads resolved. The analyst then removes
-  the decision.
+- A passing cell counts as resolved where the decision's probe is proven and its
+  `candidate` matches Cube (`accepted`: any pass in its cuts or sheets). Remove
+  a decision only when a later run shows 0 relabeled and 0 still formula gap.
 
 ## Follow-ups
 
@@ -256,16 +271,18 @@ bucket appears that the trusted run lacked. The fingerprints ignore `causes`,
 
 ## Reading the report
 
-- **Coverage first.** `## Coverage` has 1 line per `must_cover` entry, in this
-  order of precedence: gaps open, covered, in the data not in Cube, not judged,
-  not mapped yet, only on sheets with names, not on these dashboards. Rows
-  agreeing is evidence, never coverage: covered needs a cell judged against a
-  real Cube member.
-- **Trust verdict.** Trusted only when every invariant holds, including "capture
-  completeness" (which `run` records), and every hand check agrees (or trust
-  carries). A disagreeing hand check outranks pending ones. Findings stay held
-  until then.
-- **Decisions:** `### Decisions` lists each decision with its cells.
+- **Trust verdict** opens the report. Trusted only when every invariant holds,
+  including "capture completeness" (which `run` records), and every hand check
+  agrees (or trust carries). A disagreeing hand check outranks pending ones.
+  Findings stay held until then.
+- **Coverage** comes next: `## Coverage` has 1 line per `must_cover` entry, in
+  this order of precedence: gaps open, covered, in the data not in Cube, not
+  judged, not mapped yet, only on sheets with names, not on these dashboards.
+  Rows agreeing is evidence, never coverage: covered needs a cell judged against
+  a real Cube member.
+- **Decisions:** `### Decisions` gives each decision's counts (relabeled, still
+  formula gap, resolved). `### Probes` gives each probe's proof and counts, and
+  a table of the cells its candidate does not explain.
 - **Row buckets:** match, value differs, dashboard only, Cube only, outside
   scope, outside period; each split by cause or "unexplained". Outside scope
   (schools Cube does not show this identity) and outside period (days the run
@@ -292,7 +309,9 @@ review copy (same frozen extract), Cube side against the captured value, rows
 against PowerSchool or Focus. Cube's side is the captured answer at its recorded
 refresh time, never today's Cube. Mark each result exactly `agree` or `disagree`
 in `hand_checks.yml` (new checks start `pending`), then `analyze`. Any other
-value stops `analyze` with an error naming the check's id.
+value stops `analyze` with an error naming the check's id. A result for a check
+no longer picked stays in `hand_checks.yml`; of those, only a `disagree` still
+counts toward trust.
 
 ## Last year
 
