@@ -174,6 +174,67 @@ def test_dir_mtimes_traverses_unseen_directory():
     assert dir_mtimes["newdir"] == 300
 
 
+def test_traversing_filename_is_skipped():
+    """A server-supplied name with a separator must not reach the join, and
+    must not abort the rest of the listing."""
+    sftp = _build_mock_sftp(
+        {
+            ".": [
+                _make_sftp_attr("good.csv", FILE_MODE, st_mtime=100, st_size=50),
+                _make_sftp_attr(
+                    "report.txt/../../../../app/evil.pth",
+                    FILE_MODE,
+                    st_mtime=300,
+                    st_size=50,
+                ),
+            ],
+        }
+    )
+
+    with build_resources(
+        {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
+    ) as resources:
+        # DagsterLogManager doesn't propagate to caplog; assert on the call
+        # directly instead.
+        resources.ssh.log.warning = MagicMock()
+
+        files = resources.ssh.listdir_attr_r(
+            sftp_client=sftp,
+            remote_dir=".",
+            exclude_dirs=[],
+        )
+
+    filenames = [attr.filename for attr, _ in files]
+    assert filenames == ["good.csv"]
+    resources.ssh.log.warning.assert_called_once()
+    assert "Skipping illegal filename" in resources.ssh.log.warning.call_args[0][0]
+
+
+def test_parent_directory_entry_is_skipped():
+    """A `..` directory entry must not be walked upward, and must not abort
+    the rest of the listing."""
+    sftp = _build_mock_sftp(
+        {
+            ".": [
+                _make_sftp_attr("..", DIR_MODE, st_mtime=100, st_size=0),
+                _make_sftp_attr("good.csv", FILE_MODE, st_mtime=100, st_size=50),
+            ],
+        }
+    )
+
+    with build_resources(
+        {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
+    ) as resources:
+        files = resources.ssh.listdir_attr_r(
+            sftp_client=sftp,
+            remote_dir=".",
+            exclude_dirs=[],
+        )
+
+    filenames = [attr.filename for attr, _ in files]
+    assert filenames == ["good.csv"]
+
+
 def test_dir_mtimes_none_returns_list_only():
     """When dir_mtimes is None, return type is list (backward compat)."""
     sftp = _build_mock_sftp(

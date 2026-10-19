@@ -8,6 +8,9 @@ models:
       union is the pearson_state_assessment_relations var. kipptaf unions the
       district copies with the Cambium rows and repairs localstudentidentifier
       from the student crosswalk there.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -46,48 +49,79 @@ models:
       - name: is_504
         data_type: boolean
         description: True when studentwithdisabilities is '504' or 'B'.
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
         description: True when englishlearnerel is 'Y'.
+        config:
+          meta:
+            contains_pii: true
       - name: iep_status
         data_type: string
         description:
           "'Has IEP' when studentwithdisabilities is 'IEP' or 'B', else 'No
           IEP'."
+        config:
+          meta:
+            contains_pii: true
       - name: is_proficient_int
         data_type: int64
         description: is_proficient as 1/0.
+        config:
+          meta:
+            contains_pii: true
       - name: race_ethnicity
         data_type: string
         description: >-
           Single-character race/ethnicity code from the Pearson indicator flags,
-          priority T, H, I, A, B, P, W.
+          priority T, H, I, A, B, P, W. Null when no flag is 'Y'.
+        config:
+          meta:
+            contains_pii: true
       - name: njsla_aggregated_proficiency
         data_type: string
         description: >-
           NJSLA only: levels 1-2 'Below/Far Below', 3 'Approaching', 4+
           'At/Above'. Null for other assessments.
+        config:
+          meta:
+            contains_pii: true
       - name: njsla_performance_band_group_label
         data_type: string
         description: >-
           NJSLA only: levels 1-2 'Not Proficient (1-2)', 3 'Bubble (3)', 4+
           'Proficient (4-5)'. Null for other assessments.
+        config:
+          meta:
+            contains_pii: true
       - name: aligned_performance_band_group
         data_type: string
         description: >-
           'Lvl 1' to 'Lvl 5' from testperformancelevel_text; the two NJGPA
           labels map to 'Lvl 3' and 'Lvl 4'.
+        config:
+          meta:
+            contains_pii: true
       - name: is_approaching_int
         data_type: int64
         description: >-
           1 for NJSLA Science level 2 or ELA/Math level 3, else 0. Always 0 for
           NJGPA.
+        config:
+          meta:
+            contains_pii: true
       - name: is_below_int
         data_type: int64
         description: >-
           1 for NJGPA level 1, NJSLA Science below level 2, or ELA/Math below
-          level 3, else 0. The ELA/Math branch also catches NJGPA level 2, so
-          every NJGPA row reads 1; kept as-is for parity with prior output.
+          level 3, else 0. NJGPA rows carry discipline ELA or Math, so the
+          ELA/Math branch also catches NJGPA level 2 and every NJGPA row reads
+          1.
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_type
         data_type: string
         description: >-
@@ -98,11 +132,21 @@ models:
         data_type: string
         description: >-
           race_ethnicity expanded to the label used across comparison sources (B
-          'African American', H 'Hispanic', ...); null maps to 'Blank'.
+          'African American', H 'Hispanic', T 'Other', ...); null maps to
+          'Blank'.
+        config:
+          meta:
+            contains_pii: true
       - name: aligned_ml_status
         data_type: string
         description: "'ML' when lep_status, else 'Not ML'."
+        config:
+          meta:
+            contains_pii: true
       - name: aligned_iep_status
         data_type: string
         description:
           "'Students With Disabilities' or 'Students Without Disabilities'."
+        config:
+          meta:
+            contains_pii: true

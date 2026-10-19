@@ -400,11 +400,6 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: site-id
-              - name: PS_ENROLLMENT_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-powerschool-enrollment-api
-                    key: api-key
               - name: LDAP_HOST_IP
                 valueFrom:
                   secretKeyRef:
@@ -808,11 +803,6 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: site-id
-              - name: PS_ENROLLMENT_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-powerschool-enrollment-api
-                    key: api-key
               - name: LDAP_HOST_IP
                 valueFrom:
                   secretKeyRef:

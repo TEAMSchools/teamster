@@ -33,6 +33,8 @@ with
         where
             co.rn_year = 1
             and co.rn_undergrad = 1
+            -- TODO(#5181): Miami stays out until the CSGF data owner reviews it.
+            and co.region != 'Miami'
             and co.enroll_status = 2
             and (co.exitcode = 'D9' or co.exitcode like 'T%')
     ),
@@ -74,6 +76,8 @@ with
             co.school_level = 'HS'
             and co.rn_year = 1
             and co.rn_undergrad = 1
+            -- TODO(#5181): Miami stays out until the CSGF data owner reviews it.
+            and co.region != 'Miami'
             and co.cohort = {{ var("current_academic_year") }}
     ),
 
@@ -85,6 +89,8 @@ with
             co.school_level = 'HS'
             and co.rn_year = 1
             and co.rn_undergrad = 1
+            -- TODO(#5181): Miami stays out until the CSGF data owner reviews it.
+            and co.region != 'Miami'
             and co.academic_year + 1 = {{ var("current_academic_year") }}
             and co.exitcode = 'G1'
         group by co.school_name

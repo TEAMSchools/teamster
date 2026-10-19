@@ -17,10 +17,10 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `cambium`               | SFTP assets   | `AutomationConditionSensor`                                           |
 | `deanslist`             | API assets    | schedule (nightly)                                                    |
 | `edplan`                | SFTP asset    | sensor (`build_edplan_sftp_sensor`)                                   |
-| `finalsite`             | API + SFTP    | schedule (contacts 4am) + couchdrop sensor                            |
+| `finalsite`             | API + SFTP    | schedule (contacts 00:15 + 12:00 ET) + couchdrop sensor               |
 | `iready`                | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                   |
 | `overgrad`              | API assets    | schedule                                                              |
-| `pearson`               | SFTP assets   | `AutomationConditionSensor`                                           |
+| `pearson`               | SFTP assets   | manual only (retired; Cambium replaced it)                            |
 | `titan`                 | SFTP assets   | sensor (`build_titan_sftp_sensor`)                                    |
 | `extracts`              | BigQuery→SFTP | schedule                                                              |
 | `couchdrop`             | sensor only   | sensor (Google Drive watcher)                                         |

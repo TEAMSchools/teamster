@@ -1,12 +1,12 @@
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Response, Session
 from requests.exceptions import HTTPError
 
 
 class SmartRecruitersResource(ConfigurableResource):
-    smart_token: str
+    smart_token: str = Field(repr=False)
 
     _session: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr(default="https://api.smartrecruiters.com")

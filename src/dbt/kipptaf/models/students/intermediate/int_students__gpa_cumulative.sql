@@ -36,7 +36,7 @@ with
         left join
             {{ ref("stg_google_sheets__people__locations") }} as loc
             on fs.school_number = loc.focus_school_id
-        where g.syear >= 2026
+        where g.syear >= 2026 and g.marking_period_id = -1
     ),
 
     powerschool_conformed as (

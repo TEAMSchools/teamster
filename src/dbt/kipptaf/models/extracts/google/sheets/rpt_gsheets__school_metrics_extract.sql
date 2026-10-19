@@ -174,7 +174,7 @@ with
 
     assessment_responses as (
         select
-            powerschool_student_number,
+            student_number,
             academic_year,
             discipline,
             module_code,
@@ -215,7 +215,7 @@ with
         from assessment_responses as a
         inner join
             enrollments as e
-            on a.powerschool_student_number = e.student_number
+            on a.student_number = e.student_number
             and a.academic_year = e.academic_year
         left join team_manager as tm on e.school = tm.school and e.team = tm.team
         group by
@@ -243,7 +243,7 @@ with
         from assessment_responses as a
         inner join
             enrollments as e
-            on a.powerschool_student_number = e.student_number
+            on a.student_number = e.student_number
             and a.academic_year = e.academic_year
         group by
             e.region,
@@ -267,7 +267,7 @@ with
         from {{ ref("int_deanslist__incidents__penalties") }}
         where
             create_ts_academic_year = {{ var("current_academic_year") }}
-            and referral_tier not in ('Non-Behavioral', 'Social Work')
+            and is_behavioral_referral
             and start_date is not null
     ),
 

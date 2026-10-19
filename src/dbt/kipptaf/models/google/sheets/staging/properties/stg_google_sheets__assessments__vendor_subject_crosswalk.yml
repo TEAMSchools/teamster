@@ -4,8 +4,8 @@ models:
       Maps each assessment vendor's or state's own subject name onto the
       Illuminate subject vocabulary. Keyed on the raw subject column that source
       reports, not on a normalized one. Cambium rows sit under source system
-      pearson because Cambium unions into int_pearson__all_assessments before
-      any consumer reads it.
+      pearson because Cambium unions into int_assessments__state_nj_scores
+      before any consumer reads it.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

@@ -4,22 +4,33 @@ models:
       Computes the benchmark goals that get pasted into the BM Goals tab, by
       joining each student's composite level to the foundation goal for the
       season being measured. A BOY row is measured against the MOY goal and an
-      MOY row against EOY, per benchmark_goal_season.
+      MOY row against EOY, per benchmark_goal_season. Reads
+      `current_academic_year` only, and BOY and MOY only -- EOY opens no later
+      season to set a goal for. One row per school, grade and administration,
+      anchored on the At/Above goal.
 
       The foundation_goals_by_season CTE exists because academics goal-set
       grades 6-8 at EOY only -- their MOY cells read n/a, while K-5 carry both.
       Without it a BOY row for those grades matches no goal, grade_goal_type
-      comes back null, and the final At/Above filter drops the row: 31,076
-      AY2026 dashboard rows with no benchmark goal. The CTE adds an MOY row
-      carrying the EOY figure wherever a grade has EOY and no MOY, so the one
-      target academics set serves both measurement points. K-5 gains nothing,
-      because it already has real MOY rows.
+      comes back null, and the final At/Above filter drops the row. The CTE adds
+      an MOY row carrying the EOY figure wherever a grade has EOY and no MOY, so
+      the one target academics set serves both measurement points. K-5 gains
+      nothing, because it already has real MOY rows. Deriving it here rather
+      than typing the goals into the sheet by hand avoids copying one region's
+      values into another's rows.
 
-      This is what a person did by hand for AY2025. That year the At/Above
-      filter did not yet exist, so the unmatched 6-8 rows survived with real
-      counts and null goals and someone typed the goals in -- which is how
-      Paterson grades 6 and 7 ended up holding Newark's values. Doing it here
-      fixes that class of error rather than repeating it.
+      T&L's planning pads apply to the expected counts and gaps: a 5-student pad
+      on the expected At/Above count at BOY only, and a 1.5x multiplier on every
+      gap.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - school
+              - assessment_grade_int
+              - period
     columns:
       - name: academic_year
         data_type: int64
@@ -38,11 +49,12 @@ models:
       - name: period
         data_type: string
         description:
-          The benchmark administration the goal applies to -- BOY, MOY or EOY.
+          The benchmark administration the counts come from -- BOY or MOY.
       - name: benchmark_goal_season
         data_type: string
         description:
-          The administration Amplify's published standard is drawn from.
+          The administration whose foundation goal the row is measured against
+          -- MOY for a BOY row, EOY for an MOY row.
       - name: school
         data_type: string
         description: School name the goal applies to.
@@ -79,19 +91,21 @@ models:
       - name: n_admin_season_school_gl_at_above_expected
         data_type: float64
         description:
-          Students the school's goal implies should score At or Above Benchmark.
+          Students the school's goal implies should score At or Above Benchmark
+          -- the school count times grade_goal, rounded up, plus 5 at BOY.
       - name: n_admin_season_region_gl_at_above_expected
         data_type: float64
         description:
-          Students the region's goal implies should score At or Above Benchmark.
+          Students the region's goal implies should score At or Above Benchmark
+          -- the region count times grade_goal, rounded up, plus 5 at BOY.
       - name: n_admin_season_school_gl_at_above_gap
         data_type: float64
         description:
-          Distance between the school's At or Above count and its goal.
+          Expected minus actual At or Above count at the school, times 1.5.
       - name: n_admin_season_region_gl_at_above_gap
         data_type: float64
         description:
-          Distance between the region's At or Above count and its goal.
+          Expected minus actual At or Above count in the region, times 1.5.
       - name: grade_goal_iep
         data_type: float64
         description: >
@@ -128,7 +142,7 @@ models:
       - name: n_admin_season_school_gl_at_above_expected_iep
         data_type: float64
         description: >
-          Expected At/Above count for students with an IEP, padded per period.
+          Expected At/Above count for students with an IEP, plus 5 at BOY.
           Populations overlap -- a student counted here is also counted in the
           unsuffixed All columns.
       - name: n_admin_season_region_gl_at_above_expected_iep
@@ -195,7 +209,7 @@ models:
       - name: n_admin_season_school_gl_at_above_expected_mll
         data_type: float64
         description: >
-          Expected At/Above count for multilingual learners, padded per period.
+          Expected At/Above count for multilingual learners, plus 5 at BOY.
           Populations overlap -- a student counted here is also counted in the
           unsuffixed All columns.
       - name: n_admin_season_region_gl_at_above_expected_mll

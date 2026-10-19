@@ -4,19 +4,24 @@ models:
       Every assessment score the section resolver tries to place, with the one
       date it anchors on. One row per score grain (student, region, source type,
       canonical assessment, academic year, administration period, subject area)
-      and anchor date. Six source branches feed it — internal Illuminate scores
+      and anchor date. Six source types feed it — internal Illuminate scores
       anchored on the canonical administered date, NJ state (Pearson) and FL
       state (FLDOE) scores on their test date, and iReady, STAR, and DIBELS
-      benchmark composites on their completion, screening, or client date.
-      Internal scores collapse to one row per student, canonical assessment, and
-      region on the earliest administered date. Rows with no anchor date or no
-      student are out of scope and dropped. Byte-identical duplicate rows from a
+      benchmark composites on their completion, screening, or client date. State
+      scores come from int_assessments__state_scores and benchmark scores from
+      int_assessments__benchmark_scores, both with the subject area already
+      resolved through the vendor subject crosswalk. Internal scores are
+      non-replacement scaffold rows for internal assessments, collapsed to one
+      row per student, canonical assessment, and region. State rows with no test
+      date or no student are dropped. Benchmark rows with no test date are
+      dropped, iReady and STAR rows also need a scale score, STAR rows also need
+      a `_dbt_source_project` (iReady keeps null-project rows), and DIBELS keeps
+      only `overall` benchmark composites. Byte-identical duplicate rows from a
       source (re-pulled iReady and STAR sittings) collapse; a score with two
       different anchor dates keeps both rows, since each date is a separate
-      chance at an enrollment window. Read by
-      int_assessments__resolved_section_enrollments, which references it three
-      times; materializing it once here is what keeps that model's BigQuery plan
-      shallow.
+      chance at an enrollment window. Read more than once by
+      int_assessments__resolved_section_enrollments; materializing it once here
+      is what keeps that model's BigQuery plan shallow.
     config:
       materialized: table
       meta:
@@ -26,20 +31,26 @@ models:
           # ~any_deps_in_progress orders it before the resolver in one pass.
           # Refs #5261
           automation_condition:
-            cron_schedule: 0 0,10,13,15,17 * * *
+            cron_schedule: 30 0,10,13,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - powerschool_student_number
+              - student_number
               - _dbt_source_project
               - source_type
+              - source
               - canonical_assessment_id
               - academic_year
               - administration_period
               - subject_area
               - anchor_date
     columns:
+      - name: source
+        description: >-
+          System the assessment comes from for internal scores (`illuminate` or
+          `apex`); null for state and benchmark scores. Part of the key, because
+          the two systems' assessment ids can collide.
       - name: source_type
         data_type: string
         description: >-
@@ -47,14 +58,15 @@ models:
           (Illuminate-sourced), state_nj (Pearson NJ), state_fl (FLDOE FL),
           iready (i-Ready diagnostics), star (Renaissance STAR), or dibels
           (Amplify DIBELS benchmark composites).
-      - name: powerschool_student_number
+      - name: student_number
         data_type: int64
         description: >-
-          Student identifier. Sourced from int_assessments__scaffold for
-          internal scores and from each vendor or state intermediate otherwise.
+          Student number. Sourced from int_assessments__scaffold for internal
+          scores and from the `student_number` of int_assessments__state_scores
+          or int_assessments__benchmark_scores otherwise.
         config:
           meta:
-            source_column: int_assessments__scaffold.powerschool_student_number
+            source_column: int_assessments__scaffold.student_number
             contains_pii: true
       - name: canonical_assessment_id
         data_type: int64
@@ -73,7 +85,7 @@ models:
           the resolver matches.
         config:
           meta:
-            source_column: int_pearson__all_assessments.academic_year
+            source_column: int_assessments__state_nj_scores.academic_year
       - name: administration_period
         data_type: string
         description: >-
@@ -83,18 +95,16 @@ models:
           Outside Round) from `test_round`.
         config:
           meta:
-            source_column: int_pearson__all_assessments.administration_period
+            source_column: int_assessments__state_nj_scores.administration_period
       - name: subject_area
         data_type: string
         description: >-
           Subject area aligned to illuminate_subject_area values in
           int_assessments__course_enrollments. For state and vendor scores this
-          is resolved from each source's raw subject value via a LEFT JOIN to
-          stg_google_sheets__assessments__vendor_subject_crosswalk, falling back
-          to the raw value when a source_system/raw_subject pair has no
-          crosswalk row. For internal scores this remains the scaffold's
-          subject_area, passed through unchanged, because that branch's
-          source_system is always null and so never matches the crosswalk.
+          is the illuminate_subject_area of int_assessments__state_scores or
+          int_assessments__benchmark_scores, resolved there through the vendor
+          subject crosswalk with a fallback to the raw subject. For internal
+          scores this is the scaffold's subject_area, passed through unchanged.
         config:
           meta:
             source_column: int_assessments__scaffold.subject_area
@@ -112,7 +122,8 @@ models:
           The date the resolver matches against enrollment windows. The
           canonical administered date for internal scores, the test date for
           state scores, and the completion, screening, or client date for vendor
-          scores. Not the corrupt Illuminate date_taken.
+          scores. Internal scores do not use Illuminate's `date_taken`, which
+          can carry corrupt sentinel dates.
         config:
           meta:
             source_column: int_assessments__assessments_canonical.administered_date
@@ -138,7 +149,8 @@ unit_tests:
       - input: ref('int_assessments__scaffold')
         rows:
           - {
-              powerschool_student_number: 1,
+              student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -146,7 +158,8 @@ unit_tests:
               is_replacement: false,
             }
           - {
-              powerschool_student_number: 1,
+              student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -154,7 +167,8 @@ unit_tests:
               is_replacement: false,
             }
           - {
-              powerschool_student_number: 1,
+              student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -162,7 +176,8 @@ unit_tests:
               is_replacement: true,
             }
           - {
-              powerschool_student_number: 1,
+              student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -171,23 +186,20 @@ unit_tests:
             }
       - input: ref('int_assessments__assessments_canonical')
         rows:
-          - { canonical_assessment_id: 100, administered_date: 2024-03-04 }
-      - input: ref('int_pearson__all_assessments')
+          - {
+              source: illuminate,
+              canonical_assessment_id: 100,
+              administered_date: 2024-03-04,
+            }
+      - input: ref('int_assessments__state_scores')
         rows: []
-      - input: ref('int_fldoe__all_assessments')
-        rows: []
-      - input: ref('int_iready__diagnostic_results')
-        rows: []
-      - input: ref('stg_renlearn__star')
-        rows: []
-      - input: ref('int_amplify__all_assessments')
-        rows: []
-      - input: ref('stg_google_sheets__assessments__vendor_subject_crosswalk')
+      - input: ref('int_assessments__benchmark_scores')
         rows: []
     expect:
       rows:
         - {
-            powerschool_student_number: 1,
+            student_number: 1,
+            source: illuminate,
             canonical_assessment_id: 100,
             _dbt_source_project: kippnewark,
             subject_area: Mathematics,
@@ -206,54 +218,50 @@ unit_tests:
         rows: []
       - input: ref('int_assessments__assessments_canonical')
         rows: []
-      - input: ref('int_pearson__all_assessments')
+      - input: ref('int_assessments__state_scores')
         rows: []
-      - input: ref('int_fldoe__all_assessments')
-        rows: []
-      - input: ref('int_iready__diagnostic_results')
+      - input: ref('int_assessments__benchmark_scores')
         format: sql
         rows: |
           select
-              5 as student_id,
-              2024 as academic_year_int,
-              'BOY' as test_round,
-              'Reading' as subject,
+              'iready' as score_source,
+              5 as student_number,
+              2024 as academic_year,
+              'BOY' as administration_period,
+              'Reading' as raw_subject,
+              'Text Study' as illuminate_subject_area,
               'kippnewark' as _dbt_source_project,
-              date('2024-09-15') as completion_date,
-              650 as overall_scale_score
+              date('2024-09-15') as test_date,
+              cast(650 as numeric) as scale_score,
+              'overall' as response_type
           union all
           select
-              5 as student_id,
-              2024 as academic_year_int,
-              'BOY' as test_round,
-              'Reading' as subject,
+              'iready' as score_source,
+              5 as student_number,
+              2024 as academic_year,
+              'BOY' as administration_period,
+              'Reading' as raw_subject,
+              'Text Study' as illuminate_subject_area,
               'kippnewark' as _dbt_source_project,
-              date('2024-09-15') as completion_date,
-              650 as overall_scale_score
+              date('2024-09-15') as test_date,
+              cast(650 as numeric) as scale_score,
+              'overall' as response_type
           union all
           select
-              5 as student_id,
-              2024 as academic_year_int,
-              'BOY' as test_round,
-              'Reading' as subject,
+              'iready' as score_source,
+              5 as student_number,
+              2024 as academic_year,
+              'BOY' as administration_period,
+              'Reading' as raw_subject,
+              'Text Study' as illuminate_subject_area,
               'kippnewark' as _dbt_source_project,
-              date('2024-09-22') as completion_date,
-              655 as overall_scale_score
-      - input: ref('stg_renlearn__star')
-        rows: []
-      - input: ref('int_amplify__all_assessments')
-        rows: []
-      - input: ref('stg_google_sheets__assessments__vendor_subject_crosswalk')
-        rows:
-          - {
-              Source_System: iready,
-              Raw_Subject: Reading,
-              Illuminate_Subject_Area: Text Study,
-            }
+              date('2024-09-22') as test_date,
+              cast(655 as numeric) as scale_score,
+              'overall' as response_type
     expect:
       rows:
         - {
-            powerschool_student_number: 5,
+            student_number: 5,
             academic_year: 2024,
             administration_period: BOY,
             subject_area: Text Study,
@@ -261,7 +269,7 @@ unit_tests:
             source_type: iready,
           }
         - {
-            powerschool_student_number: 5,
+            student_number: 5,
             academic_year: 2024,
             administration_period: BOY,
             subject_area: Text Study,

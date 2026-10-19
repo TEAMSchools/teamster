@@ -1,27 +1,63 @@
 models:
   - name: rpt_gsheets__ddi_tier_roster
+    description: >-
+      Roster of currently enrolled students for the NJ DDI Roster Google Sheet,
+      one row per student and subject (Reading and Math) for the current
+      academic year. Carries the student's intervention tier and prior-year
+      state test and i-Ready results. No region filter is applied.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - subject
     columns:
       - name: region
         data_type: string
+        description: The student's region.
       - name: student_number
         data_type: int64
+        description: Student number assigned by the school.
       - name: student_name
         data_type: string
+        description: Student's name as recorded in the SIS.
       - name: school
         data_type: string
+        description: School name.
       - name: grade_level
         data_type: int64
+        description: The student's grade level, with K as 0.
       - name: team
         data_type: string
+        description: The student's advisory or homeroom.
       - name: iep_status
         data_type: string
+        description: Special-education status as recorded in the SIS.
       - name: subject
         data_type: string
+        description: i-Ready subject, Reading or Math.
       - name: nj_student_tier
         data_type: string
+        description:
+          Intervention bucket for the subject's discipline — Bucket 1, 2, or 3
+          when assigned, otherwise Bucket 4.
       - name: is_low_25_fl
         data_type: bool
+        description:
+          True when the student's prior-year FAST dynamic percentile rank for
+          the subject is below the 25.5th percentile. False when there is no
+          FAST result.
       - name: njsla_previous_year
         data_type: string
+        description:
+          Prior-year state test aggregated proficiency for the subject — NJSLA
+          in New Jersey, FAST PM3 in Florida. No Test when the student has no
+          prior-year result.
       - name: iready_eoy_previous_year
         data_type: string
+        description:
+          Prior-year end-of-year i-Ready diagnostic proficiency for the subject.
+          No Test when the student has no prior-year result.

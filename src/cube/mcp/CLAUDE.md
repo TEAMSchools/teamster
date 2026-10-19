@@ -8,7 +8,10 @@ data-team Codespaces via `npx mcp-remote`.
 
 - `server.py` — `MCPServer` (mcp SDK's `mcp.server.mcpserver`, PEP 723 inline
   deps; the class was `FastMCP` under `mcp.server.fastmcp` before SDK 2.0).
-  Tools: `meta`, `load`, `sql`.
+  Tools: `meta`, `load`, `sql`, `dry_run`, `cubesql`, `convert_query`,
+  `graphql_to_json`. Every read-only Cube REST endpoint has one; the excluded
+  ones and why are in
+  `docs/superpowers/specs/2026-10-15-cube-mcp-rest-coverage-design.md`.
 - `Dockerfile` — Python 3.13-slim; bare `python` entrypoint (uv installs PEP 723
   deps at build time).
 
@@ -89,6 +92,10 @@ Cloud Run service via `--set-secrets`).
 
 ## MCP SDK gotchas
 
+- **Raise `ToolError` for any failure the caller should read.** The SDK replaces
+  every other exception's text with "Error executing tool <name>", so a
+  `RuntimeError` from Cube hides the reason from the model. Keep `RuntimeError`
+  for real crashes, such as a startup misconfiguration.
 - **Verified bearer-token claims** live behind `get_access_token()` from
   `mcp.server.auth.middleware.auth_context`. `ctx.request_context.user` does not
   exist on `Context`.
@@ -128,13 +135,24 @@ Cloud Run service via `--set-secrets`).
 
 ## Cube REST quirks
 
-- **`/sql` is GET-only**; query goes in URL via
-  `params={"query": json.dumps(query)}`. `/load` accepts POST with JSON body.
+- `/load` and `/dry-run` take POST with a JSON body. `sql` uses GET (the method
+  proven against Cube Cloud) with `query` as a JSON-string param; adding
+  `format=sql` makes `query` a SQL API string instead of a query object.
+- `/cubesql` returns newline-delimited JSON (schema line, then `data` chunks),
+  not one object; `_request(raw=True)` returns the text for
+  `_parse_cubesql_stream`.
+- `/graphql-to-json` answers a parse error with HTTP 200 and
+  `{"jsonQuery": null}`.
+- `/sql`'s `canUseTransformedQuery` is dev/Playground-only in the gateway
+  (`getSqlQueriesInternal`); do not build on it. `/dry-run` always returns that
+  data as `transformedQueries`.
 
 ## WorkOS quirks
 
 - Access tokens omit `email` by default. Add a JWT template at Authentication →
-  Sessions → JWT template: `{"email": "{{ user.email }}"}`.
+  Features → JWT Template: `{"email": "{{ user.email }}"}`. The environment has
+  one template shared by every application, so another app's claims get merged
+  in beside `email`, never replace it.
 - DCR/CIMD lives at Connect → Configuration → MCP Auth (tenant-wide toggle), not
   per-application. The advertised `registration_endpoint` returns
   `dynamic_client_registration_disabled` until the toggle is on.

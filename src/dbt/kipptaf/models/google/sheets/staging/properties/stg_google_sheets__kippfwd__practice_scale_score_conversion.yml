@@ -3,8 +3,16 @@ models:
     description: >-
       Raw-score-to-scale-score conversion tables for practice SAT, PSAT, and ACT
       administrations. One row per raw-score band per assessment. Membership
-      here designates an Illuminate assessment as a reportable practice
-      assessment. Supersedes stg_google_sheets__kippfwd__act_scale_score_key.
+      here, with a matching Practice row on the scaffold, designates an
+      Illuminate assessment as a reportable practice assessment; bands with no
+      scaffold match are dropped by an inner join.
+
+
+      Rows with uses_bands_of filled in are a second kind and hold no bands.
+      Each maps one Apex module (Miami's practice tests, from Focus) to the
+      Illuminate assessment whose bands convert it, for a form both regions sat.
+      Every other column on those rows is blank, so they never reach the
+      scaffold join.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -14,9 +22,29 @@ models:
           config:
             severity: error
     columns:
+      - name: uses_bands_of
+        data_type: int64
+        description: >-
+          On an Apex module row, the Illuminate assessment_id whose bands
+          convert the module. Modules pointing to the same assessment are summed
+          before conversion, so their points together span that assessment's raw
+          range. Blank on band rows.
+        data_tests:
+          # the target must be a band row; Apex module ids share assessment_id
+          - dbt_utils.relationships_where:
+              arguments:
+                to: ref('stg_google_sheets__kippfwd__practice_scale_score_conversion')
+                field: assessment_id
+                to_condition:
+                  uses_bands_of is null and raw_score_low is not null
+              config:
+                severity: error
       - name: assessment_id
         data_type: int64
-        description: Illuminate canonical assessment id.
+        description: >-
+          Illuminate canonical assessment id on band rows. Apex assessment id on
+          rows with uses_bands_of filled in; the two id spaces can collide, so
+          uses_bands_of decides which system an id belongs to.
       - name: academic_year
         data_type: int64
         description: Start-year convention, so SY26-27 reads 2026.
@@ -31,10 +59,10 @@ models:
         data_type: string
         description: >-
           Administration within an academic year — SAT1, SAT2, ACT1, PSAT891,
-          PSAT101. Must differ between administrations in the same year, since
-          it partitions the composite score calculations. Distinct from the
-          practice hub's administration_round, which is a month and year derived
-          from Illuminate.
+          PSAT101. Must differ between administrations of one test in the same
+          year, since it groups sections into totals. Distinct from the practice
+          hub's administration_round, which is a month and year derived from
+          Illuminate.
       - name: subject
         data_type: string
         description: >-
@@ -57,7 +85,7 @@ models:
         description: >-
           Scale score for this band, from the lower bound of College Board's
           published range. Grade 9-10 SAT Reading and Writing are legacy test
-          scores on 10-40 and get rescaled by ten downstream.
+          scores on 10-40; aligned_scale_score carries them rescaled.
       - name: aligned_scale_score
         data_type: int64
         description: >-
@@ -74,5 +102,5 @@ models:
         data_type: int64
         description: >-
           Sections a student is expected to sit in this administration. Compared
-          against the count actually tested to decide whether a composite score
-          can be calculated.
+          against the count actually tested to decide whether a total score can
+          be calculated.

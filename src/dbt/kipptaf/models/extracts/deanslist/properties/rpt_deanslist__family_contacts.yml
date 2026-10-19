@@ -17,22 +17,6 @@ models:
       stable id for each contact row, so two contacts sharing a name no longer
       collapse into one on import. Delivered by the Dagster asset
       `kipptaf/extracts/deanslist/contacts_txt`.
-    data_tests:
-      # The source grain is (student, contact_slot), but the DeansList template
-      # fixes the header set so the slot cannot be projected — name plus
-      # relationship is the closest key the output can carry. warn, not error:
-      # two emergency slots can legitimately hold the same person for one
-      # student, a Finalsite data-entry gap rather than an extract defect.
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - StudentID
-              - ContactType
-              - ParentFirstName
-              - ParentLastName
-              - Relationship
-          config:
-            severity: warn
     columns:
       - name: StudentID
         data_type: int64
@@ -43,22 +27,38 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: ParentFirstName
+      - name: IntegrationKey
         data_type: string
-        description: Parent contact's first name.
+        description:
+          Stable per-contact key DeansList uses to match an imported row to the
+          contact record it already holds. Without it DeansList keys rows on a
+          hash of the contact's name, so two contacts sharing a name collapse
+          into one and a family loses a contact. Formatted `{StudentID}-{contact
+          key}`, where the contact key is the contact's `person_identity` from
+          `int_students__contacts` for `Parent1`/`Parent2` and the contact slot
+          (`emergency_1` through `emergency_4`) for `Emergency`. Parents key on
+          the person rather than the slot because parent slots are ranked
+          upstream, so a `primary` flag change swaps `Parent1` and `Parent2` — a
+          slot-keyed row would keep its key and take on the other parent's
+          details. Emergency contacts have no `person_identity`; they are scalar
+          custom fields on the student's own Finalsite record. Same split as
+          `bridge_student_contacts.student_contact_person_key`, with the student
+          prefix taking it from that model's person grain down to DeansList's
+          (student, contact) grain — without it a parent with two enrolled
+          children would get one key for two rows. Left readable rather than
+          hashed like that marts key — the longest value is 43 characters
+          against DeansList's 64-character limit, so staff can trace a row back
+          to its Finalsite contact by eye. No region component, since
+          `student_number` is unique across the three NJ regions this extract
+          covers. This is the row's key; a duplicate would make DeansList
+          overwrite one contact with another.
         data_tests:
-          - not_null
-        config:
-          meta:
-            contains_pii: true
-      - name: ParentLastName
-        data_type: string
-        description: Parent contact's last name.
-        data_tests:
-          - not_null
-        config:
-          meta:
-            contains_pii: true
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
       - name: Relationship
         data_type: string
         description:
@@ -67,10 +67,20 @@ models:
           (`parent`, `stepparent`, `guardian`, `grandparent`, etc.); emergency
           contacts carry the relationship recorded on their emergency
           custom-field set (`Mother`, `Grandmother`, `Aunt`, `Neighbor`, etc.),
-          which is populated on nearly every emergency row. Null where Finalsite
-          holds an emergency contact with no relationship recorded.
-        data_tests:
-          - not_null
+          which is populated on nearly every emergency row. `Unknown` where
+          Finalsite holds an emergency contact with no relationship recorded.
+      - name: ParentFirstName
+        data_type: string
+        description: Parent contact's first name.
+        config:
+          meta:
+            contains_pii: true
+      - name: ParentLastName
+        data_type: string
+        description: Parent contact's last name.
+        config:
+          meta:
+            contains_pii: true
       - name: HomePhone
         data_type: string
         description: Parent contact's phone number typed `Home`, if any.
@@ -106,41 +116,6 @@ models:
           Always null — the header is required by the DeansList template, but
           Finalsite parent-language data is not maintained reliably enough to
           send.
-      - name: IntegrationKey
-        data_type: string
-        description:
-          Stable per-contact key DeansList uses to match an imported row to the
-          contact record it already holds. Without it DeansList keys rows on a
-          hash of the contact's name, so two contacts sharing a name collapse
-          into one and a family loses a contact. Formatted `{StudentID}-{contact
-          key}`, where the contact key is the contact's `person_identity` from
-          `int_students__contacts` for `Parent1`/`Parent2` and the contact slot
-          (`emergency_1` through `emergency_4`) for `Emergency`. Parents key on
-          the person rather than the slot because parent slots are ranked
-          upstream, so a `primary` flag change swaps `Parent1` and `Parent2` — a
-          slot-keyed row would keep its key and take on the other parent's
-          details. Emergency contacts have no `person_identity`; they are scalar
-          custom fields on the student's own Finalsite record. Same split as
-          `bridge_student_contacts.student_contact_person_key`, with the student
-          prefix taking it from that model's person grain down to DeansList's
-          (student, contact) grain — without it a parent with two enrolled
-          children would get one key for two rows. Left readable rather than
-          hashed like that marts key — the longest value is 43 characters
-          against DeansList's 64-character limit, so staff can trace a row back
-          to its Finalsite contact by eye. No region component, since
-          `student_number` is unique across the three NJ regions this extract
-          covers.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
-          # A duplicate means one person holds two `primary`/`financial`
-          # relationships to the same student upstream — a Finalsite data-entry
-          # dup, not an extract defect, and DeansList collapsing the two rows is
-          # the right outcome. warn, matching the name-level test above.
-          - unique:
-              config:
-                severity: warn
       - name: ContactType
         data_type: string
         description:
@@ -287,6 +262,51 @@ unit_tests:
             ContactType: Emergency,
             Language: null,
             IntegrationKey: 123456-emergency_4,
+          }
+
+  - name: test_family_contacts_null_relationship_unknown
+    description:
+      An emergency contact with no relationship recorded in Finalsite reaches
+      DeansList as `Unknown` rather than blank.
+    model: rpt_deanslist__family_contacts
+    given:
+      - input: ref('int_students__contacts')
+        format: sql
+        rows: |
+          select
+            123456 as student_number,
+            'kippnewark' as _dbt_source_project,
+            'emergency_1' as contact_slot,
+            cast(null as string) as person_identity,
+            cast(null as string) as relationship,
+            'Bob' as contact_first_name,
+            'Smith' as contact_last_name,
+            cast(null as string) as email_current,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_work,
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_untyped
+      - input: ref('stg_powerschool__students')
+        format: sql
+        rows: |
+          select
+            123456 as student_number,
+            0 as enroll_status,
+            'kippnewark' as _dbt_source_project
+    expect:
+      rows:
+        - {
+            StudentID: 123456,
+            ParentFirstName: Bob,
+            ParentLastName: Smith,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: Unknown,
+            ContactType: Emergency,
+            Language: null,
+            IntegrationKey: 123456-emergency_1,
           }
 
   - name: test_family_contacts_excludes_ineligible

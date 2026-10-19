@@ -3,6 +3,10 @@ models:
     columns:
       - name: school_specific_id
         data_type: int64
+        description: >-
+          Student number. KIPP Miami contacts hold either the bare pre-Focus
+          number or the 8400-prefixed Focus id; the bare form gets the prefix
+          here, so the value matches the Miami student number.
         data_tests:
           - unique:
               config:

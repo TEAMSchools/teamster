@@ -101,7 +101,11 @@ with
     )
 
 select
-    *,
+    * except (close_ts_date),
+
+    if(
+        close_ts_date < '{{ var("deanslist_min_valid_date") }}', null, close_ts_date
+    ) as close_ts_date,
 
     concat(create_last, ', ', create_first) as create_lastfirst,
     concat(update_last, ', ', update_first) as update_lastfirst,

@@ -36,6 +36,9 @@ _Linting_.
   (third-party library wrappers)
 - `src/dbt/**` — all linters except sqlfluff, sqlfmt, and prettier ignored
 - `.k8s/**/values.yaml` — all linters ignored (generated Helm values)
+- `.claude/skills/zendesk-help-articles/references/design-system/**` — all
+  linters ignored (verbatim design-system export; prettier would mangle the
+  paste-ready snippets)
 
 ## Hooks
 

@@ -36,3 +36,11 @@ each dimension name maps to a group name in the regex.
 Assets yield `Output(value=(records, avro_schema))` and a schema validity check.
 Empty files and zero-row CSVs produce a warning but don't fail. PDFs are parsed
 via `pypdf` if `pdf_row_pattern` is provided.
+
+## Local download paths
+
+All three factories route their `sftp_get` target through
+`resolve_local_filepath()`, which nests the remote path under
+`/tmp/dagster/{asset_key}/` and raises if it would resolve outside that
+directory (traversal). Regression:
+`tests/libraries/test_sftp_local_filepath.py`.

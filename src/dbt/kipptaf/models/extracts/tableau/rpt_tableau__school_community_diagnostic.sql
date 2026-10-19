@@ -146,7 +146,13 @@ select
     se.grade_level,
 
     'Family' as survey_audience,
-from {{ ref("stg_powerschool_enrollment__submission_records") }} as sr
+from
+    {{
+        source(
+            "powerschool_enrollment",
+            "stg_powerschool_enrollment__submission_records_archive",
+        )
+    }} as sr
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on sr.submitted between rt.start_date and rt.end_date

@@ -334,8 +334,9 @@ models:
       - name: school_level_alt
         data_type: string
         description: >
-          Alternate school level override. Set to 'MS' for KIPP Sumner
-          Elementary grade 5 sections; otherwise equal to `school_level`.
+          Alternate school level override. Set to 'MS' for grade 5 and above at
+          KIPP Sumner Academy from academic year 2025 forward; otherwise equal
+          to `school_level`.
         config:
           meta:
             source_system: PowerSchool
@@ -365,8 +366,9 @@ models:
         data_type: string
         description: >
           Region concatenated with school_level_alt. Differs from
-          region_school_level only for KIPP Sumner G5, where school_level_alt =
-          'MS' instead of 'ES' (e.g. CamdenMS instead of CamdenES).
+          region_school_level only for grade 5 and above at KIPP Sumner Academy
+          (AY2025+), where school_level_alt = 'MS' instead of 'ES' (e.g.
+          CamdenMS instead of CamdenES).
       - name: section_or_period
         data_type: string
         description: >

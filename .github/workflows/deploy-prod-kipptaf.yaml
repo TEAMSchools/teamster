@@ -3,6 +3,7 @@ name: kipptaf
 permissions:
   contents: read
   pull-requests: write
+  packages: write
   id-token: write
 
 on:
@@ -32,7 +33,6 @@ on:
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/performance_management/**
-      - src/teamster/libraries/powerschool/enrollment/**
       - src/teamster/libraries/level_data/**
       - src/teamster/libraries/nsc/**
       - src/teamster/libraries/sftp/**
@@ -65,7 +65,6 @@ on:
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/performance_management/**
-      - src/teamster/libraries/powerschool/enrollment/**
       - src/teamster/libraries/level_data/**
       - src/teamster/libraries/nsc/**
       - src/teamster/libraries/sftp/**

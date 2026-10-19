@@ -37,20 +37,18 @@ models:
           which is a property of the location rather than the person.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - TEAM Academy Charter School
-                  - KIPP Cooper Norcross Academy
-                  - KIPP Miami
-                  - KIPP Paterson
-                  - KIPP TEAM and Family Schools Inc.
       - name: employee_number
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: assignment_status
         data_type: string
       - name: preferred_name_lastfirst
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: campus_name
         data_type: string
       - name: home_department_name
@@ -65,14 +63,29 @@ models:
       - name: mail
         data_type: string
         description: Post-cutover Tableau identity.
+        config:
+          meta:
+            contains_pii: true
       - name: user_principal_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: sam_account_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: reports_to_mail
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: reports_to_sam_account_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: hire_date
         data_type: date
       - name: survey

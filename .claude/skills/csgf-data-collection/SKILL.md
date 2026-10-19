@@ -34,10 +34,11 @@ table -- re-check it fresh each cycle, this is NOT guaranteed to repeat):
 - **Anthony Walters / Casey Gibson**: Postsecondary Pathways (Overgrad/Other
   Application Results tabs; Naviance is struck through/N-A this cycle),
   Discipline Data, the Round 2 NSC file.
-- **Anthony Walters / Gaby Rangel**: HS Enrollment, AP Scores, AP Offerings, HS
-  Grad Data (the HSDC tabs), plus the main **School Enrollment** Portal task --
-  but see Kevin and Laszlo below, who own specific FIELDS on that same shared
-  task, not separate tasks.
+- **Anthony Walters** (Gaby Rangel's share too, from 1 October 2026): HS
+  Enrollment, SAT, AP Scores, AP Offerings, HS Grad Data (the HSDC tabs), plus
+  the main **School Enrollment** Portal task -- but see Kevin and Laszlo below,
+  who own specific FIELDS on that same shared task, not separate tasks. Tasks
+  still assigned to Gabriela in the Portal need reassigning to Walters.
 - **Kevin Verhoff**: School Staffing Data, Org Staffing Summary, Org Chart
   (possibly shared with Laszlo) -- and, on the shared **School Enrollment**
   task, specifically **Teacher Retention, Teacher Count, and the school leader
@@ -114,9 +115,9 @@ independent of the dbt pipeline. Where the two intersect (e.g. verifying a
 Preliminary Question against a `rpt_gsheets__csgf_*` model), that's called out
 explicitly below.
 
-Reference doc: `docs/models/csgf-data-model.md` -- not yet published; will be
-added as part of #4897. Once it exists, read it first for the dbt-side lineage;
-this skill covers the manual/ownership side only.
+Reference doc: `docs/models/csgf-data-model.md` (published under Models). Read
+it first for the dbt-side lineage; this skill covers the manual/ownership side
+only.
 
 ## Key resources
 
@@ -459,15 +460,92 @@ the year-anchoring behind
 Tracking what CSGF has actually accepted, so a later reader doesn't re-verify
 already-closed items. Update the date whenever a status changes.
 
-- **Accepted by CSGF (confirmed 2026-09-22)**: Preliminary Questions, HS Grad
-  Data, AP Scores, AP Offerings, SAT (the last four resubmitted after the
-  `enroll_status` and `total_graduates` fixes -- see PR #5275 -- and after the
-  studentid `100034` GPA correction was applied to the official sheet), and
-  Kevin's Org Staffing Data.
-- **Still open**: everything else on the per-person split above (Schools List
-  fields still needed from Laz, the shared School Enrollment task, Discipline,
-  Finance, etc.) -- check each owner directly rather than assuming acceptance
-  carries over between tasks.
+Portal My Tasks board as of 2026-09-28: 27 tasks, all due 10/9/2026.
+
+| Column                   | Tasks (Portal assignee)                                                                                                                                                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completed (7)            | AP Offerings, AP Scores, High School Grad Data, SAT (Gabriela); Intended Postsecondary Pathways (Casey); Org Staffing Data (Kevin); Preliminary Questions (unassigned)                                                                               |
+| Further Edits Needed (1) | OVERGRAD Application Results (Casey)                                                                                                                                                                                                                 |
+| In Progress (3)          | Enrollment (HSDC) and Enrollment & Annual School Info (Gabriela); Schools List (Laszlo)                                                                                                                                                              |
+| Not Started (12)         | Additional Growth, Bank Info Verification, Data Collab DSA, Officer Certificate, Org Questions (Laszlo); Budget Upload, Org Finance, School Finance (Nadja); Data Summary, Org Charts Upload (Kevin); Discipline Data (Anthony); Key Contacts (Jeff) |
+| Not Applicable (4)       | ACT; NAVIANCE Application Results; OTHER Application Results (Casey); Growth Plans (Laszlo)                                                                                                                                                          |
+
+- AP Offerings, AP Scores, HS Grad Data and SAT were resubmitted after the
+  `total_graduates` fix (PR #5275) and the studentid `100034` GPA correction.
+- **Reopened 2026-09-29: Enrollment (HSDC), SAT, AP Scores and AP Offerings.**
+  The HS population dropped students who finished AY2025 and left over the
+  summer (`enroll_status` filter, now removed), and the Enrollment course flags
+  were wrong. Corrected: Enrollment 1,851 students. The model gained 183 (the
+  168 summer leavers plus 15 the tab already had, since they were coded after it
+  was filled); the tab gained 170 (the 168 plus 2 it had left out), SAT and AP
+  Scores gain the students among them who tested, and AP Offerings gains grade
+  10 for AP US History at Newark Collegiate. Repaste those tabs from the models
+  and move the three Completed tasks back to Ready for Review.
+- Enrollment (HSDC) is waiting on questions to Casey Gibson. Enrollment & Annual
+  School Info is shared: budget fields Laszlo's, teacher and school leader
+  fields Kevin's, ADA and chronic absenteeism Walters', and the enrollment
+  counts come from `rpt_gsheets__csgf_enrollment` on 2 October (below).
+- The two open enrollment tasks were reassigned to Walters in the Portal on
+  2026-09-28, after the board snapshot above.
+- Each other owner has had instructions in the CSGF Slack channel; check with
+  them directly rather than assuming acceptance carries over between tasks.
+- **Staging sheet ready for bulk upload**: the "CSGF Data" columns were
+  reordered to match the Portal's Excel templates this cycle, so each grid is a
+  copy-paste into the exported template, not cell-by-cell entry.
+- **#5432 / PR #5435** (early graduates in the 4-year graduation rate): closed
+  without merging 2026-09-28, Walters' call for this cycle. HS Grad Data was
+  accepted under the old rate. Fix preserved in
+  [`references/known-data-risks.md`](references/known-data-risks.md) if he
+  reconsiders.
+
+### Dates, SY2026-27 cycle
+
+From this cycle's protocol doc (Step 3); re-read it if a date is questioned.
+
+| Date               | What happens                                                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| Thu 1 Oct 2026     | Count day. `csgf_enrollment` filters on `is_enrolled_oct01`.                                    |
+| Fri 2 Oct, 5 PM ET | Internal deadline: owners post in the CSGF Slack channel and move tasks to Ready for Review.    |
+| 5-9 Oct 2026       | Panic week: plan for anything that cannot be submitted as asked.                                |
+| Fri 9 Oct 2026     | CSGF's official deadline. Finance submits unaudited numbers.                                    |
+| January 2027       | Round 2: audited finance, 990s, and the National Student Clearinghouse export (Walters, Casey). |
+
+### 2 October: pull the enrollment counts
+
+`rpt_gsheets__csgf_enrollment` is the only one of the eight models that needs
+count day to have passed (current-year counts and the current-year side of
+retention). Run this the morning of 2 October, after the nightly build, so exits
+entered on 1 October are in. It is due the same afternoon, so start early.
+
+1. Confirm `int_extracts__student_enrollments` rebuilt after 1 October
+   (`last_modified_time` in `kipptaf_extracts.__TABLES__`, or its latest Dagster
+   materialization). If not, wait for the build or ask the data team to
+   materialize it; don't pull from a pre-count-day build.
+2. Check the model before copying it:
+   - one row per school on the Portal's Schools List;
+   - no blank cells: the Enrollment task rejects blanks, and
+     `total_budgeted_enrollment` stays blank until Laszlo's budget targets are
+     in the targets sheet (Known data risks below);
+   - totals by school against last cycle's accepted numbers; a large swing is a
+     question for the region before it is a submission.
+3. Refresh the Enrollment tab of "CSGF Data", copy it into the School Enrollment
+   template exported from the Portal, upload, and run the Portal's validation.
+4. Post in the CSGF Slack channel and move the task to Ready for Review by 5 PM.
+
+### Helping the collection owner through the rest of the cycle
+
+Walters is the collection owner from 1 October. When he asks where things stand,
+work through this with him rather than from memory:
+
+1. Open the Portal's My Tasks board; list each task's column. Only CSGF moves a
+   task to Done, so Ready for Review is not accepted.
+2. For each task not in Done, name the owner from the per-person split and ask
+   Walters whether they have confirmed in the CSGF Slack channel.
+3. For a task that bounced back, read CSGF's comment, then check the field in
+   `references/field-definitions.md` and the model in
+   `docs/models/csgf-data-model.md` before asking the owner anything.
+4. For anything that will miss 9 October, raise it in panic week. CSGF grants no
+   extensions; only the Round 2 items move to January.
 
 ---
 
@@ -490,7 +568,14 @@ treating a documented fix as submission-ready).
   Enrollment Targets" sheet.
 - **Miami's first HS (AY2026) is a forward risk for next cycle, not this one**
   -- next cycle's HS-scoped models will need a Focus course/grade source wired
-  into two PowerSchool-only CTEs before they can cover Miami.
+  into their PowerSchool-only course and grade logic before they can cover
+  Miami.
+- **HS Enrollment course flags changed 2026-09-28**: they now count only Y1
+  grades earned at the school of enrollment. Details in
+  `references/known-data-risks.md`.
+- **Never filter the HS models on `enroll_status`.** On a past-year row it is
+  the student's current status. Use `is_enrolled_recent` for "completed the
+  year." Details in `references/known-data-risks.md`.
 - **`rpt_gsheets__csgf_hs_ap_offerings`/`hs_ap_scores` need a coverage/naming
   re-check every cycle** against CSGF's current official AP course name list
   (last checked 2026-09-11, clean).
@@ -531,10 +616,9 @@ For a one-off CSGF Google Form survey sent by email, read
 [`references/ad-hoc-surveys.md`](references/ad-hoc-surveys.md) (includes the
 2026-2027 Florida B.E.S.T. Algebra 1 worked example).
 
-## Open questions for this skill (not yet answered)
+## Collection owner
 
-- Who is the current collection owner / project manager, for reference the next
-  time this skill needs updating?
+Anthony Walters, from 1 October 2026.
 
 <!-- Next steps to capture: Salesforce Portal account setup/verification,
 working through the rest of the item list, ongoing review / Ready for Review

@@ -61,3 +61,66 @@ models:
           student has a Parent 2"); null when the field is unset. A record-owner
           field carried onto the relationship grain — it never describes the
           related person (`rel_id`).
+
+unit_tests:
+  - name: test_relationships_do_not_fan_out_across_partitions
+    description: One deduped contact with two relationships yields exactly two
+      rows. Reading the deduped model instead of the accumulated source is what
+      prevents the cross join multiplying each relationship by the number of
+      partitions the contact appears in. See #4715.
+    model: stg_finalsite__contact_relationships
+    given:
+      - input: ref('stg_finalsite__contacts')
+        format: sql
+        rows: |
+          select
+            'con1' as finalsite_enrollment_id,
+            'hh1' as household_1_id,
+            array<struct<field_name string, value struct<boolean_value bool>>>[]
+              as custom_attributes,
+            [
+              struct(
+                'rel1' as id,
+                'adult1' as rel_id,
+                'Ann Doe' as rel_name,
+                'mother' as rel_type,
+                true as `primary`,
+                true as financial,
+                true as portal_access
+              ),
+              struct(
+                'rel2' as id,
+                'adult2' as rel_id,
+                'Bob Doe' as rel_name,
+                'father' as rel_type,
+                cast(null as bool) as `primary`,
+                false as financial,
+                false as portal_access
+              )
+            ] as relationships
+    expect:
+      format: sql
+      rows: |
+        select
+          'con1' as finalsite_enrollment_id,
+          'rel1' as relationship_id,
+          'adult1' as rel_id,
+          'Ann Doe' as rel_name,
+          'mother' as rel_type,
+          true as is_primary,
+          true as is_financial,
+          true as has_portal_access,
+          'hh1' as household_1_id,
+          cast(null as bool) as is_parent2
+        union all
+        select
+          'con1' as finalsite_enrollment_id,
+          'rel2' as relationship_id,
+          'adult2' as rel_id,
+          'Bob Doe' as rel_name,
+          'father' as rel_type,
+          cast(null as bool) as is_primary,
+          false as is_financial,
+          false as has_portal_access,
+          'hh1' as household_1_id,
+          cast(null as bool) as is_parent2

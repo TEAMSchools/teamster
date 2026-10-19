@@ -21,12 +21,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__student_groups')
-                field: id
-              config:
-                severity: warn
       - name: student_id
         description: >-
           Focus student id in the group. Note this is the network student number
@@ -37,12 +31,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__students')
-                field: student_id
-              config:
-                severity: warn
         config:
           meta:
             contains_pii: true

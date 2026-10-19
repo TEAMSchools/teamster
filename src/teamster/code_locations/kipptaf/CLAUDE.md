@@ -26,7 +26,6 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `nsc`                    | SFTP assets                                               | —                | —                       |
 | `overgrad`               | API assets                                                | —                | —                       |
 | `performance_management` | SFTP assets                                               | —                | —                       |
-| `powerschool`            | enrollment API                                            | schedule         | —                       |
 | `smartrecruiters`        | report assets                                             | schedule         | —                       |
 | `tableau`                | workbook refresh assets                                   | schedule         | —                       |
 | `zendesk`                | assets                                                    | schedule         | —                       |
@@ -93,6 +92,12 @@ GET (`/workers/{aoid}`), which returns the worker regardless — so a
 single-worker probe does NOT predict which partitions a bulk re-pull will place
 them in.
 
+A `workers_sync` `zero_api_errors` failure with `EMPLOYEE_NOT_FOUND` is usually
+one of these ghosts: the record was deleted in ADP after its partition left the
+window, staging keeps it open, and the roster sends the sync to the deleted OID.
+Check the `stg_adp_workforce_now__workers__ghost_open_records` asset check
+before you debug the sync itself. The fix is the re-pull above.
+
 ## Illuminate DLT Schedule Split
 
 Illuminate DLT assets are split across two schedules in
@@ -116,5 +121,6 @@ both configs: `src/teamster/CLAUDE.md` → _Resource Model_.
 ## Disabled Integrations
 
 `adp` WFM is not integrated (no schedules or assets). Reusable library code for
-`alchemer`, `dayforce`, `fivetran`, and `adp/workforce_manager` is preserved
-under `src/teamster/libraries/` for future use.
+`alchemer`, `dayforce`, `fivetran`, `adp/workforce_manager`, and
+`powerschool/enrollment` is preserved under `src/teamster/libraries/` for future
+use.

@@ -76,10 +76,10 @@ check_output "Glob normal paths" clean Glob "/src/a.py\n/src/b.py"
 echo ""
 echo -e "${YELLOW}PostToolUse: MCP tool output scanning${NC}"
 
-check_output "MCP tool with op://" deny "mcp__bigquery__execute_sql" "op://vault/item/field"
+check_output "MCP tool with op://" deny "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly" "op://vault/item/field"
 # trunk-ignore(gitleaks/private-key): synthetic fixture, not a real key
 check_output "MCP tool with private key" deny "mcp__dagster__get_run" "-----BEGIN RSA PRIVATE KEY-----"
-check_output "MCP tool clean output" clean "mcp__bigquery__execute_sql" "rows_affected: 42"
+check_output "MCP tool clean output" clean "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly" "rows_affected: 42"
 
 # ─── High-entropy string boundary (120 chars) ────────────────────────────────
 echo ""
@@ -228,7 +228,7 @@ expect_redacted "image block with plaintext (non-base64) data still scanned" \
 	"$(jq -n '{tool_name: "mcp__x__y", tool_response: {content: [{type: "image", data: "leaked op://vault/item/field", mimeType: "image/png"}]}}')" \
 	"op://vault/item/field"
 expect_redacted "text block with a base64 data field is not exempt" \
-	"$(jq -n --arg b "${img_b64}" '{tool_name: "mcp__x__y", tool_response: {content: [{type: "text", data: $b}]}}')" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "Bash", tool_response: {content: [{type: "text", data: $b}]}}')" \
 	"${img_b64}"
 # trunk-ignore-end(shellcheck/SC2312)
 
@@ -272,30 +272,63 @@ check_output "JWT offset= behind a URL embedding the Asana URL is redacted" deny
 	"https://evil.example/https://app.asana.com/api/1.0/x?offset=${cursor}"
 check_output "JWT offset= on app.asana.com outside /api/ is redacted" deny \
 	"https://app.asana.com/0/123?offset=${cursor}"
-check_output "different opaque blob beside a valid cursor is redacted" deny mcp__asana__get_tasks \
+check_output "different opaque blob beside a valid cursor is redacted" deny \
 	"$(asana_page "${cursor}" "${opaque//a/c}")"
 # trunk-ignore-end(shellcheck/SC2312)
 
 echo ""
-echo -e "${YELLOW}PostToolUse: Google Drive nextPageToken exemption${NC}"
-# Drive search_files returns an opaque ~!!~-prefixed nextPageToken (590-790
-# chars). It is exempt only in Drive MCP output, as a nextPageToken value.
+echo -e "${YELLOW}PostToolUse: connector MCP output skips the entropy heuristic${NC}"
+# Connector ids and cursors (Outlook AAMk... ids, Drive ~!!~ tokens, Context7
+# docs) are long opaque runs, so claude.ai connector and Context7 output gets
+# named patterns only. Project MCP servers (logs, file contents) and built-in
+# tools keep the heuristic.
 # trunk-ignore-begin(shellcheck/SC2312)
-drive_tool=mcp__claude_ai_Google_Drive__search_files
-drive_token="~!!~$(printf 'AA9xZ3qLbT7wKp2R%.0s' {1..40})"
-drive_blob=$(printf 'aB3xZ9qL%.0s' {1..20})
-drive_page() { # $1 token, $2 title
-	jq -cn --arg t "$1" --arg n "${2:-Notes}" \
-		'{files:[{id:"1abcDEFghiJKLmnoPQRstuVWXyz0123456789abcd", title:$n}], nextPageToken:$t}'
+opaque_blob=$(printf 'aB3xZ9qL%.0s' {1..20})
+mcp_page="{\"uri\":\"mail:///messages/${opaque_blob}\",\"subject\":\"SFTP allowlist\"}"
+check_output "opaque blob in connector output is clean" clean \
+	mcp__claude_ai_Microsoft_365__outlook_email_search "${mcp_page}"
+check_output "opaque blob in Context7 output is clean" clean \
+	mcp__context7__query-docs "${mcp_page}"
+check_output "same opaque blob in Bash output is redacted" deny "${mcp_page}"
+check_output "same opaque blob in project MCP output is redacted" deny \
+	mcp__dagster-plus__get_run_logs "${mcp_page}"
+check_output "named secret in connector output is redacted" deny mcp__context7__query-docs \
+	"token: gh""p_$(printf 'A1b2C3d4E5f6%.0s' {1..3})"
+# trunk-ignore-end(shellcheck/SC2312)
+
+echo ""
+echo -e "${YELLOW}PostToolUse: Google API pageToken exemption${NC}"
+# A googleapiclient HttpError quotes the request URL. The Directory users.list
+# cursor is base64 of userdir_tkn_st<base64>userdir_tkn_end, percent-encoded, so
+# the decode pass unwraps a 400-char inner run that trips the entropy heuristic.
+# It is exempt only as the pageToken param of a https://*.googleapis.com/ URL.
+# trunk-ignore-begin(shellcheck/SC2312)
+g_tool=mcp__dagster-plus__get_run_logs
+g_url=https://admin.googleapis.com/admin/directory/v1/users
+g_cursor=$(printf 'userdir_tkn_st%s==userdir_tkn_end' "$(printf 'kR7+ZqLm3Xw9TbPaVn2Y%.0s' {1..20})" | base64 | tr -d '\n')
+g_cursor=${g_cursor//+/%2B}
+g_cursor=${g_cursor//\//%2F}
+g_cursor=${g_cursor//=/%3D}
+g_failure() { # $1 url through ? or &, $2 pageToken, $3 query separator (default &)
+	local sep=${3:-&}
+	jq -cn --arg m "<HttpError 400 when requesting $1pageToken=$2${sep}maxResults=500${sep}projection=full${sep}alt=json returned \"Request contains an invalid argument.\">" \
+		'{items:[{event_type:"STEP_FAILURE",error:{cause:{className:"HttpError",message:$m}}}]}'
 }
-check_output "Drive search_files nextPageToken is clean" clean "${drive_tool}" \
-	"$(drive_page "${drive_token}")"
-check_output "Drive token under a non-Drive tool is redacted" deny mcp__x__y \
-	"$(drive_page "${drive_token}")"
-check_output "Drive token without the ~!!~ prefix is redacted" deny "${drive_tool}" \
-	"$(drive_page "${drive_token#'~!!~'}")"
-check_output "opaque blob beside a valid Drive token is redacted" deny "${drive_tool}" \
-	"$(drive_page "${drive_token}" "${drive_blob}")"
+check_output "Directory HttpError with a double-encoded pageToken is clean" clean "${g_tool}" \
+	"$(g_failure "${g_url}?" "${g_cursor}")"
+g_esc=$(printf '\\%s' u0026) # JSON-escaped &
+check_output "pageToken after a JSON-escaped & separator is clean" clean "${g_tool}" \
+	"$(g_failure "${g_url}?customer=my_customer${g_esc}" "${g_cursor}" "${g_esc}")"
+check_output "pageToken on a non-Google host is redacted" deny "${g_tool}" \
+	"$(g_failure "https://googleapis.com.evil.example/v1/users?" "${g_cursor}")"
+check_output "opaque blob beside a Google pageToken is redacted" deny "${g_tool}" \
+	"$(g_failure "${g_url}?" "${g_cursor}") ${opaque_blob}"
+check_output "opaque blob in another param of a Google URL is redacted" deny "${g_tool}" \
+	"$(g_failure "${g_url}?state=${opaque_blob}&" "${g_cursor}")"
+check_output "Directory cursor outside a URL is redacted" deny "${g_tool}" \
+	"{\"nextPageToken\": \"${g_cursor//%3D/=}\"}"
+check_output "named secret inside a Google pageToken is redacted" deny "${g_tool}" \
+	"$(g_failure "${g_url}?" "gh""p_$(printf 'A1b2C3d4E5f6%.0s' {1..3})")"
 # trunk-ignore-end(shellcheck/SC2312)
 
 print_summary "Output Scanner"

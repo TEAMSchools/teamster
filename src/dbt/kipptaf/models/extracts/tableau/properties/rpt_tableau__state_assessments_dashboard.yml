@@ -1,18 +1,29 @@
 models:
   - name: rpt_tableau__state_assessments_dashboard
     description: >
-      Tableau extract joining state assessment results (NJSLA and FLDOE FAST)
-      with student enrollment demographics, performance-band goals, and
-      comparison proficiency rates from city, state, and neighborhood school
-      benchmarks. One row per student per assessment per academic year.
-
-      Network-wide, Miami included. Every leg of the score union carries
-      `localstudentidentifier` -- the network student number -- and attaches to
-      enrollments on `pearson_local_student_identifier`, which is that same
-      number despite its name. FLDOE rows take it from
-      `int_fldoe__all_assessments.student_number`, resolved upstream from
-      `fleid`. Scope ratified on #4996; the FLDOE leg emitted a hardcoded null
-      until #5042, so the model held no Miami rows before that fix.
+      Student-level extract for the State Testing Analysis Tool (STAT)
+      dashboard. One row per student, test code and administration within an
+      academic year, over the last seven academic years (grade 3 and up). Two
+      score legs are unioned. Official NJ and Florida results come from
+      int_assessments__state_scores and attach to the student's first enrollment
+      row of the year on pearson_local_student_identifier, which is the network
+      student number despite its name. Preliminary NJ results come from
+      int_pearson__student_list_report (Spring, 2024 onward), attach on the
+      state student id, and appear only for an assessment and year with no
+      Spring rows yet in int_assessments__state_nj_scores. Each row carries
+      enrollment demographics, the city, state and neighborhood-school
+      comparison rates for the matching test, the school's proficiency goals, NJ
+      tier and tutoring flags, same-year end-of-year i-Ready proficiency, and
+      the student's teacher and course in that discipline.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - test_code
+              - admin
+              - results_type
     columns:
       - name: academic_year
         data_type: int64
@@ -25,10 +36,10 @@ models:
         description: KIPP region of the student's enrollment.
       - name: state
         data_type: string
-        description: State element of address.
+        description: State of the student's region, 'NJ' or 'FL'.
       - name: schoolid
         data_type: int64
-        description: The School_Number of the associated Schools record.
+        description: School number of the student's enrollment.
       - name: school
         data_type: string
         description: School abbreviation or short identifier.
@@ -40,92 +51,164 @@ models:
         description: School level of the student's enrollment (ES, MS, or HS).
       - name: student_number
         data_type: int64
-        description: Student Number assigned by the school. Indexed.
+        description: Network student number.
+        config:
+          meta:
+            contains_pii: true
       - name: state_studentnumber
         data_type: string
         description: >
-          The state-assigned student number for the student. In most cases, this
-          number should stay the same from school to school.
+          State-assigned student id. It normally stays the same when a student
+          changes schools. The preliminary leg joins on it.
+        config:
+          meta:
+            contains_pii: true
       - name: student_first_name
         data_type: string
-        description: Students' first name.
+        description: Student's first name.
+        config:
+          meta:
+            contains_pii: true
       - name: student_middle_name
         data_type: string
         description: Student's middle name.
+        config:
+          meta:
+            contains_pii: true
       - name: student_last_name
         data_type: string
-        description: Students last name.
+        description: Student's last name.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
-        description: Last, First, Mi. Indexed.
+        description: Student's full name, last name first.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
         description: >
-          The grade the student is in. Since this is an integer: 0=Kindergarten
-          1, -2=Preschool. Indexed.
+          Student's grade level in the assessment year (0 = kindergarten).
+          Always 3 or above here.
+        config:
+          meta:
+            contains_pii: true
       - name: cohort
         data_type: int64
         description: Graduation cohort year for the student.
+        config:
+          meta:
+            contains_pii: true
       - name: enroll_status
         data_type: int64
         description: The enrollment status of the student.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
-        description: M=Male F=Female. Indexed.
+        description: Student gender (M or F).
+        config:
+          meta:
+            contains_pii: true
       - name: lunch_status
         data_type: string
         description: Student's federal lunch program eligibility status.
+        config:
+          meta:
+            contains_pii: true
       - name: gifted_and_talented
         data_type: string
         description: Gifted and talented program designation for the student.
+        config:
+          meta:
+            contains_pii: true
       - name: ms_attended
         data_type: string
         description: >
           Abbreviation of the middle school the student attended, derived from
           the student's enrollment history.
+        config:
+          meta:
+            contains_pii: true
       - name: advisory
         data_type: string
-        description:
-          Categorical mapping of advisor_lastfirst, advisory_name, school_level.
+        description: >-
+          Student's advisory, the advisory name at ES and MS and the advisor's
+          name at HS.
+        config:
+          meta:
+            contains_pii: true
       - name: year_in_network
         data_type: int64
         description:
           Number of years the student has been enrolled in the KIPP network.
+        config:
+          meta:
+            contains_pii: true
       - name: race_ethnicity
         data_type: string
-        description: >
-          Heritage background of a student. The codes assigned here are stored
-          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
-          Categorical mapping of ethnicity.
+        description: >-
+          Race/ethnicity code from the assessment record (e.g. B, H, W, T for
+          two or more). NULL on preliminary rows.
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
-        description: Student Limited English Proficiency status.
+        description: >-
+          English learner status from the assessment record. NULL on preliminary
+          rows.
+        config:
+          meta:
+            contains_pii: true
       - name: is_504
         data_type: boolean
-        description: Whether the student has a 504 plan.
+        description: >-
+          Whether the assessment record flags a 504 plan. NULL on preliminary
+          rows.
+        config:
+          meta:
+            contains_pii: true
       - name: iep_status
         data_type: string
-        description: >
-          IEP status label — 'Has IEP' when studentwithdisabilities is 'IEP' or
-          'B', otherwise 'No IEP'.
+        description: >-
+          IEP status label from the assessment record ('Has IEP' or 'No IEP').
+          NULL on preliminary rows.
+        config:
+          meta:
+            contains_pii: true
       - name: dob
         data_type: date
         description: Date of birth.
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_name
         data_type: string
-        description: Full assessment name (e.g. FAST, FSA, EOC, NJSLA, NJGPA).
+        description: >-
+          Assessment program name (e.g. NJSLA, NJSLA Science, NJGPA, FAST).
+          Preliminary rows carry the student list report's test_type.
       - name: discipline
         data_type: string
         description: Subject discipline category (Math, ELA, Science, etc.).
       - name: subject
         data_type: string
-        description: Full assessment subject name as reported by the state.
+        description: Assessment subject name.
       - name: test_code
         data_type: string
-        description: State assessment test code (e.g. ELA03, ALG01, ELAGP).
+        description:
+          Aligned state assessment test code (e.g. ELA03, ALG01, ELAGP).
       - name: test_grade
         data_type: int64
-        description: Numeric grade level at which the test was taken.
+        description: >-
+          Grade of the test form from the assessment record. NULL on preliminary
+          rows.
+        config:
+          meta:
+            contains_pii: true
       - name: admin
         data_type: string
         description:
@@ -133,75 +216,93 @@ models:
       - name: season
         data_type: string
         description: >
-          Testing season derived from administration window (Fall, Winter,
-          Spring). We only use Spring for official reporting.
+          Testing season (Fall, Winter, Spring). Spring is the only season used
+          for official reporting, and the comparison rates match on it.
       - name: score
         data_type: numeric
         description: Student's scale score on the assessment.
+        config:
+          meta:
+            contains_pii: true
       - name: performance_band
         data_type: string
         description:
           Achievement level label as reported by the state assessment.
+        config:
+          meta:
+            contains_pii: true
       - name: performance_band_level
         data_type: int64
-        description:
-          Numeric performance band level derived from the achievement level.
+        description: Numeric performance level.
+        config:
+          meta:
+            contains_pii: true
       - name: performance_band_group_label
         data_type: string
         description: >
           Performance band group label derived from the upstream assessment
-          model: for NJSLA, levels 1-2 = 'Not Proficient (1-2)', level 3 =
+          model. For NJSLA, levels 1-2 = 'Not Proficient (1-2)', level 3 =
           'Bubble (3)', level 4+ = 'Proficient (4-5)'; for FAST, level 1 = 'Not
           Proficient (1)', level 2 = 'Bubble (2)', level 3+ = 'Proficient
           (3-5)'.
+        config:
+          meta:
+            contains_pii: true
       - name: aligned_performance_band_group
         data_type: string
         description: >
-          Aligned performance band group using level labels (e.g. Lvl 1–Lvl 5)
-          derived from achievement_level strings.
+          Performance level aligned across assessments as 'Lvl 1' through 'Lvl
+          5'.
+        config:
+          meta:
+            contains_pii: true
       - name: is_proficient
         data_type: boolean
         description:
           Whether the student scored at or above the proficiency threshold.
+        config:
+          meta:
+            contains_pii: true
       - name: results_type
         data_type: string
-        description: >
-          Indicates whether scores are actual or preliminary; always 'Actual'
-          for the sources used in this model.
+        description: >-
+          'Actual' on official rows, 'Preliminary' on rows from the student list
+          report.
       - name: proficiency_city
         data_type: float64
         description: >
-          Percent proficient in the city cohort for the same test, grade, and
-          year, from the comparison demographics source.
+          City percent proficient for the same academic year, assessment, test
+          code, season, region and school level, from the comparison sheet's
+          all-students total row.
       - name: proficiency_state
         data_type: float64
         description: >
-          Percent proficient statewide for the same test, grade, and year, from
-          the comparison demographics source.
+          Statewide percent proficient, matched the same way as
+          proficiency_city.
       - name: proficiency_neighborhood_schools
         data_type: float64
         description: >
-          Percent proficient among neighborhood schools for the same test,
-          grade, and year, from the comparison demographics source.
+          Neighborhood-school percent proficient, matched the same way as
+          proficiency_city.
       - name: total_students_city
         data_type: float64
         description: >
-          Total number of students tested in the city cohort for this test,
-          grade, and year, from the comparison demographics source.
+          Number of students tested in the city, matched the same way as
+          proficiency_city.
       - name: total_students_state
         data_type: float64
         description: >
-          Total number of students tested statewide for this test, grade, and
-          year, from the comparison demographics source.
+          Number of students tested statewide, matched the same way as
+          proficiency_city.
       - name: total_students_neighborhood_schools
         data_type: float64
         description: >
-          Total number of students tested among neighborhood schools for this
-          test, grade, and year, from the comparison demographics source.
+          Number of students tested in neighborhood schools, matched the same
+          way as proficiency_city.
       - name: assessment_grade_level
         data_type: int64
-        description:
-          Numeric grade level associated with the assessment test code.
+        description: >-
+          Grade level of the academic goal row matched on school and test code.
       - name: grade_goal
         data_type: float64
         description: Target percent proficient for this grade level.
@@ -221,44 +322,93 @@ models:
         data_type: string
         description:
           NJ state assessment intervention tier assigned to the student.
+        config:
+          meta:
+            contains_pii: true
       - name: tutoring_nj
         data_type: boolean
         description:
           Whether the student is enrolled in NJ state assessment tutoring.
+        config:
+          meta:
+            contains_pii: true
       - name: iready_proficiency_eoy
         data_type: string
-        description: First non-null of iready_proficiency at end of year.
+        description: >-
+          End-of-year i-Ready proficiency in the same discipline and academic
+          year as the assessment, or 'No Test'. Read from the following year's
+          enrollment-subjects row, which carries the prior year's result.
+        config:
+          meta:
+            contains_pii: true
       - name: teachernumber
         data_type: string
-        description: The number the district assigns to track the teacher.
+        description: >-
+          Teacher number for the student's course in this discipline in the
+          assessment year.
+        config:
+          meta:
+            contains_pii: true
       - name: teacher_name
         data_type: string
-        description:
-          Full name of the teacher associated with the student's enrollment.
+        description: >-
+          Teacher of the student's course in this discipline in the assessment
+          year.
+        config:
+          meta:
+            contains_pii: true
       - name: course_number
         data_type: string
-        description: The course number associated with this section. Indexed.
+        description: >-
+          Course number of the student's course in this discipline in the
+          assessment year.
+        config:
+          meta:
+            contains_pii: true
       - name: course_name
         data_type: string
-        description: The name of the course, such as Algebra.
+        description: >-
+          Course name of the student's course in this discipline in the
+          assessment year.
+        config:
+          meta:
+            contains_pii: true
       - name: school_current
         data_type: string
-        description: School name for the student's current-year enrollment.
+        description: >-
+          School abbreviation for the student's current-year course in the same
+          credit type.
+        config:
+          meta:
+            contains_pii: true
       - name: teachernumber_current
         data_type: string
         description:
           Teacher number for the student's current-year course section.
+        config:
+          meta:
+            contains_pii: true
       - name: teacher_name_current
         data_type: string
         description: Teacher name for the student's current-year course section.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_band
         data_type: string
         description: >
-          Assessment grade band: 'HS' for high-school-level test codes (ALG02,
-          GEO01, MATGP, ELA09–11, ELAGP, SCI11, and ALG01 grade 8+), '3-8' for
-          all others.
+          Assessment grade band. 'HS' for high-school-level test codes (ALG02,
+          GEO01, MATGP, ELA09-11, ELAGP, SCI11, and ALG01 taken in grade 9 or
+          above), '3-8' for all others.
+        config:
+          meta:
+            contains_pii: true
       - name: most_recent_grade_level
         data_type: int64
         description: >
-          The highest grade level the student has reached across all of their
-          enrollment records, derived via window function over student_number.
+          The highest grade_level among the student's rows in the same score leg
+          (official or preliminary); the window is computed separately in each
+          union branch.
+        config:
+          meta:
+            contains_pii: true

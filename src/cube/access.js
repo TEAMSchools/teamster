@@ -39,14 +39,17 @@ const STAFF_SENSITIVE_SCOPE_BY_MEMBER = {
   gender_identity: "staff_pii_scope",
   race: "staff_pii_scope",
   is_hispanic: "staff_pii_scope",
+  // The hire, leave type, or termination reason behind a period's
+  // status_name. status_name itself stays on the open directory.
+  status_reason: "staff_pii_scope",
   salary: "staff_compensation_scope",
 };
 
 // The sensitive staff columns kept out of the open staff_directory view. Each
-// maps to its gating scope column in STAFF_SENSITIVE_SCOPE_BY_MEMBER — the six
-// PII fields to staff_pii_scope (surfaced in staff_pii), salary to
-// staff_compensation_scope (forward-compat; no view yet). Not PII-only, so not
-// named *_PII_*.
+// maps to its gating scope column in STAFF_SENSITIVE_SCOPE_BY_MEMBER — the
+// personal/demographic fields plus status_reason to staff_pii_scope (surfaced
+// in staff_pii), salary to staff_compensation_scope (forward-compat; no view
+// yet). Not PII-only, so not named *_PII_*.
 const STAFF_SENSITIVE_MEMBERS = Object.keys(STAFF_SENSITIVE_SCOPE_BY_MEMBER);
 
 // One column-visibility tier per forward-compat sensitive staff scope.
@@ -263,7 +266,10 @@ function buildSecurityContext(
       allowedStudentAbbreviations,
     ),
     staff_pii_scope: row?.staff_pii_scope ?? "none",
-    region_key: row?.region_key ?? null,
+    // The EMPLOYING legal entity's region, not the desk's. resolveAccess has
+    // already expanded it into both allow-lists; region maps 1:1 to legal
+    // entity, so the value is still a region key.
+    legal_entity_region_key: row?.legal_entity_region_key ?? null,
     location_abbreviation: row?.location_abbreviation ?? null,
     department_group: row?.department_group ?? null,
     job_function_level: row?.job_function_level ?? null,
@@ -297,6 +303,34 @@ function resolveAccessDataset(raw, hasDeploymentCredentials) {
   if (hasDeploymentCredentials) return fallback;
   if (/^zz_[a-z0-9_]+$/.test(raw)) return raw;
   return fallback;
+}
+
+// --- SQL API user switching (#5517) ----------------------------------------
+// The SQL super-user (Superset's service login) may switch the session to a
+// staff member so their own RLS applies. The allowlist bounds WHO it can become:
+// a real network Google domain, never an arbitrary address. It is an exact
+// domain match, not a suffix test, so a lookalike subdomain or a domain with a
+// network name embedded in it is refused. These are the only two domains in
+// dim_staff_cube_access.google_email (measured 2026-09-30); add a domain here
+// only when staff actually sign in with it.
+const NETWORK_EMAIL_DOMAINS = new Set([
+  "apps.teamschools.org",
+  "kippmiami.org",
+]);
+
+function isNetworkEmail(email) {
+  if (typeof email !== "string") return false;
+  const at = email.indexOf("@");
+  // Exactly one "@", with a non-empty local part.
+  if (at <= 0 || at !== email.lastIndexOf("@")) return false;
+  return NETWORK_EMAIL_DOMAINS.has(email.slice(at + 1).toLowerCase());
+}
+
+// An unset super-user refuses every switch, so a deployment missing
+// CUBEJS_SQL_SUPER_USER cannot match a connection whose user is also empty.
+function canSwitchSqlUser(currentUser, newUser, superUser) {
+  if (!superUser || currentUser !== superUser) return false;
+  return isNetworkEmail(newUser);
 }
 
 // --- Internal user emulation (#4526) ---------------------------------------
@@ -394,6 +428,7 @@ function emulationInputsFromCubeCloud(securityContext) {
 module.exports = {
   buildGroups,
   buildSecurityContext,
+  canSwitchSqlUser,
   computeAllowedAbbreviations,
   computeAllowedDepartmentGroups,
   emulationInputsFromCubeCloud,

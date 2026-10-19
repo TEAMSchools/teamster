@@ -183,13 +183,13 @@ async function resolveAccess(email) {
     const universes = await loadUniverses(bq);
     const baseStaffAbbreviations = access.computeAllowedAbbreviations(
       row?.staff_location_scope,
-      row?.region_key,
+      row?.legal_entity_region_key,
       row?.location_abbreviation,
       universes.locations,
     );
     const baseStudentAbbreviations = access.computeAllowedAbbreviations(
       row?.student_location_scope,
-      row?.region_key,
+      row?.legal_entity_region_key,
       row?.location_abbreviation,
       universes.locations,
     );
@@ -454,7 +454,11 @@ module.exports = {
     };
   },
 
+  // Domain allowlist and super-user gate: access.canSwitchSqlUser (#5517).
   canSwitchSqlUser: (current_user, new_user) =>
-    current_user === process.env.CUBEJS_SQL_SUPER_USER &&
-    new_user.endsWith("@apps.teamschools.org"),
+    access.canSwitchSqlUser(
+      current_user,
+      new_user,
+      process.env.CUBEJS_SQL_SUPER_USER,
+    ),
 };

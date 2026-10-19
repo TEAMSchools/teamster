@@ -1,7 +1,7 @@
 import json
 import re
 
-from dagster import AssetExecutionContext, RetryPolicy
+from dagster import AssetExecutionContext, AssetObservation, RetryPolicy
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 
@@ -32,7 +32,8 @@ def build_dbt_assets(
         selection_depends_on_nodes = [
             node
             for node_props in manifest["nodes"].values()
-            for node in node_props["depends_on"]["nodes"]
+            # seeds carry depends_on.macros only, no depends_on.nodes
+            for node in node_props["depends_on"].get("nodes", [])
             if dagster_dbt_translator.get_asset_key(node_props)
             in context.selected_asset_keys
         ]
@@ -111,6 +112,17 @@ def build_dbt_assets(
         # build models
         dbt_build = dbt_cli.cli(args=["build"], context=context)
 
-        yield from dbt_build.stream().fetch_column_metadata(with_column_lineage=False)
+        for event in dbt_build.stream().fetch_column_metadata(
+            with_column_lineage=False
+        ):
+            # dagster-dbt emits AssetObservation only for a test it cannot
+            # report as a selected check: one pulled in by dbt's eager indirect
+            # selection, or a multi-parent singular test with no
+            # meta.dagster.ref. It lands on every parent and pushes real
+            # materializations out of the asset catalog. The test result stays
+            # in the dbt logs. Verified against dagster-dbt 0.29.26
+            # (_to_observation_events_for_test); recheck on upgrade.
+            if not isinstance(event, AssetObservation):
+                yield event
 
     return _assets

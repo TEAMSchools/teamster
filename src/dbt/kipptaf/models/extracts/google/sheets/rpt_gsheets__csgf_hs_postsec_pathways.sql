@@ -25,4 +25,6 @@ left join
     {{ ref("base_kippadb__application") }} as app
     on co.salesforce_id = app.applicant
     and app.matriculation_decision = 'Matriculated (Intent to Enroll)'
+    and not app.transfer_application
+    and app.rn_app_enr = 1
 where co.rn_year = 1 and co.grade_level = 12

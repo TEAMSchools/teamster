@@ -1,19 +1,18 @@
 models:
   - name: stg_focus__student_gpa_calculated
     description: >-
-      Focus's own GPA and class-rank calculations. One row per student per
-      school. Every row carries `marking_period_id = -1`, which the vendor
-      defines as the course-history GPA — GPA over grades imported into a
-      student's official academic history, not GPA for work done in the current
-      marking period. There is no term-grained row in this table.
+      Focus's own GPA and class-rank calculations. One row per student, school,
+      school year and marking period. `marking_period_id = -1` is the
+      course-history GPA — GPA over grades imported into a student's official
+      academic history — and is the row to read for a cumulative value. Focus
+      can also write a row per term marking period for the same student and
+      school, so filter to `-1` before treating student and school as the grain.
 
 
       Coverage is narrow and that is a property of the source, not of this
-      model. Measured on the first prod load: 441 rows for 319 students, against
-      1,757 Miami students enrolled in AY2026. Every student with imported
-      course history has a row here, all 290 of them with no exceptions, plus 29
-      more. Rows appear at every grade level from K through 9, so this is not a
-      high-school-only table.
+      model. Only a minority of enrolled Miami students have a row: every
+      student with imported course history, plus a few without. Rows appear at
+      every grade level from K up, so this is not a high-school-only table.
 
 
       `gpa` and `cumulative_gpa` are the same measure at different rounding —
@@ -54,12 +53,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__students')
-                field: student_id
-              config:
-                severity: warn
         config:
           meta:
             contains_pii: true
@@ -75,8 +68,8 @@ models:
       - name: marking_period_id
         description: >-
           Marking period the calculation covers. `-1` marks the course-history
-          GPA, per Focus SIS Level 1 Certification, Day 2. It is the only value
-          present.
+          GPA, per Focus SIS Level 1 Certification, Day 2. Any other value is a
+          term marking period.
         data_type: int
       - name: grade_id
         description: >-

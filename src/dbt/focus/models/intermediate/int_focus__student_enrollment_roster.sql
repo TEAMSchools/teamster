@@ -124,9 +124,8 @@ with
     -- The tie-break depends on custom_9 being populated whenever two stints sit
     -- at different schools. That premise is asserted upstream, where both rows
     -- still exist: tests/stg_focus__student_enrollment__one_primary_per_stint.sql
-    -- TODO: drop once Focus stops accepting duplicate open stints -- the
-    -- staging uniqueness tests on stg_focus__student_enrollment are the
-    -- standing signal that it still does.
+    -- Same-school, same-start duplicates (the stub case) have no test; this
+    -- dedupe absorbs them silently.
     deduplicate as (
         {{
             dbt_utils.deduplicate(
@@ -223,10 +222,15 @@ with
     )
 
 select
-    * except (year_in_school, year_in_network),
+    * except (year_in_school, year_in_network, enroll_status),
 
     if(rn_year = 1, year_in_school, null) as year_in_school,
 
     if(rn_year = 1, year_in_network, null) as year_in_network,
+
+    -- #5598: student-level current status; rationale in the properties yml.
+    first_value(enroll_status) over (
+        partition by student_number order by rn_all
+    ) as enroll_status,
 
 from with_year_counts

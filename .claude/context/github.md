@@ -7,8 +7,7 @@
   is read by nobody. So a per-finding verdict written back to the review (which
   `pr-ci-review` and the root CLAUDE.md both require) does NOT reach the
   reviewer on its own: post the verdict, then post a tagged comment carrying the
-  asks, or lead the verdict comment with the tag. Verified 2026-09-20 on #5408,
-  where an untagged reply sat unread until a tagged one was posted.
+  asks, or lead the verdict comment with the tag.
 - Pass `minimal_output: true` on every `mcp__github__*` read unless you need a
   field it drops.
 - **Neither the read nor the write tools mangle body text. Escaped characters in
@@ -16,28 +15,17 @@
   `issue_read` render `<`, `>` and `&` as the JSON escapes `\u003c`, `\u003e`
   and `\u0026`, and a double quote as `\"`. Those decode losslessly, so a body
   that looks corrupted in a read result is NOT corrupted: do not rewrite one to
-  "fix" it, and do not read an escaped token as a dropped one.
-- Verified 2026-09-16 on PR #5350 (comment 5702796794): `<role>`, `<col>`,
-  `<notatag>`, `<zz>`, `<br>`, `<strong>`, `<=`, `>=`, `&`, `&&` and both quote
-  styles, each in prose, an inline code span and a fenced block, posted with
-  `gh api` and read back with `issue_read` `method=get_comments`. Every token
-  came back at identical count and decoded to the raw `--jq .body` bytes; zero
-  HTML entities (`&amp;`, `&#34;`, `&#39;`, `&lt;`, `&gt;`) appeared anywhere.
-  Nothing is stripped and nothing is entity-encoded. The write side was verified
-  separately 2026-09-02 at PR #5105, comment 5515033123; `&` and `"` are safe in
-  titles and code spans.
+  "fix" it, and do not read an escaped token as a dropped one. Nothing is
+  stripped or entity-encoded, in prose, code spans, or fenced blocks, and `&`
+  and `"` are safe in titles.
 - Read the TRUE stored body with raw
   `gh api repos/<owner>/<repo>/pulls/<n> --jq .body` (a GET — works via Bash,
   whereas `gh pr view` is denied) when you need exact bytes to diff, since it
-  skips the JSON escaping. Edit a body with
-  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>`, sourcing the
-  text from a raw GET or your own draft; `-F body=@<file>` also avoids
-  shell-quoting trouble on large markdown.
+  skips the JSON escaping.
 - **Never hard-wrap body text.** GitHub renders every single newline in a PR
   body, issue body, or comment as a line break, so 80-column prose displays as a
-  ragged narrow column (verified: PR #4933's body renders 69 forced breaks
-  mid-sentence). Write one line per paragraph and let it reflow. The repo's
-  prettier `proseWrap: always` governs `.md` files in the checkout only —
+  ragged narrow column. Write one line per paragraph and let it reflow. The
+  repo's prettier `proseWrap: always` governs `.md` files in the checkout only —
   nothing formats a GitHub body, so wrapping there is never automatic.
 - `mcp__github__pull_request_review_write` `method=create` requires the FULL
   40-char `commitID` — an abbreviated SHA fails with "Could not coerce value ...
@@ -61,8 +49,9 @@ The root CLAUDE.md names the allowed `gh` subcommands; the mechanics live here.
   fields (`Driver`, `Tier`, `Status`) do appear. Use the same `fieldValues`
   GraphQL query to read the omitted ones.
 - `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>` —
-  adds an issue/PR to a ProjectV2 board. No `mcp__github__*` equivalent. Combine
-  with `gh project item-edit` to set fields after add.
+  adds an issue to a ProjectV2 board. No `mcp__github__*` equivalent. Combine
+  with `gh project item-edit` to set fields after add. Never add a PR: issue
+  refs in its body put it on the board.
 - `gh api graphql` ProjectV2 `items(first: N)` is capped at 100. Paginate with
   `pageInfo.endCursor` for boards with >100 items.
 - `gh pr checks <n> --json name,bucket,state` — combined commit statuses + check
@@ -77,11 +66,10 @@ The root CLAUDE.md names the allowed `gh` subcommands; the mechanics live here.
   Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
   For large bodies (tables, multi-paragraph), write the body to a file and pass
   `-F body=@<file>` instead of inline `-f body='...'` (avoids shell-quoting on
-  big markdown). Same `-F body=@<file>` trick applies to `create_pull_request` /
-  comment creation via `gh api`.
+  big markdown).
 - Editing a PR **body** —
-  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` takes the
-  text from a file, which beats passing a long markdown body inline.
+  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>`, sourcing the
+  text from a raw GET or your own draft.
 - Replying to a PR inline review comment in-thread —
   `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
   replies. Use

@@ -1,22 +1,11 @@
 with
-    comm_log_deduped as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_deanslist__comm_log"),
-                partition_by=(
-                    "student_school_id, academic_year, reason," " _dbt_source_project"
-                ),
-                order_by="call_date desc",
-            )
-        }}
-    ),
-
     comm_log as (
         select
             *,
             {{ dbt_utils.generate_surrogate_key(["record_id", "_dbt_source_project"]) }}
             as family_communication_key,
-        from comm_log_deduped
+        from {{ ref("int_deanslist__comm_log") }}
+        where is_latest_for_reason
     )
 
 select

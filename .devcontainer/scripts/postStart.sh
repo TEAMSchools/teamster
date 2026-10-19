@@ -43,10 +43,6 @@ for h in /home/vscode/.cache/trunk/repos/*/; do
 done
 /workspaces/teamster/.trunk/tools/trunk cache prune 2>/dev/null || true
 
-# Headless setup moved from .vscode/scripts/setup.sh (folderOpen task) so it
-# runs once per container start instead of once per window reload. Only
-# interactive auth flows remain in setup.sh.
-
 if [[ -z ${GITHUB_USER-} ]]; then
 	GITHUB_USER=$(gh api user --jq .login 2>/dev/null || true)
 	if [[ -n ${GITHUB_USER} ]]; then

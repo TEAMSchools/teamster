@@ -37,8 +37,8 @@ evolve an Avro source's schema, the new-schema file must sort last — materiali
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
 otherwise pick up the old (earlier-sorting) schema.
 
-**A metadata-cached Avro external can read a field NULL downstream though the
-GCS file is correct — two distinct failure modes, both surfaced by #4151:**
+**A metadata-cached Avro external can read wrong data though the GCS file is
+correct — two distinct failure modes:**
 
 - _Schema heterogeneity (deterministic)._ After a schema add + partial backfill,
   old-schema files (field absent) and new-schema files (field present) coexist.
@@ -49,30 +49,35 @@ GCS file is correct — two distinct failure modes, both surfaced by #4151:**
   full partition history always includes old files, so the column reads NULL
   everywhere. A cache refresh / rebuild does NOT fix it — only homogenizing the
   files does (`scripts/reencode_avro_partitions.py` re-encodes every partition).
-- _Cache staleness (intermittent)._ `build_dbt_assets`
-  (stage→refresh→`dbt build`) races BigLake metadata-cache convergence after a
-  `create or replace` / overwrite-in-place: the
-  `refresh_external_metadata_cache` `CALL` returning DONE does NOT mean
-  queryable-fresh (lag seconds→hours, non-monotonic), so a just-materialized
-  partition reads NULL downstream.
+- _Pinned file version deleted (deterministic)._ A `metadata_cache_mode: MANUAL`
+  external reads the object version it cached at the last refresh, not the live
+  object. The Avro IO manager overwrites one object per partition in place, the
+  bucket keeps noncurrent versions, and its lifecycle rule deletes a version
+  once it has 2 newer ones (up to a day late). After 2 overwrites with no
+  refresh, the cached version is gone and the external reads 0 rows with no
+  error. `build_dbt_assets` refreshes the cache only for externals upstream of a
+  selected model, so a model reading an overwritten-in-place external must be a
+  table: it rebuilds, and refreshes, on every upload. A view over one goes empty
+  about 3 days after its last rebuild. A refresh restores it at once.
 
-Verifying: `bq --nouse_cache` exposes the TRUE cached state (the BQ results
-cache and the BigQuery MCP otherwise return stale-but-fresh-looking counts).
-Selecting `_FILE_NAME` forces a live read that BYPASSES the metadata cache
-(ground truth vs. staleness) but does NOT bypass schema heterogeneity (a
-mixed-schema scan still drops the field), and it contaminates the whole query to
-a live read. So `_FILE_NAME` is ground truth only within a single-schema scan
-(one partition); never mix it into a cached-path check.
+Verifying: selecting `_FILE_NAME` forces a live read that bypasses the metadata
+cache, so a live count beside a cached count of 0 means the pinned version is
+gone. It does NOT bypass schema heterogeneity (a mixed-schema scan still drops
+the field), and it turns the whole query into a live read, so it is ground truth
+only within a single-schema scan (one partition); never mix it into a
+cached-path check. To date a past empty read, `job_stages` in
+`INFORMATION_SCHEMA.JOBS` carries `records_read` per READ step, and the step's
+`substeps` name the external it read.
 
 dbt Cloud CI runs `dbt build` only (never `stage_external_sources`) → it reads
 the existing `zz_stg` external table as-is. To make CI see a new schema before
 prod Avro is updated: materialize the max partition locally (the Avro IO manager
 uploads to GCS even with `test=True` →
 `gs://teamster-test/dagster/<asset_key>/`), then
-`stage_external_sources --target staging --vars '{cloud_storage_uri_base: gs://teamster-test/dagster/<project>, ext_full_refresh: true}'`.
-Re-stage to the prod location only post-merge once the prod re-pull lands — a
-pre-merge re-stage reverts CI to the old (narrow) schema.
-`stage_external_sources` SKIPs an existing table unless
+`stage_external_sources --target staging --vars '{cloud_storage_uri_base: gs://teamster-test/dagster/<project>, ext_full_refresh: true}'`
+(a shared write: _Shared staging writes_ below). Re-stage to the prod location
+only post-merge once the prod re-pull lands — a pre-merge re-stage reverts CI to
+the old (narrow) schema. `stage_external_sources` SKIPs an existing table unless
 `ext_full_refresh: true`.
 
 Re-pulling a source asset refreshes the **prod** external
@@ -93,26 +98,33 @@ in a BigQuery external table as a named
 the typed subfield (`.string_value` / `.array_string_value` / `.boolean_value`).
 
 dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
-`dbt debug` / `build` / `run-operation --target staging` connect with no
-1Password (BigQuery uses ADC, not the 1Password bootstrap). **Hand
-`--target prod` runs (`dbt build` / `run`) to the user.** They are reported to
-have worked once on #5278 with authorization in the immediately-preceding turn,
-but that is secondhand and unverified — a session that needs one should ask the
-user to run it rather than treat the report as permission. `dbt compile` /
-`parse --target prod` are NOT blocked (no warehouse write) — use them to
-validate model SQL/refs locally. `stage_external_sources --target staging` with
-`ext_full_refresh: true` also needs direct user authorization in the
-immediately-preceding turn (drops/recreates shared `zz_stg` tables), else hand
-off.
+`dbt debug` / `build` / `run-operation` connect with no 1Password (BigQuery uses
+ADC, not the 1Password bootstrap). **Hand `--target prod` runs (`dbt build` /
+`run`) to the user.** `dbt compile` / `parse --target prod` write nothing to the
+warehouse — use them to validate model SQL/refs locally.
 
-Any shared-write dbt command can still be denied WITH authorization in hand, so
-shape the call for the classifier: put the shared write in its OWN Bash call,
-never compounded with a setup step (`dbt deps && dbt build --target staging` was
-denied where the bare `dbt build --target staging` went through), and restate
-the user's consent in plain text in the message immediately before the call,
-naming what the write touches. A `--target staging` build of one model is a
-shared write — it creates `zz_stg_<district>_<source>.<model>`, which CI and
-other developers read.
+### Shared staging writes
+
+Any `--target staging` `dbt build`, `dbt run`, `dbt clone`, or
+`stage_external_sources` writes the shared `zz_stg_*` datasets that dbt Cloud CI
+and other developers read. Even a one-model build creates
+`zz_stg_<district>_<source>.<model>`, and `ext_full_refresh: true` drops and
+recreates the external. Run one only with the user's authorization in the
+immediately-preceding turn; otherwise hand the command to the user.
+
+Authorization does not stop the classifier from denying the call, so shape it:
+
+- Put the shared write in its OWN Bash call, never compounded with a setup step
+  (`uv run dbt deps && uv run dbt build --target staging` is denied where the
+  bare build goes through).
+- Restate the user's consent in plain text in the message immediately before the
+  call, naming what the write touches.
+
+`dbt compile --target staging` writes nothing and needs no authorization.
+`--target dev` writes only your personal `zz_<user>_*` schemas and needs none
+either.
+
+### Running `stage_external_sources`
 
 `stage_external_sources --args "select: ..."` takes a
 `<source_name>.<table_name>` selector — not project-qualified. The
@@ -229,14 +241,14 @@ text-formatted `00000` in Sheets becomes INT64.
 After Ops edits a Google Sheet source or after running
 `stage_external_sources --target staging`, rebuild downstream `stg_*` tables
 (default materialization is `table`) before trusting test results:
-`dbt build --select <staging_model>+1 --exclude resource_type:test`. A "drift"
-against stale staging is a false positive.
+`uv run dbt build --select <staging_model>+1 --exclude resource_type:test`. A
+"drift" against stale staging is a false positive.
 
 Google Sheets externals read the sheet **live**, so a _value_ edit (not a new
 column) is picked up by rebuilding the `stg_` model into your dev schema
-(`dbt build --select <model> --target dev --defer --state <abs prod manifest>`)
-— no `stage_external_sources` needed (it's classifier-blocked anyway). Use this
-to verify an Ops sheet fix, then query the rebuilt `zz_<user>_*` table.
+(`uv run dbt build --select <model> --target dev --defer --state <abs prod manifest>`)
+— no `stage_external_sources` needed. Use this to verify an Ops sheet fix, then
+query the rebuilt `zz_<user>_*` table.
 
 Never judge CURRENT sheet content from the prod `stg_*` table — it is a table
 frozen at the last prod build, not a live read, so it reports pre-edit values
@@ -278,8 +290,9 @@ legitimately-superseded inactive rows that repeat the key.
 - Staging-layer tests MUST set `config: severity: error` on every test. The
   district and kipptaf project default is `warn`, so their staging tests without
   explicit `severity: error` silently degrade to warnings and won't fail CI.
-  Intermediate/mart/`rpt_` tests may omit the override where a warning is
-  acceptable.
+  Intermediate tests may omit the override where a warning is acceptable.
+- Tests on marts and `rpt_` models follow _Tests on marts and `rpt_` models_ at
+  the end of this file.
 - Removing a `severity: warn` override reverts to the project default: `warn` in
   a district or kipptaf, `error` in a source package. To force `error`, set
   `config: severity: error` explicitly.
@@ -303,10 +316,10 @@ legitimately-superseded inactive rows that repeat the key.
   `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
   literal in every UNION branch, or `count(...)`. The `accepted_values` pairing
   above overrides this rule; nothing else does.
-- **Disabling a model does NOT disable its tests.** `config: enabled: false` in
-  properties yml moves the model to `disabled` but leaves every test in `nodes`
-  (verified with `--no-partial-parse`), still scanning the stale prod relation.
-  Add `config: enabled: false` to each test as well.
+- **Disabling a model disables only the generic tests declared on it.** A
+  singular test that refs it, and a `relationships` test on another model whose
+  `to:` names it, stay in `nodes` (verified with `--no-partial-parse`) and keep
+  scanning the stale prod relation. Disable or remove each of those.
 
 ### An FK check belongs on the pre-join model, as a column `relationships` test
 
@@ -333,15 +346,19 @@ name the column at model level, not on the column.
 Top-level `description` on a singular test must go in a properties yml under
 `data_tests:` — `config(description="...")` in the SQL lands at
 `config.description`, which dbt docs doesn't read. After adding/editing the yml,
-run `dbt parse --no-partial-parse`; partial parse caches the unbound state.
+run `uv run dbt parse --no-partial-parse`; partial parse caches the unbound
+state.
 
-### Singular-test `meta.dagster.ref` needs `package:` for cross-package refs
+### Singular-test `meta.dagster.ref`: when it's required, and `package:`
+
+A singular test that reads more than one model needs `meta.dagster.ref` in
+`tests/properties.yml`, or Dagster never sees its result: `build_dbt_assets`
+drops the observation dagster-dbt falls back to.
 
 dagster-dbt resolves `meta.dagster.ref` via `(name, package, version)`. Omitting
 `package:` defaults to the running project — so a test under
 `src/dbt/<source>/tests/` referencing a model in its own package silently misses
-the lookup and logs `AssetObservation` across all parents instead of an
-`AssetCheckResult` on the intended asset. Always set `package: <source>` for
+the lookup and never becomes a check. Always set `package: <source>` for
 source-system package tests. Tests in `src/dbt/kipptaf/tests/` don't need it
 (refs default to kipptaf).
 
@@ -392,7 +409,8 @@ the normalized value its sibling scalar columns assert.
   — verify every paste against the current source.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
-  Describe calculated fields by logic. Use qualitative language — no stats.
+  Describe calculated fields by logic. Content test:
+  `.claude/rules/comments.md`.
 - Columns with **per-column** `data_tests:` must be sorted to the top of the
   `columns:` list for visibility — including after a change that strips a
   column's last test. Reorder freely under `contract: enforced`: BigQuery
@@ -415,3 +433,46 @@ the normalized value its sibling scalar columns assert.
   descriptions — those go in inline SQL comments at the derivation site.
 - The reverse (rationale belongs in `description:`, not an inline SQL comment):
   the inline-comment rule in `.claude/rules/dbt-sql.md`.
+
+<!-- --8<-- [start:tests] -->
+
+## Tests on marts and `rpt_` models
+
+Marts and `rpt_` models carry only `error` tests and unit tests. A warning on a
+model a dashboard or feed reads is one nobody acts on, so each test either fails
+the build or moves somewhere it can be acted on.
+
+Until a folder has its own `+severity: error` block in `dbt_project.yml`, set
+`config: severity: error` on each new test there. An `error` test lands only
+after its query returns 0 rows in prod.
+
+Sort each test by what it guards:
+
+- Grain: the backstop on every mart and `rpt_` model. Add `not_null` on
+  natural-key grain columns (`unique` skips nulls) unless they are non-null by
+  construction; a `generate_surrogate_key` primary key needs only `unique`. If a
+  grain test fails in prod on a source defect that waits on a fix elsewhere, set
+  `severity: warn` on that one test with a `TODO(#N)` comment, and still flip
+  the folder. A kipptaf `rpt_` model listed on
+  [#5990](https://github.com/TEAMSchools/teamster/issues/5990) has no grain test
+  yet: add one in any PR that modifies it, and check it off there.
+- A `relationships` test from a mart or `rpt_` model to another model is not a
+  regression test. Key drift is the key macros' job (A7). When two models must
+  cover the same population, have both read one shared upstream model. A test
+  comparing two separately built models also catches the gap between their
+  rebuild times. Real orphans become an upstream `warn`. A column
+  `relationships` test on the model that feeds a join, before the join drops
+  unmatched rows, is still the right FK check. Exception: an outbound feed whose
+  rows reference another feed's file (ParentSquare, Clever) keeps its
+  file-to-file check, because the target system rejects a dangling id.
+- The model's own logic: a unit test.
+- A promise an upstream model makes: an `error` test on that model.
+- Source data: a test on the earliest model that sees it. Either a `warn` with a
+  downstream defense and a description naming the source system, what is wrong,
+  and what to change there; or, when no business rule can handle it, an `error`
+  gate. A new gate lands as `warn` and flips after it passes in prod. A failing
+  test skips only downstream tables; a view between a gate and its consumers
+  still reads the bad rows.
+- Build timing: delete it.
+
+<!-- --8<-- [end:tests] -->

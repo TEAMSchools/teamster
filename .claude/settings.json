@@ -4,7 +4,6 @@
   },
   "permissions": {
     "allow": [
-      "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
       "Bash(cat)",
       "Bash(git diff)",
       "Bash(git status)",
@@ -14,16 +13,15 @@
       "Bash(uv tool list)",
       "Edit(/.claude/scratch/**)",
       "Edit(/.claude/skills/dagster-day2/**)",
-      "Edit(/.worktrees/**)",
-      "mcp__bigquery__analyze_contribution",
-      "mcp__bigquery__execute_sql",
-      "mcp__bigquery__forecast",
-      "mcp__bigquery__get_dataset_info",
-      "mcp__bigquery__get_table_info",
-      "mcp__bigquery__list_dataset_ids",
-      "mcp__bigquery__list_table_ids",
-      "mcp__bigquery__search_catalog",
+      "Edit(/.claude/worktrees/**)",
       "mcp__claude_ai_Cube__meta",
+      "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly",
+      "mcp__claude_ai_Google_Cloud_BigQuery__get_dataset_info",
+      "mcp__claude_ai_Google_Cloud_BigQuery__get_query_results",
+      "mcp__claude_ai_Google_Cloud_BigQuery__get_table_info",
+      "mcp__claude_ai_Google_Cloud_BigQuery__list_dataset_ids",
+      "mcp__claude_ai_Google_Cloud_BigQuery__list_table_ids",
+      "mcp__claude_ai_Slack__slack_send_message",
       "mcp__context7__query-docs",
       "mcp__context7__resolve-library-id",
       "mcp__dagster__get_asset_check_executions",
@@ -41,6 +39,8 @@
       "mcp__dagster__list_backfills",
       "mcp__dagster__list_schedules",
       "mcp__dagster__list_sensors",
+      "mcp__dagster-plus__get_run",
+      "mcp__dagster-plus__launch_asset_run",
       "mcp__dbt__get_job_details",
       "mcp__dbt__get_job_run_details",
       "mcp__dbt__get_job_run_error",
@@ -92,11 +92,9 @@
       "mcp__gke__list_recommendations",
       "mcp__gke__query_logs",
       "Read(/.claude/**)",
-      "Read(/.worktrees/**)",
       "Read(//home/vscode/.claude/**)",
       "Read(//tmp/dagster/**)",
       "Read(//workspaces/teamster/**)",
-      "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)"
     ],
     "deny": [
@@ -131,6 +129,7 @@
       "Edit(/.trunk/config/**)",
       "Edit(/.trunk/trunk.yaml)",
       "Edit(//home/vscode/.claude/shell-snapshots/**)",
+      "EnterWorktree",
       "Read(**/.env.*)",
       "Read(**/.env)",
       "Read(**/*.cer)",
@@ -145,6 +144,7 @@
       "Read(//home/vscode/.ssh/**)",
       "Read(//proc/**)",
       "Read(/env/**)",
+      "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql",
       "mcp__dagster__get_asset_health",
       "mcp__dagster__get_run_group",
       "mcp__dagster__get_run",
@@ -160,7 +160,7 @@
       "mcp__github__merge_pull_request"
     ]
   },
-  "enabledMcpjsonServers": ["dagster", "dagster-plus", "bigquery", "dbt"],
+  "enabledMcpjsonServers": ["dagster", "dagster-plus", "dbt"],
   "hooks": {
     "SessionStart": [
       {
@@ -217,11 +217,9 @@
     ]
   },
   "enabledPlugins": {
-    "commit-commands@claude-plugins-official": true,
     "dagster@dagster": true,
     "dbt@dbt-agent-marketplace": true,
     "pyright-lsp@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
     "superpowers@superpowers-dev": true
   },
   "extraKnownMarketplaces": {
@@ -229,25 +227,29 @@
       "source": {
         "source": "github",
         "repo": "anthropics/claude-plugins-official"
-      }
+      },
+      "autoUpdate": true
     },
     "dagster": {
       "source": {
         "source": "github",
         "repo": "dagster-io/skills"
-      }
+      },
+      "autoUpdate": true
     },
     "dbt-agent-marketplace": {
       "source": {
         "source": "github",
         "repo": "dbt-labs/dbt-agent-skills"
-      }
+      },
+      "autoUpdate": true
     },
     "superpowers-dev": {
       "source": {
         "source": "github",
         "repo": "obra/superpowers"
-      }
+      },
+      "autoUpdate": true
     }
   },
   "promptSuggestionEnabled": false,

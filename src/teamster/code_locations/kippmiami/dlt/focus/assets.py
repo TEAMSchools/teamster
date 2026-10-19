@@ -35,22 +35,37 @@ assets = [
         sql_database_credentials=sql_database_credentials,
         code_location=CODE_LOCATION,
         tables=tables,
-        # Memory only: `K8sConfigMergeBehavior` defaults to DEEP, so naming just
-        # `limits.memory` leaves the shared step-pod block's `limits.cpu`
-        # (1750m) and both requests in `.k8s/dagster/values-override.yaml`
-        # untouched. A SHALLOW merge would replace `resources` wholesale and
-        # drop the cpu sizing silently.
+        # `K8sConfigMergeBehavior` defaults to DEEP, so the cpu limit in the
+        # shared step-pod block of `.k8s/dagster/values-override.yaml` survives
+        # this override. A SHALLOW merge would replace `resources` wholesale
+        # and drop it silently.
         #
-        # Do not lower this against a sampled figure. The alert behind it caught
-        # 92.6% of the old 2.5Gi limit, but GCP samples memory every 60s and
-        # these pods live ~110s, so any measured peak is a floor. Peak scales
-        # with how many tables a tick selects (5 concurrent dlt extract workers,
-        # `FOCUS_CHUNK_SIZE` rows buffered each). If 3.0Gi also runs short, the
-        # next lever is the `dlt_extract_workers` run tag, not more memory.
-        # Incident detail: tests/libraries/test_dlt_focus_memory_limit.py.
+        # The memory request matters as much as the limit. Under node memory
+        # pressure the kubelet evicts the pod furthest over its request first.
+        # Going over the limit is no better: the OOM kill spends the Job's one
+        # retry, and that replacement pod also exits on Dagster's
+        # duplicate-start guard. Either way the run hangs until the sensor's
+        # `dagster/max_runtime`, so the request sits above the widest observed
+        # tick and the limit adds headroom above that.
+        #
+        # The cpu request follows the memory request: Scale-Out requires an
+        # exact 1:4 cpu:memory request ratio and Autopilot raises the smaller
+        # resource to fit, so it is written out rather than left implicit.
+        #
+        # Do not lower the memory figures against a sampled figure: GCP samples
+        # memory every 60s and these pods live a few minutes, so any measured
+        # peak is a floor. Peak scales with how many tables a tick selects (5
+        # concurrent dlt extract workers, `FOCUS_CHUNK_SIZE` rows buffered
+        # each). If this also runs short, the next lever is the
+        # `dlt_extract_workers` run tag, not more memory.
         op_tags={
             "dagster-k8s/config": {
-                "container_config": {"resources": {"limits": {"memory": "3.0Gi"}}}
+                "container_config": {
+                    "resources": {
+                        "requests": {"cpu": "750m", "memory": "3.0Gi"},
+                        "limits": {"memory": "3.5Gi"},
+                    }
+                }
             }
         },
     )

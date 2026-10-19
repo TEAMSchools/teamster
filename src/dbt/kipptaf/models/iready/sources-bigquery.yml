@@ -4,6 +4,7 @@ sources:
     tables:
       - name: snapshot_iready__instructional_usage_data
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:

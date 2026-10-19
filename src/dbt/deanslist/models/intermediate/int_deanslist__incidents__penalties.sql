@@ -28,7 +28,12 @@ with
     )
 
 select
-    *,
+    * except (`start_date`, end_date),
+
+    if(
+        `start_date` < '{{ var("deanslist_min_valid_date") }}', null, `start_date`
+    ) as `start_date`,
+    if(end_date < '{{ var("deanslist_min_valid_date") }}', null, end_date) as end_date,
 
     case
         when

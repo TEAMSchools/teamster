@@ -1,4 +1,14 @@
 with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("cambium", "src_cambium__njsla"),
+                partition_by="student_test_uuid",
+                order_by="source_file_modified_timestamp desc, source_file_name desc",
+            )
+        }}
+    ),
+
     njsla as (
         select
             american_indian_or_alaska_native,
@@ -50,7 +60,7 @@ with
                 unit_4_online_test_start_date_time as timestamp
             ) as unit_4_start_timestamp,
 
-        from {{ source("cambium", "src_cambium__njsla") }}
+        from deduplicate
         where summative_flag = 'Y' and test_attemptedness_flag = 'Y'
     ),
 

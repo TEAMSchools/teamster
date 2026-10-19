@@ -4,7 +4,10 @@ Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
 `dagster-ssh`'s `SSHResource` with three extra capabilities:
 
 - `listdir_attr_r()` — recursive SFTP directory listing returning
-  `(SFTPAttributes, path)` tuples
+  `(SFTPAttributes, path)` tuples. Skips (does not raise on) a listing entry
+  that isn't a single, non-traversing path component — see
+  `_is_safe_listing_filename`. Regression:
+  `tests/resources/test_resource_ssh_listdir.py`.
 - `listdir_attr_r_or_skip()` — connect + `listdir_attr_r` with failure triage;
   **the entry point every SFTP sensor should use**
 - `open_ssh_tunnel()` — in-process paramiko local port forward, used by the dlt
@@ -36,11 +39,11 @@ if isinstance(files, SkipReason):
 
 ## Key Fields Added
 
-| Field                | Type          | Purpose                                                                                                                                                                                                             |
-| -------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tunnel_remote_host` | `str \| None` | Remote bind host for local port forwarding                                                                                                                                                                          |
-| `test`               | `bool`        | Unused by any method on this class since the sshpass tunnel (its only reader) was retired in #4442; kept because other resource construction paths (e.g. `tests/resources/test_resource_ssh_rekey.py`) still set it |
-| `enable_legacy_rsa`  | `bool`        | Re-enable paramiko's dropped `ssh-rsa` host-key algorithm                                                                                                                                                           |
+| Field                | Type          | Purpose                                                                                                                                             |
+| -------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tunnel_remote_host` | `str \| None` | Remote bind host for local port forwarding                                                                                                          |
+| `test`               | `bool`        | Unused by any method on this class; kept because other resource construction paths (e.g. `tests/resources/test_resource_ssh_rekey.py`) still set it |
+| `enable_legacy_rsa`  | `bool`        | Re-enable paramiko's dropped `ssh-rsa` host-key algorithm                                                                                           |
 
 ## Notes
 

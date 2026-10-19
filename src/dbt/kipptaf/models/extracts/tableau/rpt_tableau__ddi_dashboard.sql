@@ -57,7 +57,7 @@ with
             )
     ),
 
-    identifiers as (
+    responses as (
         select
             co.student_number,
             co.student_name,
@@ -107,21 +107,33 @@ with
 
             sd.standard_domain,
 
-            cc.sections_section_number as course_section,
-            cc.courses_course_name as course_name,
-            cc.courses_course_number as course_number,
-            cc.courses_credittype as course_credittype,
-            cc.teachernumber as course_teachernumber,
-            cc.teacher_lastfirst as course_teacher_name,
-            cc.is_foundations,
-
-            sf.dibels_most_recent_composite,
-            sf.state_test_proficiency,
-            sf.is_exempt_iready,
-            sf.nj_student_tier,
-            sf.is_low_25_fl,
-
             cast(r.assessment_id as string) as assessment_id,
+
+            -- Apex rows take the section the scaffold matched, Illuminate rows
+            -- the student's latest section in the subject
+            -- Focus rows null sections_section_number; cc_section_number is
+            -- the Focus section number
+            if(
+                r.source = 'apex', ca.cc_section_number, cc.sections_section_number
+            ) as course_section,
+            if(
+                r.source = 'apex', ca.courses_course_name, cc.courses_course_name
+            ) as course_name,
+            if(
+                r.source = 'apex', ca.courses_course_number, cc.courses_course_number
+            ) as course_number,
+            if(
+                r.source = 'apex', ca.courses_credittype, cc.courses_credittype
+            ) as course_credittype,
+            if(
+                r.source = 'apex', ca.teachernumber, cc.teachernumber
+            ) as course_teachernumber,
+            if(
+                r.source = 'apex', ca.teacher_lastfirst, cc.teacher_lastfirst
+            ) as course_teacher_name,
+            if(
+                r.source = 'apex', ca.is_foundations, cc.is_foundations
+            ) as is_foundations,
 
             if(r.date_taken is not null, 1, 0) as is_complete,
 
@@ -131,7 +143,7 @@ with
         from {{ ref("int_extracts__student_enrollments_weeks") }} as co
         left join
             {{ ref("int_assessments__response_rollup") }} as r
-            on co.student_number = r.powerschool_student_number
+            on co.student_number = r.student_number
             and co.academic_year = r.academic_year
             and co.region = r.region
             and r.administered_at between co.week_start_monday and co.week_end_sunday
@@ -147,11 +159,9 @@ with
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
         left join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-            on co.student_number = sf.student_number
-            and co.academic_year = sf.academic_year
-            and cc.courses_credittype = sf.powerschool_credittype
-            and sf.rn_year = 1
+            {{ ref("base_powerschool__course_enrollments") }} as ca
+            on r.cc_dcid = ca.cc_dcid
+            and r._dbt_source_project = ca._dbt_source_project
         where
             /* Eligibility is enrollment as of the week end, not current
                enroll_status: that column is student-level and current-only, so
@@ -166,6 +176,24 @@ with
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
             and r.module_type != 'WPP'
+    ),
+
+    identifiers as (
+        select
+            r.*,
+
+            sf.dibels_most_recent_composite,
+            sf.state_test_proficiency,
+            sf.is_exempt_iready,
+            sf.nj_student_tier,
+            sf.is_low_25_fl,
+        from responses as r
+        left join
+            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
+            on r.student_number = sf.student_number
+            and r.academic_year = sf.academic_year
+            and r.course_credittype = sf.powerschool_credittype
+            and sf.rn_year = 1
     ),
 
     microgoals_long as (
@@ -260,7 +288,7 @@ select
     co.is_sipps,
     co.is_low_25_fl,
 
-    qbls.qbl,
+    cast(null as string) as qbl,
 
     g.grade_goal,
     g.school_goal,
@@ -274,22 +302,13 @@ select
         ip.total_iready_lessons_passed_math, 0
     ) as total_iready_lessons_passed_math,
 
-    if(qbls.qbl is not null, true, false) as is_qbl,
+    false as is_qbl,
 
     coalesce(ip.is_pass_2_lessons_int_reading, 0) as is_passed_iready_2plus_reading_int,
     coalesce(ip.is_pass_4_lessons_int_reading, 0) as is_passed_iready_4plus_reading_int,
     coalesce(ip.is_pass_2_lessons_int_math, 0) as is_passed_iready_2plus_math_int,
     coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
 from identifiers as co
-left join
-    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
-    on co.academic_year = qbls.academic_year
-    and co.term = qbls.term_name
-    and co.region = qbls.region
-    and co.grade_level = qbls.grade_level
-    and co.response_type_code = qbls.standard_code
-    and co.subject_area = qbls.illuminate_subject_area
-    and qbls.qbl is not null
 left join
     {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id
@@ -368,7 +387,7 @@ select
     co.is_sipps,
     co.is_low_25_fl,
 
-    qbls.qbl,
+    cast(null as string) as qbl,
 
     g.grade_goal,
     g.school_goal,
@@ -378,20 +397,13 @@ select
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
 
-    if(qbls.qbl is not null, true, false) as is_qbl,
+    false as is_qbl,
 
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
     null as is_passed_iready_2plus_math_int,
     null as is_passed_iready_4plus_math_int,
 from identifiers as co
-left join
-    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
-    on co.academic_year = qbls.academic_year
-    and co.term = qbls.term_name
-    and co.region = qbls.region
-    and co.response_type_code = qbls.standard_code
-    and co.subject_area = qbls.illuminate_subject_area
 left join
     {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id

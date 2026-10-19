@@ -1,30 +1,43 @@
-select
-    cc.schoolid as school_id,
+with
+    students as (
+        select student_number, schoolid, grade_level, _dbt_source_project,
+        from {{ ref("int_extracts__student_enrollments") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            and rn_year = 1
+            and not is_out_of_district
+            and enroll_status in (0, -1)
+            -- Miami rosters into Clever from Focus, not from this feed
+            and _dbt_source_project != 'kippmiami'
+    ),
 
-    concat(
-        regexp_extract(cc._dbt_source_relation, r'(kipp\w+)_'), cc.sectionid
-    ) as section_id,
+    enrollments as (
+        select
+            ce.cc_schoolid as school_id,
 
-    s.student_number as student_id,
-from {{ ref("stg_powerschool__cc") }} as cc
-inner join
-    {{ ref("stg_powerschool__students") }} as s
-    on cc.studentid = s.id
-    and cc._dbt_source_project = s._dbt_source_project
-    and s.enroll_status in (0, -1)
-where cc.dateleft >= current_date('{{ var("local_timezone") }}')
+            s.student_number as student_id,
 
-union all
+            concat(ce._dbt_source_project, ce.cc_sectionid) as section_id,
+        from {{ ref("int_students__course_enrollments") }} as ce
+        inner join
+            students as s
+            on ce.students_student_number = s.student_number
+            and ce._dbt_source_project = s._dbt_source_project
+        where ce.exit_date >= current_date('{{ var("local_timezone") }}')
 
-select
-    schoolid as school_id,
+        union all
 
-    concat(
-        {{ var("current_academic_year") - 1990 }},
-        schoolid,
-        right(concat(0, grade_level), 2)
-    ) as section_id,
+        select
+            schoolid as school_id,
+            student_number as student_id,
 
-    student_number as student_id,
-from {{ ref("stg_powerschool__students") }}
-where enroll_status in (0, -1)
+            concat(
+                {{ var("current_academic_year") - 1990 }},
+                schoolid,
+                right(concat(0, grade_level), 2)
+            ) as section_id,
+        from students
+    )
+
+select school_id, section_id, student_id,
+from enrollments

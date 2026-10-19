@@ -1,15 +1,21 @@
 models:
   - name: stg_deanslist__behavior
-    # config:
-    #   materialized: table
+    config:
+      # Not a view: a test on a view runs only when its code changes, and the
+      # school_name relationships test below must catch a DeansList school
+      # missing from the crosswalk sheet on every build. No package can hold it,
+      # because the crosswalk is a kipptaf model.
+      materialized: table
     columns:
       - name: school_name
         data_type: string
         data_tests:
           - relationships:
               arguments:
-                to: ref("stg_google_sheets__people__location_crosswalk")
-                field: name
+                to: ref("int_people__location_crosswalk")
+                field: location_name
+              config:
+                severity: error
       - name: _dbt_source_relation
         data_type: string
       - name: _dbt_source_project

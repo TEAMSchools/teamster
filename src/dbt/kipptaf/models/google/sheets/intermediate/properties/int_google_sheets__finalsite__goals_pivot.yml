@@ -1,5 +1,12 @@
 models:
   - name: int_google_sheets__finalsite__goals_pivot
+    description: >
+      Pivots the five enrollment targets in stg_google_sheets__finalsite__goals
+      (Seat, FDOS, Budget, New Student, Re-Enroll Projection) from one row per
+      goal_name into one column each. The pivot groups on every other goal
+      column, so rows whose goal_type is not Enrollment still come through, with
+      all five target columns null. Duplicate goal rows in the sheet would be
+      averaged by the pivot rather than surfaced.
     config:
       materialized: table
     data_tests:
@@ -18,20 +25,36 @@ models:
     columns:
       - name: enrollment_academic_year
         data_type: int64
+        description: Academic year the goal is for, from the goals sheet.
       - name: region
         data_type: string
+        description: Region the goal belongs to.
       - name: schoolid
         data_type: int64
+        description: >
+          PowerSchool school number; 0 on region-level rows not tied to a
+          school.
       - name: school
         data_type: string
+        description: School name or abbreviation from the goals sheet.
       - name: grade_level
         data_type: int64
+        description: >
+          Grade level the goal applies to (K = 0); -9 for whole-school totals.
       - name: goal_granularity
         data_type: string
+        description: >
+          "School", "School/Grade Level", or "Region/Grade Level".
       - name: goal_type
         data_type: string
+        description: Funnel stage the goal belongs to (e.g. Enrollment).
       - name: enrollment_type
         data_type: string
+        description: >
+          "New" for the New Student Target row, "Returning" for the Re-Enroll
+          Projection row, "All" for every other goal. Because it is derived from
+          goal_name, new_student_target and re_enroll_projection land on their
+          own rows, separate from the other targets.
       - name: seat_target
         data_type: numeric
         description: Total seats/capacity the school is targeting for the year.
@@ -48,7 +71,6 @@ models:
       - name: re_enroll_projection
         data_type: numeric
         description: >
-          Projected count of currently-enrolled students expected to persist
-          (return) -- "persistence," not "retention"; retention refers to grade
-          repetition in this org's vocabulary and is a distinct, unrelated
-          concept.
+          Projected count of currently enrolled students expected to return next
+          year (persistence). Not "retention", which here means repeating a
+          grade.

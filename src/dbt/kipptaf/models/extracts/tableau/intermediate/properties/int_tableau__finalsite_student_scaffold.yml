@@ -1,5 +1,19 @@
 models:
   - name: int_tableau__finalsite_student_scaffold
+    description: >-
+      Student-level FRESH dashboard roster for the current Finalsite recruitment
+      cycle (the finalsite_recruitment_year variable). One row per Finalsite
+      enrollment, enrollment_type, timeframe, goal_type and goal_name the
+      student counts toward. Finalsite statuses are mapped to funnel groups
+      through the status crosswalk; statuses the crosswalk marks invalid or
+      QA-flagged, or does not map at all, are dropped. "Ever" rows mark every
+      funnel group the student passed through; "Current" rows mark only the
+      group their latest status belongs to. Pending Offers also gets one row per
+      day bucket (<= 4, 5-10, > 10 days). Each row is matched to the student's
+      SIS enrollment for the same year (PowerSchool by infosnap_id, Focus for
+      Miami through the Finalsite contact crosswalk) and carries the QC flags
+      that compare the two. Feeds the three rpt_tableau__fresh_dashboard_*
+      views.
     config:
       materialized: table
       meta:
@@ -40,7 +54,7 @@ models:
           "2026-27".
       - name: org
         data_type: string
-        description: Always "KTAF" (verified constant, network-wide).
+        description: Always "KTAF".
       - name: region
         data_type: string
         description: One of "Newark", "Camden", "Miami", "Paterson".
@@ -55,12 +69,14 @@ models:
         data_type: string
         description: >-
           Short school abbreviation for schoolid, from the same crosswalk. "No
-          School Assigned" when Finalsite has none.
+          School Assigned" when Finalsite has none. On Inquiries and
+          Applications rows it holds the region name instead, because those
+          goals are counted at region level.
       - name: finalsite_id
         data_type: string
         description: >-
-          Finalsite enrollment id -- the grain of this model together with
-          enrollment_academic_year, and the key downstream QC joins on.
+          Finalsite enrollment id. Identifies the student within this model and
+          is the key the SIS enrollment match joins on.
         config:
           meta:
             contains_pii: true
@@ -90,18 +106,20 @@ models:
           Grade level as reported by Finalsite, decoded to an integer in the
           finalsite package (PK = -1, K = 0, 1-12 as themselves). Compared
           against sis_grade_level to produce is_grade_level_mismatch.
+        config:
+          meta:
+            contains_pii: true
       - name: enroll_status
         data_type: int64
         description: >-
           Enrollment status from the matched SIS enrollment record (PowerSchool,
           or Focus for Miami) -- 0 currently enrolled, 2 withdrawn, 3 graduated.
-          Null when no SIS record matched, which is the case
-          is_missing_sis_record covers downstream. Distinct from
+          Null when no SIS record matched. Distinct from
           finalsite_expected_enroll_status, which is derived from Finalsite
-          rather than read from the SIS. Exposed as sis_enroll_status on
-          rpt_tableau__fresh_dashboard_qc, where the pairing needs to be
-          explicit; kept as enroll_status here because the other two
-          fresh_dashboard views expose it under that name.
+          rather than read from the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
         description: Student gender as recorded in Finalsite.
@@ -120,12 +138,18 @@ models:
           Finalsite self-contained special-education indicator. Values are mixed
           in the source -- "Yes", "No", and a literal "false" -- so treat it as
           a label rather than a clean boolean.
+        config:
+          meta:
+            contains_pii: true
       - name: enrollment_type
         data_type: string
         description: >-
           "New" or "Returning" -- whether Finalsite is recruiting this student
           into the network or re-enrolling them. Part of this model's grain, and
           what valid_detailed_status on the crosswalk is scoped against.
+        config:
+          meta:
+            contains_pii: true
       - name: sis_entry_date
         data_type: date
         description: >-
@@ -133,6 +157,9 @@ models:
           PowerSchool, startdate in Focus. Carried through solely to compute
           is_enrolled_fdos against custom_fdos_date; null when no SIS record
           matched.
+        config:
+          meta:
+            contains_pii: true
       - name: custom_fdos_date
         data_type: date
         description: >-
@@ -149,67 +176,107 @@ models:
         data_type: boolean
         description: >-
           True when the student's SIS enrollment start date falls on or before
-          custom_fdos_date. Recomputed here from the hardcoded regional date --
-          it no longer passes through either SIS's own first-day flag.
-          Entry-date only, matching the prior behavior: a student who enrolled
-          before the first day and left before it still counts as true. Null
-          when no SIS record matched, which is why this is a bare comparison
-          rather than the if(..., true, false) form its sibling flags use --
-          wrapping it would report every unmatched student as false rather than
-          unknown.
+          custom_fdos_date, computed here rather than read from either SIS's own
+          first-day flag. Entry date only: a student who enrolled before the
+          first day and left before it still counts as true. Null when no SIS
+          record matched, which is why this is a bare comparison rather than the
+          if(..., true, false) form its sibling flags use -- wrapping it would
+          report every unmatched student as false rather than unknown.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_oct01
         data_type: boolean
         description: >-
           True when the matched SIS enrollment record covers October 1 of the
           enrollment year.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_oct15
         data_type: boolean
         description: >-
           True when the matched SIS enrollment record covers October 15 of the
           enrollment year.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_mar15
         data_type: boolean
         description: >-
           True when the matched SIS enrollment record covers March 15 of the
           enrollment year.
+        config:
+          meta:
+            contains_pii: true
       - name: latest_status
         data_type: string
         description: >-
           The student's most recent Finalsite status for this cycle, picked per
-          enrollment by status date then status rank. This is the single value
-          the dashboard treats as "where the student is now", and what
-          finalsite_expected_enroll_status is derived from.
+          Finalsite enrollment by latest status date, then highest status rank
+          on a same-day tie. Only statuses that survive the crosswalk filter are
+          candidates. This is the single value the dashboard treats as "where
+          the student is now", and what finalsite_expected_enroll_status is
+          derived from.
+        config:
+          meta:
+            contains_pii: true
       - name: aligned_enrollment_type
         data_type: string
         description: >-
-          Always "All" today. Exists so goal rows that apply regardless of New
-          vs Returning can join without duplicating per enrollment_type.
+          Always "All". Exists so goal rows that apply regardless of New vs
+          Returning can join without duplicating per enrollment_type.
+        config:
+          meta:
+            contains_pii: true
       - name: grouped_status_timeframe
         data_type: string
         description: >-
           "Current" for the student's status as it stands now, or "Ever" for a
-          status they passed through at any point. Funnel goal types (Inquiries,
-          Applications, Offers, Assigned School, Accepted, Conversion) are
-          counted "Ever"; everything else is counted "Current".
+          status they passed through at any point. Set per status group by the
+          status crosswalk: the funnel stages (Inquiries, Applications, Offers,
+          Assigned School, Accepted and the conversion groups) are "Ever";
+          everything else is "Current".
+        config:
+          meta:
+            contains_pii: true
       - name: goal_name
         data_type: string
         description: >-
-          The specific goal this row counts toward, from the status_crosswalk
-          goal-group mapping. See docs/models/fresh-dashboard-data-model.md for
-          the full glossary.
+          The specific goal this row counts toward. Usually the status group
+          name itself; on "Ever" rows Applications becomes "App Target" and
+          Offers becomes "Offers Target" so they line up with the goals sheet.
+          Pending Offers rows are repeated with goal_name set to each day bucket
+          ("<= 4 Days", ">= 5 & <= 10 Days", "> 10 Days"). See
+          docs/models/fresh-dashboard-data-model.md for the full glossary.
+        config:
+          meta:
+            contains_pii: true
       - name: goal_type
         data_type: string
         description: >-
           The funnel bucket this row counts toward -- Inquiries, Applications,
           Offers, Accepted, Waitlisted, Deferred, Enrolled, Conversion and the
-          rest. A single Finalsite status fans out to several goal_type rows by
-          design, which is why this model's grain includes it.
+          rest. Usually the status group name; the three conversion groups
+          (Accepted to Enrolled, Offers to Accepted, Offers to Enrolled, and
+          their "Num" variants) collapse to "Conversion". A student counts
+          toward several goal_types at once, which is why this model's grain
+          includes it.
+        config:
+          meta:
+            contains_pii: true
       - name: days_in_grouped_status
         data_type: int64
         description: >-
-          Days the student has been in the current grouped status, inclusive --
-          a status set and ended on the same day counts as 1 rather than 0.
-          Feeds the Pending Offers day-bucket splits on the dashboard.
+          Days the student spent in this status group -- from the group's start
+          date to the start of their next group, or to today (Eastern time) if
+          it is their latest. A group started and ended on the same day counts
+          as 1 rather than 0. Computed only for New students and for groups with
+          a nonzero grouped_status_order; null otherwise. Drives the Pending
+          Offers day-bucket rows.
+        config:
+          meta:
+            contains_pii: true
       - name: finalsite_expected_enroll_status
         data_type: int64
         description: >-
@@ -230,22 +297,34 @@ models:
           for the pending group, whose truer expectation is no active record
           rather than a withdrawal, but the check only ever tests against
           enroll_status = 0 so the distinction does not change any outcome.
+        config:
+          meta:
+            contains_pii: true
       - name: sis_grade_level
         data_type: int64
         description: >-
           Grade level from the matched SIS enrollment record (PowerSchool, or
           Focus for Miami), for comparison against the Finalsite-reported
           grade_level.
+        config:
+          meta:
+            contains_pii: true
       - name: sis_school
         data_type: string
         description: >-
           School name from the matched SIS enrollment record (PowerSchool, or
           Focus for Miami).
+        config:
+          meta:
+            contains_pii: true
       - name: sis_schoolid
         data_type: int64
         description: >-
           School ID from the matched SIS enrollment record (PowerSchool, or
           Focus for Miami), for comparison against schoolid.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enroll_status_mismatch
         data_type: boolean
         description: >-
@@ -253,22 +332,28 @@ models:
           actual enroll_status -- Finalsite implies enrolled while the SIS says
           withdrawn or graduated, or Finalsite implies not-enrolled while the
           SIS says currently enrolled. The second case covers both a student who
-          left and one who has not finished enrolling -- one comparison, so the
-          SRE-facing documentation presents it as one direction with two halves
-          rather than two directions. The follow-up differs between the halves;
-          latest_status is what tells them apart. The pending group replaced a
-          separate same-day-status-tie flag.
+          left and one who has not finished enrolling; latest_status tells them
+          apart. False, not null, when no SIS record matched.
+        config:
+          meta:
+            contains_pii: true
       - name: is_grade_level_mismatch
         data_type: boolean
         description: >-
           True when the Finalsite-reported grade_level differs from the SIS's
           sis_grade_level. Materializes as false, not null, when no SIS record
           matched -- the comparison is wrapped in if(), which takes the else
-          branch on a null condition. Verified against BigQuery.
+          branch on a null condition.
+        config:
+          meta:
+            contains_pii: true
       - name: is_school_mismatch
         data_type: boolean
         description: >-
           True when the Finalsite-reported schoolid differs from the SIS's
           sis_schoolid. Materializes as false, not null, when no SIS record
           matched -- the comparison is wrapped in if(), which takes the else
-          branch on a null condition. Verified against BigQuery.
+          branch on a null condition.
+        config:
+          meta:
+            contains_pii: true

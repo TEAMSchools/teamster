@@ -5,8 +5,8 @@ with
 
         union all
 
-        select distinct 'pearson' as source_system, `subject` as raw_subject,
-        from {{ ref("int_pearson__all_assessments") }}
+        select distinct 'pearson' as source_system, raw_subject,
+        from {{ ref("int_assessments__state_nj_scores") }}
 
         union all
 

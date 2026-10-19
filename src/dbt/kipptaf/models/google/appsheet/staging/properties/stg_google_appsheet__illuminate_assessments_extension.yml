@@ -1,34 +1,92 @@
 models:
   - name: stg_google_appsheet__illuminate_assessments_extension
+    description: >-
+      Metadata layered onto Illuminate and Apex assessments through AppSheet —
+      module, grade, subject, and which regions the assessment covers and
+      reports to. One row per source and assessment_id; the two systems' ids can
+      collide, so every join to this model matches on both.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - source
+              - assessment_id
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              assessment_key is not distinct from
+              format('%s-%d', `source`, assessment_id)
+          config:
+            severity: error
     columns:
+      - name: source
+        data_type: string
+        description: >-
+          System the assessment_id belongs to — illuminate or apex.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - illuminate
+                  - apex
+              config:
+                severity: error
       - name: assessment_id
         data_type: int64
+        description: >-
+          Assessment id the extension row describes, in the system named by
+          source.
+      - name: assessment_key
+        data_type: string
+        description: >-
+          The app's key, source and assessment_id joined with a hyphen (for
+          example apex-123). AppSheet fills it from the chosen assessment in
+          rpt_appsheet__assessments. Not the dim_assessments.assessment_key
+          hash, so never join the two. dbt joins on source and assessment_id
+          instead.
       - name: administered_at
         data_type: date
+        description: >-
+          Administration date entered in AppSheet. Overrides the Illuminate date
+          downstream when present.
       - name: module_type
         data_type: string
+        description: Module type prefix, combined with module_sequence.
       - name: module_sequence
         data_type: int64
+        description: Module number within module_type.
       - name: regions_assessed
         data_type: string
+        description: Comma-separated list of regions that take the assessment.
       - name: grade_level
         data_type: int64
+        description: Grade level the assessment targets (0 is kindergarten).
       - name: subject
         data_type: string
+        description: >-
+          Subject entered in AppSheet. Overrides the Illuminate subject area
+          downstream when present.
       - name: regions_report_card
         data_type: string
+        description: Regions whose report cards use the assessment.
       - name: regions_progress_report
         data_type: string
+        description: Regions whose progress reports use the assessment.
       - name: illuminate_grade_level_id
         data_type: int64
+        description: grade_level plus 1, the Illuminate grade level id.
       - name: module_code
         data_type: string
+        description: module_type concatenated with module_sequence.
       - name: regions_assessed_array
         data_type: array<string>
         description: >-
-          `regions_assessed` with all whitespace stripped, then split on comma.
-          Within-row duplicates and any empty-string elements (from leading or
-          trailing commas) are resolved by `illuminate_deduped` in
-          `dim_assessment_administrations`. Consumers can `cross join
-          unnest(regions_assessed_array)` to get one row per (assessment,
-          region).
+          regions_assessed with all whitespace stripped, then split on comma.
+          Within-row duplicates and empty-string elements (from leading or
+          trailing commas) are kept here. Consumers cross join unnest the array
+          to get one row per assessment and region.

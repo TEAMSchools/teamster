@@ -7,6 +7,7 @@ with
             'overall' as response_type,
             -1 as response_type_id,
         from {{ ref("int_assessments__assessments_members") }}
+        where source = 'illuminate'
     ),
 
     standards as (
@@ -62,3 +63,4 @@ from unioned as u
 inner join
     {{ ref("int_assessments__assessments_members") }} as a
     on u.assessment_id = a.assessment_id
+where a.source = 'illuminate'

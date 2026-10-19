@@ -280,10 +280,15 @@ cubes:
         filters:
           - sql: "{CUBE}.membership_value = 1"
 
-      - name: _sum_membership_value
+      - name: count_membership_days
+        description: >-
+          Full-membership days (membership_value = 1) with a recorded attendance
+          value — the "possible days" denominator of avg_daily_attendance. Days
+          with no recorded attendance are excluded, matching ADA. For ADA itself
+          use avg_daily_attendance.
         sql: membership_value
         type: sum
-        public: false
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
           - sql: "{CUBE}.attendance_value IS NOT NULL"
@@ -295,27 +300,39 @@ cubes:
           recorded attendance value are excluded from both numerator and
           denominator, matching the attendance dashboard; counting them in the
           denominator alone would report them as absences.
-        sql: "{_sum_attendance_value} / NULLIF({_sum_membership_value}, 0)"
+        sql: "{_sum_attendance_value} / NULLIF({count_membership_days}, 0)"
         type: number
         format: percent
         public: true
 
       # Same numerator/denominator symmetry as ADA: a tardy code recorded on a
       # day with no attendance value is excluded here, because
-      # _count_present_days already excludes it (is_absent is NULL whenever
+      # count_present_days already excludes it (is_absent is NULL whenever
       # attendance_value is, so `is_absent = 0` never matches).
-      - name: _sum_tardy
+      - name: count_tardy_days
+        description: >-
+          Tardy days among full-membership days with a recorded attendance value
+          — the numerator of pct_tardy, whose denominator is count_present_days.
+          Miami has no daily tardy data from AY2026 on, so its days add nothing
+          here while still counting in count_present_days. A total that includes
+          Miami from AY2026 on understates tardies; filter Miami out for those
+          years.
         sql: is_tardy
         type: sum
-        public: false
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
           - sql: "{CUBE}.attendance_value IS NOT NULL"
 
-      - name: _count_present_days
+      - name: count_present_days
+        description: >-
+          Full-membership days (membership_value = 1) on which the student was
+          not absent — the denominator of pct_tardy and pct_ontime. For ADA use
+          avg_daily_attendance rather than dividing this by
+          count_membership_days.
         sql: "1"
         type: sum
-        public: false
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
           - sql: "{CUBE}.is_absent = 0"
@@ -324,13 +341,16 @@ cubes:
         description: >-
           Percentage of present days where the student was tardy (tardy days /
           present days). Absent days and days with no recorded attendance value
-          are excluded from both numerator and denominator.
+          are excluded from both numerator and denominator. Miami has no daily
+          tardy data from AY2026 on, but its present days stay in the
+          denominator, so a rate that includes Miami from AY2026 on reads low;
+          filter Miami out for those years.
 
           Date filter behavior: filtering to a single date returns that day's
           tardy rate only. For a cumulative YTD rate as of a given date, use a
           date range from the start of the academic year (e.g. 2025-07-01
           through the target date).
-        sql: "1.0 * {_sum_tardy} / NULLIF({_count_present_days}, 0)"
+        sql: "1.0 * {count_tardy_days} / NULLIF({count_present_days}, 0)"
         type: number
         format: percent
         public: true
@@ -340,15 +360,17 @@ cubes:
           Percentage of present days where the student arrived on time (on-time
           days / present days). Complement of pct_tardy. Absent days and days
           with no recorded attendance value are excluded from both numerator and
-          denominator.
+          denominator. Miami has no daily tardy data from AY2026 on, so every
+          Miami present day in those years counts as on time and a rate that
+          includes them reads high; filter Miami out for those years.
 
           Date filter behavior: filtering to a single date returns that day's
           on-time rate only. For a cumulative YTD rate as of a given date, use a
           date range from the start of the academic year (e.g. 2025-07-01
           through the target date).
         sql: >-
-          1.0 * ({_count_present_days} - {_sum_tardy}) /
-          NULLIF({_count_present_days}, 0)
+          1.0 * ({count_present_days} - {count_tardy_days}) /
+          NULLIF({count_present_days}, 0)
         type: number
         format: percent
         public: true

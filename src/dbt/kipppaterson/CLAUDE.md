@@ -23,15 +23,19 @@ dlt models its PowerSchool instance does not populate — see the
 
 Endpoint-level notes:
 
-- `cambium` — `stg_cambium__njsla` only. `stg_cambium__njgpa`,
-  `stg_cambium__eoc` and their sources are disabled in `dbt_project.yml`, and so
-  are their generic tests, listed individually under `data_tests:` — a disabled
-  model keeps its tests, and they would scan a relation Paterson never builds.
-  Quoted columns (`period`, `subject`) get a trailing underscore in the test
-  name. Enable EOC when Paterson receives the file
-- `pearson` — `stg_pearson__njsla` and `stg_pearson__njsla_science` enabled;
-  `stg_pearson__njgpa`, `stg_pearson__parcc`, `stg_pearson__student_test_update`
-  disabled in `dbt_project.yml`
+- `cambium` — `stg_cambium__njsla` only. `stg_cambium__njgpa` and its source are
+  disabled in `dbt_project.yml`, and so are its generic tests, listed
+  individually under `data_tests:` — a disabled model keeps its tests, and they
+  would scan a relation Paterson never builds. Quoted columns (`period`) get a
+  trailing underscore in the test name. A first Paterson end-of-course file
+  loads through `stg_cambium__njsla` with no change here
+- `pearson` — `stg_pearson__student_list_report` and
+  `int_pearson__student_list_report` only. The score models
+  (`stg_pearson__njsla*`, the local `int_pearson__njsla*` remaps and
+  `int_pearson__all_assessments`) are disabled with their tests, leaving the
+  last prod tables frozen as history for kipptaf. `stg_pearson__njgpa`,
+  `stg_pearson__parcc` and `stg_pearson__student_test_update` were never enabled
+  here
 - `amplify` — both `dds` and `mclass/api` disabled
 - `finalsite`
 - `titan` — `stg_titan__person_data` only; `stg_titan__income_form_data`

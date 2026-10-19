@@ -3,14 +3,14 @@ from smtplib import SMTP
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 
 
 class EmailResource(ConfigurableResource):
     host: str
     port: int
     user: str
-    password: str
+    password: str = Field(repr=False)
     chunk_size: int = 1
     timeout: int = 30
 

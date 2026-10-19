@@ -29,14 +29,14 @@ district's prod manifest for `--defer` (e.g. focus → kippmiami):
 **A contract-enforced change needs a real `dbt build` to verify, not a prod
 SELECT** — `assert_columns_equivalent` runs only inside `dbt build`/CTAS, so a
 SELECT against the prod external validates data/logic but NOT the column set,
-and an all-NULL new source column that `select *` passes through slips past
-(this shipped a 2nd prod contract failure a build would have caught). For an
-Avro/GCS-source model, the dev source copy
+and an all-NULL new source column that `select *` passes through slips past. For
+an Avro/GCS-source model, the dev source copy
 `zz_<GITHUB_USER>_<district>_<source>` may be stale/missing the new column —
 re-stage YOUR copy first:
-`dbt run-operation stage_external_sources --args "select: <source>.<table>" --vars '{ext_full_refresh: true}' --target dev --project-dir src/dbt/<district>`
-(personal schema, NOT classifier-blocked, unlike `--target staging`), then
-`dbt build --select <model> --target dev`.
+`uv run dbt run-operation stage_external_sources --args "select: <source>.<table>" --vars '{ext_full_refresh: true}' --target dev --project-dir src/dbt/<district>`
+(personal schema, so no consent step; `--target staging` is a shared write, see
+_Shared staging writes_ in `.claude/rules/dbt-yaml.md`), then
+`uv run dbt build --select <model> --target dev`.
 
 **A view build does not evaluate data.** A bad `cast` in a view-materialized
 model passes `dbt build` and fails only when a downstream TABLE materializes it.
@@ -55,10 +55,11 @@ compiled. Prove a removal with `grep` for zero enabled call sites plus
 `dbt build --empty` over the affected graph.
 
 **`analyses/` are verifiable — compile + BigQuery dry run.** `dbt build` never
-runs them, but `dbt compile --select "path:analyses/<f>.sql" --target prod`
-followed by `bq query --dry_run` on `target/compiled/.../<f>.sql` resolves every
-column against prod schemas — stronger than the `--empty` gate used for models.
-Strip leading `--` comment lines first.
+runs them, but
+`uv run dbt compile --select "path:analyses/<f>.sql" --target prod` followed by
+`bq query --dry_run` on `target/compiled/.../<f>.sql` resolves every column
+against prod schemas — stronger than the `--empty` gate used for models. Strip
+leading `--` comment lines first.
 
 ### Local dev schema naming
 
@@ -79,18 +80,21 @@ Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
 "table not found" when those externals aren't staged for the current user. Add
 `--defer --state=src/dbt/<project>/target/prod/`. **`--state` path is relative
 to `--project-dir`** — repo-root form silently fails with "Could not find
-manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
-`git pull`; if stale, regenerate with
+manifest". The prod manifest is refreshed on every `git pull` by the trunk
+action `dbt-prod-manifests` (`.trunk/trunk.yaml`, post-merge trigger), which
+runs `.vscode/scripts/post-merge.sh`. Trunk owns `core.hooksPath`, so a script
+copied into `.git/hooks/` never runs. If stale, regenerate with
 `uv run dbt parse --target prod --project-dir <project> --target-path target/prod`.
 
 **From a worktree**, `--state` must be absolute
 (`/workspaces/teamster/src/dbt/<project>/target/prod`). The relative form
 resolves under the worktree, which has no `target/prod/` — only the main repo's
-manifest is refreshed by `post-merge`.
+manifest is refreshed by the post-merge action.
 
 Validate a newly-added data test against prod before pushing:
-`dbt test --select <model> --target dev --defer --state <prod manifest>` runs
-the compiled test SQL against the deferred prod relation — no dev build needed.
+`uv run dbt test --select <model> --target dev --defer --state <prod manifest>`
+runs the compiled test SQL against the deferred prod relation — no dev build
+needed.
 
 A dev `--defer` build of a **table-materialized** mart can fail on a cross-mart
 `foreign_key` constraint ("Table X does not have Primary Key constraints") when
@@ -126,19 +130,18 @@ against prod via the BQ MCP.
 build right after a full clone fails
 `Not found: Table zz_stg_<district>_<source>.<model>` for a model that plainly
 exists in prod. Cause chain: `dbt clone` skips any node absent from `--state`
-(see above), and the prod manifest only regenerates via `.git/hooks/post-merge`
-— which fails **silently** if `dbt parse` errors, freezing the manifest at its
-last good date. The parse error is usually a package the project no longer
-lists: a retired `local:` package stays in `<project>/dbt_packages/`, so parse
-still loads its models and dies on one referencing a since-disabled model (e.g.
-kippmiami kept a `powerschool` copy after the Focus migration →
-`int_powerschool__contacts` → `stg_powerschool__studentcontactassoc` "is
-disabled"). Diagnose by comparing the manifest's mtime to the model's add date
-and `grep` for the node's `unique_id`; fix with
-`dbt deps --project-dir src/dbt/<project>` (prunes the stale package) then the
-`dbt parse --target prod --target-path target/prod` regeneration above.
-Re-running the clone against the stale manifest just skips the same models
-again.
+(see above), and the prod manifest only regenerates via the post-merge action. A
+`dbt parse` error prints during the pull but does not fail it, so it is easy to
+miss, and the manifest freezes at its last good date. The parse error is usually
+a package the project no longer lists: a retired `local:` package stays in
+`<project>/dbt_packages/`, so parse still loads its models and dies on one
+referencing a since-disabled model (e.g. kippmiami kept a `powerschool` copy
+after the Focus migration → `int_powerschool__contacts` →
+`stg_powerschool__studentcontactassoc` "is disabled"). Diagnose by comparing the
+manifest's mtime to the model's add date and `grep` for the node's `unique_id`;
+fix with `uv run dbt deps --project-dir src/dbt/<project>` (prunes the stale
+package) then the `dbt parse` regeneration above. Re-running the clone against
+the stale manifest just skips the same models again.
 
 ### `dbt build --empty` destroys your dev relation contents
 
@@ -150,17 +153,14 @@ returns 0 rows and looks like catastrophic row loss in the model.
 Order matters: run validation queries BEFORE the `--empty` gate, or rebuild
 without `--empty` afterwards. Distinguish this from a real break by checking a
 relation OUTSIDE the `--empty` selection — a source copy that still has rows
-while every selected model is 0 is the signature. Verified this session: a
-409-node `--empty` gate zeroed `int_students__student_enrollments`,
-`int_focus__advisory` and the `base_` passthrough while the unselected
-`zz_<user>_kippnewark_powerschool` source kept its 97,855 rows.
+while every selected model is 0 is the signature.
 
 ### Stale dev tables shadow `--defer`
 
 `--defer` uses any existing dev table before falling through to prod, so a stale
 dev parent dim produces false-positive `relationships` orphans. Before trusting
 a dev relationships warning on a FK, include the parent in `--select` or
-`dbt clone --select <parent_dim>` from prod.
+`uv run dbt clone --select <parent_dim>` from prod.
 
 The inverse also happens: a stale dev CHILD makes a `relationships` test pass
 VACUOUSLY. A `dbt test` that passes locally and warns in CI with thousands of
@@ -173,9 +173,9 @@ dedupe from a dev mart-test failure.
 
 A stale dev copy missing a NEW column breaks the BUILD too ("Name <col> not
 found inside <alias>"), not just relationships tests.
-`dbt build --favor-state --defer --state <prod>` resolves every unselected
-upstream to prod regardless of stale dev copies — cleaner than enumerating
-parents in `--select`.
+`uv run dbt build --favor-state --defer --state <prod>` resolves every
+unselected upstream to prod regardless of stale dev copies — cleaner than
+enumerating parents in `--select`.
 
 Conversely, to validate a consumer of a NEW column on an unmerged upstream,
 `--select` BOTH: `--favor-state` resolves the unselected upstream to prod (which
@@ -198,10 +198,9 @@ against prod (or an ad-hoc prod query) instead.
 
 **`--favor-state` governs refs, NOT `source()`.** kipptaf `sources-kipp*`
 resolve to personal `zz_<user>_*` copies under `target=dev`, so a stale personal
-copy fakes a dev-vs-prod delta that no flag corrects — this produced a phantom
-7,000-row "regression" twice in one session. Validate a filter or union change
-against the SOURCE rows the build actually read (query the `zz_<user>_*` table
-directly), never against prod. Exception: a frozen BQ-native source (e.g.
+copy fakes a dev-vs-prod delta that no flag corrects. Validate a filter or union
+change against the SOURCE rows the build actually read (query the `zz_<user>_*`
+table directly), never against prod. Exception: a frozen BQ-native source (e.g.
 `kippmiami_powerschool`) resolves to PROD even under `target=dev` — the opposite
 staleness expectation from its district siblings.
 
@@ -216,12 +215,12 @@ mid-session), not your change.
 
 ### Counting package-variant models enabled in a consuming district
 
-`dbt ls --select "path:models/sis/staging/<variant>"` returns **0** in a
+`uv run dbt ls --select "path:models/sis/staging/<variant>"` returns **0** in a
 consuming district — the variant's models live in the _package_ dir, not the
 district's `models/` path, so `path:` (relative to the project-dir) misses them.
 Count with
-`dbt ls --resource-type model --output path | grep 'sis/staging/<variant>/'`. A
-package's own `dbt_project.yml` `+enabled: false` (models AND sources) applies
+`uv run dbt ls --resource-type model --output path | grep 'sis/staging/<variant>/'`.
+A package's own `dbt_project.yml` `+enabled: false` (models AND sources) applies
 to every consumer — no per-district override needed (see the powerschool
 odbc/sftp variants).
 

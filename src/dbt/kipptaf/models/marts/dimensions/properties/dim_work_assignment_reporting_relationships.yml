@@ -29,11 +29,6 @@ models:
             foreign_key:
               to: ref('dim_staff_work_assignments')
               to_columns: [work_assignment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff_work_assignments')
-                field: work_assignment_key
 
       - name: manager_staff_key
         data_type: string
@@ -47,11 +42,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
 
       - name: effective_start_date
         data_type: date

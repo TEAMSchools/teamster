@@ -10,7 +10,7 @@ const a = require("./access");
 const SL = {
   staff_key: "self",
   is_employee: true,
-  region_key: "R1",
+  legal_entity_region_key: "R1",
   location_abbreviation: "ABC",
   department_group: "Ops",
   job_function_level: 4,
@@ -110,13 +110,13 @@ test("buildSecurityContext flattens the access row + chain", () => {
     staff_key: "s1",
     is_employee: true,
     staff_pii_scope: "reporting_chain_or_below_rank",
-    region_key: "R1",
+    legal_entity_region_key: "R1",
     location_abbreviation: "ABC",
     department_group: "Operations",
     job_function_level: 5,
   };
   const ctx = a.buildSecurityContext(row, ["k1", "k2"], [], [], ["A", "B"]);
-  assert.strictEqual(ctx.region_key, "R1");
+  assert.strictEqual(ctx.legal_entity_region_key, "R1");
   assert.strictEqual(ctx.job_function_level, 5);
   assert.deepEqual(ctx.reportee_staff_keys, ["k1", "k2"]);
   assert.deepEqual(ctx.allowed_student_abbreviations, ["A", "B"]);
@@ -126,6 +126,23 @@ test("buildSecurityContext flattens the access row + chain", () => {
   assert.ok(ctx.groups.includes("student"));
   assert.strictEqual(ctx.student_location_scope, undefined);
   assert.ok(ctx.groups.includes("staff-pii-reporting_chain_or_below_rank"));
+});
+
+test("buildSecurityContext exposes legal_entity_region_key, not region_key", () => {
+  const ctx = a.buildSecurityContext(
+    { staff_key: "S1", legal_entity_region_key: "R1" },
+    [],
+  );
+  assert.strictEqual(ctx.legal_entity_region_key, "R1");
+  assert.ok(
+    !("region_key" in ctx),
+    "region_key must not survive: a field no longer returned here cannot be overwritten on the Cube Cloud paste path",
+  );
+});
+
+test("buildSecurityContext defaults legal_entity_region_key to null", () => {
+  const ctx = a.buildSecurityContext(null, []);
+  assert.strictEqual(ctx.legal_entity_region_key, null);
 });
 
 test("buildSecurityContext is null-safe for an unresolved viewer", () => {
@@ -254,6 +271,21 @@ test("computeAllowedAbbreviations: none/undefined scope denies", () => {
   );
   assert.deepEqual(
     a.computeAllowedAbbreviations(undefined, "R1", "A", LOCATION_UNIVERSE),
+    [],
+  );
+});
+
+test("computeAllowedAbbreviations: region scope with a null key denies, and does not match null-region locations", () => {
+  const universe = [
+    { abbreviation: "A", region_key: "R1" },
+    { abbreviation: "Orphan", region_key: null },
+  ];
+  assert.deepStrictEqual(
+    a.computeAllowedAbbreviations("region", null, null, universe),
+    [],
+  );
+  assert.deepStrictEqual(
+    a.computeAllowedAbbreviations("region", undefined, null, universe),
     [],
   );
 });
@@ -467,6 +499,7 @@ test("STAFF_SENSITIVE_MEMBERS lists all gated sensitive columns", () => {
     "personal_email",
     "race",
     "salary",
+    "status_reason",
   ]);
 });
 
@@ -681,7 +714,7 @@ test("resolveEmulationTarget: a non-string callerEmail resolves to no caller and
 const CONTRACTOR = {
   staff_key: "non-employee-hash",
   is_employee: false,
-  region_key: null,
+  legal_entity_region_key: null,
   location_abbreviation: null,
   department_group: null,
   job_function_level: null,
@@ -700,7 +733,7 @@ test("contractor: a 'none' base scope resolves to no abbreviations on either axi
   assert.deepEqual(
     a.computeAllowedAbbreviations(
       CONTRACTOR.staff_location_scope,
-      CONTRACTOR.region_key,
+      CONTRACTOR.legal_entity_region_key,
       CONTRACTOR.location_abbreviation,
       LOCATION_UNIVERSE,
     ),
@@ -709,7 +742,7 @@ test("contractor: a 'none' base scope resolves to no abbreviations on either axi
   assert.deepEqual(
     a.computeAllowedAbbreviations(
       CONTRACTOR.student_location_scope,
-      CONTRACTOR.region_key,
+      CONTRACTOR.legal_entity_region_key,
       CONTRACTOR.location_abbreviation,
       LOCATION_UNIVERSE,
     ),
@@ -851,5 +884,65 @@ test("resolveAccessDataset: a non-dev dataset is refused even locally", () => {
     "../kipptaf_marts",
   ]) {
     assert.equal(a.resolveAccessDataset(raw, false), "kipptaf_marts", raw);
+  }
+});
+
+// --- canSwitchSqlUser (#5517) -----------------------------------------------
+
+const SUPER = "cube_superuser";
+
+test("canSwitchSqlUser: the super-user may switch to either network domain", () => {
+  assert.equal(
+    a.canSwitchSqlUser(SUPER, "someone@apps.teamschools.org", SUPER),
+    true,
+  );
+  assert.equal(a.canSwitchSqlUser(SUPER, "someone@kippmiami.org", SUPER), true);
+});
+
+test("canSwitchSqlUser: the domain match ignores case", () => {
+  assert.equal(a.canSwitchSqlUser(SUPER, "someone@KIPPMiami.org", SUPER), true);
+});
+
+test("canSwitchSqlUser: an address outside the allowlist is refused", () => {
+  for (const email of [
+    "someone@gmail.com",
+    "someone@kippmiami.org.evil.com",
+    "someone@evil.apps.teamschools.org",
+    "someone@teamschools.org",
+    "someone@kippmiami.org@gmail.com",
+  ]) {
+    assert.equal(a.canSwitchSqlUser(SUPER, email, SUPER), false, email);
+  }
+});
+
+test("canSwitchSqlUser: a malformed target is refused, not thrown", () => {
+  for (const email of [
+    "kippmiami.org",
+    "@kippmiami.org",
+    "a@b@kippmiami.org",
+    "",
+    null,
+    undefined,
+    42,
+    ["someone@kippmiami.org"],
+  ]) {
+    assert.equal(a.canSwitchSqlUser(SUPER, email, SUPER), false, String(email));
+  }
+});
+
+test("canSwitchSqlUser: only the configured super-user may switch", () => {
+  assert.equal(
+    a.canSwitchSqlUser("someone@kippmiami.org", "other@kippmiami.org", SUPER),
+    false,
+  );
+});
+
+test("canSwitchSqlUser: an unset super-user refuses every switch", () => {
+  for (const unset of [undefined, null, ""]) {
+    assert.equal(
+      a.canSwitchSqlUser(unset, "someone@kippmiami.org", unset),
+      false,
+      String(unset),
+    );
   }
 });

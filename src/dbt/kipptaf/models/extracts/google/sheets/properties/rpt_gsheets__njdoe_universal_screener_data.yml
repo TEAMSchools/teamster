@@ -2,10 +2,11 @@ models:
   - name: rpt_gsheets__njdoe_universal_screener_data
     description:
       Current-year DIBELS 8 benchmark results for New Jersey students in
-      kindergarten through grade 3, one row per student, benchmark period and
-      assessment, formatted for the NJDOE universal screener submission.
-      Students without a state student ID in PowerSchool share a null sid and
-      collapse into one row per school and period.
+      kindergarten through grade 3 who tested at their enrolled grade, one row
+      per student, benchmark period and assessment, formatted for the NJDOE
+      universal screener submission. Students without a state student ID in
+      PowerSchool share a null sid and collapse into one row per school and
+      period.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

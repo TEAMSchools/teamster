@@ -137,15 +137,14 @@ cubes:
 
       - name: is_truant
         description: >-
-          Whether the student met regional truancy criteria on any membership
-          day in the period. Miami: 15+ absences in a 90-day rolling window. NJ
-          regions: projected absences reach 50+ for the year. No eligibility
-          floor -- neither regional rule has one.
+          Whether the student met regional truancy criteria as of
+          period_end_date, like every other value here. Miami: 15+ absences in a
+          90-day rolling window. NJ regions: projected absences reach 50+ for
+          the year. No eligibility floor -- neither regional rule has one.
 
-          Truancy is a status rather than an event, so it turns on and off
-          within a period and this reads across the whole period, unlike every
-          other value here, which is read as of period_end_date. For truancy as
-          of one specific date, pin attendance_date on
+          Truancy is a status that can turn on and off within a period, so a
+          student who was truant earlier in the period and recovered by its end
+          reads false. For truancy as of any other date, pin attendance_date on
           student_attendance_enrollment_daily_view.
         sql: is_truant
         type: boolean
@@ -281,23 +280,18 @@ cubes:
 
       - name: count_truants
         description: >-
-          Student-school records meeting regional truancy criteria on any
-          membership day in the period. Miami: 15+ absences in a 90-day rolling
-          window. NJ regions: projected absences reach 50+ for the year. Same
+          Student-school records meeting regional truancy criteria as of
+          period_end_date. Miami: 15+ absences in a 90-day rolling window. NJ
+          regions: projected absences reach 50+ for the year. Same
           distinct-student counting grain as count_students.
-
-          This is the one measure here not read as of period_end_date -- see
-          is_truant for why, and for how to get a single-date reading instead.
 
           No eligibility floor is applied here. Neither the Miami nor the NJ
           truancy rule requires a minimum membership-day count, so any such
           floor belongs inside is_truant on the fact, not in this measure or its
           denominator. Miami's rule is already self-limiting — 15 absences
           implies at least 15 membership days. NJ's is not: its projection can
-          fire in a student's first days, so early-period counts run high. At
-          year grain the effect is nil (AY2025 NJ: 233 truant either way); at
-          month grain it is concentrated in the first weeks (2025-08: 550 rows
-          here that an eligibility floor would have reported as zero). Show
+          fire in a student's first days, so early-period counts run high, most
+          at week and month grain in the first weeks of an academic year. Show
           count_students beside this measure for any early period.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
@@ -307,13 +301,12 @@ cubes:
 
       - name: pct_truant
         description: >-
-          Percentage of students meeting regional truancy criteria on any
-          membership day in the period. Denominator is count_students, every
-          student in the queried slice. No minimum-membership-day floor applies.
-          Numerator and denominator share the same population, so a student
-          whose attendance was never recorded is outside both and cannot pull
-          the rate down. Truancy has no eligibility concept in either the Miami
-          or the NJ rule.
+          Percentage of students meeting regional truancy criteria as of
+          period_end_date. Denominator is count_students, every student in the
+          queried slice. No minimum-membership-day floor applies. Numerator and
+          denominator share the same population, so a student whose attendance
+          was never recorded is outside both and cannot pull the rate down.
+          Truancy has no eligibility concept in either the Miami or the NJ rule.
 
           Any minimum-membership-day condition would belong inside is_truant on
           the fact, which keeps this denominator correct through a later change

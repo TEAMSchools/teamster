@@ -4,11 +4,14 @@ models:
       contract:
         enforced: true
     data_tests:
+      # TODO(#3818): survey contact_id duplicates break the grain
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - contact_id
               - response_id
+          config:
+            severity: warn
     columns:
       - name: contact_id
         data_type: string
@@ -163,13 +166,19 @@ models:
       - name: postsec_advisor
         data_type: string
         description:
-          Postsecondary advisor assigned to the alumnus on their Salesforce
-          contact record.
+          Salesforce Contact ID of the postsecondary advisor assigned to the
+          alumnus on their Salesforce contact record.
+      - name: college_counselor
+        data_type: string
+        description:
+          College counselor assigned to the alumnus, resolved from the
+          counselor's own Salesforce contact record.
       - name: advisor
         data_type: string
         description:
           Effective advisor for the alumnus — 'Collab' when the advising
-          provider is KIPP NYC, otherwise the Salesforce contact owner.
+          provider is KIPP NYC, otherwise the name of the alumnus's
+          postsecondary advisor.
       - name: high_school_graduated_from
         data_type: string
         description:

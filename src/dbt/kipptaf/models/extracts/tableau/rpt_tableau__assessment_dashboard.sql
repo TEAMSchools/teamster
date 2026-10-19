@@ -13,6 +13,7 @@ with
             co.spedlep as iep_status,
             co.lep_status,
             co.is_504 as c_504_status,
+            co.gifted_and_talented,
             co.is_self_contained as is_pathways,
             co.school,
             co.school_level,
@@ -40,20 +41,40 @@ with
             asr.is_replacement,
             asr.is_internal_assessment as is_normed_scope,
 
-            enr.teachernumber as enr_teachernumber,
-            enr.teacher_lastfirst as teacher_name,
-            enr.courses_course_name as course_name,
-            enr.sections_expression as expression,
-            enr.sections_section_number as section_number,
-            enr.is_foundations,
-
+            -- Apex rows take the section the scaffold matched, Illuminate rows
+            -- the student's latest section in the subject
             if(
-                co.grade_level >= 9, enr.courses_credittype, asr.subject_area
-            ) as filter_join,
+                asr.source = 'apex', ea.teachernumber, enr.teachernumber
+            ) as enr_teachernumber,
+            if(
+                asr.source = 'apex', ea.teacher_lastfirst, enr.teacher_lastfirst
+            ) as teacher_name,
+            if(
+                asr.source = 'apex', ea.courses_course_name, enr.courses_course_name
+            ) as course_name,
+            if(
+                asr.source = 'apex', ea.sections_expression, enr.sections_expression
+            ) as expression,
+            -- Focus rows null sections_section_number; cc_section_number is
+            -- the Focus section number
+            if(
+                asr.source = 'apex', ea.cc_section_number, enr.sections_section_number
+            ) as section_number,
+            if(
+                asr.source = 'apex', ea.is_foundations, enr.is_foundations
+            ) as is_foundations,
+
+            case
+                when co.grade_level >= 9 and asr.source = 'apex'
+                then ea.courses_credittype
+                when co.grade_level >= 9
+                then enr.courses_credittype
+                else asr.subject_area
+            end as filter_join,
         from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
-            on co.student_number = asr.powerschool_student_number
+            on co.student_number = asr.student_number
             and co.academic_year = asr.academic_year
         left join
             {{ ref("base_powerschool__course_enrollments") }} as enr
@@ -63,83 +84,14 @@ with
             and asr.subject_area = enr.illuminate_subject_area
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
-        where
-            co.rn_year = 1
-            and co.academic_year >= {{ var("current_academic_year") - 1 }}
-            and co.grade_level != 99
-            and co.region != 'Paterson'
-
-        union all
-
-        /* Paterson temp pending course fixes */
-        select
-            co.student_number,
-            co.student_name,
-            co.academic_year,
-            co.reporting_schoolid as schoolid,
-            co.region,
-            co.grade_level,
-            co.advisory_name as team,
-            co.enroll_status,
-            co.cohort,
-            co.spedlep as iep_status,
-            co.lep_status,
-            co.is_504 as c_504_status,
-            co.is_self_contained as is_pathways,
-            co.school,
-            co.school_level,
-            co.hos as head_of_school,
-            co.advisor_teachernumber as hr_teachernumber,
-
-            asr.assessment_id,
-            asr.title,
-            asr.scope,
-            asr.subject_area,
-            asr.term_administered,
-            asr.administered_at,
-            asr.term_taken,
-            asr.date_taken,
-            asr.module_type,
-            asr.module_code,
-            asr.response_type,
-            asr.response_type_code as standard_code,
-            asr.response_type_description as standard_description,
-            asr.response_type_root_description as domain_description,
-            asr.percent_correct,
-            asr.is_mastery,
-            asr.performance_band_label_number as performance_band_number,
-            asr.performance_band_label,
-            asr.is_replacement,
-            asr.is_internal_assessment as is_normed_scope,
-
-            enr.teachernumber as enr_teachernumber,
-            enr.teacher_lastfirst as teacher_name,
-            enr.courses_course_name as course_name,
-            enr.sections_expression as expression,
-            enr.sections_section_number as section_number,
-            enr.is_foundations,
-
-            if(
-                co.grade_level >= 9, enr.courses_credittype, asr.subject_area
-            ) as filter_join,
-        from {{ ref("int_extracts__student_enrollments") }} as co
-        inner join
-            {{ ref("int_assessments__response_rollup") }} as asr
-            on co.student_number = asr.powerschool_student_number
-            and co.academic_year = asr.academic_year
         left join
-            {{ ref("base_powerschool__course_enrollments") }} as enr
-            on co.studentid = enr.cc_studentid
-            and co.yearid = enr.cc_yearid
-            and co._dbt_source_project = enr._dbt_source_project
-            and asr.discipline = enr.discipline
-            and not enr.is_dropped_section
-            and enr.rn_student_year_illuminate_subject_desc = 1
+            {{ ref("base_powerschool__course_enrollments") }} as ea
+            on asr.cc_dcid = ea.cc_dcid
+            and asr._dbt_source_project = ea._dbt_source_project
         where
             co.rn_year = 1
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
             and co.grade_level != 99
-            and co.region = 'Paterson'
     )
 
 select
@@ -155,6 +107,7 @@ select
     d.iep_status,
     d.lep_status,
     d.c_504_status,
+    d.gifted_and_talented,
     d.is_pathways,
     d.school,
     d.school_level,

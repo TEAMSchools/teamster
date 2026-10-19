@@ -12,8 +12,7 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | Module      | Type          | Trigger                                                                |
 | ----------- | ------------- | ---------------------------------------------------------------------- |
 | `dbt`       | dbt assets    | `AutomationConditionSensor`                                            |
-| `deanslist` | API assets    | schedule (nightly)                                                     |
-| `finalsite` | API + SFTP    | schedule (contacts 04:00 + 12:00 ET) + couchdrop sensor                |
+| `finalsite` | API + SFTP    | schedule (contacts 00:15 + 12:00 ET) + couchdrop sensor                |
 | `fldoe`     | SFTP assets   | `AutomationConditionSensor`                                            |
 | `iready`    | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                    |
 | `renlearn`  | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                                  |
@@ -29,7 +28,7 @@ Finalsite SFTP export at 12:00 (Finalsite's own export is overnight and not ours
 to reschedule) → couchdrop sensor ingests within 5 min → contacts pull at 12:00
 → dbt rebuild ~3.5 min → four CSVs delivered to the Focus SFTP `incoming/`
 folder at 13:15 → **ops runs the Focus imports by hand**. Focus's own live-data
-freshness is no longer tied to that 12:00 slot — see below.
+freshness runs on its own schedule — see below.
 
 A second, unstaffed delivery runs at 03:45 so the overnight Finalsite state is
 already staged when ops start their shift. It is not load-bearing for the 2pm
@@ -68,16 +67,21 @@ Constraints to preserve when touching any of these:
   `libraries/dlt/focus/CLAUDE.md` → _Probe gating_). Losing them would delay
   picking up an in-place edit to a count-only table by up to a day; FRESH's
   Miami enrollment/attendance rows and the rest of Focus-sourced Miami data come
-  from `updated_at`-tracked tables and would not go stale. Those 78 tables have
-  NO unconditional reload — if one is suspected of drifting (a stuck signature,
-  a bad cursor), fix it with a manual launch of the Focus asset job for that
+  from `updated_at`-tracked tables and would not go stale. Those tables have NO
+  unconditional reload — if one is suspected of drifting (a stuck signature, a
+  bad cursor), fix it with a manual launch of the Focus asset job for that
   table. The safe rule for ops is not a clock time: do not re-run the delivery
   unless a Focus sync has run SINCE the last import.
 - **First diagnostic when midday Focus data looks stale: check whether the
   intraday sensor is running.** It ships with `defaultStatus` STOPPED and must
-  be enabled by hand after a one-off manual load of all 79 tables has seeded
-  their baselines (the 04:00 tier seeds only the count-only tables). A stopped
-  sensor silently freezes every `updated_at`-tracked table.
+  be enabled by hand after a one-off manual load of every table has seeded their
+  baselines (the 04:00 tier seeds only the count-only tables). A stopped sensor
+  silently freezes every `updated_at`-tracked table.
+- **The `contacts` API pull runs at 00:15, not 04:00.** That still lands before
+  FRESH's 05:00 Tableau extract, so Miami's morning dashboard reads same-day
+  data, and it puts `contacts` ahead of the NJ consumers of
+  `stg_finalsite__contacts` at 01:00 (Google Directory user sync) and 01:25
+  (DeansList). It is independent of the dlt Focus 04:00 tier above. See #4715.
 
 `kippmiami__extracts__focus__asset_job_schedule` also has to be STARTED in the
 Dagster+ UI; its `defaultStatus` is STOPPED and it had never run in prod as of
@@ -104,3 +108,9 @@ rebuild (#5195, #5228), when the location carries about 120
 `kippmiami/powerschool/*` dbt assets; PR B removes them again. kipptaf reads the
 dataset as a BQ-native source. Do not drop the dataset or the GCS files under
 `gs://teamster-kippmiami/dagster/kippmiami/powerschool/`.
+
+DeansList is retired the same way (#5110): Miami stopped using it, and this
+location has no `deanslist` assets or schedules. `kippmiami_deanslist` is a
+frozen dataset (last ingested 2026-07-21) that kipptaf still unions for history.
+Do not drop it or the GCS files under
+`gs://teamster-kippmiami/dagster/kippmiami/deanslist/`.

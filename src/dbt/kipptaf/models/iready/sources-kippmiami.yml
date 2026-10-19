@@ -15,6 +15,7 @@ sources:
                 - stg_iready__diagnostic_results
       - name: stg_iready__instructional_usage_data
         config:
+          enabled: false
           meta:
             dagster:
               group: iready
@@ -58,3 +59,12 @@ sources:
                 - kippmiami
                 - iready
                 - int_iready__personalized_instruction_unpivot
+      - name: int_iready__diagnostic_results
+        config:
+          meta:
+            dagster:
+              group: iready
+              asset_key:
+                - kippmiami
+                - iready
+                - int_iready__diagnostic_results

@@ -65,7 +65,12 @@ cubes:
         type: number
 
       - name: grade_band
-        description: Grade band (ES, MS, HS). Nullable when not school-specific.
+        description: >-
+          Grades or grade band the term applies to. A band label such as ES, MS,
+          HS or K-2 on most term types; on LIT (literacy) terms, a
+          comma-separated list of grade levels such as 0,1,2, so an equality
+          filter like grade_band = 'ES' misses every LIT term. Null when not
+          band-specific.
         sql: grade_band
         type: string
 
