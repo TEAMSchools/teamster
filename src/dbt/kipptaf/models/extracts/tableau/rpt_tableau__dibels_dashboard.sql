@@ -1,3 +1,165 @@
+with
+    -- every stint overlapping an expected window, with the date that decides
+    -- which stint owns the row: the test date, else the window's last day
+    stint_candidates as (
+        select
+            s.academic_year,
+            s.student_number,
+            s.entrydate,
+            s.exitdate,
+
+            a.admin_season,
+            a.round_number,
+            a.expected_measure_standard,
+
+            'BM' as model_type,
+
+            coalesce(b.client_date, a.end_date) as anchor_date,
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as s
+        inner join
+            {{ ref("int_google_sheets__dibels_expected_assessments") }} as a
+            on s.academic_year = a.academic_year
+            and s.region = a.region
+            and s.grade_level = a.grade
+            and (
+                a.start_date between s.entrydate and s.exitdate
+                or a.end_date between s.entrydate and s.exitdate
+            )
+            and a.assessment_type = 'Benchmark'
+            and a.assessment_include is null
+        left join
+            {{ ref("int_amplify__all_assessments") }} as b
+            on a.academic_year = b.academic_year
+            and a.admin_season = b.period
+            and a.expected_measure_standard = b.measure_standard
+            and s.student_number = b.student_number
+        where
+            s.iready_subject = 'Reading'
+            and s.is_self_contained is not true
+            and not s.is_out_of_district
+            and s.enroll_status in (0, 2, 3)
+
+        union all
+
+        select
+            s.academic_year,
+            s.student_number,
+            s.entrydate,
+            s.exitdate,
+
+            e.admin_season,
+            e.round_number,
+            e.expected_measure_standard,
+
+            'Internal' as model_type,
+
+            coalesce(a.client_date, e.end_date) as anchor_date,
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as s
+        inner join
+            {{ ref("int_google_sheets__dibels_pm_expectations") }} as e
+            on s.academic_year = e.academic_year
+            and s.region = e.region
+            and s.grade_level = e.grade
+            and (
+                e.start_date between s.entrydate and s.exitdate
+                or e.end_date between s.entrydate and s.exitdate
+            )
+            and e.pm_goal_include is null
+        left join
+            {{ ref("int_amplify__all_assessments") }} as a
+            on e.academic_year = a.academic_year
+            and e.admin_season = a.period
+            and e.round_number = a.round_number
+            and e.expected_measure_standard = a.measure_standard
+            and s.student_number = a.student_number
+            and a.model_type = 'Internal'
+        where
+            s.iready_subject = 'Reading'
+            and s.is_self_contained is not true
+            and not s.is_out_of_district
+            and s.enroll_status in (0, 2, 3)
+
+        union all
+
+        select
+            s.academic_year,
+            s.student_number,
+            s.entrydate,
+            s.exitdate,
+
+            e.admin_season,
+            e.round_number,
+            e.expected_measure_standard,
+
+            'Aimline' as model_type,
+
+            coalesce(a.client_date, e.end_date) as anchor_date,
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as s
+        inner join
+            {{ ref("int_amplify__benchmark_student_summary") }} as r
+            on s.academic_year = r.academic_year
+            and s.student_number = r.student_number
+            and s.grade_level = r.assessment_grade_int
+            and r.rn_pm_eligibility = 1
+        inner join
+            {{ ref("int_google_sheets__dibels__expected_assessments_by_levels") }} as e
+            on s.academic_year = e.academic_year
+            and s.region = e.region
+            and s.grade_level = e.grade
+            and r.matching_season = e.admin_season
+            and r.overall_aimline_composite_level = e.measure_standard_level
+            and (
+                e.start_date between s.entrydate and s.exitdate
+                or e.end_date between s.entrydate and s.exitdate
+            )
+            and e.assessment_include is null
+            and e.pm_goal_include is null
+        left join
+            {{ ref("int_amplify__all_assessments") }} as a
+            on e.academic_year = a.academic_year
+            and e.admin_season = a.period
+            and e.round_number = a.round_number
+            and e.expected_measure_standard = a.measure_standard
+            and s.student_number = a.student_number
+            and a.model_type = 'Aimline'
+        where
+            s.iready_subject = 'Reading'
+            and s.is_self_contained is not true
+            and not s.is_out_of_district
+            and s.enroll_status in (0, 2, 3)
+    ),
+
+    -- the stint holding the anchor date; when none does (left before the
+    -- window closed, or tested outside their dates), the latest overlapping one
+    picked_stints as (
+        select
+            model_type,
+            academic_year,
+            student_number,
+            admin_season,
+            round_number,
+            expected_measure_standard,
+
+            coalesce(
+                max(
+                    if(
+                        entrydate <= anchor_date and exitdate > anchor_date,
+                        entrydate,
+                        null
+                    )
+                ),
+                max(entrydate)
+            ) as entrydate,
+        from stint_candidates
+        group by
+            model_type,
+            academic_year,
+            student_number,
+            admin_season,
+            round_number,
+            expected_measure_standard
+    )
+
 select
     s._dbt_source_relation,
     s.academic_year,
@@ -164,6 +326,15 @@ inner join
     )
     and a.assessment_type = 'Benchmark'
     and a.assessment_include is null
+inner join
+    picked_stints as p
+    on s.academic_year = p.academic_year
+    and s.student_number = p.student_number
+    and s.entrydate = p.entrydate
+    and a.admin_season = p.admin_season
+    and a.round_number = p.round_number
+    and a.expected_measure_standard = p.expected_measure_standard
+    and p.model_type = 'BM'
 left join
     {{ ref("stg_google_sheets__dibels_bm_goals") }} as g
     on a.academic_year = g.academic_year
@@ -420,6 +591,15 @@ inner join
         or e.end_date between s.entrydate and s.exitdate
     )
     and e.pm_goal_include is null
+inner join
+    picked_stints as p
+    on s.academic_year = p.academic_year
+    and s.student_number = p.student_number
+    and s.entrydate = p.entrydate
+    and e.admin_season = p.admin_season
+    and e.round_number = p.round_number
+    and e.expected_measure_standard = p.expected_measure_standard
+    and p.model_type = 'Internal'
 inner join
     {{ ref("stg_google_sheets__dibels_pm_goals") }} as g
     on e.academic_year = g.academic_year
@@ -753,6 +933,15 @@ inner join
     )
     and e.assessment_include is null
     and e.pm_goal_include is null
+inner join
+    picked_stints as p
+    on s.academic_year = p.academic_year
+    and s.student_number = p.student_number
+    and s.entrydate = p.entrydate
+    and e.admin_season = p.admin_season
+    and e.round_number = p.round_number
+    and e.expected_measure_standard = p.expected_measure_standard
+    and p.model_type = 'Aimline'
 left join
     {{ ref("int_students__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year

@@ -59,7 +59,7 @@ models:
       was not. So a null in an own-goal or benchmark column means a Benchmark
       row, and nothing else.
     data_tests:
-      # TODO(#5889): enrollment join fans out across transfer stints
+      # TODO(#6022): a student tested at 2 grades in 1 window gets 2 rows
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
