@@ -126,3 +126,19 @@ def test_everything_covered_says_so(tmp_path):
     handchecks.write(tmp_path, picked, "ZZ", {}, [])
     text = (tmp_path / "hand_checks.md").read_text()
     assert text.rstrip().endswith("Every verdict and bucket has a hand check.")
+
+
+def test_cell_hand_check_shows_dashboard_values():
+    c = cells.Cell(
+        "default",
+        "ADA",
+        {"School": "Rise"},
+        "ADA",
+        "0.965056526",
+        0.96701,
+        cells.ROW_GAP,
+        fmt=cells.Format(1, True),
+    )
+    (h,) = handchecks.pick([c], [], seed="s")
+    text = "\n".join(h.steps)
+    assert "`96.5%`" in text and "`96.7%`" in text

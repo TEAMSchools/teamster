@@ -750,3 +750,14 @@ def test_a_null_measure_cut_has_no_counterpart_for_its_measure(tmp_path):
     }
     got = _judge(tmp_path, exports, answers, checks=checks)
     assert {c.verdict for c in got if c.cut == "alt"} == {cells.NO_COUNTERPART}
+
+
+def test_shown_formats_like_the_dashboard():
+    fmt = cells.Format(1, True)
+    assert cells.shown("0.965056526", fmt) == "96.5%"
+    assert cells.shown(0.965056526, fmt) == "96.5%"
+    assert cells.shown(0.0045, fmt) == "0.5%"
+    assert cells.shown("94.25%", fmt) == "94.3%"
+    assert cells.shown(1204.0, cells.Format(0, False)) == "1204"
+    assert cells.shown("0.965056526", None) == "0.965056526"
+    assert cells.shown(None, fmt) == "None"

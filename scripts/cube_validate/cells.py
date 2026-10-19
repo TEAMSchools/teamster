@@ -137,6 +137,31 @@ def display_equal(
     return abs(scaled - d.value) <= 0.5 * 10**-d.decimals + 1e-9
 
 
+def shown(value: str | float | None, fmt: Format | None) -> str:
+    """A value the way the dashboard shows it, rounded half up like the comparison.
+
+    Args:
+        value: A Tableau export string or a Cube number (a fraction when the
+            format is a percent).
+        fmt: The dashboard's format; None leaves the value as it is.
+
+    Returns:
+        The value as text; an export string that is not a number is unchanged.
+    """
+    if value is None or fmt is None:
+        return str(value)
+    if isinstance(value, str):
+        d = parse_display(value)
+        if d is None:
+            return value
+        number, is_percent = d.value, d.percent
+    else:
+        number, is_percent = float(value), False
+    if fmt.percent and not is_percent:
+        number *= 100
+    return f"{_half_up(number, fmt.decimals)}{'%' if fmt.percent else ''}"
+
+
 def parse_export(data: bytes) -> list[dict[str, str]]:
     """Rows of a sheet's CSV export, wide, without total rows."""
     rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig"))))
@@ -307,6 +332,7 @@ class Cell:
     reason: str = ""
     buckets: list[tuple] = field(default_factory=list)
     students: tuple[int, int] = (0, 0)
+    fmt: Format | None = None
 
 
 def _cut_filters(
@@ -506,7 +532,19 @@ def judge(
                         else:
                             vd, rs = verdict(eq, buckets, inert), ""
                     out.append(
-                        Cell(cut.id, sheet, dims, h, v, cube_v, vd, rs, buckets, studs)
+                        Cell(
+                            cut.id,
+                            sheet,
+                            dims,
+                            h,
+                            v,
+                            cube_v,
+                            vd,
+                            rs,
+                            buckets,
+                            studs,
+                            _format(formats, sheet, h),
+                        )  # fmt: skip
                     )
             for key, crow in cube_rows.items():
                 if key in seen:
@@ -535,6 +573,7 @@ def judge(
                         Cell(
                             cut.id, sheet, {k: v or "" for k, v in labels.items()},
                             m.column, None, float(raw), vd, rs, buckets, studs,
+                            _format(formats, sheet, m.column),
                         )
                     )  # fmt: skip
     return out
