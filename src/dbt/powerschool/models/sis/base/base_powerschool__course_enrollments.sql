@@ -76,11 +76,11 @@ select
 
     row_number() over (
         partition by cc_studyear, courses_credittype
-        order by cc_termid desc, cc_dateenrolled desc, cc_dateleft desc
+        order by cc_termid desc, cc_dateenrolled desc, cc_dateleft desc, cc_dcid desc
     ) as rn_credittype_year,
 
     row_number() over (
         partition by cc_studyear, cc_course_number
-        order by cc_termid desc, cc_dateenrolled desc, cc_dateleft desc
+        order by cc_termid desc, cc_dateenrolled desc, cc_dateleft desc, cc_dcid desc
     ) as rn_course_number_year,
 from dedupe_dateenrolled
