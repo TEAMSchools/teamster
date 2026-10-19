@@ -1,0 +1,58 @@
+models:
+  - name: stg_powerschool__u_studentsuserfields
+    description:
+      Miami's PowerSchool custom student fields (one row per student), rebuilt
+      only for the frozen kippmiami_powerschool archive.
+    columns:
+      - name: studentsdcid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                severity: error
+        description: The student's PowerSchool DCID.
+      - name: fleid
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: warn
+                # TODO: #3887 — 14 FLEIDs map to multiple student_numbers in PS.
+        description: The student's Florida education identifier.
+        config:
+          meta:
+            contains_pii: true
+      - name: cr_prevschoolname
+        data_type: string
+        description: Name of the school the student attended before KIPP Miami.
+      - name: infosnap_id
+        data_type: string
+        description: The student's InfoSnap enrollment application id.
+        config:
+          meta:
+            contains_pii: true
+      - name: media_release
+        data_type: string
+        description: Whether the family consented to media release.
+        config:
+          meta:
+            contains_pii: true
+      - name: c_504_status
+        data_type: int64
+        description: 504 plan status code; 1 means the student has a 504 plan.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_504
+        data_type: boolean
+        description: True when c_504_status is 1.
+        config:
+          meta:
+            contains_pii: true
+      - name: gifted_and_talented
+        data_type: string
+        description:
+          Y when PowerSchool flags the student as gifted, otherwise N.
+        config:
+          meta:
+            contains_pii: true

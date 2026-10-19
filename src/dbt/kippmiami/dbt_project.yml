@@ -49,6 +49,121 @@ models:
         enforced: true
   iready:
     +materialized: table
+  powerschool:
+    +materialized: table
+    sis:
+      staging:
+        odbc:
+          +enabled: false
+        dlt:
+          +enabled: true
+          # Miami's PowerSchool is retired. These hooks bake the network's
+          # Miami-only fixes into the frozen archive so kipptaf can stop
+          # applying them: the 8400 Focus student-number prefix, an AY2025
+          # (yearid 35) bound that drops the AY2026 scaffold rows, and a
+          # calendar cut at the 2026-07-01 Focus cutover.
+          stg_powerschool__students:
+            +post-hook: >-
+              update {{ this }} set student_number = student_number + 8400000000
+              where true
+          stg_powerschool__assignmentcategoryassoc:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__assignmentsection:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__attendance:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__attendance_code:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__cc:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__fte:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__gen:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__gradecalculationtype:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__gradeformulaset:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__gradeschoolconfig:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__prefs:
+            +enabled: true
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__storedgrades:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__termbins:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__terms:
+            +post-hook: delete from {{ this }} where yearid > 35
+          stg_powerschool__calendar_day:
+            +post-hook: delete from {{ this }} where date_value >= '2026-07-01'
+          # The package disables these for the NJ districts; the archive
+          # needs them.
+          stg_powerschool__codeset:
+            +enabled: true
+          stg_powerschool__emailaddress:
+            +enabled: true
+          stg_powerschool__originalcontactmap:
+            +enabled: true
+          stg_powerschool__person:
+            +enabled: true
+          stg_powerschool__personaddress:
+            +enabled: true
+          stg_powerschool__personaddressassoc:
+            +enabled: true
+          stg_powerschool__personemailaddressassoc:
+            +enabled: true
+          stg_powerschool__personphonenumberassoc:
+            +enabled: true
+          stg_powerschool__phonenumber:
+            +enabled: true
+          stg_powerschool__studentcontactassoc:
+            +enabled: true
+          stg_powerschool__studentcontactdetail:
+            +enabled: true
+          # Empty on the server, so dlt created no table; the archive keeps
+          # its frozen (empty) copies, and those of their one consumer.
+          stg_powerschool__studenttest:
+            +enabled: false
+          stg_powerschool__studenttestscore:
+            +enabled: false
+          # Not in the archive: NJ-only or never-used tables Miami's dlt pull
+          # did not load.
+          stg_powerschool__gpnode:
+            +enabled: false
+          stg_powerschool__gpprogresssubject:
+            +enabled: false
+          stg_powerschool__gpprogresssubjectearned:
+            +enabled: false
+          stg_powerschool__gpprogresssubjectenrolled:
+            +enabled: false
+          stg_powerschool__s_nj_crs_x:
+            +enabled: false
+          stg_powerschool__s_nj_ren_x:
+            +enabled: false
+          stg_powerschool__s_nj_stu_x:
+            +enabled: false
+          stg_powerschool__s_stu_x:
+            +enabled: false
+          stg_powerschool__studentrace:
+            +enabled: false
+          stg_powerschool__u_expectations:
+            +enabled: false
+          stg_powerschool__u_storedgrades_de:
+            +enabled: false
+      intermediate:
+        int_powerschool__state_assessments_transfer_scores:
+          +enabled: false
+        int_powerschool__course_pace:
+          +enabled: false
+        int_powerschool__gpnode:
+          +enabled: false
+        int_powerschool__gpprogress_grades:
+          +enabled: false
+        int_powerschool__s_nj_stu_x_unpivot:
+          +enabled: false
+        int_powerschool__student_y1_target:
+          +enabled: false
   renlearn:
     +materialized: table
     staging:
