@@ -1,5 +1,6 @@
-# Every table the dlt archive rebuild reads. The two student_contacts
-# intermediates stay frozen and are not rebuilt from these.
+# Every table the dlt archive rebuild reads. studenttest and studenttestscore
+# are empty on the server, so they land no table; the archive tables that stay
+# frozen are listed in src/dbt/kippmiami/CLAUDE.md.
 # Loaded by hand only: Miami has no PowerSchool sensor or schedule.
 assets:
   - table_name: assignmentcategoryassoc

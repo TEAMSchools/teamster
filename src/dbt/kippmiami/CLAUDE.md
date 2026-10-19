@@ -19,7 +19,7 @@ column, or the server's data needs a fix. The loop: turn the Dagster assets on
 (`src/teamster/code_locations/kippmiami/CLAUDE.md`), materialize the tables that
 need a fresh pull, re-include the package, build, then remove it again.
 
-The recipe is the `dbt_project.yml` configuration in #6012's commits: add
+The recipe is in #6012's commits `6ba0e7f2a9` and `4dd892c2b5`: add
 `- local: ../powerschool` to `packages.yml`; a top-level `powerschool:` block
 with the dlt staging variant on and odbc off, the 11 contact staging models
 enabled, and 16 post-hooks — the 8400 Focus prefix on `student_number`
