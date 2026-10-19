@@ -62,7 +62,9 @@ with
             'ALL' as credittype,
             'ALL' as course_number,
 
-            round(avg(percent_grade), 0) as percent_grade,
+            /* rounding to 6 places first stops float summation order from
+               flipping an exact .5 between builds */
+            round(round(avg(percent_grade), 6), 0) as percent_grade,
         from with_cur
         group by studentid, yearid, schoolid, reporting_term, is_current, input_column
 
@@ -147,7 +149,7 @@ select
 
     row_number() over (
         partition by gp.studentid, gp.yearid, gp.reporting_term, gp.credittype
-        order by gp.course_number asc
+        order by gp.course_number asc, gp.schoolid asc
     ) as rn_credittype,
 
     {% for cat in categories %}
@@ -161,9 +163,12 @@ select
         {% endfor %}
 
         round(
-            avg(gp.{{ cat }}_cur) over (
-                partition by gp.studentid, gp.yearid, gp.course_number
-                order by gp.reporting_term asc
+            round(
+                avg(gp.{{ cat }}_cur) over (
+                    partition by gp.studentid, gp.yearid, gp.course_number
+                    order by gp.reporting_term asc
+                ),
+                6
             ),
             0
         ) as {{ cat }}_y1,
