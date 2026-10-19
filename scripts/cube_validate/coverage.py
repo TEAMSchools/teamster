@@ -46,8 +46,6 @@ def _status(entry, mine: list, checks: Checks, rows_result, twb_text: str):
     if mine and all(c.verdict in NEVER_CUBE for c in mine):
         reason = Counter(c.reason or c.verdict for c in mine).most_common(1)[0][0]
         return "not judged", reason
-    if mine:
-        return "not judged", "no judged cell"
     caption = workbook.measure_caption(twb_text, entry.column) if twb_text else ""
     shown = _showing(twb_text, checks, caption) if twb_text else []
     unmapped = [

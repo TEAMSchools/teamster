@@ -427,3 +427,10 @@ def test_a_selector_value_records_whether_it_gave_a_measure(tmp_path):
     over = _metric({"HS Alt": {"measure": None}, "Chronic": {"measure": "m"}})
     pvs = config.load_checks(_write(tmp_path, **over)).params["Metric"]
     assert (pvs["HS Alt"].swaps_measure, pvs["Chronic"].swaps_measure) == (True, True)
+
+
+def test_a_must_cover_entry_with_no_cube_member_needs_rows(tmp_path):
+    over = _coverage()
+    over["must_cover"][0]["cube"] = None
+    with pytest.raises(config.ConfigError, match="must_cover.*Percent Chronic.*rows:"):
+        config.load_checks(_write(tmp_path, **over))

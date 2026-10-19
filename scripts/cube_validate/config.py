@@ -374,6 +374,11 @@ def _must_cover(
                 raise ConfigError(
                     f"must_cover {name}: rows names {r}, not in rows.compare"
                 )
+        if cube is None and not rows:
+            raise ConfigError(
+                f"must_cover {name}: a measure with no Cube member needs rows: "
+                "naming the compare columns behind it"
+            )
         if cube is not None:
             for sheet, member, view in _mapped(column, param, sheets, params):
                 if member is not None and (member, view) != cube:

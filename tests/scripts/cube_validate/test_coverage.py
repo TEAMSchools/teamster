@@ -42,6 +42,7 @@ def _checks(*entries):
             config.Cut("default"),
             config.Cut("trunc", params={"Metric": "Truancy"}),
         ),
+        sheets={"Mapped": base_checks().sheets["ADA"]},
         excluded_sheets={"Roster": "has a student name column"},
         must_cover=tuple(entries),
     )
@@ -131,6 +132,12 @@ def test_not_judged_names_the_most_common_tool_limit():
     got = _line(_entry("M"), cs)
     assert got["status"] == "not judged" and got["detail"] == "no join"
     assert _line(_entry("M"), [_cell("M", cells.NO_ROWS)])["detail"] == (cells.NO_ROWS)
+
+
+def test_not_judged_when_a_mapped_sheet_shows_it_but_no_cell_was_built():
+    got = _line(_entry("Truancy"))
+    assert got["status"] == "not judged"
+    assert got["detail"] == "mapped, but no cell was built"
 
 
 def test_not_mapped_yet_when_a_sheet_shows_it_and_nothing_maps_it():
