@@ -140,12 +140,12 @@ models:
           Google email so a recycled address cannot resolve to a stale identity.
           Also the key the individual-exceptions sheet is written against, and
           the only identifier a non-employee grantee has. Cube matches it
-          case-sensitively, so the sheet side is lower-cased upstream.
+          case-sensitively, so the sheet side is lower-cased upstream. Null for
+          a staff viewer with no Google account yet; that row matches no login.
         config:
           meta:
             contains_pii: true
         data_tests:
-          - not_null
           - unique
 
       - name: entity

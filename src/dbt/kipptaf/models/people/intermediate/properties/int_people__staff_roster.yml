@@ -20,6 +20,26 @@ models:
           - unique
           - not_null
         data_type: int64
+      - name: google_email
+        data_type: string
+        description: >-
+          Google Workspace email address, built from the Active Directory mail
+          attribute in LDAP. IdAuto creates the account the morning a staff
+          member first appears in the IdAuto roster feed
+          (rpt_idauto__staff_roster), so it reaches LDAP by the next pull. The
+          warning mirrors that feed's filter and lists staff who have been in it
+          since before today but still have no account; IT checks the IdAuto
+          provisioning for them. Downstream, a null email matches no Cube login,
+          so the viewer sees no data until the account exists.
+        data_tests:
+          - not_null:
+              config:
+                where: |
+                  worker_status_code != 'Terminated'
+                  and assigned_business_unit_name is not null
+                  and assigned_department_name is not null
+                  and worker_hire_date_recent <= date_add(current_date('{{ var("local_timezone") }}'), interval 9 day)
+                  and effective_date_start < current_date('{{ var("local_timezone") }}')
       - name: effective_date_start
         data_type: date
       - name: effective_date_end
@@ -176,8 +196,6 @@ models:
         data_type: string
       - name: uac_account_disable
         data_type: int64
-      - name: google_email
-        data_type: string
       - name: survey_last_submitted_timestamp
         data_type: timestamp
       - name: additional_languages
