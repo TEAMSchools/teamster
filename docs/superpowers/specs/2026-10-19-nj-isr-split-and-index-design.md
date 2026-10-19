@@ -370,4 +370,21 @@ The user provides or confirms:
   search for a new student returns "no 2026 NJ report on file" instead of
   nothing.
 - NJGPA files when the user adds them to the input folder.
-- After #6027: write as the service account, and optionally a Dagster asset.
+- A Dagster asset, if the run moves outside the data team.
+
+## Revision 2026-10-19: service account after the shared-drive move
+
+Google blocks the `gcloud` sign-in client from asking for Drive access in KTAF's
+Workspace, so the personal sign-in in _How it runs_ cannot work as designed. The
+user chose to move `Report Cards and Transcripts` into the Data Team shared
+drive first (#6027). This revision replaces every statement above about running
+as the user:
+
+- Drive and Sheets calls run as the Codespace service account,
+  `codespaces@teamster-332318.iam.gserviceaccount.com`, which is a Content
+  manager of the Data Team shared drive. Nobody signs in.
+- The test-folder run needs only a test folder in the Data Team shared drive
+  with the service account added, so it can happen before #6027 finishes.
+- The real run into school folders waits on #6027.
+- _Before the first real run_ item 2 becomes: the service account is a Content
+  manager of the shared drive that holds the folders.

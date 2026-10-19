@@ -12,15 +12,25 @@ current school, files leavers and unmatched records in a regional
 **Architecture:** A pure-Python library at `src/teamster/libraries/nj_isr/`, run
 as `uv run python -m teamster.libraries.nj_isr`. Pure modules (segment, match,
 layout) hold every decision and are unit-tested on synthetic text. Thin IO
-modules read PDFs, query BigQuery, and call Drive and Sheets. Drive calls run as
-the user through a separate `gcloud` sign-in; BigQuery uses the Codespace's
-default credentials.
+modules read PDFs, query BigQuery, and call Drive and Sheets. Every Google call
+uses the Codespace's default credentials, the
+`codespaces@teamster-332318.iam.gserviceaccount.com` service account. The
+service account can write only in a shared drive, so real runs need the folders
+in the Data Team shared drive (#6027).
 
 **Tech Stack:** Python 3.13, `pypdfium2` (read text), `pypdf` (write PDFs),
 `google-cloud-bigquery`, `google-api-python-client` (Drive v3, Sheets v4),
 `google-auth`, pytest.
 
 **Spec:** `docs/superpowers/specs/2026-10-19-nj-isr-split-and-index-design.md`
+
+## Revision 2026-10-19: service account instead of a personal sign-in
+
+Google blocks the `gcloud` sign-in client from asking for Drive access in KTAF's
+Workspace. The user chose to move `Report Cards and Transcripts` into the Data
+Team shared drive first (#6027). The command writes as the Codespace service
+account, which is a Content manager of that shared drive. Tasks 1, 6, 8, 9, 10,
+and 11 below reflect the change. No personal sign-in remains.
 
 ## Global Constraints
 
@@ -78,63 +88,39 @@ default credentials.
 
 ---
 
-### Task 1: Prove the personal Google sign-in
+### Task 1: Prove the service account can write to the shared drive
 
-No code is committed in this task. It retires the biggest risk first. The user
-signs in, because the sign-in opens a browser and needs the user.
+No code is committed in this task. It retires the biggest risk first. It needs
+the user, who adds the service account to the shared drive.
 
 **Files:**
 
 - Create (scratchpad only, never committed): `auth_check.py` in the session
   scratchpad.
 
-- [ ] **Step 1: Check the `gcloud` flags**
+- [ ] **Step 1: Ask the user for a test folder**
 
-Run:
-`/usr/local/share/google-cloud-sdk/bin/gcloud auth application-default login --help | rg -n 'no-launch-browser|no-browser|scopes'`
-Expected: both `--scopes` and a no-browser flag are listed. Use the flag the
-help text names in Step 2.
+The user makes an empty folder, for example `NJ ISR test`, inside the Data Team
+shared drive, adds `codespaces@teamster-332318.iam.gserviceaccount.com` as a
+Content manager (on the shared drive or on that folder), and pastes the folder
+link. This works before #6027 finishes.
 
-- [ ] **Step 2: Ask the user to sign in, in their own terminal**
+- [ ] **Step 2: Write and run the scratch check**
 
-Give the user this command. It keeps the sign-in in its own folder, so the
-Codespace's default credentials stay untouched:
-
-```bash
-CLOUDSDK_CONFIG=~/.config/teamster/nj-isr-gcloud \
-  /usr/local/share/google-cloud-sdk/bin/gcloud auth application-default login \
-  --no-launch-browser \
-  --scopes=openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive
-CLOUDSDK_CONFIG=~/.config/teamster/nj-isr-gcloud \
-  /usr/local/share/google-cloud-sdk/bin/gcloud auth application-default set-quota-project teamster-332318
-```
-
-Expected: "Credentials saved to file". If Google shows "This app is blocked",
-STOP and report to the user. The fallback, a desktop sign-in client in the
-`teamster-332318` project, needs the data engineer, and changes Task 6's
-`load_user_credentials`.
-
-- [ ] **Step 3: Ask the user for a test folder link**
-
-The user makes an empty folder in their own My Drive, for example `NJ ISR test`,
-and pastes its link.
-
-- [ ] **Step 4: Write and run the scratch check**
-
-The script loads `application_default_credentials.json` from
-`~/.config/teamster/nj-isr-gcloud` with `google.auth.load_credentials_from_file`
-and the Drive scope, then in the test folder: creates a text file, updates its
-content, confirms the file ID did not change, and moves it to the trash. Keep
-the file name out of the Bash command line; a hook blocks credential paths
-there.
+The script gets credentials with `google.auth.default(scopes=[drive scope])`,
+then in the test folder: creates a text file, updates its content, confirms the
+file ID did not change, and moves it to the trash. Every call passes
+`supportsAllDrives=True`.
 
 Run: `uv run python -I <scratchpad>/auth_check.py <test-folder-id>` Expected:
-`create ok`, `update ok (same id)`, `trash ok`. A 403 that names the Drive API
-means the API is off in `teamster-332318`; report it to the user.
+`create ok`, `update ok (same id)`, `trash ok`. A 404 means the service account
+cannot see the folder; ask the user to check its membership. A 403 that names
+the Drive API means the API is off in `teamster-332318`; report it to the user.
 
-- [ ] **Step 5: Record the result**
+- [ ] **Step 3: Record the result**
 
-Add one line to the task ledger: the sign-in works, or which step failed.
+Add one line to the task ledger: the service account can write, or which step
+failed.
 
 ---
 
@@ -772,7 +758,7 @@ class GoogleDriveApi:  # implements DriveApi
 
 def escape_query_value(value: str) -> str
 def folder_id_from_url(url_or_id: str) -> str
-def load_user_credentials(gcloud_config_dir: Path) -> google.auth.credentials.Credentials
+def load_credentials() -> google.auth.credentials.Credentials
 ```
 
 - [ ] **Step 1: Write the failing tests**
@@ -812,9 +798,14 @@ def test_folder_id_from_url():
     assert folder_id_from_url("https://drive.google.com/drive/folders/abc123?resourcekey=0-k") == "abc123"
     assert folder_id_from_url("abc123") == "abc123"
 
-def test_load_user_credentials_explains_missing_sign_in(tmp_path):
-    with pytest.raises(FileNotFoundError, match="gcloud auth application-default login"):
-        load_user_credentials(tmp_path)
+def test_load_credentials_asks_for_drive_scope(monkeypatch):
+    calls = []
+    def fake_default(scopes=None):
+        calls.append(scopes)
+        return object(), "teamster-332318"
+    monkeypatch.setattr("google.auth.default", fake_default)
+    load_credentials()
+    assert calls == [[DRIVE_SCOPE]]
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
@@ -834,11 +825,9 @@ and requests `fields="files(id,name,webViewLink)"`. `list_tagged` queries
 `"{role}: {emailAddress or domain or type}"`. `write_sheet` adds any missing
 tab, clears each tab, writes values with `valueInputOption="USER_ENTERED"`, and
 on `All reports` freezes 5 rows, sets rows 1 to 4 to font size 14, and bolds
-rows 1 and 5. `load_user_credentials` reads
-`application_default_credentials.json` from the directory with
-`google.auth.load_credentials_from_file(..., scopes=[DRIVE_SCOPE])`. When the
-file is missing, raise `FileNotFoundError` whose message carries the Task 1
-sign-in command.
+rows 1 and 5. `load_credentials` returns the credentials from
+`google.auth.default(scopes=[DRIVE_SCOPE])`, called through the `google.auth`
+module so the test's patch applies.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -1008,8 +997,7 @@ def summarize(plan: RunPlan, result: PublishResult | None) -> str
 - `__main__.py` arguments: `--input DIR` (required), `--root-folder LINK`
   (required unless `--dry-run`), `--school-year INT` (default: the
   administration year), `--dry-run`, `--local-out DIR`,
-  `--create-missing-folders`, `--page-anchor`, `--gcloud-config DIR` (default
-  `~/.config/teamster/nj-isr-gcloud`).
+  `--create-missing-folders`, `--page-anchor`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1062,8 +1050,8 @@ summary is for the terminal only.
 
 `__main__.py` loads the warehouse data, builds the plan, and prints the summary.
 With `--dry-run` it writes PDFs only when `--local-out` is given, then stops.
-Otherwise it writes PDFs to `--local-out` or a temporary folder, loads
-credentials from `--gcloud-config`, calls `publish`, and prints the summary
+Otherwise it writes PDFs to `--local-out` or a temporary folder, gets
+credentials with `load_credentials()`, calls `publish`, and prints the summary
 again with the result.
 
 - [ ] **Step 4: Run all of the library's tests**
@@ -1101,17 +1089,17 @@ git -C <worktree> commit -m "feat(nj_isr): add the yearly command and run summar
 
 ---
 
-### Task 9: Real run into the user's test folder
+### Task 9: Real run into the test folder
 
-This task writes real student reports to the user's own test folder, so it needs
-the user at each check.
+This task writes real student reports to the Task 1 test folder in the Data Team
+shared drive, so it needs the user at each check.
 
 - [ ] **Step 1: Run into the test folder**
 
 Run:
 `uv run python -m teamster.libraries.nj_isr --input "<isr folder>" --root-folder "<test folder link from Task 1>" --create-missing-folders --local-out <scratchpad>/nj_isr_out 2>&1 | tail -n 60`
-Expected: the same counts as the Task 8 dry run, 3 Sheet links, and the user's
-account as the only reader.
+Expected: the same counts as the Task 8 dry run, 3 Sheet links, and only the
+shared drive's members and the test folder's members as readers.
 
 - [ ] **Step 2: Ask the user to check 3 things in Drive**
 
@@ -1166,15 +1154,13 @@ someone asks to rerun the split. Content, in order:
 1. Download the ISR PDFs from the Cambium portal into
    `.claude/scratch/njsla-njgpa-isr/{season} {year} ISRs/`. Never commit them.
 2. Update `SCHOOL_FOLDERS` in `destinations.py` for new or renamed schools.
-3. Sign in (the Task 1 command).
+3. Confirm the service account is still a Content manager of the Data Team
+   shared drive.
 4. Dry run, read the summary, resolve the unmatched list.
 5. Test-folder run and the 3 checks from Task 9.
 6. Real run, then confirm each region's readers in the summary.
 7. Tell schools where the index lives.
 8. Reruns: when corrections arrive or enrollment changes; links survive.
-
-Name #6027: once the folders move to the Data Team shared drive, the command can
-write as the service account instead.
 
 - [ ] **Step 3: Lint and commit**
 
@@ -1203,9 +1189,10 @@ staff.
 
 - [ ] **Step 1: Confirm the setup with the user**
 
-The user confirms: the Paterson school folders exist with the names in
-`SCHOOL_FOLDERS` and their school-level sharing; the account running the command
-can edit every school folder.
+The user confirms: #6027 is done, so `Report Cards and Transcripts` sits in the
+Data Team shared drive with the service account as a Content manager; the
+Paterson school folders exist with the names in `SCHOOL_FOLDERS` and their
+school-level sharing.
 
 - [ ] **Step 2: Run**
 
