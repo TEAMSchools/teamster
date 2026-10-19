@@ -61,7 +61,7 @@ def build_edplan_sftp_sensor(
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                 # Daily partitions are in execution_timezone; a UTC date runs a
-                # day ahead after 20:00 ET and names a partition not yet created.
+                # day ahead in the evening and names a partition not yet created.
                 partition_key = (
                     datetime.fromtimestamp(
                         timestamp=check.not_none(value=f.st_mtime),
