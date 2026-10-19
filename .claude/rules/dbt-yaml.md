@@ -37,8 +37,8 @@ evolve an Avro source's schema, the new-schema file must sort last — materiali
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
 otherwise pick up the old (earlier-sorting) schema.
 
-**A metadata-cached Avro external can read a field NULL downstream though the
-GCS file is correct — two distinct failure modes, both surfaced by #4151:**
+**A metadata-cached Avro external can read wrong data though the GCS file is
+correct — two distinct failure modes:**
 
 - _Schema heterogeneity (deterministic)._ After a schema add + partial backfill,
   old-schema files (field absent) and new-schema files (field present) coexist.
@@ -49,20 +49,25 @@ GCS file is correct — two distinct failure modes, both surfaced by #4151:**
   full partition history always includes old files, so the column reads NULL
   everywhere. A cache refresh / rebuild does NOT fix it — only homogenizing the
   files does (`scripts/reencode_avro_partitions.py` re-encodes every partition).
-- _Cache staleness (intermittent)._ `build_dbt_assets`
-  (stage→refresh→`dbt build`) races BigLake metadata-cache convergence after a
-  `create or replace` / overwrite-in-place: the
-  `refresh_external_metadata_cache` `CALL` returning DONE does NOT mean
-  queryable-fresh (lag seconds→hours, non-monotonic), so a just-materialized
-  partition reads NULL downstream.
+- _Pinned file version deleted (deterministic)._ A `metadata_cache_mode: MANUAL`
+  external reads the object version it cached at the last refresh, not the live
+  object. The Avro IO manager overwrites one object per partition in place, the
+  bucket keeps noncurrent versions, and its lifecycle rule deletes a version
+  once it has 2 newer ones (up to a day late). After 2 overwrites with no
+  refresh, the cached version is gone and the external reads 0 rows with no
+  error. `build_dbt_assets` refreshes the cache only for externals upstream of a
+  selected model, so a model reading an overwritten-in-place external must be a
+  table: it rebuilds, and refreshes, on every upload. A view over one goes empty
+  about 3 days after its last rebuild. A refresh restores it at once.
 
-Verifying: `bq --nouse_cache` exposes the TRUE cached state (the BQ results
-cache and the BigQuery MCP otherwise return stale-but-fresh-looking counts).
-Selecting `_FILE_NAME` forces a live read that BYPASSES the metadata cache
-(ground truth vs. staleness) but does NOT bypass schema heterogeneity (a
-mixed-schema scan still drops the field), and it contaminates the whole query to
-a live read. So `_FILE_NAME` is ground truth only within a single-schema scan
-(one partition); never mix it into a cached-path check.
+Verifying: selecting `_FILE_NAME` forces a live read that bypasses the metadata
+cache, so a live count beside a cached count of 0 means the pinned version is
+gone. It does NOT bypass schema heterogeneity (a mixed-schema scan still drops
+the field), and it turns the whole query into a live read, so it is ground truth
+only within a single-schema scan (one partition); never mix it into a
+cached-path check. To date a past empty read, `job_stages` in
+`INFORMATION_SCHEMA.JOBS` carries `records_read` per READ step, and the step's
+`substeps` name the external it read.
 
 dbt Cloud CI runs `dbt build` only (never `stage_external_sources`) → it reads
 the existing `zz_stg` external table as-is. To make CI see a new schema before
@@ -279,26 +284,8 @@ legitimately-superseded inactive rows that repeat the key.
   district and kipptaf project default is `warn`, so their staging tests without
   explicit `severity: error` silently degrade to warnings and won't fail CI.
   Intermediate tests may omit the override where a warning is acceptable.
-- Marts and `rpt_` models carry only `error` tests and unit tests (#5948). Until
-  a folder has its own `+severity: error` block in `dbt_project.yml`, set
-  `config: severity: error` on each new test there. An `error` test lands only
-  after its query returns 0 rows in prod. Sort each test:
-  - Grain: the backstop on every mart and `rpt_` model. Add `not_null` on
-    natural-key grain columns (`unique` skips nulls) unless non-null by
-    construction; a `generate_surrogate_key` PK needs only `unique`.
-  - A `relationships` test from a mart or `rpt_` model to another model is not a
-    regression test. Key drift is the key macros' job (A7); a population
-    mismatch becomes a shared upstream model or a unit test; real orphans become
-    an upstream `warn`. The pre-join FK check below still applies.
-  - The model's own logic → a unit test.
-  - A promise an upstream model makes → `error` on that model.
-  - Source data → the earliest model that sees it: a `warn` with a downstream
-    defense and a description naming the source system, what is wrong, and what
-    to change there; or, when no business rule can handle it, an `error` gate. A
-    new gate lands as `warn` and flips after it passes in prod. A failing test
-    skips only downstream tables; a view between a gate and its consumers still
-    reads the bad rows.
-  - Build timing → delete.
+- Tests on marts and `rpt_` models follow _Tests on marts and `rpt_` models_ at
+  the end of this file.
 - Removing a `severity: warn` override reverts to the project default: `warn` in
   a district or kipptaf, `error` in a source package. To force `error`, set
   `config: severity: error` explicitly.
@@ -322,10 +309,10 @@ legitimately-superseded inactive rows that repeat the key.
   `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
   literal in every UNION branch, or `count(...)`. The `accepted_values` pairing
   above overrides this rule; nothing else does.
-- **Disabling a model does NOT disable its tests.** `config: enabled: false` in
-  properties yml moves the model to `disabled` but leaves every test in `nodes`
-  (verified with `--no-partial-parse`), still scanning the stale prod relation.
-  Add `config: enabled: false` to each test as well.
+- **Disabling a model disables only the generic tests declared on it.** A
+  singular test that refs it, and a `relationships` test on another model whose
+  `to:` names it, stay in `nodes` (verified with `--no-partial-parse`) and keep
+  scanning the stale prod relation. Disable or remove each of those.
 
 ### An FK check belongs on the pre-join model, as a column `relationships` test
 
@@ -438,3 +425,46 @@ the normalized value its sibling scalar columns assert.
   descriptions — those go in inline SQL comments at the derivation site.
 - The reverse (rationale belongs in `description:`, not an inline SQL comment):
   the inline-comment rule in `.claude/rules/dbt-sql.md`.
+
+<!-- --8<-- [start:tests] -->
+
+## Tests on marts and `rpt_` models
+
+Marts and `rpt_` models carry only `error` tests and unit tests. A warning on a
+model a dashboard or feed reads is one nobody acts on, so each test either fails
+the build or moves somewhere it can be acted on.
+
+Until a folder has its own `+severity: error` block in `dbt_project.yml`, set
+`config: severity: error` on each new test there. An `error` test lands only
+after its query returns 0 rows in prod.
+
+Sort each test by what it guards:
+
+- Grain: the backstop on every mart and `rpt_` model. Add `not_null` on
+  natural-key grain columns (`unique` skips nulls) unless they are non-null by
+  construction; a `generate_surrogate_key` primary key needs only `unique`. If a
+  grain test fails in prod on a source defect that waits on a fix elsewhere, set
+  `severity: warn` on that one test with a `TODO(#N)` comment, and still flip
+  the folder. A kipptaf `rpt_` model listed on
+  [#5990](https://github.com/TEAMSchools/teamster/issues/5990) has no grain test
+  yet: add one in any PR that modifies it, and check it off there.
+- A `relationships` test from a mart or `rpt_` model to another model is not a
+  regression test. Key drift is the key macros' job (A7). When two models must
+  cover the same population, have both read one shared upstream model. A test
+  comparing two separately built models also catches the gap between their
+  rebuild times. Real orphans become an upstream `warn`. A column
+  `relationships` test on the model that feeds a join, before the join drops
+  unmatched rows, is still the right FK check. Exception: an outbound feed whose
+  rows reference another feed's file (ParentSquare, Clever) keeps its
+  file-to-file check, because the target system rejects a dangling id.
+- The model's own logic: a unit test.
+- A promise an upstream model makes: an `error` test on that model.
+- Source data: a test on the earliest model that sees it. Either a `warn` with a
+  downstream defense and a description naming the source system, what is wrong,
+  and what to change there; or, when no business rule can handle it, an `error`
+  gate. A new gate lands as `warn` and flips after it passes in prod. A failing
+  test skips only downstream tables; a view between a gate and its consumers
+  still reads the bad rows.
+- Build timing: delete it.
+
+<!-- --8<-- [end:tests] -->

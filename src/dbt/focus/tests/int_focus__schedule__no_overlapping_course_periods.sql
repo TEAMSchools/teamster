@@ -2,10 +2,10 @@
 -- class period, at the same time.
 --
 -- The marking-period resolution is load-bearing. int_focus__schedule.end_date
--- is null on 18,412 of 19,699 rows because Focus bounds a schedule row by its
--- course period's marking period rather than by the row's own end_date. Taken
+-- is null on most rows because Focus bounds a schedule row by its course
+-- period's marking period rather than by the row's own end_date. Taken
 -- literally, every Semester 1 row reads as open-ended and collides with its
--- Semester 2 partner -- 188 pairs that are simply a year-long course scheduled
+-- Semester 2 partner, though the pair is simply a year-long course scheduled
 -- as two halves. Falling back to the marking period's dates removes all of
 -- them.
 --

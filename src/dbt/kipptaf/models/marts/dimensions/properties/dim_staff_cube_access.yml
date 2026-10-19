@@ -90,8 +90,9 @@ models:
       # the policy filters on a NULL abbreviation and the viewer is denied every
       # row, which looks exactly like a correct deny at the Cube surface. Warn,
       # not error — the rows are a real upstream gap in the work-assignment
-      # location (9 Miami-employed viewers as of 2026-09-23), so this surfaces
-      # them for Ops rather than blocking a deploy.
+      # location, so this surfaces them for Ops rather than blocking a deploy.
+      # TODO(#5524): flip to error once every school-scoped viewer has a
+      # work-assignment location.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
@@ -107,15 +108,13 @@ models:
       # a location-bounded remit and a non-none PII scope; zero do today,
       # network-wide. This is the tripwire for that: a hit means someone's staff
       # PII remit is now bounded by their employer rather than their desk, which
-      # is a decision to make deliberately, not to discover. Warn, not error —
-      # it constrains a future grant, not current correctness.
+      # is a decision to make deliberately, not to discover, so a hit fails
+      # the build.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
               staff_pii_scope = 'none'
               or staff_location_scope not in ('region', 'school')
-          config:
-            severity: warn
     columns:
       - name: staff_key
         data_type: string
@@ -146,51 +145,8 @@ models:
           meta:
             contains_pii: true
         data_tests:
-          - not_null:
-              config:
-                severity: warn
-          - unique:
-              config:
-                severity: warn
-
-      - name: legal_entity_region_key
-        data_type: string
-        description: >-
-          Region key of the legal entity EMPLOYING this viewer, resolved by
-          joining business_unit_code to dim_regions.business_unit_code — not the
-          region of the desk they sit at. This is the student row-level security
-          boundary: FERPA binds student-record access to the employing LEA, and
-          region maps 1:1 to legal entity, so the value is still joinable to
-          dim_locations.region_key. It also bounds the staff-PII remit when
-          staff_location_scope is region or school, which FERPA does not argue
-          for; a model-level warn test flags any viewer who reaches that state.
-          NULL when the employing business unit does not resolve, and for every
-          non-employee grantee, which has no employer; either way it denies.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_regions')
-              to_columns: [region_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_regions')
-                field: region_key
-
-      - name: location_abbreviation
-        data_type: string
-        description: >-
-          Viewer's school abbreviation (from dim_locations). resolveAccess
-          expands it into allowed_abbreviations and
-          allowed_student_abbreviations for a school location scope; no
-          access_policy reads it directly. NULL when location does not resolve.
-
-      - name: department_group
-        data_type: string
-        description: >-
-          Viewer's functional department grouping from the rollup crosswalk.
-          resolveAccess expands it into allowed_department_groups for an
-          own_group department scope, which the staff_pii policies filter on.
+          - not_null
+          - unique
 
       - name: entity
         data_type: string
@@ -204,32 +160,6 @@ models:
           have no business unit and carry unknown for the same reason.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values: [KTAF, Region, unknown]
-
-      - name: job_function_code
-        data_type: string
-        description: Current ADP job function code (CHIEF, SL, TEACH, ...).
-
-      - name: job_function_level
-        data_type: int64
-        description: >-
-          Org rank from the role crosswalk (1 = Chief, 6 = Teacher); drives the
-          below-rank branch of reporting_chain_or_below_rank. NULL when the role
-          does not resolve.
-
-      - name: is_employee
-        data_type: boolean
-        description: >-
-          True for a viewer off the work-assignment spine, false for a
-          non-employee grantee off the individual-exceptions sheet. Gates the
-          open staff directory in access.buildGroups — an employee holds it
-          unconditionally, matching the network's own directory norm, while a
-          non-employee holds it only when a grant reaches the staff axis. No
-          other column distinguishes the two legs: entity is 'unknown' and
-          job_function_code is NULL for unresolved employees as well, so neither
-          can carry this decision.
 
       - name: student_location_scope
         data_type: string
@@ -329,6 +259,64 @@ models:
                   - reporting_chain
                   - teaching_staff
 
+      - name: legal_entity_region_key
+        data_type: string
+        description: >-
+          Region key of the legal entity EMPLOYING this viewer, resolved by
+          joining business_unit_code to dim_regions.business_unit_code — not the
+          region of the desk they sit at. This is the student row-level security
+          boundary: FERPA binds student-record access to the employing LEA, and
+          region maps 1:1 to legal entity, so the value is still joinable to
+          dim_locations.region_key. It also bounds the staff-PII remit when
+          staff_location_scope is region or school, which FERPA does not argue
+          for; a model-level error test fails the build if any viewer reaches
+          that state. NULL when the employing business unit does not resolve,
+          and for every non-employee grantee, which has no employer; either way
+          it denies.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_regions')
+              to_columns: [region_key]
+
+      - name: location_abbreviation
+        data_type: string
+        description: >-
+          Viewer's school abbreviation (from dim_locations). resolveAccess
+          expands it into allowed_abbreviations and
+          allowed_student_abbreviations for a school location scope; no
+          access_policy reads it directly. NULL when location does not resolve.
+
+      - name: department_group
+        data_type: string
+        description: >-
+          Viewer's functional department grouping from the rollup crosswalk.
+          resolveAccess expands it into allowed_department_groups for an
+          own_group department scope, which the staff_pii policies filter on.
+
+      - name: job_function_code
+        data_type: string
+        description: Current ADP job function code (CHIEF, SL, TEACH, ...).
+
+      - name: job_function_level
+        data_type: int64
+        description: >-
+          Org rank from the role crosswalk (1 = Chief, 6 = Teacher); drives the
+          below-rank branch of reporting_chain_or_below_rank. NULL when the role
+          does not resolve.
+
+      - name: is_employee
+        data_type: boolean
+        description: >-
+          True for a viewer off the work-assignment spine, false for a
+          non-employee grantee off the individual-exceptions sheet. Gates the
+          open staff directory in access.buildGroups — an employee holds it
+          unconditionally, matching the network's own directory norm, while a
+          non-employee holds it only when a grant reaches the staff axis. No
+          other column distinguishes the two legs: entity is 'unknown' and
+          job_function_code is NULL for unresolved employees as well, so neither
+          can carry this decision.
+
       - name: additional_location_grants
         data_type: |
           ARRAY<STRUCT<location_scope STRING, region_key STRING, location_abbreviation STRING, includes_student_data BOOL, includes_staff_data BOOL>>
@@ -343,3 +331,157 @@ models:
           into the person's normal location remit by cube.js/access.js
           (unionAdditionalGrants, once per axis), never replacing
           student_location_scope/staff_location_scope.
+
+unit_tests:
+  - name: test_dim_staff_cube_access_entity_from_business_unit
+    description:
+      Locks how entity derives from the home business unit. Feeds three current,
+      primary staff whose home org unit is KIPP_TAF, a regional business unit,
+      and a business unit dim_regions does not hold. Asserts KTAF, Region and
+      unknown. With no role row, student_location_scope falls through to none,
+      including the KTAF widening branch.
+    model: dim_staff_cube_access
+    given:
+      - input: ref('dim_staff_work_assignments')
+        format: sql
+        rows: |
+          select 's1' as staff_key, 'wa1' as work_assignment_key, true as is_current
+          union all select 's2', 'wa2', true
+          union all select 's3', 'wa3', true
+      - input: ref('dim_work_assignment_primary')
+        format: sql
+        rows: |
+          select 'wa1' as work_assignment_key, true as is_current, true as is_primary_position
+          union all select 'wa2', true, true
+          union all select 'wa3', true, true
+      - input: ref('dim_staff')
+        format: sql
+        rows: |
+          select 's1' as staff_key, 'a@example.org' as google_email
+          union all select 's2', 'b@example.org'
+          union all select 's3', 'c@example.org'
+      - input: ref('dim_work_assignment_organizational_units')
+        format: sql
+        rows: |
+          select
+            'wa1' as work_assignment_key,
+            true as is_current,
+            'home' as assignment_type,
+            'Dept' as department_name,
+            'KIPP_TAF' as business_unit_code
+          union all select 'wa2', true, 'home', 'Dept', 'REGION_BU'
+          union all select 'wa3', true, 'home', 'Dept', 'UNKNOWN_BU'
+      - input: ref('dim_regions')
+        format: sql
+        rows: |
+          select 'r1' as region_key, 'KIPP_TAF' as business_unit_code, 'Network' as legal_entity
+          union all select 'r2', 'REGION_BU', 'Region One'
+      - input: ref('dim_work_assignment_jobs')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current,
+            cast(null as string) as job_function_code
+          from unnest([1]) where false
+      - input: ref('dim_work_assignment_locations')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as work_assignment_key,
+            cast(null as bool) as is_current,
+            cast(null as string) as location_key
+          from unnest([1]) where false
+      - input: ref('dim_locations')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as location_key,
+            cast(null as string) as abbreviation,
+            cast(null as string) as `name`
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_department_rollup')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as department_name,
+            cast(null as string) as department_group
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_role')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as job_function_code,
+            cast(null as string) as entity,
+            cast(null as int64) as job_function_level,
+            cast(null as string) as student_location_scope,
+            cast(null as string) as staff_location_scope,
+            cast(null as string) as staff_department_scope,
+            cast(null as string) as staff_pii_scope,
+            cast(null as string) as staff_compensation_scope,
+            cast(null as string) as staff_observations_scope,
+            cast(null as string) as staff_benefits_scope
+          from unnest([1]) where false
+      - input: ref('stg_google_sheets__people__cube_access_individual_exceptions')
+        format: sql
+        rows: |
+          select
+            'd@example.org' as google_email,
+            'active' as status,
+            date '2000-01-01' as grant_date,
+            date '2999-12-31' as expiry_date,
+            cast(null as string) as additional_location_name,
+            cast(null as string) as additional_location_scope,
+            'none' as additional_student_location_scope,
+            'none' as additional_staff_location_scope,
+            cast(null as string) as staff_department_scope,
+            cast(null as string) as staff_pii_scope,
+            cast(null as string) as staff_compensation_scope,
+            cast(null as string) as staff_observations_scope,
+            cast(null as string) as staff_benefits_scope
+      - input: ref('stg_google_directory__users')
+        format: sql
+        rows: |
+          select
+            'd@example.org' as primary_email,
+            false as suspended,
+            false as archived
+      - input: ref('stg_google_sheets__people__cube_access_department_override')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as department,
+            cast(null as string) as student_location_scope,
+            cast(null as string) as staff_location_scope,
+            cast(null as string) as staff_department_scope,
+            cast(null as string) as staff_pii_scope,
+            cast(null as string) as staff_compensation_scope,
+            cast(null as string) as staff_observations_scope,
+            cast(null as string) as staff_benefits_scope
+          from unnest([1]) where false
+    expect:
+      rows:
+        - {
+            google_email: a@example.org,
+            entity: KTAF,
+            is_employee: true,
+            student_location_scope: none,
+          }
+        - {
+            google_email: b@example.org,
+            entity: Region,
+            is_employee: true,
+            student_location_scope: none,
+          }
+        - {
+            google_email: c@example.org,
+            entity: unknown,
+            is_employee: true,
+            student_location_scope: none,
+          }
+        - {
+            google_email: d@example.org,
+            entity: unknown,
+            is_employee: false,
+            student_location_scope: none,
+          }

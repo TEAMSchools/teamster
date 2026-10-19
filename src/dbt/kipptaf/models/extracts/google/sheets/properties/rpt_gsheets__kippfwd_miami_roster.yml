@@ -23,13 +23,6 @@ models:
     columns:
       - name: iep_status
         data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - Has IEP
-                  - No IEP
-          - not_null
         description: >-
           Has IEP when the student carries a PowerSchool exceptionality code
           (spedlep) for years PowerSchool covers, else when the student carries

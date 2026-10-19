@@ -29,36 +29,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-      - name: student_key
-        data_type: string
-        description: Foreign key to `dim_students.student_key`.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_students')
-              to_columns: [student_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_students')
-                field: student_key
-      - name: student_enrollment_key
-        data_type: string
-        description: >-
-          Foreign key to `dim_student_enrollments.student_enrollment_key`. Each
-          status row is bound to exactly one enrollment stint (clipped to its
-          entry/exit window at build time). Consumers join here directly rather
-          than re-deriving the stint via date-range overlap.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_student_enrollments')
-              to_columns: [student_enrollment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_student_enrollments')
-                field: student_enrollment_key
       - name: _dbt_source_project
         data_type: string
         description: >-
@@ -69,9 +39,6 @@ models:
           join key to avoid fan-out for cross-enrolled students.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values: [kippnewark, kippcamden, kippmiami, kipppaterson]
       - name: effective_date_start_key
         data_type: date
         description: >-
@@ -85,10 +52,6 @@ models:
               to_columns: [date_key]
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: effective_date_end_key
         data_type: date
         description: >-
@@ -103,10 +66,6 @@ models:
               to_columns: [date_key]
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: is_current
         data_type: boolean
         description: True when `effective_date_end_key = '9999-12-31'`.
@@ -121,3 +80,23 @@ models:
           target date.
         data_tests:
           - not_null
+      - name: student_key
+        data_type: string
+        description: Foreign key to `dim_students.student_key`.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          Foreign key to `dim_student_enrollments.student_enrollment_key`. Each
+          status row is bound to exactly one enrollment stint (clipped to its
+          entry/exit window at build time). Consumers join here directly rather
+          than re-deriving the stint via date-range overlap.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]

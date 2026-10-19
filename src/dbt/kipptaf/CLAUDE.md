@@ -301,6 +301,11 @@ stays here is what to do and what not to do.
   `workers` partitions spanning the record's active dates; the re-pull drops the
   ghost and downstream tables rebuild via automation. The
   `stg_adp_workforce_now__workers__ghost_open_records` asset check flags them.
+- **`stg_people__employee_numbers` on a deleted and re-created hire** — the new
+  worker_id gets a new employee number, and the old number stays active. IdAuto
+  matches AD accounts on employee number, so have IT update the existing AD
+  account to the new number and worker_id. Do not re-point the old number at the
+  new worker_id: the new number has already reached other systems.
 
 ## Exposures
 

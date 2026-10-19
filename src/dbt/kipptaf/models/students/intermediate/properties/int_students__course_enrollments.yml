@@ -50,9 +50,11 @@ models:
           concept -- the actual leave date when the student left, the term end
           plus a day while the enrollment is open. Focus keeps the two apart, so
           this resolves to the schedule `end_date` when the student left and
-          `marking_period_end_date` otherwise. A consumer that compares
-          `cc_dateleft` instead drops every open Focus enrollment, because the
-          comparison is unknown.
+          `marking_period_end_date` otherwise, plus a day. Both SIS therefore
+          give the first day the student is no longer enrolled, so a window is
+          `date >= cc_dateenrolled and date < exit_date` in every region. A
+          consumer that compares `cc_dateleft` instead drops every open Focus
+          enrollment, because the comparison is unknown.
         data_type: date
         data_tests:
           - not_null:
@@ -62,10 +64,12 @@ models:
         description: >-
           The date the student left the section, where the SIS records one. For
           PowerSchool this doubles as the scheduled end, because PowerSchool
-          conflates the two. For Miami it is the Focus schedule `end_date`,
-          which is null while the enrollment is open -- the normal state, true
-          of 95.8% of Miami AY2026 rows. Read `exit_date` instead of coalescing
-          this one; #5043 added it for exactly that purpose.
+          conflates the two. For Miami it is the Focus schedule `end_date` plus
+          a day (Focus records the last day enrolled; PowerSchool the first day
+          not enrolled), which is null while the enrollment is open -- the
+          normal state, true of 95.8% of Miami AY2026 rows. Read `exit_date`
+          instead of coalescing this one; #5043 added it for exactly that
+          purpose.
         data_type: date
       - name: cc_dcid
         description: >-

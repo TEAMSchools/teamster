@@ -313,6 +313,89 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
     return {**query, "timezone": DEFAULT_QUERY_TIMEZONE}
 
 
+EMPTY_RESULT_NOTE = (
+    "Empty result: no rows, or one row of null or zero measures. The data may "
+    "not exist for this slice, or your access may not include it. Before "
+    "concluding it does not exist, re-run without the narrowing filter, grouped "
+    "by region or school, and check the filter values against the values the "
+    "member's `meta` description lists. If `sql` on the same query object "
+    "(`convert_query` turns SQL into one) shows `rlsAccessDenied`, your access "
+    "excludes it."
+)
+
+
+def _groups_rows(query: dict[str, Any]) -> bool:
+    """True when the query groups by a dimension or a time-dimension grain, or
+    returns raw records (`ungrouped`). Otherwise Cube answers an empty slice
+    with 1 row of null measures (a plain count may come back as 0), not with
+    `data: []`."""
+    if query.get("dimensions") or query.get("ungrouped"):
+        return True
+    return any(
+        isinstance(t, dict) and t.get("granularity")
+        for t in query.get("timeDimensions") or []
+    )
+
+
+def _is_null_or_zero(value: Any) -> bool:
+    if value is None:
+        return True
+    try:
+        return float(value) == 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _result_rows(data: Any) -> list[Any] | None:
+    """Rows of a `/load` `data` payload in any `responseFormat`: a list of
+    row objects (`default`), `{members, dataset}` (`compact`), or
+    `{members, columns}` with one array per member (`columnar`). None when
+    `data` is none of these."""
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        if isinstance(data.get("dataset"), list):
+            return data["dataset"]
+        if isinstance(data.get("columns"), list):
+            # Not strict: a malformed payload must still reach the caller,
+            # not fail the tool over this note.
+            return list(zip(*data["columns"], strict=False))
+    return None
+
+
+def _with_empty_result_note(
+    payload: dict[str, Any], query: dict[str, Any]
+) -> dict[str, Any]:
+    """Add a note to an empty load result, so a zero is not read as "no data
+    exists". Empty is no rows, or, for a `query` with no grouping, the single
+    all-null-or-zero row Cube returns instead. A multi-query response
+    (`results`, e.g. compareDateRange) gets the note on each empty result. Any
+    other payload (rows, errors, no data key) is returned unchanged."""
+    rows = _result_rows(payload.get("data"))
+    if rows is not None and (
+        not rows
+        or (
+            len(rows) == 1
+            and not _groups_rows(query)
+            and all(
+                _is_null_or_zero(v)
+                for v in (rows[0].values() if isinstance(rows[0], dict) else rows[0])
+            )
+        )
+    ):
+        return {**payload, "note": EMPTY_RESULT_NOTE}
+    results = payload.get("results")
+    if isinstance(results, list):
+        return {
+            **payload,
+            "results": [
+                _with_empty_result_note(r, query) if isinstance(r, dict) else r
+                for r in results
+            ],
+        }
+    return payload
+
+
 def _meta_scope_key(views: list[str] | None) -> str:
     """Distinguish a filtered fetch from the full `/meta` catalog in the cache
     key — a filtered call must never read or write the full catalog's cache
@@ -436,11 +519,16 @@ async def meta(
     (not an error) — see the `load` tool's grain rule before dropping a
     dimension.
 
+    Members may carry `meta.ai_context` (`aiContext` on some view-specific
+    members): usage rules written for you. Read and follow a member's
+    `ai_context` before building a query that uses it.
+
     Cached per (email, requested scope) for one hour (in-memory, with disk
     fallback across process restarts) — a filtered call never reads or writes
     the full-catalog cache entry, or another view-set's, though it does reuse
     the full catalog's cached fetch to build its filtered result. Pass
-    `force_refresh=True` after a model deploy.
+    `force_refresh=True` after a model deploy. Refresh before concluding a member
+    is missing.
     """
     email = await _get_user_email(ctx)
     scope = _meta_scope_key(views)
@@ -506,7 +594,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     just which columns come back. (This includes count_distinct measures like
     count_students: at a coarser grain Cube computes a correct distinct count
     for that grain — the "non-additive" note on some measures refers to
-    pre-aggregation rollup, not query-time grain.)
+    pre-aggregation rollup, not query-time grain.) A query with no measure
+    groups by its dimensions, so identical rows collapse into one; add a count,
+    the primary key, or the `ungrouped` field above to see every row.
 
     Example — same filters and measure (pct_proficient), two grains: dimensions
     [is_iep, module_code, academic_year] returns one proficiency rate per (IEP
@@ -533,6 +623,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     - Dates: `inDateRange`, `notInDateRange`, `onTheDate`, `beforeDate`,
       `beforeOrOnDate`, `afterDate`, `afterOrOnDate`.
     - `measureFilter`: filter by a measure's own filters; rarely needed.
+
+    `equals "null"` matches the literal string and returns zero rows; filter a
+    null with `notSet`.
 
     Date dimensions: for a single date use `filters` with `onTheDate`; for a
     range or when you need `granularity` (day/week/month/etc.), use
@@ -565,7 +658,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     full_name, birth_date, state/lea IDs) unless drill-down is explicitly
     requested. Staff sensitive fields (personal contact, birth date,
     demographics) live in `staff_pii`, gated separately from the open
-    `staff_directory` roster. Keep any identifying values — student or staff —
+    `staff_directory` roster. Student views return only the schools the user
+    can access; before describing a result as network-wide, check which regions
+    or schools it covers. Keep any identifying values — student or staff —
     in the local conversation only, never to PR comments, issues, Slack, or
     scheduled-agent outputs.
 
@@ -573,13 +668,14 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     explicit `timezone` only when wall-clock conversion is intended.
     """
     email = await _get_user_email(ctx)
-    return await _request(
+    result = await _request(
         "POST",
         "/load",
         json={"query": _with_default_timezone(query)},
         email=email,
         poll=True,
     )
+    return _with_empty_result_note(result, query)
 
 
 def _trim_sql(body: dict[str, Any]) -> dict[str, Any]:
@@ -758,13 +854,16 @@ async def cubesql(
 
     PII: student view results carry row-level student identifiers — avoid
     selecting identifier columns (student_key, full_name, birth_date,
-    state/lea IDs) unless drill-down is explicitly requested. Keep any
+    state/lea IDs) unless drill-down is explicitly requested. Student views
+    return only the schools the user can access; before describing a result as
+    network-wide, check which regions or schools it covers. Keep any
     identifying values in the local conversation only, never to PR comments,
     issues, Slack, or scheduled-agent outputs.
 
     An empty result for a query that should match rows can mean default-deny
     access: no `dim_staff_cube_access` row for the email, a `none` scope on
-    that axis, or `resolveAccess` failing closed.
+    that axis, or `resolveAccess` failing closed. Zero rows come back with a
+    `note` saying what to check.
 
     `timezone` defaults to UTC (mart dates are date-grain UTC).
     """
@@ -787,6 +886,10 @@ async def cubesql(
                     continue
                 if error:
                     raise ToolError(f"Cube POST /cubesql: {error}")
+                # Zero rows only: grouping is not visible in a SQL string, so
+                # the measure-only null row that `load` catches is not.
+                if not result["data"]:
+                    return {**result, "note": EMPTY_RESULT_NOTE}
                 return result
     except TimeoutError:
         raise ToolError(_deadline_message("POST", "/cubesql", True)) from None

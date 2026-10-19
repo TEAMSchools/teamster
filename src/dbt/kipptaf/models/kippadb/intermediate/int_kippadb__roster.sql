@@ -410,7 +410,12 @@ with
             and mpt.test_type = 'Military Physical Training'
             and mpt.rn_military_testing = 1
         left join matriculated_award_letter as mal on c.contact_id = mal.contact_id
-        where se.rn_undergrad = 1 and se.grade_level between 8 and 12
+        -- TODO(#5181): Miami stays out until the KIPP Forward feeds downstream
+        -- are reviewed for it.
+        where
+            se.rn_undergrad = 1
+            and se.grade_level between 8 and 12
+            and se.region != 'Miami'
     )
 
 select *,
