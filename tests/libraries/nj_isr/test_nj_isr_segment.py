@@ -1,0 +1,265 @@
+from datetime import date
+from pathlib import Path
+
+import pytest
+
+from teamster.libraries.nj_isr.models import IsrFormatError, Record, SourceFile
+from teamster.libraries.nj_isr.segment import (
+    apply_corrections,
+    find_duplicate_state_ids,
+    parse_source_filename,
+    scan_folder,
+    segment_pages,
+)
+
+SRC = SourceFile(
+    path=Path("2026_Spring_7325-965_ISR_SLA_Combined.pdf"),
+    year=2026,
+    season="Spring",
+    district="7325",
+    school_code="965",
+    program="NJSLA",
+    variant="Combined",
+    reissue_date=None,
+)
+
+SUBJECT_PAGES = ("English Language Arts", "Mathematics")
+
+
+def _footer(seq: int, district: str = "7325") -> str:
+    return f"{district}.{district}_965.{seq}"
+
+
+def _inner_page(
+    sid: str,
+    dob: str | None,
+    subject: str,
+    extra_sid: str | None,
+    footer: str = "",
+) -> str:
+    lines = [subject, "ALEX B. RIVERA", " ENROLLED GRADE: 5", "Student ID:", sid]
+    if extra_sid is not None:
+        lines += ["Student ID:", extra_sid]
+    if dob is not None:
+        lines += ["Date of Birth:", dob]
+    return "\n".join(lines) + footer
+
+
+def record(
+    seq: int,
+    sid: str,
+    *,
+    code: str = "ab1234",
+    district: str = "7325",
+    dob: str | None = "03/04/15",
+    subjects: tuple[str, ...] = SUBJECT_PAGES,
+    extra_sid: str | None = None,
+) -> list[str]:
+    """Build a 4-page Combined record: cover, 2 subject pages, closing page."""
+    footer = _footer(seq, district)
+    subject_text = [*subjects, "", ""][:2]
+    return [
+        f"Student Report\nFamily Portal Access Code:\n{code}{footer}",
+        _inner_page(sid, dob, subject_text[0], None),
+        _inner_page(sid, dob, subject_text[1], extra_sid),
+        _inner_page(sid, dob, "", None, footer=footer),
+    ]
+
+
+def njgpa_record(seq: int, sid: str) -> list[str]:
+    """Build a 2-page NJGPA record with the footer token on both pages."""
+    footer = _footer(seq)
+    return [
+        _inner_page(sid, "03/04/15", "Mathematics", None, footer=footer),
+        _inner_page(sid, "03/04/15", "", None, footer=footer),
+    ]
+
+
+def rec(
+    *,
+    state_id: str,
+    file: str = "2026_Spring_7325-965_ISR_SLA_Combined.pdf",
+    seq: int = 1,
+) -> Record:
+    source = parse_source_filename(Path(file))
+    assert source is not None
+    return Record(
+        source=source,
+        seq=seq,
+        page_start=1,
+        page_end=4,
+        state_id=state_id,
+        printed_name="ALEX B. RIVERA",
+        printed_dob=None,
+        grade=5,
+        subjects=("ELA", "Math"),
+        not_tested=False,
+    )
+
+
+def test_parse_source_filename():
+    s = parse_source_filename(Path("2026_Spring_7325-965_ISR_SLA_Combined.pdf"))
+    assert s is not None
+    assert (s.year, s.season, s.district, s.school_code) == (
+        2026,
+        "Spring",
+        "7325",
+        "965",
+    )
+    assert (s.program, s.variant, s.reissue_date) == ("NJSLA", "Combined", None)
+
+    r = parse_source_filename(Path("2026_Spring_1799-111_ISR_SLA_Combined_100226.pdf"))
+    assert r is not None
+    assert r.reissue_date == date(2026, 10, 2)
+
+    g = parse_source_filename(Path("2026_Spring_7325-965_ISR_GPA.pdf"))
+    assert g is not None
+    assert (g.program, g.variant) == ("NJGPA", "")
+
+    assert parse_source_filename(Path("2026_Spring_7325-965_Labels_SLA.pdf")) is None
+    assert parse_source_filename(Path("notes.txt")) is None
+
+
+def test_parse_source_filename_rejects_impossible_reissue_date():
+    with pytest.raises(IsrFormatError, match="reissue"):
+        parse_source_filename(Path("2026_Spring_7325-965_ISR_SLA_Combined_139926.pdf"))
+
+
+def test_segment_two_combined_records():
+    recs = segment_pages(SRC, record(1, "1000000001") + record(2, "1000000002"))
+    assert [(r.seq, r.page_start, r.page_end) for r in recs] == [(1, 1, 4), (2, 5, 8)]
+    assert recs[0].page_count == 4
+    assert recs[0].state_id == "1000000001"
+    assert recs[0].printed_name == "ALEX B. RIVERA"
+    assert recs[0].printed_dob == date(2015, 3, 4)
+    assert recs[0].grade == 5
+    assert recs[0].subjects == ("ELA", "Math")
+    assert recs[0].not_tested is False
+    assert recs[1].state_id == "1000000002"
+
+
+def test_footer_glued_to_code_ending_in_digits():
+    recs = segment_pages(SRC, record(1, "1000000001", code="cc5787"))
+    assert recs[0].seq == 1
+
+
+def test_footer_on_every_page_njgpa_style():
+    recs = segment_pages(SRC, njgpa_record(1, "1000000001"))
+    assert (recs[0].page_start, recs[0].page_end) == (1, 2)
+
+
+def test_missing_dob_and_subjects_do_not_fail():
+    recs = segment_pages(SRC, record(1, "1000000001", dob=None, subjects=()))
+    assert recs[0].printed_dob is None
+    assert recs[0].subjects == ()
+
+
+def test_not_tested_and_science_are_detected():
+    pages = record(1, "1000000001", subjects=("Science", "not tested"))
+    recs = segment_pages(SRC, pages)
+    assert recs[0].subjects == ("Science",)
+    assert recs[0].not_tested is True
+
+
+@pytest.mark.parametrize(
+    "pages, message",
+    [
+        (record(1, "1000000001") + record(3, "1000000002"), "seq"),  # gap
+        (record(1, "1000000001", district="1799"), "district"),  # footer != filename
+        (
+            record(1, "1000000001")[:3] + ["no footer"] + record(2, "1000000002"),
+            "page",
+        ),  # orphan page
+        (record(1, "1000000001", extra_sid="1000000009"), "state ID"),  # 2 IDs
+        (record(1, "100000"), "state ID"),  # not 10 digits
+    ],
+)
+def test_segment_stops_on_bad_structure(pages, message):
+    with pytest.raises(IsrFormatError, match=message):
+        segment_pages(SRC, pages)
+
+
+def test_apply_corrections():
+    orig = rec(state_id="1000000001", file="2026_Spring_7325-965_ISR_SLA_Combined.pdf")
+    other = rec(state_id="1000000002", file="2026_Spring_7325-965_ISR_SLA_Combined.pdf")
+    fix = rec(
+        state_id="1000000001",
+        file="2026_Spring_7325-965_ISR_SLA_Combined_100226.pdf",
+    )
+    late = rec(
+        state_id="1000000001",
+        file="2026_Spring_7325-965_ISR_SLA_Combined_101526.pdf",
+    )
+    stray = rec(
+        state_id="1000000003",
+        file="2026_Spring_7325-965_ISR_SLA_Combined_100226.pdf",
+    )
+
+    kept, replaced, unpaired = apply_corrections([orig, other, fix, late, stray])
+
+    assert late in kept and fix not in kept and orig not in kept and other in kept
+    assert replaced == [orig, fix]
+    assert unpaired == [stray] and stray in kept
+
+
+def test_apply_corrections_does_not_cross_variants():
+    combined = rec(state_id="1000000001")
+    single_fix = rec(
+        state_id="1000000001",
+        file="2026_Spring_7325-965_ISR_SLA_Single_100226.pdf",
+    )
+
+    kept, replaced, unpaired = apply_corrections([combined, single_fix])
+
+    assert kept == [combined, single_fix]
+    assert replaced == []
+    assert unpaired == [single_fix]
+
+
+def test_duplicate_state_ids_are_kept_and_reported():
+    a, b = rec(state_id="1000000001", seq=1), rec(state_id="1000000001", seq=2)
+    assert find_duplicate_state_ids([a, b]) == [a, b]
+
+
+def test_same_state_id_in_combined_and_single_is_not_a_duplicate():
+    combined = rec(state_id="1000000001")
+    single = rec(state_id="1000000001", file="2026_Spring_7325-965_ISR_SLA_Single.pdf")
+    assert find_duplicate_state_ids([combined, single]) == []
+
+
+def _folder(tmp_path: Path, *names: str) -> Path:
+    for name in names:
+        (tmp_path / name).touch()
+    return tmp_path
+
+
+def test_scan_folder_sorts_by_filename_and_skips_labels(tmp_path: Path):
+    folder = _folder(
+        tmp_path,
+        "2026_Spring_7325-965_ISR_SLA_Single.pdf",
+        "2026_Spring_7325-965_ISR_SLA_Combined.pdf",
+        "2026_Spring_7325-965_Labels_SLA.pdf",
+        "readme.txt",
+    )
+    pages_by_name = {
+        "2026_Spring_7325-965_ISR_SLA_Combined.pdf": record(1, "1000000001"),
+        "2026_Spring_7325-965_ISR_SLA_Single.pdf": record(1, "1000000002"),
+    }
+
+    recs = scan_folder(folder, lambda path: pages_by_name[path.name])
+
+    assert [(r.source.variant, r.state_id) for r in recs] == [
+        ("Combined", "1000000001"),
+        ("Single", "1000000002"),
+    ]
+
+
+def test_scan_folder_rejects_mixed_programs(tmp_path: Path):
+    folder = _folder(
+        tmp_path,
+        "2026_Spring_7325-965_ISR_SLA_Combined.pdf",
+        "2026_Spring_7325-965_ISR_GPA.pdf",
+    )
+
+    with pytest.raises(IsrFormatError, match="program"):
+        scan_folder(folder, lambda path: record(1, "1000000001"))
