@@ -921,9 +921,8 @@ data_tests:
       incomplete-credit students are excluded because they are coded straight
       from PowerSchool and never reach the cut score join at all. To fix a row,
       add the missing cohort, score type and assessment version to the
-      graduation cut score Google Sheet. Warn rather
-      than error -- the value is the named list of who is unscoreable, not a
-      blocked build.
+      graduation cut score Google Sheet. Warn rather than error -- the value is
+      the named list of who is unscoreable, not a blocked build.
     config:
       severity: warn
       meta:
