@@ -48,6 +48,7 @@ defs = Definitions(
             iready,
             # Add `powerschool` here to rebuild the frozen PowerSchool archive;
             # remove it again afterwards. See src/dbt/kippmiami/CLAUDE.md.
+            powerschool,
             renlearn,
         ]
     ),
