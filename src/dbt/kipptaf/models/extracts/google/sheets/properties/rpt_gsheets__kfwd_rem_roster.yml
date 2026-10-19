@@ -1,9 +1,20 @@
 models:
   - name: rpt_gsheets__kfwd_rem_roster
+    description:
+      KIPP Forward REM roster for the Google Sheet — one row per KIPP high
+      school graduate's Salesforce contact, with current enrollment status, the
+      latest REM contact note, credit progress, and advisor fields.
     columns:
-      - name: student_name
-        data_type: string
       - name: contact_id
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_name
         data_type: string
       - name: ktc_cohort
         data_type: int64
@@ -95,6 +106,12 @@ models:
         data_type: string
       - name: postsec_advisor_name
         data_type: string
+      - name: postsecondary_advisor
+        data_type: string
+        description:
+          Advisor shown on the REM roster — 'Collab' when the advising provider
+          is KIPP NYC, otherwise the postsecondary advisor's name from the
+          Salesforce contact record.
       - name: student_name_id_hash
         data_type: string
       - name: es_graduated
