@@ -1,12 +1,3 @@
--- A relationship flagged as a caregiver whose related contact does NOT carry
--- Finalsite's adult status. Almost always this is correct and the related
--- person really is a student -- a sibling flagged `financial`, say -- and the
--- model's adult guard drops it as intended. The rows worth acting on are the
--- inverse: an adult whose own contact record was miskeyed with a student
--- status, whose relationship the guard then discards silently, because dense
--- ranking backfills the slot from another candidate and nothing else reports
--- the loss. Warn: each row is a Finalsite record to inspect, not a build
--- failure.
 select
     r.finalsite_enrollment_id,
     r.rel_id,
