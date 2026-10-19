@@ -129,7 +129,25 @@ with
             and s.enroll_status in (0, 2, 3)
     ),
 
-    -- the stint holding the anchor date; when none does (left before the
+    -- inclusive on exitdate: Focus stores the last enrolled day, PowerSchool
+    -- the first day out; on a shared boundary day the later stint wins below
+    stint_anchors as (
+        select
+            model_type,
+            academic_year,
+            student_number,
+            admin_season,
+            round_number,
+            expected_measure_standard,
+            entrydate,
+
+            if(
+                entrydate <= anchor_date and exitdate >= anchor_date, entrydate, null
+            ) as anchor_entrydate,
+        from stint_candidates
+    ),
+
+    -- the latest stint holding the anchor date; when none does (left before the
     -- window closed, or tested outside their dates), the latest overlapping one
     picked_stints as (
         select
@@ -140,17 +158,8 @@ with
             round_number,
             expected_measure_standard,
 
-            coalesce(
-                max(
-                    if(
-                        entrydate <= anchor_date and exitdate > anchor_date,
-                        entrydate,
-                        null
-                    )
-                ),
-                max(entrydate)
-            ) as entrydate,
-        from stint_candidates
+            coalesce(max(anchor_entrydate), max(entrydate)) as entrydate,
+        from stint_anchors
         group by
             model_type,
             academic_year,
