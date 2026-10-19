@@ -1,4 +1,5 @@
-# Every table behind the kippmiami_powerschool archive's staging models.
+# Every table the dlt archive rebuild reads. The two student_contacts
+# intermediates stay frozen and are not rebuilt from these.
 # Loaded by hand only: Miami has no PowerSchool sensor or schedule.
 assets:
   - table_name: assignmentcategoryassoc

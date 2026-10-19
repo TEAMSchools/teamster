@@ -6,7 +6,7 @@ from dagster import (
 )
 from dagster_k8s import k8s_job_executor
 
-from teamster.code_locations.kippmiami import (  # noqa: F401 -- loaded only while rebuilding the archive
+from teamster.code_locations.kippmiami import (
     CODE_LOCATION,
     DBT_PROJECT,
     couchdrop,
@@ -46,8 +46,9 @@ defs = Definitions(
             finalsite,
             fldoe,
             iready,
-            # Add `powerschool` here to rebuild the frozen PowerSchool archive;
-            # remove it again afterwards. See src/dbt/kippmiami/CLAUDE.md.
+            # Add `powerschool` here (and to the import above) to rebuild the
+            # frozen PowerSchool archive; remove both again afterwards. See
+            # src/teamster/code_locations/kippmiami/CLAUDE.md.
             powerschool,
             renlearn,
         ]
