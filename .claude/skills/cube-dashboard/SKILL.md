@@ -92,8 +92,14 @@ refuses otherwise.
 4. Same evening, still in the window: `answers <checks> --snapshot <dir>`. It
    refuses if any base table changed since capture.
 5. Build causes from the first report's raw buckets (below), then `analyze`.
-6. Work the hand checks (below). Then `close <checks>`; the analyst deletes the
+6. Work the hand checks (below). Later runs need them only when trust does not
+   carry (_Trust across runs_). Then `close <checks>`; the analyst deletes the
    review copy in Tableau and runs `close` again until it reports none left.
+
+Every step after capture (`analyze`, new causes, probes, decisions) runs on the
+frozen snapshot. A change that needs new exports or new Cube answers, such as a
+new cut or a new mapped column, waits for an evening capture; say so instead of
+trying it.
 
 ## Mapping a sheet
 
@@ -128,35 +134,165 @@ checked against each measure's Cube definition. Its rows then count as matched,
 so a cell they sit under can pass. Without it such a cell reads "coincidental
 match".
 
+## Measures to cover
+
+The analyst gives a gap-catalog section or an Asana task link. Read it (the
+Asana connection, or the repo file) and draft `must_cover:` in the checks file.
+The analyst approves it, like causes. The list adds a checklist to the run; the
+run still checks everything mapped.
+
+```yaml
+must_cover:
+  - name: Chronic Absenteeism
+    source: https://app.asana.com/0/1/2
+    cube: { member: pct_chronically_absent, view: student_attendance_view }
+    tableau:
+      {
+        column: Avg. Attendance Metric,
+        param: { Attendance Metric: Chronic Absenteeism },
+      }
+  - name: Late Arrivals
+    source: gap catalog, Attendance
+    cube: null
+    tableau: { column: Late Count }
+    rows: [late_flag]
+```
+
+- Required: `name`, `source`, `tableau.column`. `param` is a selector caption
+  and value, when a selector picks the measure.
+- `cube` comes from the catalog's "where" column; `null` when no Cube measure
+  exists. The config refuses a `null` entry with no `rows:` (the `rows.compare`
+  columns behind the measure).
+- An entry's Cube member and view must equal the sheet mapping's for that column
+  and value, or the config fails.
+- A selector value with no Cube measure may carry `measure: null` under
+  `params`, so its cut is captured and reads "no Cube counterpart".
+
+## Diagnosing a formula gap
+
+A probe tests a rule that might explain a formula gap. It never sets a verdict.
+
+```yaml
+probes:
+  - id: chronic-last-day
+    measure: Avg. Attendance Metric
+    param: { Attendance Metric: Chronic Absenteeism }
+    dashboard: select avg(pct) from (select ... from {extract} where {where})
+    candidate: select avg(pct) from (select ... from {extract} where {where})
+```
+
+- `id` (unique), `measure`, `dashboard` and `candidate` are required. `param` is
+  optional.
+- Each of `dashboard` and `candidate` is a full query over the raw extract that
+  returns 1 value. `{extract}` is the extract table; `{where}` is filled with
+  the cut's and the mark's predicates. The tool runs it for every cut, sheet and
+  mark the measure appears in.
+- Proof: `dashboard` reproduces the export in every judged cell at display
+  precision. Without the proof the report shows nothing else.
+
+Steps:
+
+1. Write the probe, then `analyze`.
+2. Bring the analyst the proof and how many cells `candidate` matches Cube in,
+   with the rest listed.
+3. Record the analyst's decision (below).
+
+## Decisions
+
+A decision records who fixes a formula gap. The analyst approves it with this
+snapshot's numbers.
+
+```yaml
+decisions:
+  - measure: Avg. Attendance Metric
+    param: { Attendance Metric: Chronic Absenteeism }
+    owner: dashboard
+    rule: The dashboard averages every day, not each student's last day.
+    probe: chronic-last-day
+    task: ""
+```
+
+- `owner`: `dashboard`, `cube`, or `accepted` (a difference both sides keep on
+  purpose). `measure` and `rule` are required; `task` is the follow-up link,
+  empty until filed.
+- `dashboard` and `cube` need a `probe`. They relabel only the cells where the
+  probe's `candidate` matches Cube, as `fix-dashboard` or `fix-cube`. Other
+  cells stay "formula gap", so a new gap is never hidden.
+- `accepted` needs `cuts` or `sheets` and relabels formula gaps there as
+  `accepted difference`.
+- Row gaps are not decided here; causes cover them.
+- A cell that passes under a decision reads resolved. The analyst then removes
+  the decision.
+
+## Follow-ups
+
+Only from a trusted report.
+
+1. Draft 1 follow-up per `dashboard` or `cube` decision and per "in the data,
+   not in Cube" line. Aggregates only; counts under 10 as `<10`.
+2. Show the draft. Post nothing until the analyst approves it.
+3. A dashboard fix is an Asana subtask under the measure's subtask. If the list
+   came from the gap catalog, ask the analyst for the parent. A Cube fix or a
+   missing measure is a GitHub issue from
+   `.github/ISSUE_TEMPLATE/feature_request.md`.
+4. Put the posted link in the decision's `task`.
+5. Set the Asana tags (`fix-dashboard`, clearing `unvalidated`) by hand: the
+   Asana connection cannot set tags.
+
+## Trust across runs
+
+Trust carries from `~/.cache/cube-validate/<dashboard>/trusted.json`, written by
+the last trusted run. A run is trusted without its own hand checks when its
+invariants hold, the code and mapping fingerprints match, and no verdict or
+bucket appears that the trusted run lacked. The fingerprints ignore `causes`,
+`decisions`, `must_cover` and `probes`.
+
+- A new verdict or bucket needs hand checks for only what is new. A changed
+  fingerprint (code or mapping) needs a full set.
+- A run never carries from its own snapshot, and carried trust still needs that
+  run's own invariants.
+- If a recorded snapshot later gets a disagreeing hand check, delete its
+  `trusted.json` so later runs stop carrying from it.
+
 ## Reading the report
 
-- **Trust verdict first.** Trusted only when every invariant holds, including
-  "capture completeness" (which `run` records), and every hand check agrees. A
-  disagreeing hand check outranks pending ones. Findings stay held until then.
+- **Coverage first.** `## Coverage` has 1 line per `must_cover` entry, in this
+  order of precedence: gaps open, covered, in the data not in Cube, not judged,
+  not mapped yet, only on sheets with names, not on these dashboards. Rows
+  agreeing is evidence, never coverage: covered needs a cell judged against a
+  real Cube member.
+- **Trust verdict.** Trusted only when every invariant holds, including "capture
+  completeness" (which `run` records), and every hand check agrees (or trust
+  carries). A disagreeing hand check outranks pending ones. Findings stay held
+  until then.
+- **Decisions:** `### Decisions` lists each decision with its cells.
 - **Row buckets:** match, value differs, dashboard only, Cube only, outside
   scope, outside period; each split by cause or "unexplained". Outside scope
   (schools Cube does not show this identity) and outside period (days the run
   did not capture) take no cause.
-- **Cells:** pass, coincidental match, row gap, formula gap. Filter ignored,
-  mapping unproven, no Cube counterpart and no captured rows are the tool's
-  limits, never Cube findings.
+- **Cells:** pass, coincidental match, row gap, formula gap; under a decision,
+  `fix-dashboard`, `fix-cube` or `accepted difference`. Filter ignored, mapping
+  unproven, no Cube counterpart and no captured rows are the tool's limits,
+  never Cube findings.
 - **Precision:** a cell compares at the decimals its sheet shows on the
   dashboard. The review copy drops each measure's number format so exports carry
   the raw value. "Export shows fewer decimals than the dashboard" means that
   drop did not reach the export; the cell is unproven, not equal.
 - **Formulas not tested:** mapped measures with no cut whose rows all match.
   Their formulas are unproven either way.
+- **Clock risk** counts the rows that changed since capture.
 - Counts under 10 show as `<10`, so the report can go to `#data_team`.
 
 ## Hand checks
 
-`<snapshot>/analysis/hand_checks.md` lists 10 to 15 checks: one per verdict and
-bucket, plus random passes. Tableau side in the review copy (same frozen
-extract), Cube side against the captured value, rows against PowerSchool or
-Focus. Cube's side is the captured answer at its recorded refresh time, never
-today's Cube. Mark each result exactly `agree` or `disagree` in
-`hand_checks.yml` (new checks start `pending`), then `analyze`. Any other value
-stops `analyze` with an error naming the check's id.
+When trust does not carry, `<snapshot>/analysis/hand_checks.md` lists 10 to 15
+checks: one per verdict and bucket, plus random passes (only for what is new
+when a trusted run exists and the fingerprints match). Tableau side in the
+review copy (same frozen extract), Cube side against the captured value, rows
+against PowerSchool or Focus. Cube's side is the captured answer at its recorded
+refresh time, never today's Cube. Mark each result exactly `agree` or `disagree`
+in `hand_checks.yml` (new checks start `pending`), then `analyze`. Any other
+value stops `analyze` with an error naming the check's id.
 
 ## Last year
 
