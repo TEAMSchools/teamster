@@ -9,6 +9,11 @@ models:
       scores, the participation roster and the method's criteria model. The PM
       joins name model_type so each method reads only its own rows.
 
+      Each row takes one enrollment stint. A tested student takes the stint they
+      were enrolled in on the test date. An untested student takes the stint
+      they were enrolled in on the window's last day. When neither date falls
+      inside a stint, the row takes the latest stint that overlaps the window.
+
       Network-wide, Miami included. The grain filter reads `s.is_self_contained
       is not true`, so a row with a null self-contained flag stays in. Focus
       records no self-contained placement, so every Miami row carries a null
@@ -58,8 +63,15 @@ models:
       resulting gap to `Not Tested` -- a student who was expected to test and
       was not. So a null in an own-goal or benchmark column means a Benchmark
       row, and nothing else.
+    config:
+      meta:
+        standard_exempt:
+          A5: >-
+            The stint pick in picked_stints is the business rule for which
+            school owns a DIBELS row (the stint on the test date), not
+            dup-masking; the enrollment spine keeps one row per stint by design.
     data_tests:
-      # TODO(#5889): enrollment join fans out across transfer stints
+      # TODO(#6022): a student tested at 2 grades in 1 window gets 2 rows
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -1017,3 +1029,85 @@ models:
         config:
           meta:
             contains_pii: true
+
+unit_tests:
+  - name: unit_rpt_dibels_dashboard_one_stint_per_row
+    description: >-
+      A student who changes schools mid-window keeps one Benchmark row, owned by
+      the stint holding the test date, else the latest overlapping stint. 1001
+      tested at the new school. 1002 tested on the shared boundary day, so the
+      later stint wins. 1003 left before the window closed untested and keeps
+      their only stint. 1004 tested on the last enrolled day of an inclusive
+      (Focus-style) exit date, so the old stint wins.
+    model: rpt_tableau__dibels_dashboard
+    given:
+      - input: ref("int_extracts__student_enrollments_subjects")
+        rows:
+          - &stint_old
+            academic_year: 2025
+            region: Newark
+            grade_level: 3
+            iready_subject: Reading
+            is_self_contained: false
+            is_out_of_district: false
+            enroll_status: 0
+            student_number: 1001
+            schoolid: 100
+            entrydate: 2025-07-01
+            exitdate: 2025-09-15
+          - &stint_new
+            <<: *stint_old
+            schoolid: 200
+            entrydate: 2025-09-15
+            exitdate: 2026-06-30
+          - { <<: *stint_old, student_number: 1002 }
+          - { <<: *stint_new, student_number: 1002 }
+          - { <<: *stint_old, student_number: 1003, exitdate: 2025-09-10 }
+          - { <<: *stint_old, student_number: 1004, exitdate: 2025-09-12 }
+          - { <<: *stint_new, student_number: 1004, entrydate: 2025-09-15 }
+      - input: ref("int_google_sheets__dibels_expected_assessments")
+        rows:
+          - academic_year: 2025
+            region: Newark
+            grade: 3
+            assessment_type: Benchmark
+            assessment_include: null
+            admin_season: BOY
+            round_number: 1
+            expected_measure_standard: Composite
+            start_date: 2025-09-01
+            end_date: 2025-09-30
+      - input: ref("int_amplify__all_assessments")
+        rows:
+          - &test
+            academic_year: 2025
+            period: BOY
+            measure_standard: Composite
+            student_number: 1001
+            client_date: 2025-09-20
+          - { <<: *test, student_number: 1002, client_date: 2025-09-15 }
+          - { <<: *test, student_number: 1004, client_date: 2025-09-12 }
+      - input: ref("stg_google_sheets__dibels_bm_goals")
+        rows: []
+      - input: ref("int_students__course_enrollments")
+        rows: []
+      - input: ref("int_students__dibels_participation_roster")
+        rows: []
+      - input: ref("int_google_sheets__dibels_pm_expectations")
+        rows: []
+      - input: ref("stg_google_sheets__dibels_pm_goals")
+        rows: []
+      - input: ref("int_amplify__pm_met_criteria")
+        rows: []
+      - input: ref("int_amplify__benchmark_student_summary")
+        rows: []
+      - input: ref("int_google_sheets__dibels__expected_assessments_by_levels")
+        rows: []
+      - input: ref("int_amplify__pm_met_criteria_aimline")
+        rows: []
+    expect:
+      rows:
+        - { student_number: 1001, schoolid: 200 }
+        - { student_number: 1002, schoolid: 200 }
+        - { student_number: 1003, schoolid: 100 }
+        - { student_number: 1004, schoolid: 100 }
