@@ -46,6 +46,10 @@ with
             administration_round,
             test_type,
 
+            -- matches module_code in dim_assessments and
+            -- dim_assessment_administrations
+            lower(concat(scope, '_', replace(subject_area, ' ', '_'))) as module_code,
+
             row_number() over (
                 partition by powerschool_student_number, scope
                 order by
@@ -181,7 +185,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "'college'",
-                "pa.scope",
+                "pa.module_code",
                 "pa.test_date",
                 "pa.academic_year",
                 "cast(null as string)",
