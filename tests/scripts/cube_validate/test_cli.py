@@ -548,3 +548,16 @@ def test_a_changed_mapping_needs_its_own_hand_checks(tmp_path):
     cp.write_text(yaml.safe_dump({**CHECKS, "cost_cap_usd": 6}))
     _, line = cli.analyze_snapshot(checks, second, cp)
     assert line.startswith("Pending")
+
+
+def test_reanalyzing_the_recorded_snapshot_keeps_its_hand_checks(tmp_path):
+    checks, cp, snap = _analyzable(tmp_path, "a")
+    cli.analyze_snapshot(checks, snap, cp)
+    _agree_all(snap)
+    cli.analyze_snapshot(checks, snap, cp)
+    y = snap.analysis / "hand_checks.yml"
+    before = y.read_text()
+    assert yaml.safe_load(before)
+    _, line = cli.analyze_snapshot(checks, snap, cp)
+    assert line.startswith("Trusted for this run")
+    assert y.read_text() == before

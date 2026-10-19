@@ -92,9 +92,9 @@ def test_hand_checks_cover_only_what_is_new():
 
 def test_carried_trust_line_and_a_broken_invariant_still_wins():
     ok = {"capture completeness": True}
-    assert report.trust(ok, {}, 0, carried_from="s1") == (
+    assert report.trust(ok, {}, 5, carried_from="s1") == (
         "Trusted: carried over from s1 (code and mapping unchanged, no new verdicts)."
     )
-    assert report.trust({"x": False}, {}, 0, carried_from="s1").startswith(
+    assert report.trust({"x": False}, {}, 5, carried_from="s1").startswith(
         "Not trusted"
     )

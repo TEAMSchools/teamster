@@ -97,6 +97,8 @@ def analyze_snapshot(
             code = trusted.code_fingerprint(Path(__file__).parent)
             mapping = trusted.mapping_fingerprint(Path(checks_path))
             old = trusted.read(snap.dir.parent)
+            if old and old["snapshot"] == snap.dir.name:
+                old = None  # a snapshot is judged by its own hand checks
             if trusted.fingerprints_match(old, code, mapping) and old is not None:
                 known = set(old["kinds"])
         carried = trusted.carries(old, code, mapping, kinds, checks.dashboard)

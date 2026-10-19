@@ -53,11 +53,6 @@ def trust(
     broken = [k for k, v in invariants.items() if not v]
     if broken:
         return f"Not trusted: invariant broken: {', '.join(broken)}."
-    if carried_from:
-        return (
-            f"Trusted: carried over from {carried_from} "
-            "(code and mapping unchanged, no new verdicts)."
-        )
     bad = sum(1 for v in results.values() if v == "disagree")
     if bad:
         return f"Not trusted: {bad} hand check{'s' if bad > 1 else ''} disagree."
@@ -65,6 +60,11 @@ def trust(
         return "Pending: capture completeness was not recorded for this snapshot."
     if compared == 0:
         return "Pending: no cell was compared yet (see the mapping unproven reasons)"
+    if carried_from:
+        return (
+            f"Trusted: carried over from {carried_from} "
+            "(code and mapping unchanged, no new verdicts)."
+        )
     if not results:
         return "Pending: no hand checks recorded yet."
     open_checks = sum(1 for v in results.values() if v != "agree")

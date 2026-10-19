@@ -266,3 +266,17 @@ def test_decisions_section_shows_only_with_a_decision_and_masks_counts():
     assert "### Decisions" not in _render(cs, {})
     text = _render(cs, {}, [d])
     assert "- M (cube): <10 relabeled, 0 still formula gap, 12 resolved" in text
+
+
+def test_carried_trust_still_needs_this_runs_completeness_and_comparison():
+    ok = {"a": True, "capture completeness": True}
+    line = (
+        "Trusted: carried over from s1 (code and mapping unchanged, no new verdicts)."
+    )
+    assert report.trust(ok, {}, 5, carried_from="s1") == line
+    assert report.trust({"a": True}, {}, 5, carried_from="s1").startswith(
+        "Pending: capture completeness"
+    )
+    assert report.trust(ok, {}, 0, carried_from="s1").startswith(
+        "Pending: no cell was compared"
+    )
