@@ -92,6 +92,18 @@ GET (`/workers/{aoid}`), which returns the worker regardless — so a
 single-worker probe does NOT predict which partitions a bulk re-pull will place
 them in.
 
+A `workers_sync` `zero_api_errors` failure with `EMPLOYEE_NOT_FOUND` is usually
+one of these ghosts: the record was deleted in ADP after its partition left the
+window, staging keeps it open, and the roster sends the sync to the deleted OID.
+Check the `stg_adp_workforce_now__workers__ghost_open_records` asset check
+before you debug the sync itself. The fix is the re-pull above.
+
+When HR deletes a hire and re-creates them, `stg_people__employee_numbers` gives
+the new worker_id a new employee number, and the old number stays active. IdAuto
+matches AD accounts on employee number. So the fix is to have IT update the
+existing AD account to the new number and worker_id. Do not re-point the old
+number at the new worker_id: the new number has already reached other systems.
+
 ## Illuminate DLT Schedule Split
 
 Illuminate DLT assets are split across two schedules in
