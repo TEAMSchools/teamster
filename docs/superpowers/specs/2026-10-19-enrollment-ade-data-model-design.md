@@ -57,8 +57,9 @@ proposal line by line on Monday 2026-10-26.
 - Rebuilding the other Ops Dashboard views (Attrition x2, SPED, Student
   Demographics, Recent Enrollment Changes). They keep reading
   `rpt_tableau__ops_dashboard`.
-- Miami Surveys 1, 4 and 5, and moving the survey pipeline from state files to
-  Focus. The survey model must allow a later swap of its state-file source.
+- Miami Surveys 1, 4 and 5, and the Focus survey export. The vendor is still
+  building that export, so v1 reads the existing state-file survey data, and the
+  survey model must allow a later swap to Focus (section 6).
 - Historical snapshots before launch.
 - The Tableau workbook. This spec and its plan cover the dbt models and tests.
   The workbook gets its own plan once the models land, so the _Consumers_
@@ -160,7 +161,7 @@ stg_google_sheets__finance__ade_rules (new) ──────────┘
 marts above ──────────────────────────────────────────────▶ all-year counts rpt
 finance targets sheet (restructured) ─────────────────────▶ targets rpt
 marts above + student identity ───────────────────────────▶ roster rpt (PII, row-level security)
-state FTE files + daily fact ─────────────────────────────▶ Miami surveys rpt
+survey data (state files now, Focus export later) ────────▶ Miami surveys rpt
 Finalsite status (current SIS year) + SIS ────────────────▶ reconciliation rpt (today only)
 ```
 
@@ -276,17 +277,28 @@ A test fails if any region in the totals table lacks a rule row for its year.
 
 ### 6. Miami surveys (`rpt_tableau__miami_fte_surveys`)
 
-- Grain: academic year × school × grade × survey (2 and 3), with a source column
-  (`state` or `estimate`).
-- State counts: distinct students per survey from `stg_fldoe__fte` (kippmiami;
-  AY2021 to AY2025 today). It has its own school and grade, so no student
-  crosswalk is needed to count.
-- Estimate: students with membership on any school day in the survey window from
-  `stg_google_sheets__reporting__terms` (`type = 'FTE'`). Membership only. Do
-  not reuse `int_students__fldoe_fte`, which keeps only students present at
-  least once (`attendancevalue = 1`), the accountability rule finance rejected.
-- The estimate shows until the state file for that survey lands, then the state
-  count replaces it. Keep both for a per-survey variance line.
+- Grain: academic year × school × grade × survey (2 and 3).
+- Source now: the existing survey data in dbt, which comes from the state survey
+  files (PDFs dropped in a Drive folder, landing in kippmiami `stg_fldoe__fte`;
+  AY2021 to AY2025 today). Survey counts are distinct students per survey.
+- Source later: a special Focus export that the vendor is building. It is not in
+  hand and has no date. When it arrives, it replaces the state-file source.
+- One interface model sits between the source and the `rpt_`: 1 row per student
+  per year per survey, with school, grade and FTE. Swapping the state files for
+  the Focus export changes only that model's upstream, never the `rpt_` or the
+  dashboard.
+- kipptaf reads the surveys today through `int_fldoe__fte_pivot`, which keeps
+  only student, year and FTE per survey (joined to students on state student
+  number) and drops school and grade. A student can sit at different schools for
+  Survey 2 and Survey 3, so the interface model reads `stg_fldoe__fte` through a
+  new kipptaf source and union passthrough instead of reshaping the pivot. That
+  model carries student names, so tag PII on the passthrough.
+- Count each survey at the school and grade the state file gives. Before a
+  survey's file lands, that survey shows no number. Finance watches enrolled
+  headcount from Focus in the totals table until then.
+- Do not use `int_students__fldoe_fte` for funding counts: it keeps only
+  students present at least once (`attendancevalue = 1`), the accountability
+  rule finance rejected.
 - `fte_capped` tops out at 0.5 per survey, so summing FTE across both surveys
   already equals the funded average. Never average FTE values, or the number is
   halved twice.
@@ -370,8 +382,9 @@ data team.
 
 Read-only queries, not models, using the definitions above: enrolled today and
 projected ADE by region, a Newark SIS-to-FRESH gap broken into the reasons in
-section 7, the Miami Survey 2 estimate, and a past-year check of finance's 2
-rules of thumb. Delivered as a dated one-page brief labeled approximate.
+section 7, Miami's enrolled headcount (plus Survey 2 if the state file has
+landed), and a past-year check of finance's 2 rules of thumb. Delivered as a
+dated one-page brief labeled approximate.
 
 Finance's rules of thumb, from the intake:
 
