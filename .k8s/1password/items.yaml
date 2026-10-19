@@ -146,6 +146,22 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-ps-db-kippmiami
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/f6aiyw3rwvgnccheebsvvorvue
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-ps-ssh-kippmiami
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/fo36s5a5ovc654jjfsubwkc4ny
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-titan-sftp-kippcamden
   namespace: dagster-cloud
 spec:

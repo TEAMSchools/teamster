@@ -6,6 +6,9 @@ models:
     columns:
       - name: relationshipnote
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Any associated note for the Student Contact record. Optional.
       - name: startdate
@@ -83,16 +86,25 @@ models:
             contains_pii: true
       - name: iscustodial
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
         description:
           "Indicates whether or not the contact has custody over the student.
           Valid values: 0=No, 1=Yes.Defaults to 0. Required."
       - name: liveswithflg
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
         description:
           "Indicates whether or not the the student lives with the contact.
           Valid values: 0=No, 1=Yes.Defaults to 0. Required."
       - name: schoolpickupflg
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
         description:
           "Indicates whether or not the the student can be picked up by the
           contact. Valid values: 0=No,1=Yes. Defaults to 0. Required."

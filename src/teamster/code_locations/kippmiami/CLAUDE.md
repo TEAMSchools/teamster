@@ -100,13 +100,19 @@ Miami is the only code location with `fldoe` (Florida Department of Education
 assessment data — FSA, EOC, Science). These are SFTP assets from a Florida state
 data file drop.
 
-PowerSchool (pre-Focus SIS) is retired. `kippmiami_powerschool` is a frozen
-archive rebuilt once through the dbt `powerschool` package (#5012, recipe in
-#5201's `dbt_project.yml`). The package is removed again, so this location has
-no `powerschool` assets — except while the package is included for an archive
-rebuild (#5195, #5228), when the location carries about 120
-`kippmiami/powerschool/*` dbt assets; PR B removes them again. kipptaf reads the
-dataset as a BQ-native source. Do not drop the dataset or the GCS files under
+PowerSchool (pre-Focus SIS) is retired. The `powerschool` module holds dlt
+assets that pull Miami's server into `dagster_kippmiami_dlt_powerschool`, the
+source of the frozen `kippmiami_powerschool` archive. They are off: the module
+is left out of `definitions.py`, and the `db_powerschool` / `ssh_powerschool`
+resources and their secrets stay wired so turning it on is the 2-line edit the
+comment there describes. Turn it on only to re-pull tables for an archive
+rebuild (dbt recipe: `src/dbt/kippmiami/CLAUDE.md`), then off again in the same
+PR. While on, the location also carries the dbt `kippmiami/powerschool/*`
+assets. The `dlt_powerschool_kippmiami` pool must stay at limit 1 (Dagster+
+deployment setting): runs are launched by hand with no in-flight guard, so the
+pool is the only thing keeping two launches from opening two tunnels and racing
+on the same pipeline state. kipptaf reads the archive as a BQ-native source. Do
+not drop either dataset or the GCS files under
 `gs://teamster-kippmiami/dagster/kippmiami/powerschool/`.
 
 DeansList is retired the same way (#5110): Miami stopped using it, and this
