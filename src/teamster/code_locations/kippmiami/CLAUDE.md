@@ -28,7 +28,7 @@ Finalsite SFTP export at 12:00 (Finalsite's own export is overnight and not ours
 to reschedule) → couchdrop sensor ingests within 5 min → contacts pull at 12:00
 → dbt rebuild ~3.5 min → four CSVs delivered to the Focus SFTP `incoming/`
 folder at 13:15 → **ops runs the Focus imports by hand**. Focus's own live-data
-freshness is no longer tied to that 12:00 slot — see below.
+freshness runs on its own schedule — see below.
 
 A second, unstaffed delivery runs at 03:45 so the overnight Finalsite state is
 already staged when ops start their shift. It is not load-bearing for the 2pm

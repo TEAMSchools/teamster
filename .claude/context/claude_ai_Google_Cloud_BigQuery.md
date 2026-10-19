@@ -71,9 +71,10 @@ arg crashes its flag parser when the query text starts with a `--` comment
 separator does NOT help. Start the query with `WITH`/`SELECT` (strip leading
 comment lines). Pass backtick/quote-heavy SQL via `"$(cat file.sql)"` to dodge
 shell-quoting. `--max_rows` defaults to 100 — raise it for full dumps. To hand
-PII to Ops, redirect to a local `.claude/scratch/*.csv`
-(`bq query --format=csv ... > file`; the `>` keeps PII out of the tool result),
-verify with `wc -l`, and reference the FILE (never the values) in any tracker.
+PII to Ops, redirect to a CSV in the session scratchpad (absolute path in the
+system prompt; `bq query --format=csv ... > file`; the `>` keeps PII out of the
+tool result), verify with `wc -l`, and reference the FILE (never the values) in
+any tracker.
 
 ## Metadata and staleness
 

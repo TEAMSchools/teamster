@@ -8,9 +8,8 @@ description: >-
   into PowerSchool imports (pathway code N), the graduation pathway fields
   written back to PowerSchool for state reporting, or working on
   int_students__graduation_path_codes,
-  stg_google_sheets__student_graduation_path_cutoffs,
-  int_assessments__state_nj_scores or rpt_tableau__graduation_requirements and
-  their upstream models.
+  stg_google_sheets__student_graduation_path_cutoffs, or
+  int_assessments__state_nj_scores and their upstream models.
 ---
 
 # Graduation Pathway Codes

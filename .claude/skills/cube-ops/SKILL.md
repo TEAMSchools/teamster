@@ -106,10 +106,11 @@ The security hook flags `zz_*` schemas as an access-control regression —
 expected if you do commit the temporary change; acknowledge and revert.
 
 **`zz_*` redirect — never `git add` the whole cubes/ dir while it's live.** When
-a dev-schema redirect is in the working tree, staging with `git add -A`,
-`git add .`, or `git add src/cube/model/cubes/` accidentally commits the
-redirect. Name files explicitly in every `git add` while any cube YAML is
-redirected.
+a dev-schema redirect is in the working tree, staging with `git add -u`,
+`git add -A`, `git add .`, or `git add src/cube/model/cubes/` accidentally
+commits the redirect (`-u` stages every modified tracked cube YAML). Name files
+explicitly in every `git add` while any cube YAML is redirected; this overrides
+the root CLAUDE.md `git add -u` default.
 
 **Never `bq cp` a dev-schema table into `kipptaf_marts` to unblock testing.**
 `kipptaf_marts` is the live prod dataset read by all dashboards, the Cube

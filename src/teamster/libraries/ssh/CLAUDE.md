@@ -39,11 +39,11 @@ if isinstance(files, SkipReason):
 
 ## Key Fields Added
 
-| Field                | Type          | Purpose                                                                                                                                                                                                             |
-| -------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tunnel_remote_host` | `str \| None` | Remote bind host for local port forwarding                                                                                                                                                                          |
-| `test`               | `bool`        | Unused by any method on this class since the sshpass tunnel (its only reader) was retired in #4442; kept because other resource construction paths (e.g. `tests/resources/test_resource_ssh_rekey.py`) still set it |
-| `enable_legacy_rsa`  | `bool`        | Re-enable paramiko's dropped `ssh-rsa` host-key algorithm                                                                                                                                                           |
+| Field                | Type          | Purpose                                                                                                                                             |
+| -------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tunnel_remote_host` | `str \| None` | Remote bind host for local port forwarding                                                                                                          |
+| `test`               | `bool`        | Unused by any method on this class; kept because other resource construction paths (e.g. `tests/resources/test_resource_ssh_rekey.py`) still set it |
+| `enable_legacy_rsa`  | `bool`        | Re-enable paramiko's dropped `ssh-rsa` host-key algorithm                                                                                           |
 
 ## Notes
 

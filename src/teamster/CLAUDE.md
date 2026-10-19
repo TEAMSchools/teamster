@@ -222,9 +222,9 @@ the affected submodule alone (e.g.
 `prepare-and-package` for all 5 locations first or each dies on a missing
 `target/manifest.json`. The pytest failure is a bare
 `subprocess.CalledProcessError` that hides the cause; re-run
-`dagster definitions validate -m <module>` directly to see it. With manifests,
-conftest's 1Password bootstrap resolves kipptaf's dlt credentials too, so only
-`kippmiami` (`FOCUS_DB`) and `test_definitions_all` still fail.
+`uv run dagster definitions validate -m <module>` directly to see it. With
+manifests, conftest's 1Password bootstrap resolves kipptaf's dlt credentials
+too, so only `kippmiami` (`FOCUS_DB`) and `test_definitions_all` still fail.
 
 Importing a kipptaf **asset submodule** (e.g.
 `teamster.code_locations.kipptaf.google.directory.assets`) transitively imports

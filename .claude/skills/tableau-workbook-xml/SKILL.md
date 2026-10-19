@@ -257,7 +257,7 @@ All in `docs/tableau-xml/scripts/`; the README there has per-check tables.
 ## Not this skill
 
 Building a new workbook from a spec belongs to the `tableau-build` skill in the
-`dashboard-creation-tool` plugin, which generates XML rather than editing it. If
-that plugin is not enabled, say so rather than building one here. Its XSD
-validator and snippet files are listed as unverified inputs at the end of
-[references/build-workflow.md](references/build-workflow.md).
+`tableau-dashboard-plugin`, if that plugin is installed; it generates XML rather
+than editing it. If it is not installed, say so rather than building one here.
+Its XSD validator and snippet files are listed as unverified inputs at the end
+of [references/build-workflow.md](references/build-workflow.md).

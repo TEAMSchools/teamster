@@ -212,7 +212,8 @@ and before posting query rows to git, GitHub, or agent output. Short form:
 names, contact, `student_number` and other school-facing ids, birth data, free
 text about a person, and student-level grades, attendance, or status flags are
 PII; database surrogate keys (`studentid`, `dcid`) and aggregates without small
-cells are not.
+cells are not. Surrogate keys go untagged but are still redacted on outbound
+surfaces.
 
 ## Superpowers skill overrides
 
@@ -310,6 +311,7 @@ exploration that led nowhere (keep only the conclusion).
   - `gh run *`, `gh workflow *`, `gh repo edit`
   - `gh api` only to PATCH an existing comment or PR body (`-F body=@<file>`),
     POST a PR review-thread reply, read a file at a pinned SHA with the raw
-    Accept header, create/add labels, `-X GET search/issues`
+    Accept header, GET a PR body (`--jq .body`), create/add labels,
+    `-X GET search/issues`
 
   Mechanics and failure modes: `.claude/context/github.md`.
