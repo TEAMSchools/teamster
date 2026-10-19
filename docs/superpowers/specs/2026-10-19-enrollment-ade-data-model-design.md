@@ -5,10 +5,9 @@ Refs #6003.
 ## Intent
 
 Finance does not trust the enrollment and average daily enrollment (ADE) numbers
-on the Ops Dashboard, and they make budget decisions with them. Every student
-enrollment carries funding, so a miscount of 20 students moves about $0.5
-million in the budget. A regional leader's first data request is "ADE in my
-hand."
+on the Ops Dashboard, and they make budget decisions with them. Enrollment
+drives school funding, so even a small miscount affects budgets. A regional
+leader's first data request is "ADE in my hand."
 
 The current numbers are untrustworthy for structural reasons, not one bug:
 
