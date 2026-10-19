@@ -56,6 +56,7 @@ def test_find_child_builds_query_and_passes_all_drives(api):
     assert "trashed = false" in kwargs["q"]
     assert kwargs["supportsAllDrives"] is True
     assert kwargs["includeItemsFromAllDrives"] is True
+    assert kwargs["corpora"] == "allDrives"
     assert kwargs["fields"] == "nextPageToken,files(id,name,webViewLink)"
 
 
@@ -119,6 +120,7 @@ def test_list_tagged_queries_app_properties_across_pages(api):
     assert "appProperties has { key='isr_key' and value='it\\'s' }" in kwargs["q"]
     assert "trashed = false" in kwargs["q"]
     assert kwargs["supportsAllDrives"] is True
+    assert kwargs["corpora"] == "allDrives"
     assert [f.id for f in result] == ["a", "b"]
 
 

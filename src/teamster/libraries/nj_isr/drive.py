@@ -158,6 +158,7 @@ class GoogleDriveApi:
         request = files.list(
             q=q,
             fields=f"nextPageToken,files({_FILE_FIELDS})",
+            corpora="allDrives",
             supportsAllDrives=True,
             includeItemsFromAllDrives=True,
         )
