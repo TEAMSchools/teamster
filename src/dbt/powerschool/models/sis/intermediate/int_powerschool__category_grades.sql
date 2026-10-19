@@ -1,6 +1,7 @@
 with
     enr_gr as (
         select
+            enr.cc_dcid,
             enr.cc_abs_sectionid as sectionid,
             enr.cc_studentid as studentid,
             enr.cc_schoolid as schoolid,
@@ -57,7 +58,11 @@ with
 
             row_number() over (
                 partition by studentid, yearid, course_number, storecode
-                order by is_dropped_section asc, percent_grade desc
+                order by
+                    is_dropped_section asc,
+                    percent_grade desc,
+                    cc_dcid desc,
+                    citizenship_grade asc
             ) as rn,
         from enr_gr
     ),
@@ -83,10 +88,15 @@ select
     percent_grade,
     citizenship_grade,
 
+    /* rounding to 6 places first stops float summation order from flipping an
+       exact .5 between builds */
     round(
-        avg(percent_grade) over (
-            partition by studentid, yearid, course_number, storecode_type
-            order by termbin_start_date asc
+        round(
+            avg(percent_grade) over (
+                partition by studentid, yearid, course_number, storecode_type
+                order by termbin_start_date asc
+            ),
+            6
         ),
         0
     ) as percent_grade_y1_running,

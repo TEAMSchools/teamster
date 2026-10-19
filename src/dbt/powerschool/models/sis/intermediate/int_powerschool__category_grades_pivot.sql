@@ -162,6 +162,7 @@ select
             ) as {{ cat }}_{{ term }},
         {% endfor %}
 
+        -- 6-place pre-round: same reason as percent_grade in with_all
         round(
             round(
                 avg(gp.{{ cat }}_cur) over (
