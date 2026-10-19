@@ -193,10 +193,16 @@ def write(
         answers: Cube answers by answer_key.
         uncovered: Verdicts and buckets the cap left without a hand check; the
             file ends by naming them so the cap never hides a gap.
+
+    An entry already in hand_checks.yml for a check no longer picked stays
+    there unchanged, after the picked ones, so no recorded result is lost.
     """
     dir = Path(dir)
     md, yml = dir / "hand_checks.md", dir / "hand_checks.yml"
-    old = read_results(yml)
+    read_results(yml)  # refuses a mistyped result before anything is rewritten
+    entries = (yaml.safe_load(yml.read_text()) or []) if yml.exists() else []
+    old = {e["id"]: e for e in entries}
+    ids = {h.id for h in checks_list}
     lines = [
         "# Hand checks",
         "",
@@ -223,9 +229,14 @@ def write(
     yml.write_text(
         yaml.safe_dump(
             [
-                {"id": h.id, "result": old.get(h.id, "pending"), "note": ""}
+                {
+                    "id": h.id,
+                    "result": (old.get(h.id) or {}).get("result", "pending"),
+                    "note": (old.get(h.id) or {}).get("note", ""),
+                }
                 for h in checks_list
-            ],
+            ]
+            + [e for i, e in old.items() if i not in ids],
             sort_keys=False,
         )
     )

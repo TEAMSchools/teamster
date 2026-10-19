@@ -379,9 +379,30 @@ def _must_cover(
                 f"must_cover {name}: a measure with no Cube member needs rows: "
                 "naming the compare columns behind it"
             )
+        mapped = [
+            sm.measures[column] for sm in sheets.values() if column in sm.measures
+        ]
+        # an entry no sheet maps yet stays on the list, selector and all
+        if (
+            param
+            and mapped
+            and not any(
+                m.param == param[0] and param[1] in params.get(param[0], {})
+                for m in mapped
+            )
+        ):
+            raise ConfigError(
+                f"must_cover {name}: {param[1]} is not a listed {param[0]} value "
+                f"for {column}"
+            )
         if cube is not None:
             for sheet, member, view in _mapped(column, param, sheets, params):
-                if member is not None and (member, view) != cube:
+                if member is None:
+                    raise ConfigError(
+                        f"must_cover {name}: cube {cube[0]} on {cube[1]}, but sheet "
+                        f"{sheet} maps {column} to no Cube member"
+                    )
+                if (member, view) != cube:
                     raise ConfigError(
                         f"must_cover {name}: cube {cube[0]} on {cube[1]} differs "
                         f"from {member} on {view}, which sheet {sheet} maps "

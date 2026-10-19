@@ -21,12 +21,16 @@ TWB = """<workbook>
 <worksheet name='New Sheet'><table><view><datasource-dependencies datasource='ds'>
 <column caption='Fresh' name='[c5]' />
 </datasource-dependencies></view></table></worksheet>
+<worksheet name='Other Source'><table><view><datasource-dependencies datasource='ds2'>
+<column caption='Split' name='[c7]' />
+</datasource-dependencies></view></table></worksheet>
 <worksheet name='Elsewhere'><table><view><datasource-dependencies datasource='ds'>
 <column caption='Far Away' name='[c6]' />
 </datasource-dependencies></view></table></worksheet>
 </worksheets>
 <dashboards><dashboard name='Overview'>
-<zones><zone name='Mapped' /><zone name='Roster' /><zone name='New Sheet' /></zones>
+<zones><zone name='Mapped' /><zone name='Roster' /><zone name='New Sheet' />
+<zone name='Other Source' /></zones>
 </dashboard></dashboards>
 </workbook>"""
 
@@ -43,7 +47,10 @@ def _checks(*entries):
             config.Cut("trunc", params={"Metric": "Truancy"}),
         ),
         sheets={"Mapped": base_checks().sheets["ADA"]},
-        excluded_sheets={"Roster": "has a student name column"},
+        excluded_sheets={
+            "Roster": "Names: a student name column",
+            "Other Source": "separate run",
+        },
         must_cover=tuple(entries),
     )
 
@@ -137,7 +144,11 @@ def test_not_judged_names_the_most_common_tool_limit():
 def test_not_judged_when_a_mapped_sheet_shows_it_but_no_cell_was_built():
     got = _line(_entry("Truancy"))
     assert got["status"] == "not judged"
-    assert got["detail"] == "mapped, but no cell was built"
+    assert got["detail"] == "mapped, but no cell was built: no cut covers it"
+    got = _line(_entry("Truancy", param=("Metric", "Tardy")))
+    assert got["detail"] == (
+        "mapped, but no cell was built: no cut sets Metric = Tardy"
+    )
 
 
 def test_not_mapped_yet_when_a_sheet_shows_it_and_nothing_maps_it():
@@ -153,7 +164,12 @@ def test_a_prefixed_header_finds_its_caption():
 def test_only_on_sheets_with_names_lists_their_reasons():
     got = _line(_entry("Names Only"))
     assert got["status"] == "only on sheets with names"
-    assert got["detail"] == "Roster: has a student name column"
+    assert got["detail"] == "Roster: Names: a student name column"
+
+
+def test_an_excluded_sheet_without_a_names_reason_reads_not_mapped_yet():
+    got = _line(_entry("Split"))
+    assert got["status"] == "not mapped yet" and got["detail"] == "Other Source"
 
 
 def test_not_on_these_dashboards_when_no_dashboard_sheet_shows_it():

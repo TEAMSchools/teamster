@@ -3,7 +3,7 @@
 import datetime as dt
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest registers cube_validate at runtime
-from cube_validate import cells, config, report, rows
+from cube_validate import cells, config, probes, report, rows
 
 
 def test_small_hides_counts_under_ten():
@@ -280,3 +280,72 @@ def test_carried_trust_still_needs_this_runs_completeness_and_comparison():
     assert report.trust(ok, {}, 0, carried_from="s1").startswith(
         "Pending: no cell was compared"
     )
+
+
+def _probe_cell(school, dashboard, candidate, reproduces, matches, **over):
+    base = dict(
+        cut="default",
+        sheet="ADA",
+        dims={"School": school},
+        dashboard=dashboard,
+        candidate=candidate,
+        reproduces=reproduces,
+        candidate_matches_cube=matches,
+        tableau="33.3%",
+        cube=0.5,
+        fmt=cells.Format(1, True),
+    )
+    base.update(over)
+    return probes.ProbeCell(**base)
+
+
+def _render_probes(results):
+    rr = rows.RowsResult(
+        totals={"tableau": 0, "cube": 0, "joined": 0},
+        buckets=[],
+        differing_columns={},
+        invariants={},
+    )
+    checks = config.Checks.__new__(config.Checks)
+    object.__setattr__(checks, "dashboard", "d")
+    object.__setattr__(checks, "excluded_sheets", {})
+    object.__setattr__(checks, "sheets", {})
+    return report.render(checks, {}, rr, [], {}, "", {}, probes=results)
+
+
+def test_probes_section_shows_proof_counts_and_the_cells_left():
+    proven = probes.ProbeResult(
+        "p1",
+        True,
+        [
+            _probe_cell("A", 0.3333, 0.5, True, True),
+            _probe_cell("B", 0.3333, 0.25, True, False),
+        ],
+    )
+    unproven = probes.ProbeResult(
+        "p2",
+        False,
+        [
+            _probe_cell("A", 0.3333, 0.5, True, True),
+            _probe_cell("C", None, None, False, False, error="no column x\nLINE 1"),
+        ],
+    )
+    text = _render_probes([proven, unproven])
+    section = text.split("### Probes", 1)[1].split("\n## ", 1)[0]
+    assert "- p1: proven; candidate matches Cube in <10 of <10 cells" in section
+    assert (
+        "- p2: not proven; dashboard query reproduces the export in <10 of <10 cells; "
+        "first error: no column x"
+    ) in section
+    assert (
+        "| Probe | Cut | Sheet | Marks | Tableau | Dashboard query | Candidate | Cube |"
+        in section
+    )
+    assert (
+        "| p1 | default | ADA | School=B | 33.3% | 33.3% | 25.0% | 50.0% |" in section
+    )
+    # an unproven probe reports nothing past its proof
+    assert "| p2 | default | ADA | School=C | 33.3% | None | - | 50.0% |" in section
+    assert "School=A" not in section
+    assert "### Probes" not in _render_probes([])
+    assert "### Probes" not in _render_probes(None)

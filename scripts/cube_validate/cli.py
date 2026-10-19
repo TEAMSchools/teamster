@@ -87,7 +87,8 @@ def analyze_snapshot(
             lambda cut, sheet: _export(snap, cut, sheet),
             formats,
         )
-        cs, decided = decisions.apply(checks, cs, probes.run(ws, checks, cs))
+        probed = probes.run(ws, checks, cs)
+        cs, decided = decisions.apply(checks, cs, probed)
         samples = handchecks.row_samples(ws, checks)
         code = mapping = ""
         old = None
@@ -98,8 +99,14 @@ def analyze_snapshot(
             mapping = trusted.mapping_fingerprint(Path(checks_path))
             old = trusted.read(snap.dir.parent)
             if old and old["snapshot"] == snap.dir.name:
-                old = None  # a snapshot is judged by its own hand checks
-            if trusted.fingerprints_match(old, code, mapping) and old is not None:
+                # a snapshot is judged by its own hand checks, never carried from
+                # itself; it picks with what it inherited, so they stay the same
+                if trusted.fingerprints_match(old, code, mapping) and old.get(
+                    "inherited"
+                ):
+                    known = set(old["inherited"])
+                old = None
+            elif trusted.fingerprints_match(old, code, mapping) and old is not None:
                 known = set(old["kinds"])
         carried = trusted.carries(old, code, mapping, kinds, checks.dashboard)
         picked = handchecks.pick(
@@ -116,7 +123,14 @@ def analyze_snapshot(
             if u not in (known or ())
         ],
     )
-    results = handchecks.read_results(snap.analysis / "hand_checks.yml")
+    # trust reads this run's checks; a kept result for one no longer picked
+    # counts only when it disagrees
+    ids = {h.id for h in picked}
+    results = {
+        k: v
+        for k, v in handchecks.read_results(snap.analysis / "hand_checks.yml").items()
+        if k in ids or v == "disagree"
+    }
     cover = coverage.lines(checks, cs, rr, twb) if checks.must_cover else None
     from_snap = old["snapshot"] if carried and old else None
     text = report.render(
@@ -130,6 +144,7 @@ def analyze_snapshot(
         decided,
         coverage=cover,
         carried_from=from_snap,
+        probes=probed,
     )
     path = snap.analysis / "report.md"
     path.write_text(text)
@@ -141,7 +156,13 @@ def analyze_snapshot(
     )
     if checks_path is not None and line.startswith("Trusted for this run"):
         trusted.record(
-            snap.dir.parent, snap.dir.name, code, mapping, kinds, checks.dashboard
+            snap.dir.parent,
+            snap.dir.name,
+            code,
+            mapping,
+            kinds,
+            checks.dashboard,
+            inherited=known,
         )
     return path, line
 
@@ -155,13 +176,25 @@ def _twb_text(snap) -> str:
 
 
 def _clock_risk(bq, before: dict[str, str], after: dict[str, str]) -> str:
-    """The manifest's clock-risk line: rows changed per moved table."""
+    """The manifest's clock-risk line: rows changed per moved table.
+
+    It runs after the paid capture, so a table BigQuery cannot compare is named
+    rather than stopping the run before the manifest is written.
+    """
+    from google.api_core import exceptions
+
     moved = preflight.changed(before, after)
     changed, same = [], []
     for t in moved:
-        n, total = preflight.row_diff(bq, t, before[t], after[t])
+        try:
+            n, total = preflight.row_diff(bq, t, before[t], after[t])
+        except exceptions.GoogleAPIError as e:
+            changed.append(f"{t}: rows not compared ({e})")
+            continue
         if n:
-            changed.append(f"{t}: {n} of {total} rows changed")
+            changed.append(
+                f"{t}: {report.small(n)} of {report.small(total)} rows changed"
+            )
         else:
             same.append(t)
     if changed:

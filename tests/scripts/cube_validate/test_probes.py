@@ -133,3 +133,22 @@ def test_reproduces_compares_at_the_dashboards_format():
     assert probes.reproduces(0.942, "94.2%", None)
     assert not probes.reproduces(None, "94.2%", pct)
     assert not probes.reproduces(0.9, "", pct)
+
+
+def test_a_cube_only_cell_has_no_export_to_reproduce_and_is_skipped(tmp_path):
+    ws = _ws(tmp_path)
+    try:
+        c = [
+            _cell(),
+            _cell(dims={"School": "Other"}, tableau=None, verdict=cells.ROW_GAP),
+        ]
+        [res] = probes.run(ws, _checks(_probe()), c, extract="ext")
+    finally:
+        ws.__exit__(None, None, None)
+    assert [p.dims for p in res.cells] == [{"School": "Rise"}] and res.proven
+
+
+def test_a_probe_cell_keeps_what_the_report_shows(tmp_path):
+    [res] = _run(tmp_path, _probe(), _cell(cube=0.5, scale=2.0))
+    p = res.cells[0]
+    assert (p.tableau, p.cube, p.fmt) == ("33.3%", 1.0, cells.Format(1, True))

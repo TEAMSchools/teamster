@@ -444,8 +444,13 @@ def test_resume_checks_pass_a_rebuild_whose_rows_did_not_change(tmp_path):
     assert got == (dt.date(2026, 10, 5), dt.date(2026, 10, 15)) and seen == [["t"]]
 
 
-def _analyzable(tmp_path, tag):
-    """A snapshot whose one cell passes; returns (checks, checks_path, snap)."""
+PASSING = b"School,ADA,Students\nRise,94.2%,2\n"
+# Cube answers 94.2% and every row matches, so 50.0% reads as a formula gap
+FORMULA_GAP = b"School,ADA,Students\nRise,50.0%,2\n"
+
+
+def _analyzable(tmp_path, tag, export=PASSING, invariants=None):
+    """A snapshot with one cell, passing by default; returns (checks, checks_path, snap)."""
     checks_path = tmp_path / "c.yml"
     checks_path.write_text(yaml.safe_dump(CHECKS))
     snap = snapshot.new_snapshot(
@@ -474,9 +479,7 @@ def _analyzable(tmp_path, tag):
         ],
         [(1.0, d, "Rise"), (2.0, d, "Rise")],
     )
-    snap.export_path("default", "ADA").write_bytes(
-        b"School,ADA,Students\nRise,94.2%,2\n"
-    )
+    snap.export_path("default", "ADA").write_bytes(export)
     snap.answers.write_text(
         json.dumps(
             {
@@ -498,7 +501,7 @@ def _analyzable(tmp_path, tag):
         snap,
         {
             "scope": ["Rise"],
-            "invariants": {"capture completeness": True},
+            "invariants": invariants or {"capture completeness": True},
             "cuts": {"default": {}},
         },
     )
@@ -561,3 +564,108 @@ def test_reanalyzing_the_recorded_snapshot_keeps_its_hand_checks(tmp_path):
     _, line = cli.analyze_snapshot(checks, snap, cp)
     assert line.startswith("Trusted for this run")
     assert y.read_text() == before
+
+
+def _trust_first(tmp_path):
+    """A trusted snapshot "a" whose one cell passes."""
+    checks, cp, first = _analyzable(tmp_path, "a")
+    cli.analyze_snapshot(checks, first, cp)
+    _agree_all(first)
+    _, line = cli.analyze_snapshot(checks, first, cp)
+    assert line.startswith("Trusted for this run")
+    return checks, cp, first
+
+
+def test_one_new_verdict_gets_hand_checks_for_only_that_verdict(tmp_path):
+    checks, cp, _ = _trust_first(tmp_path)
+    _, _, second = _analyzable(tmp_path, "b", export=FORMULA_GAP)
+    _, line = cli.analyze_snapshot(checks, second, cp)
+    assert line.startswith("Pending: 1 of 1 hand checks still open")
+    md = (second.analysis / "hand_checks.md").read_text()
+    titles = [ln for ln in md.splitlines() if ln.startswith("## ")]
+    assert len(titles) == 1 and cells.FORMULA_GAP in titles[0]
+
+
+def test_a_broken_invariant_beats_a_carry(tmp_path):
+    checks, cp, _ = _trust_first(tmp_path)
+    _, _, second = _analyzable(
+        tmp_path, "b", invariants={"capture completeness": True, "rows balance": False}
+    )
+    _, line = cli.analyze_snapshot(checks, second, cp)
+    assert line == "Not trusted: invariant broken: rows balance."
+
+
+def test_a_snapshot_trusted_on_new_kinds_only_reanalyzes_as_trusted(tmp_path):
+    checks, cp, _ = _trust_first(tmp_path)
+    _, _, second = _analyzable(tmp_path, "b", export=FORMULA_GAP)
+    cli.analyze_snapshot(checks, second, cp)
+    _agree_all(second)
+    _, line = cli.analyze_snapshot(checks, second, cp)
+    assert line.startswith("Trusted for this run")
+    assert cli.trusted.read(second.dir.parent)["snapshot"] == second.dir.name
+    y = second.analysis / "hand_checks.yml"
+    before = y.read_text()
+    _, line = cli.analyze_snapshot(checks, second, cp)
+    assert line.startswith("Trusted for this run")
+    assert y.read_text() == before
+
+
+class _FakeBigQuery:
+    """row_hashes per table: (earlier, later) Counters, or an error to raise."""
+
+    def __init__(self, tables):
+        self.tables = tables
+
+    def row_hashes(self, table, at):
+        got = self.tables[table]
+        if isinstance(got, Exception):
+            raise got
+        earlier, later = got
+        return earlier if at.minute == 16 else later
+
+
+BEFORE = "2026-10-16T22:16:00+00:00"
+AFTER = "2026-10-16T22:18:00+00:00"
+
+
+def test_clock_risk_none_when_no_table_moved():
+    assert cli._clock_risk(_FakeBigQuery({}), {"t": BEFORE}, {"t": BEFORE}) == "none"
+
+
+def test_clock_risk_names_tables_rebuilt_with_the_same_rows():
+    import collections
+
+    rows = collections.Counter({1: 1, 2: 1})
+    bq = _FakeBigQuery({"t": (rows, rows)})
+    got = cli._clock_risk(bq, {"t": BEFORE}, {"t": AFTER})
+    assert got == "none (rebuilt with the same rows: t)"
+
+
+def test_clock_risk_counts_changed_rows_masked():
+    import collections
+
+    earlier = collections.Counter({i: 1 for i in range(1200)})
+    later = collections.Counter({i: 1 for i in range(1, 1203)})
+    bq = _FakeBigQuery({"t": (earlier, later)})
+    assert cli._clock_risk(bq, {"t": BEFORE}, {"t": AFTER}) == (
+        "t: <10 of 1,202 rows changed"
+    )
+
+
+def test_clock_risk_reports_a_table_bigquery_cannot_compare():
+    import collections
+
+    from google.api_core import exceptions
+
+    rows = collections.Counter({i: 1 for i in range(20)})
+    bq = _FakeBigQuery(
+        {
+            "a": (rows, collections.Counter()),
+            "b": exceptions.BadRequest("outside the time travel window"),
+        }
+    )
+    got = cli._clock_risk(bq, {"a": BEFORE, "b": BEFORE}, {"a": AFTER, "b": AFTER})
+    assert got == (
+        "a: 20 of 0 rows changed; "
+        "b: rows not compared (400 outside the time travel window)"
+    )

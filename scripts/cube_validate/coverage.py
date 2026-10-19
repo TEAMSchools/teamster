@@ -31,6 +31,21 @@ def _showing(twb_text: str, checks: Checks, caption: str) -> list[str]:
     return [s for s in workbook.sheets_showing(twb_text, caption) if s in on_dashboards]
 
 
+def _names_sheet(checks: Checks, sheet: str) -> bool:
+    """Excluded for a name or student-id column: its reason starts with `names:`."""
+    why = checks.excluded_sheets.get(sheet)
+    return why is not None and why.strip().lower().startswith("names:")
+
+
+def _no_cell_cause(entry, checks: Checks) -> str:
+    """Why a mapped, shown measure got no cell, most likely."""
+    if entry.param and not any(
+        param_matches(entry.param, c.params) for c in checks.cuts
+    ):
+        return f"no cut sets {entry.param[0]} = {entry.param[1]}"
+    return "no cut covers it"
+
+
 def _status(entry, mine: list, checks: Checks, rows_result, twb_text: str):
     judged = [c for c in mine if c.verdict in _JUDGED]
     gaps = [c for c in judged if c.verdict in _OPEN]
@@ -48,17 +63,22 @@ def _status(entry, mine: list, checks: Checks, rows_result, twb_text: str):
         return "not judged", reason
     caption = workbook.measure_caption(twb_text, entry.column) if twb_text else ""
     shown = _showing(twb_text, checks, caption) if twb_text else []
+    # a sheet excluded for another reason (separate run, blended) still counts
+    # as unmapped: only a names sheet can never be mapped
     unmapped = [
-        s for s in shown if s not in checks.sheets and s not in checks.excluded_sheets
+        s for s in shown if s not in checks.sheets and not _names_sheet(checks, s)
     ]
     if unmapped:
         return "not mapped yet", ", ".join(unmapped)
-    if shown and all(s in checks.excluded_sheets for s in shown):
+    if shown and all(_names_sheet(checks, s) for s in shown):
         return "only on sheets with names", "; ".join(
             f"{s}: {checks.excluded_sheets[s]}" for s in shown
         )
     if shown:
-        return "not judged", "mapped, but no cell was built"
+        return (
+            "not judged",
+            f"mapped, but no cell was built: {_no_cell_cause(entry, checks)}",
+        )
     return "not on these dashboards", ""
 
 

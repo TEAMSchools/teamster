@@ -104,7 +104,9 @@ def test_an_accepted_decision_covers_only_its_cuts():
 
 def test_passing_cells_under_a_decision_count_as_resolved():
     cs = [_cell("A"), _cell("B", verdict=cells.PASS)]
-    got, summary = decisions.apply(_checks(_decision()), cs, [_result(True, ("A",))])
+    got, summary = decisions.apply(
+        _checks(_decision()), cs, [_result(True, ("A", "B"))]
+    )
     assert _verdicts(got) == [cells.FIX_DASHBOARD, cells.PASS]
     assert summary[0]["resolved"] == 1
 
@@ -130,3 +132,13 @@ def test_a_param_decision_names_its_value_and_skips_other_cuts():
     got, summary = decisions.apply(checks, cs, [])
     assert _verdicts(got) == [cells.ACCEPTED, cells.FORMULA_GAP]
     assert summary[0]["decision"] == "ADA / Mode = ADA (accepted)"
+
+
+def test_a_pass_is_resolved_only_where_the_proven_candidate_matches_cube():
+    cs = [_cell("A", verdict=cells.PASS), _cell("B", verdict=cells.PASS)]
+    _, summary = decisions.apply(_checks(_decision()), cs, [_result(True, ("A",))])
+    assert summary[0]["resolved"] == 1
+    _, summary = decisions.apply(_checks(_decision()), cs, [_result(False, ("A", "B"))])
+    assert summary[0]["resolved"] == 0
+    _, summary = decisions.apply(_checks(_decision()), cs, [])
+    assert summary[0]["resolved"] == 0

@@ -38,7 +38,9 @@ def apply(
 
     A dashboard or cube decision relabels a cell only when its probe is proven
     and the probe's candidate matches Cube on that cell. An accepted decision
-    relabels the cells in its cuts or sheets. Row gaps are never relabeled.
+    relabels the cells in its cuts or sheets. Row gaps are never relabeled. A
+    passing cell counts as resolved under the same test: its candidate matches
+    Cube (dashboard, cube), or it is in scope (accepted).
 
     Args:
         checks: The dashboard's checks file.
@@ -64,15 +66,17 @@ def apply(
         for i, c in enumerate(out):
             if c.cut not in params or not _applies(d, c, params[c.cut]):
                 continue
+            explained = proven and _key(c.cut, c.sheet, c.dims) in matches
             if c.verdict == cells_mod.PASS:
-                resolved += d.owner != "accepted" or _in_scope(d, c)
+                # only a pass the rule explains is resolved, not one that always passed
+                resolved += _in_scope(d, c) if d.owner == "accepted" else explained
                 continue
             if c.verdict != cells_mod.FORMULA_GAP:
                 continue
             if d.owner == "accepted":
                 hit = _in_scope(d, c)
             else:
-                hit = proven and _key(c.cut, c.sheet, c.dims) in matches
+                hit = explained
             if hit:
                 out[i] = replace(c, verdict=_VERDICT[d.owner], reason=d.rule)
                 relabeled += 1

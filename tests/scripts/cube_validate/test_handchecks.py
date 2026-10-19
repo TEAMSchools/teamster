@@ -159,3 +159,22 @@ def test_cell_hand_check_shows_a_scaled_cube_value_as_judged():
     (h,) = handchecks.pick([c], [], seed="s")
     steps = h.steps
     assert "`96.5`" in steps[1] and "`96.5`" in steps[2]
+
+
+def test_a_result_for_a_check_no_longer_picked_survives_a_rewrite(tmp_path):
+    a = handchecks.HandCheck("C1", "cell", "t1", ["s"])
+    b = handchecks.HandCheck("C2", "cell", "t2", ["s"])
+    handchecks.write(tmp_path, [a, b], "ZZ-REVIEW x", {}, [])
+    y = tmp_path / "hand_checks.yml"
+    data = yaml.safe_load(y.read_text())
+    data[0].update(result="agree", note="checked in Tableau")
+    data[1]["result"] = "disagree"
+    y.write_text(yaml.safe_dump(data))
+    handchecks.write(tmp_path, [b], "ZZ-REVIEW x", {}, [])
+    got = yaml.safe_load(y.read_text())
+    assert got == [
+        {"id": "C2", "result": "disagree", "note": ""},
+        {"id": "C1", "result": "agree", "note": "checked in Tableau"},
+    ]
+    md = (tmp_path / "hand_checks.md").read_text()
+    assert "C2: t2" in md and "C1" not in md

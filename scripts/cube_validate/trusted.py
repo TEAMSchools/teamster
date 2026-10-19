@@ -47,8 +47,21 @@ def record(
     mapping: str,
     kinds: set[str],
     dashboard: str | None = None,
+    inherited: set[str] | None = None,
 ) -> None:
-    """Write the trusted record into the dashboard's snapshot folder."""
+    """Write the trusted record into the dashboard's snapshot folder.
+
+    Args:
+        root: The dashboard's snapshot folder.
+        snapshot: The trusted snapshot's folder name.
+        code: Its code fingerprint.
+        mapping: Its mapping fingerprint.
+        kinds: Every verdict and bucket it produced.
+        dashboard: Its dashboard; defaults to the folder name.
+        inherited: The kinds an earlier trusted run had checked, which this
+            run's hand checks skipped; empty when it drew a full set. A
+            re-analysis of this snapshot picks with it, so its checks stay put.
+    """
     root = Path(root)
     (root / FILE).write_text(
         json.dumps(
@@ -58,6 +71,7 @@ def record(
                 "mapping": mapping,
                 "kinds": sorted(kinds),
                 "dashboard": dashboard or root.name,
+                "inherited": sorted(inherited or ()),
             },
             indent=2,
         )

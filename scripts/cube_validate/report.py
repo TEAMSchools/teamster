@@ -5,7 +5,16 @@ from __future__ import annotations
 from collections import Counter
 
 from . import workbook
-from .cells import COINCIDENTAL, DECIDED, FORMULA_GAP, ORDER, PASS, ROW_GAP, answer_key
+from .cells import (
+    COINCIDENTAL,
+    DECIDED,
+    FORMULA_GAP,
+    ORDER,
+    PASS,
+    ROW_GAP,
+    answer_key,
+    shown,
+)
 
 SMALL = 10
 
@@ -114,12 +123,57 @@ def _untested(checks, cells: list) -> list[tuple[str, str]]:
 
 def _formula(twb_text: str, measure: str, params: dict[str, str]) -> str | None:
     """The measure's calculation, narrowed to the branch a cut's parameter picks."""
+    if not twb_text:
+        return None  # no workbook was captured
     whole = workbook.measure_formula(twb_text, measure, None)
     for p in params.items():
         got = workbook.measure_formula(twb_text, measure, p)
         if got != whole:
             return got
     return whole
+
+
+def _probes(results: list) -> list[str]:
+    """Each probe's proof and counts, then the cells it leaves unexplained.
+
+    A probe that is not proven reports only its proof: how many cells its
+    dashboard query reproduces, and the cells it does not.
+    """
+    out = ["", "### Probes", ""]
+    rows = []
+    for r in results:
+        n = len(r.cells)
+        if r.proven:
+            hit = sum(1 for p in r.cells if p.candidate_matches_cube)
+            line = f"- {r.probe}: proven; candidate matches Cube in {small(hit)} of {small(n)} cells"
+            left = [p for p in r.cells if not p.candidate_matches_cube]
+        else:
+            hit = sum(1 for p in r.cells if p.reproduces)
+            line = (
+                f"- {r.probe}: not proven; dashboard query reproduces the export "
+                f"in {small(hit)} of {small(n)} cells"
+            )
+            left = [p for p in r.cells if not p.reproduces]
+        error = next((p.error for p in r.cells if p.error), "")
+        if error:
+            line += f"; first error: {error.splitlines()[0]}"
+        out.append(line)
+        for p in left:
+            marks = ", ".join(f"{k}={v}" for k, v in p.dims.items())
+            candidate = _mask(shown(p.candidate, p.fmt)) if r.proven else "-"
+            rows.append(
+                f"| {r.probe} | {p.cut} | {p.sheet} | {marks} "
+                f"| {_mask(shown(p.tableau, p.fmt))} | {_mask(shown(p.dashboard, p.fmt))} "
+                f"| {candidate} | {_mask(shown(p.cube, p.fmt))} |"
+            )
+    if rows:
+        out += [
+            "",
+            "| Probe | Cut | Sheet | Marks | Tableau | Dashboard query | Candidate | Cube |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- |",
+            *rows,
+        ]
+    return out
 
 
 def render(
@@ -133,6 +187,7 @@ def render(
     decisions: list[dict] | None = None,
     coverage: list[dict] | None = None,
     carried_from: str | None = None,
+    probes: list | None = None,
 ) -> str:
     inv = {**(manifest.get("invariants") or {}), **rows_result.invariants}
     out = [f"# {checks.dashboard}: Cube validation", ""]
@@ -226,6 +281,8 @@ def render(
                 f"{small(d['still_formula_gap'])} still formula gap, "
                 f"{small(d['resolved'])} resolved (probe {proof})"
             )
+    if probes:
+        out += _probes(probes)
     shown = set()
     cut_params = {c.id: c.params for c in getattr(checks, "cuts", ())}
     for c in cells:

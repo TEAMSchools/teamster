@@ -434,3 +434,44 @@ def test_a_must_cover_entry_with_no_cube_member_needs_rows(tmp_path):
     over["must_cover"][0]["cube"] = None
     with pytest.raises(config.ConfigError, match="must_cover.*Percent Chronic.*rows:"):
         config.load_checks(_write(tmp_path, **over))
+
+
+def test_a_must_cover_param_must_be_a_listed_value_of_its_mapped_measure(tmp_path):
+    over = _coverage()
+    over["must_cover"][0]["tableau"]["param"] = {"Attendance Metric": "Nope"}
+    with pytest.raises(
+        config.ConfigError, match="must_cover Percent Chronic.*Nope.*Attendance Metric"
+    ):
+        config.load_checks(_write(tmp_path, **over))
+    over = _coverage()
+    over["must_cover"][0]["tableau"]["param"] = {
+        "Other Selector": "Chronic Absenteeism"
+    }
+    with pytest.raises(config.ConfigError, match="must_cover Percent Chronic.*Other"):
+        config.load_checks(_write(tmp_path, **over))
+
+
+def test_a_must_cover_param_on_an_unmapped_column_still_loads(tmp_path):
+    over = _coverage()
+    over["must_cover"][0]["tableau"] = {
+        "column": "Not Mapped",
+        "param": {"Attendance Metric": "Nope"},
+    }
+    c = config.load_checks(_write(tmp_path, **over))
+    assert c.must_cover[0].param == ("Attendance Metric", "Nope")
+
+
+def test_a_must_cover_member_cannot_sit_on_a_null_mapping(tmp_path):
+    over = _coverage()
+    over["params"]["Attendance Metric"]["Chronic Absenteeism"] = {"measure": None}
+    with pytest.raises(
+        config.ConfigError, match="must_cover Percent Chronic.*sheet S.*no Cube member"
+    ):
+        config.load_checks(_write(tmp_path, **over))
+    over = _coverage()
+    over["sheets"]["S"]["measures"]["Avg. Attendance Metric"] = {"cube": None}
+    over["must_cover"][0]["tableau"].pop("param")
+    with pytest.raises(
+        config.ConfigError, match="must_cover Percent Chronic.*sheet S.*no Cube member"
+    ):
+        config.load_checks(_write(tmp_path, **over))

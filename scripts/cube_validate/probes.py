@@ -27,6 +27,10 @@ class ProbeCell:
     reproduces: bool
     candidate_matches_cube: bool
     error: str = ""
+    # The cell's export text, Cube value (scaled as judged) and format, for the report
+    tableau: str | None = None
+    cube: float | None = None
+    fmt: Format | None = None
 
 
 @dataclass
@@ -69,6 +73,8 @@ def reproduces(value: float | None, tableau: str | None, fmt: Format | None) -> 
 def _applies(probe: Probe, cell: Cell, cut) -> bool:
     if cell.measure != probe.measure or cell.verdict not in JUDGED:
         return False
+    if cell.tableau is None:
+        return False  # a Cube-only mark has no export to reproduce
     if probe.param is None:
         return not cut.params
     caption, value = probe.param
@@ -77,6 +83,7 @@ def _applies(probe: Probe, cell: Cell, cut) -> bool:
 
 def _where(checks: Checks, cut, cell: Cell) -> str:
     preds = []
+    # TODO(#5856): click cuts need the manifest's click_filters in {where}.
     for caption, label in cells_mod._cut_filters(checks, cut, {}).items():
         fm = checks.filters.get(caption)
         if fm is None:
@@ -96,7 +103,19 @@ def _value(ws, sql: str) -> float | None:
 
 
 def _run_cell(ws, checks, probe, cell, cut, extract) -> ProbeCell:
-    out = ProbeCell(cell.cut, cell.sheet, cell.dims, None, None, False, False)
+    cube = None if cell.cube is None else cell.cube * cell.scale
+    out = ProbeCell(
+        cell.cut,
+        cell.sheet,
+        cell.dims,
+        None,
+        None,
+        False,
+        False,
+        tableau=cell.tableau,
+        cube=cube,
+        fmt=cell.fmt,
+    )
     try:
         where = _where(checks, cut, cell)
 
@@ -109,9 +128,9 @@ def _run_cell(ws, checks, probe, cell, cut, extract) -> ProbeCell:
         out.error = str(e)
         return out
     out.reproduces = reproduces(out.dashboard, cell.tableau, cell.fmt)
-    if cell.cube is not None:
+    if cube is not None:
         out.candidate_matches_cube = shows_same(
-            out.candidate, cell.cube * cell.scale, cell.tableau, cell.fmt
+            out.candidate, cube, cell.tableau, cell.fmt
         )
     return out
 
