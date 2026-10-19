@@ -148,8 +148,9 @@ select
     ctz.ctz_cur,
 
     row_number() over (
-        partition by gp.studentid, gp.yearid, gp.reporting_term, gp.credittype
-        order by gp.course_number asc, gp.schoolid asc
+        partition by
+            gp.studentid, gp.yearid, gp.schoolid, gp.reporting_term, gp.credittype
+        order by gp.course_number asc
     ) as rn_credittype,
 
     {% for cat in categories %}

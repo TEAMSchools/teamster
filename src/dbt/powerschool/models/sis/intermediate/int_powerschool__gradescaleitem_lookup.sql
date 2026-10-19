@@ -7,7 +7,7 @@ select
     items.cutoffpercentage as min_cutoffpercentage,
 
     lead(items.cutoffpercentage, 1, 1000) over (
-        partition by parent.id order by items.cutoffpercentage, items.id
+        partition by parent.id order by items.cutoffpercentage asc, items.id asc
     )
     - 0.1 as max_cutoffpercentage,
 from {{ ref("stg_powerschool__gradescaleitem") }} as parent

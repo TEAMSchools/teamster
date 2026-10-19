@@ -19,6 +19,10 @@ with
             'RT' || tb.storecode_order as reporting_term,
             'Q' || tb.storecode_order as `quarter`,
 
+            pgf.dcid as pgf_dcid,
+
+            sg.dcid as sg_dcid,
+
             coalesce(sg.percent, pgf.percent) as percent_grade,
             coalesce(sg.behavior, pgf.citizenship) as citizenship_grade,
 
@@ -62,7 +66,8 @@ with
                     is_dropped_section asc,
                     percent_grade desc,
                     cc_dcid desc,
-                    citizenship_grade asc
+                    sg_dcid desc,
+                    pgf_dcid desc
             ) as rn,
         from enr_gr
     ),
