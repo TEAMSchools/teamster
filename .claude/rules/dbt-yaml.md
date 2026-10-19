@@ -37,8 +37,8 @@ evolve an Avro source's schema, the new-schema file must sort last — materiali
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
 otherwise pick up the old (earlier-sorting) schema.
 
-**A metadata-cached Avro external can read a field NULL downstream though the
-GCS file is correct — two distinct failure modes, both surfaced by #4151:**
+**A metadata-cached Avro external can read wrong data though the GCS file is
+correct — two distinct failure modes:**
 
 - _Schema heterogeneity (deterministic)._ After a schema add + partial backfill,
   old-schema files (field absent) and new-schema files (field present) coexist.
@@ -49,20 +49,25 @@ GCS file is correct — two distinct failure modes, both surfaced by #4151:**
   full partition history always includes old files, so the column reads NULL
   everywhere. A cache refresh / rebuild does NOT fix it — only homogenizing the
   files does (`scripts/reencode_avro_partitions.py` re-encodes every partition).
-- _Cache staleness (intermittent)._ `build_dbt_assets`
-  (stage→refresh→`dbt build`) races BigLake metadata-cache convergence after a
-  `create or replace` / overwrite-in-place: the
-  `refresh_external_metadata_cache` `CALL` returning DONE does NOT mean
-  queryable-fresh (lag seconds→hours, non-monotonic), so a just-materialized
-  partition reads NULL downstream.
+- _Pinned file version deleted (deterministic)._ A `metadata_cache_mode: MANUAL`
+  external reads the object version it cached at the last refresh, not the live
+  object. The Avro IO manager overwrites one object per partition in place, the
+  bucket keeps noncurrent versions, and its lifecycle rule deletes a version
+  once it has 2 newer ones (up to a day late). After 2 overwrites with no
+  refresh, the cached version is gone and the external reads 0 rows with no
+  error. `build_dbt_assets` refreshes the cache only for externals upstream of a
+  selected model, so a model reading an overwritten-in-place external must be a
+  table: it rebuilds, and refreshes, on every upload. A view over one goes empty
+  about 3 days after its last rebuild. A refresh restores it at once.
 
-Verifying: `bq --nouse_cache` exposes the TRUE cached state (the BQ results
-cache and the BigQuery MCP otherwise return stale-but-fresh-looking counts).
-Selecting `_FILE_NAME` forces a live read that BYPASSES the metadata cache
-(ground truth vs. staleness) but does NOT bypass schema heterogeneity (a
-mixed-schema scan still drops the field), and it contaminates the whole query to
-a live read. So `_FILE_NAME` is ground truth only within a single-schema scan
-(one partition); never mix it into a cached-path check.
+Verifying: selecting `_FILE_NAME` forces a live read that bypasses the metadata
+cache, so a live count beside a cached count of 0 means the pinned version is
+gone. It does NOT bypass schema heterogeneity (a mixed-schema scan still drops
+the field), and it turns the whole query into a live read, so it is ground truth
+only within a single-schema scan (one partition); never mix it into a
+cached-path check. To date a past empty read, `job_stages` in
+`INFORMATION_SCHEMA.JOBS` carries `records_read` per READ step, and the step's
+`substeps` name the external it read.
 
 dbt Cloud CI runs `dbt build` only (never `stage_external_sources`) → it reads
 the existing `zz_stg` external table as-is. To make CI see a new schema before
