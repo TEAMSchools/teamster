@@ -23,6 +23,17 @@ groups:
 # Region-variant tools collapse into one row with per-region sub-links.
 # Members are matched on `name`; each must carry exactly one region.
 families:
+  - id: bucket_roster
+    name: Bucket Roster
+    description:
+      The bucket rosters — each student's intervention bucket for reading and
+      math, with prior-year state test and i-Ready results. Pick your region.
+    group: academics
+    members:
+      - NJ Bucket Rosters [Camden]
+      - Bucket Rosters [Miami]
+      - NJ Bucket Rosters [Newark]
+      - NJ Bucket Rosters [Paterson]
   - id: gpa_roster
     name: GPA Roster
     description:

@@ -41,11 +41,6 @@ models:
             foreign_key:
               to: ref('dim_survey_questions')
               to_columns: [survey_question_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_survey_questions')
-                field: survey_question_key
 
       - name: survey_submission_key
         data_type: string

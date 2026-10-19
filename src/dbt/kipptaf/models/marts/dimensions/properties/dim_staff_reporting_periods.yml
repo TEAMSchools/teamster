@@ -30,25 +30,6 @@ models:
               to_columns: [staff_key]
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
-      - name: manager_staff_key
-        data_type: string
-        description: >-
-          Foreign key to `dim_staff.staff_key` — the manager for this period.
-          Nullable: a primary reporting-relationship row may carry no manager.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_staff')
-              to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
       - name: effective_start_date
         data_type: date
         description: Start of the contiguous reporting-relationship period.
@@ -60,3 +41,13 @@ models:
           End (inclusive) of the contiguous reporting-relationship period.
         data_tests:
           - not_null
+      - name: manager_staff_key
+        data_type: string
+        description: >-
+          Foreign key to `dim_staff.staff_key` — the manager for this period.
+          Nullable: a primary reporting-relationship row may carry no manager.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]

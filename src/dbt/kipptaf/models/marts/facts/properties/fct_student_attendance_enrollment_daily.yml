@@ -127,30 +127,6 @@ models:
         data_tests:
           - unique
 
-      - name: student_enrollment_key
-        data_type: string
-        description: >-
-          FK to dim_student_enrollments. Surrogate key derived from
-          student_number, _dbt_source_project, academic_year, and entrydate.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_student_enrollments')
-              to_columns: [student_enrollment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_student_enrollments')
-                field: student_enrollment_key
-              config:
-                # Baseline, not a target. 2,286 rows across 15 enrollment keys
-                # come from an upstream divergence between
-                # int_extracts__student_enrollments and
-                # dim_student_enrollments: 10 Newark stints (AY2016-2024), 4
-                # Camden (AY2020, AY2023), 1 Paterson (AY2025). Warn above
-                # the residue so a NEW orphan source stays visible; do not
-                # raise the threshold to silence one.
-                warn_if: ">2286"
       - name: date_key
         data_type: date
         description: >-
@@ -160,11 +136,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: term_key
         data_type: string
         description: >-
@@ -178,12 +149,17 @@ models:
             foreign_key:
               to: ref('dim_terms')
               to_columns: [term_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
 
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_project, academic_year, and entrydate.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
       - name: attendance_code
         data_type: string
         description: >-

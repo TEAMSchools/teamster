@@ -51,11 +51,6 @@ models:
             foreign_key:
               to: ref('dim_student_section_enrollments')
               to_columns: [student_section_enrollment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_student_section_enrollments')
-                field: student_section_enrollment_key
       - name: term_key
         data_type: string
         description: >-
@@ -68,11 +63,6 @@ models:
             foreign_key:
               to: ref('dim_terms')
               to_columns: [term_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
       - name: due_date_key
         data_type: date
         description: >-
@@ -87,11 +77,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: academic_year
         data_type: int64
         description: >-

@@ -278,8 +278,9 @@ legitimately-superseded inactive rows that repeat the key.
 - Staging-layer tests MUST set `config: severity: error` on every test. The
   district and kipptaf project default is `warn`, so their staging tests without
   explicit `severity: error` silently degrade to warnings and won't fail CI.
-  Intermediate/mart/`rpt_` tests may omit the override where a warning is
-  acceptable.
+  Intermediate tests may omit the override where a warning is acceptable.
+- Tests on marts and `rpt_` models follow _Tests on marts and `rpt_` models_ at
+  the end of this file.
 - Removing a `severity: warn` override reverts to the project default: `warn` in
   a district or kipptaf, `error` in a source package. To force `error`, set
   `config: severity: error` explicitly.
@@ -303,10 +304,10 @@ legitimately-superseded inactive rows that repeat the key.
   `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
   literal in every UNION branch, or `count(...)`. The `accepted_values` pairing
   above overrides this rule; nothing else does.
-- **Disabling a model does NOT disable its tests.** `config: enabled: false` in
-  properties yml moves the model to `disabled` but leaves every test in `nodes`
-  (verified with `--no-partial-parse`), still scanning the stale prod relation.
-  Add `config: enabled: false` to each test as well.
+- **Disabling a model disables only the generic tests declared on it.** A
+  singular test that refs it, and a `relationships` test on another model whose
+  `to:` names it, stay in `nodes` (verified with `--no-partial-parse`) and keep
+  scanning the stale prod relation. Disable or remove each of those.
 
 ### An FK check belongs on the pre-join model, as a column `relationships` test
 
@@ -419,3 +420,46 @@ the normalized value its sibling scalar columns assert.
   descriptions — those go in inline SQL comments at the derivation site.
 - The reverse (rationale belongs in `description:`, not an inline SQL comment):
   the inline-comment rule in `.claude/rules/dbt-sql.md`.
+
+<!-- --8<-- [start:tests] -->
+
+## Tests on marts and `rpt_` models
+
+Marts and `rpt_` models carry only `error` tests and unit tests. A warning on a
+model a dashboard or feed reads is one nobody acts on, so each test either fails
+the build or moves somewhere it can be acted on.
+
+Until a folder has its own `+severity: error` block in `dbt_project.yml`, set
+`config: severity: error` on each new test there. An `error` test lands only
+after its query returns 0 rows in prod.
+
+Sort each test by what it guards:
+
+- Grain: the backstop on every mart and `rpt_` model. Add `not_null` on
+  natural-key grain columns (`unique` skips nulls) unless they are non-null by
+  construction; a `generate_surrogate_key` primary key needs only `unique`. If a
+  grain test fails in prod on a source defect that waits on a fix elsewhere, set
+  `severity: warn` on that one test with a `TODO(#N)` comment, and still flip
+  the folder. A kipptaf `rpt_` model listed on
+  [#5990](https://github.com/TEAMSchools/teamster/issues/5990) has no grain test
+  yet: add one in any PR that modifies it, and check it off there.
+- A `relationships` test from a mart or `rpt_` model to another model is not a
+  regression test. Key drift is the key macros' job (A7). When two models must
+  cover the same population, have both read one shared upstream model. A test
+  comparing two separately built models also catches the gap between their
+  rebuild times. Real orphans become an upstream `warn`. A column
+  `relationships` test on the model that feeds a join, before the join drops
+  unmatched rows, is still the right FK check. Exception: an outbound feed whose
+  rows reference another feed's file (ParentSquare, Clever) keeps its
+  file-to-file check, because the target system rejects a dangling id.
+- The model's own logic: a unit test.
+- A promise an upstream model makes: an `error` test on that model.
+- Source data: a test on the earliest model that sees it. Either a `warn` with a
+  downstream defense and a description naming the source system, what is wrong,
+  and what to change there; or, when no business rule can handle it, an `error`
+  gate. A new gate lands as `warn` and flips after it passes in prod. A failing
+  test skips only downstream tables; a view between a gate and its consumers
+  still reads the bad rows.
+- Build timing: delete it.
+
+<!-- --8<-- [end:tests] -->

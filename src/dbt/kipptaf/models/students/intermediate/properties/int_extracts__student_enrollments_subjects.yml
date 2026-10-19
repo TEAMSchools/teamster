@@ -494,3 +494,18 @@ models:
       - name: is_low_25_fl
         data_type: boolean
         description: Conditional on fldoe_dynamic_percentile_rank.
+      - name: bucket_store
+        data_type: string
+        description:
+          Which system holds the stored bucket assignment (powerschool or
+          focus); null when the student has no assignment.
+      - name: course_section_number
+        data_type: string
+        description:
+          Enrolled course section for the subject, from the student's SIS course
+          enrollments (PowerSchool, or the Focus schedule for Miami).
+      - name: course_teacher_lastfirst
+        data_type: string
+        description:
+          Teacher of that course section, from the student's SIS course
+          enrollments (PowerSchool, or the Focus schedule for Miami).

@@ -1,6 +1,23 @@
 models:
   - name: base_kippadb__application
     columns:
+      - name: applicant
+        data_type: string
+        description: Salesforce contact id of the student who applied.
+        data_tests:
+          - unique:
+              name: base_kippadb__application_one_matriculation_per_applicant
+              description: >-
+                A student has more than one application marked Matriculated
+                (Intent to Enroll) in Salesforce, excluding transfers. Consumers
+                keep the one `rn_app_enr` ranks first, which orders by college
+                enrollment start with an application that has no enrollment
+                record ranked ahead of one that does. To fix, KIPP Forward
+                clears the matriculation decision on all but the student's
+                actual college.
+              config:
+                where: is_matriculated
+                severity: warn
       - name: id
         data_type: string
       - name: name
@@ -30,8 +47,6 @@ models:
       - name: advisor_rank
         data_type: string
       - name: anticipated_housing_situation
-        data_type: string
-      - name: applicant
         data_type: string
       - name: application_admission_type
         data_type: string

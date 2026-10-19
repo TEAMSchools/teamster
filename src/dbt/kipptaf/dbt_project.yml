@@ -23,6 +23,16 @@ data_tests:
   +severity: warn
   +store_failures: true
   +store_failures_as: view
+  kipptaf:
+    marts:
+      bridges:
+        +severity: error
+      facts:
+        +severity: error
+      dimensions:
+        +severity: error
+    extracts:
+      +severity: error
 
 vars:
   local_timezone: America/New_York

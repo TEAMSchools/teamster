@@ -28,11 +28,6 @@ models:
             foreign_key:
               to: ref('dim_courses')
               to_columns: [course_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_courses')
-                field: course_key
       - name: location_key
         data_type: string
         description: >-
@@ -45,11 +40,6 @@ models:
             foreign_key:
               to: ref('dim_locations')
               to_columns: [location_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
       - name: identifier
         data_type: string
         description: >-

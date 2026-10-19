@@ -4,7 +4,8 @@ from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from pydantic import Field, PrivateAttr
 from requests import Response, Session
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import HTTPError, Timeout
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -38,7 +39,7 @@ class OvergradResource(ConfigurableResource):
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=2, max=60),
-        retry=retry_if_exception_type(HTTPError),
+        retry=retry_if_exception_type((RequestsConnectionError, Timeout, HTTPError)),
     )
     def _request(self, method: str, url: str, **kwargs) -> Response:
         response = self._session.request(

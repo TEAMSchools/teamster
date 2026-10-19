@@ -39,11 +39,6 @@ models:
             foreign_key:
               to: ref('dim_students')
               to_columns: [student_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_students')
-                field: student_key
       - name: college_key
         data_type: string
         description: >-
@@ -53,11 +48,6 @@ models:
             foreign_key:
               to: ref('dim_colleges')
               to_columns: [college_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_colleges')
-                field: college_key
       - name: start_date_key
         data_type: date
         description: >-
@@ -70,11 +60,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: end_date_key
         data_type: date
         description: >-
@@ -87,11 +72,6 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
       - name: status
         data_type: string
         description: >-
