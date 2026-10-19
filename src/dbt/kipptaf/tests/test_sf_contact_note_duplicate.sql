@@ -47,4 +47,4 @@ select
     `status` as status__c,
     `type` as type__c,
 from row_counting
-where order_rows > 1 and comments is not null
+where order_rows > 1 and comments != ''
