@@ -187,11 +187,14 @@ Four rules drive the label, and only the first is obvious from the column names:
    never count a student whose results are still due as having met the
    requirement.
 4. **A class NJDOE has not published reads `Pending Cut Score`.** A student who
-   sat the NJGPA in a subject whose cut score cohort has no sheet row gets that
-   label instead of a failing one. The cut score join leaves `pathway_option`
-   null on those rows, and that null is the signal. `final_grad_path_code` stays
-   `R`, because PowerSchool has no pending code. Never invent one: it goes to
-   the state.
+   sat the NJGPA in a subject whose cut score cohort has no NJGPA sheet row gets
+   that label instead of a failing one. The signal is the absence of any
+   `pathway_option = 'NJGPA'` row, not a null `pathway_option`, because ACT and
+   SAT rows for a class often land before NJDOE publishes its NJGPA cut. The
+   extract reads `grad_eligibility` from `rn_discipline_distinct = 1`, not from
+   scored rows, so the label reaches students with no score.
+   `final_grad_path_code` stays `R`, because PowerSchool has no pending code.
+   Never invent one: it goes to the state.
 
 **A student who graduates without ever being placed in grade 12 is never checked
 for FAFSA.** `fafsa_required` reads `grade_level = 12`, so an 11th grader who

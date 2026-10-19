@@ -408,10 +408,10 @@ label; a new state rule is a new branch in the model. Four rules drive it:
    the other untested reads ELA Only / Awaiting Math or Math Only / Awaiting
    ELA.
 4. NJDOE publishes a class's cut scores only after its test is scored. A student
-   who sat the NJGPA in a subject whose cut score cohort has no row on the cut
-   score sheet reads Pending Cut Score until the row arrives.
-   `final_grad_path_code` stays `R` in the meantime, because PowerSchool has no
-   pending code.
+   who sat the NJGPA in a subject whose cut score cohort has no NJGPA row on the
+   cut score sheet reads Pending Cut Score until the row arrives, even if the
+   class's ACT, SAT or PSAT rows are already there. `final_grad_path_code` stays
+   `R` in the meantime, because PowerSchool has no pending code.
 
 ### Picking a student's best score
 

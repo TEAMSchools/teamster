@@ -97,14 +97,21 @@ with
             coalesce(m.met_ela, false) as met_ela,
             coalesce(m.met_math, false) as met_math,
 
-            /* a null pathway_option means the sheet has no cut score row for the
-               student's cut score cohort in that subject */
-            logical_or(s.discipline = 'ELA' and s.pathway_option is null) over (
-                partition by s.student_number
-            ) as is_missing_cutoffs_ela,
-            logical_or(s.discipline = 'Math' and s.pathway_option is null) over (
-                partition by s.student_number
-            ) as is_missing_cutoffs_math,
+            /* an NJGPA row exists for every NJGPA cut score the sheet holds for
+               the student's cut score cohort, scored or not. M/N/O/P rows never
+               reach the sheet, so they count as covered. */
+            logical_or(
+                s.discipline = 'ELA'
+                and (
+                    s.pathway_option = 'NJGPA' or s.pathway_code in ('M', 'N', 'O', 'P')
+                )
+            ) over (partition by s.student_number) as has_njgpa_cutoffs_ela,
+            logical_or(
+                s.discipline = 'Math'
+                and (
+                    s.pathway_option = 'NJGPA' or s.pathway_code in ('M', 'N', 'O', 'P')
+                )
+            ) over (partition by s.student_number) as has_njgpa_cutoffs_math,
 
         from {{ ref("int_students__graduation_pathway_scores") }} as s
         left join
@@ -131,8 +138,8 @@ with
             ) as attempted_nothing,
 
             (
-                (r.attempted_njgpa_ela and r.is_missing_cutoffs_ela)
-                or (r.attempted_njgpa_math and r.is_missing_cutoffs_math)
+                (r.attempted_njgpa_ela and not r.has_njgpa_cutoffs_ela)
+                or (r.attempted_njgpa_math and not r.has_njgpa_cutoffs_math)
             ) as is_cutoff_pending,
 
             /* the alternative pathways, in the order New Jersey prefers them.
@@ -172,8 +179,8 @@ select
         is_awaiting_results,
         attempted_nothing,
         is_cutoff_pending,
-        is_missing_cutoffs_ela,
-        is_missing_cutoffs_math,
+        has_njgpa_cutoffs_ela,
+        has_njgpa_cutoffs_math,
         best_alternative_code
     ),
 

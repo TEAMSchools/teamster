@@ -387,10 +387,12 @@ models:
           records reads Awaiting Results, and one whose only counting subject
           leaves the other untested reads ELA Only / Awaiting Math or Math Only
           / Awaiting ELA. A student who sat the NJGPA in a subject whose cut
-          score cohort has no row on the cut score sheet reads Pending Cut
+          score cohort has no NJGPA row on the cut score sheet reads Pending Cut
           Score, since NJDOE publishes each class's cut scores only after the
-          test is scored. That label does not change final_grad_path_code, which
-          stays R until the row arrives.
+          test is scored. That holds even if the sheet already has the class's
+          ACT, SAT or PSAT rows, and it takes priority over a one-subject label
+          such as Math Only. The label does not change final_grad_path_code,
+          which stays R until the row arrives.
         config:
           meta:
             contains_pii: true
@@ -580,8 +582,10 @@ unit_tests:
       score cohort has no sheet rows, so the cut score join leaves
       pathway_option null. Student 6's cohort has rows, but none for the version
       they sat, so the NJGPA row carries a null score. That is a records
-      problem, not a pending one, and still reads Not Grad Eligible. Both keep a
-      final code of R, because PowerSchool has no pending code.
+      problem, not a pending one, and still reads Not Grad Eligible. Student 7's
+      cohort already has ACT rows for ELA but no NJGPA rows, and they passed
+      math. ELA is still pending, and that outranks Math Only. Pending subjects
+      keep a final code of R, because PowerSchool has no pending code.
     model: int_students__graduation_path_codes
     given:
       - input: ref('int_students__graduation_pathway_scores')
@@ -626,6 +630,17 @@ unit_tests:
             12, 0, 2027, 'ELA', 'ENG', null, true, false, false,
             'NJGPA', 'ELAGP', 'S', 725, 'NJGPA',
             null, null, null, true, false, null, 1
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 7, 7, 7, '7', null,
+            12, 0, 2028, 'ELA', 'ENG', null, true, false, false,
+            'ACT', 'act_reading', 'E', 16, 'ACT',
+            null, null, null, true, true, null, 1
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 7, 7, 7, '7', null,
+            12, 0, 2028, 'Math', 'MATH', null, true, false, false,
+            'NJGPA', 'MATGP', 'S', 725, 'NJGPA',
+            cast(800 as numeric), 'MATGP', true, true, true,
+            cast(75 as numeric), 1
     expect:
       rows:
         - {
@@ -645,4 +660,16 @@ unit_tests:
             discipline: ELA,
             final_grad_path_code: R,
             grad_eligibility: Not Grad Eligible,
+          }
+        - {
+            student_number: 7,
+            discipline: ELA,
+            final_grad_path_code: R,
+            grad_eligibility: Pending Cut Score,
+          }
+        - {
+            student_number: 7,
+            discipline: Math,
+            final_grad_path_code: S,
+            grad_eligibility: Pending Cut Score,
           }
