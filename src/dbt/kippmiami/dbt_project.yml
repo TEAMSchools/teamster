@@ -42,6 +42,14 @@ models:
       staging:
         +contract:
           enforced: true
+    # Temporary: archive-rebuild-only model, built into the frozen archive.
+    powerschool:
+      +materialized: table
+      +schema: powerschool
+      sis:
+        staging:
+          +contract:
+            enforced: true
   focus:
     +materialized: table
     staging:
