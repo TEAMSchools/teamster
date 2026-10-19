@@ -32,6 +32,14 @@ Team shared drive first (#6027). The command writes as the Codespace service
 account, which is a Content manager of that shared drive. Tasks 1, 6, 8, 9, 10,
 and 11 below reflect the change. No personal sign-in remains.
 
+During Task 7 review, 2 more changes landed. The Drive tag moved from
+`appProperties` (private to the requesting app) to `properties` (visible to all
+apps), so a rerun under a different identity still finds it; read every
+`appProperties` and `app_properties` below as `properties`. Publish writes the
+index Sheet before it trashes orphans. The command also refuses to publish
+unless the input holds at least 1 original ISR file for every district in
+`REGION_BY_DISTRICT` (Task 8).
+
 ## Global Constraints
 
 - The repo is public. Never commit a Drive folder ID, file ID, or link key. The

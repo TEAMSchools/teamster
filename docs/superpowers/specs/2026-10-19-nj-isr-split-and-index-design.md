@@ -388,3 +388,9 @@ as the user:
 - The real run into school folders waits on #6027.
 - _Before the first real run_ item 2 becomes: the service account is a Content
   manager of the shared drive that holds the folders.
+- The Drive tag lives in `properties`, not `appProperties`. `appProperties` are
+  private to the app that wrote them, so a rerun under another identity would
+  miss every tag and duplicate the files.
+- A rerun publishes only with the complete input: at least 1 original ISR file
+  for every district. A partial input would overwrite other schools' files with
+  a subset of students.
