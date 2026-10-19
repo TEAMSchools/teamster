@@ -190,10 +190,16 @@ def _stored(fm: FieldMap, label: str | None, side: str) -> str | None:
     return fm.values.get(label, n)
 
 
-def _pred(fm: FieldMap, label: str | tuple[str, ...] | None, side: str) -> str | None:
+def _pred(
+    fm: FieldMap,
+    label: str | tuple[str, ...] | None,
+    side: str,
+    prefix: str | None = None,
+) -> str | None:
     """SQL over table `rows` for field = label (or in labels) on one side.
 
     None for (All). Several labels read as IN, like Cube's equals with a list.
+    The column carries `prefix`, `{side}_` by default; "" reads a raw extract.
     """
     labels = label if isinstance(label, tuple) else (label,)
     if ALL in labels:
@@ -203,7 +209,7 @@ def _pred(fm: FieldMap, label: str | tuple[str, ...] | None, side: str) -> str |
         raise MappingGap(
             f"{fm.caption}: no {'extract' if side == 't' else 'Cube'} column"
         )
-    col = side_sql(expr, f"{side}_")
+    col = side_sql(expr, f"{side}_" if prefix is None else prefix)
     stored = [_stored(fm, x, side) for x in labels]
     if len(stored) == 1:
         v = stored[0]
