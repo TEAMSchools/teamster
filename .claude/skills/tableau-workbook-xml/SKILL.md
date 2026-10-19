@@ -102,8 +102,8 @@ redirect, never through a pipe.
    workbook name carries a `ZZ-REVIEW` prefix plus the date, so an overwrite can
    only land on a review copy. Keep the raise on `item.project_id` after the
    call as confirmation of where it landed; it cannot prevent anything. A
-   publish also drops server-side state (Verified, #5230). Pass `hidden_views`,
-   the names to hide: sheets the `<windows>` element marks publishable (`class`
+   publish also drops server-side state (Verified). Pass `hidden_views`, the
+   names to hide: sheets the `<windows>` element marks publishable (`class`
    `worksheet` or `dashboard`, `hidden` not `'true'`) minus the target's live
    view names, minus sheets this edit added; without it every publishable sheet
    goes live. Record the target's revision number before the call as the owner's

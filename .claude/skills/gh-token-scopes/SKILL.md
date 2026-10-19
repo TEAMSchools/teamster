@@ -23,9 +23,8 @@ so rerun a transiently failed CI job yourself instead of handing it over. Plain
 `gh run rerun <id> --failed` fails with "Resource not accessible by integration"
 because the `ghu_*` token lacks `workflow` scope; prefixing `GITHUB_TOKEN=`
 reruns it. Success prints NOTHING, so confirm it took by re-reading the run
-status rather than by the empty output. Verified 2026-09-16 on run 35135448204
-(a transient Artifact Registry 401 in a `dagster-cloud-deploy / merge` job,
-green on the rerun). Only the `--failed` form was exercised.
+status rather than by the empty output. Only the `--failed` form has been
+tested.
 
 `gh workflow run` (`workflow_dispatch`) can't be done from the Codespace: the
 `ghu_*` token lacks the `workflow` scope (403 "Resource not accessible by
