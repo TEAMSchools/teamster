@@ -173,6 +173,7 @@ with
             scope,
             subject_area,
             academic_year,
+            module_code,
 
             scope as title,
             test_date as administered_date,
@@ -184,8 +185,6 @@ with
             cast(null as string) as _dbt_source_project,
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
-
-            lower(concat(scope, '_', replace(subject_area, ' ', '_'))) as module_code,
         from {{ ref("int_assessments__college_assessment_practice") }}
     ),
 

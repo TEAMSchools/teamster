@@ -373,6 +373,9 @@ select
 
     g.previous_total_score_change,
 
+    -- the practice module in dim_assessments and dim_assessment_administrations
+    lower(concat(s.scope, '_', replace(s.subject_area, ' ', '_'))) as module_code,
+
     /* response_type stays in the partition so group rows rank among themselves
        and never displace the subject row before being nulled. */
     if(
