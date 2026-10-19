@@ -292,3 +292,164 @@ Data never makes analysis fail.
    under the cost cap, with every invariant holding.
 3. The analyst's hand checks agree.
 4. Someone without this context can run it from `SKILL.md`.
+
+## Revision 2026-10-19: measures to cover, gap decisions, follow-ups
+
+The first trusted run (snapshot `2026-10-19T2025`) reached the end of this
+design: the report said "formula gap" and stopped. Deciding who fixes a gap, and
+filing the follow-up, happened by hand. This revision makes them steps. It lifts
+"filing issues" out of _Out of scope_; Asana sync and `latest.json` stay out.
+
+### Decided by the analyst
+
+- The run checks everything mapped on the dashboard. A list of measures to test
+  is a "must cover" checklist on top of that, not a filter.
+- The list comes from a link the analyst gives: a gap-catalog section or an
+  Asana dashboard task with 1 subtask per measure. Claude reads the link through
+  the Asana connection or the repo and writes the list into the checks file. The
+  tool never calls Asana or GitHub.
+- A measure whose data is present but has no Cube measure gets its own coverage
+  verdict, and its follow-up asks to add it to Cube.
+- When a formula gap is the dashboard's error, the measure is marked
+  "fix-dashboard" and gets a follow-up. For Chronic Absenteeism and Truancy,
+  Cube's definitions are correct.
+- Nothing is posted until the analyst approves the draft.
+
+### Measures to cover
+
+A new `must_cover:` list in the checks file, 1 entry per measure:
+
+- `name` as the source names it, and `source`, the link it came from.
+- `cube`: member and view, from the catalog's "where" column. `null` when no
+  Cube measure exists.
+- `tableau`: the export column and, when a selector reaches it, the selector and
+  value.
+
+The analyst approves the list, like causes. An entry that names no mapped sheet
+measure still stays on the list, so the report accounts for every item asked
+about.
+
+### Coverage section
+
+The report opens with 1 line per `must_cover` entry. Each line has 1 status:
+
+| Status                    | When                                                                 |
+| ------------------------- | -------------------------------------------------------------------- |
+| covered                   | At least 1 judged cell, and every judged cell is pass or decided     |
+| gaps open                 | A judged cell is a row gap or formula gap no decision covers         |
+| in the data, not in Cube  | `cube` is null and the rows behind it agree; follow-up: add to Cube  |
+| not judged                | Mapped, but every cell is a tool limit; names the most common reason |
+| not on these dashboards   | No sheet in this run's dashboards shows it                           |
+| only on sheets with names | Every sheet that shows it has a student name or id column            |
+| not mapped yet            | A sheet shows it and the checks file does not map it                 |
+
+Rows agreeing is supporting evidence, never coverage: "covered" needs a cell
+judged against a real Cube member.
+
+Calls made in review (Claude's; the analyst can change them):
+
+- The statuses take the first that applies, in this order: gaps open, covered,
+  in the data not in Cube, not judged, not mapped yet, only on sheets with
+  names, not on these dashboards. "Gaps open" also takes a coincidental match.
+- A 7th status, **not judged**, covers a mapped measure whose every cell is a
+  tool limit (mapping unproven, filter ignored, no captured rows). The line
+  names the most common reason.
+- A measure on both a mapped sheet and a sheet with names is judged on the
+  mapped sheet.
+- An entry links to cells by its `tableau` column and selector value. If its
+  `cube` member differs from the sheet mapping's member for that column and
+  value, the config fails: the line must test the member it names.
+- "In the data, not in Cube" needs the entry's `rows:` list, naming the
+  `rows.compare` columns behind the measure. Rows agree when those columns have
+  0 "value differs" rows. If they do differ, the status is the same and the line
+  says how many rows differ.
+- A selector value with no Cube measure (Chronic Tardiness, HS Alt) may carry
+  `measure: null`. Its cut is then captured, and its cells read "no Cube
+  counterpart", so the entry can be found on a sheet.
+
+### Decisions on formula gaps
+
+A new `decisions:` list. Each entry names a measure (and selector value, when
+there is one), an owner (`dashboard`, `cube`, or `accepted` for a difference
+both sides keep on purpose), a one-sentence rule, and `task`, the follow-up's
+link (empty until filed).
+
+- The analyst approves a decision with this snapshot's numbers, like a cause.
+- A formula-gap cell under a decision reads `fix-dashboard`, `fix-cube` or
+  `accepted difference` instead of "formula gap". Row gaps are not decided here;
+  causes cover them.
+- A decision's cells that pass on a later run read "resolved"; the analyst then
+  removes the decision.
+- Call made in review: a decision with owner `dashboard` or `cube` names its
+  probe, and relabels only the cells where the probe's `candidate` matches Cube.
+  Its other cells stay "formula gap", so a decision never covers a cell its rule
+  does not explain, and a new gap on the same measure is never hidden. An
+  `accepted` decision names the cuts or sheets it covers.
+- "Resolved" is judged per cell.
+
+### Diagnosis probes
+
+To test a candidate rule, a `probes:` entry holds 2 SQL queries over the
+snapshot's extract: `dashboard`, the dashboard's number computed its own way,
+and `candidate`, the same number under the rule.
+
+- Call made in review: 1 pair per measure and selector value. Each is a full
+  query over the raw extract table that returns 1 value, with a `{where}`
+  placeholder the tool fills with the cut's and the mark's predicates on extract
+  columns. The tool runs it for every cut, sheet and mark the measure appears
+  in. A full query, not a single aggregate, because rules like Chronic
+  Absenteeism pick each student's last day before averaging.
+
+- `dashboard` must reproduce the export in every judged cell, at display
+  precision. That is the probe's proof; without it the probe reports nothing
+  else.
+- The report then gives how many cells `candidate` matches Cube in, and lists
+  the rest.
+- A probe never sets a verdict and never stands in for Cube: it compares a
+  rewrite of the dashboard's formula with Cube's captured answer. The _Mapping_
+  rule "never formulas" still governs every verdict.
+
+### Follow-ups
+
+A skill step, not tool code:
+
+1. Claude drafts 1 follow-up per decision with owner `dashboard` or `cube`, and
+   per "in the data, not in Cube" line, from the report: aggregate counts only,
+   counts under 10 shown as "<10".
+2. The analyst reads the draft. Nothing posts before they approve it.
+3. Where it goes: a dashboard fix is an Asana subtask under the measure's
+   subtask; a Cube fix or a missing measure is a GitHub issue from the feature
+   request template. Claude's call; the analyst can redirect. When the list came
+   from the gap catalog and no Asana subtask exists for the measure, Claude asks
+   the analyst for the parent task rather than guessing.
+4. The posted link goes into the decision's `task`.
+
+### Trust across runs
+
+Decided by the analyst: trust carries over from the last trusted run while
+nothing it rested on has changed.
+
+- Each trusted run records a fingerprint of the tool's code
+  (`scripts/cube_validate/`) and of the checks file's mapping: everything except
+  `causes`, `decisions`, `must_cover` and `probes`, which change with findings.
+- A later run is trusted when its own invariants hold, both fingerprints match
+  the last trusted run's, and every verdict and bucket it produced also appeared
+  in that run.
+- Otherwise it needs its own hand checks, drawn only for what is new: verdicts
+  and buckets the trusted run never had, or a full set when a fingerprint
+  changed.
+- Follow-ups are drafted only from a trusted report.
+
+### Also in this revision
+
+- A swapped measure's formula: the report shows the calculation the selector
+  value picks, not "(no calculation found)".
+- Clock risk compares row contents through time travel, like the resume gate,
+  and reports the changed-row count.
+- Hand checks show values as the dashboard does (96.5%), not raw.
+
+### Not in this revision
+
+- Asana tags: the Asana connection cannot set them; the analyst sets
+  `fix-dashboard` or clears `unvalidated` by hand.
+- Status sync back to Asana, and closing follow-ups automatically.
