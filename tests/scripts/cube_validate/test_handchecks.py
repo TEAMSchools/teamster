@@ -142,3 +142,20 @@ def test_cell_hand_check_shows_dashboard_values():
     (h,) = handchecks.pick([c], [], seed="s")
     text = "\n".join(h.steps)
     assert "`96.5%`" in text and "`96.7%`" in text
+
+
+def test_cell_hand_check_shows_a_scaled_cube_value_as_judged():
+    c = cells.Cell(
+        "default",
+        "ADA",
+        {"School": "Rise"},
+        "ADA",
+        "96.5",
+        0.965,
+        cells.ROW_GAP,
+        fmt=cells.Format(1, False),
+        scale=100.0,
+    )
+    (h,) = handchecks.pick([c], [], seed="s")
+    steps = h.steps
+    assert "`96.5`" in steps[1] and "`96.5`" in steps[2]

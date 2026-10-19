@@ -333,6 +333,7 @@ class Cell:
     buckets: list[tuple] = field(default_factory=list)
     students: tuple[int, int] = (0, 0)
     fmt: Format | None = None
+    scale: float = 1.0
 
 
 def _cut_filters(
@@ -544,6 +545,7 @@ def judge(
                             buckets,
                             studs,
                             _format(formats, sheet, h),
+                            m.scale,
                         )  # fmt: skip
                     )
             for key, crow in cube_rows.items():
@@ -573,7 +575,7 @@ def judge(
                         Cell(
                             cut.id, sheet, {k: v or "" for k, v in labels.items()},
                             m.column, None, float(raw), vd, rs, buckets, studs,
-                            _format(formats, sheet, m.column),
+                            _format(formats, sheet, m.column), m.scale,
                         )
                     )  # fmt: skip
     return out

@@ -62,7 +62,7 @@ def _cell_check(c: Cell, answers: dict) -> HandCheck:
         [
             f"In the review copy, open sheet `{c.sheet}` and set cut `{c.cut}` (see manifest.json).",
             f"Find the mark {where}. Tableau should show `{shown(c.tableau, c.fmt)}` for {c.measure}.",
-            f"Run the Cube query for `{key}` (below). The captured value was `{shown(c.cube, c.fmt)}`.",
+            f"Run the Cube query for `{key}` (below). The captured value was `{shown(None if c.cube is None else c.cube * c.scale, c.fmt)}`.",
             f"Cube's answer was captured at {at}; compare against that, not today's Cube.",
             f"The tool says **{c.verdict}**{f' ({c.reason})' if c.reason else ''}. Agree?",
         ],
