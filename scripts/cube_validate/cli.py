@@ -19,9 +19,11 @@ from . import (
     cells,
     config,
     cuts,
+    decisions,
     handchecks,
     hyper,
     preflight,
+    probes,
     report,
     rows,
     snapshot,
@@ -78,6 +80,7 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
             lambda cut, sheet: _export(snap, cut, sheet),
             formats,
         )
+        cs, decided = decisions.apply(checks, cs, probes.run(ws, checks, cs))
         samples = handchecks.row_samples(ws, checks)
         picked = handchecks.pick(cs, samples, seed=snap.dir.name, answers=answers)
     handchecks.write(
@@ -88,7 +91,7 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
         handchecks.uncovered(cs, samples, picked),
     )
     results = handchecks.read_results(snap.analysis / "hand_checks.yml")
-    text = report.render(checks, m, rr, cs, results, twb, answers)
+    text = report.render(checks, m, rr, cs, results, twb, answers, decided)
     path = snap.analysis / "report.md"
     path.write_text(text)
     return path, report.trust(

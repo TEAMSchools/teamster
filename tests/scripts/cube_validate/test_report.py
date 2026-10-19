@@ -127,7 +127,7 @@ def test_render_holds_findings_and_suppresses_small_cells():
     assert "Comm Log" in text
 
 
-def _render(cs, sheets):
+def _render(cs, sheets, decisions=None):
     rr = rows.RowsResult(
         totals={"tableau": 0, "cube": 0, "joined": 0},
         buckets=[],
@@ -138,7 +138,7 @@ def _render(cs, sheets):
     object.__setattr__(checks, "dashboard", "attendance_dashboard")
     object.__setattr__(checks, "excluded_sheets", {})
     object.__setattr__(checks, "sheets", sheets)
-    return report.render(checks, {}, rr, cs, {}, "", {})
+    return report.render(checks, {}, rr, cs, {}, "", {}, decisions)
 
 
 def test_row_gap_lists_its_buckets_once_per_mark_with_small_counts():
@@ -242,3 +242,27 @@ def test_compared_counts_judged_verdicts_only():
 
     cells = [N(verdict=v) for v in (report.PASS, report.ROW_GAP, "never in cube")]
     assert report.compared(cells) == 2
+
+
+def test_decided_verdicts_count_as_compared_and_decisions_render():
+    cs = [
+        cells.Cell("default", "S", {}, "M", "1", 1.0, v)
+        for v in (cells.FIX_DASHBOARD, cells.FIX_CUBE, cells.ACCEPTED)
+    ]
+    assert report.compared(cs) == 3
+    assert cells.ORDER.index(cells.FIX_CUBE) == cells.ORDER.index(cells.FORMULA_GAP) + 2
+
+
+def test_decisions_section_shows_only_with_a_decision_and_masks_counts():
+    cs = [cells.Cell("default", "S", {}, "M", "1", 1.0, cells.FIX_CUBE)]
+    d = {
+        "decision": "M (cube)",
+        "owner": "cube",
+        "relabeled": 3,
+        "still_formula_gap": 0,
+        "resolved": 12,
+        "probe_proven": True,
+    }
+    assert "### Decisions" not in _render(cs, {})
+    text = _render(cs, {}, [d])
+    assert "- M (cube): <10 relabeled, 0 still formula gap, 12 resolved" in text

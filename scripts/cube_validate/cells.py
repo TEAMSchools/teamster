@@ -16,12 +16,16 @@ PASS = "pass"
 COINCIDENTAL = "coincidental match"
 ROW_GAP = "row gap"
 FORMULA_GAP = "formula gap"
+FIX_DASHBOARD = "fix-dashboard"
+FIX_CUBE = "fix-cube"
+ACCEPTED = "accepted difference"
+DECIDED = (FIX_DASHBOARD, FIX_CUBE, ACCEPTED)
 FILTER_IGNORED = "filter ignored"
 UNPROVEN = "mapping unproven"
 NO_COUNTERPART = "no Cube counterpart"
 NO_ROWS = "no captured rows"
 NEVER_CUBE = (FILTER_IGNORED, UNPROVEN, NO_COUNTERPART, NO_ROWS)
-ORDER = (ROW_GAP, FORMULA_GAP, COINCIDENTAL, PASS, *NEVER_CUBE)
+ORDER = (ROW_GAP, FORMULA_GAP, *DECIDED, COINCIDENTAL, PASS, *NEVER_CUBE)
 
 CUBE_SIDE = ("match", "value_differs", "cube_only")
 DASHBOARD_SIDE = (

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 
 from . import workbook
-from .cells import COINCIDENTAL, FORMULA_GAP, ORDER, PASS, ROW_GAP, answer_key
+from .cells import COINCIDENTAL, DECIDED, FORMULA_GAP, ORDER, PASS, ROW_GAP, answer_key
 
 SMALL = 10
 
@@ -32,7 +32,7 @@ def _mask(value) -> str:
 
 def compared(cells: list) -> int:
     """Cells where Cube's number was set against the dashboard's and judged."""
-    judged = (PASS, COINCIDENTAL, ROW_GAP, FORMULA_GAP)
+    judged = (PASS, COINCIDENTAL, ROW_GAP, FORMULA_GAP, *DECIDED)
     return sum(1 for c in cells if c.verdict in judged)
 
 
@@ -88,7 +88,11 @@ def _row_gap_buckets(gaps: list) -> list[str]:
 
 def _untested(checks, cells: list) -> list[tuple[str, str]]:
     """Mapped measures with no cell whose rows all match, so no cut tests the formula."""
-    tested = {(c.sheet, c.measure) for c in cells if c.verdict in (PASS, FORMULA_GAP)}
+    tested = {
+        (c.sheet, c.measure)
+        for c in cells
+        if c.verdict in (PASS, FORMULA_GAP, *DECIDED)
+    }
     return [
         (s, h)
         for s, sm in checks.sheets.items()
@@ -115,6 +119,7 @@ def render(
     results: dict,
     twb_text: str,
     answers: dict,
+    decisions: list[dict] | None = None,
 ) -> str:
     inv = {**(manifest.get("invariants") or {}), **rows_result.invariants}
     out = [f"# {checks.dashboard}: Cube validation", ""]
@@ -187,6 +192,15 @@ def render(
                 f"| {c.cut} | {c.sheet} | {c.measure} | {marks} | {c.verdict} | {_mask(c.tableau)} | {_mask(c.cube)} |"
             )
     out += _row_gap_buckets(gaps)
+    if decisions:
+        out += ["", "### Decisions", ""]
+        for d in decisions:
+            proof = "proven" if d["probe_proven"] else "not proven"
+            out.append(
+                f"- {d['decision']}: {small(d['relabeled'])} relabeled, "
+                f"{small(d['still_formula_gap'])} still formula gap, "
+                f"{small(d['resolved'])} resolved (probe {proof})"
+            )
     shown = set()
     cut_params = {c.id: c.params for c in getattr(checks, "cuts", ())}
     for c in cells:
