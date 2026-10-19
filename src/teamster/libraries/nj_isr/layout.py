@@ -63,7 +63,12 @@ def tag_value(source: SourceFile) -> str:
 
 
 def report_label(source: SourceFile) -> str:
-    """Name of the report type, which also separates output files."""
+    """Name of the report type, which also separates output files.
+
+    Every NJGPA file is "NJGPA Reports"; the variant splits only NJSLA.
+    """
+    if source.program == "NJGPA":
+        return "NJGPA Reports"
     if source.variant in ("", "Combined"):
         return f"{source.program} Reports"
     if source.variant == "Single":

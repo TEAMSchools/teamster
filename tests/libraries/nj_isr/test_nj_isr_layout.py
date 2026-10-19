@@ -151,7 +151,8 @@ def rows_one_team():
 def test_names():
     assert report_label(src(variant="Combined")) == "NJSLA Reports"
     assert report_label(src(variant="Single")) == "NJSLA Science Reports"
-    assert report_label(src(program="NJGPA", variant="")) == "NJGPA Reports"
+    for variant in ("", "Combined", "Single"):
+        assert report_label(src(program="NJGPA", variant=variant)) == "NJGPA Reports"
     assert year_folder_name("NJSLA", "Spring 2026") == "Spring 2026 NJSLA ISRs"
     assert (
         index_sheet_name("Newark", "NJSLA", "Spring 2026")
@@ -421,3 +422,17 @@ def test_sheet_tabs_about_copy():
         ],
     ]
     assert len(tabs["All reports"]) == 5
+
+
+def test_njgpa_variants_share_one_file():
+    placements = []
+    for seq, variant in enumerate(("Combined", "Single"), start=1):
+        record = replace(
+            rec(seq, "ADAMS AL"), source=src(variant=variant, program="NJGPA")
+        )
+        placements.append(at_team_for(record))
+    files = build_output_files(placements)
+    assert [f.file_name for f in files] == [
+        "KIPP TEAM Academy - NJGPA Reports - Spring 2026.pdf"
+    ]
+    assert len(files[0].entries) == 2
