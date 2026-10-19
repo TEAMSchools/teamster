@@ -182,17 +182,15 @@ select
     ) as student_key,
 
     {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "'college'",
-                "pa.module_code",
-                "pa.test_date",
-                "pa.academic_year",
-                "cast(null as string)",
-                "pa.administration_round",
-                "cast(null as int64)",
-                "pa.test_type",
-            ]
+        assessment_administration_key(
+            "'college'",
+            "pa.module_code",
+            "pa.test_date",
+            "pa.academic_year",
+            "null",
+            "pa.administration_round",
+            "null",
+            "pa.test_type",
         )
     }} as assessment_administration_key,
 
