@@ -16,7 +16,6 @@ from teamster.code_locations.kippmiami import (
     finalsite,
     fldoe,
     iready,
-    powerschool,
     renlearn,
 )
 from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE, SSH_FOCUS
@@ -49,7 +48,6 @@ defs = Definitions(
             # Add `powerschool` here (and to the import above) to rebuild the
             # frozen PowerSchool archive; remove both again afterwards. See
             # src/teamster/code_locations/kippmiami/CLAUDE.md.
-            powerschool,
             renlearn,
         ]
     ),
