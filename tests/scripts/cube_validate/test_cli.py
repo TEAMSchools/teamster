@@ -298,9 +298,11 @@ def _fake_run(tmp_path, monkeypatch, pull_rows):
     )
     monkeypatch.setattr(cc, "write_cube_hyper", lambda s, c, t: 0)
     monkeypatch.setattr(cc, "capture_answers", lambda *a: {})
-    monkeypatch.setattr(cli, "analyze_snapshot", lambda c, s: (s.dir, "ok"))
+    monkeypatch.setattr(cli, "analyze_snapshot", lambda c, s, p=None: (s.dir, "ok"))
     checks = cli.config.load_checks(_write_checks(tmp_path))
-    args = SimpleNamespace(snapshot=str(snap.dir), period=None)
+    args = SimpleNamespace(
+        snapshot=str(snap.dir), period=None, checks=_write_checks(tmp_path)
+    )
     return snap, lambda: cli._run(checks, args)
 
 
@@ -440,3 +442,109 @@ def test_resume_checks_pass_a_rebuild_whose_rows_did_not_change(tmp_path):
         same_rows,
     )
     assert got == (dt.date(2026, 10, 5), dt.date(2026, 10, 15)) and seen == [["t"]]
+
+
+def _analyzable(tmp_path, tag):
+    """A snapshot whose one cell passes; returns (checks, checks_path, snap)."""
+    checks_path = tmp_path / "c.yml"
+    checks_path.write_text(yaml.safe_dump(CHECKS))
+    snap = snapshot.new_snapshot(
+        "d", dt.datetime(2026, 10, 15, 16, 0), tag, root=tmp_path
+    )
+    d = dt.date(2026, 10, 6)
+    hyper.write_table(
+        snap.extract,
+        "Extract",
+        "Extract",
+        [
+            ("student_number", "bigint"),
+            ("calendardate", "date"),
+            ("school_abbreviation", "text"),
+        ],
+        [(1, d, "Rise"), (2, d, "Rise")],
+    )
+    hyper.write_table(
+        snap.cube,
+        "cube",
+        "rows",
+        [
+            ("lea_student_identifier", "double"),
+            ("attendance_date", "date"),
+            ("locations_abbreviation", "text"),
+        ],
+        [(1.0, d, "Rise"), (2.0, d, "Rise")],
+    )
+    snap.export_path("default", "ADA").write_bytes(
+        b"School,ADA,Students\nRise,94.2%,2\n"
+    )
+    snap.answers.write_text(
+        json.dumps(
+            {
+                cells.answer_key("default", "ADA"): {
+                    "query": {},
+                    "sql": "SELECT",
+                    "last_refresh": "x",
+                    "data": [
+                        {
+                            "v.locations_abbreviation": "Rise",
+                            "v.avg_daily_attendance": "0.942",
+                        }
+                    ],
+                }
+            }
+        )
+    )
+    snapshot.write_manifest(
+        snap,
+        {
+            "scope": ["Rise"],
+            "invariants": {"capture completeness": True},
+            "cuts": {"default": {}},
+        },
+    )
+    return cli.config.load_checks(checks_path), checks_path, snap
+
+
+def _agree_all(snap):
+    y = snap.analysis / "hand_checks.yml"
+    data = yaml.safe_load(y.read_text())
+    for e in data:
+        e["result"] = "agree"
+    y.write_text(yaml.safe_dump(data))
+
+
+def test_a_trusted_run_is_recorded_and_a_later_one_carries(tmp_path):
+    checks, cp, first = _analyzable(tmp_path, "a")
+    cli.analyze_snapshot(checks, first, cp)
+    _agree_all(first)
+    _, line = cli.analyze_snapshot(checks, first, cp)
+    assert line.startswith("Trusted for this run")
+    assert cli.trusted.read(first.dir.parent)["snapshot"] == first.dir.name
+    _, _, second = _analyzable(tmp_path, "b")
+    path, line = cli.analyze_snapshot(checks, second, cp)
+    assert line == (
+        f"Trusted: carried over from {first.dir.name} "
+        "(code and mapping unchanged, no new verdicts)."
+    )
+    assert f"carried over from {first.dir.name}" in path.read_text()
+    assert yaml.safe_load((second.analysis / "hand_checks.yml").read_text()) == []
+    assert cli.trusted.read(first.dir.parent)["snapshot"] == first.dir.name
+
+
+def test_without_a_checks_path_nothing_is_recorded(tmp_path):
+    checks, _, snap = _analyzable(tmp_path, "a")
+    cli.analyze_snapshot(checks, snap)
+    _agree_all(snap)
+    cli.analyze_snapshot(checks, snap)
+    assert cli.trusted.read(snap.dir.parent) is None
+
+
+def test_a_changed_mapping_needs_its_own_hand_checks(tmp_path):
+    checks, cp, first = _analyzable(tmp_path, "a")
+    cli.analyze_snapshot(checks, first, cp)
+    _agree_all(first)
+    cli.analyze_snapshot(checks, first, cp)
+    _, _, second = _analyzable(tmp_path, "b")
+    cp.write_text(yaml.safe_dump({**CHECKS, "cost_cap_usd": 6}))
+    _, line = cli.analyze_snapshot(checks, second, cp)
+    assert line.startswith("Pending")

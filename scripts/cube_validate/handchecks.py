@@ -94,6 +94,7 @@ def pick(
     answers: dict | None = None,
     limit: int = 15,
     passes: int = 3,
+    known: set[str] | None = None,
 ) -> list[HandCheck]:
     """Every verdict and bucket the run produced, then random passes, capped.
 
@@ -104,10 +105,19 @@ def pick(
         answers: Cube answers by answer_key, for each answer's capture time.
         limit: The most checks to pick.
         passes: How many random passes to add.
+        known: Verdicts and "base / cause" buckets an earlier trusted run
+            already had checked; with it, only the rest get checks and no
+            random passes are added.
 
     Returns:
         The checks, cells first. Ids come from each check's content.
     """
+    if known is not None:
+        cells = [c for c in cells if c.verdict not in known]
+        row_samples = [
+            r for r in row_samples if f"{r['base']} / {r['cause']}" not in known
+        ]
+        passes = 0
     # trunk-ignore(bandit/B311): seeded sampling for repeatable hand checks, not a security use
     rng = random.Random(seed)
     firsts: dict[str, Cell] = {}

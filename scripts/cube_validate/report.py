@@ -36,17 +36,28 @@ def compared(cells: list) -> int:
     return sum(1 for c in cells if c.verdict in judged)
 
 
-def trust(invariants: dict[str, bool], results: dict[str, str], compared: int) -> str:
+def trust(
+    invariants: dict[str, bool],
+    results: dict[str, str],
+    compared: int,
+    carried_from: str | None = None,
+) -> str:
     """The verdict line.
 
     Args:
         invariants: Each balance or capture check and whether it holds.
         results: Each hand check's recorded status.
         compared: How many cells were judged against Cube; see `compared`.
+        carried_from: The snapshot whose trust this run inherits, if any.
     """
     broken = [k for k, v in invariants.items() if not v]
     if broken:
         return f"Not trusted: invariant broken: {', '.join(broken)}."
+    if carried_from:
+        return (
+            f"Trusted: carried over from {carried_from} "
+            "(code and mapping unchanged, no new verdicts)."
+        )
     bad = sum(1 for v in results.values() if v == "disagree")
     if bad:
         return f"Not trusted: {bad} hand check{'s' if bad > 1 else ''} disagree."
@@ -121,13 +132,14 @@ def render(
     answers: dict,
     decisions: list[dict] | None = None,
     coverage: list[dict] | None = None,
+    carried_from: str | None = None,
 ) -> str:
     inv = {**(manifest.get("invariants") or {}), **rows_result.invariants}
     out = [f"# {checks.dashboard}: Cube validation", ""]
     out += [
         "## Trust verdict",
         "",
-        trust(inv, results, compared(cells)),
+        trust(inv, results, compared(cells), carried_from),
         "",
         "Unit tests are part of trust: `uv run --with tableauhyperapi pytest tests/scripts/cube_validate`.",
         "",

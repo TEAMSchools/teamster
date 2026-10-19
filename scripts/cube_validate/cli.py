@@ -28,6 +28,7 @@ from . import (
     report,
     rows,
     snapshot,
+    trusted,
     workbook,
 )
 
@@ -55,12 +56,17 @@ def _period(checks, arg: str | None, today: dt.date) -> tuple[dt.date, dt.date, 
     return dt.date.fromisoformat(a), dt.date.fromisoformat(b), f"{a[:4]}-{b[2:4]}"
 
 
-def analyze_snapshot(checks, snap) -> tuple[Path, str]:
+def analyze_snapshot(
+    checks, snap, checks_path: Path | str | None = None
+) -> tuple[Path, str]:
     """Phases 3 and 4 on a frozen snapshot. Calls nothing outside the snapshot.
 
     Args:
         checks: The loaded checks file.
         snap: The snapshot to analyze.
+        checks_path: The checks file on disk. With it, trust carries over from
+            the dashboard's last trusted snapshot and this run's own trust is
+            recorded; without it, neither happens.
 
     Returns:
         The report path and the trust line.
@@ -83,26 +89,59 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
         )
         cs, decided = decisions.apply(checks, cs, probes.run(ws, checks, cs))
         samples = handchecks.row_samples(ws, checks)
-        picked = handchecks.pick(cs, samples, seed=snap.dir.name, answers=answers)
+        code = mapping = ""
+        old = None
+        known = None
+        kinds = trusted.kinds(cs, rr)
+        if checks_path is not None:
+            code = trusted.code_fingerprint(Path(__file__).parent)
+            mapping = trusted.mapping_fingerprint(Path(checks_path))
+            old = trusted.read(snap.dir.parent)
+            if trusted.fingerprints_match(old, code, mapping) and old is not None:
+                known = set(old["kinds"])
+        carried = trusted.carries(old, code, mapping, kinds, checks.dashboard)
+        picked = handchecks.pick(
+            cs, samples, seed=snap.dir.name, answers=answers, known=known
+        )
     handchecks.write(
         snap.analysis,
         picked,
         (m.get("review_copy") or {}).get("name", ""),
         answers,
-        handchecks.uncovered(cs, samples, picked),
+        [
+            u
+            for u in handchecks.uncovered(cs, samples, picked)
+            if u not in (known or ())
+        ],
     )
     results = handchecks.read_results(snap.analysis / "hand_checks.yml")
     cover = coverage.lines(checks, cs, rr, twb) if checks.must_cover else None
+    from_snap = old["snapshot"] if carried and old else None
     text = report.render(
-        checks, m, rr, cs, results, twb, answers, decided, coverage=cover
+        checks,
+        m,
+        rr,
+        cs,
+        results,
+        twb,
+        answers,
+        decided,
+        coverage=cover,
+        carried_from=from_snap,
     )
     path = snap.analysis / "report.md"
     path.write_text(text)
-    return path, report.trust(
+    line = report.trust(
         {**(m.get("invariants") or {}), **rr.invariants},
         results,
         report.compared(cs),
+        carried_from=from_snap,
     )
+    if checks_path is not None and line.startswith("Trusted for this run"):
+        trusted.record(
+            snap.dir.parent, snap.dir.name, code, mapping, kinds, checks.dashboard
+        )
+    return path, line
 
 
 def _twb_text(snap) -> str:
@@ -378,7 +417,7 @@ def _run(checks, args) -> int:
         invariants={**(m.get("invariants") or {}), "capture completeness": True},
     )
     snapshot.write_manifest(snap, m)
-    path, trust = analyze_snapshot(checks, snap)
+    path, trust = analyze_snapshot(checks, snap, args.checks)
     print(f"{trust}\nReport: {path}")
     return 0
 
@@ -425,7 +464,7 @@ def _answers(checks, args) -> int:
         _built_at(m["clock_before"], m["clock_tables"]),
     )
     _print_failed_answers(snap)
-    path, trust = analyze_snapshot(checks, snap)
+    path, trust = analyze_snapshot(checks, snap, args.checks)
     print(f"{trust}\nReport: {path}")
     return 0
 
@@ -460,6 +499,6 @@ def main(argv: list[str] | None = None) -> int:
         if args.snapshot
         else snapshot.latest_snapshot(checks.dashboard)
     )
-    path, trust = analyze_snapshot(checks, snap)
+    path, trust = analyze_snapshot(checks, snap, args.checks)
     print(f"{trust}\nReport: {path}")
     return 0
