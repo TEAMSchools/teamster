@@ -438,9 +438,9 @@ Finance and stakeholders, for the 10/26 review:
 
 Data team:
 
-12. Targets sheet structure for self-contained rows (Laz and Charlie).
-13. Tableau Server version: 2020.2 or later for relationships. If older, compute
-    school and network target totals in dbt instead.
+1. Targets sheet structure for self-contained rows (Laz and Charlie).
+2. Tableau Server version: 2020.2 or later for relationships. If older, compute
+   school and network target totals in dbt instead.
 
 ## Left to the builder
 
