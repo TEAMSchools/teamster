@@ -470,3 +470,56 @@ def formulas(twb_text: str) -> dict[str, str]:
         name = (c.get("name") or "").strip("[]")
         out.setdefault(caption_of(c, name), calc.get("formula") or "")
     return out
+
+
+_AGGREGATION = re.compile(r"^(?:[A-Za-z]+\. |Sum of |Average of |Count of )")
+_BRANCH = re.compile(
+    r"\[Parameters\]\.\[([^\]]+)\]\s*=\s*(?:'([^']*)'|\"([^\"]*)\")\s*THEN\s*"
+    r"\[([^\]]+)\]"
+)
+
+
+def measure_formula(
+    twb_text: str, header: str, param: tuple[str, str] | None
+) -> str | None:
+    """The calculation behind an export header.
+
+    A header carries an aggregation word ("Avg. Attendance Metric"); it is
+    stripped only when the whole header is not itself a caption. A selector
+    calculation (an IF/ELSEIF chain on a parameter) resolves to the branch the
+    param value picks.
+
+    Args:
+        twb_text: The workbook XML.
+        header: The measure's export header.
+        param: The parameter caption and the value selected, when a cut sets one.
+
+    Returns:
+        The formula, or "<caption> => <formula>" for the branch the value picks
+        when the formula is a selector; None when no calculation matches.
+    """
+    by_caption = formulas(twb_text)
+    caption = header
+    if caption not in by_caption:
+        caption = _AGGREGATION.sub("", header, count=1)
+    formula = by_caption.get(caption)
+    if formula is None or param is None:
+        return formula
+    root = SafeET.fromstring(twb_text)
+    cols = {
+        (c.get("name") or "").strip("[]"): c
+        for c in root.iter("column")
+        if c.get("name")
+    }
+    want, value = param
+    for pname, a, b, target in _BRANCH.findall(formula):
+        if caption_of(cols.get(pname), pname) != want and pname != want:
+            continue
+        if (a or b) != value:
+            continue
+        col = cols.get(target)
+        calc = col.find("calculation") if col is not None else None
+        if calc is None or not calc.get("formula"):
+            return formula
+        return f"{caption_of(col, target)} => {calc.get('formula')}"
+    return formula

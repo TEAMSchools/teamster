@@ -60,7 +60,7 @@ def _gap_row(tableau: str, cube: float) -> str:
     object.__setattr__(checks, "dashboard", "attendance_dashboard")
     object.__setattr__(checks, "excluded_sheets", {})
     object.__setattr__(checks, "sheets", {})
-    text = report.render(checks, {}, rr, cs, {}, {}, {})
+    text = report.render(checks, {}, rr, cs, {}, "", {})
     return next(line for line in text.splitlines() if line.startswith("| default |"))
 
 
@@ -117,7 +117,8 @@ def test_render_holds_findings_and_suppresses_small_cells():
         rr,
         cs,
         {},
-        {"ADA": "SUM([x])"},
+        "<workbook><column name='[C]' caption='ADA'><calculation class='tableau' "
+        "formula='SUM([x])' /></column></workbook>",
         {cells.answer_key("default", "ADA"): {"sql": "SELECT 1"}},
     )
     assert "Findings (held until the tool is trusted)" in text
@@ -137,7 +138,7 @@ def _render(cs, sheets):
     object.__setattr__(checks, "dashboard", "attendance_dashboard")
     object.__setattr__(checks, "excluded_sheets", {})
     object.__setattr__(checks, "sheets", sheets)
-    return report.render(checks, {}, rr, cs, {}, {}, {})
+    return report.render(checks, {}, rr, cs, {}, "", {})
 
 
 def test_row_gap_lists_its_buckets_once_per_mark_with_small_counts():
@@ -163,6 +164,44 @@ def test_row_gap_lists_its_buckets_once_per_mark_with_small_counts():
         in text
     )
     assert "| default | ADA | School=Rise | match | None | 25 | 12 |" in text
+
+
+def test_formula_gap_section_shows_the_selected_calc():
+    from cube_validate import workbook  # noqa: F401
+
+    twb = (
+        "<workbook><datasources><datasource name='Parameters'>"
+        "<column name='[Parameter 2]' caption='Attendance Metric' /></datasource>"
+        "<datasource name='d'>"
+        "<column name='[Calculation_9]' caption='Is Chronic Absentee'>"
+        "<calculation class='tableau' formula='IF [is_absent] THEN 1 END' /></column>"
+        "<column name='[Calc_1]' caption='Attendance Metric'><calculation "
+        "class='tableau' formula=\"IF [Parameters].[Parameter 2] = 'ADA' THEN "
+        "[is_present] ELSEIF [Parameters].[Parameter 2] = 'Chronic Absenteeism' "
+        'THEN [Calculation_9] END" /></column></datasource></datasources></workbook>'
+    )
+    cs = [
+        cells.Cell(
+            "chronic", "ADA", {}, "Avg. Attendance Metric", "9%", 0.1, cells.FORMULA_GAP
+        )
+    ]
+    rr = rows.RowsResult(
+        totals={"tableau": 0, "cube": 0, "joined": 0},
+        buckets=[],
+        differing_columns={},
+        invariants={},
+    )
+    checks = config.Checks.__new__(config.Checks)
+    object.__setattr__(checks, "dashboard", "d")
+    object.__setattr__(checks, "excluded_sheets", {})
+    object.__setattr__(checks, "sheets", {})
+    object.__setattr__(
+        checks,
+        "cuts",
+        (config.Cut("chronic", params={"Attendance Metric": "Chronic Absenteeism"}),),
+    )
+    text = report.render(checks, {}, rr, cs, {}, twb, {})
+    assert "Is Chronic Absentee => IF [is_absent] THEN 1 END" in text
 
 
 def test_formulas_not_tested_lists_mapped_measures_with_no_clean_cut():

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import collections
 import datetime as dt
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -129,6 +130,24 @@ class BigQuery:
         row = next(iter(job.result()))
         return int(row[0]), row[1]
 
+    def row_hashes(self, table: str, at: dt.datetime) -> collections.Counter:
+        """Each row's hash as of `at` (time travel), counted.
+
+        Returns:
+            A Counter of farm_fingerprint(to_json_string(row)) values.
+        """
+        from google.cloud import bigquery
+
+        job = self.client.query(
+            # trunk-ignore(bandit/B608): the table name comes from BigQuery's own referenced_tables
+            f"select farm_fingerprint(to_json_string(t)) from `{table}` "
+            "for system_time as of @at as t",
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[bigquery.ScalarQueryParameter("at", "TIMESTAMP", at)]
+            ),
+        )
+        return collections.Counter(int(r[0]) for r in job.result())
+
     def modified(self, table: str) -> str:
         """Returns the table's last-modified time as an ISO UTC string."""
         modified = self.client.get_table(table).modified
@@ -208,3 +227,29 @@ def rewritten(bq, before: dict[str, str], tables: list[str]) -> list[str]:
         if not same:
             out.append(t)
     return out
+
+
+def row_diff(bq, table: str, before: str, after: str) -> tuple[int, int]:
+    """Rows in one version of a table and not the other, and the later row count.
+
+    Each version is read 1 second after the modified time the capture recorded.
+
+    Args:
+        bq: A BigQuery with `row_hashes`.
+        table: The table to compare.
+        before: Its modified time at capture start (ISO).
+        after: Its modified time at capture end (ISO).
+
+    Returns:
+        The rows only in the earlier version plus the rows only in the later,
+        and the later version's total rows.
+    """
+    step = dt.timedelta(seconds=1)
+    old = bq.row_hashes(table, dt.datetime.fromisoformat(before) + step)
+    new = bq.row_hashes(table, dt.datetime.fromisoformat(after) + step)
+    return sum((old - new).values()) + sum((new - old).values()), new.total()
+
+
+def changed_rows(bq, table: str, before: str, after: str) -> int:
+    """Rows in one version of a table and not the other (see `row_diff`)."""
+    return row_diff(bq, table, before, after)[0]

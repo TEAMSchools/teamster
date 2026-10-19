@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 
+from . import workbook
 from .cells import COINCIDENTAL, FORMULA_GAP, ORDER, PASS, ROW_GAP, answer_key
 
 SMALL = 10
@@ -96,13 +97,23 @@ def _untested(checks, cells: list) -> list[tuple[str, str]]:
     ]
 
 
+def _formula(twb_text: str, measure: str, params: dict[str, str]) -> str | None:
+    """The measure's calculation, narrowed to the branch a cut's parameter picks."""
+    whole = workbook.measure_formula(twb_text, measure, None)
+    for p in params.items():
+        got = workbook.measure_formula(twb_text, measure, p)
+        if got != whole:
+            return got
+    return whole
+
+
 def render(
     checks,
     manifest: dict,
     rows_result,
     cells: list,
     results: dict,
-    formulas: dict[str, str],
+    twb_text: str,
     answers: dict,
 ) -> str:
     inv = {**(manifest.get("invariants") or {}), **rows_result.invariants}
@@ -177,10 +188,13 @@ def render(
             )
     out += _row_gap_buckets(gaps)
     shown = set()
+    cut_params = {c.id: c.params for c in getattr(checks, "cuts", ())}
     for c in cells:
-        if c.verdict != FORMULA_GAP or (c.sheet, c.measure) in shown:
+        params = cut_params.get(c.cut, {})
+        key = (c.sheet, c.measure, tuple(sorted(params.items())))
+        if c.verdict != FORMULA_GAP or key in shown:
             continue
-        shown.add((c.sheet, c.measure))
+        shown.add(key)
         out += [
             "",
             f"#### Formula gap: {c.sheet} / {c.measure}",
@@ -188,7 +202,7 @@ def render(
             "Workbook formula:",
             "",
             "```text",
-            formulas.get(c.measure, "(no calculation found)"),
+            _formula(twb_text, c.measure, params) or "(no calculation found)",
             "```",
             "",
             "Cube SQL:",

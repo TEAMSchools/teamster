@@ -77,6 +77,34 @@ def test_formulas_maps_captions_to_calculations():
     }
 
 
+_SELECTOR_TWB = (
+    "<workbook><datasources>"
+    "<datasource name='Parameters'>"
+    "<column name='[Parameter 2]' caption='Attendance Metric' datatype='string' />"
+    "</datasource>"
+    "<datasource name='d' caption='D'>"
+    "<column name='[Calculation_9]' caption='Is Chronic Absentee'>"
+    "<calculation class='tableau' formula='IF [is_absent] THEN 1 END' /></column>"
+    "<column name='[Calc_1]' caption='Attendance Metric'><calculation class='tableau' "
+    "formula=\"IF [Parameters].[Parameter 2] = 'ADA' THEN [is_present]\n"
+    "ELSEIF [Parameters].[Parameter 2] = 'Chronic Absenteeism' THEN [Calculation_9]\n"
+    'END" /></column>'
+    "</datasource></datasources></workbook>"
+)
+
+
+def test_measure_formula_follows_the_selector_value():
+    got = workbook.measure_formula(
+        _SELECTOR_TWB,
+        "Avg. Attendance Metric",
+        ("Attendance Metric", "Chronic Absenteeism"),
+    )
+    assert got == "Is Chronic Absentee => IF [is_absent] THEN 1 END"
+    whole = workbook.measure_formula(_SELECTOR_TWB, "Attendance Metric", None)
+    assert whole is not None and "ELSEIF" in whole
+    assert workbook.measure_formula(_SELECTOR_TWB, "Nope", None) is None
+
+
 def test_review_copy_strips_click_filters_from_a_sheet_with_an_escaped_name():
     twb = TWB.replace("Overview - Detail", "Absences &amp; Tardies")
     out = workbook.review_copy(twb, ["Overview"])

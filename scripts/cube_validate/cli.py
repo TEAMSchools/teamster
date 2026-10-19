@@ -68,12 +68,8 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
         snap.analysis / "analysis.hyper", {"tab": snap.extract, "cub": snap.cube}
     ) as ws:
         rr = rows.build(ws, checks, m.get("scope"), _manifest_period(m))
-        base = snap.dir / "base.twb"
-        formats = (
-            workbook.display_formats(base.read_text(encoding="utf-8", newline=""))
-            if base.exists()
-            else {}
-        )
+        twb = _twb_text(snap)
+        formats = workbook.display_formats(twb) if twb else {}
         cs = cells.judge(
             ws,
             checks,
@@ -92,10 +88,7 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
         handchecks.uncovered(cs, samples, picked),
     )
     results = handchecks.read_results(snap.analysis / "hand_checks.yml")
-    forms = (
-        workbook.formulas(workbook.twb_text(snap.twbx)) if snap.twbx.exists() else {}
-    )
-    text = report.render(checks, m, rr, cs, results, forms, answers)
+    text = report.render(checks, m, rr, cs, results, twb, answers)
     path = snap.analysis / "report.md"
     path.write_text(text)
     return path, report.trust(
@@ -103,6 +96,31 @@ def analyze_snapshot(checks, snap) -> tuple[Path, str]:
         results,
         report.compared(cs),
     )
+
+
+def _twb_text(snap) -> str:
+    """The snapshot's workbook XML: base.twb, else the .twbx's, else empty."""
+    base = snap.dir / "base.twb"
+    if base.exists():
+        return base.read_text(encoding="utf-8", newline="")
+    return workbook.twb_text(snap.twbx) if snap.twbx.exists() else ""
+
+
+def _clock_risk(bq, before: dict[str, str], after: dict[str, str]) -> str:
+    """The manifest's clock-risk line: rows changed per moved table."""
+    moved = preflight.changed(before, after)
+    changed, same = [], []
+    for t in moved:
+        n, total = preflight.row_diff(bq, t, before[t], after[t])
+        if n:
+            changed.append(f"{t}: {n} of {total} rows changed")
+        else:
+            same.append(t)
+    if changed:
+        return "; ".join(changed)
+    if same:
+        return f"none (rebuilt with the same rows: {', '.join(same)})"
+    return "none"
 
 
 def _manifest_period(m: dict) -> tuple[dt.date, dt.date] | None:
@@ -344,12 +362,11 @@ def _run(checks, args) -> int:
     capture_cube.capture_answers(cube, snap, checks, m, built)
     _print_failed_answers(snap)
     after = preflight.clock_map(bq, tables)
-    moved = preflight.changed(before, after)
     m.update(
         scope=scope,
         scope_size=len(scope),
         clock_after=after,
-        clock_risk=", ".join(moved) or "none",
+        clock_risk=_clock_risk(bq, before, after),
         cube_refresh=f"{len(parts)} parts, {n} rows",
         invariants={**(m.get("invariants") or {}), "capture completeness": True},
     )

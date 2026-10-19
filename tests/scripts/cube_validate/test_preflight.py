@@ -144,3 +144,24 @@ def test_a_table_bigquery_cannot_read_back_counts_as_changed():
     before = {"old": "2026-07-20T22:16:31+00:00"}
     bq = _Prints(now={"old": (5, 1)}, then={"old": (5, 1)}, fail=["old"])
     assert preflight.rewritten(bq, before, ["old"]) == ["old"]
+
+
+class _Hashes:
+    def __init__(self, *versions):
+        self.versions, self.asked = list(versions), []
+
+    def row_hashes(self, table, at):
+        self.asked.append((table, at))
+        return self.versions.pop(0)
+
+
+def test_changed_rows_counts_both_sides():
+    import collections
+
+    bq = _Hashes(collections.Counter({1: 1, 2: 1}), collections.Counter({1: 1, 3: 1}))
+    got = preflight.changed_rows(
+        bq, "t", "2026-10-16T22:16:23+00:00", "2026-10-16T22:18:00+00:00"
+    )
+    assert got == 2
+    assert bq.asked[0][1] == dt.datetime(2026, 10, 16, 22, 16, 24, tzinfo=dt.UTC)
+    assert bq.asked[1][1] == dt.datetime(2026, 10, 16, 22, 18, 1, tzinfo=dt.UTC)
