@@ -16,11 +16,11 @@ or mart `facts`/`dimensions`/`bridges`) —
 opaque token.
 
 - **This server targets a branch deployment via a `deployment` arg**, omitted
-  for prod — `launch_multiple_runs`, `get_run_compute_logs`, and
-  `get_captured_logs_metadata` all accept it. List the branch deployments with
-  `mcp__dagster-plus__list_deployments` and `deployment_type="branch"`. The
-  names are opaque hashes, so map a specific PR to its hash from that PR's
-  `deploy` job log line `Deploying to branch deployment <hash>` (job id from the
+  for prod — `get_run_compute_logs` and `get_captured_logs_metadata` both accept
+  it. List the branch deployments with `mcp__dagster-plus__list_deployments` and
+  `deployment_type="branch"`. The names are opaque hashes, so map a specific PR
+  to its hash from that PR's `deploy` job log line
+  `Deploying to branch deployment <hash>` (job id from the
   `dagster-cloud-deploy / deploy` check-run `details_url` `/job/<id>`, then
   `gh api repos/<owner>/<repo>/actions/jobs/<id>/logs`). A dormant branch
   deployment throws `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on
@@ -33,13 +33,14 @@ opaque token.
   rematerialized — including view models (distinct from the data-change
   condition, which skips views) — within minutes of the post-merge location
   deploy. To confirm a rollout landed: `get_location_load_history` (new commit
-  LOADED) → `list_runs` / `get_asset_materializations` for the asset. A
-  materialization after the merge is not proof: a sensor run queued just before
-  the reload runs on the OLD image, records the old `dagster/code_version`, and
-  nothing re-triggers it. Check that run's `dagster/image` tag
-  (`mcp__dagster-plus__get_run`) names the new commit, or compare its code
-  version with a sibling district built from the same package model. On a
-  mismatch, launch the asset once with `mcp__dagster-plus__launch_asset_run`.
+  LOADED) → `mcp__dagster-plus__list_runs` / `get_asset_materializations` for
+  the asset. A materialization after the merge is not proof: a sensor run queued
+  just before the reload runs on the OLD image, records the old
+  `dagster/code_version`, and nothing re-triggers it. Check that run's
+  `dagster/image` tag (`mcp__dagster-plus__get_run`) names the new commit, or
+  compare its code version with a sibling district built from the same package
+  model. On a mismatch, launch the asset once with
+  `mcp__dagster-plus__launch_asset_run`.
 - **Schedule/sensor-launched runs report no asset selection**; recover it from
   the `ASSET_MATERIALIZATION_PLANNED` events on page 1 of
   `mcp__dagster-plus__get_run_logs` (`.claude/context/dagster-plus.md`). A
@@ -53,15 +54,9 @@ opaque token.
 - A running backfill's `get_backfill` `status` can read `REQUESTED` with empty
   `partitionStatusCounts` while its partition runs already execute — use
   `get_asset_partition_statuses` on the backfilled asset for real progress.
-- `mcp__dagster__launch_multiple_runs` requires non-empty `asset_keys` per run —
-  jobName alone won't queue. Resolve null-`assetSelection` failures to asset
-  keys first.
 - Launch a **partitioned** asset with `mcp__dagster-plus__launch_asset_run` and
-  its explicit `partition` argument; this server's `launch_run` is denied, and
-  it had no partition arg (the partition went in
-  `tags={"dagster/partition": "<key>"}`). The key must match the asset's
-  `partitions_def` fmt (e.g. `DailyPartitionsDefinition` `%m/%d/%Y` →
-  `05/11/2026`).
+  its `partition` argument. The key must match the asset's `partitions_def` fmt
+  (e.g. `DailyPartitionsDefinition` `%m/%d/%Y` → `05/11/2026`).
 - A run-level **SUCCESS can still carry a FAILED asset check** (e.g.
   `zero_api_errors`) that fired an alert — `list_runs(status="FAILURE")` and
   day2 step_01 both miss it; check `get_asset_check_executions` (day2 step_16).

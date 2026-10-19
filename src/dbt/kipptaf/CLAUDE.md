@@ -216,11 +216,10 @@ already, so daily passes BigQuery's 4,000-partition cap inside a decade. See
 
 **Miami is the exception, deliberately.** Focus is Miami's sole enrollment
 source and has no placeholder equivalent, so the Focus cutover removed Miami's
-1,002 placeholder rows (420 students, AY2022-AY2025) — from the spine in #4775
-and from `base_powerschool__student_enrollments` in #4868. The
-retain-graduate-placeholder rule below still binds the three NJ regions. Do not
-"restore" Miami placeholders by reviving the frozen archive branch; that was
-decided against on 2026-08-14.
+placeholder rows from the spine and from
+`base_powerschool__student_enrollments`. The retain-graduate-placeholder rule
+below still binds the three NJ regions. Do not "restore" Miami placeholders by
+reviving the frozen archive branch; that was decided against.
 
 **Point-in-time enrollment headcount uses entry/exit dates, not
 `enroll_status`.** `count_students` on the `student_attendance_enrollment_daily`
@@ -232,12 +231,11 @@ inside a stint, break days included, so any date resolves for every school.
 
 **Each stint's day window is clamped to its school's academic year, and that
 clamp is load-bearing.** PowerSchool rolls NJ stints over on 1 July while Focus
-dates Miami stints to the real first day of school (19,979 Newark July entries
-against 2,955 Miami August entries, AY2024-26). An unclamped window would report
-Newark at roughly 20,000 students in mid-July against almost no Miami students,
-purely from a source-system date convention. Clamping to the school year makes
-any calendar date comparable across regions; mid-July correctly returns nobody
-anywhere.
+dates Miami stints to the real first day of school. An unclamped window would
+report Newark at roughly 20,000 students in mid-July against almost no Miami
+students, purely from a source-system date convention. Clamping to the school
+year makes any calendar date comparable across regions; mid-July correctly
+returns nobody anywhere.
 
 **Miami is present across history on
 `fct_student_attendance_enrollment_daily`.** Its rows come from
@@ -344,54 +342,9 @@ flips).
 
 ## dbt Cloud CI
 
-CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
-defers to Staging environment.
-
-A refactor touching many models pulls them into `state:modified+`, so CI builds
-models it has never built — expect latent `severity: error` failures unrelated
-to your change (a 56-file sweep surfaced 5 duplicate PKs sitting in prod). Query
-prod for the same count before assuming you caused it, and budget for triage
-when scoping a wide sweep.
-
-`state:modified+` is branch-vs-deferred-environment, NOT commit-vs-commit. A
-docs-only or `.md`-only push to a branch that already modifies dbt models
-re-runs the whole selection — measured at 918 relations and ~4.5 min on a
-13-file PR whose last commit touched only `.md`. Batch doc commits before
-pushing, or land them in a separate PR. Verify what a run actually built with
-`creation_time` in `region-us.INFORMATION_SCHEMA.TABLES` filtered to
-`dbt_cloud_pr_<job>_<pr>%` — step duration and warning counts are both weak
-proxies.
-
-`Clone - Staging (Modified)` clones only `state:modified` models, not their
-parents. When CI fails on a stale staging defer table for an unmodified upstream
-(column missing after a recent merge), trigger the full `Clone - Staging` job —
-or `dbt clone --select <upstream>` against staging. Trigger via
-`mcp__dbt__trigger_job_run` with the `Clone - Staging (On-Demand)` job ID from
-`mcp__dbt__list_jobs` (~5 min run); after success, empty-commit + push
-re-triggers Build - CI.
-
-`Clone - Staging` refreshes only kipptaf-level relations — NOT district-level
-`zz_stg_kipp<district>_*`. A CI orphan / row-count delta that reconciles exactly
-against per-district prod-vs-`zz_stg` gaps is that staleness, not your change;
-re-running Clone - Staging won't fix it.
-
-Distinct from stale staging defer — **stale per-PR shadow**: a model that was
-`state:modified` in an earlier run (e.g. before the branch merged `main`) but is
-now unmodified leaves a stale copy in the per-PR schema
-(`dbt_cloud_pr_<job>_<pr>_<schema>`, one dataset per dbt custom schema). dbt
-prefers an existing same-schema relation over the staging defer, so consumers
-fail `Name <col> not found` even when `zz_stg_*` has the column. Confirm via
-`INFORMATION_SCHEMA.COLUMNS` on the per-PR vs `zz_stg_*` schema, then drop the
-stale per-PR relation (match `drop view`/`drop table` to its type) — or
-`drop schema ... cascade` the whole `dbt_cloud_pr_<job>_<pr>_*` set to avoid
-model-by-model whack-a-mole — and re-run. Claude is DDL-blocked (BQ MCP / `bq`
-are SELECT-only), so hand the drops to the user.
-
-Re-triggering Build - CI: prefer `mcp__dbt__retry_job_run(run_id=<failed run>)`
-— it retries the _existing_ run, keeping the PR-schema override
-(`trigger_job_run` loses it; that's why the fallback is empty-commit + push).
-After changing external state, use a fresh build instead (`pr-ci-review` → dbt
-Cloud CI state comparison).
+CI builds this project alone, with `state:modified+` against the Staging
+environment. Its selection, retries, and stale staging or per-PR copies are in
+the `pr-ci-review` skill; seeding district copies for one PR is below.
 
 ## Single-PR cross-project workflow
 
@@ -402,18 +355,20 @@ touching both a district model and a kipptaf consumer:
    `zz_stg_<district>_<source>`).
 2. From each affected district project, run broad clone (no `--select`):
    `uv run dbt clone --project-dir <worktree>/src/dbt/<district> --target staging --state /workspaces/teamster/src/dbt/<district>/target/prod`
-   to seed `zz_stg_<district>_*` from prod. The state path is absolute: a
-   worktree has no `target/prod/` (see `dbt-local-dev`).
+   to seed `zz_stg_<district>_*` from prod. This is a shared write: follow
+   _Shared staging writes_ in `.claude/rules/dbt-yaml.md`. Absolute `--state`
+   and the clone's silent skips: `dbt-local-dev`.
 3. Push; CI reads staged regional via the schema branch.
 
 `dbt clone` only seeds upstreams UNCHANGED in this PR (it copies prod schema).
 For district/package models you MODIFIED, clone gives the OLD schema — instead
 `stage_external_sources --target staging` their externals, then
-`dbt build --select <model> --target staging` into `zz_stg_`. Also clone+build
-`zz_stg_kipptaf` itself — under `--target staging` kipptaf reads its own models
-from there. Seed EVERY district that unions into the kipptaf model (e.g.
-`kipppaterson`, which feeds `stg_pearson__njsla`/`_science` via its own
-`int_pearson__*`, not the package `stg_*`).
+`uv run dbt build --select <model> --target staging` into `zz_stg_`. Also
+clone+build `zz_stg_kipptaf` itself — under `--target staging` kipptaf reads its
+own models from there. Each of these is a shared write under the same rule. Seed
+EVERY district that unions into the kipptaf model (e.g. `kipppaterson`, which
+feeds `stg_pearson__njsla`/`_science` via its own `int_pearson__*`, not the
+package `stg_*`).
 
 Alternative to the two-PR pattern in `.claude/rules/dbt-models.md`.
 
@@ -421,7 +376,8 @@ Alternative to the two-PR pattern in `.claude/rules/dbt-models.md`.
 
 When a kipptaf `union_relations` wrapper's `zz_stg` defer copy is wider than
 current (e.g. a district lags a column-drop rollout, so the prod-cloned copy
-still carries the dropped column), rebuild the wrapper `--target staging`:
+still carries the dropped column), rebuild the wrapper `--target staging` (a
+shared write: _Shared staging writes_ in `.claude/rules/dbt-yaml.md`):
 `union_relations` recomputes the column intersection from the CURRENT district
 `zz_stg` sources, yielding a corrected (narrow) copy — no prod rematerialization
 and no waiting on the lagging district. Used to unblock CI on a downstream
