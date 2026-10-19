@@ -140,8 +140,8 @@ class BigQuery:
 
         job = self.client.query(
             # trunk-ignore(bandit/B608): the table name comes from BigQuery's own referenced_tables
-            f"select farm_fingerprint(to_json_string(t)) from `{table}` "
-            "for system_time as of @at as t",
+            f"select farm_fingerprint(to_json_string(t)) from `{table}` as t "
+            "for system_time as of @at",
             job_config=bigquery.QueryJobConfig(
                 query_parameters=[bigquery.ScalarQueryParameter("at", "TIMESTAMP", at)]
             ),
