@@ -22,6 +22,12 @@ RESERVED = (
     "unexplained",
 )
 ALL = "(All)"
+DECISION_OWNERS = ("dashboard", "cube", "accepted")
+# Checks-file sections that describe findings, not the Tableau-to-Cube mapping,
+# so editing one does not change the mapping's fingerprint.
+MAPPING_EXCLUDED = ("causes", "decisions", "must_cover", "probes")
+# Marks a key absent from the checks file while loading, apart from an explicit null.
+MISSING = object()
 # Minutes past each hour when the dashboard's scheduled refreshes sign in; the
 # checks file's tableau_quiet_minutes overrides it per dashboard.
 DEFAULT_QUIET = (0, 10)
@@ -117,6 +123,46 @@ class Cause:
 
 
 @dataclass(frozen=True)
+class MustCover:
+    """A measure the dashboard owner needs Cube to answer, and where it maps."""
+
+    name: str
+    source: str
+    # (member, view); None when Cube has no such member yet.
+    cube: tuple[str, str] | None
+    column: str
+    # (caption, value) of the selector that picks this measure, if any.
+    param: tuple[str, str] | None
+    # Names from rows.compare that explain this measure's row-level gaps.
+    rows: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class Probe:
+    """A pair of SQL texts over the extract that test one suspected formula gap."""
+
+    id: str
+    measure: str
+    param: tuple[str, str] | None
+    dashboard: str
+    candidate: str
+
+
+@dataclass(frozen=True)
+class Decision:
+    """Who owns a formula gap on a mapped measure, and the rule behind it."""
+
+    measure: str
+    param: tuple[str, str] | None
+    owner: str
+    rule: str
+    probe: str | None
+    cuts: tuple[str, ...]
+    sheets: tuple[str, ...]
+    task: str
+
+
+@dataclass(frozen=True)
 class CubeRows:
     view: str
     date: str
@@ -153,6 +199,9 @@ class Checks:
     # The dashboard's own filter values, applied to every cut before its filters.
     # A card may start on several values; a cut's own filter replaces them all.
     defaults: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    must_cover: tuple[MustCover, ...] = ()
+    probes: tuple[Probe, ...] = ()
+    decisions: tuple[Decision, ...] = ()
 
 
 def side_sql(expr: str, prefix: str) -> str:
@@ -244,6 +293,161 @@ def _unique_slugs(kind: str, names: list[str]) -> None:
                 f"{kind} {seen[s]} and {n} share the export name {s}; rename one"
             )
         seen[s] = n
+
+
+def _measure(v) -> str | None:
+    """A selector value's measure; absent and null both store None."""
+    return None if v is MISSING else v
+
+
+def _pair(v: dict | None, where: str) -> tuple[str, str] | None:
+    """A `{caption: value}` single pair, or None when absent."""
+    if not v:
+        return None
+    if not isinstance(v, dict) or len(v) != 1:
+        raise ConfigError(f"{where}: param must be a single {{caption: value}} pair")
+    ((cap, val),) = v.items()
+    return (str(cap), str(val))
+
+
+def _mapped(
+    column: str,
+    param: tuple[str, str] | None,
+    sheets: dict[str, SheetMap],
+    params: dict[str, dict[str, ParamValue]],
+) -> list[tuple[str, str | None, str]]:
+    """(sheet, member, view) for the sheets exporting this measure header."""
+    out = []
+    for sm in sheets.values():
+        m = sm.measures.get(column)
+        if m is None:
+            continue
+        pv = None
+        if param and m.param == param[0]:
+            pv = params.get(param[0], {}).get(param[1])
+        if pv is not None:
+            out.append((sm.name, pv.measure, pv.view or sm.view))
+        else:
+            out.append((sm.name, m.cube, sm.view))
+    return out
+
+
+def _must_cover(
+    d: dict,
+    sheets: dict[str, SheetMap],
+    params: dict[str, dict[str, ParamValue]],
+    compare: tuple[Expr, ...],
+) -> tuple[MustCover, ...]:
+    names = {e.name for e in compare}
+    out = []
+    for i, e in enumerate(d.get("must_cover") or []):
+        where = f"must_cover[{i}]"
+        name = str(_req(e, "name", where))
+        t = _req(e, "tableau", where)
+        column = str(_req(t, "column", f"{where}.tableau"))
+        param = _pair(t.get("param"), f"{where}.tableau")
+        c = e.get("cube")
+        cube = (
+            (
+                str(_req(c, "member", f"{where}.cube")),
+                str(_req(c, "view", f"{where}.cube")),
+            )
+            if c
+            else None
+        )
+        rows = tuple(str(r) for r in (e.get("rows") or ()))
+        for r in rows:
+            if r not in names:
+                raise ConfigError(
+                    f"must_cover {name}: rows names {r}, not in rows.compare"
+                )
+        if cube is not None:
+            for sheet, member, view in _mapped(column, param, sheets, params):
+                if member is not None and (member, view) != cube:
+                    raise ConfigError(
+                        f"must_cover {name}: cube {cube[0]} on {cube[1]} differs "
+                        f"from {member} on {view}, which sheet {sheet} maps "
+                        f"{column} to"
+                    )
+        out.append(
+            MustCover(name, str(_req(e, "source", where)), cube, column, param, rows)
+        )
+    return tuple(out)
+
+
+def _probes(d: dict) -> tuple[Probe, ...]:
+    out = []
+    for i, p in enumerate(d.get("probes") or []):
+        where = f"probes[{i}]"
+        out.append(
+            Probe(
+                str(_req(p, "id", where)),
+                str(_req(p, "measure", where)),
+                _pair(p.get("param"), where),
+                str(_req(p, "dashboard", where)),
+                str(_req(p, "candidate", where)),
+            )
+        )
+    if len({p.id for p in out}) != len(out):
+        raise ConfigError("probe ids must be unique")
+    return tuple(out)
+
+
+def _decisions(
+    d: dict,
+    sheets: dict[str, SheetMap],
+    params: dict[str, dict[str, ParamValue]],
+    probes: tuple[Probe, ...],
+    cuts: tuple[Cut, ...],
+) -> tuple[Decision, ...]:
+    probe_ids = {p.id for p in probes}
+    out = []
+    for i, e in enumerate(d.get("decisions") or []):
+        where = f"decisions[{i}]"
+        measure = str(_req(e, "measure", where))
+        param = _pair(e.get("param"), where)
+        if not any(measure in sm.measures for sm in sheets.values()):
+            raise ConfigError(f"{where}: {measure} is not a mapped sheet measure")
+        if param and not any(
+            sm.measures[measure].param == param[0]
+            and param[1] in params.get(param[0], {})
+            for sm in sheets.values()
+            if measure in sm.measures
+        ):
+            raise ConfigError(
+                f"{where}: {param[1]} is not a listed {param[0]} value for {measure}"
+            )
+        owner = e.get("owner")
+        if owner not in DECISION_OWNERS:
+            raise ConfigError(
+                f"{where}: owner must be one of {', '.join(DECISION_OWNERS)}"
+            )
+        probe = e.get("probe")
+        if probe is not None and probe not in probe_ids:
+            raise ConfigError(f"{where}: probe {probe} is not under probes")
+        dcuts = tuple(str(c) for c in (e.get("cuts") or ()))
+        dsheets = tuple(str(s) for s in (e.get("sheets") or ()))
+        if owner == "accepted" and not (dcuts or dsheets):
+            raise ConfigError(f"{where}: an accepted decision needs cuts or sheets")
+        for c in dcuts:
+            if c not in {x.id for x in cuts}:
+                raise ConfigError(f"{where}: cut {c} is not under cuts")
+        for s in dsheets:
+            if s not in sheets:
+                raise ConfigError(f"{where}: sheet {s} is not under sheets")
+        out.append(
+            Decision(
+                measure,
+                param,
+                owner,
+                str(_req(e, "rule", where)),
+                None if probe is None else str(probe),
+                dcuts,
+                dsheets,
+                str(e.get("task") or ""),
+            )
+        )
+    return tuple(out)
 
 
 def _cost_cap(d: dict) -> float:
@@ -348,12 +552,16 @@ def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
                 (pv or {}).get("tableau"),
                 (pv or {}).get("cube_column"),
                 tuple((pv or {}).get("cube_filters") or ()),
-                (pv or {}).get("measure"),
+                _measure((pv or {}).get("measure", MISSING)),
                 (pv or {}).get("view"),
                 {str(k): str(x) for k, x in ((pv or {}).get("rename") or {}).items()},
             )
             for val, pv in (vals or {}).items()
         }
+        for cap, vals in (d.get("params") or {}).items()
+    }
+    raw_params = {
+        cap: {str(val): pv or {} for val, pv in (vals or {}).items()}
         for cap, vals in (d.get("params") or {}).items()
     }
     for s, sm in sheets.items():
@@ -363,7 +571,7 @@ def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
             if m.param not in params:
                 raise ConfigError(f"sheets.{s}.measures.{h}: no param {m.param}")
             for val, pv in params[m.param].items():
-                if not pv.measure:
+                if "measure" not in raw_params[m.param][val]:
                     # the default member would be compared under this value
                     raise ConfigError(
                         f"params.{m.param}.{val}: {s}/{h} swaps on it, so it needs a measure"
@@ -396,6 +604,9 @@ def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
                     f"{where}: Cube column {col} is not in cube.members, "
                     "so capture never fetches it"
                 )
+    probes = _probes(d)
+    must_cover = _must_cover(d, sheets, params, compare)
+    decisions = _decisions(d, sheets, params, probes, cuts)
     quiet = d.get("tableau_quiet_minutes") or DEFAULT_QUIET
     return Checks(
         dashboard=_req(d, "dashboard"),
@@ -435,4 +646,7 @@ def load_checks(path: str | Path, *, for_plan: bool = False) -> Checks:
             str(k): str(v) for k, v in (d.get("excluded_sheets") or {}).items()
         },
         defaults=defaults,
+        must_cover=must_cover,
+        probes=probes,
+        decisions=decisions,
     )

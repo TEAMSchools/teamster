@@ -285,3 +285,131 @@ def test_a_measure_cannot_name_an_unknown_parameter(tmp_path):
     over["params"] = {}
     with pytest.raises(config.ConfigError, match="param Metric"):
         config.load_checks(_write(tmp_path, **over))
+
+
+def _coverage(**over):
+    """Overrides for a sheet whose measure swaps on a parameter, plus the 3 new sections."""
+    sheets = {
+        "S": {
+            "measures": {
+                "Avg. Attendance Metric": {
+                    "cube": "avg_daily_attendance",
+                    "param": "Attendance Metric",
+                }
+            }
+        }
+    }
+    params = {
+        "Attendance Metric": {
+            "Chronic Absenteeism": {"measure": "pct_chronically_absent", "view": "pv"},
+            "On-Time": {"measure": "pct_ontime"},
+        }
+    }
+    must_cover = [
+        {
+            "name": "Percent Chronic Absenteeism",
+            "source": "https://example.test/1",
+            "cube": {"member": "pct_chronically_absent", "view": "pv"},
+            "tableau": {
+                "column": "Avg. Attendance Metric",
+                "param": {"Attendance Metric": "Chronic Absenteeism"},
+            },
+            "rows": [],
+        }
+    ]
+    probes = [
+        {
+            "id": "chronic-probe",
+            "measure": "Avg. Attendance Metric",
+            "param": {"Attendance Metric": "Chronic Absenteeism"},
+            "dashboard": "select 1 from {extract} where {where}",
+            "candidate": "select 2 from {extract} where {where}",
+        }
+    ]
+    decisions = [
+        {
+            "measure": "Avg. Attendance Metric",
+            "param": {"Attendance Metric": "Chronic Absenteeism"},
+            "owner": "dashboard",
+            "rule": "The dashboard drops transfers.",
+            "probe": "chronic-probe",
+            "task": "",
+        }
+    ]
+    data = {
+        "sheets": sheets,
+        "params": params,
+        "must_cover": must_cover,
+        "probes": probes,
+        "decisions": decisions,
+    }
+    data.update(over)
+    return data
+
+
+def test_must_cover_probes_and_decisions_load(tmp_path):
+    c = config.load_checks(_write(tmp_path, **_coverage()))
+    assert c.must_cover == (
+        config.MustCover(
+            name="Percent Chronic Absenteeism",
+            source="https://example.test/1",
+            cube=("pct_chronically_absent", "pv"),
+            column="Avg. Attendance Metric",
+            param=("Attendance Metric", "Chronic Absenteeism"),
+            rows=(),
+        ),
+    )
+    assert c.probes[0].param == ("Attendance Metric", "Chronic Absenteeism")
+    assert c.probes[0].id == "chronic-probe"
+    d = c.decisions[0]
+    assert (d.owner, d.probe, d.cuts, d.sheets, d.task) == (
+        "dashboard",
+        "chronic-probe",
+        (),
+        (),
+        "",
+    )
+    assert "decisions" in config.MAPPING_EXCLUDED
+
+
+def test_a_must_cover_member_must_match_the_mapping(tmp_path):
+    over = _coverage()
+    over["must_cover"][0]["cube"]["member"] = "pct_ontime"
+    with pytest.raises(config.ConfigError, match="must_cover.*pct_ontime"):
+        config.load_checks(_write(tmp_path, **over))
+
+
+def test_a_must_cover_row_name_must_be_a_compare_name(tmp_path):
+    over = _coverage()
+    over["must_cover"][0]["rows"] = ["nope"]
+    with pytest.raises(config.ConfigError, match="must_cover.*nope"):
+        config.load_checks(_write(tmp_path, **over))
+
+
+def test_a_decision_needs_a_mapped_measure_and_value(tmp_path):
+    over = _coverage()
+    over["decisions"][0]["param"] = {"Attendance Metric": "Nope"}
+    with pytest.raises(config.ConfigError, match="decisions.*Nope"):
+        config.load_checks(_write(tmp_path, **over))
+
+
+def test_a_dashboard_or_cube_decision_names_a_known_probe(tmp_path):
+    over = _coverage()
+    over["decisions"][0]["probe"] = "missing"
+    with pytest.raises(config.ConfigError, match="decisions.*missing"):
+        config.load_checks(_write(tmp_path, **over))
+    over = _coverage()
+    over["decisions"][0].update(owner="accepted", probe=None)
+    with pytest.raises(config.ConfigError, match="accepted"):
+        config.load_checks(_write(tmp_path, **over))
+    over["decisions"][0]["sheets"] = ["S"]
+    c = config.load_checks(_write(tmp_path, **over))
+    assert c.decisions[0].sheets == ("S",)
+
+
+def test_a_selector_value_may_carry_a_null_measure(tmp_path):
+    over = _metric({"HS Alt": {"measure": None}})
+    c = config.load_checks(_write(tmp_path, **over))
+    assert c.params["Metric"]["HS Alt"].measure is None
+    with pytest.raises(config.ConfigError, match="needs a measure"):
+        config.load_checks(_write(tmp_path, **_metric({"HS Alt": {"view": "p"}})))
