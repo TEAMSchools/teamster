@@ -258,6 +258,8 @@ When summarizing the conversation, always preserve:
   verbatim error messages.
 - Dead ends already tried, gotchas discovered, and workarounds applied this
   session.
+- Corrected conclusions in their corrected form only, with one line naming what
+  they replaced. Never carry both versions forward.
 - During plan execution (executing-plans or subagent-driven-development): the
   plan file path, the ledger path, which tasks are complete, and that execution
   continues through every remaining task without check-ins. The next step names
