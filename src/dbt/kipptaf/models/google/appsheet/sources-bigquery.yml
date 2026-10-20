@@ -104,15 +104,17 @@ sources:
                 - google
                 - appsheet
                 - src_kfwd_career_conversations__output
+  # Separate source name from google_appsheet so the
+  # bigquery_table_modified_sensor, whose asset selection is built from
+  # source_name == google_appsheet, does not watch these relations.
   - name: google_appsheet_frozen
     schema: kipptaf_appsheet
     description: >
       Frozen relations in the live AppSheet dataset that nothing writes to any
-      more but a dashboard still reads. Separate source name from
-      google_appsheet so the bigquery_table_modified_sensor, whose asset
-      selection is built from source_name == google_appsheet, does not watch
-      them.
+      more but a dashboard still reads.
     tables:
+      # Not the disabled dbt snapshot snapshot_stipend_and_bonus__output in
+      # snapshots/google_appsheet.yml: different name, different dataset.
       - name: snapshot__stipend_and_bonus__output
         description: >
           Last snapshot of the stipend and bonus app's output table, read
