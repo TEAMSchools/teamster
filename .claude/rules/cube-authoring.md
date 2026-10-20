@@ -450,23 +450,25 @@ enrolled calendar day, break days included, so any date resolves — no anchor
 flag, and none available. Pin `attendance_date`, not `dates_date_day` (see the
 partition-pruning rule above).
 
-**Multi-stage measures are viable on both attendance facts, the daily one
-included.** `add_group_by` (nested aggregates: a per-school ratio summed or
+**Nested-aggregate and rank multi-stage measures are viable on both attendance
+facts, the daily one included.** `add_group_by` (a per-school ratio summed or
 averaged across schools) and `type: rank` with `reduce_by` both return within a
-few seconds over every academic year of
-`fct_student_attendance_enrollment_daily`, well inside the Cube MCP server's
-55-second poll deadline. The cost is slot time, not latency: Cube's compiled
-multi-stage SQL burns many times the slot time of the equivalent hand-written
-query. So precompute in dbt for cost when a value is a fixed period-end figure
-read often, and reach for multi-stage when the second aggregation level depends
-on the query's own slice. Use `add_group_by`/`reduce_by`; the `grain` parameter
-in current Cube docs replaces them, but check it against the deployed Cube
-version before relying on it.
+few seconds over five academic years of
+`fct_student_attendance_enrollment_daily` on a local Cube server, well inside
+the Cube MCP server's 55-second poll deadline. Other multi-stage types
+(`time_shift`, `group_by` percent-of-total) are untested here. The cost is slot
+time, not latency: Cube's compiled multi-stage SQL burns many times the slot
+time of the equivalent hand-written query. So precompute in dbt for cost when a
+value is a fixed period-end figure read often, and reach for multi-stage when
+the second aggregation level depends on the query's own slice. Use
+`add_group_by`/`reduce_by`; the `grain` parameter in current Cube docs replaces
+them, but check it against the deployed Cube version before relying on it.
 
-Multi-stage has a modelling limit that performance does not change: one measure
-cannot combine a total over a date range with a value pinned to the range's last
-date (for example, membership days to date plus students enrolled on that date).
-Such a measure needs its inputs precomputed on a dbt row.
+Untested: one measure that combines a total over a date range with a value
+pinned to the range's last date (for example, membership days to date plus
+students enrolled on that date). A `rolling_window` measure with
+`trailing: 1 day` may express the pinned value; prototype it before deciding to
+precompute those inputs on a dbt row.
 
 The catch with a second aggregation level is semantic: a mean-of-school-rates
 measure beside the pooled `pct_chronically_absent` puts two different network
