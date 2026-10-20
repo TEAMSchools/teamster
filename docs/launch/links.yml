@@ -364,8 +364,7 @@
 
 # Report Cards and Transcripts — one Drive folder per region, rendered as the
 # `report_cards_and_transcripts` family in groups.yml. All four sit in one
-# shared drive, restricted to named staff and Workspace groups; none is
-# link-shared.
+# shared drive that staff can view; none is link-shared.
 
 - id: report_cards_and_transcripts_camden
   name: Camden Report Cards and Transcripts

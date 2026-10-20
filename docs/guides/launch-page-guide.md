@@ -81,11 +81,6 @@ So for anything with a `google-*` system:
 **If you find one that is link-shared, do not add it.** Flag it instead. That is
 a live exposure to fix at the source, not something to document.
 
-**A Drive folder is checked at the folder you link.** Sharing adds up down the
-tree, so a subfolder can be shared more widely than its parent but never less.
-For a region family of folders, open each regional folder's Share dialog, not
-just the parent's.
-
 **AppSheet apps need this twice.** An AppSheet app has its own access setting,
 _and_ it reads from a backing Google Sheet with separate sharing. Both have to
 require sign-in. Open the app, then open the Sheet behind it, and check each.
