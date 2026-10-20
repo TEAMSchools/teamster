@@ -21,7 +21,7 @@ _PROGRAMS = {"SLA": "NJSLA", "GPA": "NJGPA"}
 _STATE_ID_RE = re.compile(r"Student ID:\s*(\d{10})")
 _DOB_RE = re.compile(r"Date of Birth:\s*(\d{2}/\d{2}/\d{2})")
 _GRADE_RE = re.compile(r"ENROLLED GRADE:\s*(\d+)")
-_NAME_RE = re.compile(r"\n([^\n]+)\n\s*ENROLLED GRADE:")
+_NAME_LINE_RE = re.compile(r"^([^\r\n]*?)[ \t]*ENROLLED GRADE:", re.MULTILINE)
 _NOT_TESTED_RE = re.compile(r"NOT TESTED", re.IGNORECASE)
 
 _SUBJECT_MARKERS = (
@@ -124,6 +124,24 @@ def _page_seqs(source: SourceFile, pages: list[str]) -> list[int]:
     return resolved
 
 
+def _printed_name(text: str) -> str:
+    """Read the printed name that sits before the first "ENROLLED GRADE:" label.
+
+    The name is the text before the label on the same line. When that is empty,
+    it is the nearest non-empty line above.
+    """
+    match = _NAME_LINE_RE.search(text)
+
+    if match is None:
+        return ""
+
+    if same_line := match[1].strip():
+        return same_line
+
+    above = [line.strip() for line in text[: match.start()].splitlines()]
+    return next((line for line in reversed(above) if line), "")
+
+
 def _parse_dob(name: str, seq: int, text: str) -> date | None:
     match = _DOB_RE.search(text)
 
@@ -150,7 +168,6 @@ def _build_record(
             "expected exactly 1 (a state ID is 10 digits after 'Student ID:')"
         )
 
-    name_match = _NAME_RE.search(text)
     grade_match = _GRADE_RE.search(text)
 
     return Record(
@@ -159,7 +176,7 @@ def _build_record(
         page_start=page_start,
         page_end=page_end,
         state_id=state_ids.pop(),
-        printed_name=name_match[1].strip() if name_match else "",
+        printed_name=_printed_name(text),
         printed_dob=_parse_dob(name, seq, text),
         grade=int(grade_match[1]) if grade_match else None,
         subjects=tuple(

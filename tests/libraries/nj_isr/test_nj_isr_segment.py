@@ -36,13 +36,28 @@ def _inner_page(
     subject: str,
     extra_sid: str | None,
     footer: str = "",
+    name: str = "ALEX B. RIVERA",
+    name_on_own_line: bool = False,
 ) -> str:
-    lines = [subject, "ALEX B. RIVERA", " ENROLLED GRADE: 5", "Student ID:", sid]
-    if extra_sid is not None:
-        lines += ["Student ID:", extra_sid]
+    """Build a page in the shape pdfium returns.
+
+    Lines end in CRLF, the name and grade share one line, and the state ID and
+    birth date share one line. `name_on_own_line` gives the older shape, with the
+    name on the line above the grade.
+    """
+    if name_on_own_line:
+        lines = [subject, name, " ENROLLED GRADE: 5"]
+    else:
+        lines = [subject, f"{name} ENROLLED GRADE: 5"]
+
+    id_line = f"Student ID: {sid}"
     if dob is not None:
-        lines += ["Date of Birth:", dob]
-    return "\n".join(lines) + footer
+        id_line += f" Date of Birth: {dob}"
+    lines.append(id_line + " Date of Testing: SPRING 2026")
+
+    if extra_sid is not None:
+        lines.append(f"Student ID: {extra_sid}")
+    return "\r\n".join(lines) + footer
 
 
 def record(
@@ -54,15 +69,29 @@ def record(
     dob: str | None = "03/04/15",
     subjects: tuple[str, ...] = SUBJECT_PAGES,
     extra_sid: str | None = None,
+    name: str = "ALEX B. RIVERA",
+    name_on_own_line: bool = False,
 ) -> list[str]:
     """Build a 4-page Combined record: cover, 2 subject pages, closing page."""
     footer = _footer(seq, district)
     subject_text = [*subjects, "", ""][:2]
+
+    def page(subject: str, extra: str | None, footer: str = "") -> str:
+        return _inner_page(
+            sid,
+            dob,
+            subject,
+            extra,
+            footer,
+            name=name,
+            name_on_own_line=name_on_own_line,
+        )
+
     return [
         f"Student Report\nFamily Portal Access Code:\n{code}{footer}",
-        _inner_page(sid, dob, subject_text[0], None),
-        _inner_page(sid, dob, subject_text[1], extra_sid),
-        _inner_page(sid, dob, "", None, footer=footer),
+        page(subject_text[0], None),
+        page(subject_text[1], extra_sid),
+        page("", None, footer),
     ]
 
 
@@ -123,6 +152,23 @@ def test_parse_source_filename():
 def test_parse_source_filename_rejects_impossible_reissue_date():
     with pytest.raises(IsrFormatError, match="reissue"):
         parse_source_filename(Path("2026_Spring_7325-965_ISR_SLA_Combined_139926.pdf"))
+
+
+def test_segment_reads_a_multi_part_hyphenated_name_on_the_real_shape():
+    recs = segment_pages(
+        SRC, record(1, "1000000001", name="MARY-ANN O'NEIL DE LA CRUZ-SMITH JR.")
+    )
+    assert recs[0].printed_name == "MARY-ANN O'NEIL DE LA CRUZ-SMITH JR."
+    assert recs[0].grade == 5
+    assert recs[0].state_id == "1000000001"
+
+
+def test_segment_reads_a_name_on_the_line_above_the_grade():
+    recs = segment_pages(
+        SRC, record(1, "1000000001", name="ALEX B. RIVERA", name_on_own_line=True)
+    )
+    assert recs[0].printed_name == "ALEX B. RIVERA"
+    assert recs[0].grade == 5
 
 
 def test_segment_two_combined_records():

@@ -37,12 +37,18 @@ def touch(folder: Path, name: str) -> None:
 
 
 def _record_pages(district: str, seq: int, sid: str) -> list[str]:
+    """Pages in the shape pdfium returns: CRLF endings and the name and grade on one
+    line.
+    """
     footer = f"{district}.{district}_965.{seq}"
-    text = (
-        "English Language Arts\nALEX B. RIVERA\n ENROLLED GRADE: 5\n"
-        f"Student ID:\n{sid}\nDate of Birth:\n03/04/15{footer}"
+    text = "\r\n".join(
+        [
+            "English Language Arts",
+            "ALEX B. RIVERA ENROLLED GRADE: 5",
+            f"Student ID: {sid} Date of Birth: 03/04/15 Date of Testing: SPRING 2026",
+        ]
     )
-    return [text, text]
+    return [text + footer, text + footer]
 
 
 def fake_pages(path: Path) -> list[str]:
