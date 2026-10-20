@@ -14,6 +14,7 @@ exposure.kfwd_missing_account_audit_refreshes_nightly	A8	kipptaf.int_kippadb__ro
 exposure.kipp_alumni_employees	A8	kipptaf.int_people__staff_roster	#5808
 exposure.literacy_dashboard	A8	kipptaf.stg_google_sheets__dibels_pm_goals	#5808
 exposure.location_changers_2025	A8	kipptaf.int_people__staff_roster_history	#5808
+exposure.manager_survey_rollup	A8	kipptaf.int_surveys__manager_survey_details	#5808
 exposure.membership_upload_sheet	A8	kipptaf.int_people__staff_roster	#5808
 exposure.powerschool_retention_exemption_log_upload_template	A8	kipptaf.int_powerschool__teachers	#5808
 exposure.rpt_gsheets__miami_lunch_adults	A8	kipptaf.int_people__staff_roster	#5808
