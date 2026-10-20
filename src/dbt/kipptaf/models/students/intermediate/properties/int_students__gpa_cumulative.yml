@@ -36,8 +36,6 @@ models:
           automation_condition:
             cron_schedule: 0 * * * *
     data_tests:
-      # Scoped to rows that resolved a student_number; see
-      # int_students__gpa_term for the 4 Camden AY2015 rows with none.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -45,7 +43,7 @@ models:
               - schoolid
               - _dbt_source_project
           config:
-            where: student_number is not null
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string

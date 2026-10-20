@@ -113,15 +113,13 @@ subagent.** A large MCP result that overflows the context budget dumps to
 path: Rule 2's protected set is `settings.json`, `settings.local.json`,
 `hooks/*.sh` and `shell-snapshots/`, none of which match `.claude/projects/`.
 Extract with `jq -r '.result' <file> | jq '<filter>'`. The spill message itself
-suggests a subagent — ignore that; verified 2026-09-16 after following the old
-"Bash-unreadable" note here burned a ~42k-token dispatch to run one `jq length`.
+suggests a subagent — ignore that.
 
 ## Protected files
 
 Hook scripts, `settings.json`, and `.devcontainer/scripts/` are Edit-denied:
-draft the change and hand it to the user. Full procedure, `permissions.deny`
-semantics, and the settings-integrity checks load from
-`.claude/rules/claude-settings.md` on the first read of one of those files.
+draft the change and hand it to the user; `.claude/rules/claude-settings.md`
+(loads on the first read of one of those files) has the procedure.
 
 If the hook blocks a `git commit -m` message, Write the message into your
 SESSION scratchpad (absolute path given in the system prompt), one file per

@@ -9,9 +9,11 @@ models:
       frozen archive keeps serving Miami AY2020 through AY2025. The boundary is
       derived from the Focus schedule rather than hardcoded, so a Focus backfill
       of an earlier year moves it instead of double-counting that year. The
-      Focus branch carries course name, section, teacher and course row number,
-      conformed to the same columns the PowerSchool branch has always populated.
-      Replaces `base_powerschool__course_enrollments` as the canonical
+      Focus branch carries course name, section, teacher, course row number, and
+      the crosswalked Illuminate subject area (falling back to the core-subject
+      mapping for Focus ELA and Math courses), conformed to the same columns the
+      PowerSchool branch has always populated. Replaces
+      `base_powerschool__course_enrollments` as the canonical
       course-enrollment-grain source.
     config:
       materialized: table
@@ -41,19 +43,18 @@ models:
           When this section enrollment ends, whether or not the student left
           early. Non-null on every row in both SIS branches, so a consumer
           bounding an enrollment window reads this rather than `cc_dateleft`.
-          Named for `dim_student_section_enrollments.exit_date`, which is this
-          value and until #5043 aliased `cc_dateleft` itself.
+          `dim_student_section_enrollments.exit_date` is this value.
 
           The two SIS record it differently and neither is wrong. PowerSchool
           has no separate departure date, so `cc_dateleft` is already this
           concept -- the actual leave date when the student left, the term end
           plus a day while the enrollment is open. Focus keeps the two apart, so
           this resolves to the schedule `end_date` when the student left and
-          `marking_period_end_date` otherwise.
-
-          Added on #5043. Before it, consumers compared `cc_dateleft` directly
-          and every Focus row with an open enrollment -- 95.8% of Miami AY2026
-          -- made the comparison unknown and dropped out.
+          `marking_period_end_date` otherwise, plus a day. Both SIS therefore
+          give the first day the student is no longer enrolled, so a window is
+          `date >= cc_dateenrolled and date < exit_date` in every region. A
+          consumer that compares `cc_dateleft` instead drops every open Focus
+          enrollment, because the comparison is unknown.
         data_type: date
         data_tests:
           - not_null:
@@ -63,10 +64,12 @@ models:
         description: >-
           The date the student left the section, where the SIS records one. For
           PowerSchool this doubles as the scheduled end, because PowerSchool
-          conflates the two. For Miami it is the Focus schedule `end_date`,
-          which is null while the enrollment is open -- the normal state, true
-          of 95.8% of Miami AY2026 rows. Read `exit_date` instead of coalescing
-          this one; #5043 added it for exactly that purpose.
+          conflates the two. For Miami it is the Focus schedule `end_date` plus
+          a day (Focus records the last day enrolled; PowerSchool the first day
+          not enrolled), which is null while the enrollment is open -- the
+          normal state, true of 95.8% of Miami AY2026 rows. Read `exit_date`
+          instead of coalescing this one; #5043 added it for exactly that
+          purpose.
         data_type: date
       - name: cc_dcid
         description: >-
@@ -168,8 +171,12 @@ models:
         description: >-
           Row number of value partitioned by `_dbt_source_relation`,
           `cc_studyear`, `illuminate_subject_area` ordered by `cc_termid`,
-          `cc_dateenrolled`, `cc_dateleft`, all descending. Null for Miami's
-          Focus branch, which does not compute this window.
+          `cc_dateenrolled`, `cc_dateleft`, all descending. The Focus branch
+          computes its own window over `_dbt_source_project`,
+          `students_student_number`, `cc_academic_year`,
+          `illuminate_subject_area` ordered by non-dropped sections first, then
+          `cc_dateenrolled` and `exit_date` descending, with `cc_dcid` as the
+          tie-break.
         data_type: int64
       - name: rn_ap_course_subject_year
         description: >-

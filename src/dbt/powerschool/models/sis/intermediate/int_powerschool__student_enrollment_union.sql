@@ -198,11 +198,13 @@ with
             (academic_year + 13) + (-1 * grade_level) as cohort_primary,
 
             lag(yearid, 1) over (
-                partition by studentid order by yearid asc
+                partition by studentid
+                order by yearid asc, exitdate asc, reenrollments_dcid desc
             ) as yearid_prev,
 
             lag(grade_level, 1) over (
-                partition by studentid order by yearid asc
+                partition by studentid
+                order by yearid asc, exitdate asc, reenrollments_dcid desc
             ) as grade_level_prev,
 
             row_number() over (

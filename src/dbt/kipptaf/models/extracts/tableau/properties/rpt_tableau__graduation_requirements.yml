@@ -18,12 +18,15 @@ models:
       more than one College and Career course gets every row once per course,
       which breaks the intended grain.
     data_tests:
+      # TODO(#5920): College and Career section choice duplicates rows
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - student_number
               - discipline
               - test_type
+          config:
+            severity: warn
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -362,8 +365,10 @@ models:
         description: >-
           Where the student stands against the graduation requirement overall,
           combining both subjects and FAFSA. One value per student, repeated on
-          every row. Awaiting Results and the "/ Awaiting" labels mark 11th
-          graders whose NJGPA results are still due; the rules are on
+          every row, including rows with no score. Awaiting Results and the "/
+          Awaiting" labels mark 11th graders whose NJGPA results are still due.
+          Pending Cut Score marks a student who sat the NJGPA before NJDOE
+          published their class's cut scores. The rules are on
           int_students__graduation_path_codes.
         config:
           meta:

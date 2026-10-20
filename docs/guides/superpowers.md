@@ -19,8 +19,9 @@ Every feature, refactor, or significant change follows this lifecycle:
  "Let's brainstorm"   Asks questions, plays back what    Answer questions,
                       it heard, sizes the work           approve design
 
-                      Opens GitHub issue, asks            Choose worktree or
-                      worktree or branch switch           branch switch
+                      Asks whether to open a GitHub       Say yes or no to the
+                      issue, asks worktree or branch      issue; choose worktree
+                      switch                              or branch switch
 
                       Creates dev branch, writes          Review spec, share
                       spec on the branch                  issue with team
@@ -35,7 +36,7 @@ Every feature, refactor, or significant change follows this lifecycle:
   the plan"           (subagents or Native)               answer questions
 
                       Runs verification, commits,         Fill in PR checklist,
-                      opens PR                            request reviews
+                      pushes, opens PR                    request reviews
 ```
 
 ## Phase 1: Brainstorm
@@ -74,9 +75,10 @@ design.
 
 After a project brainstorm, Claude will:
 
-1. Open a GitHub issue through the GitHub connector — labeled with the
-   appropriate conventional commit type (`feat`, `fix`, `refactor`, etc.) and
-   any related system labels.
+1. **Ask you whether to open a GitHub issue first.** It waits for your answer
+   before writing the spec. If you say yes, it opens the issue through the
+   GitHub connector, labeled with the appropriate conventional commit type
+   (`feat`, `fix`, `refactor`, etc.) and any related system labels.
 2. **Ask you: worktree or branch switch?** These are two ways to create a
    development branch. Claude will not choose for you.
    - **Branch switch** — switches your current workspace to the new branch. One
@@ -191,12 +193,12 @@ When all tasks are complete, Claude:
 1. **Verifies** — runs tests, linters, and any validation commands. It must show
    you the actual passing output before claiming anything works. No "it should
    pass" — evidence only.
-2. **Presents options** — merge locally, push and create a PR, or keep the
-   branch as-is. Discarding the work is not on the menu: ask for it, and Claude
-   will make you type `discard` to confirm.
+2. **Commits and pushes** the feature branch. Claude never pushes to `main`.
 3. **Opens a PR** — using the repository's
-   [pull request template](https://github.com/TEAMSchools/teamster/blob/main/.github/pull_request_template.md)
-   with squash merge.
+   [pull request template](https://github.com/TEAMSchools/teamster/blob/main/.github/pull_request_template.md).
+   The PR merges with squash merge.
+4. **Offers to watch CI** and respond to the `claude-review` findings once they
+   post.
 
 **Your role:** Fill in the PR self-review checklist. Request reviews from the
 appropriate team members. Address CI check failures.
@@ -213,7 +215,7 @@ You won't use these every time, but they're available when you need them:
 | "Let's troubleshoot"       | Structured debugging — find root cause before fixing         |
 | "Let's write tests first"  | Test-driven development — failing test before implementation |
 | "Let's review the code"    | Request a code review from Claude                            |
-| "Let's finish this branch" | Wrap up a dev branch — verify, PR or merge, clean up         |
+| "Let's finish this branch" | Wrap up a dev branch — verify, open a PR, clean up           |
 
 ## Choosing a Model and Effort Level
 

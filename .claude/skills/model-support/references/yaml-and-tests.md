@@ -24,9 +24,8 @@ config, contains_pii, contract, data_type, or column names. The SQL is the
 source of truth over any doc. Never change a test to match a description
 or the reverse: flag the disagreement instead. Remove change-log narration,
 stale counts, TODOs, and issue refs (#1234) from descriptions. Then run,
-with cwd <worktree>,
-/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <edited files> </dev/null
-and uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>.
+lint the edited files per the `trunk-lint` skill (cwd <worktree>),
+and run uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>.
 Report: per file a one-line summary; FLAGS with file:line evidence (column
 lists that don't match the SQL, missing uniqueness tests, wrong grains,
 student-level columns with no contains_pii tag, including kipptaf wrappers

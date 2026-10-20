@@ -13,6 +13,7 @@ with
             co.spedlep as iep_status,
             co.lep_status,
             co.is_504 as c_504_status,
+            co.gifted_and_talented,
             co.is_self_contained as is_pathways,
             co.school,
             co.school_level,
@@ -54,10 +55,10 @@ with
             if(
                 asr.source = 'apex', ea.sections_expression, enr.sections_expression
             ) as expression,
+            -- Focus rows null sections_section_number; cc_section_number is
+            -- the Focus section number
             if(
-                asr.source = 'apex',
-                ea.sections_section_number,
-                enr.sections_section_number
+                asr.source = 'apex', ea.cc_section_number, enr.sections_section_number
             ) as section_number,
             if(
                 asr.source = 'apex', ea.is_foundations, enr.is_foundations
@@ -106,6 +107,7 @@ select
     d.iep_status,
     d.lep_status,
     d.c_504_status,
+    d.gifted_and_talented,
     d.is_pathways,
     d.school,
     d.school_level,

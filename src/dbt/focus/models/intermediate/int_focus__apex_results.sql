@@ -154,6 +154,10 @@ with
                 lead(min_score) over (partition by band_set_id order by min_score),
                 1000000
             ) as upper_bound,
+
+            min(if(label = 'Level 3', min_score, null)) over (
+                partition by band_set_id
+            ) as mastery_min_score,
         from {{ ref("stg_focus__apex_band_levels") }}
     )
 
@@ -176,14 +180,8 @@ select
     bl.label as performance_band_label,
     bl.label_number as performance_band_label_number,
 
-    case
-        when bl.label in ('Level 3', 'Level 4', 'Level 5')
-        then true
-        when
-            bl.label
-            in ('Level 1', 'Level 2', 'Low 1', 'Low 2', 'Mid 1', 'High 1', 'High 2')
-        then false
-    end as is_mastery,
+    -- bare comparison keeps null when the set has no Level 3 band
+    bl.min_score >= bl.mastery_min_score as is_mastery,
 from scores_percent as sp
 left join
     band_levels as bl

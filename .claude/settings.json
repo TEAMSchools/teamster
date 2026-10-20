@@ -4,7 +4,6 @@
   },
   "permissions": {
     "allow": [
-      "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
       "Bash(cat)",
       "Bash(git diff)",
       "Bash(git status)",
@@ -96,7 +95,6 @@
       "Read(//home/vscode/.claude/**)",
       "Read(//tmp/dagster/**)",
       "Read(//workspaces/teamster/**)",
-      "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)"
     ],
     "deny": [

@@ -73,7 +73,7 @@ models:
       - name: is_foundations
         data_type: boolean
         description: >-
-          TRUE if this course is a Foundations (intervention) course, per the
+          TRUE when the course is a Foundations (intervention) course, per the
           course-subject crosswalk.
 
         config:

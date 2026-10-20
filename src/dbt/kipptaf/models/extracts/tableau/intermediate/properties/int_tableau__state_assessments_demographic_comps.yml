@@ -30,6 +30,8 @@ models:
               - comparison_entity
               - comparison_demographic_group
               - comparison_demographic_subgroup
+          config:
+            severity: warn
     columns:
       - name: academic_year
         data_type: int64

@@ -35,6 +35,20 @@ models:
           Legal-entity name the location rolls up to (source column: Region).
           Matches dim_regions.legal_entity (e.g., "TEAM Academy Charter School",
           "KIPP Cooper Norcross Academy").
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - TEAM Academy Charter School
+                  - KIPP Cooper Norcross Academy
+                  - KIPP Miami
+                  - KIPP Paterson
+                  - KIPP TEAM and Family Schools Inc.
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: business_unit_code
         data_type: string
         description: |

@@ -23,6 +23,17 @@ groups:
 # Region-variant tools collapse into one row with per-region sub-links.
 # Members are matched on `name`; each must carry exactly one region.
 families:
+  - id: bucket_roster
+    name: Bucket Roster
+    description:
+      The bucket rosters — each student's intervention bucket for reading and
+      math, with prior-year state test and i-Ready results. Pick your region.
+    group: academics
+    members:
+      - NJ Bucket Rosters [Camden]
+      - Bucket Rosters [Miami]
+      - NJ Bucket Rosters [Newark]
+      - NJ Bucket Rosters [Paterson]
   - id: gpa_roster
     name: GPA Roster
     description:
@@ -37,6 +48,17 @@ families:
       - "GPA Roster: Miami"
       - "GPA Roster: Newark"
       - "GPA Roster: Paterson"
+  - id: report_cards_and_transcripts
+    name: Report Cards and Transcripts
+    description:
+      Student report cards and transcripts, plus assessment results, in a folder
+      per school. Pick your region.
+    group: operations
+    members:
+      - Camden Report Cards and Transcripts
+      - Miami Report Cards and Transcripts
+      - Newark Report Cards and Transcripts
+      - Paterson Report Cards and Transcripts
   - id: student_contact_info_feed
     name: Student Contact Info Feed (SCIF)
     description: Student and guardian contact information. Pick your region.

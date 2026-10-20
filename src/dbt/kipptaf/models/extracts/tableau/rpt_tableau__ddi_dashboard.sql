@@ -111,10 +111,10 @@ with
 
             -- Apex rows take the section the scaffold matched, Illuminate rows
             -- the student's latest section in the subject
+            -- Focus rows null sections_section_number; cc_section_number is
+            -- the Focus section number
             if(
-                r.source = 'apex',
-                ca.sections_section_number,
-                cc.sections_section_number
+                r.source = 'apex', ca.cc_section_number, cc.sections_section_number
             ) as course_section,
             if(
                 r.source = 'apex', ca.courses_course_name, cc.courses_course_name

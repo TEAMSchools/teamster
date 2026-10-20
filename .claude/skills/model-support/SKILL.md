@@ -8,7 +8,9 @@ description: >-
   that should not change them. Triggers: "document this model", "update the docs
   for", "write a reference doc", "restructure this skill", "check prod values",
   "did the refactor change anything", "new scores landed", or a docs/models page
-  or family skill that no longer matches the SQL.
+  or family skill that no longer matches the SQL. Work on a model owned by a
+  family skill (graduation-pathways, hs-early-warning, stat-dash, and the other
+  dashboard family skills) goes to that skill first.
 ---
 
 # Model support
@@ -114,9 +116,7 @@ review, and every edited family-skill file a walk test (rules above).
 
 ## Step 8: close out
 
-Run trunk on every changed file, with cwd in the edited checkout
-(`/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`),
-and
+Lint every changed file per the `trunk-lint` skill, and run
 `uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>`.
 A fresh worktree has no `dbt_packages/`, so run
 `uv run dbt deps --project-dir <worktree>/src/dbt/<project>` first, in its own

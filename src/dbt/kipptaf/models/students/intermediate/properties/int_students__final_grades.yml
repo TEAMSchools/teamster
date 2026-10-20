@@ -28,6 +28,15 @@ models:
       grade row matches exactly one `int_focus__schedule` row — which is what
       makes Miami's `student_section_enrollment_key` resolve against
       `dim_student_section_enrollments`.
+
+
+      When Focus holds a posted grade (a live posting with no grade-type token)
+      for the same student, course period and marking period as a DT running
+      grade, the posted grade is the term grade and the DT row is dropped.
+      Posted grades appear when a school finalizes a marking period, so DT
+      stands in until then. This rule is inferred from the data, not confirmed
+      by Focus documentation. If it proves wrong, remove the
+      `focus_posted_grades` join and decide how the two rows should combine.
     config:
       materialized: table
       meta:
@@ -194,3 +203,88 @@ models:
           Date the grade was last changed. Null on every Focus row — Focus's
           modified_date is null on every student_report_card_grades row.
         data_type: date
+
+unit_tests:
+  - name: test_int_students__final_grades_posted_grade_supersedes_dt
+    description:
+      A Focus posted grade (no grade-type token) replaces the DT running grade
+      for the same student, course period and marking period. A DT grade with no
+      posted grade beside it stays.
+    model: int_students__final_grades
+    given:
+      - input: ref('base_powerschool__final_grades')
+        rows: []
+      - input: ref('int_focus__report_card_grades')
+        rows:
+          - student_id: 11
+            course_period_id: 100
+            marking_period_id: 7181
+            grade_type_token: DT
+            academic_year: 2026
+            schoolid: 58
+            marking_period_short_name: Q1
+            grade_title: B
+            _dbt_source_project: kippmiami
+          - student_id: 11
+            course_period_id: 100
+            marking_period_id: 7181
+            grade_type_token: null
+            academic_year: 2026
+            schoolid: 58
+            marking_period_short_name: Q1
+            grade_title: A
+            _dbt_source_project: kippmiami
+          - student_id: 12
+            course_period_id: 100
+            marking_period_id: 7181
+            grade_type_token: DT
+            academic_year: 2026
+            schoolid: 58
+            marking_period_short_name: Q1
+            grade_title: C
+            _dbt_source_project: kippmiami
+          - student_id: 13
+            course_period_id: 100
+            marking_period_id: 7181
+            grade_type_token: null
+            academic_year: 2026
+            schoolid: 58
+            marking_period_short_name: Q1
+            grade_title: D
+            _dbt_source_project: kippmiami
+      - input: ref('int_focus__schedule')
+        rows:
+          - student_id: 11
+            course_period_id: 100
+            academic_year: 2026
+            student_schedule_id: 501
+          - student_id: 12
+            course_period_id: 100
+            academic_year: 2026
+            student_schedule_id: 502
+          - student_id: 13
+            course_period_id: 100
+            academic_year: 2026
+            student_schedule_id: 503
+      - input: ref('int_focus__students')
+        rows:
+          - student_id: 11
+            student_number: 1
+          - student_id: 12
+            student_number: 2
+          - student_id: 13
+            student_number: 3
+      - input: ref('int_focus__schools')
+        rows:
+          - id: 58
+            school_number: 2332A
+      - input: ref('stg_google_sheets__people__locations')
+        rows: []
+    expect:
+      rows:
+        - cc_dcid: 501
+          term_letter_grade: A
+        - cc_dcid: 502
+          term_letter_grade: C
+        - cc_dcid: 503
+          term_letter_grade: D
