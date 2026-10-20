@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import httplib2
 import pytest
-from google.auth.credentials import AnonymousCredentials
+from google.auth.credentials import AnonymousCredentials, Credentials, Scoped
 from googleapiclient.errors import HttpError
 
 from teamster.libraries.nj_isr.drive import (
@@ -517,3 +517,28 @@ def test_load_credentials_asks_for_drive_scope(monkeypatch):
 
     assert load_credentials() is credentials
     assert calls == [[DRIVE_SCOPE]]
+
+
+def test_load_credentials_rescopes_pinned_credentials(monkeypatch):
+    rescoped = object()
+    with_scopes_calls = []
+
+    class PinnedCredentials(Scoped, Credentials):
+        def refresh(self, request):
+            pass
+
+        @property
+        def requires_scopes(self):
+            return False
+
+        def with_scopes(self, scopes, default_scopes=None):
+            with_scopes_calls.append(scopes)
+            return rescoped
+
+    monkeypatch.setattr(
+        "google.auth.default",
+        lambda scopes=None: (PinnedCredentials(), "teamster-332318"),
+    )
+
+    assert load_credentials() is rescoped
+    assert with_scopes_calls == [[DRIVE_SCOPE]]

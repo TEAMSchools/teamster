@@ -87,8 +87,17 @@ def folder_id_from_url(url_or_id: str) -> str:
 
 
 def load_credentials() -> google.auth.credentials.Credentials:
-    """Returns the environment's default Google credentials with the Drive scope."""
-    return google.auth.default(scopes=[DRIVE_SCOPE])[0]
+    """Returns the environment's default Google credentials with the Drive scope.
+
+    Default credentials may pin narrower scopes, which `google.auth.default`
+    does not override, so the function re-scopes them to full Drive.
+    """
+    credentials = google.auth.default(scopes=[DRIVE_SCOPE])[0]
+
+    if isinstance(credentials, google.auth.credentials.Scoped):
+        credentials = credentials.with_scopes([DRIVE_SCOPE])
+
+    return credentials
 
 
 def _to_drive_file(raw: Mapping[str, str]) -> DriveFile:

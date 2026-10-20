@@ -479,6 +479,24 @@ def test_create_missing_allows_a_root_holding_only_region_folders():
     assert drive.path_exists(f"{NEWARK}/TEAM Report Cards/{YEAR}/{TEAM_PDF}")
 
 
+def test_create_missing_refuses_the_real_root(monkeypatch):
+    monkeypatch.setattr(
+        f"{__name__}.ROOT_NAME", "Report Cards and Transcripts", raising=True
+    )
+    drive = fake_drive_with_existing(NEWARK, "Camden Report Cards and Transcripts")
+
+    with pytest.raises(MissingFolderError) as excinfo:
+        publish(
+            drive, "root", [team_file], PDFS, ROWS, **{**KW, "create_missing": True}
+        )
+
+    assert (
+        "--create-missing-folders is only for a test folder; the root is "
+        "Report Cards and Transcripts"
+    ) in str(excinfo.value)
+    assert drive.writes == []
+
+
 def test_publish_reports_the_root_folder_and_its_readers():
     drive = newark_drive()
 

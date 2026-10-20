@@ -25,6 +25,7 @@ from teamster.libraries.nj_isr.match import TRANSFER_FOLDER
 from teamster.libraries.nj_isr.models import MissingFolderError
 
 TAG_KEY = "nj_isr_admin"
+REAL_ROOT_NAME = "Report Cards and Transcripts"
 
 SchoolKey = tuple[str, int]  # (region, PowerSchool schoolid)
 
@@ -103,9 +104,10 @@ def _plan(
     local PDF, a region or school folder that is not configured, missing, or
     doubled (a missing one is allowed with `create_missing`), and any doubled
     name among the yearly folders, transfer folders, and shortcuts the run
-    will use. `create_missing` also refuses a root that holds any folder other
-    than a region folder, because it is only for an empty test folder: on the
-    real root, a missing or misnamed school folder must stop the run.
+    will use. `create_missing` also refuses the real root by name, and any root
+    that holds a folder other than a region folder, because it is only for a
+    test folder: on the real root, a missing or misnamed school folder must stop
+    the run.
     """
     problems: list[str] = []
     plan = _Plan(regions=sorted({f.region for f in files}))
@@ -118,6 +120,12 @@ def _plan(
     plan.root_readers = api.readers(root_id)
 
     if create_missing:
+        if plan.root_name == REAL_ROOT_NAME:
+            problems.append(
+                "--create-missing-folders is only for a test folder; "
+                f"the root is {REAL_ROOT_NAME}"
+            )
+
         region_names = set(REGION_FOLDERS.values())
         for name in sorted(
             {f.name for f in api.list_children(root_id, FOLDER_MIME)} - region_names
