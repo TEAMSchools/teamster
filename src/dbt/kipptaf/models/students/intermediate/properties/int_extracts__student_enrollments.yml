@@ -42,6 +42,23 @@ models:
             where: rn_year = 1
             severity: warn
     columns:
+      - name: grad_iep_exempt_status_overall
+        data_type: string
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Not Grad IEP Exempt
+                  - "Yes"
+                  - Math only. No ELA match.
+                  - ELA only. No Math match.
+        description: >-
+          NJ graduation pathway IEP exemption for currently enrolled students,
+          from the PowerSchool NJ state fields. Yes when both the math and ELA
+          graduation pathways are M (IEP exempt), "Math only. No ELA match." or
+          "ELA only. No Math match." when only one is, and Not Grad IEP Exempt
+          otherwise, including every student whose enroll_status is not 0.
       - name: _dbt_source_project
         data_type: string
       - name: studentid
@@ -874,17 +891,6 @@ models:
       - name: overgrad_fafsa_opt_out
         data_type: string
         description: Conditional on fafsa_opt_out.
-      - name: grad_iep_exempt_status_overall
-        data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - Not Grad IEP Exempt
-                  - "Yes"
-        description:
-          The enrollment status of the student. Conditional on enroll_status,
-          grad_iep_exempt_overall.
       - name: ml_status
         data_type: string
         description:

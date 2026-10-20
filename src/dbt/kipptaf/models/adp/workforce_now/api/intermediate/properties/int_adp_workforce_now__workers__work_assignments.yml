@@ -1,5 +1,25 @@
 models:
   - name: int_adp_workforce_now__workers__work_assignments
+    data_tests:
+      # TODO(#5524): flip to error once every current assignment's location
+      # code is on the locations sheet.
+      - dbt_utils.expression_is_true:
+          description: >-
+            Catches a current, non-terminated ADP work assignment whose home
+            work location code matches no row on the locations Google Sheet.
+            Downstream, dim_staff_cube_access gives that staff member no
+            location, so Cube denies them student data. Fix by filling
+            ADP_Location_Code for that location on the locations sheet.
+          arguments:
+            expression: |
+              home_work_location__name_code__code_value is null
+              or location_key is not null
+          config:
+            # terminated assignments at retired codes (Pathways, Whittier) are
+            # excluded from the location join on purpose
+            where: |
+              is_current_record
+              and assignment_status__status_code__name != 'Terminated'
     columns:
       - name: location_key
         data_type: string

@@ -23,6 +23,25 @@ models:
       cron.
     config:
       materialized: table
+    data_tests:
+      - dbt_utils.expression_is_true:
+          description: >-
+            Catches a Google Forms submission to a tracked survey that falls
+            outside every SURVEY window for its title on the reporting terms
+            Google Sheet, so it has no academic year or term code. Fix by
+            extending that survey's window on the reporting terms sheet, or
+            accept the submission as late.
+          arguments:
+            expression: |
+              survey_title not in (
+                  'School Community Diagnostic Staff Survey',
+                  'School Community Diagnostic Student Survey',
+                  'KIPP NJ & KIPP Miami Family Survey',
+                  'KIPP Miami Re-Commitment Form & Family School Community Diagnostic',
+                  'Engagement & Support Surveys',
+                  'Manager Survey'
+              )
+              or (academic_year is not null and term_code is not null)
     columns:
       - name: survey_submission_key
         description: >-
@@ -119,7 +138,7 @@ models:
       - name: academic_year
         description: >-
           Academic year the submission falls in. Google Forms resolves it from
-          the SURVEY reporting-terms windows by title and UTC submit date.
+          the SURVEY reporting-terms windows by title and local submit date.
           Alchemer takes the campaign fiscal year minus one and falls back to
           the reporting-terms window. The archive carries the campaign year.
 

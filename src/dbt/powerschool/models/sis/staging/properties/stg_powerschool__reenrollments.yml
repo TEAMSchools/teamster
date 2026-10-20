@@ -3,6 +3,21 @@ models:
     description:
       This table stores all enrollments, except the current one, for a student
       such as the ones for end-of-year (EOY) processing or in-term transfers.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: entrydate <= exitdate
+          description: >-
+            A PowerSchool past enrollment (re-enrollment record) has an exit
+            date before its entry date. A no-show, with the same entry and exit
+            date, is valid. Fix the entry or exit date on that enrollment in
+            PowerSchool. Downstream, int_powerschool__student_enrollment_union
+            keeps only stints whose exit date is after the entry date, so these
+            stints drop out of enrollment reporting until fixed. Graduated
+            stints (schoolid 999999) are excluded.
+          config:
+            severity: warn
+            where: schoolid != 999999
     columns:
       - name: dcid
         data_type: int64

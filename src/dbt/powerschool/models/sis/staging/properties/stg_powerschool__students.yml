@@ -3,6 +3,22 @@ models:
     description:
       This table maintains Student demographics and other School related
       information such as Lunch ID, Grade Level and scheduling data.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: entrydate <= exitdate
+          description: >-
+            A PowerSchool student's current enrollment has an exit date before
+            its entry date. A no-show, with the same entry and exit date, is
+            valid. Fix the entry or exit date on the student's enrollment in
+            PowerSchool. Downstream, int_powerschool__student_enrollment_union
+            keeps only stints whose exit date is after the entry date, so these
+            stints drop out of enrollment reporting until fixed. Graduated
+            students (schoolid 999999) and invalid records (enroll_status 1) are
+            excluded.
+          config:
+            severity: warn
+            where: schoolid != 999999 and enroll_status != 1
     columns:
       - name: id
         data_type: int64
