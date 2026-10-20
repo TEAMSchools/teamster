@@ -75,7 +75,7 @@ left join
     on eh.home_work_location_name = lc.location_name
 left join
     {{ ref("int_students__teacher_grade_levels") }} as tgl
-    on eh.powerschool_teacher_number = tgl.teachernumber
+    on eh.sis_teacher_number = tgl.teachernumber
     and eh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1

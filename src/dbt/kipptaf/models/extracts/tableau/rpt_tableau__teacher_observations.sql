@@ -159,7 +159,7 @@ left join observation_details as od on op.observation_id = od.observation_id
 left join roster_current as rc on op.observer_employee_number = rc.employee_number
 left join
     grade_levels as gl
-    on rh.powerschool_teacher_number = gl.teachernumber
+    on rh.sis_teacher_number = gl.teachernumber
     and rh.home_work_location_dagster_code_location = gl._dbt_source_project
     and op.academic_year = gl.academic_year
 where rh.primary_indicator and rh.assignment_status = 'Active'
@@ -252,7 +252,7 @@ left join observation_details as od on op.observation_id = od.observation_id
 left join roster_current as rc on op.observer_employee_number = rc.employee_number
 left join
     grade_levels as gl
-    on rh.powerschool_teacher_number = gl.teachernumber
+    on rh.sis_teacher_number = gl.teachernumber
     and rh.home_work_location_dagster_code_location = gl._dbt_source_project
     and op.academic_year = gl.academic_year
 where
