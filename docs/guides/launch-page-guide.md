@@ -81,6 +81,11 @@ So for anything with a `google-*` system:
 **If you find one that is link-shared, do not add it.** Flag it instead. That is
 a live exposure to fix at the source, not something to document.
 
+**A Drive folder is checked at the folder you link.** Sharing adds up down the
+tree, so a subfolder can be shared more widely than its parent but never less.
+For a region family of folders, open each regional folder's Share dialog, not
+just the parent's.
+
 **AppSheet apps need this twice.** An AppSheet app has its own access setting,
 _and_ it reads from a backing Google Sheet with separate sharing. Both have to
 require sign-in. Open the app, then open the Sheet behind it, and check each.
@@ -118,7 +123,7 @@ build.
 | `id`     | Lowercase letters, digits, and underscores only. Must be unique           |
 | `name`   | Non-empty. Use what the tool calls itself when you open it                |
 | `url`    | Must start with `https://`                                                |
-| `system` | One of the nine values in [Systems](#systems)                             |
+| `system` | One of the values in [Systems](#systems)                                  |
 | `group`  | One of the seven ids in [Groups](#groups). Required — there is no default |
 | `status` | `needs-review` or `verified`                                              |
 
@@ -343,17 +348,18 @@ Pick the one the tool most belongs under. If none fits, raise it — do not gues
 
 ### Systems
 
-| Value           | Display label |
-| --------------- | ------------- |
-| `tableau`       | Tableau       |
-| `appsheet`      | AppSheet      |
-| `zendesk`       | Zendesk       |
-| `google-sheet`  | Google Sheet  |
-| `google-slides` | Google Slides |
-| `google-form`   | Google Form   |
-| `google-doc`    | Google Doc    |
-| `apps-script`   | Apps Script   |
-| `other`         | Other         |
+| Value           | Display label       |
+| --------------- | ------------------- |
+| `tableau`       | Tableau             |
+| `appsheet`      | AppSheet            |
+| `zendesk`       | Zendesk             |
+| `google-sheet`  | Google Sheet        |
+| `google-slides` | Google Slides       |
+| `google-form`   | Google Form         |
+| `google-doc`    | Google Doc          |
+| `google-folder` | Google Drive folder |
+| `apps-script`   | Apps Script         |
+| `other`         | Other               |
 
 Anything `google-*` or `appsheet` triggers
 [the sharing check](#the-sharing-check).
