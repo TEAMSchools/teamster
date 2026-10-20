@@ -36,6 +36,8 @@ with
         left join
             {{ ref("stg_google_sheets__people__locations") }} as loc
             on fs.school_number = loc.focus_school_id
+        -- Miami's Focus cutover year. A pre-cutover Focus row would win the
+        -- anti-join below; flooring it keeps that student's PowerSchool value.
         where g.syear >= 2026
     ),
 
