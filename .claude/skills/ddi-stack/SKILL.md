@@ -1,6 +1,6 @@
 ---
 name: ddi-stack
-description:
+description: >-
   Use when any question or task touches the DDI stack (Illuminate internal
   assessments) or its lineage. Triggers: the DDI Suite, DKI view/deck/dashboard,
   Module Dashboard, Assessment Dashboard, Mastery by Classroom, "buckets" (DDI
