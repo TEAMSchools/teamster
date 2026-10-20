@@ -11,10 +11,10 @@ models:
       subject area, so Writing rows stay Writing where mod_standards reports
       them as Text Study. It does not join performance band sets, so it keeps
       rows the published models drop for falling in no band. Like
-      mod_standards_domains, a Report Card standard aligned to records in more
-      than one Illuminate standard set is one row, scored as total points over
-      total points possible. Use computed_avg_pct_correct to check the published
-      averages against the underlying data.
+      mod_standards_domains, Report Card rows come from
+      int_assessments__standard_rollup, one row per standard. Use
+      computed_avg_pct_correct to check the published averages against the
+      underlying data.
     config:
       meta:
         contains_pii: true
