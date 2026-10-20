@@ -349,9 +349,7 @@ def summarize(plan: RunPlan, result: PublishResult | None) -> str:
     ]
     unmatched = [p for p in plan.placements if p.resolution.reason != "matched"]
     lines.append("")
-    lines.append(
-        f"Partial matches (in school files, on the investigation list): {len(partial)}"
-    )
+    lines.append(f"Partial matches (on the investigation list): {len(partial)}")
     lines.append(f"Unmatched: {len(unmatched)}")
     for placement in unmatched:
         record = placement.record

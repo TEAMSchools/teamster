@@ -220,14 +220,14 @@ def test_summary_counts_partial_matches(tmp_path):
 
     text = summarize(plan, None)
 
-    assert "Partial matches (in school files, on the investigation list): 1" in text
+    assert "Partial matches (on the investigation list): 1" in text
     assert "Unmatched: 1" in text
 
 
 def test_summary_counts_no_partial_matches_for_a_full_match(tmp_path):
     text = summarize(small_plan(tmp_path), None)
 
-    assert "Partial matches (in school files, on the investigation list): 0" in text
+    assert "Partial matches (on the investigation list): 0" in text
 
 
 def test_summary_shows_the_publish_result(tmp_path):
