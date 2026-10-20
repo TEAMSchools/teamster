@@ -52,9 +52,10 @@ tests) and its End-of-Year window is open now.
 
 ## Anti-goals
 
-- A replica model that grows its own logic. The replica is a projection of
-  grain-level intermediates; if it carries a join or a derived column the design
-  has failed (see _Replica models_).
+- A replica model that grows its own logic. The replica joins grain-level
+  intermediates on their keys, renames columns to the state's names, and applies
+  the state's formats; if it derives a value, the design has failed (see
+  _Replica models_).
 - Tests scoped to one region, or a region excluded "for now".
 - Waivers. A failure that looks like it needs a waiver is either a wrong test or
   missing cleanup in the SQL (#5558, "No waivers").
@@ -91,7 +92,11 @@ made each unless marked as the author's call.
 ### 1. Replica models host the file-level rules
 
 One dbt model per submission reproduces the state file row-for-row from
-warehouse data:
+warehouse data. "The state file" means the file the state should receive, as the
+handbook defines it, not a copy of what PowerSchool's extract emits (author's
+call). Where the two differ because of a known extract defect (latest stint
+only, blank program fields filled on output, legacy codes translated), the
+replica follows the handbook and the pre-upload gate diff exposes the defect.
 
 - `int_nj_sleds__student_management` (one row per student per snapshot
   population)
@@ -107,17 +112,23 @@ date exists, section parity between the two rosters), and the pre-upload gate: a
 comparison of the replica against the PowerSchool-generated extract before
 anyone certifies a file.
 
-The replicas hold no logic. Every join and every derived column lives one level
-down in grain-level intermediates that are useful on their own:
+The replicas derive nothing. Every derived column lives one level down in
+grain-level intermediates that are useful on their own:
 
 - a student-year NJ fields model (student, school, year, every `s_nj_stu_x` and
   `s_nj_ren_x` field the handbook names, materialized as a table; the Student
   Management catalog calls it `njx`),
-- a student-section-stint model (the enrollment stint grain, since PowerSchool
-  keeps only the latest entry and exit per student-section while the state wants
-  one row per continuous stint),
+- a student-section-stint rollup (one row per continuous enrollment stint,
+  merging touching `cc` rows, since PowerSchool keeps only the latest entry and
+  exit per student-section while the state wants one row per continuous stint),
 - a section-staff-assignment model (section, staff member, role, allocation,
-  assignment dates, with `nj_section_teacher_tracking` rows once ingested).
+  assignment dates, with `nj_section_teacher_tracking` rows once ingested),
+- a Student Management population model (student x snapshot, see _Snapshot
+  populations_ below).
+
+Formatting on the replica (Y/N text for booleans, `YYYYMMDD` dates, zero-padded
+codes) is a named exception to rule S14: the replica is a file projection for
+one consumer, the same reason an `rpt_` may carry Y/N.
 
 Where the intermediates live (author's call): the student-year NJ fields model
 is single-source, so it is a `powerschool` package model built per region, at
@@ -125,20 +136,38 @@ the enrollment-stint grain (`student_number`, `schoolid`, `academic_year`,
 `entrydate`, the same grain as `int_students__student_enrollments`), with a
 kipptaf `union_relations` passthrough carrying `_dbt_source_project`. The
 section-staff-assignment model follows the same shape. The student-section-stint
-model extends the existing package `base_powerschool__course_enrollments` grain
-rather than adding a sibling (rule A4). Package tests set `severity` explicitly,
-since the package default is `error`. The kipptaf replicas read the union
-wrappers; a `union_relations` passthrough is the repo's standard cross-region
-shape and does not count as logic in the replica.
+model is a package `_rollup` over `base_powerschool__course_enrollments` (rule
+A3: it changes the grain from one row per `cc` record to one row per continuous
+stint), not a change to that hub model's grain, which about five package models
+and kipptaf read as-is. Package tests set `severity` explicitly, since the
+package default is `error`. The kipptaf replicas read the union wrappers; a
+`union_relations` passthrough is the repo's standard cross-region shape and does
+not count as logic in the replica.
 
-Snapshot populations (author's call): the Student Management replica carries
-every population in one table with a `snapshot` column (`fall`, `end_of_year`,
-`graduation`). Membership is computed from a `nj_sleds_report_date` var that
-defaults to the run date, so windowed rules (pathways, FAFSA, Seal of
-Biliteracy) evaluate against the window that is open on the day the test runs;
-the graduation population keys off the prior academic year through August 31, so
-July's rollover of `current_academic_year` does not drop last year's graduates
-while their snapshot is open.
+Snapshot populations (author's call): a kipptaf population model,
+`int_nj_sleds__student_management_population`, at student x snapshot grain,
+holds the membership logic. It reads a `nj_sleds_report_date` var that defaults
+to the run date and emits a row for each population whose window is open on that
+date: `fall` (July 6 to October 15), `end_of_year` (October 19 to June 30),
+`graduation` (July 6 to August 31, keyed on the prior academic year so July's
+rollover of `current_academic_year` does not drop last year's graduates while
+their snapshot is open). A student in two open windows is two rows. Rows for a
+closed window do not exist, because `s_nj_stu_x` holds only current values, a
+closed window cannot be corrected, and a stale Fall row would be the "fires
+forever" anti-goal. No open window (October 16 to 18) yields an empty population
+and no failures, which is correct. The replica joins this model to the NJ fields
+model on keys; windowed rules (pathways, FAFSA, Seal of Biliteracy) read the
+`snapshot` column.
+
+The population model must read a stint source that keeps no-shows (exit date not
+after entry date), which the state requires in the file and
+`int_powerschool__student_enrollment_union` drops; `includeinnjsmart_tf` is
+blank for about 99.6 percent of students and cannot be the filter. Verification
+step 1 confirms the population rule against the generated file.
+
+Field-level tests use _Decision 4_'s scope plus the graduation population
+through August 31, so graduation-only rules keep firing on last year's graduates
+while their window is open.
 
 Pre-upload gate input (author's call, pending confirmation): the
 PowerSchool-generated extract for each submission lands in the same drop
@@ -208,8 +237,9 @@ table either way.
   its official window closes on August 3, then drop it. NJ SLEDS refuses
   prior-year uploads, so a prior-year roster defect is unfixable and must not
   generate tickets.
-- This departs from #5558's "tests cover all history" for annual files. The
-  departure is deliberate and applies to the rosters only.
+- Both scopes depart from #5558's "tests cover all history". The departure is
+  deliberate: a state file is a point-in-time certification, and a record the
+  state will never accept again is not a ticket anyone can close.
 
 ### 5. Program status: the marts are the referee
 
@@ -260,10 +290,17 @@ ticketed tests. This project writes generic tests in their normal form and
 relies on that override; until it lands, their stored failures are value-level,
 which is enough for engineers and not yet enough for a punch list.
 
-Author's call: where a candidate overlaps an existing test, the existing test
-gets the `nj_sleds` meta added; no duplicate is written. Where an existing test
-is wrong against the handbook (the three audit checks #5549 names), the fix goes
-through #5549, not here.
+Author's call on overlaps: where a candidate overlaps an existing test that can
+serve as written (same predicate, a table host, the right scope and severity),
+the existing test gets the `nj_sleds` meta added and no duplicate is written.
+Where the existing test cannot serve (its host is a view, so it never re-runs;
+its scope is all history; it is a package uniqueness test at error where the
+rule should warn and ticket), the compliance test is written on the compliance
+host with an extra meta key `overlaps: <existing test name>`, and the existing
+test is left alone, since its current consumers depend on its behavior. "No
+duplicate" means no second test with the same predicate on the same host. Where
+an existing test is wrong against the handbook (the three audit checks #5549
+names), the fix goes through #5549, not here.
 
 ### 8. Order, regions, and policy checks
 
@@ -293,6 +330,15 @@ than one staff row.
   replica regression tests; the two SAR defects): `severity: error`. They carry
   the `nj_sleds` traceability meta like every other compliance test but never a
   runbook key, since the fix is a pull request, not a ticket.
+- Extract-defect rules (a third bucket, author's call): failures caused by how
+  PowerSchool's extract behaves rather than by a source value or our code
+  (latest stint only, blank program fields filled on output, legacy codes
+  translated). They are error-level tests on the replica or on the pre-upload
+  gate, carry the meta, and get no ticket; the fix is a PowerSchool setup
+  change, a vendor case, or a replica that supersedes the extract. A correct
+  value the state might still reject, such as an accented legal name, is not a
+  failure at all: the handbook says nothing about accents, and "no waivers"
+  means the test is wrong, not the name.
 
 ## Dependencies and sequencing
 
@@ -354,8 +400,14 @@ own small issue or PR rather than a compliance test:
 
 ## Inputs the builder plans from
 
-All under `.claude/scratch/nj-compliance-reference/` in the main checkout
-(gitignored; no student or staff rows):
+Author's call: the catalogs are committed to the repo at
+`docs/superpowers/nj-sleds-compliance/catalog/` in the first plan task, so the
+`catalog_id` meta key points at something permanent and each candidate row's
+disposition (ship, decline with reason, defer with link) is recorded in a
+`decision` column there, which also satisfies the first goal's "written reason
+it cannot have one". They hold aggregate counts only, no student or staff rows.
+Until that task runs they live under `.claude/scratch/nj-compliance-reference/`
+in the main checkout (gitignored):
 
 - `catalog/<submission>-fields.md`: every element with every rule, cited to the
   handbook page or PowerSchool spec section.
@@ -372,7 +424,7 @@ with a decision above, the decision wins.
 
 ## Left to the builder
 
-- Exact column lists of the three grain-level intermediates and the replica
+- Exact column lists of the four grain-level intermediates and the replica
   projections; the state's column order and formats are in the handbooks and
   templates.
 - Which candidate rows ship in wave 1 versus wave 2 per submission, within the
