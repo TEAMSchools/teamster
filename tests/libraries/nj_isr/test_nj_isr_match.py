@@ -16,6 +16,7 @@ from teamster.libraries.nj_isr.match import (
     Student,
     confirm,
     last_name_matches,
+    matched_on,
     place,
     resolve,
 )
@@ -120,14 +121,60 @@ def test_resolve_state_id_only_confirmed():
     assert (r.reason, r.student) == ("matched", alex)
 
 
-def test_resolve_wrong_dob_is_failed_confirmation():
-    r = resolve(rec(dob=date(2015, 3, 5)), {"1000000001": {101}}, {}, {101: alex})
-    assert (r.reason, r.student) == ("failed_confirmation", None)
+def test_matched_on_levels():
+    assert matched_on(rec(dob=DOB, name="ALEX B. RIVERA"), alex) == "both"
+    assert (
+        matched_on(rec(dob=date(2015, 3, 5), name="ALEX B. RIVERA"), alex)
+        == "last name"
+    )
+    assert matched_on(rec(dob=DOB, name="ALEX B. RIVERRA"), alex) == "birth date"
+    assert matched_on(rec(dob=None, name="ALEX B. JONES"), alex) == ""
 
 
-def test_resolve_missing_dob_is_failed_confirmation():
+def test_matched_on_ignores_a_missing_birth_date_on_both_sides():
+    assert (
+        matched_on(rec(dob=None, name="ALEX B. JONES"), replace(alex, dob=None)) == ""
+    )
+
+
+def test_resolve_full_match_records_matched_on_both():
+    r = resolve(rec(), {"1000000001": {101}}, {}, {101: alex})
+    assert (r.reason, r.matched_on, r.candidates) == ("matched", "both", (alex,))
+
+
+def test_resolve_partial_match_routes_like_a_match():
+    r = resolve(
+        rec(sid="1000000001", dob=date(2015, 3, 5)),
+        {"1000000001": {101}},
+        {},
+        {101: alex},
+    )
+    assert (r.reason, r.student, r.matched_on) == ("matched", alex, "last name")
+
+
+def test_resolve_birth_date_only_is_a_partial_match():
+    r = resolve(rec(name="ALEX B. RIVERRA"), {}, {"1000000001": {101}}, {101: alex})
+    assert (r.reason, r.student, r.matched_on) == ("matched", alex, "birth date")
+
+
+def test_resolve_missing_printed_dob_with_matching_name_is_a_partial_match():
     r = resolve(rec(dob=None), {"1000000001": {101}}, {}, {101: alex})
-    assert r.reason == "failed_confirmation"
+    assert (r.reason, r.student, r.matched_on) == ("matched", alex, "last name")
+
+
+def test_resolve_neither_check_is_failed_confirmation_with_candidates():
+    r = resolve(
+        rec(sid="1000000001", dob=date(2015, 3, 5), name="ALEX B. JONES"),
+        {"1000000001": {101}},
+        {},
+        {101: alex},
+    )
+    assert (r.reason, r.student, r.matched_on, r.candidates) == (
+        "failed_confirmation",
+        None,
+        "",
+        (alex,),
+    )
 
 
 def test_resolve_agreeing_sources_confirm_once():
@@ -163,6 +210,69 @@ def test_resolve_conflict_neither_confirms():
         {303: stranger, 202: someone_else},
     )
     assert (r.reason, r.student) == ("source_conflict", None)
+
+
+def test_resolve_conflict_full_beats_partial():
+    # 101 matches both checks, 202 matches the last name only
+    namesake = replace(someone_else, last_name="Rivera")
+    r = resolve(
+        rec(),
+        {"1000000001": {202}},
+        {"1000000001": {101}},
+        {101: alex, 202: namesake},
+    )
+    assert (r.reason, r.student, r.matched_on) == ("matched", alex, "both")
+    assert r.candidates == (alex, namesake)
+
+
+def test_resolve_conflict_single_partial_wins_when_no_full():
+    # 101 matches the last name only, 303 matches neither
+    r = resolve(
+        rec(dob=date(2015, 3, 5)),
+        {"1000000001": {303}},
+        {"1000000001": {101}},
+        {101: alex, 303: stranger},
+    )
+    assert (r.reason, r.student, r.matched_on) == ("matched", alex, "last name")
+    assert r.candidates == (alex, stranger)
+
+
+def test_resolve_conflict_two_partials_is_source_conflict():
+    # 101 matches the last name only, 202 matches the birth date only
+    by_date = replace(someone_else, dob=date(2015, 3, 5))
+    r = resolve(
+        rec(dob=date(2015, 3, 5)),
+        {"1000000001": {101}},
+        {"1000000001": {202}},
+        {101: alex, 202: by_date},
+    )
+    assert (r.reason, r.student, r.matched_on) == ("source_conflict", None, "")
+    assert r.candidates == (alex, by_date)
+
+
+def test_resolve_conflict_two_last_name_partials_is_source_conflict():
+    twin = replace(alex, student_number=102)
+    r = resolve(
+        rec(dob=date(2015, 3, 5)),
+        {"1000000001": {101}},
+        {"1000000001": {102}},
+        {101: alex, 102: twin},
+    )
+    assert (r.reason, r.student) == ("source_conflict", None)
+
+
+def test_resolve_conflict_candidates_are_in_student_number_order():
+    r = resolve(
+        rec(),
+        {"1000000001": {303}},
+        {"1000000001": {202}},
+        {303: stranger, 202: someone_else},
+    )
+    assert r.candidates == (someone_else, stranger)
+
+
+def test_resolve_no_candidate_has_no_candidates():
+    assert resolve(rec(), {}, {}, {}).candidates == ()
 
 
 def test_resolve_conflict_both_confirm_is_source_conflict():

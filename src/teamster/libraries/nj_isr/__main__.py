@@ -17,8 +17,10 @@ from teamster.libraries.nj_isr.run import (
     RunPlan,
     administration_year,
     build_plan,
+    investigation_rows,
     missing_districts,
     summarize,
+    write_investigation_csv,
 )
 from teamster.libraries.nj_isr.warehouse import load_crosswalk, load_students
 
@@ -47,6 +49,14 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--dry-run", action="store_true", help="Plan and print, touch no Drive file"
     )
     parser.add_argument("--local-out", type=Path, help="Folder for the output PDFs")
+    parser.add_argument(
+        "--checks-out",
+        type=Path,
+        help=(
+            "CSV for the investigation list, which holds student names "
+            "(default: nj_isr_checks_<tag>.csv next to the input folder)"
+        ),
+    )
     parser.add_argument(
         "--create-missing-folders",
         action="store_true",
@@ -91,6 +101,13 @@ def main(argv: list[str] | None = None) -> int:
         school_year=school_year,
     )
     print(summarize(plan, None))
+
+    checks_rows = investigation_rows(plan)
+    checks_path = write_investigation_csv(
+        checks_rows,
+        args.checks_out or args.input.parent / f"nj_isr_checks_{plan.tag}.csv",
+    )
+    print(f"Investigation list: {len(checks_rows)} rows -> {checks_path}")
 
     absent = missing_districts(plan)
     if absent:

@@ -1,6 +1,8 @@
+import csv
 from collections import Counter
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 from teamster.libraries.nj_isr.destinations import (
@@ -20,6 +22,7 @@ from teamster.libraries.nj_isr.layout import (
 from teamster.libraries.nj_isr.match import (
     TRANSFER_FOLDER,
     Placement,
+    Resolution,
     Student,
     place,
     resolve,
@@ -32,6 +35,30 @@ from teamster.libraries.nj_isr.segment import (
     parse_source_filename,
     scan_folder,
 )
+
+INVESTIGATION_COLUMNS = (
+    "issue",
+    "filed_in",
+    "region",
+    "output_file",
+    "page",
+    "printed_name",
+    "printed_birth_date",
+    "state_id",
+    "student_number",
+    "powerschool_last_name",
+    "powerschool_first_name",
+    "powerschool_birth_date",
+    "source_file",
+    "source_seq",
+)
+
+_PARTIAL_ISSUES = {"last name": "birth date differs", "birth date": "last name differs"}
+_UNMATCHED_ISSUES = {
+    "failed_confirmation": "name and birth date differ",
+    "source_conflict": "state and PowerSchool point to different students",
+    "no_candidate": "no student for this state ID",
+}
 
 
 @dataclass(frozen=True)
@@ -204,6 +231,85 @@ def missing_districts(plan: RunPlan) -> list[str]:
     return [district for district in REGION_BY_DISTRICT if district not in present]
 
 
+def _iso(value: date | None) -> str:
+    return "" if value is None else value.isoformat()
+
+
+def _issue(resolution: Resolution) -> str | None:
+    """The investigation-list issue for a resolution, None for a full match."""
+    if resolution.reason == "matched":
+        return _PARTIAL_ISSUES.get(resolution.matched_on)
+    return _UNMATCHED_ISSUES[resolution.reason]
+
+
+def _student_columns(resolution: Resolution) -> dict[str, str]:
+    student = resolution.student
+    if student is None and len(resolution.candidates) == 1:
+        student = resolution.candidates[0]
+
+    if student is None:
+        return {
+            "student_number": "; ".join(
+                str(c.student_number) for c in resolution.candidates
+            ),
+            "powerschool_last_name": "",
+            "powerschool_first_name": "",
+            "powerschool_birth_date": "",
+        }
+
+    return {
+        "student_number": str(student.student_number),
+        "powerschool_last_name": student.last_name,
+        "powerschool_first_name": student.first_name,
+        "powerschool_birth_date": _iso(student.dob),
+    }
+
+
+def investigation_rows(plan: RunPlan) -> list[dict[str, str]]:
+    """List every partial match and every unmatched record for the Data team.
+
+    A partial match is filed in the student's school but agrees with PowerSchool
+    on only the last name or only the birth date. The rows hold student names
+    and birth dates and are never written to Drive or git.
+    """
+    rows: list[dict[str, str]] = []
+    for file in plan.files:
+        for entry in file.entries:
+            placement = entry.placement
+            issue = _issue(placement.resolution)
+            if issue is None:
+                continue
+
+            record = placement.record
+            rows.append(
+                {
+                    "issue": issue,
+                    "filed_in": placement.where,
+                    "region": placement.region,
+                    "output_file": file.file_name,
+                    "page": str(entry.page_in_file),
+                    "printed_name": record.printed_name,
+                    "printed_birth_date": _iso(record.printed_dob),
+                    "state_id": record.state_id,
+                    **_student_columns(placement.resolution),
+                    "source_file": record.source.path.name,
+                    "source_seq": str(record.seq),
+                }
+            )
+
+    return sorted(rows, key=lambda r: (r["region"], r["issue"], r["printed_name"]))
+
+
+def write_investigation_csv(rows: Sequence[Mapping[str, str]], path: Path) -> Path:
+    """Write the investigation list as a CSV with a header row."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter[str](handle, fieldnames=INVESTIGATION_COLUMNS)
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+
+
 def _record_label(record: Record) -> str:
     return f"{record.source.path.name} seq {record.seq}"
 
@@ -236,8 +342,16 @@ def summarize(plan: RunPlan, result: PublishResult | None) -> str:
     for record in plan.duplicates:
         lines.append(f"  {record.state_id}  {_record_label(record)}")
 
+    partial = [
+        p
+        for p in plan.placements
+        if p.resolution.reason == "matched" and p.resolution.matched_on != "both"
+    ]
     unmatched = [p for p in plan.placements if p.resolution.reason != "matched"]
     lines.append("")
+    lines.append(
+        f"Partial matches (in school files, on the investigation list): {len(partial)}"
+    )
     lines.append(f"Unmatched: {len(unmatched)}")
     for placement in unmatched:
         record = placement.record

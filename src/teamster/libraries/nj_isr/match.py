@@ -34,10 +34,15 @@ class Resolution:
         student: The confirmed student, None unless reason is "matched".
         reason: "matched", "no_candidate", "failed_confirmation", or
             "source_conflict".
+        matched_on: "both", "last name", or "birth date" for a match, else "".
+        candidates: Every distinct student considered, by student number. Empty
+            only for "no_candidate".
     """
 
     student: Student | None
     reason: str
+    matched_on: str = ""
+    candidates: tuple[Student, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -59,6 +64,7 @@ class Placement:
     where: str
 
 
+_PARTIAL_LEVELS = ("last name", "birth date")
 _NAME_SEPARATORS = re.compile(r"[\s\-.]+")
 
 
@@ -83,13 +89,29 @@ def last_name_matches(printed_name: str, ps_last_name: str) -> bool:
     )
 
 
+def matched_on(record: Record, student: Student) -> str:
+    """Which printed details agree with PowerSchool.
+
+    Returns:
+        "both" when the last name and birth date agree, "last name" or
+        "birth date" when only that one does, "" when neither does. A report
+        with no printed birth date never agrees on birth date.
+    """
+    name_agrees = last_name_matches(record.printed_name, student.last_name)
+    dob_agrees = record.printed_dob is not None and record.printed_dob == student.dob
+
+    if name_agrees and dob_agrees:
+        return "both"
+    if name_agrees:
+        return "last name"
+    if dob_agrees:
+        return "birth date"
+    return ""
+
+
 def confirm(record: Record, student: Student) -> bool:
     """Whether the printed birth date and last name both agree with PowerSchool."""
-    return (
-        record.printed_dob is not None
-        and record.printed_dob == student.dob
-        and last_name_matches(record.printed_name, student.last_name)
-    )
+    return matched_on(record, student) == "both"
 
 
 def _sole_candidate(
@@ -111,30 +133,46 @@ def resolve(
 
     The state ID is looked up in the state testing crosswalk and in
     PowerSchool's own state ID field. A source only counts when it names
-    exactly 1 known student. When the two sources name different students, the
-    one that passes confirmation wins, and a tie or no pass is a source
-    conflict.
-    """
-    from_crosswalk = _sole_candidate(crosswalk, record.state_id, students)
-    from_state_id = _sole_candidate(by_state_id, record.state_id, students)
+    exactly 1 known student. A candidate is confirmed when the printed last
+    name or birth date agrees with PowerSchool; agreeing on both is a full
+    match and on only 1 is a partial match.
 
-    if from_crosswalk is None and from_state_id is None:
+    When the two sources name different students, a single full match wins.
+    With no full match, a single partial match wins. Anything else is a
+    source conflict.
+    """
+    found = (
+        _sole_candidate(crosswalk, record.state_id, students),
+        _sole_candidate(by_state_id, record.state_id, students),
+    )
+    distinct = {s.student_number: s for s in found if s is not None}
+    candidates = tuple(distinct[number] for number in sorted(distinct))
+
+    if not candidates:
         return Resolution(None, "no_candidate")
 
-    if (
-        from_crosswalk is not None
-        and from_state_id is not None
-        and from_crosswalk.student_number != from_state_id.student_number
-    ):
-        passing = [s for s in (from_crosswalk, from_state_id) if confirm(record, s)]
-        if len(passing) == 1:
-            return Resolution(passing[0], "matched")
-        return Resolution(None, "source_conflict")
+    levels = {s.student_number: matched_on(record, s) for s in candidates}
+    full = [s for s in candidates if levels[s.student_number] == "both"]
+    partial = [s for s in candidates if levels[s.student_number] in _PARTIAL_LEVELS]
 
-    candidate = from_crosswalk if from_crosswalk is not None else from_state_id
-    if candidate is not None and confirm(record, candidate):
-        return Resolution(candidate, "matched")
-    return Resolution(None, "failed_confirmation")
+    winner: Student | None = None
+    if len(candidates) == 1:
+        winner = candidates[0] if levels[candidates[0].student_number] else None
+    elif len(full) == 1:
+        winner = full[0]
+    elif not full and len(partial) == 1:
+        winner = partial[0]
+
+    if winner is not None:
+        return Resolution(
+            winner,
+            "matched",
+            matched_on=levels[winner.student_number],
+            candidates=candidates,
+        )
+
+    reason = "failed_confirmation" if len(candidates) == 1 else "source_conflict"
+    return Resolution(None, reason, candidates=candidates)
 
 
 def place(record: Record, resolution: Resolution, testing_region: str) -> Placement:

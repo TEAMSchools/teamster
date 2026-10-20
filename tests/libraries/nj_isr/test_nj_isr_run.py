@@ -1,3 +1,4 @@
+import csv
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
@@ -8,11 +9,14 @@ from teamster.libraries.nj_isr.match import TRANSFER_FOLDER, Enrollment, Student
 from teamster.libraries.nj_isr.models import IsrFormatError, MissingFolderError
 from teamster.libraries.nj_isr.publish import PublishResult
 from teamster.libraries.nj_isr.run import (
+    INVESTIGATION_COLUMNS,
     RunPlan,
     administration_year,
     build_plan,
+    investigation_rows,
     missing_districts,
     summarize,
+    write_investigation_csv,
 )
 
 TEAM = Enrollment("Newark", 133570965, "KIPP TEAM Academy")
@@ -211,6 +215,21 @@ def test_summary_lists_unmatched_records_with_their_reason(tmp_path):
     assert "seq 2" in text
 
 
+def test_summary_counts_partial_matches(tmp_path):
+    plan = _plan_with(tmp_path, students={101: replace(ALEX, dob=date(2015, 3, 5))})
+
+    text = summarize(plan, None)
+
+    assert "Partial matches (in school files, on the investigation list): 1" in text
+    assert "Unmatched: 1" in text
+
+
+def test_summary_counts_no_partial_matches_for_a_full_match(tmp_path):
+    text = summarize(small_plan(tmp_path), None)
+
+    assert "Partial matches (in school files, on the investigation list): 0" in text
+
+
 def test_summary_shows_the_publish_result(tmp_path):
     result = PublishResult(
         links={},
@@ -277,3 +296,149 @@ def test_administration_year_stops_when_there_are_no_isr_files(tmp_path):
 
     with pytest.raises(IsrFormatError, match="ISR"):
         administration_year(tmp_path)
+
+
+def _plan_with(
+    folder: Path,
+    *,
+    students: dict[int, Student],
+    crosswalk: dict[str, set[int]] | None = None,
+    by_state_id: dict[str, set[int]] | None = None,
+) -> RunPlan:
+    touch(folder, "2026_Spring_7325-965_ISR_SLA_Combined.pdf")
+    touch(folder, "2026_Spring_7325-965_ISR_SLA_Combined_100226.pdf")
+    return build_plan(
+        folder,
+        read_pages=fake_pages,
+        crosswalk=XW if crosswalk is None else crosswalk,
+        by_state_id={} if by_state_id is None else by_state_id,
+        students=students,
+    )
+
+
+def test_investigation_rows_skip_a_full_match(tmp_path):
+    rows = investigation_rows(small_plan(tmp_path))
+
+    assert [r["issue"] for r in rows] == ["no student for this state ID"]
+
+
+def test_investigation_rows_list_a_partial_match_in_the_school_file(tmp_path):
+    plan = _plan_with(tmp_path, students={101: replace(ALEX, dob=date(2015, 3, 5))})
+
+    rows = investigation_rows(plan)
+
+    assert [r["issue"] for r in rows] == [
+        "birth date differs",
+        "no student for this state ID",
+    ]
+    partial = rows[0]
+    assert partial["filed_in"] == "KIPP TEAM Academy"
+    assert partial["region"] == "Newark"
+    entry = next(
+        e for f in plan.files for e in f.entries if e.placement.record.state_id == SID_A
+    )
+    assert partial["page"] == str(entry.page_in_file)
+    assert partial["output_file"].endswith("NJSLA Reports - Spring 2026.pdf")
+    assert partial["printed_name"] == "ALEX B. RIVERA"
+    assert partial["printed_birth_date"] == "2015-03-04"
+    assert partial["state_id"] == SID_A
+    assert partial["student_number"] == "101"
+    assert partial["powerschool_last_name"] == "Rivera"
+    assert partial["powerschool_first_name"] == "Alex"
+    assert partial["powerschool_birth_date"] == "2015-03-05"
+    assert partial["source_file"] == (
+        "2026_Spring_7325-965_ISR_SLA_Combined_100226.pdf"
+    )
+    assert partial["source_seq"] == "1"
+    assert all(isinstance(v, str) for r in rows for v in r.values())
+
+
+def test_investigation_rows_name_the_last_name_difference(tmp_path):
+    students = {101: replace(ALEX, last_name="Rivero")}
+
+    rows = investigation_rows(_plan_with(tmp_path, students=students))
+
+    assert rows[0]["issue"] == "last name differs"
+    assert rows[0]["powerschool_last_name"] == "Rivero"
+
+
+def test_investigation_rows_for_no_candidate_leave_the_student_columns_blank(
+    tmp_path,
+):
+    rows = investigation_rows(small_plan(tmp_path))
+
+    row = rows[0]
+    assert row["filed_in"] == TRANSFER_FOLDER
+    assert row["state_id"] == SID_B
+    assert row["page"] == "1"
+    for column in (
+        "student_number",
+        "powerschool_last_name",
+        "powerschool_first_name",
+        "powerschool_birth_date",
+    ):
+        assert row[column] == ""
+
+
+def test_investigation_rows_for_failed_confirmation_show_the_candidate(tmp_path):
+    students = {101: replace(ALEX, last_name="Jones", dob=date(2012, 1, 1))}
+
+    rows = investigation_rows(_plan_with(tmp_path, students=students))
+
+    failed = next(r for r in rows if r["state_id"] == SID_A)
+    assert failed["issue"] == "name and birth date differ"
+    assert failed["filed_in"] == TRANSFER_FOLDER
+    assert failed["student_number"] == "101"
+    assert failed["powerschool_last_name"] == "Jones"
+    assert failed["powerschool_birth_date"] == "2012-01-01"
+
+
+def test_investigation_rows_for_source_conflict_list_every_candidate(tmp_path):
+    other = replace(ALEX, student_number=202, last_name="Jones", dob=date(2012, 1, 1))
+    nobody = replace(ALEX, last_name="Nguyen", dob=date(2013, 1, 1))
+
+    rows = investigation_rows(
+        _plan_with(
+            tmp_path,
+            students={101: nobody, 202: other},
+            crosswalk={SID_A: {101}},
+            by_state_id={SID_A: {202}},
+        )
+    )
+
+    conflict = next(r for r in rows if r["state_id"] == SID_A)
+    assert conflict["issue"] == "state and PowerSchool point to different students"
+    assert conflict["student_number"] == "101; 202"
+    assert conflict["powerschool_last_name"] == ""
+    assert conflict["powerschool_first_name"] == ""
+    assert conflict["powerschool_birth_date"] == ""
+
+
+def test_investigation_rows_are_sorted_by_region_issue_and_printed_name(tmp_path):
+    plan = _plan_with(tmp_path, students={101: replace(ALEX, dob=date(2015, 3, 5))})
+
+    rows = investigation_rows(plan)
+
+    keys = [(r["region"], r["issue"], r["printed_name"]) for r in rows]
+    assert keys == sorted(keys)
+
+
+def test_write_investigation_csv_writes_the_header_and_rows(tmp_path):
+    plan = _plan_with(tmp_path, students={101: replace(ALEX, dob=date(2015, 3, 5))})
+    rows = investigation_rows(plan)
+    path = tmp_path / "out" / "checks.csv"
+
+    assert write_investigation_csv(rows, path) == path
+
+    with path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        assert tuple(reader.fieldnames or ()) == INVESTIGATION_COLUMNS
+        assert list(reader) == rows
+
+
+def test_write_investigation_csv_with_no_rows_still_writes_the_header(tmp_path):
+    path = tmp_path / "checks.csv"
+
+    write_investigation_csv([], path)
+
+    assert path.read_text(encoding="utf-8").strip() == ",".join(INVESTIGATION_COLUMNS)
