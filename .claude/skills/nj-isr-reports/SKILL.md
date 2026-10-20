@@ -64,7 +64,8 @@ Each step is done when its check passes.
    after their fixes land if they change enrollment.
 4. **Test run.** Create an empty test folder in the Data Team shared drive, add
    the service account, and run with `--root-folder <test folder link>`,
-   `--create-missing-folders`, and `--page-anchor`. Done when all 3 checks pass:
+   `--create-missing-folders`, and `--page-anchor`. Test runs label the region
+   and school folders they create with `TEST - `. Done when all 3 checks pass:
    the largest school file previews in Drive (if it does not, stop, do not run
    against the real root, and tell the code owner, because per-grade output is a
    code change); 3 index rows open the right file and page; and a second

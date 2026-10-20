@@ -26,6 +26,7 @@ from teamster.libraries.nj_isr.models import MissingFolderError
 
 TAG_KEY = "nj_isr_admin"
 REAL_ROOT_NAME = "Report Cards and Transcripts"
+TEST_PREFIX = "TEST - "
 
 SchoolKey = tuple[str, int]  # (region, PowerSchool schoolid)
 
@@ -61,6 +62,11 @@ class _Plan:
     missing_regions: list[str] = field(default_factory=list)
     missing_schools: list[SchoolKey] = field(default_factory=list)
     orphans: list[DriveFile] = field(default_factory=list)
+
+
+def _folder_name(name: str, create_missing: bool) -> str:
+    """Region and school folder name; test runs prefix it so it cannot pass for real."""
+    return f"{TEST_PREFIX}{name}" if create_missing else name
 
 
 def _lookup(
@@ -104,10 +110,11 @@ def _plan(
     local PDF, a region or school folder that is not configured, missing, or
     doubled (a missing one is allowed with `create_missing`), and any doubled
     name among the yearly folders, transfer folders, and shortcuts the run
-    will use. `create_missing` also refuses the real root by name, and any root
-    that holds a folder other than a region folder, because it is only for a
-    test folder: on the real root, a missing or misnamed school folder must stop
-    the run.
+    will use. `create_missing` is only for a test folder: it looks up and
+    creates region and school folders under `TEST_PREFIX`, refuses the real root
+    by name, and refuses any root that holds a folder other than a prefixed
+    region folder. On the real root, a missing or misnamed school folder must
+    stop the run.
     """
     problems: list[str] = []
     plan = _Plan(regions=sorted({f.region for f in files}))
@@ -126,7 +133,9 @@ def _plan(
                 f"the root is {REAL_ROOT_NAME}"
             )
 
-        region_names = set(REGION_FOLDERS.values())
+        region_names = {
+            _folder_name(name, create_missing) for name in REGION_FOLDERS.values()
+        }
         for name in sorted(
             {f.name for f in api.list_children(root_id, FOLDER_MIME)} - region_names
         ):
@@ -143,7 +152,7 @@ def _plan(
             problems.append(f"no region folder is configured for {region!r}")
             continue
 
-        name = REGION_FOLDERS[region]
+        name = _folder_name(REGION_FOLDERS[region], create_missing)
         count = len(problems)
         found = _lookup(api, root_id, name, FOLDER_MIME, problems)
 
@@ -165,7 +174,7 @@ def _plan(
             problems.append(f"no school folder is configured for {(region, schoolid)}")
             continue
 
-        name = SCHOOL_FOLDERS[(region, schoolid)]
+        name = _folder_name(SCHOOL_FOLDERS[(region, schoolid)], create_missing)
         count = len(problems)
         found = _lookup(api, plan.region_ids.get(region), name, FOLDER_MIME, problems)
 
@@ -176,7 +185,8 @@ def _plan(
                 plan.missing_schools.append((region, schoolid))
             else:
                 problems.append(
-                    f"Drive folder {name!r} not found in {REGION_FOLDERS[region]!r}"
+                    f"Drive folder {name!r} not found in "
+                    f"{_folder_name(REGION_FOLDERS[region], create_missing)!r}"
                 )
 
     for region, region_id in plan.region_ids.items():
@@ -204,7 +214,13 @@ def _plan(
             if key in plan.school_ids or key in needed:
                 continue
 
-            school = _lookup(api, region_id, SCHOOL_FOLDERS[key], FOLDER_MIME, None)
+            school = _lookup(
+                api,
+                region_id,
+                _folder_name(SCHOOL_FOLDERS[key], create_missing),
+                FOLDER_MIME,
+                None,
+            )
             year = _lookup(
                 api, school.id if school else None, year_name, FOLDER_MIME, None
             )
@@ -344,11 +360,15 @@ def publish(
     school_ids = dict(plan.school_ids)
 
     for region in plan.missing_regions:
-        region_ids[region] = api.create(root_id, REGION_FOLDERS[region], FOLDER_MIME).id
+        region_ids[region] = api.create(
+            root_id, _folder_name(REGION_FOLDERS[region], create_missing), FOLDER_MIME
+        ).id
 
     for key in plan.missing_schools:
         school_ids[key] = api.create(
-            region_ids[key[0]], SCHOOL_FOLDERS[key], FOLDER_MIME
+            region_ids[key[0]],
+            _folder_name(SCHOOL_FOLDERS[key], create_missing),
+            FOLDER_MIME,
         ).id
 
     regions = sorted(region_ids)

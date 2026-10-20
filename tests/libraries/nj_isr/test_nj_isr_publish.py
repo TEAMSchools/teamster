@@ -18,6 +18,8 @@ from teamster.libraries.nj_isr.publish import TAG_KEY, publish
 NEWARK = "Newark Report Cards and Transcripts"
 YEAR = "Spring 2026 NJSLA ISRs"
 TRANSFER = "Transfer Out & Unmatched"
+TEST_NEWARK = f"TEST - {NEWARK}"
+TEST_TEAM = "TEST - TEAM Report Cards"
 SHEET = "Newark NJSLA Reports Index - Spring 2026"
 SHORTCUT = "00 - Find a student's NJSLA report - Spring 2026"
 
@@ -446,17 +448,30 @@ def test_unconfigured_school_stops_before_any_write():
     assert drive.writes == []
 
 
-def test_create_missing_builds_folders_for_a_test_run():
+def test_create_missing_builds_test_prefixed_folders_for_a_test_run():
     drive = fake_drive_with_existing()
 
     publish(drive, "root", [team_file], PDFS, ROWS, **{**KW, "create_missing": True})
 
-    assert drive.path_exists(f"{NEWARK}/TEAM Report Cards")
-    assert drive.path_exists(f"{NEWARK}/TEAM Report Cards/{YEAR}/{TEAM_PDF}")
+    assert drive.path_exists(f"{TEST_NEWARK}/{TEST_TEAM}/{YEAR}/{TEAM_PDF}")
+    assert not drive.named(NEWARK)
+    assert not drive.named("TEAM Report Cards")
+
+
+def test_second_test_run_reuses_the_prefixed_folders():
+    drive = fake_drive_with_existing()
+    kw = {**KW, "create_missing": True}
+
+    publish(drive, "root", [team_file], PDFS, ROWS, **kw)
+    first = drive.ids_by_path()
+    publish(drive, "root", [team_file], PDFS, ROWS, **kw)
+
+    assert drive.ids_by_path() == first
+    assert drive.path_exists(f"{TEST_NEWARK}/{TEST_TEAM}/{YEAR}/{TEAM_PDF}")
 
 
 def test_create_missing_refuses_a_root_holding_a_non_region_folder():
-    drive = fake_drive_with_existing(NEWARK, "TEAM Report Cards")
+    drive = fake_drive_with_existing(TEST_NEWARK, "TEAM Report Cards")
 
     with pytest.raises(MissingFolderError) as excinfo:
         publish(
@@ -467,23 +482,42 @@ def test_create_missing_refuses_a_root_holding_a_non_region_folder():
         "--create-missing-folders is only for an empty test folder; the root holds "
         "'TEAM Report Cards'"
     ) in str(excinfo.value)
-    assert NEWARK not in str(excinfo.value)
+    assert TEST_NEWARK not in str(excinfo.value)
     assert drive.writes == []
 
 
-def test_create_missing_allows_a_root_holding_only_region_folders():
-    drive = fake_drive_with_existing(NEWARK, "Camden Report Cards and Transcripts")
+def test_create_missing_refuses_an_unprefixed_region_folder():
+    drive = fake_drive_with_existing(NEWARK)
+
+    with pytest.raises(MissingFolderError) as excinfo:
+        publish(
+            drive, "root", [team_file], PDFS, ROWS, **{**KW, "create_missing": True}
+        )
+
+    assert (
+        "--create-missing-folders is only for an empty test folder; the root holds "
+        f"{NEWARK!r}"
+    ) in str(excinfo.value)
+    assert drive.writes == []
+
+
+def test_create_missing_allows_a_root_holding_only_prefixed_region_folders():
+    drive = fake_drive_with_existing(
+        TEST_NEWARK, "TEST - Camden Report Cards and Transcripts"
+    )
 
     publish(drive, "root", [team_file], PDFS, ROWS, **{**KW, "create_missing": True})
 
-    assert drive.path_exists(f"{NEWARK}/TEAM Report Cards/{YEAR}/{TEAM_PDF}")
+    assert drive.path_exists(f"{TEST_NEWARK}/{TEST_TEAM}/{YEAR}/{TEAM_PDF}")
 
 
 def test_create_missing_refuses_the_real_root(monkeypatch):
     monkeypatch.setattr(
         f"{__name__}.ROOT_NAME", "Report Cards and Transcripts", raising=True
     )
-    drive = fake_drive_with_existing(NEWARK, "Camden Report Cards and Transcripts")
+    drive = fake_drive_with_existing(
+        TEST_NEWARK, "TEST - Camden Report Cards and Transcripts"
+    )
 
     with pytest.raises(MissingFolderError) as excinfo:
         publish(
@@ -517,7 +551,7 @@ def test_unreadable_root_stops_before_any_write():
 
 def test_create_missing_still_stops_on_a_doubled_name():
     drive = fake_drive_with_existing(
-        NEWARK, f"{NEWARK}/TEAM Report Cards", f"{NEWARK}/TEAM Report Cards"
+        TEST_NEWARK, f"{TEST_NEWARK}/{TEST_TEAM}", f"{TEST_NEWARK}/{TEST_TEAM}"
     )
 
     with pytest.raises(MissingFolderError):
