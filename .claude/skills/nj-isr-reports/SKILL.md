@@ -41,7 +41,9 @@ Each step is done when its check passes.
 1. **Download the PDFs.** Get the ISR PDFs from the Cambium portal into
    `.claude/scratch/njsla-njgpa-isr/{season} {year} ISRs/`. The folder must live
    there: the investigation CSV lands next to it by default. Done when every
-   district (Newark, Camden, Paterson) has at least 1 original ISR file.
+   district the program tests has at least 1 original ISR file: Newark, Camden,
+   and Paterson for NJSLA; Newark and Camden for NJGPA. Once Paterson has a
+   grade 11, add `7899` to `PROGRAM_DISTRICTS["NJGPA"]` in `destinations.py`.
 2. **Update the school list.** In
    `src/teamster/libraries/nj_isr/destinations.py`, edit `SCHOOL_FOLDERS` for
    each new, renamed, or closed school (key: region and PowerSchool `schoolid`;
@@ -54,15 +56,18 @@ Each step is done when its check passes.
    then the investigation CSV. The CSV lists every partial match (last name or
    birth date differs from PowerSchool) and every unmatched report. Hand it to
    the Data team to check and fix in PowerSchool. Done when the run finishes
-   without a conservation error and the Data team has the CSV; rerun the dry run
-   after their fixes land if they change enrollment.
+   without a conservation error and, before the real run, the Data team has
+   checked every `birth date differs` row whose `filed_in` is a school, because
+   a same-surname sibling is the likely wrong match. Rerun the dry run after
+   their fixes land if they change enrollment.
 4. **Test run.** Create an empty test folder in the Data Team shared drive, add
    the service account, and run with `--root-folder <test folder link>`,
    `--create-missing-folders`, and `--page-anchor`. Done when all 3 checks pass:
    the largest school file previews in Drive (if it does not, stop, do not run
    against the real root, and tell the code owner, because per-grade output is a
    code change); 3 index rows open the right file and page; and a second
-   identical run keeps every file link with nothing trashed.
+   identical run keeps every file link and lists no file under
+   `Files no longer produced`.
 5. **Real run.** Same command, with `--root-folder` set to the link of the
    `Report Cards and Transcripts` folder and without `--create-missing-folders`.
    On the real root a missing or misnamed school folder must stop the run; with
@@ -83,11 +88,13 @@ Each step is done when its check passes.
 Rerun when the state sends corrections or enrollment changes.
 
 - Use the complete input folder. The command refuses to publish unless every
-  district has an original ISR file, because a partial input would overwrite
-  other schools' files.
+  district the program tests (Step 1) has an original ISR file, because a
+  partial input would overwrite other schools' files.
 - File links survive. The command tags every file it creates in Drive
   `properties` and replaces content in place by tag and name. Tags work under
   any identity; a rerun must use the same scheme or it duplicates files.
 - Page numbers can shift. The same run rewrites the index, so it always matches
   the files.
-- A tagged file the run no longer produces goes to the Drive trash.
+- A tagged file the run no longer produces stays in Drive and is listed under
+  `Files no longer produced`. A first run has nothing to list. On a rerun, read
+  the list and add `--allow-trash` only when every listed file should go.

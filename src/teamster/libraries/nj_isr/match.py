@@ -75,6 +75,14 @@ def _name_tokens(name: str) -> list[str]:
     return [t for t in _NAME_SEPARATORS.split(cleaned) if t]
 
 
+def _last_name_parts(ps_last_name: str) -> set[str]:
+    return {
+        part
+        for part in _name_tokens(ps_last_name)
+        if sum(c.isalpha() for c in part) >= 2
+    }
+
+
 def last_name_matches(printed_name: str, ps_last_name: str) -> bool:
     """Whether a PowerSchool last name appears in the printed name.
 
@@ -82,27 +90,35 @@ def last_name_matches(printed_name: str, ps_last_name: str) -> bool:
     when any one part of 2 or more letters is among the printed words. The
     student's PowerSchool first name is never compared.
     """
-    printed = set(_name_tokens(printed_name))
-    return any(
-        sum(c.isalpha() for c in part) >= 2 and part in printed
-        for part in _name_tokens(ps_last_name)
-    )
+    return not _last_name_parts(ps_last_name).isdisjoint(_name_tokens(printed_name))
+
+
+def surname_matches(printed_name: str, ps_last_name: str) -> bool:
+    """Whether a PowerSchool last-name part is the printed name's final word.
+
+    Stricter than `last_name_matches`: a printed first or middle name equal
+    to the PowerSchool last name does not count.
+    """
+    printed = _name_tokens(printed_name)
+    return bool(printed) and printed[-1] in _last_name_parts(ps_last_name)
 
 
 def matched_on(record: Record, student: Student) -> str:
     """Which printed details agree with PowerSchool.
 
     Returns:
-        "both" when the last name and birth date agree, "last name" or
-        "birth date" when only that one does, "" when neither does. A report
-        with no printed birth date never agrees on birth date.
+        "both" when the last name (`last_name_matches`) and birth date agree.
+        "last name" when only the surname agrees, judged by the stricter
+        `surname_matches`, because without the birth date a sibling or a
+        student whose first name is another's surname could pass. "birth date"
+        when only that agrees, and "" when neither does. A report with no
+        printed birth date never agrees on birth date.
     """
-    name_agrees = last_name_matches(record.printed_name, student.last_name)
     dob_agrees = record.printed_dob is not None and record.printed_dob == student.dob
 
-    if name_agrees and dob_agrees:
+    if dob_agrees and last_name_matches(record.printed_name, student.last_name):
         return "both"
-    if name_agrees:
+    if not dob_agrees and surname_matches(record.printed_name, student.last_name):
         return "last name"
     if dob_agrees:
         return "birth date"
@@ -134,8 +150,8 @@ def resolve(
     The state ID is looked up in the state testing crosswalk and in
     PowerSchool's own state ID field. A source only counts when it names
     exactly 1 known student. A candidate is confirmed when the printed last
-    name or birth date agrees with PowerSchool; agreeing on both is a full
-    match and on only 1 is a partial match.
+    name or birth date agrees with PowerSchool (see `matched_on`); agreeing on
+    both is a full match and on only 1 is a partial match.
 
     When the two sources name different students, a single full match wins.
     With no full match, a single partial match wins. Anything else is a

@@ -4,6 +4,13 @@ REGION_BY_DISTRICT: dict[str, str] = {
     "7899": "Paterson",
 }
 
+# Districts that must each have an original ISR file before a run publishes.
+# Paterson (7899) joins NJGPA once it has a grade 11.
+PROGRAM_DISTRICTS: dict[str, tuple[str, ...]] = {
+    "NJSLA": ("7325", "1799", "7899"),
+    "NJGPA": ("7325", "1799"),
+}
+
 REGION_FOLDERS: dict[str, str] = {
     "Newark": "Newark Report Cards and Transcripts",
     "Camden": "Camden Report Cards and Transcripts",

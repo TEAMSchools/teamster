@@ -198,6 +198,20 @@ def test_build_plan_sends_a_student_in_an_unserved_region_to_the_transfer_folder
     assert moved.resolution.student == students[101]
 
 
+def publish_result(
+    trashed: list[str] | None = None, orphans_kept: list[str] | None = None
+) -> PublishResult:
+    return PublishResult(
+        links={},
+        sheets={"Newark": "https://example.test/sheet"},
+        trashed=trashed or [],
+        readers={"Newark": ["reader@example.test"]},
+        root_name="Test root",
+        root_readers=["writer: team@example.test"],
+        orphans_kept=orphans_kept or [],
+    )
+
+
 def test_summary_lists_counts_by_region_and_destination(tmp_path):
     text = summarize(small_plan(tmp_path), None)
 
@@ -231,22 +245,35 @@ def test_summary_counts_no_partial_matches_for_a_full_match(tmp_path):
 
 
 def test_summary_shows_the_publish_result(tmp_path):
-    result = PublishResult(
-        links={},
-        sheets={"Newark": "https://example.test/sheet"},
-        trashed=["Old file.pdf"],
-        readers={"Newark": ["reader@example.test"]},
-        root_name="Test root",
-        root_readers=["writer: team@example.test"],
-    )
+    result = publish_result(trashed=["Old file.pdf"])
 
     text = summarize(small_plan(tmp_path), result)
 
-    assert "Old file.pdf" in text
+    assert "Trashed: 1\n  Old file.pdf" in text
+    assert "Files no longer produced" not in text
     assert "https://example.test/sheet" in text
     assert "reader@example.test" in text
     assert "Root folder: Test root" in text
     assert "Root folder readers: writer: team@example.test" in text
+
+
+def test_summary_lists_files_kept_without_allow_trash(tmp_path):
+    result = publish_result(orphans_kept=["Old file.pdf"])
+
+    text = summarize(small_plan(tmp_path), result)
+
+    assert (
+        "Files no longer produced (kept; rerun with --allow-trash to remove): 1\n"
+        "  Old file.pdf"
+    ) in text
+    assert "Trashed" not in text
+
+
+def test_summary_maps_each_school_to_its_drive_folder(tmp_path):
+    text = summarize(small_plan(tmp_path), None)
+
+    assert "Newark  KIPP TEAM Academy -> TEAM Report Cards" in text
+    assert "Transfer Out & Unmatched ->" not in text
 
 
 def test_summary_without_a_result_has_no_publish_section(tmp_path):
@@ -286,6 +313,28 @@ def test_missing_districts_ignores_a_district_with_only_a_correction_file(tmp_pa
     )
 
     assert missing_districts(plan) == ["1799"]
+
+
+def test_missing_districts_for_njgpa_needs_only_newark_and_camden(tmp_path):
+    plan = three_district_plan(
+        tmp_path,
+        ["2026_Spring_7325-965_ISR_GPA.pdf", "2026_Spring_1799-111_ISR_GPA.pdf"],
+    )
+
+    assert plan.program == "NJGPA"
+    assert missing_districts(plan) == []
+
+
+def test_missing_districts_for_njsla_still_needs_paterson(tmp_path):
+    plan = three_district_plan(
+        tmp_path,
+        [
+            "2026_Spring_7325-965_ISR_SLA_Combined.pdf",
+            "2026_Spring_1799-111_ISR_SLA_Combined.pdf",
+        ],
+    )
+
+    assert missing_districts(plan) == ["7899"]
 
 
 def test_administration_year_reads_the_filenames(tmp_path):

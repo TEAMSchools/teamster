@@ -70,6 +70,14 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         action="store_true",
         help="Link each index row to its page in the PDF",
     )
+    parser.add_argument(
+        "--allow-trash",
+        action="store_true",
+        help=(
+            "Move files this run no longer produces to the Drive trash "
+            "(default: keep them and list them in the summary)"
+        ),
+    )
 
     args = parser.parse_args(argv)
 
@@ -149,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
             ran_at=datetime.now(),
             create_missing=args.create_missing_folders,
             page_anchor=args.page_anchor,
+            allow_trash=args.allow_trash,
         )
 
     print(summarize(plan, result))

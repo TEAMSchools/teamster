@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from teamster.libraries.nj_isr.destinations import (
+    PROGRAM_DISTRICTS,
     REGION_BY_DISTRICT,
     REGION_FOLDERS,
     SCHOOL_FOLDERS,
@@ -129,6 +130,37 @@ def test_matched_on_levels():
     )
     assert matched_on(rec(dob=DOB, name="ALEX B. RIVERRA"), alex) == "birth date"
     assert matched_on(rec(dob=None, name="ALEX B. JONES"), alex) == ""
+
+
+def test_last_name_partial_needs_the_printed_surname():
+    # a printed first name equal to the PowerSchool last name is not a match
+    james = replace(alex, last_name="James")
+    wrong_dob = date(2015, 3, 5)
+
+    assert matched_on(rec(dob=wrong_dob, name="JAMES R. SMITH"), james) == ""
+    assert matched_on(rec(dob=DOB, name="JAMES R. SMITH"), james) == "both"
+
+
+def test_last_name_partial_matches_a_multi_part_surname():
+    de_la_cruz = replace(alex, last_name="De La Cruz")
+
+    assert (
+        matched_on(rec(dob=date(2015, 3, 5), name="JOSE DE LA CRUZ"), de_la_cruz)
+        == "last name"
+    )
+
+
+def test_resolve_first_name_only_agreement_is_failed_confirmation():
+    james = replace(alex, last_name="James")
+
+    r = resolve(
+        rec(dob=date(2015, 3, 5), name="JAMES R. SMITH"),
+        {"1000000001": {101}},
+        {},
+        {101: james},
+    )
+
+    assert (r.reason, r.student) == ("failed_confirmation", None)
 
 
 def test_matched_on_ignores_a_missing_birth_date_on_both_sides():
@@ -346,3 +378,5 @@ def test_region_tables_agree():
     assert set(REGION_BY_DISTRICT.values()) == set(REGION_FOLDERS)
     assert {region for region, _ in SCHOOL_FOLDERS} <= set(REGION_FOLDERS)
     assert TRANSFER_FOLDER == "Transfer Out & Unmatched"
+    for districts in PROGRAM_DISTRICTS.values():
+        assert set(districts) <= set(REGION_BY_DISTRICT)

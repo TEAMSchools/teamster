@@ -6,6 +6,7 @@ from datetime import date
 from pathlib import Path
 
 from teamster.libraries.nj_isr.destinations import (
+    PROGRAM_DISTRICTS,
     REGION_BY_DISTRICT,
     REGION_FOLDERS,
     SCHOOL_FOLDERS,
@@ -218,17 +219,22 @@ def build_plan(
 
 
 def missing_districts(plan: RunPlan) -> list[str]:
-    """District codes with no original (non-correction) record in the run.
+    """District codes the program needs that have no original record in the run.
 
     A run without every district would overwrite the other districts' files
-    with a subset of their students and trash the rest.
+    with a subset of their students. `PROGRAM_DISTRICTS` lists the districts
+    each program tests.
     """
     present = {
         record.source.district
         for record in plan.records_in
         if record.source.reissue_date is None
     }
-    return [district for district in REGION_BY_DISTRICT if district not in present]
+    return [
+        district
+        for district in PROGRAM_DISTRICTS[plan.program]
+        if district not in present
+    ]
 
 
 def _iso(value: date | None) -> str:
@@ -332,6 +338,16 @@ def summarize(plan: RunPlan, result: PublishResult | None) -> str:
         lines.append(f"{region}  {where}  {count} records")
 
     lines.append("")
+    lines.append("School folders")
+    schools = {(p.region, p.where, p.schoolid) for p in plan.placements}
+    for region, where, schoolid in sorted(
+        (region, where, schoolid)
+        for region, where, schoolid in schools
+        if schoolid is not None
+    ):
+        lines.append(f"{region}  {where} -> {SCHOOL_FOLDERS[(region, schoolid)]}")
+
+    lines.append("")
     lines.append(f"Corrections applied: {len(plan.replaced)}")
     lines.append(f"Unpaired corrections: {len(plan.unpaired_corrections)}")
     for record in plan.unpaired_corrections:
@@ -364,9 +380,15 @@ def summarize(plan: RunPlan, result: PublishResult | None) -> str:
         lines.append(f"Root folder readers: {', '.join(result.root_readers)}")
 
         lines.append("")
-        lines.append(f"Trashed files: {len(result.trashed)}")
-        for name in result.trashed:
-            lines.append(f"  {name}")
+        if result.orphans_kept:
+            lines.append(
+                "Files no longer produced (kept; rerun with --allow-trash to "
+                f"remove): {len(result.orphans_kept)}"
+            )
+            lines.extend(f"  {name}" for name in result.orphans_kept)
+        else:
+            lines.append(f"Trashed: {len(result.trashed)}")
+            lines.extend(f"  {name}" for name in result.trashed)
 
         for region in sorted(result.sheets):
             lines.append("")

@@ -67,7 +67,9 @@ KW = {
     "ran_at": datetime(2026, 10, 19, 9, 30),
     "create_missing": False,
     "page_anchor": True,
+    "allow_trash": False,
 }
+TRASH = {**KW, "allow_trash": True}
 
 
 @dataclass
@@ -256,6 +258,7 @@ def test_first_publish_builds_the_layout():
     assert result.sheets == {"Newark": drive.named(SHEET)[0].web_view_link}
     assert result.readers == {"Newark": [f"reader: {YEAR}"]}
     assert result.trashed == []
+    assert result.orphans_kept == []
 
 
 def test_shortcuts_and_folders_are_not_tagged():
@@ -301,13 +304,27 @@ def test_rerun_replaces_pdf_content_instead_of_duplicating():
     assert len(drive.named(TEAM_PDF)) == 1
 
 
-def test_rerun_trashes_a_file_no_longer_produced():
+def test_rerun_without_allow_trash_keeps_and_lists_a_file_no_longer_produced():
     drive = newark_drive()
     publish(drive, "root", [team_file, team_science_file], PDFS, ROWS, **KW)
+    drive.writes.clear()
 
     result = publish(drive, "root", [team_file], PDFS, ROWS, **KW)
 
+    assert result.trashed == []
+    assert result.orphans_kept == [TEAM_SCIENCE_PDF]
+    assert len(drive.named(TEAM_SCIENCE_PDF)) == 1
+    assert [w for w in drive.writes if w[0] == "trash"] == []
+
+
+def test_rerun_with_allow_trash_trashes_a_file_no_longer_produced():
+    drive = newark_drive()
+    publish(drive, "root", [team_file, team_science_file], PDFS, ROWS, **KW)
+
+    result = publish(drive, "root", [team_file], PDFS, ROWS, **TRASH)
+
     assert result.trashed == [TEAM_SCIENCE_PDF]
+    assert result.orphans_kept == []
     assert drive.named(TEAM_SCIENCE_PDF) == []
 
 
@@ -315,7 +332,7 @@ def test_rerun_trashes_orphans_in_a_school_that_has_no_files_this_run():
     drive = newark_drive()
     publish(drive, "root", [team_file, spark_file, transfer_file], PDFS, ROWS, **KW)
 
-    result = publish(drive, "root", [team_file, transfer_file], PDFS, ROWS, **KW)
+    result = publish(drive, "root", [team_file, transfer_file], PDFS, ROWS, **TRASH)
 
     assert result.trashed == [SPARK_PDF]
 
@@ -324,7 +341,7 @@ def test_rerun_trashes_a_stale_transfer_file():
     drive = newark_drive()
     publish(drive, "root", [team_file, transfer_file], PDFS, ROWS, **KW)
 
-    result = publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+    result = publish(drive, "root", [team_file], PDFS, ROWS, **TRASH)
 
     assert result.trashed == [TRANSFER_PDF]
 
@@ -339,7 +356,7 @@ def test_orphan_scan_leaves_untagged_files_sheet_and_shortcuts():
     )
     drive._add(team_year, "Staff notes.pdf", "application/pdf")
 
-    result = publish(drive, "root", [team_file, transfer_file], PDFS, ROWS, **KW)
+    result = publish(drive, "root", [team_file, transfer_file], PDFS, ROWS, **TRASH)
 
     assert result.trashed == []
     assert len(drive.named("Staff notes.pdf")) == 1
@@ -350,7 +367,7 @@ def test_orphan_scan_leaves_untagged_files_sheet_and_shortcuts():
 def test_orphan_scan_ignores_a_configured_school_without_folders():
     drive = fake_drive_with_existing(NEWARK, f"{NEWARK}/TEAM Report Cards")
 
-    result = publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+    result = publish(drive, "root", [team_file], PDFS, ROWS, **TRASH)
 
     assert result.trashed == []
     assert not any("SPARK" in drive._path(i) for i in drive.items.values())
@@ -576,7 +593,7 @@ def test_duplicate_yearly_folder_of_a_school_without_files_is_skipped():
         f"{NEWARK}/SPARK Report Cards/{YEAR}",
     )
 
-    result = publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+    result = publish(drive, "root", [team_file], PDFS, ROWS, **TRASH)
 
     assert result.trashed == []
 
@@ -606,7 +623,7 @@ def test_failed_sheet_write_leaves_nothing_trashed():
     drive.writes.clear()
 
     with pytest.raises(SheetWriteFails):
-        publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+        publish(drive, "root", [team_file], PDFS, ROWS, **TRASH)
 
     assert [w for w in drive.writes if w[0] == "trash"] == []
     assert len(drive.named(TEAM_SCIENCE_PDF)) == 1

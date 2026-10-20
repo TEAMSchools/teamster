@@ -1,3 +1,4 @@
+from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -36,6 +37,7 @@ class PublishResult:
     readers: dict[str, list[str]]  # region -> who can open the region's yearly folder
     root_name: str  # name of the --root-folder folder
     root_readers: list[str]  # who can open the root folder
+    orphans_kept: list[str]  # file names no longer produced, left in place
 
 
 @dataclass
@@ -57,6 +59,7 @@ class _Plan:
     shortcut_folders: set[str] = field(default_factory=set)
     missing_regions: list[str] = field(default_factory=list)
     missing_schools: list[SchoolKey] = field(default_factory=list)
+    orphans: list[DriveFile] = field(default_factory=list)
 
 
 def _lookup(
@@ -87,9 +90,13 @@ def _plan(
     *,
     year_name: str,
     shortcut: str,
+    tag: str,
     create_missing: bool,
 ) -> _Plan:
     """Read everything the run depends on, writing nothing.
+
+    Also lists the orphans: tagged files in the transfer and school yearly
+    folders that this run will not write.
 
     Raises a MissingFolderError at once when the root cannot be read.
     Otherwise raises one MissingFolderError naming every problem: a missing
@@ -209,7 +216,49 @@ def _plan(
     if problems:
         raise MissingFolderError("; ".join(problems))
 
+    plan.orphans = _find_orphans(api, plan, files, tag)
+
     return plan
+
+
+def _find_orphans(
+    api: DriveApi, plan: _Plan, files: Sequence[OutputFile], tag: str
+) -> list[DriveFile]:
+    """Lists tagged files that no output file of this run replaces.
+
+    Scans the transfer and school yearly folders that already exist, including
+    those of schools with no file this run, in region, folder, and name order.
+    The index Sheet lives in the region yearly folder, which is not scanned.
+    """
+    produced = defaultdict[str, set[str]](set)
+    for file in files:
+        folder_id = (
+            plan.transfer_ids.get(file.region)
+            if file.schoolid is None
+            else plan.school_year_ids.get((file.region, file.schoolid))
+        )
+        if folder_id is not None:
+            produced[folder_id].add(file.file_name)
+
+    orphans: list[DriveFile] = []
+    for region in sorted(plan.region_ids):
+        scan = [plan.transfer_ids[region]] if region in plan.transfer_ids else []
+        scan += [
+            folder_id
+            for (r, _schoolid), folder_id in sorted(plan.school_year_ids.items())
+            if r == region
+        ]
+
+        for folder_id in scan:
+            orphans.extend(
+                item
+                for item in sorted(
+                    api.list_tagged(folder_id, TAG_KEY, tag), key=lambda f: f.name
+                )
+                if item.name not in produced[folder_id]
+            )
+
+    return orphans
 
 
 def _ensure_folder(
@@ -237,21 +286,6 @@ def _upload_pdf(api: DriveApi, folder_id: str, name: str, path: Path, tag: str) 
     ).web_view_link
 
 
-def _trash_orphans(
-    api: DriveApi, folder_id: str, produced: set[str], tag: str, keep_id: str
-) -> list[str]:
-    trashed: list[str] = []
-
-    for item in sorted(api.list_tagged(folder_id, TAG_KEY, tag), key=lambda f: f.name):
-        if item.name in produced or item.id == keep_id:
-            continue
-
-        api.trash(item.id)
-        trashed.append(item.name)
-
-    return trashed
-
-
 def publish(
     api: DriveApi,
     root_id: str,
@@ -265,6 +299,7 @@ def publish(
     ran_at: datetime,
     create_missing: bool,
     page_anchor: bool,
+    allow_trash: bool,
 ) -> PublishResult:
     """Puts the output files, their shortcuts, and each region's index in Drive.
 
@@ -272,12 +307,16 @@ def publish(
     the transfer folder) and root / region folder / school folder / yearly
     folder holding that school's PDFs and a shortcut to the Sheet.
 
-    Every lookup that can fail happens before the first write: a missing or
-    doubled name, or a missing local PDF, leaves Drive untouched. Files keep
-    their IDs on a rerun: a tagged PDF or Sheet of the same name is updated in
-    place. The Sheet is written before orphans are trashed, so a failed Sheet
-    write leaves stale files rather than index links to trashed ones. Only PDFs
-    and Sheets are tagged, so the orphan scan never trashes anything else.
+    Every lookup that can fail happens before the first write: an unreadable
+    root, a missing or doubled name, or a missing local PDF leaves Drive
+    untouched. Files keep their IDs on a rerun: a tagged PDF or Sheet of the
+    same name is updated in place.
+
+    A tagged file the run no longer produces (an orphan) is trashed only with
+    `allow_trash`; otherwise it stays and is listed in `orphans_kept`. Orphans
+    are trashed after the Sheet is written, so a failed Sheet write leaves
+    stale files rather than index links to trashed ones. Only PDFs and Sheets
+    are tagged, so nothing else is ever an orphan.
     """
     year_name = year_folder_name(program, admin)
     link_name = shortcut_name(program, admin)
@@ -289,6 +328,7 @@ def publish(
         pdf_paths,
         year_name=year_name,
         shortcut=link_name,
+        tag=tag,
         create_missing=create_missing,
     )
 
@@ -328,7 +368,6 @@ def publish(
 
     school_year_ids = dict(plan.school_year_ids)
     received: dict[SchoolKey, str] = {}
-    produced: dict[str, set[str]] = {}
     links: dict[str, str] = {}
 
     for file in files:
@@ -347,7 +386,6 @@ def publish(
         links[file.file_name] = _upload_pdf(
             api, folder_id, file.file_name, pdf_paths[file.file_name], tag
         )
-        produced.setdefault(folder_id, set()).add(file.file_name)
 
     shortcut_targets = [
         (folder_id, sheet_ids[key[0]]) for key, folder_id in received.items()
@@ -372,24 +410,14 @@ def publish(
         )
 
     trashed: list[str] = []
+    kept: list[str] = []
 
-    for region in regions:
-        scan = [transfer_ids[region]] + [
-            folder_id
-            for (r, _schoolid), folder_id in sorted(school_year_ids.items())
-            if r == region
-        ]
-
-        for folder_id in scan:
-            trashed.extend(
-                _trash_orphans(
-                    api,
-                    folder_id,
-                    produced.get(folder_id, set()),
-                    tag,
-                    sheet_ids[region],
-                )
-            )
+    for orphan in plan.orphans:
+        if allow_trash:
+            api.trash(orphan.id)
+            trashed.append(orphan.name)
+        else:
+            kept.append(orphan.name)
 
     return PublishResult(
         links=links,
@@ -398,4 +426,5 @@ def publish(
         readers={region: api.readers(year_ids[region]) for region in regions},
         root_name=plan.root_name,
         root_readers=plan.root_readers,
+        orphans_kept=kept,
     )
