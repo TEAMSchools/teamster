@@ -29,6 +29,12 @@ with
             cast(null as float64) as core_cumulative_y1_gpa,
             cast(null as float64) as earned_credits_cum_projected,
             cast(null as float64) as potential_credits_cum,
+
+            row_number() over (
+                partition by
+                    g._dbt_source_project, st.student_number, loc.powerschool_school_id
+                order by g.syear desc
+            ) as rn_syear,
         from {{ ref("stg_focus__student_gpa_calculated") }} as g
         inner join
             {{ ref("int_focus__students") }} as st on g.student_id = st.student_id
@@ -113,6 +119,7 @@ with
             class_rank,
             calculated_academic_year,
         from focus_conformed
+        where rn_syear = 1
     )
 
 select

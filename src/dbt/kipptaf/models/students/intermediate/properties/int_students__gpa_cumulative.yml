@@ -15,12 +15,22 @@ models:
       the student's PowerSchool history at that school.
 
 
+      **Focus keeps the latest school year.** Focus writes a cumulative row per
+      school year, so a student with several years at one school keeps only the
+      row from the newest `syear`.
+
+
       **Miami Focus coverage is partial, and that comes from the source.** A
       Miami student missing from Focus has no imported course history, and falls
       back to the PowerSchool archive where one exists.
     config:
       materialized: table
       meta:
+        standard_exempt:
+          A5: >-
+            Latest-year-wins is the business rule (Focus writes a cumulative row
+            per school year and the newest one is current), not source-duplicate
+            masking; the staging grain test still guards true duplicates.
         dagster:
           # Hourly, matching int_extracts__student_enrollments (0 * * * *),
           # which takes its GPA from here. This model is cumulative-only, so an
@@ -138,3 +148,48 @@ models:
           KTAF GPA band for `cumulative_y1_gpa_projected_unweighted`, on the
           same cut-offs. Null when the projected GPA is null, which is every
           Focus row.
+
+unit_tests:
+  - name: unit_int_students__gpa_cumulative__focus_latest_year
+    description: >-
+      A student with Focus cumulative rows for 2 school years at 1 school keeps
+      only the newest year's row.
+    model: int_students__gpa_cumulative
+    given:
+      - input: ref("stg_focus__student_gpa_calculated")
+        rows:
+          - student_id: 1
+            school_id: 10
+            syear: 2026
+            marking_period_id: -1
+            cumulative_gpa: 2.5
+            _dbt_source_relation: "`t`.`kippmiami_focus`.`x`"
+            _dbt_source_project: kippmiami
+          - student_id: 1
+            school_id: 10
+            syear: 2027
+            marking_period_id: -1
+            cumulative_gpa: 3.1
+            _dbt_source_relation: "`t`.`kippmiami_focus`.`x`"
+            _dbt_source_project: kippmiami
+      - input: ref("int_focus__students")
+        rows:
+          - student_id: 1
+            student_number: 84000001
+      - input: ref("int_focus__schools")
+        rows:
+          - id: 10
+            school_number: 100
+      - input: ref("stg_google_sheets__people__locations")
+        rows:
+          - focus_school_id: 100
+            powerschool_school_id: 30200
+      - input: ref("int_powerschool__gpa_cumulative")
+        rows: []
+    expect:
+      rows:
+        - student_number: 84000001
+          schoolid: 30200
+          calculated_academic_year: 2027
+          cumulative_y1_gpa_unweighted: 3.1
+          cumulative_y1_gpa_unweighted_band: 4
