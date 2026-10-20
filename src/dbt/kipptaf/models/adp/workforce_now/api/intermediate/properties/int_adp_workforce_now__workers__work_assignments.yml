@@ -1,8 +1,6 @@
 models:
   - name: int_adp_workforce_now__workers__work_assignments
     data_tests:
-      # TODO(#5524): flip to error once every non-terminated assignment's
-      # location code is on the locations sheet.
       - dbt_utils.expression_is_true:
           description: >-
             Catches a non-terminated ADP work assignment record, current or
@@ -18,6 +16,7 @@ models:
               home_work_location__name_code__code_value is null
               or location_key is not null
           config:
+            severity: error
             # terminated assignments at retired codes (Pathways, Whittier) are
             # excluded from the location join on purpose
             where: assignment_status__status_code__name != 'Terminated'
