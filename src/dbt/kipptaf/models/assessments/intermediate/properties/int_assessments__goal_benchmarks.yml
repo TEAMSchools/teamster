@@ -66,10 +66,13 @@ models:
       - name: scale_score
         description: >-
           Scale score of the picked source; i-Ready rows carry the BOY score
-          plus annual typical growth.
+          plus annual typical growth. Each benchmark_assessment_type has its own
+          scale, so compare or aggregate scores only within one type.
       - name: scale_score_state
-        description:
-          State-side scale score, kept beside the pick for comparison.
+        description: >-
+          State-side scale score, kept beside the pick for comparison. NJSLA,
+          FAST and Algebra I EOC each have their own scale, so compare scores
+          only within one test.
       - name: is_proficient_int_state
         description: State-side proficiency flag (1/0), null when no state row.
       - name: scale_score_iready
@@ -388,7 +391,9 @@ unit_tests:
     description: >-
       A Miami 9th grader with no prior-year FAST PM3 reads their prior-year
       Algebra I EOC ahead of same-year i-Ready, while a classmate with both a
-      PM3 and an EOC still reads PM3 first.
+      PM3 and an EOC still reads PM3 first. A 9th grader with only a Civics EOC
+      and an 8th grader with only an Algebra I EOC get no row - Civics never
+      reads, and the EOC counts only for students enrolled in grade 9.
     model: int_assessments__goal_benchmarks
     given:
       - input: ref("int_assessments__state_scores")
@@ -406,7 +411,7 @@ unit_tests:
             assessment_name: EOC
             administration_period: PM3
             test_grade: 8
-            grade_level_when_assessed: 8
+            grade_level_when_assessed: null
             raw_subject: Algebra I
             _dbt_source_project: kippmiami
           - student_number: 84008888
@@ -422,7 +427,7 @@ unit_tests:
             assessment_name: FAST
             administration_period: PM3
             test_grade: 8
-            grade_level_when_assessed: 8
+            grade_level_when_assessed: null
             raw_subject: null
             _dbt_source_project: kippmiami
           - student_number: 84008888
@@ -438,7 +443,39 @@ unit_tests:
             assessment_name: EOC
             administration_period: PM3
             test_grade: 8
-            grade_level_when_assessed: 8
+            grade_level_when_assessed: null
+            raw_subject: Algebra I
+            _dbt_source_project: kippmiami
+          - student_number: 84009999
+            academic_year: 2025
+            scale_score: 510
+            performance_level: 4
+            is_proficient_int: 1
+            is_approaching_int: 0
+            is_below_int: 0
+            source_system: fldoe
+            illuminate_subject_area: Social Studies
+            score_source: state_fl
+            assessment_name: EOC
+            administration_period: PM3
+            test_grade: 8
+            grade_level_when_assessed: null
+            raw_subject: Civics
+            _dbt_source_project: kippmiami
+          - student_number: 84006666
+            academic_year: 2025
+            scale_score: 500
+            performance_level: 3
+            is_proficient_int: 1
+            is_approaching_int: 0
+            is_below_int: 0
+            source_system: fldoe
+            illuminate_subject_area: Mathematics
+            score_source: state_fl
+            assessment_name: EOC
+            administration_period: PM3
+            test_grade: 7
+            grade_level_when_assessed: null
             raw_subject: Algebra I
             _dbt_source_project: kippmiami
       - input: ref("int_assessments__iready_diagnostic_results")
@@ -471,6 +508,18 @@ unit_tests:
           - student_number: 84008888
             academic_year: 2026
             grade_level: 9
+            region: Miami
+            rn_year: 1
+            _dbt_source_project: kippmiami
+          - student_number: 84009999
+            academic_year: 2026
+            grade_level: 9
+            region: Miami
+            rn_year: 1
+            _dbt_source_project: kippmiami
+          - student_number: 84006666
+            academic_year: 2026
+            grade_level: 8
             region: Miami
             rn_year: 1
             _dbt_source_project: kippmiami

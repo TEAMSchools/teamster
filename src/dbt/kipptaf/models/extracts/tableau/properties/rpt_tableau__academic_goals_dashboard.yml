@@ -86,10 +86,16 @@ models:
         description: Benchmark-panel performance level (comparison only).
       - name: scale_score
         data_type: numeric
-        description: Benchmark-panel scale score (comparison only).
+        description: >-
+          Benchmark-panel scale score (comparison only). Each
+          benchmark_assessment_type has its own scale, so compare or aggregate
+          scores only within one type.
       - name: scale_score_state
         data_type: numeric
-        description: State-side benchmark scale score (comparison only).
+        description: >-
+          State-side benchmark scale score (comparison only). NJSLA, FAST and
+          Algebra I EOC each have their own scale, so compare scores only within
+          one test.
       - name: is_proficient_int_state
         data_type: int64
         description: State-side proficiency flag (comparison only).
