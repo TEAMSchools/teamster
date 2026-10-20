@@ -106,10 +106,11 @@ The security hook flags `zz_*` schemas as an access-control regression —
 expected if you do commit the temporary change; acknowledge and revert.
 
 **`zz_*` redirect — never `git add` the whole cubes/ dir while it's live.** When
-a dev-schema redirect is in the working tree, staging with `git add -A`,
-`git add .`, or `git add src/cube/model/cubes/` accidentally commits the
-redirect. Name files explicitly in every `git add` while any cube YAML is
-redirected.
+a dev-schema redirect is in the working tree, staging with `git add -u`,
+`git add -A`, `git add .`, or `git add src/cube/model/cubes/` accidentally
+commits the redirect (`-u` stages every modified tracked cube YAML). Name files
+explicitly in every `git add` while any cube YAML is redirected; this overrides
+the root CLAUDE.md `git add -u` default.
 
 **Never `bq cp` a dev-schema table into `kipptaf_marts` to unblock testing.**
 `kipptaf_marts` is the live prod dataset read by all dashboards, the Cube
@@ -151,10 +152,9 @@ exercise it; a plain dev server silently default-denies every gated view.
   `Table or CTE with name '<view>' not found` on the SQL API; in dev mode both
   surfaces report 0 rows, which reads as a clean default-deny and is what makes
   a dev-mode matrix run falsely benign. **This is a MODE difference, not a Cube
-  version difference** — verified across all four combinations of {1.6.59,
-  1.7.14} × {dev, auth-on}, denial shape tracking the mode only (#4605). Scoped
-  viewers return identical rows in both modes, so only the denial shape needs
-  auth on.
+  version difference**: the denial shape tracks the mode on every version.
+  Scoped viewers return identical rows in both modes, so only the denial shape
+  needs auth on.
 - **Testing the `__user` switch (`canSwitchSqlUser`): the super-user's OWN
   context must see the view.** Cube plans the query under the connecting user's
   context and only swaps in the `__user` target for execution. Connect as a
@@ -174,13 +174,12 @@ exercise it; a plain dev server silently default-denies every gated view.
 - **Cube Cloud Explore's "Semantic SQL" tab IS a valid surface for testing the
   Cube Cloud path.** It accepts the SQL API dialect (dimensions bare,
   `MEASURE(measure)`, query the view not the cube) AND honors a pasted Security
-  Context through `contextToGroups` — verified by pasting
-  `{"email": "<viewer>"}` as an impersonator and getting the target's scope
-  back. Do not assume "SQL" implies `checkSqlAuth`: that applies to the Postgres
-  wire protocol on `CUBEJS_PG_SQL_PORT`, not this tab. Member names follow the
-  view's `prefix:` settings, so a `prefix: true` join surfaces
-  `<lastJoinPathSegment>_<member>` (`regions_region_name`,
-  `dates_academic_year`).
+  Context through `contextToGroups`: paste `{"email": "<viewer>"}` as an
+  impersonator and you get the target's scope back. Do not assume "SQL" implies
+  `checkSqlAuth`: that applies to the Postgres wire protocol on
+  `CUBEJS_PG_SQL_PORT`, not this tab. Member names follow the view's `prefix:`
+  settings, so a `prefix: true` join surfaces `<lastJoinPathSegment>_<member>`
+  (`regions_region_name`, `dates_academic_year`).
 - **The committed matrix tool is the RLS validation path** —
   `uv run scripts/cube_rls_matrix.py --viewers-file <local file>` opens one SQL
   connection per viewer email and runs the same query, so a scope difference is
@@ -191,8 +190,8 @@ exercise it; a plain dev server silently default-denies every gated view.
   context (or sign the same payload); in Cube Cloud, paste
   `{"email": "viewer@…"}`. Either way you need to be in `CUBE_IMPERSONATORS` on
   that deployment (gate semantics: `.claude/rules/cube-authoring.md`); a caller
-  not on the list keeps their own scope silently. Verified live on both
-  surfaces: emulating a region-scoped viewer returns that region only.
+  not on the list keeps their own scope silently. On both surfaces, emulating a
+  region-scoped viewer returns that region only.
 - **The dev server always serves the MAIN checkout** — the `Cube: Dev Server`
   task runs `npm --prefix src/cube` from the workspace root, so branch changes
   to `cube.js` in a worktree are never exercised, and a worktree has no dotenv

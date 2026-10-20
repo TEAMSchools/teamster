@@ -267,6 +267,14 @@ data_tests:
             name: stg_google_sheets__people__locations
 
   - name: test_sf_contact_note_duplicate
+    description: >-
+      Salesforce Contact Notes entered more than once for the same student, from
+      AY2025 on, for students with no outside advising provider. Two notes are
+      duplicates when contact, subject, comments, next steps, date, status and
+      type all match; whitespace differences in the text are ignored. Notes with
+      blank comments are skipped, because two blank call logs on one day can be
+      two real calls. Each row is an extra copy, and the copy with the lowest
+      note name is kept. KIPP Forward deletes each listed note in Salesforce.
     config:
       meta:
         dagster:
@@ -902,15 +910,19 @@ data_tests:
       Every student who sat the NJGPA needs a cut score row that accepts their
       score. This finds students the model records as having attempted the
       assessment for a discipline but whose NJGPA rows all carry a null scale
-      score, meaning no cut score row matched on their cohort, score type and
-      assessment version. Those students fall through to a final_grad_path_code
-      of R, which is indistinguishable from genuinely meeting no pathway. DLM,
-      portfolio, no-pathway and incomplete-credit students are excluded because
-      they are coded straight from PowerSchool and never reach the cut score
-      join at all. NJDOE publishes cut scores per graduating class only after
-      the administration is scored, and a retained or accelerated student can
-      sit a version their own cohort has no row for, so warn rather than error
-      -- the value is the named list of who is unscoreable, not a blocked build.
+      score, meaning their cohort has NJGPA cut score rows but none matched on
+      score type and assessment version -- typically a retained or accelerated
+      student who sat a version their cohort has no row for. Those students fall
+      through to a final_grad_path_code of R, which is indistinguishable from
+      genuinely meeting no pathway. Students whose cohort has no NJGPA cut score
+      rows at all are left out, because NJDOE publishes cut scores per
+      graduating class only after the administration is scored and the model
+      already labels them Pending Cut Score. DLM, portfolio, no-pathway and
+      incomplete-credit students are excluded because they are coded straight
+      from PowerSchool and never reach the cut score join at all. To fix a row,
+      add the missing cohort, score type and assessment version to the
+      graduation cut score Google Sheet. Warn rather than error -- the value is
+      the named list of who is unscoreable, not a blocked build.
     config:
       severity: warn
       meta:

@@ -188,11 +188,10 @@ and diagnostics are in the `cube-ops` skill.
   per grain, or `count_distinct_approx` (HLL, wrong for a reported headcount).
   Partitioning the underlying mart is usually the cheaper win; see the
   partition-pruning rule under Authoring conventions.
-- **Custom granularities were evaluated and rejected.** `offset: -6 months` on
-  `dates.date_day` returns correct July-anchored buckets, but costs about twice
-  the slot time of the `academic_year` dimension for an identical answer, and
-  the July bucketing already lives in `dim_dates`. `origin` is silently ignored
-  — two different origin values both bucket on the calendar year, with no error.
+- **Do not add a custom granularity for academic-year buckets.** Use the
+  `academic_year` dimension: July bucketing already lives in `dim_dates`, and an
+  `offset` granularity costs more slot time for the same answer. `origin` is
+  silently ignored and buckets on the calendar year.
 
 ## View access policies
 

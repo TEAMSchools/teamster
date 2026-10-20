@@ -8,9 +8,8 @@ description: >-
   into PowerSchool imports (pathway code N), the graduation pathway fields
   written back to PowerSchool for state reporting, or working on
   int_students__graduation_path_codes,
-  stg_google_sheets__student_graduation_path_cutoffs,
-  int_assessments__state_nj_scores or rpt_tableau__graduation_requirements and
-  their upstream models.
+  stg_google_sheets__student_graduation_path_cutoffs, or
+  int_assessments__state_nj_scores and their upstream models.
 ---
 
 # Graduation Pathway Codes
@@ -170,8 +169,7 @@ the network.
 boolean columns. That sheet is retired (`enabled: false`) and the label is now
 computed in `int_students__graduation_path_codes`. Do not reinstate it.
 
-Three rules drive the label, and only the first is obvious from the column
-names:
+Four rules drive the label, and only the first is obvious from the column names:
 
 1. **A subject only counts if the student sat the NJGPA in it.** `met_ela` with
    `attempted_njgpa_ela` false contributes nothing. A DLM code (`M`) counts as
@@ -188,6 +186,15 @@ names:
    `Math Only / Awaiting ELA`. These are not Grad Eligible: the dashboard must
    never count a student whose results are still due as having met the
    requirement.
+4. **A class NJDOE has not published reads `Pending Cut Score`.** A student who
+   sat the NJGPA in a subject whose cut score cohort has no NJGPA sheet row gets
+   that label instead of a failing one. The signal is the absence of any
+   `pathway_option = 'NJGPA'` row, not a null `pathway_option`, because ACT and
+   SAT rows for a class often land before NJDOE publishes its NJGPA cut. The
+   extract reads `grad_eligibility` from `rn_discipline_distinct = 1`, not from
+   scored rows, so the label reaches students with no score.
+   `final_grad_path_code` stays `R`, because PowerSchool has no pending code.
+   Never invent one: it goes to the state.
 
 **A student who graduates without ever being placed in grade 12 is never checked
 for FAFSA.** `fafsa_required` reads `grade_level = 12`, so an 11th grader who
@@ -319,17 +326,17 @@ A cut score fix should only ever **add** met pathways. Compare before and after
 and confirm no student loses one. If any student flips from met to not met, the
 join is wrong — usually a new-scale cut applied to old-scale scores.
 
-A cohort with scores but no cut score row produces `final_grad_path_code = 'R'`,
-which reads as "no pathway met". That is indistinguishable from a genuine
-failure on the dashboard, so a missing row is a silent wrong answer, not a gap.
+A cohort with scores but no cut score row produces `final_grad_path_code = 'R'`
+and reads `Pending Cut Score` on the dashboard. Once you add the rows, those
+students move to their real result. Count them before and after.
 
 Then re-run `int_students__graduation_path_codes__scores_have_cutoffs` and read
-the remainder. Three causes leave a student unscoreable and the rows you just
-entered fix only the first: a class NJDOE has not published, a twice-retained
-student whose cut score cohort key predates the assessment version they sat, and
-a student holding no NJGPA record at all. Report the remainder to the HS team
-split by cause — the second needs a records decision, the third needs nothing,
-and handing over one undifferentiated list wastes their time.
+the remainder. The test skips classes with no NJGPA rows at all, since those
+read `Pending Cut Score`. Two causes remain: a twice-retained student whose cut
+score cohort key predates the assessment version they sat, and a student holding
+no NJGPA record at all. Report the remainder to the HS team split by cause. The
+first needs a records decision and the second needs nothing. Handing over one
+undifferentiated list wastes their time.
 
 ---
 

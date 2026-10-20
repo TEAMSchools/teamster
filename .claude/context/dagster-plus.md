@@ -34,9 +34,7 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   - the whole re-execution chain → `list_runs` returns every run's `tags`,
     `status` and timestamps, so a chain whose members share one page costs no
     extra call. Otherwise walk `dagster/root_run_id`, then
-    `dagster/auto_retry_run_id` forward, one `get_run` per hop. Verified on the
-    pair `74dfbc07` (root, `will_retry: true`) and `140a55b5`
-    (`retry_number: 1`, `will_retry: false`).
+    `dagster/auto_retry_run_id` forward, one `get_run` per hop.
   - `stepStats` → no direct replacement. This tool's `stats` gives
     `steps_succeeded` / `steps_failed` / `materializations`, and per-step
     timings come from the `STEP_START` / `STEP_SUCCESS` / `STEP_FAILURE` event
@@ -68,8 +66,7 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `step_key` and resolve the compute-log key themselves.
   - This tool caps `limit` at 100 (passing 1000 is a validation error), has no
     `filter_types`, and returns events oldest-first, so a step failure at the
-    end of a long run is several pages in — 4 pages and 329 events on one
-    100-second run.
+    end of a long run is several pages in.
   - Its error payload is `className`, `message`, `stack` and `cause`. Walk
     `error.cause` for the nested parent error.
   - Event types are DagsterEventType names (`STEP_FAILURE`, `LOGS_CAPTURED`,
@@ -79,16 +76,16 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
     `step_key`, and the files live in Dagster's own S3 bucket. Step-pod
     stdout/stderr comes only from `mcp__dagster__get_run_compute_logs`.
 
-- **The alert route is not a substitute for reading logs.** 13 alert policies
-  exist, but none fires on run failure: the run-scoped ones are `JOB_SUCCESS`
-  and `JOB_LONG_RUNNING`, and the rest are asset-health, `TICK_FAILURE`,
+- **The alert route is not a substitute for reading logs.** No alert policy
+  fires on run failure: the run-scoped ones are `JOB_SUCCESS` and
+  `JOB_LONG_RUNNING`, and the rest are asset-health, `TICK_FAILURE`,
   `CODE_LOCATION_ERROR` and `AGENT_UNAVAILABLE`. So
   `get_run_alert_notifications` on a failed run returns empty. Revisit if a
   `JOB_FAILURE` policy is ever added.
 - `list_code_locations` here drops `updatedTimestamp` and `repositories`, but
-  the commit hash is in the `image` tag and
-  `mcp__dagster__get_location_load_history` is the rollout-verification tool
-  anyway — so this server owns it.
+  the commit hash is in the `image` tag. Rollout verification goes to the
+  homebrew server's `mcp__dagster__get_location_load_history`, which owns code
+  location load history.
 - `list_asset_checks` is the only route to an asset's check NAMES, which
   `mcp__dagster__get_asset_check_executions` requires as `check_name`. Use the
   two together.
@@ -106,9 +103,8 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
     so a check that failed before the window and has not re-run since reads 0
     there while the enum still reads DEGRADED.
   - `materialization_status` → `mcp__dagster__get_asset_partition_statuses` for
-    `numMaterialized` / `numPartitions` / `numFailed`. Verified: an asset
-    reading `HEALTHY` returned 349 of 450 materialized, so a HEALTHY partitioned
-    asset can still be 101 partitions short.
+    `numMaterialized` / `numPartitions` / `numFailed`. A HEALTHY partitioned
+    asset can still be missing partitions.
   - `freshness_status` → `get_asset`'s own `latest_materialization_timestamp`.
 - **`list_deployments` with `deployment_type="branch"` returns the branch
   deployments**, which the homebrew server's `list_deployments` does not. The
