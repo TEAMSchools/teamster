@@ -48,6 +48,7 @@ def record(
     kinds: set[str],
     dashboard: str | None = None,
     inherited: set[str] | None = None,
+    capture: str | None = None,
 ) -> None:
     """Write the trusted record into the dashboard's snapshot folder.
 
@@ -61,6 +62,8 @@ def record(
         inherited: The kinds an earlier trusted run had checked, which this
             run's hand checks skipped; empty when it drew a full set. A
             re-analysis of this snapshot picks with it, so its checks stay put.
+        capture: Its capture identity (`snapshot.capture_id`), so a copy of
+            the snapshot under another folder name counts as the same one.
     """
     root = Path(root)
     (root / FILE).write_text(
@@ -72,6 +75,7 @@ def record(
                 "kinds": sorted(kinds),
                 "dashboard": dashboard or root.name,
                 "inherited": sorted(inherited or ()),
+                "capture": capture,
             },
             indent=2,
         )

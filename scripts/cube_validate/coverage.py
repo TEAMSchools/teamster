@@ -58,6 +58,14 @@ def _status(entry, mine: list, checks: Checks, rows_result, twb_text: str):
         if not differing:
             return "in the data, not in Cube", "rows agree"
         return "in the data, not in Cube", f"{small(differing)} rows differ"
+    counted = [s for s, sm in checks.sheets.items() if sm.students == entry.column]
+    if counted:
+        return (
+            "not judged",
+            "the student count on "
+            + ", ".join(counted)
+            + " proves each sheet's filters; it is never compared with Cube",
+        )
     if mine and all(c.verdict in NEVER_CUBE for c in mine):
         reason = Counter(c.reason or c.verdict for c in mine).most_common(1)[0][0]
         return "not judged", reason

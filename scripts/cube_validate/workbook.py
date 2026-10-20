@@ -465,14 +465,18 @@ def formulas(twb_text: str) -> dict[str, str]:
     out: dict[str, str] = {}
     for c in root.iter("column"):
         calc = c.find("calculation")
-        if calc is None or not calc.get("formula"):
+        # a parameter's calculation is its current value, under a caption a
+        # selector calculation often shares
+        if calc is None or not calc.get("formula") or c.get("param-domain-type"):
             continue
         name = (c.get("name") or "").strip("[]")
         out.setdefault(caption_of(c, name), calc.get("formula") or "")
     return out
 
 
-_AGGREGATION = re.compile(r"^(?:[A-Za-z]+\. |Sum of |Average of |Count of )")
+_AGGREGATION = re.compile(
+    r"^(?:[A-Za-z]+\. |Sum of |Average of |Distinct count of |Count of )"
+)
 _BRANCH = re.compile(
     r"\[Parameters\]\.\[([^\]]+)\]\s*=\s*(?:'([^']*)'|\"([^\"]*)\")\s*THEN\s*"
     r"\[([^\]]+)\]"
@@ -537,7 +541,8 @@ def measure_formula(
     for pname, a, b, target in _BRANCH.findall(formula):
         if caption_of(cols.get(pname), pname) != want and pname != want:
             continue
-        if (a or b) != value:
+        # Tableau escapes % in list values ("\% On-Time"); formulas do not
+        if (a or b) != value.replace("\\%", "%"):
             continue
         col = cols.get(target)
         calc = col.find("calculation") if col is not None else None

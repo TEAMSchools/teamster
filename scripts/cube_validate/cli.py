@@ -98,7 +98,11 @@ def analyze_snapshot(
             code = trusted.code_fingerprint(Path(__file__).parent)
             mapping = trusted.mapping_fingerprint(Path(checks_path))
             old = trusted.read(snap.dir.parent)
-            if old and old["snapshot"] == snap.dir.name:
+            capture = snapshot.capture_id(m)
+            if old and (
+                old["snapshot"] == snap.dir.name
+                or (capture is not None and old.get("capture") == capture)
+            ):
                 # a snapshot is judged by its own hand checks, never carried from
                 # itself; it picks with what it inherited, so they stay the same
                 if trusted.fingerprints_match(old, code, mapping) and old.get(
@@ -163,6 +167,7 @@ def analyze_snapshot(
             kinds,
             checks.dashboard,
             inherited=known,
+            capture=snapshot.capture_id(m),
         )
     return path, line
 

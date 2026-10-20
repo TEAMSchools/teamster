@@ -2,6 +2,7 @@
 
 import datetime as dt
 import json
+import shutil
 
 import pytest
 import yaml
@@ -574,6 +575,20 @@ def _trust_first(tmp_path):
     _, line = cli.analyze_snapshot(checks, first, cp)
     assert line.startswith("Trusted for this run")
     return checks, cp, first
+
+
+def test_a_copied_snapshot_never_carries_from_its_original(tmp_path):
+    checks, cp, first = _analyzable(tmp_path, "a")
+    m = snapshot.read_manifest(first)
+    snapshot.write_manifest(first, {**m, "extract_at": "2026-10-15T19:00:00+00:00"})
+    cli.analyze_snapshot(checks, first, cp)
+    _agree_all(first)
+    _, line = cli.analyze_snapshot(checks, first, cp)
+    assert line.startswith("Trusted for this run")
+    copy = snapshot.Snapshot(first.dir.parent / f"{first.dir.name}-copy")
+    shutil.copytree(first.dir, copy.dir, ignore=shutil.ignore_patterns("analysis"))
+    _, line = cli.analyze_snapshot(checks, copy, cp)
+    assert line.startswith("Pending")
 
 
 def test_one_new_verdict_gets_hand_checks_for_only_that_verdict(tmp_path):

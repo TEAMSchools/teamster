@@ -181,6 +181,12 @@ def test_a_mapped_and_a_named_sheet_with_cells_is_judged_on_the_mapped_one():
     assert _line(_entry("Odd"), [_cell("Odd", cells.PASS)])["status"] == "covered"
 
 
+def test_a_sheets_student_count_column_reads_not_judged():
+    got = _line(_entry("Students"))
+    assert got["status"] == "not judged"
+    assert "student count" in got["detail"]
+
+
 def test_report_puts_coverage_right_after_the_trust_verdict():
     checks = _checks(_entry("M"))
     lines = [{"name": "M", "status": "covered", "detail": "x", "source": "link"}]

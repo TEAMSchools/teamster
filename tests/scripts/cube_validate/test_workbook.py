@@ -105,6 +105,38 @@ def test_measure_formula_follows_the_selector_value():
     assert workbook.measure_formula(_SELECTOR_TWB, "Nope", None) is None
 
 
+# Real parameters carry their current value as a calculation, under the same
+# caption as the selector calculation, and Tableau escapes % in list values.
+_PARAM_WITH_VALUE_TWB = _SELECTOR_TWB.replace(
+    "<column name='[Parameter 2]' caption='Attendance Metric' datatype='string' />",
+    "<column name='[Parameter 2]' caption='Attendance Metric' datatype='string' "
+    "param-domain-type='list'><calculation class='tableau' formula='&quot;ADA&quot;' />"
+    "</column>",
+).replace("'Chronic Absenteeism'", "'% On-Time'")
+
+
+def test_measure_formula_skips_a_parameter_that_shares_the_caption():
+    whole = workbook.measure_formula(
+        _PARAM_WITH_VALUE_TWB, "Avg. Attendance Metric", None
+    )
+    assert whole is not None and "ELSEIF" in whole
+
+
+def test_measure_formula_matches_an_escaped_percent_value():
+    got = workbook.measure_formula(
+        _PARAM_WITH_VALUE_TWB,
+        "Avg. Attendance Metric",
+        ("Attendance Metric", "\\% On-Time"),
+    )
+    assert got == "Is Chronic Absentee => IF [is_absent] THEN 1 END"
+
+
+def test_measure_caption_strips_a_distinct_count_prefix():
+    twb = "<workbook><datasources /></workbook>"
+    got = workbook.measure_caption(twb, "Distinct count of Student Number")
+    assert got == "Student Number"
+
+
 def test_review_copy_strips_click_filters_from_a_sheet_with_an_escaped_name():
     twb = TWB.replace("Overview - Detail", "Absences &amp; Tardies")
     out = workbook.review_copy(twb, ["Overview"])

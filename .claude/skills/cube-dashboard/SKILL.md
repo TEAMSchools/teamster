@@ -147,9 +147,15 @@ rows "no Cube counterpart".
 
 The run starts with none. For each candidate, measure on this snapshot how many
 rows it claims and what stays unexplained (`analyze` after adding it), then the
-analyst approves it. Causes are SQL over table `rows`: `base`, `k_<key>`,
-`t_<extract column>`, `c_<Cube column>`, `t__dup`, `c__dup`. Two causes claiming
-one row stop the report; never order them to make it pass.
+analyst approves it. A cause is a SQL condition on one row of table `rows_base`:
+`base`, `k_<key>`, `l_<label>`, `t_<extract column>`, `c_<Cube column>`,
+`t__dup`, `c__dup`, `in_t`, `in_c`. A cause about a student's other rows queries
+`rows_base` itself, correlated by name:
+`exists (select 1 from rows_base c where c.in_c and c.k_student = rows_base.k_student)`.
+A subquery on `rows` fails, because that table is built from the causes. Two
+causes claiming one row stop the report; never order them to make it pass. To
+measure a candidate before adding it, rebuild `rows` in a scratch script with
+`rows.build` and save it to a table you can query.
 
 Set `inert: true` on a cause only when its rows cannot move any mapped measure,
 checked against each measure's Cube definition. Its rows then count as matched,
@@ -350,11 +356,13 @@ When trust does not carry, `<snapshot>/analysis/hand_checks.md` lists 10 to 15
 checks: one per verdict and bucket, plus random passes (only for what is new
 when a trusted run exists and the fingerprints match). Tableau side in the
 review copy (same frozen extract), Cube side against the captured value, rows
-against PowerSchool or Focus. Cube's side is the captured answer at its recorded
-refresh time, never today's Cube. Mark each result exactly `agree` or `disagree`
-in `hand_checks.yml` (new checks start `pending`), then `analyze`. Any other
-value stops `analyze` with an error naming the check's id. A result for a check
-no longer picked stays in `hand_checks.yml`; of those, only a `disagree` still
+against PowerSchool or Focus. The Tableau MCP cannot set a parameter on this
+server (`get-view-data` returns 400), so the analyst checks a parameter cut's
+mark in the browser. Cube's side is the captured answer at its recorded refresh
+time, never today's Cube. Mark each result exactly `agree` or `disagree` in
+`hand_checks.yml` (new checks start `pending`), then `analyze`. Any other value
+stops `analyze` with an error naming the check's id. A result for a check no
+longer picked stays in `hand_checks.yml`; of those, only a `disagree` still
 counts toward trust.
 
 ## Last year

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -88,3 +89,17 @@ def read_manifest(snap: Snapshot) -> dict:
 
 def write_manifest(snap: Snapshot, m: dict) -> None:
     snap.manifest_path.write_text(json.dumps(m, indent=2, sort_keys=True, default=str))
+
+
+# Written once by a capture: a copied snapshot keeps them, a new capture never
+# repeats them.
+CAPTURE_FIELDS = ("extract_at", "extract_refreshed", "clock_before", "review_copy")
+
+
+def capture_id(m: dict) -> str | None:
+    """sha256 of the manifest's capture fields, or None when it records none."""
+    kept = {k: m[k] for k in CAPTURE_FIELDS if m.get(k)}
+    if not kept:
+        return None
+    text = json.dumps(kept, sort_keys=True, default=str)
+    return hashlib.sha256(text.encode()).hexdigest()
