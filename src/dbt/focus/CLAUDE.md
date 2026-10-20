@@ -139,11 +139,13 @@ persist.** The load has no cross-table snapshot: every table is its own
 opening its own engine, so two related tables are read seconds apart from a live
 Postgres. A row written between the parent read and the child read lands as an
 orphan until the next load, so a `relationships` test here fires on teacher
-activity, not on defects. The one kept, `stg_focus__test_history_scores`
-`administration_id`, guards a persistent orphan. Any `relationships` test stays
-`severity: warn`, because at `error` a teacher saving mid-load fails the whole
-district build. Single-table tests (`unique`, `not_null`) stay
-`severity: error`, since one table IS read atomically.
+activity, not on defects. The two kept, `stg_focus__test_history_scores`
+`administration_id` and `stg_focus__students_join_people` `person_id`, guard
+persistent orphans. Any `relationships` test stays `severity: warn`, because at
+`error` a teacher saving mid-load fails the whole district build. Single-table
+key tests (`unique`, `not_null` on a Focus id) stay `severity: error`, since one
+table IS read atomically. A single-table test of what staff entered (a duplicate
+FLEID, a blank ELL code) is a source-data check and lands at `warn`.
 
 ## Model Structure
 

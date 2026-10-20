@@ -32,15 +32,16 @@ data_tests:
 
   - name: stg_finalsite__contact_relationships__caregiver_is_adult
     description: >-
-      A Finalsite relationship flagged `primary` or `financial` whose related
-      contact is not at `not_in_workflow`, the status Finalsite gives adults.
-      The usual cause is a parent whose own contact record sits in a student
-      workflow status such as `inquiry`. The parent-contact models drop that
-      relationship and fill the slot from the next candidate, so the parent
-      silently disappears from SIS contact feeds. Enrollment Ops fixes each row
-      in Finalsite. If the related contact is the parent, set their status to
-      `not_in_workflow`. If it is really a student, remove the `primary` and
-      `financial` flags from the relationship.
+      A currently enrolled Finalsite student has a relationship flagged
+      `primary` or `financial` whose related contact is not at
+      `not_in_workflow`, the status Finalsite gives adults. Students who are not
+      enrolled this school year are skipped. The usual cause is a parent whose
+      own contact record sits in a student workflow status such as `inquiry`.
+      The parent-contact models drop that relationship and fill the slot from
+      the next candidate, so the parent silently disappears from SIS contact
+      feeds. Enrollment Ops fixes each row in Finalsite. If the related contact
+      is the parent, set their status to `not_in_workflow`. If it is really a
+      student, remove the `primary` and `financial` flags from the relationship.
     config:
       severity: warn
       meta:

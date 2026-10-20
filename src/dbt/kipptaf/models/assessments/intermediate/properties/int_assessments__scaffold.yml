@@ -51,12 +51,15 @@ models:
               - student_number
               - source
               - assessment_id
-      # Source data-quality guard: Illuminate occasionally emits a corrupt
-      # date_taken (epoch / year-2000 sentinels). Section resolution anchors on
-      # administered_date instead (#4183), so this is surveillance only. Scoped
-      # to the current academic year to surface fresh corruption without years
-      # of legacy noise; warn, not error.
+      # Scoped to the current academic year so past years do not bury new rows.
       - dbt_utils.expression_is_true:
+          description: >-
+            Catches a current-year student assessment whose date_taken falls
+            before the assessment's academic year began. Either the assessment
+            is filed under the wrong academic year in Illuminate, or date_taken
+            is corrupt. Fix the assessment's academic year, or the date, in
+            Illuminate. Section resolution anchors on administered_date, not
+            date_taken, so a bad date_taken does not misplace the row.
           arguments:
             expression: |
               academic_year != {{ var("current_academic_year") }}
