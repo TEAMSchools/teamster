@@ -623,12 +623,14 @@ Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,
 discarding hand-authored definitions.
 
-Cube decides access **per view, not per field**. A viewer either opens the whole
-view, limited to the rows their scope allows, or gets a not-found error for the
-entire view. Sensitive fields live in their own view (`staff_pii` beside
-`staff_directory`), so a workbook built on a view works for everyone who can
-open that view. When an audience should see only aggregates, build the workbook
-on a view that carries no student identifiers.
+Every view today grants all of its fields to anyone who can open it, limited to
+the rows their scope allows. Sensitive fields live in their own view
+(`staff_pii` beside `staff_directory`), so a workbook built on a view works for
+everyone who can open that view. Cube can also grant a group only some fields of
+a view. If a view does that, a query that names a field outside the viewer's
+grant **fails as a whole**; Cube does not drop the field and return the rest.
+Build a workbook on such a view using only the fields its narrowest audience can
+see.
 
 ## Using Cube with Claude
 

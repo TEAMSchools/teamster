@@ -400,13 +400,17 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   `staff-pii-<staff_pii_scope>`, and the forward-compat staff tiers, each listed
   under _View access policies_. `none` on any axis → no group for that axis →
   default-deny on the views gated by it.
-- **Access is decided per view, never per field.** Every `member_level` block is
-  `includes: "*"`, so a viewer either opens the whole view, narrowed by its
-  `row_level` filters, or gets a not-found error for the entire view. Keep gated
-  fields in their own view (`staff_directory` vs `staff_pii`) rather than gating
-  members inside a mixed one. The consequence for a dashboard: an audience that
-  should see only aggregates cannot be given a view that also carries student
-  identifiers, so give it a separate view without them.
+- **A field-level grant blocks, it does not strip.** Cube's `member_level` can
+  grant a group a subset of a view's members, and members union across all of a
+  viewer's groups. A query that names a member none of the viewer's groups grant
+  fails as a whole (`You requested hidden member` with auth on, 0 rows in dev
+  mode); Cube does not drop that column and return the rest. So a Tableau
+  workbook that names a field outside a narrower audience's grant breaks for
+  that audience. Every view here uses `includes: "*"` and keeps gated fields in
+  their own view (`staff_directory` vs `staff_pii`), so a workbook built on a
+  view works for everyone who can open it. A per-field grant on a mixed view,
+  such as an aggregates-only group on a view that also carries student
+  identifiers, is possible; its workbooks must use only that group's members.
 - **`canSwitchSqlUser`** only allows the SQL super-user
   (`CUBEJS_SQL_SUPER_USER`) to switch to an address on `NETWORK_EMAIL_DOMAINS`
   in `src/cube/access.js` (`apps.teamschools.org`, `kippmiami.org`) — the
