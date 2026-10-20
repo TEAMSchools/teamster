@@ -14,11 +14,12 @@ models:
             PowerSchool. Downstream, int_powerschool__student_enrollment_union
             keeps only stints whose exit date is after the entry date, so these
             stints drop out of enrollment reporting until fixed. Graduated
-            students (schoolid 999999) and pre-registered or inactive records
-            (enroll_status -1 or 1) are excluded.
+            students (schoolid 999999) and invalid records (enroll_status 1) are
+            excluded. Pre-registered students (enroll_status -1) stay in,
+            because the enrollment union keeps their stints.
           config:
             severity: warn
-            where: schoolid != 999999 and enroll_status not in (-1, 1)
+            where: schoolid != 999999 and enroll_status != 1
     columns:
       - name: id
         data_type: int64

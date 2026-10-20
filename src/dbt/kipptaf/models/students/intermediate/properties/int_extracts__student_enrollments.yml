@@ -46,13 +46,13 @@ models:
         data_type: string
         data_tests:
           - not_null
+          # TODO(#5900): the one-subject values warn until someone decides
+          # whether a student can be IEP exempt in only one subject.
           - accepted_values:
               arguments:
                 values:
                   - Not Grad IEP Exempt
                   - "Yes"
-                  - Math only. No ELA match.
-                  - ELA only. No Math match.
         description: >-
           NJ graduation pathway IEP exemption for currently enrolled students,
           from the PowerSchool NJ state fields. Yes when both the math and ELA

@@ -752,6 +752,19 @@ data_tests:
           ref:
             name: rpt_parentsquare__students
 
+  - name: int_surveys__survey_submissions__windowed_survey_has_term
+    description: >-
+      Catches a submission to a survey that has SURVEY windows on the reporting
+      terms Google Sheet but falls outside every window for its title, so it has
+      no academic year or term code. Fix by adding or extending that survey's
+      window on the reporting terms sheet, or accept the submission as late. A
+      title with no SURVEY window at all is not checked.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_surveys__survey_submissions
+
   - name: int_students__calendar_day__zero_enrollment_in_session_days
     description: >-
       Catches Focus in-session calendar days at a school that enrolled nobody
