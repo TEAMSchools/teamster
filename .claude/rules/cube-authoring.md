@@ -464,11 +464,19 @@ the second aggregation level depends on the query's own slice. Use
 `add_group_by`/`reduce_by`; the `grain` parameter in current Cube docs replaces
 them, but check it against the deployed Cube version before relying on it.
 
-Untested: one measure that combines a total over a date range with a value
-pinned to the range's last date (for example, membership days to date plus
-students enrolled on that date). A `rolling_window` measure with
-`trailing: 1 day` may express the pinned value; prototype it before deciding to
-precompute those inputs on a dbt row.
+A value pinned to a range's last date (students enrolled on that date, beside
+membership days summed over the range) is a `rolling_window` measure with
+`trailing: 1 day` and `offset: end`. It can sit in one query with range totals,
+and a `type: number` measure can divide one by the other. Two traps:
+
+- With a `granularity`, each bucket reads the bucket's own last date, and the
+  last bucket does not clip to the query's range end: a month-grain query ending
+  10/15 returns the 10/31 headcount for October. Query the as-of date without a
+  granularity.
+- There is no academic-year granularity (see the custom-granularity rule under
+  _Authoring conventions_), so a query grouped by `dates_academic_year` pins
+  every year to the range end and returns rows for the final year only. Per-year
+  period-end values need one query per year, or a dbt row.
 
 The catch with a second aggregation level is semantic: a mean-of-school-rates
 measure beside the pooled `pct_chronically_absent` puts two different network
