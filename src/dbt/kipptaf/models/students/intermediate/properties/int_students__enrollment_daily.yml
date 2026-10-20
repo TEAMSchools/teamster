@@ -148,9 +148,11 @@ unit_tests:
       Two back-to-back stints for one student. The first opens on the 1 July
       rollover and is clamped to the year's first in-session day; its exitdate
       is exclusive, so its last row is the day before the second stint's
-      entrydate. The open second stint runs to the year's last in-session day. A
-      calendar holiday and an uncarried weekend both get rows that are not in
-      session and carry zero membership.
+      entrydate. The open second stint runs to the year's last in-session day,
+      and a second student's stint that exits after that day is capped there
+      too. A calendar holiday and an uncarried weekend both get rows that are
+      not in session and carry zero membership. Calendar, week and term rows for
+      the same school number in another region must not match.
     model: int_students__enrollment_daily
     given:
       - input: ref('int_extracts__student_enrollments')
@@ -171,6 +173,14 @@ unit_tests:
             schoolid: 101
             grade_level: 5
             enroll_status: 0
+          - student_number: 1002
+            _dbt_source_project: kippnewark
+            academic_year: 2024
+            entrydate: 2024-09-09
+            exitdate: 2024-09-20
+            schoolid: 101
+            grade_level: 6
+            enroll_status: 2
       - input: ref('int_students__calendar_day')
         rows:
           - schoolid: 101
@@ -218,6 +228,15 @@ unit_tests:
             membershipvalue: 1.0
             week_start_date: 2024-09-09
             week_end_date: 2024-09-13
+          - schoolid: 101
+            _dbt_source_project: kippcamden
+            academic_year: 2024
+            date_value: 2024-09-05
+            insession: 1
+            is_in_session: true
+            membershipvalue: 1.0
+            week_start_date: 2024-09-02
+            week_end_date: 2024-09-06
       - input: ref('dim_dates')
         rows:
           - date_key: 2024-09-01
@@ -242,6 +261,11 @@ unit_tests:
             week_start_monday: 2024-09-09
             week_end_sunday: 2024-09-15
             week_number_academic_year: 2
+          - schoolid: 101
+            _dbt_source_project: kippcamden
+            week_start_monday: 2024-09-02
+            week_end_sunday: 2024-09-08
+            week_number_academic_year: 9
       - input: ref('int_students__terms')
         rows:
           - schoolid: 101
@@ -250,6 +274,12 @@ unit_tests:
             semester: S1
             term_start_date: 2024-09-03
             term_end_date: 2024-11-08
+          - schoolid: 101
+            _dbt_source_project: kippcamden
+            term: Q2
+            semester: S1
+            term_start_date: 2024-09-01
+            term_end_date: 2024-09-30
     expect:
       rows:
         - entrydate: 2024-07-01
@@ -295,6 +325,13 @@ unit_tests:
           week_number_academic_year: 1
           term: Q1
         - entrydate: 2024-09-06
+          calendardate: 2024-09-09
+          is_in_session_day: true
+          membershipvalue: 1.0
+          week_start_date: 2024-09-09
+          week_number_academic_year: 2
+          term: Q1
+        - entrydate: 2024-09-09
           calendardate: 2024-09-09
           is_in_session_day: true
           membershipvalue: 1.0
