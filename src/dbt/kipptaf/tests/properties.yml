@@ -752,16 +752,27 @@ data_tests:
           ref:
             name: rpt_parentsquare__students
 
+  - name: int_surveys__survey_submissions__windowed_survey_has_term
+    description: >-
+      Catches a submission to a survey that has SURVEY windows on the reporting
+      terms Google Sheet but falls outside every window for its title, so it has
+      no academic year or term code. Fix by adding or extending that survey's
+      window on the reporting terms sheet, or accept the submission as late. A
+      title with no SURVEY window at all is not checked.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_surveys__survey_submissions
+
   - name: int_students__calendar_day__zero_enrollment_in_session_days
     description: >-
-      Focus in-session days at a school that enrolled nobody that year. Five
-      Focus schools carry unfiltered 212-day calendars including holidays and
-      breaks; two of them are closed but still map to live network location
-      keys, so their days reach dim_school_calendars. The fix belongs in Focus
-      configuration, so this warns rather than errors -- it makes the rows
-      visible without hiding them.
+      Catches Focus in-session calendar days at a school that enrolled nobody
+      that school year, usually a closed school or an unfiltered calendar that
+      still counts holidays and breaks. When the school still maps to a live
+      network location, its days reach dim_school_calendars. Fix the school's
+      calendar, or retire the closed school, in Focus.
     config:
-      severity: warn
       meta:
         dagster:
           ref:

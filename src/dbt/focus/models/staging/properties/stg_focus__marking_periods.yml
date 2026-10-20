@@ -6,6 +6,21 @@ models:
       three posting-window end columns (post_end_date, stand_post_end_date,
       grade12_post_end_date) are TIMESTAMP in the Focus source while their start
       counterparts are DATE.
+    data_tests:
+      # kipptaf joins quarters on a date range, so two quarters sharing a day
+      # would double that day. End dates are inclusive, hence gaps required.
+      # The 2026 floor matches kipptaf int_students__terms: earlier Focus
+      # quarters are a scaffold back to 1980 that overlaps itself and is never
+      # read.
+      - dbt_utils.mutually_exclusive_ranges:
+          arguments:
+            lower_bound_column: start_date
+            upper_bound_column: end_date
+            partition_by: school_id
+            gaps: required
+          config:
+            severity: error
+            where: type = 'quarter' and syear >= 2026
     columns:
       - name: marking_period_id
         description: Primary key — Focus marking period id.

@@ -23,6 +23,17 @@ models:
               [schoolid, yearid, week_start_date, _dbt_source_project]
           config:
             severity: error
+      # int_students__enrollment_daily joins weeks on a date range, so two
+      # weeks sharing a day would double that day. End dates are inclusive,
+      # which is why gaps are required rather than allowed.
+      - dbt_utils.mutually_exclusive_ranges:
+          arguments:
+            lower_bound_column: week_start_monday
+            upper_bound_column: week_end_sunday
+            partition_by: _dbt_source_project, schoolid
+            gaps: required
+          config:
+            severity: error
     columns:
       - name: _dbt_source_relation
         description: Fully-qualified source relation the row was unioned from.

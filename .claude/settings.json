@@ -21,6 +21,7 @@
       "mcp__claude_ai_Google_Cloud_BigQuery__get_table_info",
       "mcp__claude_ai_Google_Cloud_BigQuery__list_dataset_ids",
       "mcp__claude_ai_Google_Cloud_BigQuery__list_table_ids",
+      "mcp__claude_ai_Google_Sheets__update_values",
       "mcp__claude_ai_Slack__slack_send_message",
       "mcp__context7__query-docs",
       "mcp__context7__resolve-library-id",
