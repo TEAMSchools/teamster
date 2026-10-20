@@ -36,6 +36,6 @@ SCHOOL_FOLDERS: dict[tuple[str, int], str] = {
     ("Camden", 179903): "Hatch Report Cards",
     ("Camden", 179904): "KHS Report Cards",
     ("Camden", 179905): "Sumner Report Cards",
-    ("Paterson", 1234): "Paterson Prep Elementary Report Cards",
-    ("Paterson", 2): "Paterson Prep Middle Report Cards",
+    ("Paterson", 1234): "PPES Report Cards",
+    ("Paterson", 2): "PPMS Report Cards",
 }

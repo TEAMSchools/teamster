@@ -368,7 +368,7 @@ def test_place_unmatched_goes_to_transfer():
 
 
 def test_school_folders_key_on_region_and_schoolid():
-    assert SCHOOL_FOLDERS[("Paterson", 2)] == "Paterson Prep Middle Report Cards"
+    assert SCHOOL_FOLDERS[("Paterson", 2)] == "PPMS Report Cards"
     assert SCHOOL_FOLDERS[("Newark", 133570965)] == "TEAM Report Cards"
     assert len(SCHOOL_FOLDERS) == 19
     assert all(len(k) == 2 for k in SCHOOL_FOLDERS)
