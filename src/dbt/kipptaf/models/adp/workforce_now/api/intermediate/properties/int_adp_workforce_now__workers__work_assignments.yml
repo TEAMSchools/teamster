@@ -32,6 +32,23 @@ models:
               arguments:
                 to: ref("dim_locations")
                 field: location_key
+      - name: home_work_location__name_code__code_value
+        data_type: string
+        description:
+          ADP code for the assignment's home work location. Joins to
+          adp_location_code in stg_google_sheets__people__locations to resolve
+          location_key.
+        data_tests:
+          - not_null:
+              description: >-
+                Catches a current, non-terminated ADP work assignment with no
+                home work location. Downstream, dim_staff_cube_access gives that
+                staff member no location, so Cube denies them student data. Fix
+                by setting the home work location on the assignment in ADP.
+              config:
+                where: |
+                  is_current_record
+                  and assignment_status__status_code__name != 'Terminated'
       - name: home_work_location__name_code__name
         data_type: string
         description:
@@ -119,8 +136,6 @@ models:
       - name: base_remuneration__daily_rate_amount__name_code__long_name
         data_type: string
       - name: base_remuneration__daily_rate_amount__name_code__short_name
-        data_type: string
-      - name: home_work_location__name_code__code_value
         data_type: string
       - name: home_work_location__name_code__long_name
         data_type: string

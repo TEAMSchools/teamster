@@ -57,8 +57,10 @@ models:
           NJ graduation pathway IEP exemption for currently enrolled students,
           from the PowerSchool NJ state fields. Yes when both the math and ELA
           graduation pathways are M (IEP exempt), "Math only. No ELA match." or
-          "ELA only. No Math match." when only one is, and Not Grad IEP Exempt
-          otherwise, including every student whose enroll_status is not 0.
+          "ELA only. No Math match." when only one is M and the other pathway is
+          filled in, and Not Grad IEP Exempt otherwise. That includes a student
+          with one pathway M and the other blank, and every student whose
+          enroll_status is not 0.
       - name: _dbt_source_project
         data_type: string
       - name: studentid
