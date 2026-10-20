@@ -53,17 +53,19 @@ Each step is done when its check passes.
    `--input <folder> --dry-run --local-out <scratchpad dir>`. Read the summary,
    then the investigation CSV. The CSV lists every partial match (last name or
    birth date differs from PowerSchool) and every unmatched report. Hand it to
-   the Data team to check and fix in PowerSchool. Done when the summary shows
-   record conservation and the Data team has the CSV; rerun the dry run after
-   their fixes land if they change enrollment.
+   the Data team to check and fix in PowerSchool. Done when the run finishes
+   without a conservation error and the Data team has the CSV; rerun the dry run
+   after their fixes land if they change enrollment.
 4. **Test run.** Create an empty test folder in the Data Team shared drive, add
-   the service account, and run with `--root-folder <test folder link>` and
-   `--create-missing-folders`. Done when all 3 checks pass: the largest school
-   file previews in Drive (if it does not, stop and switch to one file per
-   grade); 3 index rows open the right file and page; and a second identical run
-   keeps every file link with nothing trashed.
+   the service account, and run with `--root-folder <test folder link>`,
+   `--create-missing-folders`, and `--page-anchor`. Done when all 3 checks pass:
+   the largest school file previews in Drive (if it does not, stop, do not run
+   against the real root, and tell the code owner, because per-grade output is a
+   code change); 3 index rows open the right file and page; and a second
+   identical run keeps every file link with nothing trashed.
 5. **Real run.** Same command, with `--root-folder` set to the link of the
-   `Report Cards and Transcripts` folder. Done when the summary lists each
+   `Report Cards and Transcripts` folder, and `--page-anchor` only if the test
+   run's links landed on the right page. Done when the summary lists each
    region's readers and they are the staff who should see that region. Share
    each region's yearly folder (`{season} {year} NJSLA ISRs`) with that region's
    school staff if they cannot open it.
