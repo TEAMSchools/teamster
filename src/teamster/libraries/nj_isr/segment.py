@@ -124,22 +124,32 @@ def _page_seqs(source: SourceFile, pages: list[str]) -> list[int]:
     return resolved
 
 
-def _printed_name(text: str) -> str:
+def _printed_name(pages: Sequence[str]) -> str:
     """Read the printed name that sits before the first "ENROLLED GRADE:" label.
 
     The name is the text before the label on the same line. When that is empty,
-    it is the nearest non-empty line above.
+    it is the nearest non-empty line above on the same page, never an earlier
+    page: page 1 ends in the access code glued to the footer token. A candidate
+    with a digit or a footer token is not a name, so the result is "" and the
+    index shows "Unknown student".
     """
-    match = _NAME_LINE_RE.search(text)
+    for page in pages:
+        match = _NAME_LINE_RE.search(page)
 
-    if match is None:
-        return ""
+        if match is None:
+            continue
 
-    if same_line := match[1].strip():
-        return same_line
+        candidate = match[1].strip()
+        if not candidate:
+            above = [line.strip() for line in page[: match.start()].splitlines()]
+            candidate = next((line for line in reversed(above) if line), "")
 
-    above = [line.strip() for line in text[: match.start()].splitlines()]
-    return next((line for line in reversed(above) if line), "")
+        if any(c.isdigit() for c in candidate) or FOOTER_RE.search(candidate):
+            return ""
+
+        return candidate
+
+    return ""
 
 
 def _parse_dob(name: str, seq: int, text: str) -> date | None:
@@ -157,9 +167,10 @@ def _parse_dob(name: str, seq: int, text: str) -> date | None:
 
 
 def _build_record(
-    source: SourceFile, seq: int, page_start: int, page_end: int, text: str
+    source: SourceFile, seq: int, page_start: int, page_end: int, pages: list[str]
 ) -> Record:
     name = source.path.name
+    text = "\n".join(pages)
 
     state_ids = set(_STATE_ID_RE.findall(text))
     if len(state_ids) != 1:
@@ -176,7 +187,7 @@ def _build_record(
         page_start=page_start,
         page_end=page_end,
         state_id=state_ids.pop(),
-        printed_name=_printed_name(text),
+        printed_name=_printed_name(pages),
         printed_dob=_parse_dob(name, seq, text),
         grade=int(grade_match[1]) if grade_match else None,
         subjects=tuple(
@@ -226,7 +237,7 @@ def segment_pages(source: SourceFile, pages: list[str]) -> list[Record]:
                 seq=seq,
                 page_start=start + 1,
                 page_end=index,
-                text="\n".join(pages[start:index]),
+                pages=pages[start:index],
             )
         )
         start = index

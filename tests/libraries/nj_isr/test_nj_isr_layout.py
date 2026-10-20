@@ -1,6 +1,7 @@
 from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -24,6 +25,7 @@ from teamster.libraries.nj_isr.match import (
     Student,
 )
 from teamster.libraries.nj_isr.models import IsrFormatError, Record, SourceFile
+from teamster.libraries.nj_isr.segment import segment_pages
 
 TEAM = Enrollment("Newark", 133570965, "KIPP TEAM Academy")
 RISE = Enrollment("Paterson", 777, "KIPP Paterson Rise")
@@ -182,11 +184,8 @@ def test_build_output_files_groups_sorts_and_numbers_pages():
     )
     team = next(f for f in files if f.schoolid == 133570965)
     assert team.file_name == "KIPP TEAM Academy - NJSLA Reports - Spring 2026.pdf"
-    assert [e.placement.resolution.student.first_name for e in team.entries] == [
-        "Al",
-        "Bo",
-        "Ava",
-    ]
+    students = [e.placement.resolution.student for e in team.entries]
+    assert [s.first_name for s in students if s is not None] == ["Al", "Bo", "Ava"]
     assert [e.page_in_file for e in team.entries] == [1, 5, 9]
     assert team.page_count == 12
     transfer = next(f for f in files if f.schoolid is None)
@@ -334,9 +333,36 @@ def test_cross_region_row_goes_to_destination_region():
     assert "Paterson" in rows and "Newark" not in rows
 
 
+ACCESS_CODE = "qz7x2w"
+FOOTER_TOKEN = "7325.7325_965.1"
+
+
+def unnamed_record_from_pages() -> Record:
+    """Segment a record whose name is missing, with the access code on page 1.
+
+    The blank name line opens page 2, so the line above it in the joined
+    record text is page 1's access code glued to the footer token.
+    """
+    source = replace(src(), path=Path("2026_Spring_7325-965_ISR_SLA_Combined.pdf"))
+    inner = "Student ID: 1000000002 Date of Birth: 03/04/15"
+    pages = [
+        f"Student Report\r\nFamily Portal Access Code:\r\n{ACCESS_CODE}{FOOTER_TOKEN}",
+        f"\r\n ENROLLED GRADE: 5\r\n{inner}",
+        f"English Language Arts\r\n{inner}\r\n{FOOTER_TOKEN}",
+    ]
+    return segment_pages(source, pages)[0]
+
+
 def test_index_never_shows_dob_state_id_or_code():
+    unnamed = Placement(
+        unnamed_record_from_pages(),
+        Resolution(None, "no_candidate"),
+        "Newark",
+        None,
+        TRANSFER_FOLDER,
+    )
     tabs = sheet_tabs(
-        index_rows(build_output_files([at_team("Adams", "Al", 1)]))["Newark"],
+        index_rows(build_output_files([at_team("Adams", "Al", 1), unnamed]))["Newark"],
         {},
         region="Newark",
         program="NJSLA",
@@ -344,12 +370,34 @@ def test_index_never_shows_dob_state_id_or_code():
         ran_at=datetime(2026, 10, 20, 9, 0),
         page_anchor=False,
     )
-    cells = [c for tab in tabs.values() for row in tab for c in row]
+    cells = [c.casefold() for tab in tabs.values() for row in tab for c in row]
+    assert "Unknown student".casefold() in cells
     assert not any(
         s in c
         for c in cells
-        for s in ("1000000001", "03/04/15", "2015-03-04", "a1b2c3")
+        for s in (
+            "1000000001",
+            "1000000002",
+            "03/04/15",
+            "2015-03-04",
+            ACCESS_CODE,
+            FOOTER_TOKEN,
+        )
     )
+
+
+def test_two_schools_with_one_name_stop_the_run():
+    twin = Enrollment("Newark", 73252, TEAM.school_name)
+    other = Placement(
+        rec(2, "BAKER BO"),
+        Resolution(student("Baker", "Bo", 102, current=twin), "matched"),
+        twin.region,
+        twin.schoolid,
+        twin.school_name,
+    )
+
+    with pytest.raises(IsrFormatError, match="duplicate output file name: "):
+        build_output_files([at_team("Adams", "Al", 1), other])
 
 
 def test_sheet_tabs_banner_header_and_link():
@@ -386,12 +434,12 @@ def test_sheet_tabs_banner_header_and_link():
 
 
 def test_sheet_tabs_link_without_anchor_or_url():
-    kwargs = dict(
-        region="Newark",
-        program="NJSLA",
-        admin="Spring 2026",
-        ran_at=datetime(2026, 10, 20, 9, 0),
-    )
+    kwargs: dict[str, Any] = {
+        "region": "Newark",
+        "program": "NJSLA",
+        "admin": "Spring 2026",
+        "ran_at": datetime(2026, 10, 20, 9, 0),
+    }
     link = {"KIPP TEAM Academy - NJSLA Reports - Spring 2026.pdf": "https://x/view"}
     plain = sheet_tabs(rows_one_team(), link, page_anchor=False, **kwargs)
     assert plain["All reports"][5][6] == '=HYPERLINK("https://x/view", "Open report")'

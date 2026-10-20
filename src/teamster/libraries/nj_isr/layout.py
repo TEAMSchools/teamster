@@ -131,6 +131,11 @@ def build_output_files(placements: Sequence[Placement]) -> list[OutputFile]:
 
     Students are sorted matched-first, then by name. Each entry carries the page
     its record starts on in the combined file.
+
+    Raises:
+        IsrFormatError: If 2 groups produce the same file name, for example 2
+            schools with one name. Links and local PDFs are keyed by file name,
+            so one school's file would overwrite the other's.
     """
     groups = defaultdict[tuple[str, int | None, str, str], list[Placement]](list)
     for placement in placements:
@@ -158,6 +163,15 @@ def build_output_files(placements: Sequence[Placement]) -> list[OutputFile]:
                 entries=tuple(entries),
             )
         )
+
+    names = Counter(f.file_name for f in files)
+    doubled = sorted(name for name, count in names.items() if count > 1)
+    if doubled:
+        raise IsrFormatError(
+            f"duplicate output file name: {', '.join(map(repr, doubled))}; "
+            "2 destinations would write the same file"
+        )
+
     return sorted(files, key=lambda f: (f.region, f.schoolid is None, f.file_name))
 
 

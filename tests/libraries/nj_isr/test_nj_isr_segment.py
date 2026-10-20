@@ -171,6 +171,25 @@ def test_segment_reads_a_name_on_the_line_above_the_grade():
     assert recs[0].grade == 5
 
 
+def test_missing_name_never_reads_the_access_code_on_page_1():
+    # the name line is blank and is the first line of its page, so the line
+    # above it in the joined record text is page 1's access code and footer
+    pages = record(1, "1000000001", code="qz7x2w", name="", subjects=())
+
+    assert pages[1].startswith("\r\n ENROLLED GRADE:")
+    assert segment_pages(SRC, pages)[0].printed_name == ""
+
+
+@pytest.mark.parametrize(
+    "name, name_on_own_line",
+    [("SPRING 2026", True), ("1000000001", False), ("AB 7325.7325_965.1", False)],
+)
+def test_printed_name_rejects_a_line_with_a_digit(name, name_on_own_line):
+    pages = record(1, "1000000001", name=name, name_on_own_line=name_on_own_line)
+
+    assert segment_pages(SRC, pages)[0].printed_name == ""
+
+
 def test_segment_two_combined_records():
     recs = segment_pages(SRC, record(1, "1000000001") + record(2, "1000000002"))
     assert [(r.seq, r.page_start, r.page_end) for r in recs] == [(1, 1, 4), (2, 5, 8)]
