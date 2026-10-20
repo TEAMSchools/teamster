@@ -4,8 +4,9 @@ models:
       This table maintains the student schedules. It contains information such
       as Section ID, Student ID, Term ID and Teacher ID. PowerSchool sometimes
       writes the same enrollment twice. Two warning tests list those duplicates
-      for cleanup in PowerSchool — one on student, section, and date left, one
-      on student, section, and date enrolled.
+      — one on student, section, and date left, one on student, section, and
+      date enrolled. To fix one, delete the extra cc record in PowerSchool so
+      the student keeps a single enrollment in that section.
       base_powerschool__course_enrollments removes them before anything
       downstream reads cc.
     data_tests:

@@ -24,14 +24,27 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: student_id
-        description: Focus student id the person is linked to.
+      - name: person_id
+        description: Focus person id linked to the student.
         data_type: int
+        data_tests:
+          - relationships:
+              description: >-
+                A Focus student-to-person link that points at a person who no
+                longer exists in Focus. The person was deleted but the link was
+                left behind, so the student shows a contact with no name or
+                details. To fix in Focus, remove the link or point it at the
+                right person.
+              arguments:
+                to: ref('stg_focus__people')
+                field: person_id
+              config:
+                severity: warn
         config:
           meta:
             contains_pii: true
-      - name: person_id
-        description: Focus person id linked to the student.
+      - name: student_id
+        description: Focus student id the person is linked to.
         data_type: int
         config:
           meta:
