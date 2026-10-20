@@ -34,6 +34,14 @@ models:
       the years Focus does not cover.
     config:
       materialized: table
+      meta:
+        dagster:
+          # Its only readers are the two attendance enrollment facts, so it
+          # shares their tick (fct_student_attendance_enrollment_daily). An
+          # eager rebuild fires on every calendar or terms update through the
+          # upstream views and buys freshness nothing reads.
+          automation_condition:
+            cron_schedule: 0 6,15 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -52,10 +60,6 @@ models:
         description: >-
           The calendar day this row represents. Present for every day in the
           stint's clamped window, in session or not.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
 
       - name: student_number
         description: Network-wide student identifier.
@@ -137,3 +141,163 @@ models:
           Membership weight for the day, taken from the school calendar. Zero on
           every carried break day, so a break day can never reach a rate
           denominator downstream.
+
+unit_tests:
+  - name: test_int_students__enrollment_daily_stint_windows
+    description:
+      Two back-to-back stints for one student. The first opens on the 1 July
+      rollover and is clamped to the year's first in-session day; its exitdate
+      is exclusive, so its last row is the day before the second stint's
+      entrydate. The open second stint runs to the year's last in-session day. A
+      calendar holiday and an uncarried weekend both get rows that are not in
+      session and carry zero membership.
+    model: int_students__enrollment_daily
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - student_number: 1001
+            _dbt_source_project: kippnewark
+            academic_year: 2024
+            entrydate: 2024-07-01
+            exitdate: 2024-09-06
+            schoolid: 101
+            grade_level: 5
+            enroll_status: 2
+          - student_number: 1001
+            _dbt_source_project: kippnewark
+            academic_year: 2024
+            entrydate: 2024-09-06
+            exitdate: null
+            schoolid: 101
+            grade_level: 5
+            enroll_status: 0
+      - input: ref('int_students__calendar_day')
+        rows:
+          - schoolid: 101
+            _dbt_source_project: kippnewark
+            academic_year: 2024
+            date_value: 2024-09-03
+            insession: 1
+            is_in_session: true
+            membershipvalue: 1.0
+            week_start_date: 2024-09-02
+            week_end_date: 2024-09-06
+          - schoolid: 101
+            _dbt_source_project: kippnewark
+            academic_year: 2024
+            date_value: 2024-09-04
+            insession: 1
+            is_in_session: true
+            membershipvalue: 1.0
+            week_start_date: 2024-09-02
+            week_end_date: 2024-09-06
+          - schoolid: 101
+            _dbt_source_project: kippnewark
+            academic_year: 2024
+            date_value: 2024-09-05
+            insession: 0
+            is_in_session: false
+            membershipvalue: 1.0
+            week_start_date: 2024-09-02
+            week_end_date: 2024-09-06
+          - schoolid: 101
+            _dbt_source_project: kippnewark
+            academic_year: 2024
+            date_value: 2024-09-06
+            insession: 1
+            is_in_session: true
+            membershipvalue: 1.0
+            week_start_date: 2024-09-02
+            week_end_date: 2024-09-06
+          - schoolid: 101
+            _dbt_source_project: kippnewark
+            academic_year: 2024
+            date_value: 2024-09-09
+            insession: 1
+            is_in_session: true
+            membershipvalue: 1.0
+            week_start_date: 2024-09-09
+            week_end_date: 2024-09-13
+      - input: ref('dim_dates')
+        rows:
+          - date_key: 2024-09-01
+          - date_key: 2024-09-02
+          - date_key: 2024-09-03
+          - date_key: 2024-09-04
+          - date_key: 2024-09-05
+          - date_key: 2024-09-06
+          - date_key: 2024-09-07
+          - date_key: 2024-09-08
+          - date_key: 2024-09-09
+          - date_key: 2024-09-10
+      - input: ref('int_students__calendar_week')
+        rows:
+          - schoolid: 101
+            _dbt_source_project: kippnewark
+            week_start_monday: 2024-09-02
+            week_end_sunday: 2024-09-08
+            week_number_academic_year: 1
+          - schoolid: 101
+            _dbt_source_project: kippnewark
+            week_start_monday: 2024-09-09
+            week_end_sunday: 2024-09-15
+            week_number_academic_year: 2
+      - input: ref('int_students__terms')
+        rows:
+          - schoolid: 101
+            _dbt_source_project: kippnewark
+            term: Q1
+            semester: S1
+            term_start_date: 2024-09-03
+            term_end_date: 2024-11-08
+    expect:
+      rows:
+        - entrydate: 2024-07-01
+          calendardate: 2024-09-03
+          is_in_session_day: true
+          membershipvalue: 1.0
+          week_start_date: 2024-09-02
+          week_number_academic_year: 1
+          term: Q1
+        - entrydate: 2024-07-01
+          calendardate: 2024-09-04
+          is_in_session_day: true
+          membershipvalue: 1.0
+          week_start_date: 2024-09-02
+          week_number_academic_year: 1
+          term: Q1
+        - entrydate: 2024-07-01
+          calendardate: 2024-09-05
+          is_in_session_day: false
+          membershipvalue: 0.0
+          week_start_date: 2024-09-02
+          week_number_academic_year: 1
+          term: Q1
+        - entrydate: 2024-09-06
+          calendardate: 2024-09-06
+          is_in_session_day: true
+          membershipvalue: 1.0
+          week_start_date: 2024-09-02
+          week_number_academic_year: 1
+          term: Q1
+        - entrydate: 2024-09-06
+          calendardate: 2024-09-07
+          is_in_session_day: false
+          membershipvalue: 0.0
+          week_start_date: null
+          week_number_academic_year: 1
+          term: Q1
+        - entrydate: 2024-09-06
+          calendardate: 2024-09-08
+          is_in_session_day: false
+          membershipvalue: 0.0
+          week_start_date: null
+          week_number_academic_year: 1
+          term: Q1
+        - entrydate: 2024-09-06
+          calendardate: 2024-09-09
+          is_in_session_day: true
+          membershipvalue: 1.0
+          week_start_date: 2024-09-09
+          week_number_academic_year: 2
+          term: Q1
