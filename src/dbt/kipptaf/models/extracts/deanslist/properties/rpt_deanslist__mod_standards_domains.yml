@@ -62,3 +62,74 @@ models:
           above for Exceeds, 75 for Met, and 50 for Approaching Expectations,
           then 30 for Below and 0 for Far Below. Grades 3-4 use 85 for Exceeds,
           70 for Met, 50 for Approaching, 30 for Below, and 0 for Far Below.
+unit_tests:
+  - name: test_rpt_deanslist__mod_standards_domains_split_standard
+    description: >-
+      Standard A is aligned to 2 Illuminate standard records on one assessment,
+      3 of 4 points on one and 0 of 2 on the other. It scores once, 3 of 6
+      points (50), not the average of 75 and 0. Standard B has 1 record and
+      keeps its Illuminate percent_correct of 80 rather than a recomputed 78.
+    model: rpt_deanslist__mod_standards_domains
+    given:
+      - input: ref('int_assessments__response_rollup')
+        format: sql
+        rows: |
+          select
+              'illuminate' as source,
+              101 as student_number,
+              2026 as academic_year,
+              9001 as assessment_id,
+              'Mathematics' as subject_area,
+              'Q1' as term_administered,
+              false as is_replacement,
+              'standard' as response_type,
+              'CODE.A' as response_type_code,
+              'Standard A' as response_type_description,
+              cast(3 as numeric) as points,
+              cast(4 as numeric) as points_possible,
+              cast(75 as numeric) as percent_correct
+          union all
+          select
+              'illuminate', 101, 2026, 9001, 'Mathematics', 'Q1', false,
+              'standard', 'CODE.A', 'Standard A',
+              cast(0 as numeric), cast(2 as numeric), cast(0 as numeric)
+          union all
+          select
+              'illuminate', 101, 2026, 9001, 'Mathematics', 'Q1', false,
+              'standard', 'CODE.B', 'Standard B',
+              cast(7 as numeric), cast(9 as numeric), cast(80 as numeric)
+      - input: ref('stg_google_sheets__assessments__standard_domains')
+        rows:
+          - { standard_code: CODE.A, standard_domain: Domain 1 }
+          - { standard_code: CODE.B, standard_domain: Domain 2 }
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              academic_year: 2026,
+              student_number: 101,
+              rn_year: 1,
+              grade_level: 3,
+              region: Newark,
+            }
+      - input: ref('stg_google_appsheet__illuminate_assessments_extension')
+        rows:
+          - {
+              source: illuminate,
+              assessment_id: 9001,
+              regions_report_card: Newark,
+              regions_progress_report: null,
+            }
+    expect:
+      rows:
+        - {
+            report_type: Report Card,
+            standard_domain: Domain 1,
+            avg_percent_correct: 50,
+            performance_level: Approaching Expectations,
+          }
+        - {
+            report_type: Report Card,
+            standard_domain: Domain 2,
+            avg_percent_correct: 80,
+            performance_level: Met Expectations,
+          }
