@@ -32,16 +32,10 @@ models:
       enrollment spine is the same one Topline and the Tableau extracts read,
       and int_students__calendar_day keeps the frozen PowerSchool archive for
       the years Focus does not cover.
-    config:
-      materialized: table
-      meta:
-        dagster:
-          # Its only readers are the two attendance enrollment facts, so it
-          # shares their tick (fct_student_attendance_enrollment_daily). An
-          # eager rebuild fires on every calendar or terms update through the
-          # upstream views and buys freshness nothing reads.
-          automation_condition:
-            cron_schedule: 0 6,15 * * *
+    # A view, not a table: its only readers are the two attendance enrollment
+    # facts, which recompute it when they build. A stored copy rebuilt on every
+    # upstream update bought freshness nothing read, and a cron copy can lag
+    # its parent when that parent is held back at a shared tick.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
