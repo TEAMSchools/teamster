@@ -11,6 +11,10 @@ def test_normalize_regional_admin_schools():
         {"_id": "u4", "regionalAdminSchools": []},
         {"_id": "u5", "regionalAdminSchools": None},
         {"_id": "u6"},
+        {"_id": "u7", "regionalAdminSchools": ["s6", None]},
+        # unknown shapes pass through so the Avro write fails loudly
+        {"_id": "u8", "regionalAdminSchools": {"0": "s7"}},
+        {"_id": "u9", "regionalAdminSchools": [{"id": "s8"}]},
     ]
 
     normalize_regional_admin_schools(records)
@@ -22,4 +26,7 @@ def test_normalize_regional_admin_schools():
         [],
         None,
         None,
+        [{"_id": "s6", "name": None}, None],
+        {"0": "s7"},
+        [{"id": "s8"}],
     ]

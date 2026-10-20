@@ -22,14 +22,15 @@ def normalize_regional_admin_schools(records: list[dict]) -> None:
 
     Grow returns bare school ids, and some entries arrive as an array serialized
     into an object (`{"0": id, "1": id}`). The Avro schema expects `Ref`
-    records, so wrap each id with an empty `name`. Populated `Ref` entries pass
-    through unchanged.
+    records, so wrap each id with an empty `name`. Any other shape passes through
+    unchanged, so an unexpected payload still fails the Avro write instead of
+    storing wrong ids.
     """
     # TODO(#6031): store the field as ids and drop this
     for record in records:
         schools = record.get("regionalAdminSchools")
 
-        if not schools:
+        if not isinstance(schools, list):
             continue
 
         normalized = []
@@ -37,7 +38,9 @@ def normalize_regional_admin_schools(records: list[dict]) -> None:
         for school in schools:
             if isinstance(school, str):
                 normalized.append({"_id": school, "name": None})
-            elif isinstance(school, dict) and "_id" not in school:
+            elif (
+                isinstance(school, dict) and school and all(k.isdigit() for k in school)
+            ):
                 normalized.extend({"_id": i, "name": None} for i in school.values())
             else:
                 normalized.append(school)
