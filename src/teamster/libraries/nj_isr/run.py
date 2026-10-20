@@ -360,6 +360,10 @@ def summarize(plan: RunPlan, result: PublishResult | None) -> str:
 
     if result is not None:
         lines.append("")
+        lines.append(f"Root folder: {result.root_name}")
+        lines.append(f"Root folder readers: {', '.join(result.root_readers)}")
+
+        lines.append("")
         lines.append(f"Trashed files: {len(result.trashed)}")
         for name in result.trashed:
             lines.append(f"  {name}")

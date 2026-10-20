@@ -81,8 +81,13 @@ class Item:
     web_view_link: str = ""
 
 
+ROOT_NAME = "Test root"
+
+
 @dataclass
 class FakeDrive:
+    """In-memory Drive. The root folder is "root" and is not an item."""
+
     items: dict[str, Item] = field(default_factory=dict)
     writes: list[tuple[str, str]] = field(default_factory=list)
     sheets: dict[str, dict[str, list[list[str]]]] = field(default_factory=dict)
@@ -118,6 +123,22 @@ class FakeDrive:
         ]
 
     # DriveApi
+
+    def get(self, file_id: str) -> DriveFile:
+        if file_id == "root":
+            return DriveFile("root", ROOT_NAME, "https://drive.test/root")
+
+        if file_id not in self.items:
+            raise MissingFolderError(f"Drive returned 404 for {file_id}")
+
+        return self._file(self.items[file_id])
+
+    def list_children(self, parent_id: str, mime_type: str) -> list[DriveFile]:
+        return [
+            self._file(i)
+            for i in self._live_children(parent_id)
+            if i.mime_type == mime_type
+        ]
 
     def find_child(self, parent_id: str, name: str, mime_type: str) -> DriveFile | None:
         matches = [
@@ -162,7 +183,7 @@ class FakeDrive:
         self.items[file_id].trashed = True
 
     def readers(self, file_id: str) -> list[str]:
-        return [f"reader: {self.items[file_id].name}"]
+        return [f"reader: {self.get(file_id).name}"]
 
     def write_sheet(
         self, spreadsheet_id: str, tabs: Mapping[str, list[list[str]]]
@@ -415,6 +436,48 @@ def test_create_missing_builds_folders_for_a_test_run():
 
     assert drive.path_exists(f"{NEWARK}/TEAM Report Cards")
     assert drive.path_exists(f"{NEWARK}/TEAM Report Cards/{YEAR}/{TEAM_PDF}")
+
+
+def test_create_missing_refuses_a_root_holding_a_non_region_folder():
+    drive = fake_drive_with_existing(NEWARK, "TEAM Report Cards")
+
+    with pytest.raises(MissingFolderError) as excinfo:
+        publish(
+            drive, "root", [team_file], PDFS, ROWS, **{**KW, "create_missing": True}
+        )
+
+    assert (
+        "--create-missing-folders is only for an empty test folder; the root holds "
+        "'TEAM Report Cards'"
+    ) in str(excinfo.value)
+    assert NEWARK not in str(excinfo.value)
+    assert drive.writes == []
+
+
+def test_create_missing_allows_a_root_holding_only_region_folders():
+    drive = fake_drive_with_existing(NEWARK, "Camden Report Cards and Transcripts")
+
+    publish(drive, "root", [team_file], PDFS, ROWS, **{**KW, "create_missing": True})
+
+    assert drive.path_exists(f"{NEWARK}/TEAM Report Cards/{YEAR}/{TEAM_PDF}")
+
+
+def test_publish_reports_the_root_folder_and_its_readers():
+    drive = newark_drive()
+
+    result = publish(drive, "root", [team_file], PDFS, ROWS, **KW)
+
+    assert result.root_name == ROOT_NAME
+    assert result.root_readers == [f"reader: {ROOT_NAME}"]
+
+
+def test_unreadable_root_stops_before_any_write():
+    drive = newark_drive()
+
+    with pytest.raises(MissingFolderError, match="--root-folder"):
+        publish(drive, "not-shared", [team_file], PDFS, ROWS, **KW)
+
+    assert drive.writes == []
 
 
 def test_create_missing_still_stops_on_a_doubled_name():

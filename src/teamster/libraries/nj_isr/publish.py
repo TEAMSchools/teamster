@@ -34,6 +34,8 @@ class PublishResult:
     sheets: dict[str, str]  # region -> Sheet webViewLink
     trashed: list[str]  # file names moved to the trash
     readers: dict[str, list[str]]  # region -> who can open the region's yearly folder
+    root_name: str  # name of the --root-folder folder
+    root_readers: list[str]  # who can open the root folder
 
 
 @dataclass
@@ -45,6 +47,8 @@ class _Plan:
     """
 
     regions: list[str]
+    root_name: str = ""
+    root_readers: list[str] = field(default_factory=list)
     region_ids: dict[str, str] = field(default_factory=dict)
     school_ids: dict[SchoolKey, str] = field(default_factory=dict)
     year_ids: dict[str, str] = field(default_factory=dict)
@@ -87,13 +91,34 @@ def _plan(
 ) -> _Plan:
     """Read everything the run depends on, writing nothing.
 
-    Raises one MissingFolderError naming every problem: a missing local PDF, a
-    region or school folder that is not configured, missing, or doubled (a
-    missing one is allowed with `create_missing`), and any doubled name among
-    the yearly folders, transfer folders, and shortcuts the run will use.
+    Raises a MissingFolderError at once when the root cannot be read.
+    Otherwise raises one MissingFolderError naming every problem: a missing
+    local PDF, a region or school folder that is not configured, missing, or
+    doubled (a missing one is allowed with `create_missing`), and any doubled
+    name among the yearly folders, transfer folders, and shortcuts the run
+    will use. `create_missing` also refuses a root that holds any folder other
+    than a region folder, because it is only for an empty test folder: on the
+    real root, a missing or misnamed school folder must stop the run.
     """
     problems: list[str] = []
     plan = _Plan(regions=sorted({f.region for f in files}))
+
+    try:
+        plan.root_name = api.get(root_id).name
+    except MissingFolderError as e:
+        raise MissingFolderError(f"cannot open the --root-folder link: {e}") from e
+
+    plan.root_readers = api.readers(root_id)
+
+    if create_missing:
+        region_names = set(REGION_FOLDERS.values())
+        for name in sorted(
+            {f.name for f in api.list_children(root_id, FOLDER_MIME)} - region_names
+        ):
+            problems.append(
+                "--create-missing-folders is only for an empty test folder; "
+                f"the root holds {name!r}"
+            )
 
     for name in sorted({f.file_name for f in files if f.file_name not in pdf_paths}):
         problems.append(f"no local PDF was given for {name!r}")
@@ -371,4 +396,6 @@ def publish(
         sheets=sheets,
         trashed=trashed,
         readers={region: api.readers(year_ids[region]) for region in regions},
+        root_name=plan.root_name,
+        root_readers=plan.root_readers,
     )

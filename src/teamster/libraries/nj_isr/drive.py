@@ -7,6 +7,7 @@ from typing import Any, Protocol
 import google.auth
 import google.auth.credentials
 from googleapiclient import discovery
+from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 
 from teamster.libraries.nj_isr.models import MissingFolderError
@@ -23,6 +24,14 @@ _FILE_FIELDS = "id,name,webViewLink"
 _NUM_RETRIES = 5
 _FORMULA_PREFIXES = ("=", "+", "-", "@")
 _HYPERLINK_PREFIX = "=HYPERLINK("
+# The banner rows on All reports. Sheets refuses to freeze every row of a grid.
+_FROZEN_ROWS = 5
+_UNREADABLE = {
+    403: "Drive returned 403 for {id}: the service account can see it but may not "
+    "read it",
+    404: "Drive returned 404 for {id}: it does not exist, or the service account "
+    "cannot see it",
+}
 
 
 @dataclass(frozen=True)
@@ -33,6 +42,10 @@ class DriveFile:
 
 
 class DriveApi(Protocol):
+    def get(self, file_id: str) -> DriveFile: ...
+
+    def list_children(self, parent_id: str, mime_type: str) -> list[DriveFile]: ...
+
     def find_child(
         self, parent_id: str, name: str, mime_type: str
     ) -> DriveFile | None: ...
@@ -125,7 +138,7 @@ def _all_reports_format_requests(sheet_id: int) -> list[dict]:
             "updateSheetProperties": {
                 "properties": {
                     "sheetId": sheet_id,
-                    "gridProperties": {"frozenRowCount": 5},
+                    "gridProperties": {"frozenRowCount": _FROZEN_ROWS},
                 },
                 "fields": "gridProperties.frozenRowCount",
             }
@@ -134,6 +147,50 @@ def _all_reports_format_requests(sheet_id: int) -> list[dict]:
         repeat_cell(start_row=0, end_row=1, text_format={"bold": True}),
         repeat_cell(start_row=4, end_row=5, text_format={"bold": True}),
     ]
+
+
+def _layout_requests(
+    sheet_ids: Mapping[str, int], tabs: Mapping[str, list[list[str]]]
+) -> list[dict]:
+    """Deletes tabs not in `tabs`, orders the rest, and sizes each grid.
+
+    Tabs move in order of their target index, so each move is to a lower index
+    or to where the tab already is. Sheets counts a move to a higher index
+    against the positions before the move, which this order never needs.
+    """
+    deletes = [
+        {"deleteSheet": {"sheetId": sheet_id}}
+        for title, sheet_id in sheet_ids.items()
+        if title not in tabs
+    ]
+    moves = [
+        {
+            "updateSheetProperties": {
+                "properties": {"sheetId": sheet_ids[tab], "index": index},
+                "fields": "index",
+            }
+        }
+        for index, tab in enumerate(tabs)
+    ]
+    grids = [
+        {
+            "updateSheetProperties": {
+                "properties": {
+                    "sheetId": sheet_ids[tab],
+                    "gridProperties": {
+                        "rowCount": max(
+                            len(rows),
+                            _FROZEN_ROWS + 1 if tab == ALL_REPORTS_TAB else 1,
+                        ),
+                        "columnCount": max([1, *(len(row) for row in rows)]),
+                    },
+                },
+                "fields": "gridProperties.rowCount,gridProperties.columnCount",
+            }
+        }
+        for tab, rows in tabs.items()
+    ]
+    return deletes + moves + grids
 
 
 class GoogleDriveApi:
@@ -169,6 +226,36 @@ class GoogleDriveApi:
             request = files.list_next(request, response)
 
         return found
+
+    def get(self, file_id: str) -> DriveFile:
+        """Reads one file or folder.
+
+        Raises:
+            MissingFolderError: If Drive answers 403 or 404, which for a folder
+                in a shared drive means the service account cannot open it.
+        """
+        try:
+            response = (
+                self._drive.files()
+                .get(fileId=file_id, fields=_FILE_FIELDS, supportsAllDrives=True)
+                .execute(num_retries=_NUM_RETRIES)
+            )
+        except HttpError as e:
+            if e.resp.status in _UNREADABLE:
+                raise MissingFolderError(
+                    _UNREADABLE[e.resp.status].format(id=file_id)
+                ) from e
+
+            raise
+
+        return _to_drive_file(response)
+
+    def list_children(self, parent_id: str, mime_type: str) -> list[DriveFile]:
+        return self._list(
+            f"'{escape_query_value(parent_id)}' in parents"
+            f" and mimeType = '{mime_type}'"
+            " and trashed = false"
+        )
 
     def find_child(self, parent_id: str, name: str, mime_type: str) -> DriveFile | None:
         matches = self._list(
@@ -276,10 +363,12 @@ class GoogleDriveApi:
     def write_sheet(
         self, spreadsheet_id: str, tabs: Mapping[str, list[list[str]]]
     ) -> None:
-        """Replaces the contents of each named tab, adding tabs that are missing.
+        """Makes the spreadsheet hold exactly `tabs`, in order, and writes them.
 
-        Tabs not named in `tabs`, including the default tab of a new
-        spreadsheet, are left alone. Formatting is applied to `All reports`.
+        The command owns the spreadsheet, so a tab not named in `tabs`,
+        including the default tab of a new spreadsheet, is deleted. Missing tabs
+        are added first, so the spreadsheet never has 0 tabs. Each grid is sized
+        to its values, and formatting is applied to `All reports`.
         """
         spreadsheets = self._sheets.spreadsheets()
 
@@ -305,6 +394,11 @@ class GoogleDriveApi:
 
             for tab, reply in zip(missing, added.get("replies", []), strict=False):
                 sheet_ids[tab] = reply["addSheet"]["properties"]["sheetId"]
+
+        spreadsheets.batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={"requests": _layout_requests(sheet_ids, tabs)},
+        ).execute(num_retries=_NUM_RETRIES)
 
         values = spreadsheets.values()
 

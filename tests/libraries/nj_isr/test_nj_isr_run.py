@@ -236,6 +236,8 @@ def test_summary_shows_the_publish_result(tmp_path):
         sheets={"Newark": "https://example.test/sheet"},
         trashed=["Old file.pdf"],
         readers={"Newark": ["reader@example.test"]},
+        root_name="Test root",
+        root_readers=["writer: team@example.test"],
     )
 
     text = summarize(small_plan(tmp_path), result)
@@ -243,6 +245,8 @@ def test_summary_shows_the_publish_result(tmp_path):
     assert "Old file.pdf" in text
     assert "https://example.test/sheet" in text
     assert "reader@example.test" in text
+    assert "Root folder: Test root" in text
+    assert "Root folder readers: writer: team@example.test" in text
 
 
 def test_summary_without_a_result_has_no_publish_section(tmp_path):

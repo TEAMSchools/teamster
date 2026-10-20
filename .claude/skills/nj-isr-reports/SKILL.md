@@ -64,11 +64,15 @@ Each step is done when its check passes.
    code change); 3 index rows open the right file and page; and a second
    identical run keeps every file link with nothing trashed.
 5. **Real run.** Same command, with `--root-folder` set to the link of the
-   `Report Cards and Transcripts` folder, and `--page-anchor` only if the test
-   run's links landed on the right page. Done when the summary lists each
-   region's readers and they are the staff who should see that region. Share
-   each region's yearly folder (`{season} {year} NJSLA ISRs`) with that region's
-   school staff if they cannot open it.
+   `Report Cards and Transcripts` folder and without `--create-missing-folders`.
+   On the real root a missing or misnamed school folder must stop the run; with
+   the flag, that school's reports would go into a new folder its staff do not
+   know about. Add `--page-anchor` only if the test run's links landed on the
+   right page. Done when the summary's `Root folder` line names
+   `Report Cards and Transcripts` and each region's readers are the staff who
+   should see that region. Share each region's yearly folder
+   (`{season} {year} NJSLA ISRs`) with that region's school staff if they cannot
+   open it.
 6. **Tell schools where the index is.** The
    `00 - Find a student's NJSLA report - {season} {year}` shortcut in each
    school's yearly folder opens the region's index. Transfer-out students'

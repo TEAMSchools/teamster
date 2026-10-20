@@ -1,8 +1,10 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import httplib2
 import pytest
 from google.auth.credentials import AnonymousCredentials
+from googleapiclient.errors import HttpError
 
 from teamster.libraries.nj_isr.drive import (
     DRIVE_SCOPE,
@@ -183,6 +185,57 @@ def test_update_media_targets_the_same_id(api, tmp_path):
     assert kwargs["media_body"].mimetype() == PDF_MIME
 
 
+def test_get_reads_one_file_across_drives(api):
+    files = api._drive.files.return_value
+    files.get.return_value.execute.return_value = {
+        "id": "root1",
+        "name": "Test root",
+        "webViewLink": "https://x/root1",
+    }
+
+    assert api.get("root1") == DriveFile(
+        id="root1", name="Test root", web_view_link="https://x/root1"
+    )
+    kwargs = files.get.call_args.kwargs
+    assert kwargs == {
+        "fileId": "root1",
+        "fields": "id,name,webViewLink",
+        "supportsAllDrives": True,
+    }
+
+
+def test_get_turns_a_404_into_a_missing_folder_error(api):
+    files = api._drive.files.return_value
+    files.get.return_value.execute.side_effect = HttpError(
+        httplib2.Response({"status": 404}), b"not found"
+    )
+
+    with pytest.raises(MissingFolderError, match="404.*cannot see"):
+        api.get("root1")
+
+
+def test_get_reraises_other_http_errors(api):
+    files = api._drive.files.return_value
+    files.get.return_value.execute.side_effect = HttpError(
+        httplib2.Response({"status": 500}), b"boom"
+    )
+
+    with pytest.raises(HttpError):
+        api.get("root1")
+
+
+def test_list_children_lists_one_mime_type(api):
+    _list_returns(api, [{"id": "a", "name": "Newark", "webViewLink": ""}])
+
+    result = api.list_children("root1", FOLDER_MIME)
+
+    q = api._drive.files.return_value.list.call_args.kwargs["q"]
+    assert "'root1' in parents" in q
+    assert f"mimeType = '{FOLDER_MIME}'" in q
+    assert "trashed = false" in q
+    assert [f.name for f in result] == ["Newark"]
+
+
 def test_trash_marks_the_file_trashed(api):
     api.trash("file1")
 
@@ -224,6 +277,14 @@ def _sheets_with_tabs(api: GoogleDriveApi, titles: dict[str, int]) -> MagicMock:
     return spreadsheets
 
 
+def _batch_requests(spreadsheets: MagicMock) -> list[list[dict]]:
+    """The request list of every batchUpdate call, in call order."""
+    return [
+        call.kwargs["body"]["requests"]
+        for call in spreadsheets.batchUpdate.call_args_list
+    ]
+
+
 def test_write_sheet_adds_missing_tab_clears_and_writes(api):
     spreadsheets = _sheets_with_tabs(api, {"Sheet1": 0})
     spreadsheets.batchUpdate.return_value.execute.return_value = {
@@ -236,13 +297,14 @@ def test_write_sheet_adds_missing_tab_clears_and_writes(api):
     assert get_kwargs["spreadsheetId"] == "ss1"
     assert get_kwargs["fields"] == "sheets.properties"
 
-    # one batchUpdate adds the tab; no formatting for a tab other than All reports
-    assert spreadsheets.batchUpdate.call_count == 1
-    batch_kwargs = spreadsheets.batchUpdate.call_args.kwargs
-    assert batch_kwargs["spreadsheetId"] == "ss1"
-    assert batch_kwargs["body"]["requests"] == [
+    # the first batchUpdate adds the tab; nothing formats a tab but All reports
+    assert spreadsheets.batchUpdate.call_args_list[0].kwargs["spreadsheetId"] == "ss1"
+    assert _batch_requests(spreadsheets)[0] == [
         {"addSheet": {"properties": {"title": "Notes"}}}
     ]
+    assert not any(
+        "repeatCell" in r for batch in _batch_requests(spreadsheets) for r in batch
+    )
 
     values = spreadsheets.values.return_value
     assert values.clear.call_args.kwargs["spreadsheetId"] == "ss1"
@@ -254,16 +316,97 @@ def test_write_sheet_adds_missing_tab_clears_and_writes(api):
     assert update_kwargs["body"] == {"values": [["a", "b"], ["c", "d"]]}
 
 
-def test_write_sheet_leaves_default_tab_and_existing_tabs_alone(api):
-    spreadsheets = _sheets_with_tabs(api, {"Sheet1": 0, "Notes": 3})
+def test_write_sheet_deletes_other_tabs_after_its_own_exist(api):
+    spreadsheets = _sheets_with_tabs(api, {"Sheet1": 0})
+    spreadsheets.batchUpdate.return_value.execute.return_value = {
+        "replies": [
+            {"addSheet": {"properties": {"sheetId": 9}}},
+            {"addSheet": {"properties": {"sheetId": 10}}},
+        ]
+    }
 
-    api.write_sheet("ss1", {"Notes": [["a"]]})
+    api.write_sheet("ss1", {"All reports": [["t"]], "About": [["a", "b"]]})
 
-    # nothing to add, nothing to format
-    assert spreadsheets.batchUpdate.call_count == 0
-    values = spreadsheets.values.return_value
-    assert values.clear.call_count == 1
-    assert values.clear.call_args.kwargs["range"] == "'Notes'"
+    batches = _batch_requests(spreadsheets)
+    add_call = next(i for i, b in enumerate(batches) if any("addSheet" in r for r in b))
+    delete_call = next(
+        i for i, b in enumerate(batches) if any("deleteSheet" in r for r in b)
+    )
+    assert add_call < delete_call
+    assert [r["deleteSheet"] for r in batches[delete_call] if "deleteSheet" in r] == [
+        {"sheetId": 0}
+    ]
+
+
+def test_write_sheet_orders_all_reports_first_and_about_second(api):
+    spreadsheets = _sheets_with_tabs(api, {"About": 5, "Sheet1": 0, "All reports": 4})
+
+    api.write_sheet("ss1", {"All reports": [["t"]], "About": [["a", "b"]]})
+
+    moves = [
+        r["updateSheetProperties"]
+        for b in _batch_requests(spreadsheets)
+        for r in b
+        if "updateSheetProperties" in r
+        and r["updateSheetProperties"]["fields"] == "index"
+    ]
+    assert moves == [
+        {"properties": {"sheetId": 4, "index": 0}, "fields": "index"},
+        {"properties": {"sheetId": 5, "index": 1}, "fields": "index"},
+    ]
+
+
+def test_write_sheet_sizes_each_grid_to_its_values_before_writing(api):
+    spreadsheets = _sheets_with_tabs(api, {"All reports": 4, "About": 5})
+    rows = [["banner"]] * 4 + [["h"] * 9] + [["r"] * 9] * 9395
+    order: list[str] = []
+
+    def record(step: str):
+        def call(**_: object) -> MagicMock:
+            order.append(step)
+            return MagicMock()
+
+        return call
+
+    spreadsheets.batchUpdate.side_effect = record("batch")
+    spreadsheets.values.return_value.update.side_effect = record("values")
+
+    api.write_sheet("ss1", {"All reports": rows, "About": [["a", "b"], ["c"]]})
+
+    grids = {
+        r["updateSheetProperties"]["properties"]["sheetId"]: r["updateSheetProperties"]
+        for b in _batch_requests(spreadsheets)
+        for r in b
+        if "updateSheetProperties" in r
+        and "rowCount" in r["updateSheetProperties"]["fields"]
+    }
+    assert grids[4] == {
+        "properties": {
+            "sheetId": 4,
+            "gridProperties": {"rowCount": 9400, "columnCount": 9},
+        },
+        "fields": "gridProperties.rowCount,gridProperties.columnCount",
+    }
+    assert grids[5]["properties"]["gridProperties"] == {
+        "rowCount": 2,
+        "columnCount": 2,
+    }
+    assert order.index("batch") < order.index("values")
+
+
+def test_write_sheet_keeps_a_row_below_the_frozen_banner(api):
+    spreadsheets = _sheets_with_tabs(api, {"All reports": 4})
+
+    api.write_sheet("ss1", {"All reports": [["t"]] * 5})
+
+    grid = next(
+        r["updateSheetProperties"]["properties"]["gridProperties"]
+        for b in _batch_requests(spreadsheets)
+        for r in b
+        if "updateSheetProperties" in r
+        and "rowCount" in r["updateSheetProperties"]["fields"]
+    )
+    assert grid == {"rowCount": 6, "columnCount": 1}
 
 
 def test_write_sheet_formats_all_reports(api):
@@ -271,8 +414,7 @@ def test_write_sheet_formats_all_reports(api):
 
     api.write_sheet("ss1", {"All reports": [["t"], ["t"], ["t"], ["t"], ["h"], ["r"]]})
 
-    assert spreadsheets.batchUpdate.call_count == 1
-    requests = spreadsheets.batchUpdate.call_args.kwargs["body"]["requests"]
+    requests = _batch_requests(spreadsheets)[-1]
 
     freeze = next(r for r in requests if "updateSheetProperties" in r)
     assert freeze["updateSheetProperties"]["properties"] == {
@@ -309,8 +451,10 @@ def test_write_sheet_formats_a_newly_added_all_reports_tab(api):
 
     api.write_sheet("ss1", {"All reports": [["t"]]})
 
-    assert spreadsheets.batchUpdate.call_count == 2
-    freeze_request = spreadsheets.batchUpdate.call_args.kwargs["body"]["requests"][0]
+    freeze_request = _batch_requests(spreadsheets)[-1][0]
+    assert freeze_request["updateSheetProperties"]["fields"] == (
+        "gridProperties.frozenRowCount"
+    )
     assert freeze_request["updateSheetProperties"]["properties"]["sheetId"] == 9
 
 

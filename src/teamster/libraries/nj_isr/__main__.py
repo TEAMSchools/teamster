@@ -60,7 +60,10 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument(
         "--create-missing-folders",
         action="store_true",
-        help="Create region and school folders that Drive does not have",
+        help=(
+            "Test runs only: create region and school folders that Drive does "
+            "not have. Refused when the root holds any other folder"
+        ),
     )
     parser.add_argument(
         "--page-anchor",
