@@ -10,6 +10,9 @@ models:
       domain across assessments whose AppSheet report-card regions include the
       student's region, mapping each standard code to a domain through the
       standard domains sheet; standards with no domain mapping are dropped.
+      Report Card scores come from int_assessments__standard_rollup, so a
+      standard counts once in its domain average even when Illuminate splits it
+      across standard sets.
     config:
       meta:
         contains_pii: true
@@ -54,7 +57,7 @@ models:
       - name: performance_level
         data_type: string
         description: >-
-          Expectations level from avg_percent_correct. Grades K-2 use 90 and
-          above for Exceeds, 75 for Met, and 50 for Approaching Expectations,
-          then 30 for Below and 0 for Far Below. Grades 3-4 use 85 for Exceeds,
-          70 for Met, 50 for Approaching, 30 for Below, and 0 for Far Below.
+          Expectations level from avg_percent_correct, on a 5-level scale of
+          Exceeds, Met, Approaching, Below, and Far Below Expectations. Grades
+          K-2 need higher scores than grades 3-4 for Exceeds and Met; the lower
+          cutoffs are shared. The cutoffs are in the model SQL.
