@@ -180,6 +180,14 @@ models:
         config:
           meta:
             source_column: int_illuminate__agg_student_responses.points
+      - name: points_possible
+        data_type: numeric
+        description: >-
+          Points possible, summed the same way as `points`. For Apex rows, the
+          `points_possible` from `int_focus__apex_results`.
+        config:
+          meta:
+            source_column: int_illuminate__agg_student_responses.points_possible
       - name: percent_correct
         data_type: numeric
         description: >-

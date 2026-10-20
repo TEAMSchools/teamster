@@ -1,4 +1,20 @@
 data_tests:
+  - name: test_illuminate_assessment_split_standard
+    description: >-
+      Illuminate keeps some standards, such as Common Core, in more than one
+      standards set. Lists current-year assessments that align items to one
+      standard (same code and description) through records in more than one set,
+      which splits that standard's scores across records.
+      int_assessments__standard_rollup merges the split, so reports stay right.
+      Fix it in Illuminate by realigning the assessment's items to one set's
+      record.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_illuminate__dna_assessments__assessment_standards
+
   - name: rpt_gsheets__dibels_bm_goals_calculations__region_counts_school_invariant
     description: >-
       The n_admin_season_region_gl_* columns are region-wide figures carried on
