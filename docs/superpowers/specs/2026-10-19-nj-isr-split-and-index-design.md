@@ -103,10 +103,10 @@ Verified on the real files on 2026-10-19 (Newark `7325`, Camden `1799`, Paterson
 - The cover page lists the subjects the report covers: English Language Arts,
   Mathematics, and Science where tested.
 - A file with a date suffix (`_100226`) is a corrected report from the state.
-  Both corrected students also appear in the original file. The corrected pages
+  Each corrected student also appears in the original file. The corrected pages
   replace the original pages.
-- One state ID appears twice in Newark's `Single` file. Both records stay; the
-  run summary names the duplicate.
+- A repeated state ID can appear within a file. Both records stay; the run
+  summary names the duplicate.
 - The NJGPA files from the earlier exploration use the same footer token on
   every page, 2 pages per student. The same segmentation rule covers them, so
   `_GPA` files work when they are in the input folder.
@@ -139,8 +139,8 @@ is unmatched.
 - Current school: the student's row in `base_powerschool__student_enrollments`
   with `academic_year` = the new school year, `rn_year = 1`, and
   `enroll_status = 0`. The report goes to that school's folder, in whatever
-  region the school is in. 2 students moved between Newark and Paterson this
-  year; their reports follow them.
+  region the school is in. A few students moved between regions this year; their
+  reports follow them.
 - Everything else goes to the testing region's `Transfer Out & Unmatched`
   folder: students not enrolled in the new year, students who left during it,
   and unmatched records.

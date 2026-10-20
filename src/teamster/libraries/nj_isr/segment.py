@@ -245,6 +245,41 @@ def segment_pages(source: SourceFile, pages: list[str]) -> list[Record]:
     return records
 
 
+def find_source_files(input_dir: Path) -> list[SourceFile]:
+    """Find every state ISR PDF in a folder and its subfolders.
+
+    Args:
+        input_dir: Folder holding the state's PDFs.
+
+    Returns:
+        The ISR files, in filename order. Label files and other names are
+        skipped.
+
+    Raises:
+        IsrFormatError: If 2 ISR files share a filename. Reports name their
+            source by filename, and a second download of a file would file
+            every student twice.
+    """
+    sources = sorted(
+        (
+            source
+            for path in input_dir.rglob("*")
+            if path.is_file() and (source := parse_source_filename(path)) is not None
+        ),
+        key=lambda source: source.path.name,
+    )
+
+    names = Counter(source.path.name for source in sources)
+    doubled = sorted(name for name, count in names.items() if count > 1)
+    if doubled:
+        raise IsrFormatError(
+            f"a filename appears more than once in {input_dir}: "
+            f"{', '.join(doubled)}; keep 1 copy of each"
+        )
+
+    return sources
+
+
 def scan_folder(
     input_dir: Path, read_pages: Callable[[Path], list[str]]
 ) -> list[Record]:
@@ -259,17 +294,10 @@ def scan_folder(
         other names are skipped.
 
     Raises:
-        IsrFormatError: If the files cover more than one program, or a file
-            fails segmentation.
+        IsrFormatError: If 2 files share a filename, the files cover more
+            than one program, or a file fails segmentation.
     """
-    sources = sorted(
-        (
-            source
-            for path in input_dir.rglob("*")
-            if path.is_file() and (source := parse_source_filename(path)) is not None
-        ),
-        key=lambda source: source.path.name,
-    )
+    sources = find_source_files(input_dir)
 
     programs = sorted({source.program for source in sources})
     if len(programs) > 1:

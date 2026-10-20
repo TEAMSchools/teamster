@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from google.cloud import bigquery
 
+from teamster.libraries.nj_isr.destinations import REGION_FOLDERS
 from teamster.libraries.nj_isr.match import Enrollment, Student
 
 _CROSSWALK_SQL = """
@@ -11,12 +12,17 @@ where academic_year = @admin_academic_year and period = 'Spring'
   and student_number is not null
 """
 
+# Both student queries keep to the regions with report folders. The table also
+# holds Miami's Focus students, whose student numbers could collide with NJ
+# PowerSchool ones; a student now in Miami has no current NJ enrollment and goes
+# to the transfer folder.
 _STATE_ID_SQL = """
 select distinct
     student_number,
     cast(state_studentnumber as string) as state_id,
-from `teamster-332318.kipptaf_powerschool.base_powerschool__student_enrollments`
+from `teamster-332318.kipptaf_students.int_students__student_enrollments`
 where state_studentnumber is not null
+  and region in unnest(@regions)
 """
 
 _ENROLLMENT_SQL = """
@@ -31,9 +37,14 @@ select
     last_name,
     first_name,
     dob,
-from `teamster-332318.kipptaf_powerschool.base_powerschool__student_enrollments`
+from `teamster-332318.kipptaf_students.int_students__student_enrollments`
 where academic_year in (@school_year - 1, @school_year)
+  and region in unnest(@regions)
 """
+
+
+def _regions_parameter() -> bigquery.ArrayQueryParameter:
+    return bigquery.ArrayQueryParameter("regions", "STRING", sorted(REGION_FOLDERS))
 
 
 def load_crosswalk(
@@ -79,17 +90,23 @@ def load_students(
 
     Returns:
         A tuple of the students by student number and a map from state ID to
-        the student numbers PowerSchool holds for it, across all years.
+        the student numbers PowerSchool holds for it, across all years. Only
+        students in a region with report folders are read.
     """
     by_state_id = defaultdict[str, set[int]](set)
-    for row in client.query(_STATE_ID_SQL).result():
+    state_id_job = client.query(
+        _STATE_ID_SQL,
+        job_config=bigquery.QueryJobConfig(query_parameters=[_regions_parameter()]),
+    )
+    for row in state_id_job.result():
         by_state_id[row["state_id"]].add(row["student_number"])
 
     job = client.query(
         _ENROLLMENT_SQL,
         job_config=bigquery.QueryJobConfig(
             query_parameters=[
-                bigquery.ScalarQueryParameter("school_year", "INT64", school_year)
+                bigquery.ScalarQueryParameter("school_year", "INT64", school_year),
+                _regions_parameter(),
             ]
         ),
     )

@@ -345,20 +345,24 @@ class GoogleDriveApi:
         ).execute(num_retries=_NUM_RETRIES)
 
     def readers(self, file_id: str) -> list[str]:
-        response = (
-            self._drive.permissions()
-            .list(
-                fileId=file_id,
-                supportsAllDrives=True,
-                fields="permissions(role,emailAddress,domain,type)",
-            )
-            .execute(num_retries=_NUM_RETRIES)
+        permissions = self._drive.permissions()
+        found: list[str] = []
+
+        request = permissions.list(
+            fileId=file_id,
+            supportsAllDrives=True,
+            fields="nextPageToken,permissions(role,emailAddress,domain,type)",
         )
 
-        return [
-            f"{p['role']}: {p.get('emailAddress') or p.get('domain') or p['type']}"
-            for p in response.get("permissions", [])
-        ]
+        while request is not None:
+            response = request.execute(num_retries=_NUM_RETRIES)
+            found.extend(
+                f"{p['role']}: {p.get('emailAddress') or p.get('domain') or p['type']}"
+                for p in response.get("permissions", [])
+            )
+            request = permissions.list_next(request, response)
+
+        return found
 
     def write_sheet(
         self, spreadsheet_id: str, tabs: Mapping[str, list[list[str]]]

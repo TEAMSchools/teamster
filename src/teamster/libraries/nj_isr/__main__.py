@@ -3,6 +3,7 @@ import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from google.cloud import bigquery
 
@@ -25,6 +26,7 @@ from teamster.libraries.nj_isr.run import (
 from teamster.libraries.nj_isr.warehouse import load_crosswalk, load_students
 
 BIGQUERY_PROJECT = "teamster-332318"
+EASTERN = ZoneInfo("America/New_York")
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -54,7 +56,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         type=Path,
         help=(
             "CSV for the investigation list, which holds student names "
-            "(default: nj_isr_checks_<tag>.csv next to the input folder)"
+            "(default: nj_isr_checks_<tag>.csv inside the input folder)"
         ),
     )
     parser.add_argument(
@@ -116,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
     checks_rows = investigation_rows(plan)
     checks_path = write_investigation_csv(
         checks_rows,
-        args.checks_out or args.input.parent / f"nj_isr_checks_{plan.tag}.csv",
+        args.checks_out or args.input / f"nj_isr_checks_{plan.tag}.csv",
     )
     print(f"Investigation list: {len(checks_rows)} rows -> {checks_path}")
 
@@ -154,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
             program=plan.program,
             admin=plan.admin,
             tag=plan.tag,
-            ran_at=datetime.now(),
+            ran_at=datetime.now(EASTERN),
             create_missing=args.create_missing_folders,
             page_anchor=args.page_anchor,
             allow_trash=args.allow_trash,

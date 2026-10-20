@@ -344,6 +344,15 @@ def test_administration_year_reads_the_filenames(tmp_path):
     assert administration_year(tmp_path) == 2026
 
 
+def test_administration_year_stops_on_two_files_with_one_name(tmp_path):
+    for folder in ("a", "b"):
+        (tmp_path / folder).mkdir()
+        touch(tmp_path / folder, "2026_Spring_7325-965_ISR_SLA_Combined.pdf")
+
+    with pytest.raises(IsrFormatError, match="more than once"):
+        administration_year(tmp_path)
+
+
 def test_administration_year_stops_when_there_are_no_isr_files(tmp_path):
     touch(tmp_path, "2026_Spring_7325-965_Labels_SLA.pdf")
 
@@ -474,6 +483,64 @@ def test_investigation_rows_are_sorted_by_region_issue_and_printed_name(tmp_path
 
     keys = [(r["region"], r["issue"], r["printed_name"]) for r in rows]
     assert keys == sorted(keys)
+
+
+def _resolved_disagreement_plan(folder: Path) -> RunPlan:
+    # the state names 101 and PowerSchool names 202; only 101 confirms
+    other = replace(ALEX, student_number=202, last_name="Jones", dob=date(2012, 1, 1))
+    return _plan_with(
+        folder,
+        students={101: ALEX, 202: other},
+        crosswalk={SID_A: {101}},
+        by_state_id={SID_A: {202}},
+    )
+
+
+def test_summary_lists_source_disagreements_resolved_by_name_and_birth_date(
+    tmp_path,
+):
+    text = summarize(_resolved_disagreement_plan(tmp_path), None)
+
+    assert (
+        "Source disagreements resolved by name and birth date: 1\n"
+        "  2026_Spring_7325-965_ISR_SLA_Combined_100226.pdf seq 1"
+    ) in text
+
+
+def test_summary_counts_no_resolved_disagreement_when_sources_agree(tmp_path):
+    text = summarize(small_plan(tmp_path), None)
+
+    assert "Source disagreements resolved by name and birth date: 0" in text
+
+
+def test_investigation_rows_list_a_resolved_source_disagreement(tmp_path):
+    rows = investigation_rows(_resolved_disagreement_plan(tmp_path))
+
+    resolved = [
+        r for r in rows if r["issue"] == "state and PowerSchool disagreed; resolved"
+    ]
+    assert len(resolved) == 1
+    assert resolved[0]["state_id"] == SID_A
+    assert resolved[0]["student_number"] == "101"
+    assert resolved[0]["filed_in"] == "KIPP TEAM Academy"
+
+
+def test_investigation_rows_list_a_state_id_repeated_in_a_file(tmp_path):
+    touch(tmp_path, "2026_Spring_7325-965_ISR_SLA_Combined.pdf")
+
+    def pages(path: Path) -> list[str]:
+        return _record_pages("7325", 1, SID_A) + _record_pages("7325", 2, SID_A)
+
+    plan = build_plan(
+        tmp_path, read_pages=pages, crosswalk=XW, by_state_id={}, students=STUDENTS
+    )
+    rows = investigation_rows(plan)
+
+    assert [(r["issue"], r["source_seq"]) for r in rows] == [
+        ("state ID appears more than once in a file", "1"),
+        ("state ID appears more than once in a file", "2"),
+    ]
+    assert {r["state_id"] for r in rows} == {SID_A}
 
 
 def test_write_investigation_csv_writes_the_header_and_rows(tmp_path):

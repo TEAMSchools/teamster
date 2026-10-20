@@ -275,7 +275,10 @@ def sheet_tabs(
     ran_at: datetime,
     page_anchor: bool,
 ) -> dict[str, list[list[str]]]:
-    """Cell values for the index Sheet's "All reports" and "About" tabs."""
+    """Cell values for the index Sheet's "All reports" and "About" tabs.
+
+    `ran_at` is labeled Eastern time, so pass it in America/New_York.
+    """
     all_reports: list[list[str]] = [
         [f"{region} {program} reports - {admin}"],
         ["1. Press Ctrl+F (Cmd+F on a Mac) and type the student's last name."],
@@ -304,7 +307,7 @@ def sheet_tabs(
             f"Every {admin} {program} Individual Student Report for {region}, "
             "one row per student per subject.",
         ],
-        ["Last updated", ran_at.strftime("%Y-%m-%d %H:%M")],
+        ["Last updated", ran_at.strftime("%Y-%m-%d %H:%M ET")],
         ["Can't find a report?", "Submit a ticket to the Data team."],
         [
             "Students who left KTAF",

@@ -345,6 +345,16 @@ def test_scan_folder_sorts_by_filename_and_skips_labels(tmp_path: Path):
     ]
 
 
+def test_scan_folder_rejects_two_files_with_one_name(tmp_path: Path):
+    name = "2026_Spring_7325-965_ISR_SLA_Combined.pdf"
+    for folder in ("download 1", "download 2"):
+        (tmp_path / folder).mkdir()
+        (tmp_path / folder / name).touch()
+
+    with pytest.raises(IsrFormatError, match=f"more than once.*{name}"):
+        scan_folder(tmp_path, lambda path: record(1, "1000000001"))
+
+
 def test_scan_folder_rejects_mixed_programs(tmp_path: Path):
     folder = _folder(
         tmp_path,

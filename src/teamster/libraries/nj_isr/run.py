@@ -33,7 +33,7 @@ from teamster.libraries.nj_isr.publish import PublishResult
 from teamster.libraries.nj_isr.segment import (
     apply_corrections,
     find_duplicate_state_ids,
-    parse_source_filename,
+    find_source_files,
     scan_folder,
 )
 
@@ -60,6 +60,8 @@ _UNMATCHED_ISSUES = {
     "source_conflict": "state and PowerSchool point to different students",
     "no_candidate": "no student for this state ID",
 }
+_RESOLVED_ISSUE = "state and PowerSchool disagreed; resolved"
+_DUPLICATE_ISSUE = "state ID appears more than once in a file"
 
 
 @dataclass(frozen=True)
@@ -97,14 +99,10 @@ def administration_year(input_dir: Path) -> int:
     """Read the administration year from the ISR filenames in a folder.
 
     Raises:
-        IsrFormatError: If the folder has no ISR files or files from more than
-            one year.
+        IsrFormatError: If the folder has no ISR files, 2 files share a
+            filename, or the files come from more than one year.
     """
-    years = {
-        source.year
-        for path in input_dir.rglob("*")
-        if path.is_file() and (source := parse_source_filename(path)) is not None
-    }
+    years = {source.year for source in find_source_files(input_dir)}
 
     if not years:
         raise IsrFormatError(f"no state ISR files found in {input_dir}")
@@ -241,11 +239,30 @@ def _iso(value: date | None) -> str:
     return "" if value is None else value.isoformat()
 
 
-def _issue(resolution: Resolution) -> str | None:
-    """The investigation-list issue for a resolution, None for a full match."""
+def _resolved_disagreement(resolution: Resolution) -> bool:
+    """Whether the 2 sources named different students and 1 was confirmed."""
+    return resolution.reason == "matched" and len(resolution.candidates) == 2
+
+
+def _issues(placement: Placement, duplicates: set[tuple[Path, int]]) -> list[str]:
+    """The investigation-list issues for a placement, none for a clean match."""
+    resolution = placement.resolution
+    record = placement.record
+    issues: list[str] = []
+
     if resolution.reason == "matched":
-        return _PARTIAL_ISSUES.get(resolution.matched_on)
-    return _UNMATCHED_ISSUES[resolution.reason]
+        if partial := _PARTIAL_ISSUES.get(resolution.matched_on):
+            issues.append(partial)
+    else:
+        issues.append(_UNMATCHED_ISSUES[resolution.reason])
+
+    if _resolved_disagreement(resolution):
+        issues.append(_RESOLVED_ISSUE)
+
+    if (record.source.path, record.seq) in duplicates:
+        issues.append(_DUPLICATE_ISSUE)
+
+    return issues
 
 
 def _student_columns(resolution: Resolution) -> dict[str, str]:
@@ -272,38 +289,48 @@ def _student_columns(resolution: Resolution) -> dict[str, str]:
 
 
 def investigation_rows(plan: RunPlan) -> list[dict[str, str]]:
-    """List every partial match and every unmatched record for the Data team.
+    """List every record the Data team should check, 1 row per issue.
 
-    A partial match is filed in the student's school but agrees with PowerSchool
-    on only the last name or only the birth date. The rows hold student names
-    and birth dates and are never written to Drive or git.
+    The issues: a partial match (filed in the student's school but agreeing
+    with PowerSchool on only the last name or only the birth date), an
+    unmatched record, a source disagreement resolved by name and birth date,
+    and a state ID repeated within a file. A record with 2 issues has 2 rows.
+    The rows hold student names and birth dates and are never written to Drive
+    or git.
     """
+    duplicates = {(record.source.path, record.seq) for record in plan.duplicates}
     rows: list[dict[str, str]] = []
     for file in plan.files:
         for entry in file.entries:
             placement = entry.placement
-            issue = _issue(placement.resolution)
-            if issue is None:
-                continue
-
             record = placement.record
-            rows.append(
-                {
-                    "issue": issue,
-                    "filed_in": placement.where,
-                    "region": placement.region,
-                    "output_file": file.file_name,
-                    "page": str(entry.page_in_file),
-                    "printed_name": record.printed_name,
-                    "printed_birth_date": _iso(record.printed_dob),
-                    "state_id": record.state_id,
-                    **_student_columns(placement.resolution),
-                    "source_file": record.source.path.name,
-                    "source_seq": str(record.seq),
-                }
-            )
+            for issue in _issues(placement, duplicates):
+                rows.append(
+                    {
+                        "issue": issue,
+                        "filed_in": placement.where,
+                        "region": placement.region,
+                        "output_file": file.file_name,
+                        "page": str(entry.page_in_file),
+                        "printed_name": record.printed_name,
+                        "printed_birth_date": _iso(record.printed_dob),
+                        "state_id": record.state_id,
+                        **_student_columns(placement.resolution),
+                        "source_file": record.source.path.name,
+                        "source_seq": str(record.seq),
+                    }
+                )
 
-    return sorted(rows, key=lambda r: (r["region"], r["issue"], r["printed_name"]))
+    return sorted(
+        rows,
+        key=lambda r: (
+            r["region"],
+            r["issue"],
+            r["printed_name"],
+            r["source_file"],
+            int(r["source_seq"]),
+        ),
+    )
 
 
 def write_investigation_csv(rows: Sequence[Mapping[str, str]], path: Path) -> Path:
@@ -339,12 +366,14 @@ def summarize(plan: RunPlan, result: PublishResult | None) -> str:
 
     lines.append("")
     lines.append("School folders")
-    schools = {(p.region, p.where, p.schoolid) for p in plan.placements}
-    for region, where, schoolid in sorted(
-        (region, where, schoolid)
-        for region, where, schoolid in schools
-        if schoolid is not None
-    ):
+    schools = sorted(
+        {
+            (p.region, p.where, p.schoolid)
+            for p in plan.placements
+            if p.schoolid is not None
+        }
+    )
+    for region, where, schoolid in schools:
         lines.append(f"{region}  {where} -> {SCHOOL_FOLDERS[(region, schoolid)]}")
 
     lines.append("")
@@ -364,8 +393,13 @@ def summarize(plan: RunPlan, result: PublishResult | None) -> str:
         if p.resolution.reason == "matched" and p.resolution.matched_on != "both"
     ]
     unmatched = [p for p in plan.placements if p.resolution.reason != "matched"]
+    resolved = [p for p in plan.placements if _resolved_disagreement(p.resolution)]
     lines.append("")
     lines.append(f"Partial matches (on the investigation list): {len(partial)}")
+    lines.append(
+        f"Source disagreements resolved by name and birth date: {len(resolved)}"
+    )
+    lines.extend(f"  {_record_label(p.record)}" for p in resolved)
     lines.append(f"Unmatched: {len(unmatched)}")
     for placement in unmatched:
         record = placement.record

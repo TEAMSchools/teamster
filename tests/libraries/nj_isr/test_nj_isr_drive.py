@@ -245,8 +245,28 @@ def test_trash_marks_the_file_trashed(api):
     assert kwargs["supportsAllDrives"] is True
 
 
+def test_readers_follows_next_page_token(api):
+    permissions = api._drive.permissions.return_value
+    first_request, second_request = MagicMock(), MagicMock()
+    permissions.list.return_value = first_request
+    first_request.execute.return_value = {
+        "permissions": [{"role": "reader", "type": "domain", "domain": "a.org"}],
+        "nextPageToken": "t2",
+    }
+    second_request.execute.return_value = {
+        "permissions": [{"role": "writer", "type": "domain", "domain": "b.org"}]
+    }
+    permissions.list_next.side_effect = [second_request, None]
+
+    assert api.readers("file1") == ["reader: a.org", "writer: b.org"]
+    assert permissions.list.call_args.kwargs["fields"] == (
+        "nextPageToken,permissions(role,emailAddress,domain,type)"
+    )
+
+
 def test_readers_formats_role_and_grantee(api):
     permissions = api._drive.permissions.return_value
+    permissions.list_next.return_value = None
     permissions.list.return_value.execute.return_value = {
         "permissions": [
             {"role": "reader", "type": "user", "emailAddress": "a@example.org"},
@@ -263,7 +283,9 @@ def test_readers_formats_role_and_grantee(api):
     kwargs = permissions.list.call_args.kwargs
     assert kwargs["fileId"] == "file1"
     assert kwargs["supportsAllDrives"] is True
-    assert kwargs["fields"] == "permissions(role,emailAddress,domain,type)"
+    assert (
+        kwargs["fields"] == "nextPageToken,permissions(role,emailAddress,domain,type)"
+    )
 
 
 def _sheets_with_tabs(api: GoogleDriveApi, titles: dict[str, int]) -> MagicMock:

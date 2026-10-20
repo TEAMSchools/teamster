@@ -430,7 +430,7 @@ def test_sheet_tabs_banner_header_and_link():
     ]
     assert a[5][6] == '=HYPERLINK("https://x/view#page=1", "Open report")'
     assert a[5][7] == "1"
-    assert tabs["About"][1] == ["Last updated", "2026-10-20 09:00"]
+    assert tabs["About"][1] == ["Last updated", "2026-10-20 09:00 ET"]
 
 
 def test_sheet_tabs_link_without_anchor_or_url():
@@ -462,7 +462,7 @@ def test_sheet_tabs_about_copy():
             "What this is",
             "Every Spring 2026 NJSLA Individual Student Report for Newark, one row per student per subject.",
         ],
-        ["Last updated", "2026-10-20 09:00"],
+        ["Last updated", "2026-10-20 09:00 ET"],
         ["Can't find a report?", "Submit a ticket to the Data team."],
         [
             "Students who left KTAF",

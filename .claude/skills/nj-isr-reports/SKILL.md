@@ -40,7 +40,7 @@ Each step is done when its check passes.
 
 1. **Download the PDFs.** Get the ISR PDFs from the Cambium portal into
    `.claude/scratch/njsla-njgpa-isr/{season} {year} ISRs/`. The folder must live
-   there: the investigation CSV lands next to it by default. Done when every
+   there: the investigation CSV lands inside it by default. Done when every
    district the program tests has at least 1 original ISR file: Newark, Camden,
    and Paterson for NJSLA; Newark and Camden for NJGPA. Once Paterson has a
    grade 11, add `7899` to `PROGRAM_DISTRICTS["NJGPA"]` in `destinations.py`.
@@ -53,13 +53,15 @@ Each step is done when its check passes.
    folder name matches exactly 1 Drive folder.
 3. **Dry run.** Run with
    `--input <folder> --dry-run --local-out <scratchpad dir>`. Read the summary,
-   then the investigation CSV. The CSV lists every partial match (last name or
-   birth date differs from PowerSchool) and every unmatched report. Hand it to
-   the Data team to check and fix in PowerSchool. Done when the run finishes
-   without a conservation error and, before the real run, the Data team has
-   checked every `birth date differs` row whose `filed_in` is a school, because
-   a same-surname sibling is the likely wrong match. Rerun the dry run after
-   their fixes land if they change enrollment.
+   checking that each `School folders` line pairs a school with its own Drive
+   folder, then the investigation CSV. The CSV lists every partial match (last
+   name or birth date differs from PowerSchool), unmatched report, source
+   disagreement the command resolved, and state ID repeated within a file. Hand
+   it to the Data team to check and fix in PowerSchool. Done when the run
+   finishes without a conservation error and, before the real run, the Data team
+   has checked every `birth date differs` row whose `filed_in` is a school,
+   because a same-surname sibling is the likely wrong match. Rerun the dry run
+   after their fixes land if they change enrollment.
 4. **Test run.** Create an empty test folder in the Data Team shared drive, add
    the service account, and run with `--root-folder <test folder link>`,
    `--create-missing-folders`, and `--page-anchor`. Done when all 3 checks pass:
@@ -67,7 +69,8 @@ Each step is done when its check passes.
    against the real root, and tell the code owner, because per-grade output is a
    code change); 3 index rows open the right file and page; and a second
    identical run keeps every file link and lists no file under
-   `Files no longer produced`.
+   `Files no longer produced`. After the checks, delete the test folder: it
+   holds a full copy of every report.
 5. **Real run.** Same command, with `--root-folder` set to the link of the
    `Report Cards and Transcripts` folder and without `--create-missing-folders`.
    On the real root a missing or misnamed school folder must stop the run; with
