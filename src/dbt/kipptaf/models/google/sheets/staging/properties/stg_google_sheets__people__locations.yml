@@ -67,6 +67,17 @@ models:
               config:
                 where: nces_school_id is not null
                 severity: error
+      - name: focus_school_id
+        data_type: string
+        description: |
+          Focus SIS school-number code (alphanumeric, e.g. 2332A, 1000B). The
+          `SCH_ID` value for Focus SFTP enrollment imports.
+        data_tests:
+          # Every Focus calendar, week and term row crosswalks through this
+          # column, so a repeated code doubles all of Miami's rows downstream.
+          - unique:
+              config:
+                severity: error
       - name: reporting_school_id
         data_type: int64
         description: |
@@ -134,11 +145,6 @@ models:
         description: |
           Postal (ZIP) code as a STRING to preserve leading zeros for
           New Jersey five-digit codes.
-      - name: focus_school_id
-        data_type: string
-        description: |
-          Focus SIS school-number code (alphanumeric, e.g. 2332A, 1000B). The
-          `SCH_ID` value for Focus SFTP enrollment imports.
       - name: google_student_org_unit_path
         data_type: string
         description: |
