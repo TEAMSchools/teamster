@@ -3,10 +3,9 @@ models:
     description: |
       Category grades pivoted to one row per student, year, school, reporting
       term, and course, with running year-to-date columns.
-
-      Rebuilt each time its only parent, `int_powerschool__category_grades`,
-      lands, so it never reads the parent's previous build. Its only consumer
-      is `rpt_deanslist__final_grades`.
+    # No cron, so the table condition rebuilds this model each time its only
+    # parent, int_powerschool__category_grades, lands. A shared cron tick let
+    # it build on the parent's previous copy. Refs #6044
     config:
       materialized: table
     data_tests:
