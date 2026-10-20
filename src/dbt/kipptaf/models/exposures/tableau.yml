@@ -26,12 +26,16 @@ exposures:
         dagster:
           kinds:
             - tableau
+          asset:
+            metadata:
+              id: 9cc6fe34-8ae9-4c56-aa5f-6e6c229f6f5d
   - name: attrition_dashboard
     label: Attrition Dashboard
     type: dashboard
     owner:
       name: Data Team
     depends_on:
+      - ref("int_people__staff_roster")
       - ref("rpt_tableau__staff_attrition_details")
     config:
       meta:
@@ -106,7 +110,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__adp_pension_and_benefits_enrollments")
       - ref("rpt_tableau__finance_accounting_people_model")
-      # - ref("rpt_tableau__staff_attrition")
+      - ref("rpt_tableau__staff_attrition_details")
     config:
       meta:
         dagster:
@@ -155,6 +159,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_gsheets__kfwd_rem_roster")
+      - ref("rpt_tableau__kfwd_aid_report")
       - ref("rpt_tableau__kfwd_career_launch_survey")
       - ref("rpt_tableau__kfwd_contact_notes")
       - ref("rpt_tableau__kfwd_dashboard")
@@ -296,7 +301,6 @@ exposures:
       - ref("rpt_tableau__schoolmint_grow_observation_details")
       - ref("rpt_tableau__schoolmint_grow_goals")
       - ref("rpt_tableau__teacher_observations")
-      - ref("rpt_tableau__pm_outlier_detection")
     config:
       meta:
         dagster:
@@ -532,6 +536,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__stipend_and_bonus_app")
+      - source("google_appsheet_frozen", "snapshot__stipend_and_bonus__output")
     config:
       meta:
         dagster:
@@ -638,7 +643,6 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__smartrecruiters")
-      - ref("rpt_tableau__seat_tracker")
       - ref("rpt_tableau__seat_tracker_snapshot")
     config:
       meta:
@@ -675,8 +679,6 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__survey_links")
-      - ref("rpt_tableau__survey_completion")
-      - ref("rpt_tableau__survey_responses")
     config:
       meta:
         dagster:
@@ -763,6 +765,9 @@ exposures:
         dagster:
           kinds:
             - tableau
+          asset:
+            metadata:
+              id: 0c1f3b3f-f49a-45cb-8424-05bbbab619e9
   - name: topline_cascade_dashboard
     label: Topline Cascade Dashboard
     type: dashboard

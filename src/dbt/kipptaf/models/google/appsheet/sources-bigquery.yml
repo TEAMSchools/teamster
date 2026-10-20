@@ -104,6 +104,28 @@ sources:
                 - google
                 - appsheet
                 - src_kfwd_career_conversations__output
+  - name: google_appsheet_frozen
+    schema: kipptaf_appsheet
+    description: >
+      Frozen relations in the live AppSheet dataset that nothing writes to any
+      more but a dashboard still reads. Separate source name from
+      google_appsheet so the bigquery_table_modified_sensor, whose asset
+      selection is built from source_name == google_appsheet, does not watch
+      them.
+    tables:
+      - name: snapshot__stipend_and_bonus__output
+        description: >
+          Last snapshot of the stipend and bonus app's output table, read
+          directly by the Stipend and Bonus Dashboard.
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - appsheet
+                - frozen
+                - snapshot__stipend_and_bonus__output
   - name: google_appsheet_archive
     schema: kipptaf_google_appsheet
     description: >
