@@ -1,20 +1,40 @@
 ---
 name: cube-dashboard
-description:
-  Use when validating Cube against a Tableau dashboard, re-checking one after a
-  Cube or workbook fix, mapping a dashboard's sheets to Cube members, adding a
-  cause to a dashboard's rows layer, or reading a validation report. Triggers:
-  "validate <dashboard> against Cube", "does Cube match Tableau", cube_validate,
-  ZZ-REVIEW copies in TEMP-CB, or any file under
-  .claude/skills/cube-dashboard/checks/.
+description: >-
+  Checks a Tableau dashboard's numbers against Cube: captures both once in the
+  evening, matches their rows, compares every number, explains each gap, and
+  files fixes and Asana tags once hand checks agree. Use when validating Cube
+  against a dashboard, re-checking one after a Cube or workbook fix, mapping a
+  dashboard's sheets to Cube members, adding a cause to a dashboard's rows
+  layer, or reading a validation report. Triggers: "validate <dashboard> against
+  Cube", "does Cube match Tableau", cube_validate, ZZ-REVIEW copies in TEMP-CB,
+  or any file under .claude/skills/cube-dashboard/checks/.
 ---
 
 # cube-dashboard
 
-Both sides are captured once, inside the dashboard's evening window, into a
-snapshot. Analysis reconciles rows first, then compares each exported number
-with Cube's and explains gaps by the rows. Design:
-`docs/superpowers/specs/2026-10-15-cube-validate-redesign-design.md`.
+Design: `docs/superpowers/specs/2026-10-15-cube-validate-redesign-design.md`.
+
+## How it works
+
+1. Capture once, in the evening window: the extract, each sheet's export per
+   cut, and Cube's rows and answers. Every later step reads that frozen
+   snapshot, so analysis is free and repeatable.
+2. Reconcile rows on student, day and school: match, value differs, dashboard
+   only, Cube only, or outside scope or period.
+3. Causes, named SQL rules the analyst approves, claim the gap rows. The rest
+   read "unexplained".
+4. Each exported number is compared with Cube's at the dashboard's decimals:
+   pass, coincidental match, row gap or formula gap.
+5. Probes reproduce the dashboard's number and test a candidate rule against
+   Cube; a decision records who fixes the gap.
+6. Hand checks against Tableau, the captured Cube answer and the SIS gate trust.
+   Findings stay held until every one agrees.
+7. Follow-ups from a trusted report, after the analyst reviews them: an Asana
+   task for dashboard fixes, a GitHub issue for Cube fixes and missing measures.
+8. Sync Asana last: verdicts merge into `latest.json`, and
+   `scripts/asana_sync.py` sets `matched`, `mismatch` or `unvalidated` and ticks
+   done rows.
 
 ## Running a step that needs credentials
 
@@ -243,16 +263,40 @@ decisions:
 
 Only from a trusted report.
 
-1. Draft 1 follow-up per `dashboard` or `cube` decision and per "in the data,
-   not in Cube" line. Aggregates only; counts under 10 as `<10`.
-2. Show the draft. Post nothing until the analyst approves it.
-3. A dashboard fix is an Asana subtask under the measure's subtask. If the list
-   came from the gap catalog, ask the analyst for the parent. A Cube fix or a
-   missing measure is a GitHub issue from
-   `.github/ISSUE_TEMPLATE/feature_request.md`.
-4. Put the posted link in the decision's `task`.
-5. Set the Asana tags (`fix-dashboard`, clearing `unvalidated`) by hand: the
-   Asana connection cannot set tags.
+1. Draft 2 follow-ups: 1 Asana task covering every `dashboard` decision, and 1
+   GitHub issue (from `.github/ISSUE_TEMPLATE/feature_request.md`) covering
+   every `cube` decision, cube-owned row cause and "in the data, not in Cube"
+   line. Aggregates only; counts under 10 as `<10`.
+2. Show the drafts. Post nothing until the analyst approves them.
+3. File both under the domain's `Open Issues — <Domain>` parent task, in the
+   dashboard's section of the Data Marts + Semantic Layer project. Create the
+   Asana task with that parent, and link the measure subtasks in its notes.
+4. After posting the issue, wait for its TEAMster mirror task,
+   `#<N> | <issue title>`, before you continue. Search for `#<N>` until it
+   appears; if it is missing after a few minutes, ask the analyst. Then set that
+   task's parent to the same `Open Issues — <Domain>` task.
+5. Put the posted links in the decisions' `task`.
+6. Sync Asana last, with `scripts/asana_sync.py` (rules:
+   `references/asana-rules.md`).
+   - Draft a merge of this run's verdicts into
+     `~/asana-sync/validation/latest.json` (create it if missing), keyed by
+     measure subtask gid, keeping every other row: `pass` when every judged cell
+     passes or is `fix-dashboard` with a proven probe whose `candidate` matches
+     Cube; `fix_cube` for a `cube` decision or a cube-owned row cause; `fail`
+     for gaps still open. Rows this run did not judge keep their verdict. The
+     analyst runs the merge: the classifier blocks writing that file.
+   - Ask the analyst whether `ASANA_PAT` is loaded in their terminal. If not:
+     create a personal token at app.asana.com/0/my-apps, then run
+     `read -rs ASANA_PAT && export ASANA_PAT`. Never ask for the token in chat.
+   - The analyst runs
+     `uv run --with requests python scripts/asana_sync.py --only <dashboard task gid>`
+     to preview, then adds `--apply`. It sets the tags and ticks done rows.
+   - Read the preview before `--apply`. Every change must be on this run's
+     measure rows.
+   - When the analyst approves a rule that a `Decide:` blocker task asks for,
+     comment the decision with this run's numbers and complete the task.
+   - A `matched` row ticks done only once all its blockers close. Name the open
+     blockers in the report.
 
 ## Trust across runs
 
