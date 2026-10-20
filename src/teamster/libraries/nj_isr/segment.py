@@ -220,7 +220,7 @@ def segment_pages(source: SourceFile, pages: list[str]) -> list[Record]:
 def scan_folder(
     input_dir: Path, read_pages: Callable[[Path], list[str]]
 ) -> list[Record]:
-    """Segment every state ISR PDF in a folder.
+    """Segment every state ISR PDF in a folder and its subfolders.
 
     Args:
         input_dir: Folder holding the state's PDFs.
@@ -237,7 +237,7 @@ def scan_folder(
     sources = sorted(
         (
             source
-            for path in input_dir.iterdir()
+            for path in input_dir.rglob("*")
             if path.is_file() and (source := parse_source_filename(path)) is not None
         ),
         key=lambda source: source.path.name,

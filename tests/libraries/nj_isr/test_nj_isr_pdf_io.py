@@ -3,6 +3,7 @@ from pathlib import Path
 
 from pypdf import PdfReader, PdfWriter
 
+from teamster.libraries.nj_isr import pdf_io
 from teamster.libraries.nj_isr.layout import Entry, OutputFile
 from teamster.libraries.nj_isr.match import Placement, Resolution
 from teamster.libraries.nj_isr.models import Record, SourceFile
@@ -96,3 +97,10 @@ def test_read_page_texts_returns_one_string_per_page(tmp_path):
 
     assert len(texts) == 3
     assert all(isinstance(t, str) for t in texts)
+
+
+def test_read_page_texts_reads_across_document_reopens(tmp_path, monkeypatch):
+    monkeypatch.setattr(pdf_io, "_PAGES_PER_DOCUMENT", 2)
+    path = blank_pdf(tmp_path / "a.pdf", widths=[100, 101, 102, 103, 104])
+
+    assert len(read_page_texts(path)) == 5

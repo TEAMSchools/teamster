@@ -5,16 +5,27 @@ from pypdf import PdfReader, PdfWriter
 
 from teamster.libraries.nj_isr.layout import OutputFile
 
+# pdfium keeps every page's shared resources until the document closes, which
+# grows without bound on a file of tens of thousands of pages.
+_PAGES_PER_DOCUMENT = 1000
+
 
 def read_page_texts(path: Path) -> list[str]:
     """Read the text of every page of a PDF, in page order."""
-    document = pypdfium2.PdfDocument(path)
-    try:
-        return [
-            document[i].get_textpage().get_text_range() for i in range(len(document))
-        ]
-    finally:
-        document.close()
+    with pypdfium2.PdfDocument(path) as document:
+        page_count = len(document)
+
+    texts: list[str] = []
+    for start in range(0, page_count, _PAGES_PER_DOCUMENT):
+        with pypdfium2.PdfDocument(path) as document:
+            for index in range(start, min(start + _PAGES_PER_DOCUMENT, page_count)):
+                page = document[index]
+                textpage = page.get_textpage()
+                texts.append(textpage.get_text_range())
+                textpage.close()
+                page.close()
+
+    return texts
 
 
 def write_output_pdf(file: OutputFile, out_dir: Path) -> Path:
