@@ -4,16 +4,11 @@ models:
       Category grades pivoted to one row per student, year, school, reporting
       term, and course, with running year-to-date columns.
 
-      Built once a day at local midnight on the same tick as its parent
-      `int_powerschool__category_grades`, so `~any_deps_in_progress` builds it
-      after the parent. Its only consumer, `rpt_deanslist__final_grades`, is
-      extracted at 01:25.
+      Rebuilt each time its only parent, `int_powerschool__category_grades`,
+      lands, so it never reads the parent's previous build. Its only consumer
+      is `rpt_deanslist__final_grades`.
     config:
       materialized: table
-      meta:
-        dagster:
-          automation_condition:
-            cron_schedule: 0 0 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
