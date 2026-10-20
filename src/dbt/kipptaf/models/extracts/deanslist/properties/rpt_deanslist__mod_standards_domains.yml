@@ -9,7 +9,11 @@ models:
       standard-level percent correct per student, subject, term, and standard
       domain across assessments whose AppSheet report-card regions include the
       student's region, mapping each standard code to a domain through the
-      standard domains sheet; standards with no domain mapping are dropped.
+      standard domains sheet; standards with no domain mapping are dropped. When
+      an assessment aligns one standard (same code and description) to records
+      in more than one Illuminate standard set, the records score as one
+      standard, total points over total points possible, so the standard counts
+      once in its domain average.
     config:
       meta:
         contains_pii: true

@@ -49,6 +49,25 @@ models:
               - response_type
               - response_type_id
               - is_replacement
+      # Illuminate: the assessment aligns items to 1 standard (same code and
+      # description) through records in more than 1 standards set, so the
+      # standard splits across response_type_id rows. Fix in Illuminate by
+      # realigning those items to 1 set. rpt_deanslist__mod_standards_domains
+      # merges the split until then.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - source
+              - assessment_id
+              - response_type_code
+              - response_type_description
+              - is_replacement
+          config:
+            severity: warn
+            where: |-
+              response_type = 'standard'
+              and academic_year = {{ var("current_academic_year") }}
       # Asserts the relative invariant the model now enforces: a sitting date is
       # judged against its own administration, not an absolute calendar floor.
       # Kept at warn so a source regression surfaces without blocking CI.
@@ -180,6 +199,14 @@ models:
         config:
           meta:
             source_column: int_illuminate__agg_student_responses.points
+      - name: points_possible
+        data_type: numeric
+        description: >-
+          Points possible, summed the same way as `points`. For Apex rows, the
+          `points_possible` from `int_focus__apex_results`.
+        config:
+          meta:
+            source_column: int_illuminate__agg_student_responses.points_possible
       - name: percent_correct
         data_type: numeric
         description: >-

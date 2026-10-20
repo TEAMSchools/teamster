@@ -12,6 +12,50 @@ with
         cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     ),
 
+    -- matches rpt_deanslist__mod_standards_domains: 1 standard aligned to
+    -- records in 2 Illuminate standard sets scores as 1 standard
+    standard_scores as (
+        select
+            source,
+            student_number,
+            academic_year,
+            assessment_id,
+            title,
+            scope,
+            subject_area,
+            term_administered,
+            response_type,
+            response_type_code,
+            response_type_description,
+            is_internal_assessment,
+            is_replacement,
+
+            if(
+                count(*) = 1,
+                any_value(percent_correct),
+                safe_divide(sum(points), sum(points_possible)) * 100
+            ) as percent_correct,
+            if(
+                count(*) = 1, any_value(performance_band_label), null
+            ) as performance_band_label,
+        from {{ ref("int_assessments__response_rollup") }}
+        where response_type = 'standard'
+        group by
+            source,
+            student_number,
+            academic_year,
+            assessment_id,
+            title,
+            scope,
+            subject_area,
+            term_administered,
+            response_type,
+            response_type_code,
+            response_type_description,
+            is_internal_assessment,
+            is_replacement
+    ),
+
     mod_assessment as (
         select
             ar.source,
@@ -179,7 +223,7 @@ with
 
             'mod_standards_domains' as source_model,
             'Report Card' as report_type,
-        from {{ ref("int_assessments__response_rollup") }} as ar
+        from standard_scores as ar
         inner join
             {{ ref("stg_google_sheets__assessments__standard_domains") }} as sd
             on ar.response_type_code = sd.standard_code
@@ -195,8 +239,7 @@ with
             and ar.assessment_id = rcr.assessment_id
             and co.region = rcr.report_card_region
         where
-            ar.response_type = 'standard'
-            and ar.academic_year in (
+            ar.academic_year in (
                 {{ var("current_academic_year") }},
                 {{ var("current_academic_year") }} - 1
             )

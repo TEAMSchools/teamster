@@ -10,6 +10,39 @@ with
         select iae.source, iae.assessment_id, report_card_region,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
+    ),
+
+    -- an assessment can align 1 standard to records in 2 Illuminate standard
+    -- sets; score them as 1 standard
+    standard_scores as (
+        select
+            source,
+            student_number,
+            academic_year,
+            assessment_id,
+            subject_area,
+            term_administered,
+            is_replacement,
+            response_type_code,
+            response_type_description,
+
+            if(
+                count(*) = 1,
+                any_value(percent_correct),
+                safe_divide(sum(points), sum(points_possible)) * 100
+            ) as percent_correct,
+        from {{ ref("int_assessments__response_rollup") }}
+        where response_type = 'standard'
+        group by
+            source,
+            student_number,
+            academic_year,
+            assessment_id,
+            subject_area,
+            term_administered,
+            is_replacement,
+            response_type_code,
+            response_type_description
     )
 
 select
@@ -92,7 +125,7 @@ select
         when round(avg(ar.percent_correct), 0) >= 0
         then 'Far Below Expectations'
     end as performance_level,
-from {{ ref("int_assessments__response_rollup") }} as ar
+from standard_scores as ar
 inner join
     {{ ref("stg_google_sheets__assessments__standard_domains") }} as sd
     on ar.response_type_code = sd.standard_code
@@ -107,7 +140,6 @@ inner join
     on ar.source = r.source
     and ar.assessment_id = r.assessment_id
     and co.region = r.report_card_region
-where ar.response_type = 'standard'
 group by
     ar.academic_year,
     ar.student_number,
