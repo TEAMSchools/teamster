@@ -362,6 +362,50 @@
   guide: https://teamschools.zendesk.com/hc/en-us/articles/19856763832855--User-Guide-Seat-Tracker-App-and-Reporting
   status: verified
 
+# Report Cards and Transcripts — one Drive folder per region, rendered as the
+# `report_cards_and_transcripts` family in groups.yml. All four sit in one
+# shared drive that staff can view; none is link-shared.
+
+- id: report_cards_and_transcripts_camden
+  name: Camden Report Cards and Transcripts
+  url: https://drive.google.com/drive/folders/1RDj-0tS5Zq8arqTtzBpOMk3vFOBlJa_S
+  description: Report cards and transcripts for KIPP Camden students.
+  audiences: [leaders, ops, teachers]
+  system: google-folder
+  group: operations
+  regions: [camden]
+  status: verified
+
+- id: report_cards_and_transcripts_miami
+  name: Miami Report Cards and Transcripts
+  url: https://drive.google.com/drive/folders/1N7hXIAy5j6BfxTLk0Npse13meGfJheEQ
+  description: Report cards and transcripts for KIPP Miami students.
+  audiences: [leaders, ops, teachers]
+  system: google-folder
+  group: operations
+  regions: [miami]
+  status: verified
+
+- id: report_cards_and_transcripts_newark
+  name: Newark Report Cards and Transcripts
+  url: https://drive.google.com/drive/folders/1WlfU93WBjmAIPaxpa_1Mo4B4Bw7C4hqc
+  description: Report cards and transcripts for KIPP Newark students.
+  audiences: [leaders, ops, teachers]
+  system: google-folder
+  group: operations
+  regions: [newark]
+  status: verified
+
+- id: report_cards_and_transcripts_paterson
+  name: Paterson Report Cards and Transcripts
+  url: https://drive.google.com/drive/folders/1Y39TWAPSnLfz9gUZ1YQOmaqnJj7Arj6C
+  description: Report cards and transcripts for KIPP Paterson students.
+  audiences: [leaders, ops, teachers]
+  system: google-folder
+  group: operations
+  regions: [paterson]
+  status: verified
+
 - id: seat_tracker
   name: Seat Tracker
   url: https://www.appsheet.com/start/da7c51f8-1985-4c8d-b786-2aaf816ae1d2
