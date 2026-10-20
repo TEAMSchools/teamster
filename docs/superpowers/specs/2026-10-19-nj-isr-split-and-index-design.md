@@ -394,3 +394,22 @@ as the user:
 - A rerun publishes only with the complete input: at least 1 original ISR file
   for every district. A partial input would overwrite other schools' files with
   a subset of students.
+
+## Revision 2026-10-20: relaxed confirmation with an investigation list
+
+The 2026 dry run left 60 records unmatched. 54 of them had a single state-ID
+candidate that agreed with PowerSchool on the last name or the birth date, but
+not both. The user approved relaxing _Match_:
+
+- A candidate confirms when its last name or its birth date matches the report.
+  A candidate that matches both is a full match; one that matches only 1 is a
+  partial match. Both kinds route to the student's current school.
+- When the 2 sources point to different students, a single full match wins;
+  otherwise a single partial match wins; otherwise the record is a
+  `source_conflict`.
+- Every partial match and every unmatched record goes on an investigation list.
+  The command writes it as a CSV on every run, dry runs included, in the
+  git-ignored scratch area, and the summary prints its path. It holds the
+  printed and PowerSchool names and birth dates, so it never goes to a Drive
+  folder that school staff can open, and the index shows no note for a partial
+  match.
