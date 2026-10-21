@@ -3,16 +3,17 @@
   uv run --with requests python scripts/asana_sync.py --only <dashboard task gid>          # preview, changes nothing
   uv run --with requests python scripts/asana_sync.py --only <dashboard task gid> --apply  # make the changes
 
---only limits the run to one dashboard task's measure rows and skips step 1, so a validation changes nothing
-else; without it the run covers every dashboard. Run it from a teamster checkout: it runs `git fetch` and reads
+--only limits the run to one dashboard task's measure and dimension rows and skips step 1, so a validation
+changes nothing else; without it the run covers every dashboard. Run it from a teamster checkout: it runs `git fetch` and reads
 src/cube/model on origin/main.
 
 Needs ASANA_PAT, your own personal access token, in the environment for both modes. Create one in Asana's
 developer console (app.asana.com/0/my-apps), then load it without echoing it or saving it to history:
   read -rs ASANA_PAT && export ASANA_PAT
 
-Rows are a dashboard task's measure subtasks (notes carry a `Status:` line) and the subtasks of its `Dimensions`
-subtask. Each run:
+Rows are a dashboard task's measure subtasks (notes carry a `Status:` line) and its dimension rows: the subtasks of
+table tasks, other than `mart:` / `cube:` / `view:` stages, that block the dashboard task. One dimension row lives
+on the table its column comes from and blocks every dashboard that uses it. Each run:
   1. Chains stages inside every table task: `mart:` blocks `cube:`, `cube:` blocks `view:` (adds only missing links).
   2. Ticks a row done when it is live in Cube: every Cube member its notes name is on a public view on main, and
      no blocker on the row is open. Validation does not gate done. A row blocks only on the stage or addition that
@@ -47,11 +48,8 @@ MEASURE_TAG, DUP_MEASURE_TAG = "1214073246940451", "1215598455588323"
 # At most one on an open row, from its open blockers; done rows carry none.
 STATUS = ["needs-data", "needs-cube"]
 VALIDATED = "validated"  # the latest validation found Cube equal to the dashboard
-DIMENSION = "dimension"  # on each row under a dashboard's DIMENSIONS_TASK, as `measure` is on measure rows
-DIMENSIONS_TASK = (
-    "Dimensions"  # the dashboard subtask whose subtasks are its dimension rows
-)
-# No rule sets these; the sync strips them so a row carries only STATUS, VALIDATED and `measure`.
+DIMENSION = "dimension"  # on each dimension row, as `measure` is on measure rows
+# No rule sets these; the sync strips them so a row carries only STATUS, VALIDATED and its kind tag.
 OLD_TAGS = [
     "cube-covered",
     "cube-partial",
@@ -271,7 +269,7 @@ report_blocked_on_main, report_gaps = [], []
 
 
 def sync_row(r, kind):
-    """Steps 2-6 for one measure row or one row under a dashboard's Dimensions task."""
+    """Steps 2-6 for one measure row or one dimension row."""
     notes = r.get("notes") or ""
     rid, name = r["gid"], f"[{kind}] {r['name'][:64]}"
     have = {t["gid"] for t in r.get("tags", [])}
@@ -393,6 +391,8 @@ def sync_row(r, kind):
         )
 
 
+report_odd_dash_blockers = []
+dims_done = set()  # a dimension row blocks every dashboard that uses it; sync it once
 for dash in DASHBOARDS:
     if ONLY and dash != ONLY:
         continue
@@ -403,12 +403,20 @@ for dash in DASHBOARDS:
             f"latest.json has no verdict for any row of {ONLY}: merge this run's verdicts first."
         )
     for r in rows:
-        if r["name"].strip() == DIMENSIONS_TASK:
-            for d in get_all(f"/tasks/{r['gid']}/subtasks", {"opt_fields": ROWF}):
-                sync_row(d, "dimension")
-        elif "Status:" in (r.get("notes") or ""):
+        if "Status:" in (r.get("notes") or ""):
             sync_row(r, "measure")
         # anything else (checklist steps etc.) is not a row
+    for d in get_all(f"/tasks/{dash}/dependencies", {"opt_fields": "name"}):
+        st = stage_map.get(d["gid"])
+        if not st or st["kind"] != "addition":
+            # a dashboard blocks only on dimension rows; a stage or outside task there is a misplaced link
+            report_odd_dash_blockers.append(f"{dash}: {d.get('name', d['gid'])[:70]}")
+        elif d["gid"] not in dims_done:
+            dims_done.add(d["gid"])
+            sync_row(
+                call("GET", f"/tasks/{d['gid']}", params={"opt_fields": ROWF})["data"],
+                "dimension",
+            )
 
 print(f"\n{'Applied' if APPLY else 'Would apply'} {len(changes)} change(s).")
 if report_ticked:
@@ -419,9 +427,14 @@ if report_untick:
     print("\n".join("  " + x for x in report_untick))
 if report_blocked_on_main:
     print(
-        "\nMembers on main but a blocker is open (move a cut's blocker to its dimension row; close a shipped stage):"
+        "\nMembers on main but a blocker is open (a cut's blocker belongs on its dimension row; close a shipped stage):"
     )
     print("\n".join("  " + x for x in report_blocked_on_main))
+if report_odd_dash_blockers:
+    print(
+        "\nDashboard blockers that are not dimension rows (link the dimension row on the table task instead):"
+    )
+    print("\n".join("  " + x for x in report_odd_dash_blockers))
 if report_unverified:
     print("\nBlockers done but not verified on main (left open):")
     print("\n".join("  " + x for x in report_unverified))

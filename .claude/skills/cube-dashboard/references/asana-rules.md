@@ -5,8 +5,8 @@ project. Change a rule here and in the script together.
 
 ## Done and tags
 
-- Rows are a dashboard's measure subtasks and the subtasks of its `Dimensions`
-  subtask. The sync tags each `measure` or `dimension`, and the rules below
+- Rows are a dashboard's measure subtasks and its dimension rows (see
+  _Structure_). The sync tags each `measure` or `dimension`, and the rules below
   apply to both.
 - A row is **done** when it is live in Cube: every member its notes name is on a
   public view on `main`, and no blocker on the row is open. Done is what the
@@ -54,14 +54,16 @@ only stops new pure-slice members.
 - One Asana task per table (named for the table), with stage subtasks `mart:`
   (only if the table is new), `cube:`, `view:` (facts only; dims join into the
   fact's view), then column additions.
-- Each dashboard task holds its measure rows, its checklist steps, and one
-  `Dimensions` subtask whose subtasks are its dimension rows. A row's notes
-  carry `Use:` (how the dashboard uses it), an optional `Needs:` line, and
-  `Where it lives:` last (`<view>.<member>` as the view's `includes` names it).
-  Workbook-only fields get no row.
+- Each dashboard task holds its measure rows and its checklist steps.
+- A dimension row is a subtask of the table its column comes from, one per
+  dimension, never a copy per dashboard. It blocks the task of every dashboard
+  that slices or filters by it; that link is what puts it on the dashboard's
+  status. Its notes carry `Use:` (how dashboards use it), an optional `Needs:`
+  line, and `Where it lives:` last (`<view>.<member>` as the view's `includes`
+  names it). A Tableau-only field gets no row.
 - Dependencies: `mart` blocks `cube` blocks `view`; a row is blocked only by the
-  stage or addition that builds its own member. A dimension the dashboard slices
-  or filters by blocks its dimension row, never a measure row.
+  stage or addition that builds its own member. A dashboard is blocked only by
+  dimension rows, never by a stage.
 - Each domain section has an `Open Issues — <Domain>` parent task (Assessments'
   is named `Open Issues`). Every follow-up a validation files sits under it.
 - Shared section = conformed dims: calendar and org, the student spine, the
