@@ -226,8 +226,8 @@ models:
           Miami's truancy rule (15 or more makes is_truant true). Days on the
           record, not calendar days, so it differs from a count over the 90
           calendar days before a date; a day on the record with no recorded
-          attendance still takes one of the 91 places. Accumulates per student per year and does not reset
-          when the student changes schools.
+          attendance still takes one of the 91 places. Accumulates per student
+          per year and does not reset when the student changes schools.
 
           Carried across break days and gated on n_membership_days_ytd exactly
           like is_truant, so the count and the flag resolve on the same rows.

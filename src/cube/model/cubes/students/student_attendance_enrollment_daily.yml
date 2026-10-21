@@ -69,8 +69,7 @@ cubes:
         public: true
 
       - name: attendance_code
-        description:
-          Attendance identifier set by school. Examples Tardy, Absent, etc.
+        description: Attendance identifier set by school. Examples Tardy, Absent, etc.
         sql: attendance_code
         type: string
         public: true
@@ -116,15 +115,13 @@ cubes:
         public: true
 
       - name: is_absent
-        description:
-          1 if the student was absent, 0 if present. Sum-friendly flag.
+        description: 1 if the student was absent, 0 if present. Sum-friendly flag.
         sql: is_absent
         type: number
         public: true
 
       - name: is_tardy
-        description:
-          1 if the student was tardy (T-prefix attendance code), 0 otherwise.
+        description: 1 if the student was tardy (T-prefix attendance code), 0 otherwise.
         sql: is_tardy
         type: number
         public: true
