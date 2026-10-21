@@ -491,6 +491,18 @@ models:
           next grade level unless thestudent is being demoted. Categorical
           mapping of discipline, grade_level, is_self_contained,
           special_education_code, values_column.
+      - name: is_algebra_i_ms
+        data_type: boolean
+        description: >-
+          True on the Math row when a New Jersey student (Newark, Camden, or
+          Paterson) holds a non-dropped section in the Algebra I MS subject area
+          (middle school Algebra I) that year. Always false on the Reading row
+          and for Miami. These students sit the Algebra I end-of-course test
+          instead of grade-level math, so goal-setting leaves their Math row
+          out.
+        config:
+          meta:
+            contains_pii: true
       - name: is_low_25_fl
         data_type: boolean
         description: Conditional on fldoe_dynamic_percentile_rank.
