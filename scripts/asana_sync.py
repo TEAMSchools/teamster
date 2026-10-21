@@ -13,22 +13,19 @@ developer console (app.asana.com/0/my-apps), then load it without echoing it or 
 
 Each run:
   1. Chains stages inside every table task: `mart:` blocks `cube:`, `cube:` blocks `view:` (adds only missing links).
-  2. Recomputes each measure row's status tag from evidence only, never from a tag already on the row
-     (is it in Cube? whether it matches is step 5's tag):
-       the latest validation found a missing Cube member                      -> cube-partial
-       every member its notes name is on a public view on main, no open blocker -> cube-covered
-       otherwise an open mart stage or column addition                        -> mart-missing
-       otherwise an open cube / view stage                                    -> mart-ready
-       otherwise (no evidence either way)                                     -> untriaged
-  3. Ticks a row only when it is cube-covered AND tagged 'matched'. Every other done row is unticked, with the
-     reason in the report.
+  2. Ticks a measure row done when it is live in Cube: its Status line says `cube-covered` with no `→ open` hold,
+     and every Cube member its notes name is on a public view on main. Validation does not gate done, and
+     neither do blockers: an open blocker on a live row is a cut the dashboard needs or a stale stage, and the
+     report lists it. Every other done row is unticked, with the reason in the report.
+  3. Gives each open row at most one status tag, from its open blockers; done rows carry none:
+       an open mart stage or column addition -> needs-data
+       otherwise an open cube / view stage   -> needs-cube
+       otherwise                              -> none (nobody has worked out what it needs yet)
   4. Keeps the project's own `measure` tag on rows (drops the duplicate workspace tag of the same name).
-  5. Reads ~/asana-sync/validation/latest.json (the cube-dashboard skill's latest verdict per row) and gives every row
-     exactly one validation tag, removing the others:
-       pass                           -> 'matched'
-       fail, missing_member, fix_cube, fix_source, undecided -> 'mismatch' (Cube's numbers differ; the digest says whether a missing
-                                         member explains the gap)
-       incomplete, or never validated -> 'unvalidated'
+  5. Reads ~/asana-sync/validation/latest.json (the cube-dashboard skill's latest verdict per row): 'validated'
+     when the latest verdict is pass, removed otherwise. The report lists every other verdict; its gaps belong
+     in subtasks under the row, never in a tag.
+  6. Strips the tags in OLD_TAGS from every row.
 """
 
 import json
@@ -45,26 +42,22 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APPLY = "--apply" in sys.argv
 ONLY = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv[:-1] else None
 MEASURE_TAG, DUP_MEASURE_TAG = "1214073246940451", "1215598455588323"
-# Every row gets exactly one, from evidence only; untriaged = no evidence either way.
-STATUS = ["cube-covered", "cube-partial", "mart-ready", "mart-missing", "untriaged"]
-MISMATCH = "mismatch"
-MATCHED = (
-    "matched"  # the latest validation found Cube equal to the dashboard at every grain
-)
-UNVALIDATED = (
-    "unvalidated"  # no run yet, or the latest run could not compare (incomplete)
-)
-# The one validation tag each latest verdict gives a row; any other verdict is unvalidated.
-VALIDATION_TAG = {
-    "pass": MATCHED,
-    "fail": MISMATCH,
-    "missing_member": MISMATCH,
-    "fix_cube": MISMATCH,
-    "fix_source": MISMATCH,
-    "undecided": MISMATCH,
-}
+# At most one on an open row, from its open blockers; done rows carry none.
+STATUS = ["needs-data", "needs-cube"]
+VALIDATED = "validated"  # the latest validation found Cube equal to the dashboard
+# No rule sets these; the sync strips them so a row carries only STATUS, VALIDATED and `measure`.
+OLD_TAGS = [
+    "cube-covered",
+    "cube-partial",
+    "mart-ready",
+    "mart-missing",
+    "untriaged",
+    "matched",
+    "mismatch",
+    "unvalidated",
+]
 LATEST = os.path.expanduser("~/asana-sync/validation/latest.json")
-# A missing file would read as "never validated" and strip every row's validation tag.
+# A missing file would read as "never validated" and strip every row's 'validated' tag.
 if not os.path.exists(LATEST):
     sys.exit(f"No {LATEST}: merge the run's verdicts into it first.")
 validation = json.load(open(LATEST))["rows"]
@@ -178,15 +171,14 @@ def ensure_tag(name):
 
 
 status_gid = {}
-for name in STATUS:
+for name in STATUS + [VALIDATED]:
     gids = tags.get(name, [])
     if len(gids) > 1:
         print(f"note: {len(gids)} tags named {name!r}; using {gids[0]}")
     status_gid[name] = gids[0] if gids else ensure_tag(name)
-validation_gid = {}
-for tag_name in (MATCHED, MISMATCH, UNVALIDATED):
-    gids = tags.get(tag_name, [])
-    validation_gid[tag_name] = gids[0] if gids else ensure_tag(tag_name)
+validated_gid = status_gid.pop(VALIDATED)
+# every workspace tag with an old name, duplicates included; never created
+old_gid = {gid: name for name in OLD_TAGS for gid in tags.get(name, [])}
 
 # ---------------------------------------------------------------- 1. chain stages inside table tasks
 print("\n1. Stage chains")
@@ -228,11 +220,22 @@ for t in table_tasks:
                     {"dependencies": need},
                 )
 
-# ---------------------------------------------------------------- 2-4. measure rows
-print("\n2-4. Measure rows")
+# ---------------------------------------------------------------- 2-6. measure rows
+print("\n2-6. Measure rows")
 ROWF = "name,completed,notes,tags.name,tags.gid,dependencies"
 # blockers are classified from stage_map (loaded in step 1): mart / cube / view stages, or "addition" for any other
 # subtask of a table task (column work). Anything else a row depends on (e.g. a privacy review) isn't a status input.
+
+
+def status_line(notes):
+    m = re.search(r"Status:\s*([^\n]*)", notes or "")
+    return m.group(1).strip() if m else ""
+
+
+def declared_covered(notes):
+    """The catalog's own call: the Status line says cube-covered and carries no `→ open` hold."""
+    line = status_line(notes)
+    return line.startswith("cube-covered") and "→ open" not in line
 
 
 def members_named(notes):
@@ -266,24 +269,20 @@ def member(x):
     return x.split(".")[-1]
 
 
-report_untick, report_unverified, report_mismatch, report_partial, report_ticked = (
-    [],
-    [],
-    [],
-    [],
-    [],
-)
+report_ticked, report_untick, report_unverified = [], [], []
+report_blocked_live, report_undeclared, report_gaps = [], [], []
 for dash in DASHBOARDS:
     if ONLY and dash != ONLY:
         continue
     rows = get_all(f"/tasks/{dash}/subtasks", {"opt_fields": ROWF})
-    # with no verdict for any row, --apply would mark the whole dashboard unvalidated
+    # with no verdict for any row, --apply would strip the whole dashboard's 'validated' tags
     if ONLY and APPLY and not any(r["gid"] in validation for r in rows):
         sys.exit(
             f"latest.json has no verdict for any row of {ONLY}: merge this run's verdicts first."
         )
     for r in rows:
-        if "Status:" not in (r.get("notes") or ""):
+        notes = r.get("notes") or ""
+        if "Status:" not in notes:
             continue  # checklist items etc.
         rid, name = r["gid"], r["name"][:70]
         have = {t["gid"] for t in r.get("tags", [])}
@@ -304,105 +303,53 @@ for dash in DASHBOARDS:
         deps = r.get("dependencies")
         if deps is None:
             deps = get_all(f"/tasks/{rid}/dependencies", {"opt_fields": "name"})
-        blockers = [
-            (stage_map[d["gid"]]["kind"], stage_map[d["gid"]])
-            for d in deps
-            if d["gid"] in stage_map
-        ]
+        blockers = [stage_map[d["gid"]] for d in deps if d["gid"] in stage_map]
+        open_blockers = [b for b in blockers if not b.get("completed")]
         done = r["completed"]
-        named = members_named(r.get("notes"))
         cube_named = {
-            x for x in named if member(x) in cube_members
+            x for x in members_named(notes) if member(x) in cube_members
         }  # only real Cube measure/dimension names
-        verified = bool(cube_named) and all(member(x) in shipped for x in cube_named)
+        on_main = bool(cube_named) and all(member(x) in shipped for x in cube_named)
+        declared = declared_covered(notes)
+        live = declared and on_main
         # 5. validation results from the cube-dashboard skill
-        v = validation.get(rid, {})
-        verdict = v.get("verdict")
-        reopen = v.get("reopen_for", [])
-        failed = verdict == "fail"
-        # a member Cube lacks causes part of the gap (whatever else is wrong): the row is not shipped
-        partial = verdict == "missing_member" or bool(reopen)
-        matched = verdict == "pass"
-        # Exactly one validation tag, from the latest verdict: never inferred from a blank.
-        want_v = VALIDATION_TAG.get(verdict, UNVALIDATED)
-        for tag_name, gid in validation_gid.items():
-            if tag_name == want_v and gid not in have:
-                write(
-                    f"{name}: latest validation {verdict or 'never run'} -> add '{tag_name}'",
-                    "POST",
-                    f"/tasks/{rid}/addTag",
-                    {"tag": gid},
-                )
-            elif tag_name != want_v and gid in have:
-                write(
-                    f"{name}: latest validation {verdict or 'never run'} -> remove '{tag_name}'",
-                    "POST",
-                    f"/tasks/{rid}/removeTag",
-                    {"tag": gid},
-                )
-        mismatched = want_v == MISMATCH
-        if partial:
-            report_partial.append(
-                f"{name} ({rid}): add to Cube: {', '.join(reopen) or 'see the digest'}"
-            )
-        if mismatched:
-            report_mismatch.append(f"{name} ({rid}): Cube does not match Tableau")
-        # 2. status tag: does the row ship in Cube today?
-        blockers_done = all(d.get("completed") for _, d in blockers)
-        # Status comes from evidence only, never from a tag already on the row: the stage
-        # blockers, the members its notes name being on main, and the latest validation.
-        # The status tag says whether the row is in Cube; whether its numbers match is the
-        # validation tag's job. A failing row that ships stays cube-covered (and open).
-        covered = verified and blockers_done and not partial
-        if partial:
-            want = "cube-partial"
-        elif covered:
-            want = "cube-covered"
-        elif any(
-            k in ("mart", "addition") and not d.get("completed") for k, d in blockers
-        ):
-            want = "mart-missing"
-        elif any(k in ("cube", "view") and not d.get("completed") for k, d in blockers):
-            want = "mart-ready"
-        else:
-            want = "untriaged"  # no evidence either way: nobody has worked out what it needs
-        # 3. done means it ships in Cube and its numbers matched the dashboard
-        if covered and matched and not done:
+        verdict = validation.get(rid, {}).get("verdict")
+        if verdict == "pass" and validated_gid not in have:
             write(
-                f"{name}: cube-covered and matched -> tick done",
+                f"{name}: latest validation passed -> add '{VALIDATED}'",
+                "POST",
+                f"/tasks/{rid}/addTag",
+                {"tag": validated_gid},
+            )
+        elif verdict != "pass" and validated_gid in have:
+            write(
+                f"{name}: latest validation {verdict or 'never run'} -> remove '{VALIDATED}'",
+                "POST",
+                f"/tasks/{rid}/removeTag",
+                {"tag": validated_gid},
+            )
+        if verdict and verdict != "pass":
+            report_gaps.append(f"{name} ({rid}): {verdict}")
+        # 2. done means it is live in Cube
+        if live and not done:
+            write(
+                f"{name}: live in Cube -> tick done",
                 "PUT",
                 f"/tasks/{rid}",
                 {"completed": True},
             )
             report_ticked.append(f"{name} ({rid})")
-        elif done and not (covered and matched):
+        elif done and not live:
             why = []
-            if not verified:
+            if not declared:
+                why.append(f"Status line reads '{status_line(notes)[:60]}'")
+            if not on_main:
                 gone = sorted(x for x in cube_named if member(x) not in shipped)
                 why.append(
                     f"not on main: {', '.join(gone)}"
                     if gone
                     else "its notes name no member Cube defines on main"
                 )
-            if not blockers_done:
-                why.append("a blocker is open")
-            if failed:
-                why.append("validation failed")
-            if partial:
-                why.append("Cube lacks a member")
-            if verdict == "fix_cube":
-                why.append("Cube's formula differs from the dashboard")
-            if verdict == "fix_source":
-                why.append("the source data is wrong")
-            if verdict == "undecided":
-                why.append("the domain owner has not decided who fixes a mismatch")
-            if (
-                not matched
-                and not failed
-                and not partial
-                and verdict not in ("fix_cube", "fix_source", "undecided")
-            ):
-                why.append(f"not validated ({verdict or 'never run'})")
             write(
                 f"{name}: {'; '.join(why)} -> untick",
                 "PUT",
@@ -410,45 +357,75 @@ for dash in DASHBOARDS:
                 {"completed": False},
             )
             report_untick.append(f"{name} ({rid}): {'; '.join(why)}")
-        if not done and blockers and blockers_done and not verified:
+        if live and open_blockers:
+            report_blocked_live.append(
+                f"{name} ({rid}): {'; '.join(b['name'][:60] for b in open_blockers)}"
+            )
+        if not live and on_main and not declared:
+            report_undeclared.append(
+                f"{name} ({rid}): Status reads '{status_line(notes)[:60]}'"
+            )
+        if not live and blockers and not open_blockers and not on_main:
             report_unverified.append(
                 f"{name} ({rid}): blockers done, but Cube member(s) not found on main: {', '.join(sorted(cube_named)) or 'none named'}"
             )
-        current = [n for n in STATUS if status_gid[n] in have]
-        if want and current != [want]:
-            for n in current:
-                if n != want:
-                    write(
-                        f"{name}: remove '{n}'",
-                        "POST",
-                        f"/tasks/{rid}/removeTag",
-                        {"tag": status_gid[n]},
-                    )
-            if want not in current:
+        # 3. status tag: what an open row still needs
+        if live:
+            want = None
+        elif any(b["kind"] in ("mart", "addition") for b in open_blockers):
+            want = "needs-data"
+        elif open_blockers:
+            want = "needs-cube"
+        else:
+            want = None
+        for n in STATUS:
+            if n != want and status_gid[n] in have:
                 write(
-                    f"{name}: add '{want}'",
+                    f"{name}: remove '{n}'",
                     "POST",
-                    f"/tasks/{rid}/addTag",
-                    {"tag": status_gid[want]},
+                    f"/tasks/{rid}/removeTag",
+                    {"tag": status_gid[n]},
                 )
+        if want and status_gid[want] not in have:
+            write(
+                f"{name}: add '{want}'",
+                "POST",
+                f"/tasks/{rid}/addTag",
+                {"tag": status_gid[want]},
+            )
+        # 6. tags no rule sets
+        for gid in sorted(have & old_gid.keys()):
+            write(
+                f"{name}: remove old tag '{old_gid[gid]}'",
+                "POST",
+                f"/tasks/{rid}/removeTag",
+                {"tag": gid},
+            )
 
 print(f"\n{'Applied' if APPLY else 'Would apply'} {len(changes)} change(s).")
 if report_ticked:
-    print(f"\nTicked: cube-covered and matched ({len(report_ticked)}):")
+    print(f"\nTicked: live in Cube ({len(report_ticked)}):")
     print("\n".join("  " + x for x in report_ticked))
 if report_untick:
-    print(
-        f"\nUnticked: done rows that are not both cube-covered and matched ({len(report_untick)}):"
-    )
+    print(f"\nUnticked: done rows that are not live in Cube ({len(report_untick)}):")
     print("\n".join("  " + x for x in report_untick))
+if report_blocked_live:
+    print(
+        "\nLive rows with open blockers (move a cut's blocker to the dashboard task; close a stale stage):"
+    )
+    print("\n".join("  " + x for x in report_blocked_live))
+if report_undeclared:
+    print(
+        "\nMembers on main, but the Status line does not say cube-covered (edit it if the row is live):"
+    )
+    print("\n".join("  " + x for x in report_undeclared))
 if report_unverified:
     print("\nBlockers done but not verified on main (left open):")
     print("\n".join("  " + x for x in report_unverified))
-if report_mismatch:
-    print(f"\nRows tagged '{MISMATCH}' (see ~/asana-sync/validation/):")
-    print("\n".join("  " + x for x in report_mismatch))
-if report_partial:
-    print("\nRows tagged cube-partial: Cube lacks a member the dashboard uses:")
-    print("\n".join("  " + x for x in report_partial))
+if report_gaps:
+    print(
+        f"\nLatest validation did not pass (give each gap a subtask under the row; see ~/asana-sync/validation/) ({len(report_gaps)}):"
+    )
+    print("\n".join("  " + x for x in report_gaps))
 if not APPLY:
     print("\nPreview only. Re-run with --apply to make these changes.")

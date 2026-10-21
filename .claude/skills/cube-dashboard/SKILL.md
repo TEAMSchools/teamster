@@ -32,9 +32,9 @@ Design: `docs/superpowers/specs/2026-10-15-cube-validate-redesign-design.md`.
    Findings stay held until every one agrees.
 7. Follow-ups from a trusted report, after the analyst reviews them: an Asana
    task for dashboard fixes, a GitHub issue for Cube fixes and missing measures.
-8. Sync Asana last: verdicts merge into `latest.json`, and
-   `scripts/asana_sync.py` sets `matched`, `mismatch` or `unvalidated` and ticks
-   done rows.
+8. Sync Asana last: verdicts merge into `latest.json`, `scripts/asana_sync.py`
+   tags the rows that passed `validated`, and each gap still open gets a subtask
+   under its measure row.
 
 ## Running a step that needs credentials
 
@@ -296,13 +296,15 @@ Only from a trusted report.
      `read -rs ASANA_PAT && export ASANA_PAT`. Never ask for the token in chat.
    - The analyst runs
      `uv run --with requests python scripts/asana_sync.py --only <dashboard task gid>`
-     to preview, then adds `--apply`. It sets the tags and ticks done rows.
+     to preview, then adds `--apply`. It adds `validated` to the rows that
+     passed and removes it from the rest.
    - Read the preview before `--apply`. Every change must be on this run's
      measure rows.
-   - When the analyst approves a rule that a `Decide:` blocker task asks for,
-     comment the decision with this run's numbers and complete the task.
-   - A `matched` row ticks done only once all its blockers close. Name the open
-     blockers in the report.
+   - Give each gap the run leaves open a subtask under its measure row, named
+     for the gap, linking its follow-up. The preview's "did not pass" list names
+     the rows. Close the subtask when a later run passes.
+   - When the analyst approves a rule that a `Decide:` task asks for, comment
+     the decision with this run's numbers and complete the task.
 
 ## Trust across runs
 
