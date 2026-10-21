@@ -32,6 +32,16 @@ models:
       The 21 `custom_*_gpa`, `custom_*_rank` and `ncaa_gpa` columns in the
       source are omitted: all are 100% null, as is `mp`. Add one when Focus
       starts populating it.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - school_id
+              - syear
+              - marking_period_id
+          config:
+            severity: error
     columns:
       - name: id
         description: Primary key — Focus student GPA calculation id.

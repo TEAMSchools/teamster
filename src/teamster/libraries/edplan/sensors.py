@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from dagster import (
@@ -60,9 +60,12 @@ def build_edplan_sftp_sensor(
                 and check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
+                # Daily partitions are in execution_timezone; a UTC date runs a
+                # day ahead in the evening and names a partition not yet created.
                 partition_key = (
                     datetime.fromtimestamp(
-                        timestamp=check.not_none(value=f.st_mtime), tz=timezone.utc
+                        timestamp=check.not_none(value=f.st_mtime),
+                        tz=execution_timezone,
                     )
                     .date()
                     .isoformat()

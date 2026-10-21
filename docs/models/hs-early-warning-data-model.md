@@ -353,7 +353,9 @@ flowchart TD
     both -->|yes| f1{FAFSA required and missing?}
     f1 -->|no| ge
     f1 -->|yes| nf[No FAFSA]
-    both -->|no| one{One subject counts?}
+    both -->|no| pend{Sat the NJGPA in a subject whose class has no cut score row yet?}
+    pend -->|yes| pc[Pending Cut Score]
+    pend -->|no| one{One subject counts?}
     one -->|yes| aw{Grade 11, other subject untested, before results land?}
     aw -->|yes| onlyaw[ELA Only / Awaiting Math or Math Only / Awaiting ELA]
     aw -->|no| f2{FAFSA required and missing?}
@@ -393,7 +395,7 @@ Two models, split by grain:
   `grad_eligibility`.
 
 `grad_eligibility` is derived in the model, so there is no combination it cannot
-label; a new state rule is a new branch in the model. Three rules drive it:
+label; a new state rule is a new branch in the model. Four rules drive it:
 
 1. A subject only counts if the student sat the NJGPA in it. A DLM code (`M`)
    counts as sitting it, in that subject only.
@@ -405,6 +407,11 @@ label; a new state rule is a new branch in the model. Three rules drive it:
    records yet reads Awaiting Results. One whose only counting subject leaves
    the other untested reads ELA Only / Awaiting Math or Math Only / Awaiting
    ELA.
+4. NJDOE publishes a class's cut scores only after its test is scored. A student
+   who sat the NJGPA in a subject whose cut score cohort has no NJGPA row on the
+   cut score sheet reads Pending Cut Score until the row arrives, even if the
+   class's ACT, SAT or PSAT rows are already there. `final_grad_path_code` stays
+   `R` in the meantime, because PowerSchool has no pending code.
 
 ### Picking a student's best score
 

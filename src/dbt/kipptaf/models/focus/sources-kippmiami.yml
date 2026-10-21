@@ -247,7 +247,7 @@ sources:
                 - kippmiami
                 - focus
                 - int_focus__calendar_rollup
-      - name: stg_focus__student_gpa_calculated
+      - name: int_focus__student_gpa_cumulative
         config:
           meta:
             dagster:
@@ -255,7 +255,7 @@ sources:
               asset_key:
                 - kippmiami
                 - focus
-                - stg_focus__student_gpa_calculated
+                - int_focus__student_gpa_cumulative
       - name: int_focus__gradebook_grades
         config:
           meta:

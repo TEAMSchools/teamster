@@ -92,7 +92,7 @@ select
         when round(avg(ar.percent_correct), 0) >= 0
         then 'Far Below Expectations'
     end as performance_level,
-from {{ ref("int_assessments__response_rollup") }} as ar
+from {{ ref("int_assessments__standard_rollup") }} as ar
 inner join
     {{ ref("stg_google_sheets__assessments__standard_domains") }} as sd
     on ar.response_type_code = sd.standard_code
@@ -107,7 +107,6 @@ inner join
     on ar.source = r.source
     and ar.assessment_id = r.assessment_id
     and co.region = r.report_card_region
-where ar.response_type = 'standard'
 group by
     ar.academic_year,
     ar.student_number,

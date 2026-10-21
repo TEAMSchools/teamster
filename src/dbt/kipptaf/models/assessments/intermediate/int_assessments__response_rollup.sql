@@ -173,6 +173,7 @@ with
             count(distinct assessment_id) as n_assessments,
 
             sum(points) as points,
+            sum(points_possible) as points_possible,
 
             array_agg(distinct assessment_id order by assessment_id) as assessment_ids,
 
@@ -227,6 +228,7 @@ with
             response_type_root_description,
             date_taken,
             points,
+            points_possible,
             percent_correct,
             n_assessments,
             assessment_ids,
@@ -270,6 +272,7 @@ with
             response_type_root_description,
             date_taken,
             points,
+            points_possible,
             percent_correct,
 
             1 as n_assessments,
@@ -323,6 +326,7 @@ with
             r.response_type_root_description,
             r.date_taken,
             r.points,
+            r.points_possible,
 
             -- float64 in Focus; numeric keeps the union's Illuminate type
             cast(r.percent_correct as numeric) as percent_correct,
@@ -382,6 +386,7 @@ select
     ru.response_type_root_description,
     ru.date_taken,
     ru.points,
+    ru.points_possible,
     ru.percent_correct,
     ru.title,
     ru.assessment_id,
