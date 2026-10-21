@@ -7,12 +7,13 @@ views:
       attendance is still a row. Contains direct student identifiers — see
       access_policy for PII gating.
 
-      count_students is a distinct-student count over whatever slice is queried.
-      Leave the date open for ever-enrolled over a range; pin it to one date for
-      a point-in-time headcount as of that date. There is no anchor filter and
-      none is needed — break days carry a row, so a weekend or a holiday
-      resolves exactly like a school day. Filter is_in_session_day = true for
-      anything that should count school days only.
+      count_students is the enrollment headcount: distinct students enrolled in
+      whatever slice is queried, whether or not their attendance has been
+      recorded. Leave the date open for ever-enrolled over a range; pin it to
+      one date for a point-in-time headcount as of that date. There is no anchor
+      filter and none is needed — break days carry a row, so a weekend or a
+      holiday resolves exactly like a school day. Filter is_in_session_day =
+      true for anything that should count school days only.
 
       Filter attendance_date, not dates_date_day, for a single date or a date
       range. The two return identical rows, but attendance_date compiles to a
@@ -46,17 +47,18 @@ views:
       region this month — is two queries, one per view. Do not substitute a tier
       percentage for an attendance rate.
 
-      Every rate on this view divides by count_students, which counts students
-      with recorded attendance. No minimum-day floor applies -- one measured day
-      is enough -- but a student whose attendance was never recorded is outside
-      both the numerator and the denominator. Population and denominator are the
-      same number, so they cannot drift apart and an unmeasured student cannot
-      pull a rate down.
+      Every student-weighted rate on this view divides by
+      count_students_measured, the students with at least 1 recorded attendance
+      day. No minimum-day floor applies -- one measured day is enough -- but a
+      student whose attendance was never recorded is outside both the numerator
+      and the denominator, so an unmeasured student cannot pull a rate down.
+      count_students counts that student; count_students_measured does not.
 
     cubes:
       - join_path: student_attendance_enrollment_daily
         includes:
           - count_students
+          - count_students_measured
           - is_in_session_day
           - avg_daily_attendance
           - pct_tardy
