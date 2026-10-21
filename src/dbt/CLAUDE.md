@@ -114,10 +114,13 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
 
 ## No seeds
 
-dbt seeds are forbidden. Every project sets `seed-paths: []`, so a CSV dropped
-into `seeds/` is never loaded and a `ref()` to it fails at parse. Hand-kept
-lookup data lives in a Google Sheet, read through a `sources-external.yml` entry
-and a `stg_google_sheets__*` model. Never put a path back in `seed-paths`.
+dbt seeds are forbidden: a seed commits data to the repo, so every data change
+becomes a code change and a redeploy. Every project sets `seed-paths: []`, so a
+CSV dropped into `seeds/` is never loaded and a `ref()` to it fails at parse.
+Hand-kept lookup data lives in a Google Sheet, read through a
+`sources-external.yml` entry and a `stg_google_sheets__*` model. A list another
+organization publishes at a stable URL is fetched by a Dagster asset instead, so
+no one copies it by hand. Never put a path back in `seed-paths`.
 
 ## Model Conventions
 
