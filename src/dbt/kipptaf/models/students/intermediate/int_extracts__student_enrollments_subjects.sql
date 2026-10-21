@@ -116,7 +116,11 @@ with
 
             'Math' as iready_subject,
         from {{ ref("int_students__course_enrollments") }}
-        where illuminate_subject_area = 'Algebra I MS' and not is_dropped_section
+        where
+            illuminate_subject_area = 'Algebra I MS'
+            and not is_dropped_section
+            -- the goal generator applies this exclusion to NJ regions only
+            and _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
     ),
 
     dibels as (

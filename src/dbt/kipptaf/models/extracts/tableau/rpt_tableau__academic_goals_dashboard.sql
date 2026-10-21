@@ -43,7 +43,7 @@ select
         when co.is_exempt_state_testing
         then 'Exempt from state testing'
         when co.is_algebra_i_ms
-        then 'Grade 8 Algebra I'
+        then format('Grade %d Algebra I', co.grade_level)
     end as denominator_exclusion,
 from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 left join
