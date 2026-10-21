@@ -287,10 +287,11 @@ def test_locations_do_not_override_placement(location: str, config: str):
     """
     path = REPO_ROOT / f"src/teamster/code_locations/{location}/dagster-cloud.yaml"
     k8s = yaml.safe_load(path.read_text())["locations"][0]["container_context"]["k8s"]
-    pod_spec = k8s.get(config, {}).get("pod_spec_config", {})
+    # coerce so snake_case (node_selector) and camelCase keys are both caught
+    pod_spec = _coerce(k8s.get(config, {}).get("pod_spec_config", {}))
 
-    assert "nodeSelector" not in pod_spec
-    assert "nodeAffinity" not in pod_spec.get("affinity", {})
+    assert pod_spec.node_selector is None
+    assert pod_spec.affinity is None or pod_spec.affinity.node_affinity is None
 
 
 def test_agent_stays_on_scale_out_amd64():

@@ -63,8 +63,9 @@ skill.
   when GKE cannot provision arm64. Their `nodeSelector` names only the class (an
   arch key would disable the fallback), and they carry an explicit
   `kubernetes.io/arch=arm64:NoSchedule` toleration, since Autopilot adds it only
-  to pods that select arm64. The agent pins to built-in Scale-Out amd64 (image
-  is amd64-only). Asserted in `tests/test_k8s_config.py`.
+  to pods that select arm64. A code server that fell back stays on amd64 (the
+  pricier tier) until its next redeploy. The agent pins to built-in Scale-Out
+  amd64 (image is amd64-only). Asserted in `tests/test_k8s_config.py`.
 - **No node affinity on CCC pods carrying `safe-to-evict`.** Autopilot treats
   the annotation as an extended-duration request and adds a
   `cloud.google.com/extended-duration-pods` key, which Warden
