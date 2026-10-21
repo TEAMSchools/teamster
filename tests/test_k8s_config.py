@@ -279,12 +279,15 @@ def test_dagster_pods_select_the_arm_first_class(config: str):
     assert "nodeAffinity" not in pod_spec.get("affinity", {})
 
 
+@pytest.mark.parametrize("config", ["server_k8s_config", "run_k8s_config"])
 @pytest.mark.parametrize("location", CODE_LOCATIONS)
-def test_locations_do_not_override_placement(location: str):
+def test_locations_do_not_override_placement(location: str, config: str):
     """Per-location config deep-merges over Helm, so a location-level selector
     or node affinity would undo the fallback for that location.
     """
-    pod_spec = _server_pod_spec_config(location)
+    path = REPO_ROOT / f"src/teamster/code_locations/{location}/dagster-cloud.yaml"
+    k8s = yaml.safe_load(path.read_text())["locations"][0]["container_context"]["k8s"]
+    pod_spec = k8s.get(config, {}).get("pod_spec_config", {})
 
     assert "nodeSelector" not in pod_spec
     assert "nodeAffinity" not in pod_spec.get("affinity", {})
