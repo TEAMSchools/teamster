@@ -208,11 +208,12 @@ cubes:
 
       - name: n_absent_days_rolling_90
         description: >-
-          Absences in the student's last 91 recorded school days of the academic
-          year, through and including this date -- the count behind Miami's
-          truancy rule (15 or more makes is_truant true). School days, not
-          calendar days, so it differs from a count over the 90 calendar days
-          before a date. Accumulates per student per year and does not reset
+          Absences in the student's last 91 days on the attendance record for
+          the academic year, through and including this date -- the count behind
+          Miami's truancy rule (15 or more makes is_truant true). Days on the
+          record, not calendar days, so it differs from a count over the 90
+          calendar days before a date; a day on the record with no recorded
+          attendance still takes one of the 91 places. Accumulates per student per year and does not reset
           when the student changes schools.
 
           Carried across break days and gated on n_membership_days_ytd exactly
@@ -446,7 +447,7 @@ cubes:
           attendance code and one third for each T or T10, 0 for every other
           code. Narrower than count_absent_days_weighted: other absence codes
           and other tardy codes score nothing. Miami records no tardy codes from
-          AY2026 on, so Miami from AY2026 on scores its absences only.
+          AY2026 on, so Miami from AY2026 on scores its A and AD absences only.
         sql: >-
           CASE
             WHEN {CUBE}.attendance_code IN ('A', 'AD') THEN 1.0
@@ -463,8 +464,8 @@ cubes:
       - name: count_iss_days
         description: >-
           In-school suspension days (S and ISS codes) over days with membership.
-          Miami records no suspension codes from AY2026 on, so Miami from AY2026
-          on returns null, not zero.
+          Miami's suspension flags are not populated from AY2026 on, so Miami
+          from AY2026 on returns null, not zero.
         sql: is_iss
         type: sum
         public: true
@@ -474,8 +475,9 @@ cubes:
       - name: count_oss_days
         description: >-
           Out-of-school suspension days (OS, OSS, OSSP and SHI codes) over days
-          with membership. Miami records no suspension codes from AY2026 on, so
-          Miami from AY2026 on returns null, not zero.
+          with membership. Miami's suspension flags are not populated from
+          AY2026 on, so Miami from AY2026 on returns null, not zero, even on a
+          day coded OSS.
         sql: is_oss
         type: sum
         public: true

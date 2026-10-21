@@ -221,11 +221,12 @@ models:
       - name: n_absent_days_rolling_90
         data_type: float64
         description: >-
-          Absences in the student's last 91 recorded school days of the academic
-          year, through and including this date -- the count behind Miami's
-          truancy rule (15 or more makes is_truant true). School days, not
-          calendar days, so it differs from a count over the 90 calendar days
-          before a date. Accumulates per student per year and does not reset
+          Absences in the student's last 91 days on the attendance record for
+          the academic year, through and including this date -- the count behind
+          Miami's truancy rule (15 or more makes is_truant true). Days on the
+          record, not calendar days, so it differs from a count over the 90
+          calendar days before a date; a day on the record with no recorded
+          attendance still takes one of the 91 places. Accumulates per student per year and does not reset
           when the student changes schools.
 
           Carried across break days and gated on n_membership_days_ytd exactly
