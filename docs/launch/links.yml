@@ -71,6 +71,17 @@
   regions: [paterson]
   status: verified
 
+- id: academic_goal_rollup
+  name: Academic Goal Roll-Up
+  url: https://tableau.kipp.org/t/KIPPNJ/views/AcademicGoalRoll-Up_17581610808600/GoalScoreboard?:embed=y
+  description:
+    Bucket plans against academic goals by region, school, grade band, and
+    grade, with a worklist for choosing students to add to buckets.
+  audiences: [leaders, region, teachers]
+  system: tableau
+  group: academics
+  status: verified
+
 - id: certification_dashboard
   name: Certification Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/NJCertificationDashboardSchoolsView/CertificationDashboard?:embed=y
