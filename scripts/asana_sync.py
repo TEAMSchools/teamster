@@ -11,18 +11,19 @@ Needs ASANA_PAT, your own personal access token, in the environment for both mod
 developer console (app.asana.com/0/my-apps), then load it without echoing it or saving it to history:
   read -rs ASANA_PAT && export ASANA_PAT
 
-Each run:
+Rows are a dashboard task's measure subtasks (notes carry a `Status:` line) and the subtasks of its `Dimensions`
+subtask. Each run:
   1. Chains stages inside every table task: `mart:` blocks `cube:`, `cube:` blocks `view:` (adds only missing links).
-  2. Ticks a measure row done when it is live in Cube: every Cube member its notes name is on a public view on
-     main, and no blocker on the row is open. Validation does not gate done. A row blocks only on the stage or
-     addition that builds its own member; a cut the dashboard needs blocks the dashboard task, so the report
-     lists rows whose members are on main but a blocker is open. Every other done row is unticked, with the
-     reason in the report.
-  3. Gives each open row at most one status tag, from its open blockers; done rows carry none:
+  2. Ticks a row done when it is live in Cube: every Cube member its notes name is on a public view on main, and
+     no blocker on the row is open. Validation does not gate done. A row blocks only on the stage or addition that
+     builds its own member: a cut belongs on its dimension row, so the report lists rows whose members are on main
+     but a blocker is open. Every other done row is unticked, with the reason in the report.
+  3. Gives each open row at most one status tag; done rows carry none:
        an open mart stage or column addition -> needs-data
        otherwise an open cube / view stage   -> needs-cube
+       otherwise a `Needs: data` / `Needs: cube` line in the notes, the triage for a row nobody has made a task for
        otherwise                              -> none (nobody has worked out what it needs yet)
-  4. Keeps the project's own `measure` tag on rows (drops the duplicate workspace tag of the same name).
+  4. Tags every row `measure` or `dimension` (drops the duplicate workspace `measure` tag).
   5. Reads ~/asana-sync/validation/latest.json (the cube-dashboard skill's latest verdict per row): 'validated'
      when the latest verdict is pass, removed otherwise. The report lists every other verdict; its gaps belong
      in subtasks under the row, never in a tag.
@@ -46,6 +47,10 @@ MEASURE_TAG, DUP_MEASURE_TAG = "1214073246940451", "1215598455588323"
 # At most one on an open row, from its open blockers; done rows carry none.
 STATUS = ["needs-data", "needs-cube"]
 VALIDATED = "validated"  # the latest validation found Cube equal to the dashboard
+DIMENSION = "dimension"  # on each row under a dashboard's DIMENSIONS_TASK, as `measure` is on measure rows
+DIMENSIONS_TASK = (
+    "Dimensions"  # the dashboard subtask whose subtasks are its dimension rows
+)
 # No rule sets these; the sync strips them so a row carries only STATUS, VALIDATED and `measure`.
 OLD_TAGS = [
     "cube-covered",
@@ -172,12 +177,13 @@ def ensure_tag(name):
 
 
 status_gid = {}
-for name in STATUS + [VALIDATED]:
+for name in STATUS + [VALIDATED, DIMENSION]:
     gids = tags.get(name, [])
     if len(gids) > 1:
         print(f"note: {len(gids)} tags named {name!r}; using {gids[0]}")
     status_gid[name] = gids[0] if gids else ensure_tag(name)
 validated_gid = status_gid.pop(VALIDATED)
+kind_gid = {"measure": MEASURE_TAG, "dimension": status_gid.pop(DIMENSION)}
 # every workspace tag with an old name, duplicates included; never created
 old_gid = {gid: name for name in OLD_TAGS for gid in tags.get(name, [])}
 
@@ -221,16 +227,17 @@ for t in table_tasks:
                     {"dependencies": need},
                 )
 
-# ---------------------------------------------------------------- 2-6. measure rows
-print("\n2-6. Measure rows")
+# ---------------------------------------------------------------- 2-6. measure and dimension rows
+print("\n2-6. Measure and dimension rows")
 ROWF = "name,completed,notes,tags.name,tags.gid,dependencies"
 # blockers are classified from stage_map (loaded in step 1): mart / cube / view stages, or "addition" for any other
 # subtask of a table task (column work). Anything else a row depends on (e.g. a privacy review) isn't a status input.
+NEEDS = re.compile(r"^\s*Needs:\s*(cube|data)\b", re.M | re.I)
 
 
 def members_named(notes):
     m = re.search(
-        r"Where it lives:\s*(.*?)(?:\n\s*Regions:|\n\s*Was:|\n\s*https?://|$)",
+        r"Where it lives:\s*(.*?)(?:\n\s*(?:Regions|Was|Needs|Use):|\n\s*https?://|$)",
         notes or "",
         re.S,
     )
@@ -261,6 +268,131 @@ def member(x):
 
 report_ticked, report_untick, report_unverified = [], [], []
 report_blocked_on_main, report_gaps = [], []
+
+
+def sync_row(r, kind):
+    """Steps 2-6 for one measure row or one row under a dashboard's Dimensions task."""
+    notes = r.get("notes") or ""
+    rid, name = r["gid"], f"[{kind}] {r['name'][:64]}"
+    have = {t["gid"] for t in r.get("tags", [])}
+    # 4. the row's own kind tag
+    if kind == "measure" and DUP_MEASURE_TAG in have:
+        write(
+            f"{name}: duplicate 'measure' tag -> project 'measure' tag",
+            "POST",
+            f"/tasks/{rid}/removeTag",
+            {"tag": DUP_MEASURE_TAG},
+        )
+    if kind_gid[kind] not in have:
+        write(
+            f"{name}: add '{kind}' tag",
+            "POST",
+            f"/tasks/{rid}/addTag",
+            {"tag": kind_gid[kind]},
+        )
+    deps = r.get("dependencies")
+    if deps is None:
+        deps = get_all(f"/tasks/{rid}/dependencies", {"opt_fields": "name"})
+    blockers = [stage_map[d["gid"]] for d in deps if d["gid"] in stage_map]
+    open_blockers = [b for b in blockers if not b.get("completed")]
+    done = r["completed"]
+    cube_named = {
+        x for x in members_named(notes) if member(x) in cube_members
+    }  # only real Cube measure/dimension names
+    on_main = bool(cube_named) and all(member(x) in shipped for x in cube_named)
+    live = on_main and not open_blockers
+    # 5. validation results from the cube-dashboard skill
+    verdict = validation.get(rid, {}).get("verdict")
+    if verdict == "pass" and validated_gid not in have:
+        write(
+            f"{name}: latest validation passed -> add '{VALIDATED}'",
+            "POST",
+            f"/tasks/{rid}/addTag",
+            {"tag": validated_gid},
+        )
+    elif verdict != "pass" and validated_gid in have:
+        write(
+            f"{name}: latest validation {verdict or 'never run'} -> remove '{VALIDATED}'",
+            "POST",
+            f"/tasks/{rid}/removeTag",
+            {"tag": validated_gid},
+        )
+    if verdict and verdict != "pass":
+        report_gaps.append(f"{name} ({rid}): {verdict}")
+    # 2. done means it is live in Cube
+    if live and not done:
+        write(
+            f"{name}: live in Cube -> tick done",
+            "PUT",
+            f"/tasks/{rid}",
+            {"completed": True},
+        )
+        report_ticked.append(f"{name} ({rid})")
+    elif done and not live:
+        why = []
+        if open_blockers:
+            why.append(
+                f"open blocker: {'; '.join(b['name'][:60] for b in open_blockers)}"
+            )
+        if not on_main:
+            gone = sorted(x for x in cube_named if member(x) not in shipped)
+            why.append(
+                f"not on main: {', '.join(gone)}"
+                if gone
+                else "its notes name no member Cube defines on main"
+            )
+        write(
+            f"{name}: {'; '.join(why)} -> untick",
+            "PUT",
+            f"/tasks/{rid}",
+            {"completed": False},
+        )
+        report_untick.append(f"{name} ({rid}): {'; '.join(why)}")
+    if on_main and open_blockers:
+        report_blocked_on_main.append(
+            f"{name} ({rid}): {'; '.join(b['name'][:60] for b in open_blockers)}"
+        )
+    if blockers and not open_blockers and not on_main:
+        report_unverified.append(
+            f"{name} ({rid}): blockers done, but Cube member(s) not found on main: {', '.join(sorted(cube_named)) or 'none named'}"
+        )
+    # 3. status tag: what an open row still needs; a blocker outranks the notes' `Needs:` line
+    needs = NEEDS.search(notes)
+    if live:
+        want = None
+    elif any(b["kind"] in ("mart", "addition") for b in open_blockers):
+        want = "needs-data"
+    elif open_blockers:
+        want = "needs-cube"
+    elif needs:
+        want = f"needs-{needs.group(1).lower()}"
+    else:
+        want = None
+    for n in STATUS:
+        if n != want and status_gid[n] in have:
+            write(
+                f"{name}: remove '{n}'",
+                "POST",
+                f"/tasks/{rid}/removeTag",
+                {"tag": status_gid[n]},
+            )
+    if want and status_gid[want] not in have:
+        write(
+            f"{name}: add '{want}'",
+            "POST",
+            f"/tasks/{rid}/addTag",
+            {"tag": status_gid[want]},
+        )
+    # 6. tags no rule sets
+    for gid in sorted(have & old_gid.keys()):
+        write(
+            f"{name}: remove old tag '{old_gid[gid]}'",
+            "POST",
+            f"/tasks/{rid}/removeTag",
+            {"tag": gid},
+        )
+
+
 for dash in DASHBOARDS:
     if ONLY and dash != ONLY:
         continue
@@ -271,123 +403,12 @@ for dash in DASHBOARDS:
             f"latest.json has no verdict for any row of {ONLY}: merge this run's verdicts first."
         )
     for r in rows:
-        notes = r.get("notes") or ""
-        if "Status:" not in notes:
-            continue  # checklist items etc.
-        rid, name = r["gid"], r["name"][:70]
-        have = {t["gid"] for t in r.get("tags", [])}
-        if DUP_MEASURE_TAG in have:
-            write(
-                f"{name}: duplicate 'measure' tag -> project 'measure' tag",
-                "POST",
-                f"/tasks/{rid}/removeTag",
-                {"tag": DUP_MEASURE_TAG},
-            )
-        if MEASURE_TAG not in have:
-            write(
-                f"{name}: add 'measure' tag",
-                "POST",
-                f"/tasks/{rid}/addTag",
-                {"tag": MEASURE_TAG},
-            )
-        deps = r.get("dependencies")
-        if deps is None:
-            deps = get_all(f"/tasks/{rid}/dependencies", {"opt_fields": "name"})
-        blockers = [stage_map[d["gid"]] for d in deps if d["gid"] in stage_map]
-        open_blockers = [b for b in blockers if not b.get("completed")]
-        done = r["completed"]
-        cube_named = {
-            x for x in members_named(notes) if member(x) in cube_members
-        }  # only real Cube measure/dimension names
-        on_main = bool(cube_named) and all(member(x) in shipped for x in cube_named)
-        live = on_main and not open_blockers
-        # 5. validation results from the cube-dashboard skill
-        verdict = validation.get(rid, {}).get("verdict")
-        if verdict == "pass" and validated_gid not in have:
-            write(
-                f"{name}: latest validation passed -> add '{VALIDATED}'",
-                "POST",
-                f"/tasks/{rid}/addTag",
-                {"tag": validated_gid},
-            )
-        elif verdict != "pass" and validated_gid in have:
-            write(
-                f"{name}: latest validation {verdict or 'never run'} -> remove '{VALIDATED}'",
-                "POST",
-                f"/tasks/{rid}/removeTag",
-                {"tag": validated_gid},
-            )
-        if verdict and verdict != "pass":
-            report_gaps.append(f"{name} ({rid}): {verdict}")
-        # 2. done means it is live in Cube
-        if live and not done:
-            write(
-                f"{name}: live in Cube -> tick done",
-                "PUT",
-                f"/tasks/{rid}",
-                {"completed": True},
-            )
-            report_ticked.append(f"{name} ({rid})")
-        elif done and not live:
-            why = []
-            if open_blockers:
-                why.append(
-                    f"open blocker: {'; '.join(b['name'][:60] for b in open_blockers)}"
-                )
-            if not on_main:
-                gone = sorted(x for x in cube_named if member(x) not in shipped)
-                why.append(
-                    f"not on main: {', '.join(gone)}"
-                    if gone
-                    else "its notes name no member Cube defines on main"
-                )
-            write(
-                f"{name}: {'; '.join(why)} -> untick",
-                "PUT",
-                f"/tasks/{rid}",
-                {"completed": False},
-            )
-            report_untick.append(f"{name} ({rid}): {'; '.join(why)}")
-        if on_main and open_blockers:
-            report_blocked_on_main.append(
-                f"{name} ({rid}): {'; '.join(b['name'][:60] for b in open_blockers)}"
-            )
-        if blockers and not open_blockers and not on_main:
-            report_unverified.append(
-                f"{name} ({rid}): blockers done, but Cube member(s) not found on main: {', '.join(sorted(cube_named)) or 'none named'}"
-            )
-        # 3. status tag: what an open row still needs
-        if live:
-            want = None
-        elif any(b["kind"] in ("mart", "addition") for b in open_blockers):
-            want = "needs-data"
-        elif open_blockers:
-            want = "needs-cube"
-        else:
-            want = None
-        for n in STATUS:
-            if n != want and status_gid[n] in have:
-                write(
-                    f"{name}: remove '{n}'",
-                    "POST",
-                    f"/tasks/{rid}/removeTag",
-                    {"tag": status_gid[n]},
-                )
-        if want and status_gid[want] not in have:
-            write(
-                f"{name}: add '{want}'",
-                "POST",
-                f"/tasks/{rid}/addTag",
-                {"tag": status_gid[want]},
-            )
-        # 6. tags no rule sets
-        for gid in sorted(have & old_gid.keys()):
-            write(
-                f"{name}: remove old tag '{old_gid[gid]}'",
-                "POST",
-                f"/tasks/{rid}/removeTag",
-                {"tag": gid},
-            )
+        if r["name"].strip() == DIMENSIONS_TASK:
+            for d in get_all(f"/tasks/{r['gid']}/subtasks", {"opt_fields": ROWF}):
+                sync_row(d, "dimension")
+        elif "Status:" in (r.get("notes") or ""):
+            sync_row(r, "measure")
+        # anything else (checklist steps etc.) is not a row
 
 print(f"\n{'Applied' if APPLY else 'Would apply'} {len(changes)} change(s).")
 if report_ticked:
@@ -398,7 +419,7 @@ if report_untick:
     print("\n".join("  " + x for x in report_untick))
 if report_blocked_on_main:
     print(
-        "\nMembers on main but a blocker is open (move a cut's blocker to the dashboard task; close a shipped stage):"
+        "\nMembers on main but a blocker is open (move a cut's blocker to its dimension row; close a shipped stage):"
     )
     print("\n".join("  " + x for x in report_blocked_on_main))
 if report_unverified:
