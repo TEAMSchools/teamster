@@ -5,8 +5,11 @@ models:
       tabs, all four regions). Joins only - the subjects roster (stored bucket,
       Bucket 4 default), the benchmark-score comparison panel, and the
       goals-sheet permutations. Official rollup measures aggregate student_tier
-      in Tableau; is_tested_int drives the denominator parameter. Scoped to
-      academic_year 2026 onward - SY26 stays on the disabled
+      in Tableau. The enrolled denominator is every enrolled student except
+      those exempt from state testing and, on the Math row only, New Jersey
+      students in middle school Algebra I (is_enrolled_denominator_int, with the
+      reason in denominator_exclusion); is_tested_int drives the Tested option.
+      Scoped to academic_year 2026 onward - SY26 stays on the disabled
       rpt_tableau__academic_goals_rollup relation. Goal columns join on the
       sheet's AY2026+ convention (Mathematics / Text Study subject areas with a
       numeric grade level); rows entered in the old HS style (course-named
@@ -79,8 +82,9 @@ models:
       - name: is_exempt_state_testing
         data_type: boolean
         description: >-
-          State-testing exemption flag from the roster, so Tableau can exclude
-          exempt students from enrolled denominators the way the old view did.
+          State-testing exemption flag from the roster.
+          is_enrolled_denominator_int folds it in with the Algebra I rule, so
+          read that column for the enrolled denominator.
       - name: performance_level
         data_type: int64
         description: Benchmark-panel performance level (comparison only).
@@ -136,8 +140,21 @@ models:
       - name: is_tested_int
         data_type: int64
         description: >-
-          1 when any benchmark source has a score; drives the Tableau
-          denominator parameter.
+          1 when any benchmark source has a score; drives the Tested option of
+          the Tableau denominator parameter.
+      - name: is_enrolled_denominator_int
+        data_type: int64
+        description: >-
+          1 when the row counts toward the enrolled denominator. 0 for students
+          exempt from state testing, and for the Math row of a New Jersey
+          student taking middle school Algebra I, the same students the goal
+          generator leaves out of its roster.
+      - name: denominator_exclusion
+        data_type: string
+        description: >-
+          Why the row is out of the enrolled denominator - Exempt from state
+          testing, or Grade N Algebra I with the student's grade (Math row
+          only). Exempt wins when both apply. Null when the row counts.
 
 unit_tests:
   - name: unit_rpt_academic_goals_dashboard_defaults
@@ -167,6 +184,7 @@ unit_tests:
               'Mathematics' as illuminate_subject_area,
               'Bucket 4' as nj_student_tier,
               false as is_exempt_state_testing,
+              false as is_algebra_i_ms,
               cast(null as string) as bucket_store,
               1 as rn_year,
               0 as enroll_status
@@ -224,3 +242,108 @@ unit_tests:
           assessment_band_goal: null
           benchmark_assessment_type: Untested
           is_tested_int: 0
+          is_enrolled_denominator_int: 1
+          denominator_exclusion: null
+  - name: unit_rpt_academic_goals_dashboard_enrolled_denominator
+    description: >-
+      Exempt students, and the Math rows of students taking middle school
+      Algebra I, leave the enrolled denominator and carry the reason, which
+      names the student's grade. The same Algebra I student's Reading row stays
+      in, and a student who is both reads as exempt.
+    model: rpt_tableau__academic_goals_dashboard
+    given:
+      - input: ref("int_extracts__student_enrollments_subjects")
+        format: sql
+        rows: |
+          select
+              2026 as academic_year,
+              'kippnewark' as _dbt_source_project,
+              'Newark' as region,
+              133570965 as schoolid,
+              'TEAM' as school,
+              8 as grade_level,
+              6001 as student_number,
+              'Student, Algebra' as student_name,
+              'No IEP' as iep_status,
+              '8A' as team,
+              'Teacher, A' as advisor_lastfirst,
+              cast(null as string) as course_section_number,
+              cast(null as string) as course_teacher_lastfirst,
+              'Math' as iready_subject,
+              'Mathematics' as illuminate_subject_area,
+              'Bucket 4' as nj_student_tier,
+              false as is_exempt_state_testing,
+              true as is_algebra_i_ms,
+              cast(null as string) as bucket_store,
+              1 as rn_year,
+              0 as enroll_status
+          union all
+          select
+              2026, 'kippnewark', 'Newark', 133570965, 'TEAM', 8, 6001,
+              'Student, Algebra', 'No IEP', '8A', 'Teacher, A', '801', 'Teacher, B',
+              'Reading', 'Text Study', 'Bucket 2', false, false, 'powerschool', 1, 0
+          union all
+          select
+              2026, 'kippnewark', 'Newark', 73254, 'SPARK', 3, 6002,
+              'Student, Exempt', 'No IEP', '3A', 'Teacher, C', '301', 'Teacher, D',
+              'Reading', 'Text Study', 'Bucket 4', true, false,
+              cast(null as string), 1, 0
+          union all
+          select
+              2026, 'kippnewark', 'Newark', 133570965, 'TEAM', 8, 6003,
+              'Student, Both', 'No IEP', '8A', 'Teacher, A',
+              cast(null as string), cast(null as string), 'Math', 'Mathematics',
+              'Bucket 4', true, true, cast(null as string), 1, 0
+          union all
+          select
+              2026, 'kippnewark', 'Newark', 133570965, 'TEAM', 7, 6004,
+              'Student, Seventh', 'No IEP', '7A', 'Teacher, A',
+              cast(null as string), cast(null as string), 'Math', 'Mathematics',
+              'Bucket 4', false, true, cast(null as string), 1, 0
+      - input: ref("int_assessments__goal_benchmarks")
+        format: sql
+        rows: |
+          select
+              cast(null as string) as _dbt_source_project,
+              cast(null as int64) as student_number,
+              cast(null as int64) as academic_year,
+              cast(null as string) as subject,
+              cast(null as string) as benchmark_assessment_type,
+              cast(null as int64) as performance_level,
+              cast(null as float64) as scale_score,
+              cast(null as float64) as scale_score_state,
+              cast(null as int64) as is_proficient_int_state,
+              cast(null as float64) as scale_score_iready,
+              cast(null as int64) as is_proficient_int,
+              cast(null as int64) as is_approaching_int,
+              cast(null as int64) as is_below_int,
+              cast(null as int64) as is_tested_int
+      - input: ref("int_assessments__academic_goals")
+        rows: []
+    expect:
+      rows:
+        - student_number: 6001
+          subject: Math
+          is_exempt_state_testing: false
+          is_enrolled_denominator_int: 0
+          denominator_exclusion: Grade 8 Algebra I
+        - student_number: 6001
+          subject: Reading
+          is_exempt_state_testing: false
+          is_enrolled_denominator_int: 1
+          denominator_exclusion: null
+        - student_number: 6002
+          subject: Reading
+          is_exempt_state_testing: true
+          is_enrolled_denominator_int: 0
+          denominator_exclusion: Exempt from state testing
+        - student_number: 6003
+          subject: Math
+          is_exempt_state_testing: true
+          is_enrolled_denominator_int: 0
+          denominator_exclusion: Exempt from state testing
+        - student_number: 6004
+          subject: Math
+          is_exempt_state_testing: false
+          is_enrolled_denominator_int: 0
+          denominator_exclusion: Grade 7 Algebra I
