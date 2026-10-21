@@ -107,6 +107,18 @@ with
             and not is_dropped_section
     ),
 
+    algebra_i_ms as (
+        -- grain projection, not dup-masking: one row per project, student, year
+        select distinct
+            _dbt_source_project,
+            students_student_number as student_number,
+            cc_academic_year as academic_year,
+
+            'Math' as iready_subject,
+        from {{ ref("int_students__course_enrollments") }}
+        where illuminate_subject_area = 'Algebra I MS' and not is_dropped_section
+    ),
+
     dibels as (
         select
             student_number,
@@ -217,6 +229,8 @@ select
 
     if(ie.student_number is not null, true, false) as is_magoosh,
 
+    if(am.student_number is not null, true, false) as is_algebra_i_ms,
+
     if(nj.iready_subject is not null, true, false) as bucket_two,
 
     if(ie.student_number is not null or co.is_sipps, true, false) as is_exempt_iready,
@@ -300,6 +314,12 @@ left join
     and co.academic_year = ie.academic_year
     and co._dbt_source_project = ie._dbt_source_project
     and sj.iready_subject = ie.iready_subject
+left join
+    algebra_i_ms as am
+    on co.student_number = am.student_number
+    and co.academic_year = am.academic_year
+    and co._dbt_source_project = am._dbt_source_project
+    and sj.iready_subject = am.iready_subject
 left join
     intervention_nj as nj
     on co.studentid = nj.studentid

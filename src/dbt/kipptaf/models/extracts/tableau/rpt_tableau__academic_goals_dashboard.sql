@@ -34,6 +34,17 @@ select
 
     coalesce(gb.benchmark_assessment_type, 'Untested') as benchmark_assessment_type,
     coalesce(gb.is_tested_int, 0) as is_tested_int,
+
+    if(
+        co.is_exempt_state_testing or co.is_algebra_i_ms, 0, 1
+    ) as is_enrolled_denominator_int,
+
+    case
+        when co.is_exempt_state_testing
+        then 'Exempt from state testing'
+        when co.is_algebra_i_ms
+        then 'Grade 8 Algebra I'
+    end as denominator_exclusion,
 from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 left join
     {{ ref("int_assessments__goal_benchmarks") }} as gb
