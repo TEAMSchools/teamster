@@ -287,10 +287,12 @@ legitimately-superseded inactive rows that repeat the key.
 - Project-level `data_tests:` defaults flow through to singular tests too. Drop
   redundant `severity` / `store_failures` / `store_failures_as` from
   singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
-- Staging-layer tests MUST set `config: severity: error` on every test. The
+- Staging-layer tests MUST set `config: severity` explicitly on every test. The
   district and kipptaf project default is `warn`, so their staging tests without
-  explicit `severity: error` silently degrade to warnings and won't fail CI.
-  Intermediate tests may omit the override where a warning is acceptable.
+  an explicit severity silently degrade to warnings and won't fail CI. Set
+  `error`, except on a ticketed test (#5558): it runs at `warn` on the earliest
+  model that can route its ticket, which is often a staging model. Intermediate
+  tests may omit the override where a warning is acceptable.
 - Tests on marts and `rpt_` models follow _Tests on marts and `rpt_` models_ at
   the end of this file.
 - Removing a `severity: warn` override reverts to the project default: `warn` in
