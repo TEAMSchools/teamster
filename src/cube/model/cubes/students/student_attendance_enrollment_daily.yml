@@ -260,8 +260,7 @@ cubes:
         description: >-
           Distinct students enrolled in the queried slice, by entry and exit
           dates, whether or not their attendance has been recorded. This is the
-          enrollment headcount; it matches the dbt enrollment models and the Ops
-          Dashboard.
+          enrollment headcount.
 
           Leave the date open for an ever-enrolled count over a range; pin
           attendance_date to a single date for a point-in-time headcount as of
@@ -282,10 +281,11 @@ cubes:
         description: >-
           Distinct students in the queried slice with at least 1 recorded
           attendance day in the academic year so far, and the denominator for
-          every rate here. A student whose attendance was never recorded can
-          never reach a rate's numerator, so counting them would pull every rate
-          down. Lower than count_students by the enrolled students nobody has
-          marked yet, mostly new enrollees in their first days.
+          pct_chronically_absent and pct_truant. A student whose attendance was
+          never recorded can never reach those numerators, so counting them
+          would pull both rates down. Lower than count_students by the enrolled
+          students nobody has marked yet, mostly new enrollees in their first
+          days.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
