@@ -22,7 +22,7 @@ CODE_LOCATIONS = ["kippcamden", "kippmiami", "kippnewark", "kipppaterson", "kipp
 
 GRACE_PERIOD_KEY = "DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS"
 
-# Autopilot minimum requests for a Scale-Out pod using workload separation
+# Autopilot minimum requests for an extended-duration (safe-to-evict) pod
 CODE_SERVER_MIN_CPU = "500m"
 CODE_SERVER_MIN_MEMORY = "2.0Gi"
 
@@ -183,9 +183,9 @@ def test_every_dagster_pod_is_pinned_against_the_autoscaler():
         assert annotations[key] == "false"
 
 
-def test_code_server_requests_meet_scale_out_minimum():
-    """Autopilot requires 500m / 2GiB for Scale-Out pods using workload
-    separation, which the nodeSelector opts these pods into.
+def test_code_server_requests_meet_extended_duration_minimum():
+    """Autopilot applies a 500m / 2GiB minimum to extended-duration pods, which
+    the safe-to-evict annotation makes these.
     """
     requests = _helm_values()["workspace"]["serverK8sConfig"]["containerConfig"][
         "resources"
@@ -236,3 +236,67 @@ def test_agent_readiness_budget_covers_worst_case_first_reconcile():
         f"install.sh rollout timeout {rollout_timeout}s is below the readiness"
         f" budget {readiness_budget}s, so a healthy-but-slow upgrade reports failure"
     )
+
+
+# arm64 nodes carry this taint. Autopilot adds the matching toleration only to
+# pods that select arm64, and the fallback class cannot select an arch.
+ARM_TOLERATION = {
+    "key": "kubernetes.io/arch",
+    "operator": "Equal",
+    "value": "arm64",
+    "effect": "NoSchedule",
+}
+
+
+def test_compute_class_prefers_arm_then_falls_back_to_amd64():
+    """An arm64 stockout left pods Pending until runs failed the start timeout.
+    The class tries arm64 first and provisions amd64 only when arm64 is out.
+    """
+    (compute_class,) = [
+        m for m in _helm_values()["extraManifests"] if m["kind"] == "ComputeClass"
+    ]
+
+    assert compute_class["metadata"]["name"] == "dagster-arm-first"
+    assert compute_class["spec"]["autopilot"]["enabled"] is True
+    assert compute_class["spec"]["priorities"] == [
+        {"podFamily": "general-purpose-arm"},
+        {"podFamily": "general-purpose"},
+    ]
+
+
+@pytest.mark.parametrize("config", ["serverK8sConfig", "runK8sConfig"])
+def test_dagster_pods_select_the_arm_first_class(config: str):
+    """An arch key in the selector would disable the amd64 fallback, and a
+    missing toleration would keep every pod off arm64. Warden rejects node
+    affinity next to safe-to-evict on a custom class.
+    """
+    pod_spec = _helm_values()["workspace"][config]["podSpecConfig"]
+
+    assert pod_spec["nodeSelector"] == {
+        "cloud.google.com/compute-class": "dagster-arm-first"
+    }
+    assert ARM_TOLERATION in pod_spec["tolerations"]
+    assert "nodeAffinity" not in pod_spec.get("affinity", {})
+
+
+@pytest.mark.parametrize("config", ["server_k8s_config", "run_k8s_config"])
+@pytest.mark.parametrize("location", CODE_LOCATIONS)
+def test_locations_do_not_override_placement(location: str, config: str):
+    """Per-location config deep-merges over Helm, so a location-level selector
+    or node affinity would undo the fallback for that location.
+    """
+    path = REPO_ROOT / f"src/teamster/code_locations/{location}/dagster-cloud.yaml"
+    k8s = yaml.safe_load(path.read_text())["locations"][0]["container_context"]["k8s"]
+    # coerce so snake_case (node_selector) and camelCase keys are both caught
+    pod_spec = _coerce(k8s.get(config, {}).get("pod_spec_config", {}))
+
+    assert pod_spec.node_selector is None
+    assert pod_spec.affinity is None or pod_spec.affinity.node_affinity is None
+
+
+def test_agent_stays_on_scale_out_amd64():
+    """The agent image is amd64-only, so it must not follow the other pods."""
+    assert _helm_values()["dagsterCloudAgent"]["nodeSelector"] == {
+        "cloud.google.com/compute-class": "Scale-Out",
+        "kubernetes.io/arch": "amd64",
+    }

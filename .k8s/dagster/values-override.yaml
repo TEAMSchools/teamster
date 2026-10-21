@@ -183,14 +183,18 @@ workspace:
         # drop to 0 and Preempted stays at 0.
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
-      # Hard-pin to built-in Scale-Out arm64 (T2A) under pod-based pricing.
-      # No fallback — arm64 STOCKOUT will leave pods Pending. Code servers
-      # tolerate this: PDB-protected (`maxUnavailable: 1` -- see extraManifests
-      # below; do NOT switch to minAvailable, per CLAUDE.md), Dagster Cloud
-      # serves the last-good Deployment until replacements bind.
+      # Prefer arm64, fall back to amd64 when arm64 is out of capacity: see the
+      # `dagster-arm-first` ComputeClass in extraManifests. No arch key here,
+      # or the fallback can never be used; the toleration is what lets these
+      # pods land on arm64 nodes. Do not add node affinity: Warden rejects it
+      # alongside safe-to-evict on a custom class.
       nodeSelector:
-        cloud.google.com/compute-class: Scale-Out
-        kubernetes.io/arch: arm64
+        cloud.google.com/compute-class: dagster-arm-first
+      tolerations:
+        - key: kubernetes.io/arch
+          operator: Equal
+          value: arm64
+          effect: NoSchedule
       terminationGracePeriodSeconds: 60
       topologySpreadConstraints:
         - maxSkew: 1
@@ -271,14 +275,17 @@ workspace:
       # argument for 1000 never applied: the required anti-affinity below keeps
       # run pods and code servers off the same node.
       #
-      # Hard-pin to built-in Scale-Out arm64 (T2A) under pod-based pricing.
-      # No fallback — arm64 STOCKOUT will leave run pods Pending until
-      # capacity returns. `podFailurePolicy` (`DisruptionTarget` → `Ignore`)
-      # already absorbs autoscaler/preemption disruption mid-run; STOCKOUT
-      # affects scheduling, not running pods.
+      # Prefer arm64, fall back to amd64 when arm64 is out of capacity, so a
+      # stockout no longer holds runs Pending past the start timeout. Same
+      # placement rules as code servers above: no arch key, the arm64
+      # toleration, and no node affinity.
       nodeSelector:
-        cloud.google.com/compute-class: Scale-Out
-        kubernetes.io/arch: arm64
+        cloud.google.com/compute-class: dagster-arm-first
+      tolerations:
+        - key: kubernetes.io/arch
+          operator: Equal
+          value: arm64
+          effect: NoSchedule
       affinity:
         # Hard-block run/step pods from sharing a node with code servers
         # (with both at priority 0, a run pod that fits nowhere waits for a
@@ -395,7 +402,8 @@ extraManifests:
     description: >-
       Elevates agent pods above run/step and code server pods (priority 0) so
       nothing in this namespace can preempt the single-replica agent. The agent
-      pins to amd64 nodes and the others to arm64, so it never preempts them.
+      stays on Scale-Out amd64 nodes and the others use the dagster-arm-first
+      class, so they never share a node and it never preempts them.
   - apiVersion: policy/v1
     kind: PodDisruptionBudget
     metadata:
@@ -407,3 +415,15 @@ extraManifests:
           deployment_name: prod
           managed_by: K8sUserCodeLauncher
           location_name: kipptaf
+  # arm64 first, amd64 when GKE cannot provision arm64. podFamily rules keep
+  # pod-based billing; machine-family rules would bill per VM.
+  - apiVersion: cloud.google.com/v1
+    kind: ComputeClass
+    metadata:
+      name: dagster-arm-first
+    spec:
+      autopilot:
+        enabled: true
+      priorities:
+        - podFamily: general-purpose-arm
+        - podFamily: general-purpose
