@@ -342,10 +342,37 @@ models:
         data_type: boolean
       - name: is_enrolled_oct01
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on October 1
+          of the academic year, the same on every stint that year. For a count
+          by school or grade as of the date, use is_enrolled_oct01_stint.
       - name: is_enrolled_oct15
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on October 15
+          of the academic year, the same on every stint that year. For a count
+          by school or grade as of the date, use is_enrolled_oct15_stint.
       - name: is_enrolled_mar15
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on March 15 of
+          the academic year, the same on every stint that year. For a count by
+          school or grade as of the date, use is_enrolled_mar15_stint.
+      - name: is_enrolled_oct01_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered October 1 of the academic year — entry date
+          on or before it, last_enrolled_date on or after it.
+      - name: is_enrolled_oct15_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered October 15 of the academic year — entry
+          date on or before it, last_enrolled_date on or after it.
+      - name: is_enrolled_mar15_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered March 15 of the academic year — entry date
+          on or before it, last_enrolled_date on or after it.
       - name: is_enrolled_recent
         data_type: boolean
       - name: is_enrolled_fdos
