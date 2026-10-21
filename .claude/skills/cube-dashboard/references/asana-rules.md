@@ -5,17 +5,17 @@ project. Change a rule here and in the script together.
 
 ## Done and tags
 
-- A measure row is **done** when it is live in Cube: its `Status:` line says
-  `cube-covered` with no `→ open` hold, and every member its notes name is on a
-  public view on `main`. Done is what the semantic layer status page counts as
-  ready, so it means people can query the metric today, not that it matches the
-  dashboard. The sync ticks exactly those rows and unticks every other done row,
-  saying why. To hold a live row open, add `→ open: <reason>` to its Status
-  line; to release a row whose Status line says otherwise, change it to
-  `cube-covered`.
-- Neither validation nor blockers hold a live row open. The preview lists live
-  rows with open blockers: move a cut's blocker to the dashboard task, and close
-  a stage that has shipped.
+- A measure row is **done** when it is live in Cube: every member its notes name
+  is on a public view on `main`, and no blocker on the row is open. Done is what
+  the semantic layer status page counts as ready, so it means people can query
+  the metric today, not that it matches the dashboard. Validation never holds a
+  row open. The sync ticks exactly those rows and unticks every other done row,
+  saying why.
+- A row whose notes name a member on `main` but which still needs Cube work (a
+  threshold measure, a grain, a band) is held by a blocker: a
+  `cube: <member> on <cube>` subtask of the table task. The preview lists rows
+  whose members are on `main` but a blocker is open: move a cut's blocker to the
+  dashboard task, and close a stage that has shipped.
 - Status tags: an open row carries at most one, from its open blockers. Done
   rows carry none. Nobody sets one by hand.
   - `needs-data`: an open `mart:` stage or column addition blocks it

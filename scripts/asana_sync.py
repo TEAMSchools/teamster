@@ -13,10 +13,11 @@ developer console (app.asana.com/0/my-apps), then load it without echoing it or 
 
 Each run:
   1. Chains stages inside every table task: `mart:` blocks `cube:`, `cube:` blocks `view:` (adds only missing links).
-  2. Ticks a measure row done when it is live in Cube: its Status line says `cube-covered` with no `→ open` hold,
-     and every Cube member its notes name is on a public view on main. Validation does not gate done, and
-     neither do blockers: an open blocker on a live row is a cut the dashboard needs or a stale stage, and the
-     report lists it. Every other done row is unticked, with the reason in the report.
+  2. Ticks a measure row done when it is live in Cube: every Cube member its notes name is on a public view on
+     main, and no blocker on the row is open. Validation does not gate done. A row blocks only on the stage or
+     addition that builds its own member; a cut the dashboard needs blocks the dashboard task, so the report
+     lists rows whose members are on main but a blocker is open. Every other done row is unticked, with the
+     reason in the report.
   3. Gives each open row at most one status tag, from its open blockers; done rows carry none:
        an open mart stage or column addition -> needs-data
        otherwise an open cube / view stage   -> needs-cube
@@ -227,17 +228,6 @@ ROWF = "name,completed,notes,tags.name,tags.gid,dependencies"
 # subtask of a table task (column work). Anything else a row depends on (e.g. a privacy review) isn't a status input.
 
 
-def status_line(notes):
-    m = re.search(r"Status:\s*([^\n]*)", notes or "")
-    return m.group(1).strip() if m else ""
-
-
-def declared_covered(notes):
-    """The catalog's own call: the Status line says cube-covered and carries no `→ open` hold."""
-    line = status_line(notes)
-    return line.startswith("cube-covered") and "→ open" not in line
-
-
 def members_named(notes):
     m = re.search(
         r"Where it lives:\s*(.*?)(?:\n\s*Regions:|\n\s*Was:|\n\s*https?://|$)",
@@ -270,7 +260,7 @@ def member(x):
 
 
 report_ticked, report_untick, report_unverified = [], [], []
-report_blocked_live, report_undeclared, report_gaps = [], [], []
+report_blocked_on_main, report_gaps = [], []
 for dash in DASHBOARDS:
     if ONLY and dash != ONLY:
         continue
@@ -310,8 +300,7 @@ for dash in DASHBOARDS:
             x for x in members_named(notes) if member(x) in cube_members
         }  # only real Cube measure/dimension names
         on_main = bool(cube_named) and all(member(x) in shipped for x in cube_named)
-        declared = declared_covered(notes)
-        live = declared and on_main
+        live = on_main and not open_blockers
         # 5. validation results from the cube-dashboard skill
         verdict = validation.get(rid, {}).get("verdict")
         if verdict == "pass" and validated_gid not in have:
@@ -341,8 +330,10 @@ for dash in DASHBOARDS:
             report_ticked.append(f"{name} ({rid})")
         elif done and not live:
             why = []
-            if not declared:
-                why.append(f"Status line reads '{status_line(notes)[:60]}'")
+            if open_blockers:
+                why.append(
+                    f"open blocker: {'; '.join(b['name'][:60] for b in open_blockers)}"
+                )
             if not on_main:
                 gone = sorted(x for x in cube_named if member(x) not in shipped)
                 why.append(
@@ -357,15 +348,11 @@ for dash in DASHBOARDS:
                 {"completed": False},
             )
             report_untick.append(f"{name} ({rid}): {'; '.join(why)}")
-        if live and open_blockers:
-            report_blocked_live.append(
+        if on_main and open_blockers:
+            report_blocked_on_main.append(
                 f"{name} ({rid}): {'; '.join(b['name'][:60] for b in open_blockers)}"
             )
-        if not live and on_main and not declared:
-            report_undeclared.append(
-                f"{name} ({rid}): Status reads '{status_line(notes)[:60]}'"
-            )
-        if not live and blockers and not open_blockers and not on_main:
+        if blockers and not open_blockers and not on_main:
             report_unverified.append(
                 f"{name} ({rid}): blockers done, but Cube member(s) not found on main: {', '.join(sorted(cube_named)) or 'none named'}"
             )
@@ -409,16 +396,11 @@ if report_ticked:
 if report_untick:
     print(f"\nUnticked: done rows that are not live in Cube ({len(report_untick)}):")
     print("\n".join("  " + x for x in report_untick))
-if report_blocked_live:
+if report_blocked_on_main:
     print(
-        "\nLive rows with open blockers (move a cut's blocker to the dashboard task; close a stale stage):"
+        "\nMembers on main but a blocker is open (move a cut's blocker to the dashboard task; close a shipped stage):"
     )
-    print("\n".join("  " + x for x in report_blocked_live))
-if report_undeclared:
-    print(
-        "\nMembers on main, but the Status line does not say cube-covered (edit it if the row is live):"
-    )
-    print("\n".join("  " + x for x in report_undeclared))
+    print("\n".join("  " + x for x in report_blocked_on_main))
 if report_unverified:
     print("\nBlockers done but not verified on main (left open):")
     print("\n".join("  " + x for x in report_unverified))
