@@ -62,9 +62,16 @@ views:
           - pct_tardy
           - pct_ontime
           - count_absent_days
+          - count_absent_days_weighted
+          - attendance_points
+          - count_iss_days
+          - count_oss_days
+          - days_to_90_percent
           - count_present_days
           - count_tardy_days
           - count_membership_days
+          - sum_attendance_value
+          - sum_membership_value
           - attendance_date
           - attendance_code
           - attendance_category
@@ -80,6 +87,7 @@ views:
           - is_truant
           - n_membership_days_ytd
           - n_present_days_ytd
+          - n_absent_days_rolling_90
           - ada_tier
           - is_chronically_absent
           - count_chronically_absent
@@ -198,6 +206,7 @@ views:
             - is_chronically_absent
             - n_membership_days_ytd
             - n_present_days_ytd
+            - n_absent_days_rolling_90
         - name: Date
           members:
             - dates_academic_year

@@ -206,6 +206,27 @@ cubes:
         type: number
         public: true
 
+      - name: n_absent_days_rolling_90
+        description: >-
+          Absences in the student's last 91 recorded school days of the academic
+          year, through and including this date -- the count behind Miami's
+          truancy rule (15 or more makes is_truant true). School days, not
+          calendar days, so it differs from a count over the 90 calendar days
+          before a date. Accumulates per student per year and does not reset
+          when the student changes schools.
+
+          Carried across break days and gated on n_membership_days_ytd exactly
+          like is_truant, so the count and the flag resolve on the same rows.
+          Computed for every region, though only Miami's truancy rule reads it.
+        sql: n_absent_days_rolling_90
+        type: number
+        public: true
+        meta:
+          ai_context: >-
+            A per-student value: group by student and pin attendance_date to
+            read each student's count as of that date. Never sum it across
+            students or days.
+
       - name: ada_tier
         description: >-
           Cumulative ADA band as of this date. Tier 1 at 95% and above, Tier 2
@@ -273,12 +294,27 @@ cubes:
       # keeps via membership_value > 0 — no such row exists today (zero rows
       # outside {0, 1} across all 12.8M), but if dual enrollment ever produces
       # one, ADA and count_absent_days will span different day sets.
-      - name: _sum_attendance_value
+      - name: sum_attendance_value
+        description: >-
+          Attendance value summed over full-membership days (membership_value =
+          1) -- days attended, with a partial day counting its fraction. The
+          numerator of avg_daily_attendance. Unlike count_present_days, which
+          counts every non-absent day as 1, this is the fractional sum.
         sql: attendance_value
         type: sum
-        public: false
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
+
+      - name: sum_membership_value
+        description: >-
+          Membership value summed over every day in the slice, including days
+          with no recorded attendance; break days add zero.
+          count_membership_days is the same sum restricted to full-membership
+          days with recorded attendance, which is the day set ADA uses.
+        sql: membership_value
+        type: sum
+        public: true
 
       - name: count_membership_days
         description: >-
@@ -300,7 +336,7 @@ cubes:
           recorded attendance value are excluded from both numerator and
           denominator, matching the attendance dashboard; counting them in the
           denominator alone would report them as absences.
-        sql: "{_sum_attendance_value} / NULLIF({count_membership_days}, 0)"
+        sql: "{sum_attendance_value} / NULLIF({count_membership_days}, 0)"
         type: number
         format: percent
         public: true
@@ -386,6 +422,82 @@ cubes:
         public: true
         filters:
           - sql: "{CUBE}.membership_value > 0"
+
+      # The fallback keys on is_tardy being null, never on region, so Miami
+      # tardies count here with no edit once the fact carries them.
+      # TODO(#4927): drop the Miami sentence from the description then.
+      - name: count_absent_days_weighted
+        description: >-
+          Absence days plus one third of a day for each tardy, over days with
+          membership -- three tardies weigh the same as one absence. A day whose
+          source records no daily tardies counts its absence only; Miami has no
+          daily tardy data from AY2026 on, so Miami from AY2026 on is absences
+          alone.
+        sql: "{CUBE}.is_absent + COALESCE({CUBE}.is_tardy, 0) / 3.0"
+        type: sum
+        public: true
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+
+      # TODO(#4927): Miami tardy codes score here once the fact carries them.
+      - name: attendance_points
+        description: >-
+          Attendance points over days with membership -- 1 for each A or AD
+          attendance code and one third for each T or T10, 0 for every other
+          code. Narrower than count_absent_days_weighted: other absence codes
+          and other tardy codes score nothing. Miami records no tardy codes from
+          AY2026 on, so Miami from AY2026 on scores its absences only.
+        sql: >-
+          CASE
+            WHEN {CUBE}.attendance_code IN ('A', 'AD') THEN 1.0
+            WHEN {CUBE}.attendance_code IN ('T', 'T10') THEN 1.0 / 3
+            ELSE 0.0
+          END
+        type: sum
+        public: true
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+
+      # TODO(#4927): drop the Miami sentence from both descriptions once the
+      # fact carries Miami suspension codes.
+      - name: count_iss_days
+        description: >-
+          In-school suspension days (S and ISS codes) over days with membership.
+          Miami records no suspension codes from AY2026 on, so Miami from AY2026
+          on returns null, not zero.
+        sql: is_iss
+        type: sum
+        public: true
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+
+      - name: count_oss_days
+        description: >-
+          Out-of-school suspension days (OS, OSS, OSSP and SHI codes) over days
+          with membership. Miami records no suspension codes from AY2026 on, so
+          Miami from AY2026 on returns null, not zero.
+        sql: is_oss
+        type: sum
+        public: true
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+
+      # 0.105 is 1 - 0.895: the target is 89.5%, the lowest ADA that rounds to
+      # 90%. Matches the Attendance Dashboard's Days to 90% calc.
+      - name: days_to_90_percent
+        description: >-
+          Days of perfect attendance needed to bring ADA to 90% (89.5%, which
+          rounds to 90%) -- absences divided by 0.105, minus membership days,
+          over the same day set as avg_daily_attendance. Negative when ADA is
+          already above the line: the size of the cushion, in days.
+        sql: "{count_absent_days} / 0.105 - {count_membership_days}"
+        type: number
+        public: true
+        meta:
+          ai_context: >-
+            Answers per student: group by student over the academic year to
+            date. Summed over a school it is the school's days to 90%, not a
+            per-student figure.
 
       # Pin attendance_date for every measure below. Each one counts students
       # whose cumulative position crossed a line, and the fact re-stamps that
