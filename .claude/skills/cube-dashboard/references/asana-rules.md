@@ -56,14 +56,17 @@ only stops new pure-slice members.
   fact's view), then column additions.
 - Each dashboard task holds its measure rows and its checklist steps.
 - A dimension row is a subtask of the table its column comes from, one per
-  dimension, never a copy per dashboard. It blocks the task of every dashboard
-  that slices or filters by it; that link is what puts it on the dashboard's
-  status. Its notes carry `Use:` (how dashboards use it), an optional `Needs:`
-  line, and `Where it lives:` last (`<view>.<member>` as the view's `includes`
-  names it). A Tableau-only field gets no row.
+  column, never a copy per dashboard. Its notes carry `Use:` (how dashboards use
+  it), `Used by:` (links to every dashboard task that slices or filters by it;
+  this line is what makes it a dimension row and puts it on those dashboards'
+  status), an optional `Needs:` line, and `Where it lives:` last
+  (`<view>.<member>`, the name Cube exposes, e.g. `locations_location_name`). A
+  Tableau-only field gets no row.
 - Dependencies: `mart` blocks `cube` blocks `view`; a row is blocked only by the
-  stage or addition that builds its own member. A dashboard is blocked only by
-  dimension rows, never by a stage.
+  stage or addition that builds its own member. A table task blocks every
+  dashboard its dimension rows name in `Used by:`; the sync adds those links.
+  The table, not each column, blocks the dashboard because Asana caps a task at
+  30 dependencies plus dependents. A dashboard is blocked by nothing else.
 - Each domain section has an `Open Issues — <Domain>` parent task (Assessments'
   is named `Open Issues`). Every follow-up a validation files sits under it.
 - Shared section = conformed dims: calendar and org, the student spine, the

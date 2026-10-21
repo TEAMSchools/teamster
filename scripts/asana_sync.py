@@ -11,10 +11,12 @@ Needs ASANA_PAT, your own personal access token, in the environment for both mod
 developer console (app.asana.com/0/my-apps), then load it without echoing it or saving it to history:
   read -rs ASANA_PAT && export ASANA_PAT
 
-Rows are a dashboard task's measure subtasks (notes carry a `Status:` line) and its dimension rows: the subtasks of
-table tasks, other than `mart:` / `cube:` / `view:` stages, that block the dashboard task. One dimension row lives
-on the table its column comes from and blocks every dashboard that uses it. Each run:
+Rows are a dashboard task's measure subtasks (notes carry a `Status:` line) and dimension rows: subtasks of table
+tasks, other than `mart:` / `cube:` / `view:` stages, whose notes carry a `Used by:` line of dashboard task links.
+One dimension row lives on the table its column comes from. Each run:
   1. Chains stages inside every table task: `mart:` blocks `cube:`, `cube:` blocks `view:` (adds only missing links).
+     1b. Makes each table task block every dashboard a dimension row on it names in `Used by:` (adds only missing
+     links). A table, not each column, blocks the dashboard: Asana caps a task at 30 dependencies plus dependents.
   2. Ticks a row done when it is live in Cube: every Cube member its notes name is on a public view on main, and
      no blocker on the row is open. Validation does not gate done. A row blocks only on the stage or addition that
      builds its own member: a cut belongs on its dimension row, so the report lists rows whose members are on main
@@ -135,13 +137,35 @@ git("fetch", "origin", "main", "-q")
 views = git(
     "ls-tree", "-r", "--name-only", "origin/main", "src/cube/model/views"
 ).split()
-shipped = set()
+
+
+def view_includes(yml):
+    """(include name, exposed name) for each member of one view file.
+
+    A `prefix: true` join exposes `<cube>_<member>` (the last join_path cube); an include is a bare name or the
+    dict form `- name: <member>`. Notes may name either form, so both count.
+    """
+    out, cube, prefix = [], None, False
+    for line in yml.splitlines():
+        if m := re.match(r"^\s{6}- join_path:\s*(\S+)", line):
+            cube, prefix = m.group(1).split(".")[-1], False
+        elif re.match(r"^\s{8}prefix:\s*true\s*$", line):
+            prefix = True
+        elif m := re.match(r"^\s{10}-\s+(?:name:\s*)?([a-z0-9_]+)\s*$", line):
+            out.append(
+                (m.group(1), f"{cube}_{m.group(1)}" if prefix and cube else m.group(1))
+            )
+    return out
+
+
+shipped, exposed = set(), set()
 for v in views:
     if v.endswith(".yml"):
         y = git("show", f"origin/main:{v}")
         vname = os.path.basename(v)[:-4]
-        for m in re.findall(r"^\s{10}-\s+([a-z0-9_]+)\s*$", y, re.M):
-            shipped |= {m, f"{vname}.{m}"}
+        for raw, name in view_includes(y):
+            shipped |= {raw, f"{vname}.{raw}", name, f"{vname}.{name}"}
+            exposed.add(name)
 print(
     f"Cube members on public views (origin/main): {len([x for x in shipped if '.' in x])}"
 )
@@ -158,6 +182,9 @@ for c in git(
             m = re.match(r"^\s{6}-\s+name:\s*([a-z][a-z0-9_]*)\s*$", line)
             if m and section in ("measures", "dimensions"):
                 cube_members.add(m.group(1))
+cube_members |= (
+    exposed  # a prefixed view name (`locations_location_name`) is a member too
+)
 
 # ---------------------------------------------------------------- tags by name
 tags = {}
@@ -195,8 +222,12 @@ for u in TABLE_UMBRELLAS:
         for t in get_all(f"/tasks/{u}/subtasks", {"opt_fields": "name"})
         if TABLE.match(t["name"])
     ]
-FIELDS = "name,completed,dependencies.gid,parent.name"
+FIELDS = "name,completed,notes,tags.name,tags.gid,dependencies.gid,parent.name"
+USED_BY = re.compile(r"^\s*Used by:\s*(.*)$", re.M)
 stage_map = {}  # gid of every table-task subtask -> its kind (mart / cube / view / addition) and state
+dim_rows = []  # table-task subtasks whose notes carry a `Used by:` line
+uses = {}  # dashboard gid -> gids of the table tasks its dimension rows sit on
+table_name = {t["gid"]: t["name"] for t in table_tasks}
 for t in table_tasks:
     subs = get_all(f"/tasks/{t['gid']}/subtasks", {"opt_fields": FIELDS})
     for x in subs:
@@ -209,6 +240,13 @@ for t in table_tasks:
             "completed": x["completed"],
             "name": x["name"],
         }
+        used_by = USED_BY.search(x.get("notes") or "")
+        if kind == "addition" and used_by:
+            # the line holds Asana links to dashboards; a task link carries its gid
+            x["used_by"] = set(re.findall(r"\b(\d{16})\b", used_by.group(1)))
+            dim_rows.append(x)
+            for g in x["used_by"]:
+                uses.setdefault(g, set()).add(t["gid"])
     stage = {
         k: [x for x in subs if x["name"].startswith(k + ":")]
         for k in ("mart", "cube", "view")
@@ -392,7 +430,6 @@ def sync_row(r, kind):
 
 
 report_odd_dash_blockers = []
-dims_done = set()  # a dimension row blocks every dashboard that uses it; sync it once
 for dash in DASHBOARDS:
     if ONLY and dash != ONLY:
         continue
@@ -406,17 +443,30 @@ for dash in DASHBOARDS:
         if "Status:" in (r.get("notes") or ""):
             sync_row(r, "measure")
         # anything else (checklist steps etc.) is not a row
-    for d in get_all(f"/tasks/{dash}/dependencies", {"opt_fields": "name"}):
-        st = stage_map.get(d["gid"])
-        if not st or st["kind"] != "addition":
-            # a dashboard blocks only on dimension rows; a stage or outside task there is a misplaced link
+    # 1b. every table holding a dimension row this dashboard uses blocks the dashboard (adds only missing links)
+    deps = get_all(f"/tasks/{dash}/dependencies", {"opt_fields": "name"})
+    need = sorted(uses.get(dash, set()) - {d["gid"] for d in deps})
+    if need:
+        write(
+            f"dashboard {dash}: {', '.join(table_name[g] for g in need)} block it",
+            "POST",
+            f"/tasks/{dash}/addDependencies",
+            {"dependencies": need},
+        )
+    for d in deps:
+        if d["gid"] not in table_name:
+            # a dashboard blocks only on table tasks; anything else there is a misplaced link
             report_odd_dash_blockers.append(f"{dash}: {d.get('name', d['gid'])[:70]}")
-        elif d["gid"] not in dims_done:
-            dims_done.add(d["gid"])
-            sync_row(
-                call("GET", f"/tasks/{d['gid']}", params={"opt_fields": ROWF})["data"],
-                "dimension",
-            )
+
+for r in dim_rows:
+    if not ONLY or ONLY in r["used_by"]:
+        sync_row(r, "dimension")
+report_unknown_used_by = sorted(
+    f"{r['name'][:60]} ({r['gid']}): {g}"
+    for r in dim_rows
+    for g in r["used_by"]
+    if g not in DASHBOARDS
+)
 
 print(f"\n{'Applied' if APPLY else 'Would apply'} {len(changes)} change(s).")
 if report_ticked:
@@ -432,9 +482,12 @@ if report_blocked_on_main:
     print("\n".join("  " + x for x in report_blocked_on_main))
 if report_odd_dash_blockers:
     print(
-        "\nDashboard blockers that are not dimension rows (link the dimension row on the table task instead):"
+        "\nDashboard blockers that are not table tasks (name the dashboard in a dimension row's `Used by:` instead):"
     )
     print("\n".join("  " + x for x in report_odd_dash_blockers))
+if report_unknown_used_by:
+    print("\n`Used by:` names a task that is not a dashboard in DASHBOARDS:")
+    print("\n".join("  " + x for x in report_unknown_used_by))
 if report_unverified:
     print("\nBlockers done but not verified on main (left open):")
     print("\n".join("  " + x for x in report_unverified))
