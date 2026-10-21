@@ -80,6 +80,7 @@
   audiences: [leaders, region, teachers]
   system: tableau
   group: academics
+  guide: https://teamschools.zendesk.com/hc/en-us/articles/44403224833431--User-Guide-Academic-Goal-Roll-Up-Dashboard
   status: verified
 
 - id: certification_dashboard
