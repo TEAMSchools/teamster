@@ -1,0 +1,63 @@
+models:
+  - name: stg_branchingminds__tiers
+    description:
+      One row per Branching Minds tier update (tier history). The export holds a
+      rolling multi-year window, so a record can appear in more than one
+      fiscal-year partition; the newest partition wins. BrM's student
+      demographics are dropped; join to our student models on student_number
+      instead.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - tier_update_id
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description: Student number from BrM's local student ID.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_powerschool__students")
+                field: student_number
+              config:
+                severity: warn
+                description:
+                  A BrM student whose local ID matches no PowerSchool
+                  student_number. Fix the student's local ID in Branching Minds.
+      - name: subject_area
+        data_type: string
+        description: Subject area.
+      - name: tier_update_method
+        data_type: string
+        description: How the tier was set, as BrM labels it.
+      - name: tier_change_reason
+        data_type: string
+        description: Reason given for the tier change.
+      - name: tier_change_reason_notes
+        data_type: string
+        description: Free-text notes on the tier change.
+      - name: district
+        data_type: string
+        description: BrM district code.
+      - name: source_fiscal_year
+        data_type: int64
+        description:
+          Fiscal year (ending year) of the export partition this row came from.
+      - name: tier_update_id
+        data_type: int64
+        description: BrM tier update ID.
+      - name: school_id
+        data_type: int64
+        description: BrM school ID.
+      - name: tier_level
+        data_type: int64
+        description: Tier level.
+      - name: tier_update_date
+        data_type: date
+        description: Date the tier was set.

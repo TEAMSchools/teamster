@@ -1,0 +1,78 @@
+models:
+  - name: stg_branchingminds__academic_progress_monitoring
+    description:
+      One row per Branching Minds progress-monitoring score. The export holds a
+      rolling multi-year window, so a record can appear in more than one
+      fiscal-year partition; the newest partition wins. BrM's student
+      demographics are dropped; join to our student models on student_number
+      instead.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - score_id
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description: Student number from BrM's local student ID.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_powerschool__students")
+                field: student_number
+              config:
+                severity: warn
+                description:
+                  A BrM student whose local ID matches no PowerSchool
+                  student_number. Fix the student's local ID in Branching Minds.
+      - name: school_year
+        data_type: int64
+        description: School year the record belongs to, as its ending year.
+        data_tests:
+          - branchingminds_school_year_matches_partition:
+              config:
+                severity: warn
+                description:
+                  BrM rolled its export window on a date other than July 1.
+      - name: subject_area
+        data_type: string
+        description: Subject area.
+      - name: assessment_family
+        data_type: string
+        description: Assessment family, such as DIBELS or iReady.
+      - name: assessment_name
+        data_type: string
+        description: Assessment name.
+      - name: assessment_grade_level
+        data_type: string
+        description: Grade level of the assessment form.
+      - name: notes
+        data_type: string
+        description: Free-text notes.
+      - name: staff
+        data_type: string
+        description: Staff member BrM attributes the record to.
+      - name: district
+        data_type: string
+        description: BrM district code.
+      - name: source_fiscal_year
+        data_type: int64
+        description:
+          Fiscal year (ending year) of the export partition this row came from.
+      - name: score_id
+        data_type: int64
+        description: BrM score ID.
+      - name: school_id
+        data_type: int64
+        description: BrM school ID.
+      - name: score
+        data_type: numeric
+        description: Score value.
+      - name: assessment_date
+        data_type: date
+        description: Date the assessment was taken.

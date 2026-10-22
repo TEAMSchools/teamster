@@ -30,6 +30,15 @@ models:
                 description:
                   A BrM student whose local ID matches no PowerSchool
                   student_number. Fix the student's local ID in Branching Minds.
+      - name: school_year
+        data_type: int64
+        description: School year the plan belongs to, as its ending year.
+        data_tests:
+          - branchingminds_school_year_matches_partition:
+              config:
+                severity: warn
+                description:
+                  BrM rolled its export window on a date other than July 1.
       - name: intervention_plan_id
         data_type: int64
         description: BrM intervention plan ID.
@@ -73,9 +82,6 @@ models:
       - name: school_id
         data_type: int64
         description: BrM school ID.
-      - name: school_year
-        data_type: int64
-        description: School year the plan belongs to, as its ending year.
       - name: intervention_frequency
         data_type: int64
         description: Planned sessions per week.

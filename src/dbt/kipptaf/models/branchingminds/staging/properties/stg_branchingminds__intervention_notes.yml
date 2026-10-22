@@ -1,0 +1,35 @@
+models:
+  - name: stg_branchingminds__intervention_notes
+    description:
+      One row per note on a Branching Minds intervention plan. The export holds
+      a rolling multi-year window, so a record can appear in more than one
+      fiscal-year partition; the newest partition wins.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - intervention_plan_id
+              - notes_date
+              - notes
+          config:
+            severity: error
+    columns:
+      - name: notes
+        data_type: string
+        description: Free-text notes.
+      - name: district
+        data_type: string
+        description: BrM district code.
+      - name: source_fiscal_year
+        data_type: int64
+        description:
+          Fiscal year (ending year) of the export partition this row came from.
+      - name: intervention_plan_id
+        data_type: int64
+        description: BrM intervention plan ID.
+      - name: notes_date
+        data_type: date
+        description: Date of the note.

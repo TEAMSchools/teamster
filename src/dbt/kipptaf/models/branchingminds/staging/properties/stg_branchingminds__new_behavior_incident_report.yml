@@ -1,0 +1,116 @@
+models:
+  - name: stg_branchingminds__new_behavior_incident_report
+    description:
+      One row per student per behavior incident in Branching Minds. The export
+      holds a rolling multi-year window, so a record can appear in more than one
+      fiscal-year partition; the newest partition wins. BrM's student
+      demographics are dropped; join to our student models on student_number
+      instead.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - brm_detail_id
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description: Student number from BrM's local student ID.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_powerschool__students")
+                field: student_number
+              config:
+                severity: warn
+                description:
+                  A BrM student whose local ID matches no PowerSchool
+                  student_number. Fix the student's local ID in Branching Minds.
+      - name: source_detail_id
+        data_type: string
+        description: Incident detail ID in the source system.
+      - name: student_role
+        data_type: string
+        description: Student's role in the incident.
+      - name: incident_type
+        data_type: string
+        description: Incident type.
+      - name: incident_description
+        data_type: string
+        description: Free-text incident description.
+      - name: incident_location
+        data_type: string
+        description: Where the incident happened.
+      - name: action_taken
+        data_type: string
+        description: Action taken.
+      - name: instructional_time_lost
+        data_type: string
+        description: Instructional time lost, as BrM exports it.
+      - name: antecedent
+        data_type: string
+        description: What preceded the behavior.
+      - name: consequence
+        data_type: string
+        description: Consequence given.
+      - name: student_account
+        data_type: string
+        description: Student's account of the incident.
+      - name: deescalation_strategy_student
+        data_type: string
+        description: De-escalation strategy the student used.
+      - name: deescalation_strategy_staff
+        data_type: string
+        description: De-escalation strategy staff used.
+      - name: restraint_used
+        data_type: string
+        description: Whether restraint was used, as BrM exports it.
+      - name: seclusion_used
+        data_type: string
+        description: Whether seclusion was used, as BrM exports it.
+      - name: family_notified
+        data_type: string
+        description: Whether the family was notified, as BrM exports it.
+      - name: police_notified
+        data_type: string
+        description: Whether police were notified, as BrM exports it.
+      - name: reporting_staff
+        data_type: string
+        description: Staff member who reported the incident.
+      - name: data_source
+        data_type: string
+        description:
+          How the incident reached BrM; brm_sftp means our DeansList feed.
+      - name: district
+        data_type: string
+        description: BrM district code.
+      - name: incident_time
+        data_type: string
+        description: Incident time, as BrM exports it.
+      - name: source_fiscal_year
+        data_type: int64
+        description:
+          Fiscal year (ending year) of the export partition this row came from.
+      - name: brm_detail_id
+        data_type: int64
+        description: BrM incident detail ID; one row per student per incident.
+      - name: brm_incident_id
+        data_type: int64
+        description: BrM incident ID.
+      - name: source_incident_id
+        data_type: int64
+        description:
+          Incident ID in the source system that sent it to BrM (DeansList).
+      - name: school_id
+        data_type: int64
+        description: BrM school ID.
+      - name: incident_date
+        data_type: date
+        description: Incident date.
+      - name: reported_date
+        data_type: date
+        description: Date the incident was reported.

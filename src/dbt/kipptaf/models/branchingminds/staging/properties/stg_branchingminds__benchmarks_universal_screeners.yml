@@ -1,0 +1,93 @@
+models:
+  - name: stg_branchingminds__benchmarks_universal_screeners
+    description:
+      One row per benchmark or universal screener score in Branching Minds. The
+      export holds a rolling multi-year window, so a record can appear in more
+      than one fiscal-year partition; the newest partition wins. BrM's student
+      demographics are dropped; join to our student models on student_number
+      instead.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - score_id
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description: Student number from BrM's local student ID.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_powerschool__students")
+                field: student_number
+              config:
+                severity: warn
+                description:
+                  A BrM student whose local ID matches no PowerSchool
+                  student_number. Fix the student's local ID in Branching Minds.
+      - name: school_year
+        data_type: int64
+        description: School year the record belongs to, as its ending year.
+        data_tests:
+          - branchingminds_school_year_matches_partition:
+              config:
+                severity: warn
+                description:
+                  BrM rolled its export window on a date other than July 1.
+      - name: network
+        data_type: string
+        description: BrM network name.
+      - name: subject_area
+        data_type: string
+        description: Subject area.
+      - name: assessment_provider
+        data_type: string
+        description: Assessment provider.
+      - name: assessment
+        data_type: string
+        description: Assessment name.
+      - name: level
+        data_type: string
+        description: Performance level the provider reports.
+      - name: description
+        data_type: string
+        description: Provider description of the score.
+      - name: staff
+        data_type: string
+        description: Staff member BrM attributes the record to.
+      - name: district
+        data_type: string
+        description: BrM district code.
+      - name: school_name
+        data_type: string
+        description: BrM school name.
+      - name: assessment_window
+        data_type: string
+        description: Benchmark window (BrM column window).
+      - name: source_fiscal_year
+        data_type: int64
+        description:
+          Fiscal year (ending year) of the export partition this row came from.
+      - name: score_id
+        data_type: int64
+        description: BrM score ID.
+      - name: score
+        data_type: numeric
+        description: Score value.
+      - name: percentile
+        data_type: int64
+        description: National percentile.
+      - name: growth_percentile
+        data_type: int64
+        description: Growth percentile.
+      - name: assessment_date
+        data_type: date
+        description: Date the assessment was taken.
+      - name: student_tags
+        data_type: array<string>
+        description: BrM tags on the student, parsed from a JSON array.
