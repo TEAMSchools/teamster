@@ -627,6 +627,9 @@ unit_tests:
             cast(null as numeric) as credit_hours,
             cast(null as numeric) as course_hours,
             cast(null as string) as homeroom
+      # empty: left-joined, no student here has an enrollment end
+      - input: ref('stg_focus__student_enrollment')
+        rows: []
     expect:
       rows:
         - student_schedule_id: 1
@@ -736,6 +739,9 @@ unit_tests:
             cast(null as numeric) as credit_hours,
             cast(null as numeric) as course_hours,
             cast(null as string) as homeroom
+      # empty: left-joined, no student here has an enrollment end
+      - input: ref('stg_focus__student_enrollment')
+        rows: []
     expect:
       rows:
         - student_schedule_id: 2
@@ -744,6 +750,163 @@ unit_tests:
           student_id: 11
         - student_schedule_id: 5
           student_id: 12
+
+  - name: test_int_focus__schedule_ends_seats_at_withdrawal
+    model: int_focus__schedule
+    description: >-
+      Focus leaves a withdrawn student's seats open. Student 20 left on
+      2026-10-16 — open seat 11 ends that day, seat 12 keeps its earlier drop
+      date, seat 14 starts on the withdrawal day and is kept, and seat 13 starts
+      after it and is removed. Student 21 is still enrolled, and student 22
+      withdrew and came back, so neither is clamped. Student 23 has no
+      enrollment at the seat's school and keeps the term end.
+    given:
+      - input: ref('stg_focus__schedule')
+        format: sql
+        rows: |
+          select 11 as id, 2026 as syear, 100 as school_id, 20 as student_id,
+            20 as course_id, 30 as course_period_id, 502 as marking_period_id,
+            'SEM' as mp, cast(null as string) as course_weight,
+            cast(null as string) as days,
+            cast(null as string) as rotation_days,
+            date '2026-08-12' as start_date, cast(null as date) as end_date,
+            cast(null as string) as fefp_number,
+            cast(null as string) as dual_enrollment_indicator,
+            cast(null as string) as class_minutes_weekly,
+            cast(null as string) as reading_intervention_component,
+            cast(null as string) as basic_skills_exam,
+            cast(null as string) as location_of_student,
+            cast(null as string) as eoc_exam_term,
+            cast(null as string) as exempt_from_total_clock_hours,
+            cast(null as string) as exclude_from_fte,
+            cast(null as string) as pmrn
+          union all
+          select 12, 2026, 100, 20, 20, 31, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-09-29', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 13, 2026, 100, 20, 20, 32, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-10-20',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 14, 2026, 100, 20, 20, 33, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-10-16',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 15, 2026, 100, 21, 20, 30, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 16, 2026, 100, 22, 20, 30, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 17, 2026, 100, 23, 20, 30, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+      - input: ref('stg_focus__marking_periods')
+        format: sql
+        rows: |
+          select 502 as marking_period_id, 2026 as syear, 100 as school_id,
+            'Semester 1' as title, 'S1' as short_name, 'semester' as type,
+            date '2026-08-12' as start_date, date '2027-01-15' as end_date
+      - input: ref('stg_focus__course_periods')
+        format: sql
+        rows: |
+          select course_period_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as string) as custom_title,
+            cast(null as int64) as teacher_id, cast(null as string) as room,
+            cast(null as int64) as period_id,
+            cast(null as int64) as calendar_id,
+            cast(null as int64) as team_id,
+            cast(null as int64) as grade_scale_id,
+            cast(null as string) as credits,
+            cast(null as string) as does_attendance,
+            cast(null as string) as does_grades,
+            cast(null as string) as does_gpa
+          from unnest([30, 31, 32, 33, 34]) as course_period_id
+      - input: ref('stg_focus__courses')
+        format: sql
+        rows: |
+          select 20 as course_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as int64) as subject_id,
+            cast(null as int64) as grad_subject_id,
+            cast(null as string) as grade_level,
+            cast(null as numeric) as credit_hours,
+            cast(null as numeric) as course_hours,
+            cast(null as string) as homeroom
+      - input: ref('stg_focus__student_enrollment')
+        rows:
+          - id: 1
+            student_id: 20
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: 2026-10-16
+          - id: 2
+            student_id: 21
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: null
+          - id: 3
+            student_id: 22
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: 2026-09-01
+          - id: 4
+            student_id: 22
+            school_id: 100
+            syear: 2026
+            start_date: 2026-09-15
+            end_date: null
+          - id: 5
+            student_id: 23
+            school_id: 200
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: 2026-09-01
+    expect:
+      rows:
+        - student_schedule_id: 11
+          end_date: null
+          effective_end_date: 2026-10-16
+        - student_schedule_id: 12
+          end_date: 2026-09-29
+          effective_end_date: 2026-09-29
+        - student_schedule_id: 14
+          end_date: null
+          effective_end_date: 2026-10-16
+        - student_schedule_id: 15
+          end_date: null
+          effective_end_date: 2027-01-15
+        - student_schedule_id: 16
+          end_date: null
+          effective_end_date: 2027-01-15
+        - student_schedule_id: 17
+          end_date: null
+          effective_end_date: 2027-01-15
 
   - name: test_int_focus__students_iep_from_ese_log
     description: >-

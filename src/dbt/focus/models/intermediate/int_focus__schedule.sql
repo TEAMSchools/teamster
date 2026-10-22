@@ -14,6 +14,7 @@ with
         from {{ ref("stg_focus__marking_periods") }}
     ),
 
+    # trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     schedule as (
         select
             s.id as student_schedule_id,
@@ -80,13 +81,92 @@ with
             on s.syear = mkp.syear
             and s.school_id = mkp.school_id
             and s.marking_period_id = mkp.schedule_marking_period_id
-    )
+    ),
+
+    enrollment_end as (
+        select
+            student_id,
+            school_id,
+            syear,
+
+            if(
+                countif(end_date is null) > 0, null, max(end_date)
+            ) as enrollment_end_date,
+        from {{ ref("stg_focus__student_enrollment") }}
+        group by student_id, school_id, syear
+    ),
 
     -- one stint per course period; the pick order is in the model description
-    {{
-        dbt_utils.deduplicate(
-            relation="schedule",
-            partition_by="student_id, course_period_id",
-            order_by="(end_date is not null) asc, (mp is distinct from 'FY') asc, student_schedule_id desc",
-        )
-    }}
+    deduplicated as (
+        {{
+            dbt_utils.deduplicate(
+                relation="schedule",
+                partition_by="student_id, course_period_id",
+                order_by="(end_date is not null) asc, (mp is distinct from 'FY') asc, student_schedule_id desc",
+            )
+        }}
+    )
+
+select
+    s.student_schedule_id,
+    s.academic_year,
+    s.schoolid,
+    s.student_id,
+    s.course_id,
+    s.course_period_id,
+    s.mp,
+    s.course_weight,
+    s.days,
+    s.rotation_days,
+    s.start_date,
+    s.end_date,
+    s.fefp_number,
+    s.dual_enrollment_indicator,
+    s.class_minutes_weekly,
+    s.reading_intervention_component,
+    s.basic_skills_exam,
+    s.location_of_student,
+    s.eoc_exam_term,
+    s.exempt_from_total_clock_hours,
+    s.exclude_from_fte,
+    s.pmrn,
+    s.course_period_title,
+    s.course_period_short_name,
+    s.course_period_custom_title,
+    s.teacher_id,
+    s.room,
+    s.period_id,
+    s.calendar_id,
+    s.team_id,
+    s.grade_scale_id,
+    s.credits,
+    s.does_attendance,
+    s.does_grades,
+    s.does_gpa,
+    s.course_title,
+    s.course_short_name,
+    s.subject_id,
+    s.grad_subject_id,
+    s.course_grade_level,
+    s.credit_hours,
+    s.course_hours,
+    s.homeroom,
+    s.marking_period_id,
+    s.marking_period_title,
+    s.marking_period_short_name,
+    s.marking_period_type,
+    s.marking_period_start_date,
+    s.marking_period_end_date,
+
+    (
+        select min(d),
+        from unnest([s.end_date, s.marking_period_end_date, e.enrollment_end_date]) as d
+    ) as effective_end_date,
+from deduplicated as s
+left join
+    enrollment_end as e
+    on s.student_id = e.student_id
+    and s.schoolid = e.school_id
+    and s.academic_year = e.syear
+-- drop seats Focus scheduled after the student left
+where e.enrollment_end_date is null or s.start_date <= e.enrollment_end_date
