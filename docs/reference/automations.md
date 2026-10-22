@@ -33,13 +33,14 @@ Network-wide code location covering CMO-level integrations.
 
 ### Sensors
 
-| Sensor                                            | Min interval | Assets                                                                                                           |
-| ------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `kipptaf__adp__payroll__sftp_sensor`              | 10 min       | `general_ledger_file`                                                                                            |
-| `kipptaf__adp__workforce_now__sftp_assets_sensor` | 10 min       | `additional_earnings_report`, `employee_memberships`, `pension_and_benefits_enrollments`, `time_and_attendance`  |
-| `kipptaf__couchdrop__sftp_asset_job_sensor`       | 10 min       | `collegeboard/ap`, `collegeboard/psat`, `collegeboard/sat`, `nsc/student_tracker`, `tableau/view_count_per_view` |
-| `kipptaf__deanslist__sftp_asset_job_sensor`       | 10 min       | `reconcile_attendance`, `reconcile_suspensions`                                                                  |
-| `kipptaf__google__forms__responses_sensor`        | 15 min       | `responses`                                                                                                      |
+| Sensor                                            | Min interval | Assets                                                                                                                                                                                                                       |
+| ------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kipptaf__adp__payroll__sftp_sensor`              | 10 min       | `general_ledger_file`                                                                                                                                                                                                        |
+| `kipptaf__adp__workforce_now__sftp_assets_sensor` | 10 min       | `additional_earnings_report`, `employee_memberships`, `pension_and_benefits_enrollments`, `time_and_attendance`                                                                                                              |
+| `kipptaf__branchingminds__sftp_sensor`            | 10 min       | `academic_progress_monitoring`, `benchmarks_universal_screeners`, `current_student_tier_levels`, `daily_intervention_sessions`, `goals`, `intervention_notes`, `intervention_plans`, `new_behavior_incident_report`, `tiers` |
+| `kipptaf__couchdrop__sftp_asset_job_sensor`       | 10 min       | `collegeboard/ap`, `collegeboard/psat`, `collegeboard/sat`, `nsc/student_tracker`, `tableau/view_count_per_view`                                                                                                             |
+| `kipptaf__deanslist__sftp_asset_job_sensor`       | 10 min       | `reconcile_attendance`, `reconcile_suspensions`                                                                                                                                                                              |
+| `kipptaf__google__forms__responses_sensor`        | 15 min       | `responses`                                                                                                                                                                                                                  |
 
 ### Extracts
 

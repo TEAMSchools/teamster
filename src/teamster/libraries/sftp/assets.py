@@ -2,12 +2,14 @@ import os
 import re
 import zipfile
 from collections.abc import Callable
+from datetime import datetime
 
 from dagster import (
     AssetExecutionContext,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
+    TimeWindow,
     asset,
 )
 from dagster_shared import check
@@ -108,6 +110,7 @@ def build_sftp_file_asset(
     pdf_row_pattern: str | None = None,
     exclude_dirs: list[str] | None = None,
     ignore_multiple_matches: bool = False,
+    current_partition_only: bool = False,
     archive_remote_dir: Callable[[str], str] | None = None,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
@@ -208,6 +211,7 @@ def build_sftp_file_asset(
             remote_dirs.append(archive_remote_dir(partition_key))
 
         file_matches: list[str] = []
+        file_mtimes: dict[str, int | None] = {}
 
         with (
             ssh.get_connection() as connection,
@@ -225,6 +229,8 @@ def build_sftp_file_asset(
                     continue
 
                 files.sort(key=lambda x: x[0].st_mtime or 0, reverse=True)
+
+                file_mtimes = {path: attr.st_mtime for attr, path in files}
 
                 file_matches = [
                     path
@@ -260,6 +266,24 @@ def build_sftp_file_asset(
             raise Exception(msg)
         else:
             file_match = file_matches[0]
+
+        # the vendor file only ever holds the current partition's data, so a
+        # past partition's file is a frozen snapshot that a re-run would destroy.
+        # Judge by the file's mtime, not the clock: a June 30 file can run after
+        # midnight.
+        if current_partition_only:
+            time_window = check.inst(
+                obj=context.partition_time_window, ttype=TimeWindow
+            )
+            file_datetime = datetime.fromtimestamp(
+                file_mtimes[file_match] or 0, tz=time_window.start.tzinfo
+            )
+
+            if not time_window.start <= file_datetime < time_window.end:
+                raise ValueError(
+                    f"{file_match} was modified {file_datetime}, outside partition "
+                    f"{partition_key}; refusing to overwrite its snapshot"
+                )
 
         local_filepath = ssh.sftp_get(
             remote_filepath=file_match,
