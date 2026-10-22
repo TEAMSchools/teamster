@@ -102,7 +102,10 @@ models:
             contains_pii: true
       - name: is_low_percentile
         description: >-
-          Focus's lowest-percentile flag. Focus does not document the cut.
+          Focus's low-percentile flag. True for every `percentile` of 29 or
+          below and false for 31 and above. At exactly 30 it can be either.
+          Miami uses it as the L30 flag in place of `l25`, which Focus fills
+          only after PM3.
         data_type: bool
         config:
           meta:
