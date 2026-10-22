@@ -54,16 +54,22 @@ assets = [
         #
         # Do not lower the memory figures against a sampled figure: GCP samples
         # memory every 60s and these pods live a few minutes, so any measured
-        # peak is a floor. Peak scales with how many tables a tick selects (5
+        # peak is a floor, and a pod OOM-killed inside its first minute never
+        # trips the limit-utilization alert. Check node `OOMKilling` events
+        # instead. Peak scales with how many tables a tick selects (5
         # concurrent dlt extract workers, `FOCUS_CHUNK_SIZE` rows buffered
-        # each). If this also runs short, the next lever is the
-        # `dlt_extract_workers` run tag, not more memory.
+        # each) and with row width: `custom_field_log_entries` rows are far
+        # wider than any other table's and keep growing, so its chunk sets the
+        # peak. Before raising memory again, consider a smaller chunk for that
+        # table alone (`FOCUS_CHUNK_SIZE` is shared by every Focus table), or a
+        # `dlt_extract_workers` tag in the intraday sensor's run tags, which
+        # sensor-launched runs otherwise never carry.
         op_tags={
             "dagster-k8s/config": {
                 "container_config": {
                     "resources": {
-                        "requests": {"cpu": "750m", "memory": "3.0Gi"},
-                        "limits": {"memory": "3.5Gi"},
+                        "requests": {"cpu": "1000m", "memory": "4.0Gi"},
+                        "limits": {"memory": "5.0Gi"},
                     }
                 }
             }
