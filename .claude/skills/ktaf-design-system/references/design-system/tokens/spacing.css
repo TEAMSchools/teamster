@@ -1,0 +1,38 @@
+/* ============================================================
+   SPACING — KIPP NJ | Miami
+   4px base grid. The brand also spaces layouts off the logo's
+   "K" height; --space-k is a nod to that for hero/lockup gaps.
+   ============================================================ */
+
+:root {
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Semantic spacing */
+  --gap-inline:    var(--space-2);
+  --gap-control:   var(--space-3);
+  --gap-card:      var(--space-6);
+  --pad-card:      var(--space-6);
+  --pad-section-y: var(--space-20);
+  --pad-page-x:    var(--space-6);
+
+  /* "K" lockup unit (logo clear-space rhythm) */
+  --space-k: var(--space-12);
+
+  /* Layout */
+  --container-max: 1200px;
+  --container-narrow: 760px;
+  --content-measure: 68ch;
+}

@@ -1,0 +1,23 @@
+<!-- @dsCard group="Brand" viewport="700x160" name="Region themes" subtitle="data-theme swaps the interchangeable accent per region" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 22px 24px; background: var(--surface-card); display:grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .r { border-radius: var(--radius-lg); overflow:hidden; border:1px solid var(--border-subtle); }
+  .r .bar { height: 10px; background: var(--brand-accent); }
+  .r .body { padding: 12px; }
+  .r .name { font-family: var(--font-brand); font-weight:700; text-transform:uppercase; letter-spacing:.04em; font-size: 13px; color: var(--text-strong); }
+  .r .btn { margin-top:10px; display:inline-block; background: var(--brand-accent); color: var(--brand-on-accent); font-family:var(--font-brand); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.04em; padding:5px 10px; border-radius:var(--radius-md); }
+  .r .code { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); margin-top:8px; }
+</style>
+</head>
+<body>
+  <div class="r" data-theme="newark"><div class="bar"></div><div class="body"><div class="name">Newark</div><div class="code">+ blue</div><span class="btn">Apply</span></div></div>
+  <div class="r" data-theme="camden"><div class="bar"></div><div class="body"><div class="name">Camden</div><div class="code">+ green</div><span class="btn">Apply</span></div></div>
+  <div class="r" data-theme="paterson"><div class="bar"></div><div class="body"><div class="name">Paterson</div><div class="code">+ red</div><span class="btn">Apply</span></div></div>
+  <div class="r" data-theme="miami"><div class="bar"></div><div class="body"><div class="name">Miami</div><div class="code">+ orange</div><span class="btn">Apply</span></div></div>
+</body>
+</html>

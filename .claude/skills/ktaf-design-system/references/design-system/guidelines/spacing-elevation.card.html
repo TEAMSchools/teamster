@@ -1,0 +1,22 @@
+<!-- @dsCard group="Spacing" viewport="700x190" name="Elevation" subtitle="Subtle indigo-tinted shadows, plus the hard-offset brand pop" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 30px 28px; background: var(--surface-sunken); display:flex; align-items:center; gap: 26px; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .box { width: 92px; height: 64px; background: var(--surface-card); border-radius: var(--radius-lg); display:flex; align-items:center; justify-content:center; }
+  .col span { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  .pop { border: 2px solid var(--kipp-indigo); box-shadow: var(--shadow-pop); }
+</style>
+</head>
+<body>
+  <div class="col"><div class="box" style="box-shadow:var(--shadow-sm)"></div><span>sm</span></div>
+  <div class="col"><div class="box" style="box-shadow:var(--shadow-md)"></div><span>md</span></div>
+  <div class="col"><div class="box" style="box-shadow:var(--shadow-lg)"></div><span>lg</span></div>
+  <div class="col"><div class="box" style="box-shadow:var(--shadow-xl)"></div><span>xl</span></div>
+  <div class="col"><div class="box pop"></div><span style="color:var(--text-strong);font-weight:700">pop</span></div>
+</body>
+</html>
