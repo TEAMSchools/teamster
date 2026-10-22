@@ -47,14 +47,16 @@ models:
 
           The two SIS record it differently and neither is wrong. PowerSchool
           has no separate departure date, so `cc_dateleft` is already this
-          concept -- the actual leave date when the student left, the term end
-          plus a day while the enrollment is open. Focus keeps the two apart, so
-          this resolves to the schedule `end_date` when the student left and
-          `marking_period_end_date` otherwise, plus a day. Both SIS therefore
-          give the first day the student is no longer enrolled, so a window is
-          `date >= cc_dateenrolled and date < exit_date` in every region. A
-          consumer that compares `cc_dateleft` instead drops every open Focus
-          enrollment, because the comparison is unknown.
+          concept -- the actual leave date when the student left the class or
+          the school, the term end plus a day while the enrollment is open.
+          Focus keeps the two apart and leaves seats open when a student
+          withdraws, so this is the Focus schedule `effective_end_date` plus a
+          day -- the earliest of the drop date, the term end and the student's
+          withdrawal, so a Miami seat ends at withdrawal as a NJ seat does. Both
+          SIS therefore give the first day the student is no longer enrolled, so
+          a window is `date >= cc_dateenrolled and date < exit_date` in every
+          region. A consumer that compares `cc_dateleft` instead drops every
+          open Focus enrollment, because the comparison is unknown.
         data_type: date
         data_tests:
           - not_null:

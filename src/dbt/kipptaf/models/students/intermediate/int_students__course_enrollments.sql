@@ -116,13 +116,10 @@ with
             s.course_period_short_name as cc_section_number,
             s.teacher_id as cc_teacherid,
 
-            -- Focus records the departure and the scheduled term end as two
-            -- facts; PowerSchool conflates them into cc_dateleft. Resolve the
-            -- neutral column from whichever this SIS actually has, rather than
-            -- back-filling PowerSchool's conflated column. #5043
-            date_add(
-                coalesce(s.end_date, s.marking_period_end_date), interval 1 day
-            ) as exit_date,
+            -- The Focus package resolves the seat's last day from the drop, the
+            -- term end and the withdrawal; shift it to PowerSchool's day-after
+            -- convention rather than back-filling cc_dateleft. #5043
+            date_add(s.effective_end_date, interval 1 day) as exit_date,
             st.student_number as students_student_number,
             loc.powerschool_school_id as sections_schoolid,
             loc.powerschool_school_id as cc_schoolid,
