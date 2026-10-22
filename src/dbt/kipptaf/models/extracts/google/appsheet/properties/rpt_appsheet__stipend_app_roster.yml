@@ -64,10 +64,11 @@ models:
       - name: app_permissions
         data_type: int64
         description:
-          Stipend app access tier. 3 is all access, 2 is in-region, 1 is
-          location or campus, 0 is no access beyond the user's own submissions.
-          The case in this model's SQL assigns the tier; the app's filters
-          decide what each tier sees.
+          Stipend app access tier. 3 is all access (the Data, HR, Leadership
+          Development, Executive and finance departments, plus network
+          Operations), 2 is in-region, 1 is location or campus, 0 is no access
+          beyond the user's own submissions. The case in this model's SQL
+          assigns the tier; the app's filters decide what each tier sees.
       - name: department
         data_type: string
         description: Home department name.

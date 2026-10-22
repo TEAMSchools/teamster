@@ -38,8 +38,16 @@ select
     case
         /* all access view */
         when
-            r.home_department_name
-            in ('Data', 'Human Resources', 'Leadership Development', 'Executive')
+            r.home_department_name in (
+                'Data',
+                'Human Resources',
+                'Leadership Development',
+                'Executive',
+                'Financial Planning and Analysis',
+                'Accounting',
+                'Accounting and Compliance',
+                'Compliance'
+            )
         then 3
         when
             r.home_business_unit_code = 'KIPP_TAF'
