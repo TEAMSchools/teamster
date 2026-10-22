@@ -66,6 +66,13 @@ skill.
   to pods that select arm64. A code server that fell back stays on amd64 (the
   pricier tier) until its next redeploy. The agent pins to built-in Scale-Out
   amd64 (image is amd64-only). Asserted in `tests/test_k8s_config.py`.
+- **Class priorities steer only new nodes.** kube-scheduler packs pods onto any
+  existing node of the class, so after a stockout a busy amd64 node keeps taking
+  every new run/step pod. The class sets `activeMigration.optimizeRulePriority`
+  to move work back to arm64 once it has capacity. Migration never evicts a
+  `safe-to-evict: "false"` pod, so a running step is never killed. Unverified:
+  whether GKE cordons an amd64 node it cannot fully drain. If amd64 nodes still
+  outlive a stockout, that is why.
 - **No node affinity on CCC pods carrying `safe-to-evict`.** Autopilot treats
   the annotation as an extended-duration request and adds a
   `cloud.google.com/extended-duration-pods` key, which Warden

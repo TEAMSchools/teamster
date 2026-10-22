@@ -417,6 +417,11 @@ extraManifests:
           location_name: kipptaf
   # arm64 first, amd64 when GKE cannot provision arm64. podFamily rules keep
   # pod-based billing; machine-family rules would bill per VM.
+  #
+  # Priorities only steer new nodes: the scheduler packs pods onto any existing
+  # node of the class, so a busy amd64 node would hold all work after a stockout
+  # ends. Active migration moves workloads back to arm64 once it has capacity,
+  # and it never evicts pods annotated safe-to-evict: "false".
   - apiVersion: cloud.google.com/v1
     kind: ComputeClass
     metadata:
@@ -424,6 +429,8 @@ extraManifests:
     spec:
       autopilot:
         enabled: true
+      activeMigration:
+        optimizeRulePriority: true
       priorities:
         - podFamily: general-purpose-arm
         - podFamily: general-purpose
