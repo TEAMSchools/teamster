@@ -131,3 +131,19 @@ def test_skip_reason_passes_through():
     skip = SkipReason("SFTP unreachable")
 
     assert _run(skip) is skip
+
+
+def test_only_the_asset_path_triggers_a_run():
+    """A same-named file in another folder, or a backup copy, is not the asset's."""
+    mtime = _ts(2025, 3, 1, 9)
+    elsewhere, _ = _file("a.csv", mtime)
+    backup, _ = _file("a.csv.bak", mtime)
+
+    result = _run(
+        [(elsewhere, "/exports/archive/a.csv"), (backup, "/exports/a.csv.bak")]
+    )
+
+    assert (
+        isinstance(result, SkipReason)
+        or not check.inst(result, SensorResult).run_requests
+    )

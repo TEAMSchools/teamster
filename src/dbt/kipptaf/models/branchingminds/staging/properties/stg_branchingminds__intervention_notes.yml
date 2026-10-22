@@ -17,6 +17,13 @@ models:
           config:
             severity: error
     columns:
+      - name: intervention_plan_id
+        data_type: int64
+        description: BrM intervention plan ID.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: notes
         data_type: string
         description: Free-text notes.
@@ -27,9 +34,6 @@ models:
         data_type: int64
         description:
           Fiscal year (ending year) of the export partition this row came from.
-      - name: intervention_plan_id
-        data_type: int64
-        description: BrM intervention plan ID.
       - name: notes_date
         data_type: date
         description: Date of the note.

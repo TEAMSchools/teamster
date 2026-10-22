@@ -56,15 +56,18 @@ def build_branchingminds_sftp_sensor(
 
         for asset in asset_selection:
             asset_identifier = asset.key.to_python_identifier()
-            remote_file_regex = asset.metadata_by_key[asset.key]["remote_file_regex"]
+            metadata = asset.metadata_by_key[asset.key]
+            remote_path_regex = (
+                f"{metadata['remote_dir_regex']}/{metadata['remote_file_regex']}"
+            )
             partitions_def = check.not_none(asset.partitions_def)
             last_mtime = cursor.get(asset_identifier, 0)
 
-            for f, _ in files:
+            for f, path in files:
                 mtime = check.not_none(f.st_mtime)
 
                 if (
-                    re.match(pattern=remote_file_regex, string=f.filename) is None
+                    re.fullmatch(pattern=remote_path_regex, string=path) is None
                     or mtime <= last_mtime
                     or check.not_none(f.st_size) == 0
                 ):

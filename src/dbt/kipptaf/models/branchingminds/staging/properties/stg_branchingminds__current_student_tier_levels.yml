@@ -19,6 +19,13 @@ models:
           config:
             severity: error
     columns:
+      - name: tier_update_id
+        data_type: int64
+        description: BrM ID of the tier update that set the current tier.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: student_number
         data_type: int64
         description: Student number from BrM's local student ID.
@@ -32,9 +39,6 @@ models:
                 description:
                   A BrM student whose local ID matches no PowerSchool
                   student_number. Fix the student's local ID in Branching Minds.
-      - name: tier_update_id
-        data_type: int64
-        description: BrM ID of the tier update that set the current tier.
       - name: source_fiscal_year
         data_type: int64
         description:

@@ -9,14 +9,17 @@ models:
     config:
       meta:
         contains_pii: true
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - tier_update_id
-          config:
-            severity: error
     columns:
+      - name: tier_update_id
+        data_type: int64
+        description: BrM tier update ID.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: student_number
         data_type: int64
         description: Student number from BrM's local student ID.
@@ -49,9 +52,6 @@ models:
         data_type: int64
         description:
           Fiscal year (ending year) of the export partition this row came from.
-      - name: tier_update_id
-        data_type: int64
-        description: BrM tier update ID.
       - name: school_id
         data_type: int64
         description: BrM school ID.

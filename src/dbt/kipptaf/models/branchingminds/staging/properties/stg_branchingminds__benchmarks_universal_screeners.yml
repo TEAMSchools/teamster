@@ -9,14 +9,17 @@ models:
     config:
       meta:
         contains_pii: true
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - score_id
-          config:
-            severity: error
     columns:
+      - name: score_id
+        data_type: int64
+        description: BrM score ID.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: student_number
         data_type: int64
         description: Student number from BrM's local student ID.
@@ -38,7 +41,9 @@ models:
               config:
                 severity: warn
                 description:
-                  BrM rolled its export window on a date other than July 1.
+                  A partition holds a later school year than its fiscal year, so
+                  BrM rolled to the new year before July 1 and the frozen June
+                  snapshot is incomplete.
       - name: network
         data_type: string
         description: BrM network name.
@@ -73,9 +78,6 @@ models:
         data_type: int64
         description:
           Fiscal year (ending year) of the export partition this row came from.
-      - name: score_id
-        data_type: int64
-        description: BrM score ID.
       - name: score
         data_type: numeric
         description: Score value.
