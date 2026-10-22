@@ -237,6 +237,7 @@
   audiences: [region, teachers]
   system: tableau
   group: academics
+  guide: https://teamschools.zendesk.com/hc/en-us/articles/43413797842071-Academic-Gradebook-Health-Suite
   status: verified
 
 - id: grow_dashboard
