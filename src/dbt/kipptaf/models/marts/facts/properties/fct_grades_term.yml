@@ -204,9 +204,11 @@ unit_tests:
             term_percent_grade: 70
       - input: ref('dim_student_section_enrollments')
         rows:
+          # student_section_enrollment_key("1", "kippnewark")
           # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
           - student_section_enrollment_key: 00b9169e88f2a42ca30294ac7297680d
             student_enrollment_key: a
+          # student_section_enrollment_key("2", "kippnewark")
           # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
           - student_section_enrollment_key: f648101fedbcb6da08ebb6588693c27f
             student_enrollment_key: null
