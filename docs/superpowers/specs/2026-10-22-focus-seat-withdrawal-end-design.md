@@ -62,6 +62,9 @@ recent seat in the course, not "active today".
 - Add a column (working name `enrollment_end_date`, the builder may pick a
   better one): the earliest of `end_date`, `marking_period_end_date`, and that
   enrollment end. Same last-day-enrolled convention as Focus `end_date`.
+  Enrollment `end_date` uses that convention too: Focus records attendance on
+  it, and `int_students__student_enrollment_union` adds 1 day to reach
+  PowerSchool's first-day-not-enrolled.
 - Remove seats whose `start_date` is after the enrollment end.
 - `end_date` stays the raw Focus value.
 - Seats with no enrollment at that school and year are kept unchanged.
@@ -89,7 +92,10 @@ This is a shared write and needs the user's go-ahead.
 
 - Reproduce query from #6091 (all 2,481 seats, not only the 749 that start
   before the exit): 0 Miami seats not dropped with `exit_date` after the
-  withdrawal.
+  withdrawal. Take the withdrawal from `int_students__student_enrollment_union`,
+  whose `exitdate` is on the same first-day-not-enrolled convention as
+  `exit_date`. `int_extracts__student_enrollments` carries Miami's `exitdate`
+  unshifted, 1 day earlier.
 - `is_dropped_section` count for Miami unchanged.
 - NJ rows unchanged.
 - #6085 validation re-run (graded rows dropped from `fct_grades_term`).
@@ -97,8 +103,5 @@ This is a shared write and needs the user's go-ahead.
 
 ## Left to the builder
 
-- Confirm `stg_focus__student_enrollment.end_date` uses the last-day-enrolled
-  convention and matches `int_extracts__student_enrollments.exitdate` minus a
-  day.
 - The column name.
 - Which of the six other consumers should read the new column.
