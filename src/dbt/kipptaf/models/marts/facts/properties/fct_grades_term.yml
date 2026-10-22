@@ -7,11 +7,13 @@ models:
       credit hours. FK to dim_student_section_enrollments, dim_terms, and
       dim_dates (role-playing via term_start_date_key and term_end_date_key).
       Reaches dim_student_enrollments by traversing
-      student_section_enrollment_key. A grade is kept when any of the student's
-      school enrollments in that region and year overlaps the term, so students
-      who enroll partway through a term keep their grade. Grades with no
-      overlapping enrollment, such as blank grades for students who never
-      attended, are dropped.
+      student_section_enrollment_key. A grade is kept only when its section
+      enrollment is matched to a school enrollment in
+      dim_student_section_enrollments, so every row traverses to
+      dim_student_enrollments. Students who enroll partway through a term keep
+      their grade. Grades on section enrollments with no matching school
+      enrollment, such as a course at a second campus or a schedule row that
+      closed before the student enrolled, are dropped.
     columns:
       - name: grades_term_key
         data_type: string
@@ -172,15 +174,13 @@ models:
           upstream int64 0/1 flag per R3 boolean-prefix convention.
 
 unit_tests:
-  - name: test_fct_grades_term_keeps_grades_for_any_enrollment_in_term
+  - name: test_fct_grades_term_keeps_grades_with_a_matched_enrollment
     description:
-      Locks the population rule. A term grade is kept when any school enrollment
-      overlaps the term, not only one covering the term's first day. Feeds a
-      student who enrolled mid-term (kept), a student who transferred mid-term
-      and so overlaps 2 stints (kept once), and a student who left before the
-      term started (dropped). Boundary cases - a student who enrolled on the
-      term's last day (kept), a student whose exit date is the term's first day
-      (dropped), and a stint whose exit date falls before its entry date
+      Locks the population rule. A term grade is kept only when its section
+      enrollment is matched to a school enrollment in
+      dim_student_section_enrollments. Feeds a matched section enrollment with 2
+      terms (both kept, one row each), a section enrollment the dim could not
+      match to a school enrollment (dropped), and one missing from the dim
       (dropped).
     model: fct_grades_term
     given:
@@ -189,88 +189,27 @@ unit_tests:
           - cc_dcid: 1
             _dbt_source_project: kippnewark
             storecode: Q1
-            student_number: 101
-            academic_year: 2026
-            termbin_start_date: 2026-09-01
-            termbin_end_date: 2026-11-07
             term_percent_grade: 90
+          - cc_dcid: 1
+            _dbt_source_project: kippnewark
+            storecode: Q2
+            term_percent_grade: 85
           - cc_dcid: 2
             _dbt_source_project: kippnewark
             storecode: Q1
-            student_number: 102
-            academic_year: 2026
-            termbin_start_date: 2026-09-01
-            termbin_end_date: 2026-11-07
             term_percent_grade: 80
           - cc_dcid: 3
             _dbt_source_project: kippnewark
-            storecode: Q2
-            student_number: 103
-            academic_year: 2026
-            termbin_start_date: 2026-11-10
-            termbin_end_date: 2027-01-23
+            storecode: Q1
             term_percent_grade: 70
-          - cc_dcid: 4
-            _dbt_source_project: kippnewark
-            storecode: Q1
-            student_number: 104
-            academic_year: 2026
-            termbin_start_date: 2026-09-01
-            termbin_end_date: 2026-11-07
-            term_percent_grade: 60
-          - cc_dcid: 5
-            _dbt_source_project: kippnewark
-            storecode: Q1
-            student_number: 105
-            academic_year: 2026
-            termbin_start_date: 2026-09-01
-            termbin_end_date: 2026-11-07
-            term_percent_grade: 50
-          - cc_dcid: 6
-            _dbt_source_project: kippnewark
-            storecode: Q1
-            student_number: 106
-            academic_year: 2026
-            termbin_start_date: 2026-09-01
-            termbin_end_date: 2026-11-07
-            term_percent_grade: 40
-      - input: ref('int_students__student_enrollment_union')
+      - input: ref('dim_student_section_enrollments')
         rows:
-          - student_number: 101
-            academic_year: 2026
-            _dbt_source_project: kippnewark
-            entrydate: 2026-10-01
-            exitdate: 2027-06-30
-          - student_number: 102
-            academic_year: 2026
-            _dbt_source_project: kippnewark
-            entrydate: 2026-07-01
-            exitdate: 2026-10-01
-          - student_number: 102
-            academic_year: 2026
-            _dbt_source_project: kippnewark
-            entrydate: 2026-10-01
-            exitdate: 2027-06-30
-          - student_number: 103
-            academic_year: 2026
-            _dbt_source_project: kippnewark
-            entrydate: 2026-07-01
-            exitdate: 2026-10-15
-          - student_number: 104
-            academic_year: 2026
-            _dbt_source_project: kippnewark
-            entrydate: 2026-11-07
-            exitdate: 2027-06-30
-          - student_number: 105
-            academic_year: 2026
-            _dbt_source_project: kippnewark
-            entrydate: 2026-07-01
-            exitdate: 2026-09-01
-          - student_number: 106
-            academic_year: 2026
-            _dbt_source_project: kippnewark
-            entrydate: 2026-10-01
-            exitdate: 2026-09-15
+          # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
+          - student_section_enrollment_key: 00b9169e88f2a42ca30294ac7297680d
+            student_enrollment_key: a
+          # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
+          - student_section_enrollment_key: f648101fedbcb6da08ebb6588693c27f
+            student_enrollment_key: null
       - input: ref('dim_regions')
         rows:
           - dagster_code_location: kippnewark
@@ -282,5 +221,4 @@ unit_tests:
     expect:
       rows:
         - percent_grade: 90
-        - percent_grade: 80
-        - percent_grade: 60
+        - percent_grade: 85

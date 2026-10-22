@@ -1,17 +1,11 @@
 with
-    -- grain projection, not dup-masking: a mid-term transfer overlaps 2 stints
-    enrolled_term_grades as (
-        select distinct fg.cc_dcid, fg._dbt_source_project, fg.storecode,
-        from {{ ref("int_students__final_grades") }} as fg
-        inner join
-            {{ ref("int_students__student_enrollment_union") }} as enr
-            on fg.student_number = enr.student_number
-            and fg.academic_year = enr.academic_year
-            and fg._dbt_source_project = enr._dbt_source_project
-            and fg.termbin_end_date >= enr.entrydate
-            and fg.termbin_start_date < enr.exitdate
-            -- a stint ending on or before its start covers no day
-            and enr.entrydate < enr.exitdate
+    final_grades as (
+        select
+            *,
+
+            {{ dbt_utils.generate_surrogate_key(["cc_dcid", "_dbt_source_project"]) }}
+            as student_section_enrollment_key,
+        from {{ ref("int_students__final_grades") }}
     ),
 
     reporting_terms as (
@@ -36,8 +30,7 @@ select
         )
     }} as grades_term_key,
 
-    {{ dbt_utils.generate_surrogate_key(["fg.cc_dcid", "fg._dbt_source_project"]) }}
-    as student_section_enrollment_key,
+    fg.student_section_enrollment_key,
 
     if(
         rt.code is not null,
@@ -81,14 +74,10 @@ select
     fg.lastgradeupdate as last_grade_update_date,
 
     cast(fg.exclude_from_gpa as bool) as is_excluded_from_gpa,
-from {{ ref("int_students__final_grades") }} as fg
--- row-population filter only; enrollment linkage flows through
--- `student_section_enrollment_key`
+from final_grades as fg
 inner join
-    enrolled_term_grades as etg
-    on fg.cc_dcid = etg.cc_dcid
-    and fg._dbt_source_project = etg._dbt_source_project
-    and fg.storecode = etg.storecode
+    {{ ref("dim_student_section_enrollments") }} as sse
+    on fg.student_section_enrollment_key = sse.student_section_enrollment_key
 inner join
     {{ ref("dim_regions") }} as dr on fg._dbt_source_project = dr.dagster_code_location
 left join
@@ -97,3 +86,4 @@ left join
     and fg.schoolid = rt.school_id
     and dr.`name` = rt.region
     and fg.yearid = rt.powerschool_year_id
+where sse.student_enrollment_key is not null
