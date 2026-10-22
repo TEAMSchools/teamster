@@ -162,6 +162,8 @@ with
             -- defensive -- end_date is null on 96.8% of Miami rows and
             -- `null < date` is null, so without it the flag reads null on every
             -- open row. #4968
+            -- TODO(#6098): the package now removes seats scheduled after a
+            -- withdrawal, so a leaver with no open seat left reads as a sweep
             coalesce(
                 s.end_date < s.marking_period_end_date
                 and countif(s.end_date is null) over (

@@ -22,9 +22,9 @@ models:
       left-joined on syear and school_id as well as the id, resolving Focus's
       full-year sentinel (marking_period_id 0) to the school's year-level
       marking period. A seat that starts after the student's last enrollment end
-      at that school and year is excluded; Focus schedules rotation and
-      next-term seats for students who have already withdrawn. A seat at a
-      school where the student has no enrollment that year is kept.
+      at that school and year is excluded before the stint pick; Focus schedules
+      rotation and next-term seats for students who have already withdrawn. A
+      seat at a school where the student has no enrollment that year is kept.
       Internal-only — a rpt_ view must sit between this model and any external
       consumer.
     columns:
