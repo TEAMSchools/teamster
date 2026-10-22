@@ -90,6 +90,12 @@ models:
         +enabled: false
     assessments:
       +schema: assessments
+    branchingminds:
+      +schema: branchingminds
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     cambium:
       +schema: cambium
     collegeboard:

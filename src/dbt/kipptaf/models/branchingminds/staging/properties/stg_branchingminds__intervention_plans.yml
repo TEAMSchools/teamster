@@ -1,0 +1,153 @@
+models:
+  - name: stg_branchingminds__intervention_plans
+    description:
+      One row per Branching Minds intervention plan, from the nightly
+      intervention report export. The export holds a rolling multi-year window,
+      so a plan can appear in more than one fiscal-year partition; the newest
+      partition wins. BrM's student demographics are dropped; join to our
+      student models on student_number instead.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - intervention_plan_id
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description: Student number from BrM's local student ID.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_powerschool__students")
+                field: student_number
+              config:
+                severity: warn
+                description:
+                  A BrM student whose local ID matches no PowerSchool
+                  student_number. Fix the student's local ID in Branching Minds.
+      - name: intervention_plan_id
+        data_type: int64
+        description: BrM intervention plan ID.
+      - name: intervention_name
+        data_type: string
+        description: Name of the intervention or support.
+      - name: intervention_subject_area
+        data_type: string
+        description: Subject area the intervention targets.
+      - name: support_used_as
+        data_type: string
+        description: How the support is used, as BrM labels it.
+      - name: support_type
+        data_type: string
+        description: BrM support type.
+      - name: support_evidence_level
+        data_type: string
+        description: Evidence level BrM assigns to the support.
+      - name: technology_required
+        data_type: string
+        description: Technology the support requires.
+      - name: support_cost
+        data_type: string
+        description: Cost category of the support.
+      - name: intervention_setting
+        data_type: string
+        description: Setting where the intervention is delivered.
+      - name: staff_delivering_intervention
+        data_type: string
+        description: Name of the staff member delivering the intervention.
+      - name: staff_email
+        data_type: string
+        description: Email of the staff member delivering the intervention.
+      - name: district
+        data_type: string
+        description: BrM district code.
+      - name: source_fiscal_year
+        data_type: int64
+        description:
+          Fiscal year (ending year) of the export partition this row came from.
+      - name: school_id
+        data_type: int64
+        description: BrM school ID.
+      - name: school_year
+        data_type: int64
+        description: School year the plan belongs to, as its ending year.
+      - name: intervention_frequency
+        data_type: int64
+        description: Planned sessions per week.
+      - name: duration_per_occurrence
+        data_type: int64
+        description: Planned minutes per session.
+      - name: total_minutes_planned
+        data_type: numeric
+        description: Total minutes planned over the plan.
+      - name: total_minutes_delivered
+        data_type: numeric
+        description: Total minutes delivered so far.
+      - name: intervention_start_date
+        data_type: date
+        description: Plan start date.
+      - name: intervention_end_date
+        data_type: date
+        description: Plan end date.
+      - name: applicable_tiers
+        data_type: array<string>
+        description: Tiers the support applies to, parsed from a JSON array.
+      - name: support_tags
+        data_type: array<string>
+        description: Tags on the support, parsed from a JSON array.
+
+unit_tests:
+  - name: test_stg_branchingminds__intervention_plans_newest_partition_wins
+    description:
+      A plan exported in 2 fiscal-year partitions keeps only the newer one.
+    model: stg_branchingminds__intervention_plans
+    given:
+      - input:
+          source("branchingminds", "src_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          with
+            partitions as (
+              select 'old' as intervention_name, 2027 as fiscal_year
+              union all
+              select 'new', 2028
+            )
+
+          select
+            intervention_name,
+            cast(null as string) as intervention_subject_area,
+            cast(null as string) as support_used_as,
+            cast(null as string) as support_type,
+            cast(null as string) as support_evidence_level,
+            cast(null as string) as technology_required,
+            cast(null as string) as support_cost,
+            cast(null as string) as intervention_setting,
+            cast(null as string) as staff_delivering_intervention,
+            cast(null as string) as staff_email,
+            cast(null as string) as district,
+            fiscal_year as _dagster_partition_fiscal_year,
+            '1001' as intervention_plan_id,
+            '100001' as student_id,
+            cast(null as string) as school_id,
+            cast(null as string) as school_year,
+            cast(null as string) as intervention_frequency,
+            cast(null as string) as duration_per_occurrence,
+            cast(null as string) as total_minutes_planned,
+            cast(null as string) as total_minutes_delivered,
+            cast(null as string) as intervention_start_date,
+            cast(null as string) as intervention_end_date,
+            '["1","2"]' as applicable_tiers,
+            '[]' as support_tags,
+          from partitions
+    expect:
+      rows:
+        - {
+            intervention_plan_id: 1001,
+            intervention_name: new,
+            source_fiscal_year: 2028,
+          }
