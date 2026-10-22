@@ -102,7 +102,8 @@ models:
             contains_pii: true
       - name: is_low_percentile
         description: >-
-          Focus's lowest-percentile flag. Focus does not document the cut.
+          True when the student's FAST percentile is 30 or below. Miami uses it
+          as the L30 flag until Focus fills `l25` after PM3.
         data_type: bool
         config:
           meta:
