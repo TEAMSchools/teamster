@@ -2,13 +2,16 @@ models:
   - name: rpt_appsheet__stipend_app_roster
     description:
       Staff roster for the Stipend and Bonus AppSheet app, one row per employee.
-      The app reads it to fill the teammate dropdown, to decide which stipend
-      rows each user can see from app_permissions, and to limit entry for
-      KIPP_TAF staff to their direct manager through reports_to_google_email.
+      The app reads it for the teammate dropdown, for each user's access tier
+      (app_permissions), and for each employee's direct manager
+      (reports_to_google_email).
     columns:
       - name: employee_number
         data_type: int64
         description: ADP employee number. The app's key for this table.
+        config:
+          meta:
+            contains_pii: true
         data_tests:
           - unique:
               config:
@@ -38,12 +41,18 @@ models:
         description:
           Google Workspace email. The app matches USEREMAIL() against it to find
           the signed-in user's row.
+        config:
+          meta:
+            contains_pii: true
       - name: reports_to_google_email
         data_type: string
         description:
-          Google Workspace email of the employee's direct manager. The app
-          allows only this person, or an app Admin, to enter a stipend for a
-          KIPP_TAF employee.
+          Google Workspace email of the employee's direct manager. Supports the
+          app's rule that only the direct manager, or an app Admin, enters a
+          stipend for a KIPP_TAF employee.
+        config:
+          meta:
+            contains_pii: true
       - name: assignment_status
         data_type: string
         description: ADP assignment status (Active, Leave, Terminated).
@@ -51,15 +60,14 @@ models:
         data_type: string
         description:
           Campus of the home work location, or the location itself when it
-          belongs to no campus. A campus-based DSO sees stipends for the whole
-          campus.
+          belongs to no campus.
       - name: app_permissions
         data_type: int64
         description:
-          Stipend app access level. 3 sees everything; 2 sees staff below level
-          2 in their own entity, or in every entity for KIPP_TAF staff; 1 sees
-          staff at level 1 or below at their location or campus; 0 sees only
-          what they submitted.
+          Stipend app access tier. 3 is all access, 2 is in-region, 1 is
+          location or campus, 0 is no access beyond the user's own submissions.
+          The case in this model's SQL assigns the tier; the app's filters
+          decide what each tier sees.
       - name: department
         data_type: string
         description: Home department name.
@@ -79,6 +87,9 @@ models:
       - name: formatted_name
         data_type: string
         description: Employee name as Last, First.
+        config:
+          meta:
+            contains_pii: true
       - name: location
         data_type: string
         description: Home work location name.
