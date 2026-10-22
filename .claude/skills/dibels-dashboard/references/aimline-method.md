@@ -206,33 +206,20 @@ differently, on purpose:
   round is judged. Do not restore the settled-first order on either side to make
   them match.
 
-**The workbook is the other half of this and is not done.** The Literacy
-Dashboard's `PM - Met Goal Selector` is a CASE returning one of the three
-numeric flags, coloured null / 0 / 1 as No Data / Not Met / Met. To surface the
-new state, point each branch at the matching `*_status` column so the calc
-returns strings and carries no logic:
+**The workbook is the other half of this and is not done.** As of 2026-10-02 the
+Literacy Dashboard's `PM - Met Goal Selector` still returns the numeric flags,
+and it pairs a standard-grain flag with a measure-grain column, which is what
+Zendesk ticket 484741 reported as percentages past 100%. The selector rewrite,
+the grain switch, the legend, the render grid and the publish are one procedure:
+[workbook-met-goal-selector.md](workbook-met-goal-selector.md).
 
-```text
-CASE [PM - Met Goal Parameter]
-WHEN 'Met Overall Goal'   THEN [PM Round Status]
-WHEN 'Met Standard Goal'  THEN [Measure Standard Goal Status]
-WHEN 'Met Benchmark Goal' THEN [Admin Benchmark Goal Status]
-END
-```
-
-**Also outstanding, and more urgent: every PM view must now filter
-`model_type`.** The dashboard has a third branch for the aimline method, so both
-methods emit rows for the same student and any unfiltered PM view double-counts.
-Nothing in the workbook filters it yet.
-
-Two things to watch on the selector itself. The existing No Data alias is on the
-NULL member, and PM rows are no longer null -- repoint it to `Not Tested`. And
-check whether any sheet aggregates the selector as a measure (an `AVG()`
-met-rate); converting it to a string breaks that sheet, so if one exists, add
-the string version as a second calc for Colour and leave the numeric one for
-measures. The workbook's datasource is embedded, and Tableau's VizQL Data
-Service returns 500 on embedded sources, so the MCP cannot read the calculated
-fields -- this has to be checked in Desktop.
+**Every PM view must filter `model_type`.** The dashboard has a third branch for
+the aimline method, so both methods emit rows for the same student and an
+unfiltered PM view double-counts. `Region Overview PM - Met Goal` filters
+`Internal` (read from the XML 2026-10-02); check any other PM sheet before
+trusting its counts. The MCP cannot read calculated fields on this embedded
+datasource (VizQL returns 500), so read the filters and calcs from the
+downloaded `.twb`, or in Desktop.
 
 ## Measure grain and measure-standard grain differ by 15 points on ORF
 
