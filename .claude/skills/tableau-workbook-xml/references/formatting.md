@@ -106,6 +106,36 @@ to be done in Desktop, which is three clicks. If you need this, ask the owner to
 do those three clicks on a scratch copy, save, and send the `.twb`; diff it
 against the base and you own the shape.
 
+## A data source palette needs a column-instance beside it
+
+**Verified by render.** A colour palette lives in the data source's own
+`<style>`, and takes effect only when its field also has a `<column-instance>`
+directly under that `<datasource>`, beside the raw columns:
+
+```xml
+<datasource caption='…' inline='true' name='federated.…' version='18.1'>
+  …
+  <column-instance column='[Calculation_9600000000000000001]' derivation='None' name='[none:Calculation_9600000000000000001:nk]' pivot='key' type='nominal' />
+  …
+  <style>
+    <style-rule element='mark'>
+      <encoding attr='color' field='[none:Calculation_9600000000000000001:nk]' type='palette'>
+        <map to='#f1f6cf'>
+          <bucket>&quot;On pace&quot;</bucket>
+        </map>
+```
+
+Without that instance Tableau ignores the palette and draws its default colours
+(`#4e79a7`, `#f28e2b`, …), with no error. That held for a calculated field, the
+same calc without an em-dash bucket, and the raw string field. Adding the
+instance made all 4 mapped fills render, and default blue dropped to 0 pixels.
+Every working palette in the corpus had one.
+
+`check_twb.py` `check_palette_instances` fails a palette field with no
+data-source-level instance. `[:Measure Names]` is exempt, because it never has
+one, and an encoding naming two fields joined by `&#10;` is checked field by
+field.
+
 ## Entity encoding inside attributes
 
 **Verified.** Formulas and captions live in single-quoted attributes, so the

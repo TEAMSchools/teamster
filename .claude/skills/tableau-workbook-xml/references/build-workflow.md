@@ -145,6 +145,22 @@ must produce a byte-identical copy before any mutant result is meaningful; an
 ElementTree round-trip fails this test because it rewrites attribute quoting and
 line endings enough to break a regex-based assertion on an _unmutated_ file.
 
+A mutant counts as caught only when the mutant file exists and differs from its
+source, the assertion exits non-zero, and the assertion's log holds its own
+`FAIL:` line. Hand-written mutants whose anchors matched 3, 7 and 11 times (the
+same text sat in other sheets and in dependency blocks) wrote no file; the
+assertion then failed on the missing file, and the runner counted a catch
+(Verified). Scope each hand replacement to its worksheet block, assert exactly
+one match, and count catches like this:
+
+```bash
+expect_fail() {  # <name> <mutant.twb>
+  if [ ! -s "$2" ] || cmp -s "$2" out.twb; then echo "VOID   $1: mutant not written"; return 1; fi
+  uv run python assert_edit.py "$2" >"$1.log" 2>&1; rc=$?
+  if [ "$rc" -ne 0 ] && grep -q "FAIL:" "$1.log"; then echo "caught $1"; else echo "MISSED $1"; return 1; fi
+}
+```
+
 Resolve field references by caption at runtime rather than hard-coding instance
 strings, so a transcription slip fails loudly instead of rendering a literal
 token.
@@ -203,6 +219,10 @@ click performs. A render once "proved" a parameter action that was still broken.
 - A render **cannot** show a hover or a click. Tooltips, parameter actions and
   navigation buttons are unverifiable this way. Say so and ask a human rather
   than inferring from structure.
+- A pop-out renders closed, because opening it is a click. To see it, publish a
+  throwaway probe build with `hidden-by-user` stripped inside the pop-out's
+  subtree only and its new sheets marked visible in `<windows>`; that build
+  rendered the pop-out open (Verified). Delete the probe build when done.
 
 ## Credentials in this repo
 
@@ -250,8 +270,9 @@ facts checked against the installed source.
   a `PaginationItem`. `BackgroundJobItem` has `title`, `subtitle`, `status`,
   `ended_at`; it has no `workbook_name`, `finish_code`, or `completed_at`, so
   filtering on `workbook_name` raises `AttributeError`.
-- **`populate_csv` on a dashboard returned 0 rows, and so did the control.**
-  Export from a worksheet, or render and read the image. The lesson is in
+- **`populate_csv` on a dashboard returned 0 rows, and so did the control.** On
+  a worksheet view it returns the rows (Verified, #5862), so export from a
+  worksheet, or render and read the image. The lesson is in
   [failure-catalog.md](failure-catalog.md): the test was wrong before the
   workbook was.
 
