@@ -60,8 +60,10 @@ assets = [
         # concurrent dlt extract workers, `FOCUS_CHUNK_SIZE` rows buffered
         # each) and with row width: `custom_field_log_entries` rows are far
         # wider than any other table's and keep growing, so its chunk sets the
-        # peak. Before raising memory again, consider a smaller
-        # `FOCUS_CHUNK_SIZE` or the `dlt_extract_workers` run tag.
+        # peak. Before raising memory again, consider a smaller chunk for that
+        # table alone (`FOCUS_CHUNK_SIZE` is shared by every Focus table), or a
+        # `dlt_extract_workers` tag in the intraday sensor's run tags, which
+        # sensor-launched runs otherwise never carry.
         op_tags={
             "dagster-k8s/config": {
                 "container_config": {
