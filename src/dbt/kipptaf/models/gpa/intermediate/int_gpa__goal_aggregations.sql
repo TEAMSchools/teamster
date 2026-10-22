@@ -4,6 +4,8 @@ with
             academic_year,
             region,
             schoolid,
+            school,
+            school_name,
             grade_level,
             student_number,
             y1_gpa_weighted,
@@ -37,6 +39,8 @@ with
             m.academic_year,
             m.region,
             m.schoolid,
+            m.school,
+            m.school_name,
             m.student_number,
             m.is_on_pace,
             m.is_on_pace_denominator,
@@ -149,6 +153,8 @@ with
             academic_year,
             region,
             schoolid,
+            school,
+            school_name,
             org_level,
             grade_band,
             aggregation_hash,
@@ -180,6 +186,8 @@ with
             academic_year,
             region,
             schoolid,
+            school,
+            school_name,
             org_level,
             grade_band,
             aggregation_hash,
@@ -199,6 +207,9 @@ with
             metric,
             goal_proportion,
             higher_is_better,
+
+            cast(null as string) as school,
+            cast(null as string) as school_name,
 
             count(student_number) as n_students_in_grain,
 
@@ -244,6 +255,9 @@ with
             goal_proportion,
             higher_is_better,
 
+            cast(null as string) as school,
+            cast(null as string) as school_name,
+
             count(student_number) as n_students_in_grain,
 
             countif(
@@ -281,6 +295,8 @@ with
             academic_year,
             region,
             schoolid,
+            school,
+            school_name,
             org_level,
             grade_band,
             aggregation_hash,
@@ -298,6 +314,8 @@ with
             academic_year,
             region,
             schoolid,
+            school,
+            school_name,
             org_level,
             grade_band,
             aggregation_hash,
@@ -315,6 +333,8 @@ with
             academic_year,
             region,
             schoolid,
+            school,
+            school_name,
             org_level,
             grade_band,
             aggregation_hash,
@@ -335,6 +355,8 @@ with
             org_level,
             region,
             schoolid,
+            school,
+            school_name,
             grade_band,
             goal_proportion,
             higher_is_better,
@@ -358,6 +380,8 @@ with
             org_level,
             region,
             schoolid,
+            school,
+            school_name,
             grade_band,
             goal_proportion,
             n_students_in_grain,
@@ -376,6 +400,15 @@ with
                 safe_divide(metric_rate, goal_proportion),
                 safe_divide(goal_proportion, metric_rate)
             ) as progress_to_goal_raw,
+
+            case
+                org_level
+                when 'school'
+                then school
+                when 'region'
+                then region
+                else 'Network'
+            end as aggregation_label,
         from rates
     )
 
@@ -386,6 +419,8 @@ select
     org_level,
     region,
     schoolid,
+    school_name,
+    aggregation_label,
     grade_band,
     goal_proportion,
     n_students_in_grain,

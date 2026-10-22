@@ -39,6 +39,20 @@ models:
         description:
           PowerSchool school ID when `org_level` is `school`. Null for `org`- or
           `region`-level rows.
+      - name: school_name
+        data_type: string
+        description:
+          Canonical school name when `org_level` is `school`. Null for `org`-
+          and `region`-level rows.
+      - name: aggregation_label
+        data_type: string
+        description:
+          Single label naming this row's grain, so a chart can put one field on
+          an axis at every rung — the school's short name on `school` rows, the
+          region name on `region` rows, and `Network` on the `org` row. Never
+          null. That is the point, since `schoolid` and `region` are both null
+          at the org rung, so without it a reporting tool has to carry its own
+          fallback.
       - name: grade_band
         data_type: string
         description: Human-readable grade band from the matched goal.
