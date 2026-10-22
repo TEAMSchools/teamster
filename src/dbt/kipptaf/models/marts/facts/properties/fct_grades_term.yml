@@ -166,3 +166,74 @@ models:
         description: >-
           TRUE if this course grade is excluded from GPA calculation. Cast from
           upstream int64 0/1 flag per R3 boolean-prefix convention.
+
+unit_tests:
+  - name: test_fct_grades_term_keeps_grades_for_any_enrollment_in_term
+    description:
+      Locks the population rule. A term grade is kept when any school enrollment
+      overlaps the term, not only one covering the term's first day. Feeds a
+      student who enrolled mid-term (kept), a student who transferred mid-term
+      and so overlaps 2 stints (kept once), and a student who left before the
+      term started (dropped).
+    model: fct_grades_term
+    given:
+      - input: ref('int_students__final_grades')
+        rows:
+          - cc_dcid: 1
+            _dbt_source_project: kippnewark
+            storecode: Q1
+            student_number: 101
+            academic_year: 2026
+            termbin_start_date: 2026-09-01
+            termbin_end_date: 2026-11-07
+            term_percent_grade: 90
+          - cc_dcid: 2
+            _dbt_source_project: kippnewark
+            storecode: Q1
+            student_number: 102
+            academic_year: 2026
+            termbin_start_date: 2026-09-01
+            termbin_end_date: 2026-11-07
+            term_percent_grade: 80
+          - cc_dcid: 3
+            _dbt_source_project: kippnewark
+            storecode: Q2
+            student_number: 103
+            academic_year: 2026
+            termbin_start_date: 2026-11-10
+            termbin_end_date: 2027-01-23
+            term_percent_grade: 70
+      - input: ref('int_students__student_enrollment_union')
+        rows:
+          - student_number: 101
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            entrydate: 2026-10-01
+            exitdate: 2027-06-30
+          - student_number: 102
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            entrydate: 2026-07-01
+            exitdate: 2026-10-01
+          - student_number: 102
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            entrydate: 2026-10-01
+            exitdate: 2027-06-30
+          - student_number: 103
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            entrydate: 2026-07-01
+            exitdate: 2026-10-15
+      - input: ref('dim_regions')
+        rows:
+          - dagster_code_location: kippnewark
+            name: Newark
+      - input: ref('stg_google_sheets__reporting__terms')
+        rows:
+          - type: RT
+            name: Q9
+    expect:
+      rows:
+        - percent_grade: 90
+        - percent_grade: 80

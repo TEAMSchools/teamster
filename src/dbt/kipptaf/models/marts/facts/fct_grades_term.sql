@@ -1,13 +1,16 @@
 with
-    student_enrollments as (
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            student_number,
-            academic_year,
-            entrydate,
-            exitdate,
-        from {{ ref("int_students__student_enrollment_union") }}
+    -- a term grade is kept when any school enrollment overlaps the term;
+    -- grain projection, not dup-masking: a mid-term transfer overlaps 2 stints
+    enrolled_term_grades as (
+        select distinct fg.cc_dcid, fg._dbt_source_project, fg.storecode,
+        from {{ ref("int_students__final_grades") }} as fg
+        inner join
+            {{ ref("int_students__student_enrollment_union") }} as enr
+            on fg.student_number = enr.student_number
+            and fg.academic_year = enr.academic_year
+            and fg._dbt_source_project = enr._dbt_source_project
+            and fg.termbin_end_date >= enr.entrydate
+            and fg.termbin_start_date < enr.exitdate
     ),
 
     reporting_terms as (
@@ -78,20 +81,13 @@ select
 
     cast(fg.exclude_from_gpa as bool) as is_excluded_from_gpa,
 from {{ ref("int_students__final_grades") }} as fg
--- Retained as a row-population filter: a term grade must fall within a covering
--- school enrollment. Enrollment linkage now flows through
--- `student_section_enrollment_key` to `dim_student_section_enrollments`, joined
--- on `student_number` rather than `studentid`. The Focus branch has no
--- PowerSchool `studentid`, and `student_number` is the only student key both
--- branches carry. Measured against prod before the swap: row-identical to the
--- `studentid` join for all 3 NJ regions.
+-- row-population filter only; enrollment linkage flows through
+-- `student_section_enrollment_key`
 inner join
-    student_enrollments as enr
-    on fg.student_number = enr.student_number
-    and fg.academic_year = enr.academic_year
-    and fg.termbin_start_date >= enr.entrydate
-    and fg.termbin_start_date < enr.exitdate
-    and fg._dbt_source_project = enr._dbt_source_project
+    enrolled_term_grades as etg
+    on fg.cc_dcid = etg.cc_dcid
+    and fg._dbt_source_project = etg._dbt_source_project
+    and fg.storecode = etg.storecode
 inner join
     {{ ref("dim_regions") }} as dr on fg._dbt_source_project = dr.dagster_code_location
 left join
