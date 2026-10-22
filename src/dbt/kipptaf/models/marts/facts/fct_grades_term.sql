@@ -3,7 +3,7 @@ with
         select
             *,
 
-            {{ dbt_utils.generate_surrogate_key(["cc_dcid", "_dbt_source_project"]) }}
+            {{ student_section_enrollment_key("cc_dcid", "_dbt_source_project") }}
             as student_section_enrollment_key,
         from {{ ref("int_students__final_grades") }}
     ),
