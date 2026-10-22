@@ -27,7 +27,6 @@ with
         group by student_id, school_id, syear
     ),
 
-    # trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     schedule as (
         select
             s.id as student_schedule_id,
@@ -84,7 +83,10 @@ with
             mkp.start_date as marking_period_start_date,
             mkp.end_date as marking_period_end_date,
 
-            ee.enrollment_end_date,
+            (
+                select min(d),
+                from unnest([s.end_date, mkp.end_date, ee.enrollment_end_date]) as d
+            ) as effective_end_date,
         from {{ ref("stg_focus__schedule") }} as s
         inner join
             {{ ref("stg_focus__course_periods") }} as cp
@@ -102,72 +104,13 @@ with
             and s.syear = ee.syear
         -- drop seats Focus scheduled after the student left, before the stint pick
         where ee.enrollment_end_date is null or s.start_date <= ee.enrollment_end_date
-    ),
-
-    -- one stint per course period; the pick order is in the model description
-    deduplicated as (
-        {{
-            dbt_utils.deduplicate(
-                relation="schedule",
-                partition_by="student_id, course_period_id",
-                order_by="(end_date is not null) asc, (mp is distinct from 'FY') asc, student_schedule_id desc",
-            )
-        }}
     )
 
-select
-    student_schedule_id,
-    academic_year,
-    schoolid,
-    student_id,
-    course_id,
-    course_period_id,
-    mp,
-    course_weight,
-    days,
-    rotation_days,
-    start_date,
-    end_date,
-    fefp_number,
-    dual_enrollment_indicator,
-    class_minutes_weekly,
-    reading_intervention_component,
-    basic_skills_exam,
-    location_of_student,
-    eoc_exam_term,
-    exempt_from_total_clock_hours,
-    exclude_from_fte,
-    pmrn,
-    course_period_title,
-    course_period_short_name,
-    course_period_custom_title,
-    teacher_id,
-    room,
-    period_id,
-    calendar_id,
-    team_id,
-    grade_scale_id,
-    credits,
-    does_attendance,
-    does_grades,
-    does_gpa,
-    course_title,
-    course_short_name,
-    subject_id,
-    grad_subject_id,
-    course_grade_level,
-    credit_hours,
-    course_hours,
-    homeroom,
-    marking_period_id,
-    marking_period_title,
-    marking_period_short_name,
-    marking_period_type,
-    marking_period_start_date,
-    marking_period_end_date,
-
-    (
-        select min(d),
-        from unnest([end_date, marking_period_end_date, enrollment_end_date]) as d
-    ) as effective_end_date,
-from deduplicated
+    -- one stint per course period; the pick order is in the model description
+    {{
+        dbt_utils.deduplicate(
+            relation="schedule",
+            partition_by="student_id, course_period_id",
+            order_by="(end_date is not null) asc, (mp is distinct from 'FY') asc, student_schedule_id desc",
+        )
+    }}

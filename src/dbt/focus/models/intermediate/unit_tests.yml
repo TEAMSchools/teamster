@@ -762,6 +762,8 @@ unit_tests:
       enrollment at the seat's school and keeps the term end. Student 24 has a
       closed stint (18) and a re-add after withdrawing (19) in one course
       period; the re-add is removed before the stint pick, so 18 survives.
+      Student 25's seat matches no marking period, so it still ends at the
+      withdrawal rather than going null.
     given:
       - input: ref('stg_focus__schedule')
         format: sql
@@ -838,6 +840,13 @@ unit_tests:
             cast(null as string), cast(null as string), cast(null as string),
             cast(null as string), cast(null as string), cast(null as string),
             cast(null as string), cast(null as string)
+          union all
+          select 20, 2026, 100, 25, 20, 35, 999, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
       - input: ref('stg_focus__marking_periods')
         format: sql
         rows: |
@@ -859,7 +868,7 @@ unit_tests:
             cast(null as string) as does_attendance,
             cast(null as string) as does_grades,
             cast(null as string) as does_gpa
-          from unnest([30, 31, 32, 33, 34]) as course_period_id
+          from unnest([30, 31, 32, 33, 34, 35]) as course_period_id
       - input: ref('stg_focus__courses')
         format: sql
         rows: |
@@ -909,6 +918,12 @@ unit_tests:
             syear: 2026
             start_date: 2026-08-13
             end_date: 2026-10-16
+          - id: 7
+            student_id: 25
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: 2026-10-16
     expect:
       rows:
         - student_schedule_id: 11
@@ -932,6 +947,9 @@ unit_tests:
         - student_schedule_id: 18
           end_date: 2026-09-29
           effective_end_date: 2026-09-29
+        - student_schedule_id: 20
+          end_date: null
+          effective_end_date: 2026-10-16
 
   - name: test_int_focus__students_iep_from_ese_log
     description: >-
