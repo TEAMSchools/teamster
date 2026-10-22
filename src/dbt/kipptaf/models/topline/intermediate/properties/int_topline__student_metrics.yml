@@ -1,12 +1,16 @@
 models:
   - name: int_topline__student_metrics
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
-          # nightly instead of eager: 19 eager upstreams drove 44-180 full
-          # ~7 GiB rebuilds/day whose freshness nothing consumed — the only
+          # cron instead of eager: eager rebuilt this expensive table on every
+          # upstream change, and nothing consumed that freshness — the only
           # consumer chain is the topline cascade dashboard, delivered by
-          # nightly extract schedules (01:15-03:00 ET). Refs #4559
+          # nightly extracts that run after this tick. Shares its tick with
+          # the int_topline__*_weekly upstreams and the assessment chain
+          # (int_assessments__response_rollup) so one run builds them in
+          # order. Refs #4559
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 30 0 * * *

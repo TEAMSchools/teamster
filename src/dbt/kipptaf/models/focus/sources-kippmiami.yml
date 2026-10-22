@@ -22,6 +22,15 @@ sources:
                 - kippmiami
                 - focus
                 - stg_focus__students
+      - name: int_focus__student_group_memberships
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__student_group_memberships
       - name: stg_focus__student_enrollment
         config:
           meta:
@@ -238,7 +247,7 @@ sources:
                 - kippmiami
                 - focus
                 - int_focus__calendar_rollup
-      - name: stg_focus__student_gpa_calculated
+      - name: int_focus__student_gpa_cumulative
         config:
           meta:
             dagster:
@@ -246,7 +255,7 @@ sources:
               asset_key:
                 - kippmiami
                 - focus
-                - stg_focus__student_gpa_calculated
+                - int_focus__student_gpa_cumulative
       - name: int_focus__gradebook_grades
         config:
           meta:
@@ -256,3 +265,21 @@ sources:
                 - kippmiami
                 - focus
                 - int_focus__gradebook_grades
+      - name: int_focus__apex_assessments
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__apex_assessments
+      - name: int_focus__apex_results
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__apex_results

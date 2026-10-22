@@ -1158,3 +1158,25 @@ test("structural invariant: every securityContext.<field> interpolated in model/
       "intentional.",
   );
 });
+
+test("canSwitchSqlUser: reads the super-user from CUBEJS_SQL_SUPER_USER and accepts @kippmiami.org (#5517)", () => {
+  const original = process.env.CUBEJS_SQL_SUPER_USER;
+  process.env.CUBEJS_SQL_SUPER_USER = "cube_superuser";
+  try {
+    assert.equal(
+      cube.canSwitchSqlUser("cube_superuser", "someone@kippmiami.org"),
+      true,
+    );
+    assert.equal(
+      cube.canSwitchSqlUser("cube_superuser", "someone@gmail.com"),
+      false,
+    );
+    assert.equal(
+      cube.canSwitchSqlUser("someone-else", "someone@kippmiami.org"),
+      false,
+    );
+  } finally {
+    if (original === undefined) delete process.env.CUBEJS_SQL_SUPER_USER;
+    else process.env.CUBEJS_SQL_SUPER_USER = original;
+  }
+});

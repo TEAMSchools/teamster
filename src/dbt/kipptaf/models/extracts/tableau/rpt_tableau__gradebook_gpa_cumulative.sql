@@ -45,6 +45,8 @@ select
 from {{ ref("int_extracts__student_enrollments") }}
 where
     rn_undergrad = 1
+    -- TODO(#5181, #5171): Miami stays out until its GPA data is reviewed.
+    and region != 'Miami'
     and not is_out_of_district
     and school_level_alt in ('MS', 'HS')
     and enroll_status in (0, 3)

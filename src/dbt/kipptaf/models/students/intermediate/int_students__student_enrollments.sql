@@ -418,6 +418,9 @@ with
             cohort_primary,
             rn_all,
             rn_year,
+            -- Focus has no grade 99 rows, so the most recent stint is the most
+            -- recent undergraduate stint.
+            rn_all as rn_undergrad,
             grade_level_prev,
             year_in_school,
             year_in_network,
@@ -465,7 +468,6 @@ with
             cast(null as string) as track,
             cast(null as int64) as rn_school,
             cast(null as int64) as yearid_prev,
-            cast(null as int64) as rn_undergrad,
             cast(null as int64) as cohort_graduated,
             cast(null as int64) as prevstudentid,
             cast(null as string) as advisor_teachernumber,

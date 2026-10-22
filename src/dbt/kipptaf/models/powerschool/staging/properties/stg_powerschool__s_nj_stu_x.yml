@@ -1,7 +1,5 @@
 models:
   - name: stg_powerschool__s_nj_stu_x
-    config:
-      materialized: table
     columns:
       - name: _dbt_source_project
         description: >-

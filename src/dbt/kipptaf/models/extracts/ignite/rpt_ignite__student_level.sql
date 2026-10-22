@@ -1,31 +1,39 @@
 with
-    /* grain projection: the upstream carries one row per enrollment stint and
-     every column here is functionally determined by (student_number,
-     academic_year, schoolid). Not a mask for upstream duplicates. */
+    -- one row per enrollment stint; scaffold picks one per student-year
     enrollments as (
-        select distinct
-            student_number,
-            academic_year,
-            schoolid,
-            school_name,
-            grade_level,
-            gender,
-            race_ethnicity,
-            lunch_status,
-            ml_status,
-            iep_status,
-        from {{ ref("int_extracts__student_enrollments") }}
-        where
-            academic_year in ({{ var("ignite_academic_years") | join(", ") }})
-            and grade_level in ({{ var("ignite_grade_levels") | join(", ") }})
-            and region in ({{ "'" ~ (var("ignite_regions") | join("', '")) ~ "'" }})
-            and student_number is not null
+        select
+            e.student_number,
+            e.academic_year,
+            e.rn_year,
+            e.schoolid,
+            e.school_name,
+            e.grade_level,
+            e.gender,
+            e.race_ethnicity,
+            e.lunch_status,
+            e.ml_status,
+            e.iep_status,
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            {{ ref("int_ignite__student_years") }} as sy
+            on e.student_number = sy.student_number
+            and e.academic_year = sy.academic_year
+        where e.state = 'NJ' and e.grade_level between 9 and 12
+    ),
+
+    -- unique among NCES rows, tested on stg_google_sheets__people__locations
+    nces_schools as (
+        select powerschool_school_id, nces_school_id,
+        from {{ ref("stg_google_sheets__people__locations") }}
+        where nces_school_id is not null
     ),
 
     /* Mathematica asks for the school the student was enrolled in longest when
      the site-lead list does not name one, so days enrolled is the ranking key.
      One student in academic year 2024 attended both Newark high schools and is
-     attributed to the longer of the two enrollments. */
+     attributed to the longer of the two enrollments. Two stints at one school
+     tie on days enrolled; the latest stint (rn_year) wins, so a mid-year grade
+     or lunch status change reports the current value. */
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     ranked as (
         select
@@ -39,6 +47,7 @@ with
             e.lunch_status,
             e.ml_status,
             e.iep_status,
+            e.rn_year,
 
             a.days_present,
             a.days_enrolled,
@@ -57,7 +66,7 @@ with
             dbt_utils.deduplicate(
                 relation="ranked",
                 partition_by="student_number, academic_year",
-                order_by="days_enrolled_rank desc, schoolid asc",
+                order_by="days_enrolled_rank desc, schoolid asc, rn_year asc",
             )
         }}
     ),
@@ -105,8 +114,7 @@ with
         inner join
             {{ ref("int_ignite__student_id_crosswalk") }} as x
             on s.student_number = x.student_number
-        left join
-            {{ ref("seed_ignite__school_nces_ids") }} as n on s.schoolid = n.schoolid
+        left join nces_schools as n on s.schoolid = n.powerschool_school_id
         left join
             {{ ref("int_ignite__student_treatment") }} as t
             on s.student_number = t.student_number

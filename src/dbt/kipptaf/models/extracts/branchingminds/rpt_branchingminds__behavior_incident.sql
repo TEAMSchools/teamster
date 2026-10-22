@@ -7,7 +7,7 @@ select
     cast(i.incident_id as string) as incident_id,
 
     cast(loc.powerschool_school_id as string) as school_id,
-from {{ ref("int_deanslist__incidents") }} as i
+from {{ ref("int_students__behavioral_incidents") }} as i
 inner join
     {{ ref("stg_google_sheets__people__locations") }} as loc
     on i.location_key = loc.location_key

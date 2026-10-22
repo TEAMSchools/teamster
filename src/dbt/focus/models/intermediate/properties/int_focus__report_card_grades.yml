@@ -7,11 +7,13 @@ models:
       course history (course_history is Y, most of the table) carries the letter
       grade, GPA points and credits denormalized onto the row, with no
       report-card foreign keys, so its grade-scale columns are null. Live
-      postings, which Miami began in August 2026, carry a grade_type_token and
-      resolve to a grade scale through report_card_grade_id. The DY grade type
-      is excluded here — it is the cron account's snapshot of yesterday's grade
-      and would double-count every live grade downstream. Internal-only — a rpt_
-      view must sit between this model and any external consumer.
+      postings, which Miami began in August 2026, carry a course_period_id and
+      resolve to a grade scale through report_card_grade_id. Most carry a
+      grade_type_token; a posted grade, finalized at the end of a marking
+      period, carries none. The DY grade type is excluded here — it is the cron
+      account's snapshot of yesterday's grade and would double-count every live
+      grade downstream. Internal-only — a rpt_ view must sit between this model
+      and any external consumer.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -21,11 +23,11 @@ models:
               - marking_period_id
               - grade_type_token
           config:
-            # Scoped to live-posted rows, as on the staging model: imported
-            # course history carries no token and no course_period_id and
-            # legitimately repeats a (student, marking period) pair across
-            # transcript courses.
-            where: grade_type_token is not null
+            # Scoped to live-posted rows, posted grades included, as on the
+            # staging model: imported course history carries no
+            # course_period_id and legitimately repeats a (student, marking
+            # period) pair across transcript courses.
+            where: course_period_id is not null
             severity: error
     columns:
       - name: student_report_card_grade_id
@@ -60,8 +62,11 @@ models:
         description: >-
           Grade type Focus prefixes onto a live posting's marking period — DT is
           the running gradebook (the live grade) and E is an exam. Null on
-          imported course history. DY, the cron account's snapshot of
-          yesterday's grade, is filtered out of this model.
+          imported course history, and on a posted grade — a live posting
+          (course_period_id populated) that a school finalizes for a marking
+          period. See kipptaf's int_students__final_grades for how it combines
+          with DT. DY, the cron account's snapshot of yesterday's grade, is
+          filtered out of this model.
       - name: report_card_grade_id
         description: >-
           Focus report_card_grades id of the grade definition the posting used.

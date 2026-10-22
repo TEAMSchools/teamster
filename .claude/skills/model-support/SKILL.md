@@ -8,7 +8,9 @@ description: >-
   that should not change them. Triggers: "document this model", "update the docs
   for", "write a reference doc", "restructure this skill", "check prod values",
   "did the refactor change anything", "new scores landed", or a docs/models page
-  or family skill that no longer matches the SQL.
+  or family skill that no longer matches the SQL. Work on a model owned by a
+  family skill (graduation-pathways, hs-early-warning, stat-dash, and the other
+  dashboard family skills) goes to that skill first.
 ---
 
 # Model support
@@ -77,7 +79,7 @@ the request; if it is unclear, ask.
 
 | Mode     | Step                                        | Read                                                          |
 | -------- | ------------------------------------------- | ------------------------------------------------------------- |
-| Document | 1-2 Intake, consumers, boundary             | [intake-and-inventory.md](references/intake-and-inventory.md) |
+| Document | 1-2 Intake, consumers, boundary, inventory  | [intake-and-inventory.md](references/intake-and-inventory.md) |
 | Document | 3 Reference doc and cold review             | [reference-doc.md](references/reference-doc.md)               |
 | Document | 4-6 YAML, tests, known issues, SQL comments | [yaml-and-tests.md](references/yaml-and-tests.md)             |
 | Document | 7 Family skill, fact-check, walk test       | [model-skill.md](references/model-skill.md)                   |
@@ -114,9 +116,7 @@ review, and every edited family-skill file a walk test (rules above).
 
 ## Step 8: close out
 
-Run trunk on every changed file, with cwd in the edited checkout
-(`/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`),
-and
+Lint every changed file per the `trunk-lint` skill, and run
 `uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>`.
 A fresh worktree has no `dbt_packages/`, so run
 `uv run dbt deps --project-dir <worktree>/src/dbt/<project>` first, in its own

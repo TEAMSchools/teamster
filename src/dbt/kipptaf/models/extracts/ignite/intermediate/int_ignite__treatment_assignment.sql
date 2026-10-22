@@ -8,7 +8,7 @@ with
             treatment_cp,
             treatment_rdc,
             treatment_rr,
-        from {{ ref("seed_ignite__treatment_sections") }}
+        from {{ ref("stg_google_sheets__ignite__treatment_sections") }}
         where status = 'resolved'
     ),
 

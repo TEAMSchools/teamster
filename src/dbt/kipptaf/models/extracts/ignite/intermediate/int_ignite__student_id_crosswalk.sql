@@ -1,29 +1,21 @@
 with
-    /* grain projection: one row per student from a multi-stint upstream, and
-     student_number is the only column projected. Not a mask for duplicates. */
+    /* grain projection, not dup-masking: one row per student across study
+     years */
     population as (
-        select distinct student_number,
-        from {{ ref("int_extracts__student_enrollments") }}
-        where
-            academic_year in ({{ var("ignite_academic_years") | join(", ") }})
-            and grade_level in ({{ var("ignite_grade_levels") | join(", ") }})
-            and region in ({{ "'" ~ (var("ignite_regions") | join("', '")) ~ "'" }})
-            and student_number is not null
-    ),
-
-    keyed as (
-        select student_number, cast(student_number as string) as student_number_string,
-        from population
+        select distinct
+            student_number, cast(student_number as string) as student_number_string,
+        from {{ ref("int_ignite__student_years") }}
     ),
 
     hashed as (
         select
-            student_number,
+            p.student_number,
 
             farm_fingerprint(
-                concat('{{ var("ignite_id_salt") }}:', student_number_string)
+                concat(s.salt, ':', p.student_number_string)
             ) as fingerprint,
-        from keyed
+        from population as p
+        cross join {{ source("ignite", "ignite_id_salt") }} as s
     )
 
 select student_number, mod(abs(fingerprint), 1000000000) as stu_id,

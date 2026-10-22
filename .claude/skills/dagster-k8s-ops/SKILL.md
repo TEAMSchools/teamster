@@ -73,10 +73,10 @@ description:
   system-critical pod, not a run pod.
 - **PriorityClass `dagster-agent`** (value 1000) on agent pods — above run/step
   and code server pods, so nothing in the namespace preempts the agent. The
-  agent pins to amd64 and the others to arm64, so it never preempts them either.
-  Does not protect against OOM kills of the pod itself — only eviction ordering.
-  Code servers tolerate eviction: they are stateless and PDB-protected
-  (`maxUnavailable: 1`).
+  agent pins to Scale-Out amd64 and the others to the `dagster-arm-first` class,
+  so they never share a node and it never preempts them either. Does not protect
+  against OOM kills of the pod itself — only eviction ordering. Code servers
+  tolerate eviction: they are stateless and PDB-protected (`maxUnavailable: 1`).
 - **PDB for code servers** uses `maxUnavailable: 1`. Do not switch to
   `minAvailable: 1` — GKE Recommender flags single-replica + `minAvailable: 1`
   as blocking voluntary evictions (node maintenance). The known

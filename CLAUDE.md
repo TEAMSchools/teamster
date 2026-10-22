@@ -57,7 +57,10 @@ specifics live there.
   `git worktree add /workspaces/teamster/.claude/worktrees/<branch> <branch>`.
   The path must be absolute; a relative one nests one worktree inside another.
   Keep worktrees under `.claude/worktrees/`: `.claude/rules/worktrees.md` loads
-  on the first read there and nowhere else.
+  on the first read there and nowhere else. Merging a linked branch's PR closes
+  the issue whatever the body says, so when the issue must outlive the PR (it
+  tracks `standard-baseline.tsv` rows or deferred work), use the no-issue form
+  below and write `Refs #N`.
 - Create, without an issue (user declined):
   `git worktree add -b <branch> <abs-path> origin/main` or
   `git checkout -b <branch>`. Name `origin/main`; local `main` is often behind.
@@ -120,6 +123,13 @@ accept a subagent's self-report without the checks there.
 - Invoke `superpowers:receiving-code-review` before processing `claude-review`
   findings, and post a per-finding verdict as a PR comment. Everything else
   about review and CI: invoke `pr-ci-review`.
+- A finding you do not fix is declined (give the reason; nothing to record) or
+  deferred. A deferred finding links its record when you report it: an open
+  issue, a comment on one, a `standard-baseline.tsv` row, or a `TODO(#N)`. If
+  none covers it, file the issue first. "Out of scope", "backlog", or "left to
+  the author" with no link drops the work, since the user reads the verdict as
+  handled. This covers `claude-review` verdicts and executing-plans "Deferred
+  minors", whose ledger is deleted at finish.
 
 ## Tooling
 
@@ -171,12 +181,13 @@ accept a subagent's self-report without the checks there.
 
 ## Linting
 
-- Do not run `trunk fmt` or `trunk check` as a routine; the commit and push
-  hooks do. But a clean commit hook is not lint-clean. Before pushing SQL, YAML,
-  or markdown (specs and plans included), run
+- Do not run `trunk fmt` or `trunk check` as a routine. The commit hook only
+  formats, so before pushing SQL, YAML, or markdown (specs and plans included),
+  run
   `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`
-  with cwd inside the edited checkout. `--force` is required or committed files
-  are skipped and markdownlint under-reports.
+  with cwd inside the edited checkout and fix lint findings; formatting is the
+  hook's. `--force` is required or committed files are skipped and markdownlint
+  under-reports.
 - Suppress with `trunk-ignore(linter/rule): reason` on the line before the
   flagged line, never linter-native syntax.
 - Binary paths, worktree invocation, CI-only markdownlint rules: invoke
@@ -201,12 +212,13 @@ and before posting query rows to git, GitHub, or agent output. Short form:
 names, contact, `student_number` and other school-facing ids, birth data, free
 text about a person, and student-level grades, attendance, or status flags are
 PII; database surrogate keys (`studentid`, `dcid`) and aggregates without small
-cells are not.
+cells are not. Surrogate keys go untagged but are still redacted on outbound
+surfaces.
 
 ## Superpowers skill overrides
 
 - Branch creation always goes through _Before you start_ and _Branches_,
-  including inside `superpowers:brainstorming` ("Write design doc"),
+  including inside `superpowers:brainstorming` ("Where it goes"),
   `superpowers:writing-plans` ("Save plans to:"), and
   `superpowers:using-git-worktrees`. Pause the skill, run the flow, then write
   the spec or plan on the new branch. The flow's `git worktree add` satisfies
@@ -215,6 +227,8 @@ cells are not.
   (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on the
   issue. `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
   `docs/guides/superpowers.md` never loads into context.
+- `superpowers:brainstorming` "Size the Work": when unsure which size a request
+  is, including whether it is a quick, clear task, ask the user before acting.
 - "The project's suite" (TDD, `finishing-a-development-branch`,
   `using-git-worktrees` baseline) means `uv run pytest <touched tests>` plus
   `uv run dbt build --select <model>+` for modified models. Never bare
@@ -244,6 +258,8 @@ When summarizing the conversation, always preserve:
   verbatim error messages.
 - Dead ends already tried, gotchas discovered, and workarounds applied this
   session.
+- Corrected conclusions in their corrected form only, with one line naming what
+  they replaced. Never carry both versions forward.
 - During plan execution (executing-plans or subagent-driven-development): the
   plan file path, the ledger path, which tasks are complete, and that execution
   continues through every remaining task without check-ins. The next step names
@@ -297,6 +313,7 @@ exploration that led nowhere (keep only the conclusion).
   - `gh run *`, `gh workflow *`, `gh repo edit`
   - `gh api` only to PATCH an existing comment or PR body (`-F body=@<file>`),
     POST a PR review-thread reply, read a file at a pinned SHA with the raw
-    Accept header, create/add labels, `-X GET search/issues`
+    Accept header, GET a PR body (`--jq .body`), create/add labels,
+    `-X GET search/issues`
 
   Mechanics and failure modes: `.claude/context/github.md`.

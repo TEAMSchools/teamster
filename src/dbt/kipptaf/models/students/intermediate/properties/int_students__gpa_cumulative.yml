@@ -4,8 +4,8 @@ models:
       SIS-neutral cumulative GPA, one row per student and school. Cumulative GPA
       is calculated per school, not per year, so there is no year in the grain.
       Unions PowerSchool's `int_powerschool__gpa_cumulative` with Miami's Focus
-      `student_gpa_calculated`, conformed to the PowerSchool column vocabulary,
-      and computes the KTAF GPA bands once for both systems.
+      `int_focus__student_gpa_cumulative`, conformed to the PowerSchool column
+      vocabulary, and computes the KTAF GPA bands once for both systems.
 
 
       **Focus wins over the Miami PowerSchool archive.** Where a Miami student
@@ -15,29 +15,22 @@ models:
       the student's PowerSchool history at that school.
 
 
+      **Focus keeps the latest school year.** Focus writes a cumulative row per
+      school year; `int_focus__student_gpa_cumulative` keeps only the newest one
+      per student and school.
+
+
       **Miami Focus coverage is partial, and that comes from the source.** A
       Miami student missing from Focus has no imported course history, and falls
       back to the PowerSchool archive where one exists.
+    # A view, so int_extracts__student_enrollments never reads a stale build.
+    # The uniqueness test below then runs only on code change. A duplicate
+    # here still fails the hourly grain test on
+    # int_extracts__student_enrollments, and the Focus grain is tested on the
+    # focus package's stg_focus__student_gpa_calculated. Refs #6044
     config:
-      materialized: table
-      meta:
-        dagster:
-          # Hourly, matching int_extracts__student_enrollments (0 * * * *),
-          # which takes its GPA from here. This model is cumulative-only, so an
-          # hourly build is a fraction of the old term-grained
-          # int_students__gpa's 0.137 GiB. Refs #5462
-          #
-          # Not a view, even though the intermediate layer permits it. The
-          # uniqueness test here guards the Focus-over-PowerSchool anti-join:
-          # if it breaks, a Miami student-school emits from both branches,
-          # both carrying _dbt_source_project = 'kippmiami'. As a view the test
-          # would fire only on code change, because the data-change condition
-          # re-materializes tables only.
-          automation_condition:
-            cron_schedule: 0 * * * *
+      materialized: view
     data_tests:
-      # Scoped to rows that resolved a student_number; see
-      # int_students__gpa_term for the 4 Camden AY2015 rows with none.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -45,7 +38,7 @@ models:
               - schoolid
               - _dbt_source_project
           config:
-            where: student_number is not null
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -140,3 +133,72 @@ models:
           KTAF GPA band for `cumulative_y1_gpa_projected_unweighted`, on the
           same cut-offs. Null when the projected GPA is null, which is every
           Focus row.
+
+unit_tests:
+  - name: unit_int_students__gpa_cumulative__focus_over_powerschool
+    description: >-
+      A Focus row replaces the PowerSchool archive row for the same student and
+      school. A Focus row from before 2026 is dropped, so that student keeps the
+      PowerSchool archive row.
+    model: int_students__gpa_cumulative
+    given:
+      - input: ref("int_focus__student_gpa_cumulative")
+        format: sql
+        rows: |
+          select
+              1 as student_id,
+              10 as school_id,
+              2027 as syear,
+              cast(null as int64) as class_rank,
+              numeric '3.1' as cumulative_gpa,
+              numeric '3.4' as cumulative_weighted_gpa,
+              numeric '12' as cumulative_credits,
+              '`t`.`kippmiami_focus`.`x`' as _dbt_source_relation,
+              'kippmiami' as _dbt_source_project
+          union all
+          select
+              2,
+              10,
+              2025,
+              null,
+              numeric '1.0',
+              numeric '1.0',
+              numeric '4',
+              '`t`.`kippmiami_focus`.`x`',
+              'kippmiami'
+      - input: ref("int_focus__students")
+        rows:
+          - student_id: 1
+            student_number: 84000001
+          - student_id: 2
+            student_number: 84000002
+      - input: ref("int_focus__schools")
+        rows:
+          - id: 10
+            school_number: 2008A
+      - input: ref("stg_google_sheets__people__locations")
+        rows:
+          - focus_school_id: 2008A
+            powerschool_school_id: 30200
+      - input: ref("int_powerschool__gpa_cumulative")
+        rows:
+          - students_student_number: 84000001
+            schoolid: 30200
+            cumulative_y1_gpa_unweighted: 2.2
+            _dbt_source_project: kippmiami
+          - students_student_number: 84000002
+            schoolid: 30200
+            cumulative_y1_gpa_unweighted: 2.7
+            _dbt_source_project: kippmiami
+    expect:
+      rows:
+        - student_number: 84000001
+          schoolid: 30200
+          calculated_academic_year: 2027
+          cumulative_y1_gpa_unweighted: 3.1
+          cumulative_y1_gpa_unweighted_band: 4
+        - student_number: 84000002
+          schoolid: 30200
+          calculated_academic_year: null
+          cumulative_y1_gpa_unweighted: 2.7
+          cumulative_y1_gpa_unweighted_band: 3

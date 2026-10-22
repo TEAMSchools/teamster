@@ -5,7 +5,7 @@ models:
       Mathematica. Mathematica asked for their site-lead classroom list back
       with the teacher name column removed and the course, section and period
       numbers filled in. Teacher names never enter this pipeline at all — the
-      seed feeding it holds identifiers only, because staff names are PII and
+      sheet feeding it holds identifiers only, because staff names are PII and
       the working resolution sheet that carries them stays in local scratch. The
       course name, grade levels and period reported here come from PowerSchool
       rather than from the site-lead list, which gives Mathematica authoritative

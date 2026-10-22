@@ -1,8 +1,8 @@
 -- Temporary wrapper. Passes rpt_tableau__gpa_cumulative_year through unchanged
--- and adds the four gpa_goal_* columns. A column added to that model does NOT
--- arrive here on its own -- add it to the select list below AND to this model's
--- contract yml, or it silently never reaches the Cumulative GPA Monitor.
--- Folding this into the extract is planned; see
+-- and adds the gpa_goal_* columns and the quarter-target columns. A column
+-- added to that model does NOT arrive here on its own -- add it to the select
+-- list below AND to this model's contract yml, or it silently never reaches the
+-- Cumulative GPA Monitor. Folding this into the extract is planned; see
 -- docs/superpowers/specs/2026-09-01-student-goal-definitions-design.md
 select
     cy._dbt_source_relation,
@@ -32,6 +32,7 @@ select
     cy.year_in_network,
     cy.rn_undergrad,
     cy.is_pathways,
+    cy.is_hs_honors_program,
     cy.is_retained_year,
     cy.is_retained_ever,
     cy.student_slideback,
@@ -63,9 +64,20 @@ select
     gd.goal_proportion_region as gpa_goal_proportion_region,
     gd.goal_proportion_school as gpa_goal_proportion_school,
 
+    t.pace_status,
+    t.gpa_needed_weighted,
+    t.target_letter_grade,
+    t.target_cutoff_percent,
+    t.n_courses_below_target,
 from {{ ref("rpt_tableau__gpa_cumulative_year") }} as cy
 left join
     {{ ref("int_gpa__student_goal_definitions") }} as gd
     on cy.student_number = gd.student_number
     and cy.academic_year = gd.academic_year
     and gd.metric = 'cumulative_gpa_unweighted'
+left join
+    {{ ref("int_powerschool__student_y1_target") }} as t
+    on cy.studentid = t.studentid
+    and cy.schoolid = t.schoolid
+    and cy._dbt_source_project = t._dbt_source_project
+    and cy.academic_year = {{ var("current_academic_year") }}

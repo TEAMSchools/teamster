@@ -27,6 +27,19 @@ models:
           config:
             severity: error
     columns:
+      - name: school_name
+        data_type: string
+        description: School name as provided in the vendor file.
+        data_tests:
+          # Also the per-load guard for the view
+          # stg_amplify__mclass__sftp__pm_student_summary, which this table
+          # reads in full as its base.
+          - relationships:
+              arguments:
+                to: ref("int_people__location_crosswalk")
+                field: location_name
+              config:
+                severity: error
       - name: student_primary_id
         data_type: int64
         description: >-
@@ -93,9 +106,6 @@ models:
       - name: school_year
         data_type: string
         description: School year range (e.g., '2025-2026').
-      - name: school_name
-        data_type: string
-        description: School name as provided in the vendor file.
       - name: academic_year
         data_type: int64
         description:

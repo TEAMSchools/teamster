@@ -7,8 +7,8 @@ own gate: **invoke the `tableau-workbook-xml` skill before writing any
 skill carries the checkers, the repack script, the non-production review-copy
 publish, and the two typed confirmations a production publish requires.
 
-Marks: **Verified** = observed against this server on the date given.
-**Inferred** = reported by one project (#5230) without a controlled probe.
+Marks: **Verified** = observed against this server. **Inferred** = reported
+once, never probed.
 
 - **`viewFilters` sets Tableau PARAMETERS, not just filter fields — this is the
   whole QA loop for a parameterised dashboard.** Pass the parameter's display
@@ -22,11 +22,9 @@ Marks: **Verified** = observed against this server on the date given.
       "Granularity Options": "Reading Accuracy (ORF-Accu)"})
   ```
 
-  Verified 2026-09-20 on the Literacy Dashboard's Region Overview - Aimline: a 3
-  x 5 x 4 grid of granularity x measure x comparison item, driven entirely from
-  here with no workbook edits and nothing for the author to click. Render at
-  1000x640 or larger and the BAN tiles and bar labels are legible enough to read
-  every number off the PNG.
+  Verified: a full parameter grid can be swept from here, with no workbook edits
+  and nothing for the author to click. Render at 1000x640 or larger and the BAN
+  tiles and bar labels are legible enough to read every number off the PNG.
 
 - **Read the numbers off `get-view-image`, not `get-view-data`.** On a
   DASHBOARD, `get-view-data` returns only the first sheet (one BAN tile), so it
@@ -39,22 +37,22 @@ Marks: **Verified** = observed against this server on the date given.
   "Use all"; to confirm from here, pass the new domain's value explicitly in
   `viewFilters` and see whether it renders.
 - **A value that does not change proves nothing about whether a parameter
-  applied.** Check a mark that MUST move under the parameter. A first probe here
-  read a BAN that is deliberately parameter-independent, concluded parameters
-  were unsupported, and nearly cost the whole automated sweep.
-- **The MCP is read-only.** Verified 2026-09-09: all 19 tools in this deployment
-  are `get-`, `list-`, `query-`, `search-` or `generate-pulse-*`. There is no
-  publish, no workbook edit, no group mutation. Do not look for one. Workbook
-  content can still be edited and republished from this Codespace with
+  applied.** Check a mark that MUST move under the parameter. A deliberately
+  parameter-independent mark, such as a BAN, reads the same either way and
+  falsely suggests parameters are unsupported.
+- **The MCP is read-only.** Verified: every tool in this deployment is a `get-`,
+  `list-`, `query-`, `search-` or `generate-pulse-*`. There is no publish, no
+  workbook edit, no group mutation. Do not look for one. Workbook content can
+  still be edited and republished from this Codespace with
   `tableauserverclient`; that is the skill's job, not the MCP's.
-- **No tool returns calculated-field text.** Inferred (#5230). `get-workbook`
-  and `list-workbooks` return workbook, view and datasource metadata, never the
+- **No tool returns calculated-field text.** Inferred. `get-workbook` and
+  `list-workbooks` return workbook, view and datasource metadata, never the
   formula, and there is no Metadata API GraphQL passthrough. Row-level-security
   calculations cannot be audited from the MCP: checking which workbooks carry a
   branch, or searching for `USERNAME()` against a literal, happens outside it,
   by downloading the workbook through the skill.
-- **Both metadata paths fail on an embedded extract.** Verified 2026-09-04
-  against one embedded-extract luid; do not re-test that case:
+- **Both metadata paths fail on an embedded extract.** Verified; do not re-test
+  that case:
 
   | Tool                      | Result                                        |
   | ------------------------- | --------------------------------------------- |

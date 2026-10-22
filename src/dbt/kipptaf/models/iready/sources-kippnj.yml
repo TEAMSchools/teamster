@@ -59,3 +59,12 @@ sources:
                 - kippnewark
                 - iready
                 - int_iready__personalized_instruction_unpivot
+      - name: int_iready__diagnostic_results
+        config:
+          meta:
+            dagster:
+              group: iready
+              asset_key:
+                - kippnewark
+                - iready
+                - int_iready__diagnostic_results

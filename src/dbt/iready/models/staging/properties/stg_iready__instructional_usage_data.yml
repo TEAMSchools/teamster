@@ -1,277 +1,952 @@
 models:
   - name: stg_iready__instructional_usage_data
+    description: >-
+      One row per student per subject per last-week window from the vendor's
+      legacy Instructional Usage export, with typed counts, percents, minutes,
+      and dates. Each row also carries monthly and year-to-date totals by
+      domain. This lineage is disabled and no longer refreshed.
     config:
       enabled: false
     columns:
       - name: student_id
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The vendor's Student ID for the student in the i-Ready roster.
         data_tests:
           - not_null:
               config:
                 enabled: false
       - name: academic_year
         data_type: string
+        description: >-
+          The academic year label i-Ready assigns to the row, as reported in the
+          vendor's export.
       - name: class_es
         data_type: string
+        description: >-
+          Name(s) of the class(es) the student is enrolled in within i-Ready.
       - name: class_teacher_s
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Name(s) of the teacher(s) of record for the student's i-Ready
+          class(es).
       - name: economically_disadvantaged
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Y/N flag for whether the student is economically disadvantaged, per
+          the district roster i-Ready received.
       - name: english_language_learner
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Y/N flag for whether the student is an English Language Learner, per
+          the district roster i-Ready received.
       - name: enrolled
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Y/N flag for whether the student is currently enrolled in an i-Ready
+          class.
       - name: first_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: The student's first name, as loaded from the vendor roster.
       - name: hispanic_or_latino
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Y/N flag for whether the student is identified as Hispanic or Latino,
+          per the district roster i-Ready received.
       - name: last_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: The student's last name, as loaded from the vendor roster.
       - name: migrant
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Y/N flag for whether the student is identified as a migrant student,
+          per the district roster i-Ready received.
       - name: race
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The student's race, per the district roster i-Ready received.
       - name: report_group_s
         data_type: string
+        description: >-
+          Name(s) of the Report Group(s) the student is enrolled in within
+          i-Ready.
       - name: school
         data_type: string
+        description: The name of the school i-Ready has the student enrolled at.
       - name: sex
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The student's sex, per the district roster i-Ready received.
       - name: special_education
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Y/N flag for whether the student receives special education services,
+          per the district roster i-Ready received.
       - name: subject
         data_type: string
+        description: >-
+          The i-Ready subject (reading or math) the usage row covers, as
+          reported in the vendor's export.
       - name: user_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: The student's i-Ready login username.
       - name: april_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student completed in April.
       - name: april_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in April.
       - name: april_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in April.
       - name: april_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Total minutes the student spent on i-Ready lessons in April.
       - name: april_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in
+          April.
       - name: august_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student completed in August.
       - name: august_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in August.
       - name: august_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in August.
       - name: august_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Total minutes the student spent on i-Ready lessons in August.
       - name: august_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in
+          August.
       - name: december_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in December.
       - name: december_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in December.
       - name: december_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in December.
       - name: december_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Total minutes the student spent on i-Ready lessons in December.
       - name: december_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in
+          December.
       - name: february_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in February.
       - name: february_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in February.
       - name: february_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in February.
       - name: february_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Total minutes the student spent on i-Ready lessons in February.
       - name: february_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in
+          February.
       - name: january_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student completed in January.
       - name: january_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in January.
       - name: january_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in January.
       - name: january_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Total minutes the student spent on i-Ready lessons in January.
       - name: january_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in
+          January.
       - name: july_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student completed in July.
       - name: july_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in July.
       - name: july_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in July.
       - name: july_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Total minutes the student spent on i-Ready lessons in July.
       - name: july_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in July.
       - name: june_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student completed in June.
       - name: june_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in June.
       - name: june_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in June.
       - name: june_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Total minutes the student spent on i-Ready lessons in June.
       - name: june_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in June.
       - name: last_week_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the last-week
+          window.
       - name: last_week_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the last-week window.
       - name: last_week_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the last-week window.
       - name: last_week_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the last-week window.
       - name: march_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student completed in March.
       - name: march_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in March.
       - name: march_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in March.
       - name: march_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Total minutes the student spent on i-Ready lessons in March.
       - name: march_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in
+          March.
       - name: may_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student completed in May.
       - name: may_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in May.
       - name: may_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in May.
       - name: may_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Total minutes the student spent on i-Ready lessons in May.
       - name: may_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in May.
       - name: november_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in November.
       - name: november_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in November.
       - name: november_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in November.
       - name: november_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Total minutes the student spent on i-Ready lessons in November.
       - name: november_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in
+          November.
       - name: october_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student completed in October.
       - name: october_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in October.
       - name: october_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in October.
       - name: october_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Total minutes the student spent on i-Ready lessons in October.
       - name: october_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in
+          October.
       - name: september_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in September.
       - name: september_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Number of i-Ready lessons the student passed in September.
       - name: september_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: Percent of i-Ready lessons the student passed in September.
       - name: september_total_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Total minutes the student spent on i-Ready lessons in September.
       - name: september_weekly_average_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Average minutes per week the student spent on i-Ready lessons in
+          September.
       - name: year_to_date_algebra_and_algebraic_thinking_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the Algebra and
+          Algebraic Thinking domain so far this academic year.
       - name: year_to_date_algebra_and_algebraic_thinking_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the Algebra and
+          Algebraic Thinking domain so far this academic year.
       - name: year_to_date_algebra_and_algebraic_thinking_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the Algebra and
+          Algebraic Thinking domain so far this academic year.
       - name: year_to_date_algebra_and_algebraic_thinking_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the Algebra and
+          Algebraic Thinking domain so far this academic year.
       - name: year_to_date_comprehension_close_reading_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the Comprehension,
+          Close Reading domain so far this academic year.
       - name: year_to_date_comprehension_close_reading_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the Comprehension,
+          Close Reading domain so far this academic year.
       - name: year_to_date_comprehension_close_reading_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the Comprehension,
+          Close Reading domain so far this academic year.
       - name: year_to_date_comprehension_close_reading_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the Comprehension,
+          Close Reading domain so far this academic year.
       - name: year_to_date_comprehension_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the Comprehension
+          domain so far this academic year.
       - name: year_to_date_comprehension_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the Comprehension
+          domain so far this academic year.
       - name: year_to_date_comprehension_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the Comprehension
+          domain so far this academic year.
       - name: year_to_date_comprehension_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the Comprehension
+          domain so far this academic year.
       - name: year_to_date_geometry_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the Geometry domain
+          so far this academic year.
       - name: year_to_date_geometry_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the Geometry domain so
+          far this academic year.
       - name: year_to_date_geometry_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the Geometry domain
+          so far this academic year.
       - name: year_to_date_geometry_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the Geometry domain so
+          far this academic year.
       - name: year_to_date_high_frequency_words_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the High-Frequency
+          Words domain so far this academic year.
       - name: year_to_date_high_frequency_words_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the High-Frequency
+          Words domain so far this academic year.
       - name: year_to_date_high_frequency_words_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the High-Frequency
+          Words domain so far this academic year.
       - name: year_to_date_high_frequency_words_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the High-Frequency
+          Words domain so far this academic year.
       - name: year_to_date_measurement_and_data_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the Measurement and
+          Data domain so far this academic year.
       - name: year_to_date_measurement_and_data_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the Measurement and
+          Data domain so far this academic year.
       - name: year_to_date_measurement_and_data_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the Measurement and
+          Data domain so far this academic year.
       - name: year_to_date_measurement_and_data_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the Measurement and
+          Data domain so far this academic year.
       - name: year_to_date_number_and_operations_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the Number and
+          Operations domain so far this academic year.
       - name: year_to_date_number_and_operations_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the Number and
+          Operations domain so far this academic year.
       - name: year_to_date_number_and_operations_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the Number and
+          Operations domain so far this academic year.
       - name: year_to_date_number_and_operations_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the Number and
+          Operations domain so far this academic year.
       - name: year_to_date_overall_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed across all domains so
+          far this academic year.
       - name: year_to_date_overall_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed across all domains so far
+          this academic year.
       - name: year_to_date_overall_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed across all domains so
+          far this academic year.
       - name: year_to_date_overall_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons across all domains so far
+          this academic year.
       - name: year_to_date_phonics_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the Phonics domain
+          so far this academic year.
       - name: year_to_date_phonics_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the Phonics domain so
+          far this academic year.
       - name: year_to_date_phonics_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the Phonics domain so
+          far this academic year.
       - name: year_to_date_phonics_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the Phonics domain so
+          far this academic year.
       - name: year_to_date_phonological_awareness_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the Phonological
+          Awareness domain so far this academic year.
       - name: year_to_date_phonological_awareness_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the Phonological
+          Awareness domain so far this academic year.
       - name: year_to_date_phonological_awareness_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the Phonological
+          Awareness domain so far this academic year.
       - name: year_to_date_phonological_awareness_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the Phonological
+          Awareness domain so far this academic year.
       - name: year_to_date_vocabulary_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student completed in the Vocabulary
+          domain so far this academic year.
       - name: year_to_date_vocabulary_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready lessons the student passed in the Vocabulary domain
+          so far this academic year.
       - name: year_to_date_vocabulary_percent_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready lessons the student passed in the Vocabulary domain
+          so far this academic year.
       - name: year_to_date_vocabulary_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on i-Ready lessons in the Vocabulary domain
+          so far this academic year.
       - name: _dagster_partition_academic_year
         data_type: int64
+        description: >-
+          The Dagster partition academic year for the export folder Dagster
+          loaded this row from.
       - name: _dagster_partition_subject
         data_type: string
+        description: >-
+          The Dagster partition subject (ela or math) for the export folder
+          Dagster loaded this row from.
       - name: academic_year_int
         data_type: int64
+        description: >-
+          The first four digits of the vendor's academic year label as an
+          integer, null when the label does not parse.
       - name: last_week_start_date
         data_type: date
+        description: >-
+          First day of the vendor's last-week usage window for this export.
       - name: last_week_end_date
         data_type: date
+        description: >-
+          Last day of the vendor's last-week usage window for this export.
       - name: first_lesson_completion_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Date the student completed their first i-Ready lesson, per the vendor.
       - name: most_recent_lesson_completion_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Date the student completed their most recent i-Ready lesson, per the
+          vendor.
       - name: student_grade
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The student's grade level as reported by the vendor, with Kindergarten
+          reported as K.

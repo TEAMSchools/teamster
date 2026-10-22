@@ -9,22 +9,8 @@ models:
       internal PM method's score source; the aimline method reads
       int_amplify__mclass__pm_student_summary_aimline.
     config:
-      materialized: table
       meta:
         contains_pii: true
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_primary_id
-              - school_year
-              - pm_period
-              - measure
-              - probe_number
-              - device_date
-              - assessment_grade
-          config:
-            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string

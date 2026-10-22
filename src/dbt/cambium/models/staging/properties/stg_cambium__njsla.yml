@@ -1,11 +1,14 @@
 models:
   - name: stg_cambium__njsla
     description: >-
-      Cambium TIDE NJSLA district summative record file, one row per student per
-      subject test, filtered to summative, attempted records. Carries English
-      Language Arts, Mathematics and Science in one file. Columns keep Cambium's
-      names; kipptaf int_pearson__all_assessments maps them into the shared NJ-
-      assessment shape.
+      Cambium TIDE NJSLA and end-of-course (EOC) district summative record
+      files, one row per student per test, filtered to summative, attempted
+      records. The NJSLA file carries English Language Arts, Mathematics and
+      Science; the EOC file, with the same header, carries Algebra I, Algebra II
+      and Geometry. A re-issued NJSLA file can bundle the EOC tests too, so a
+      test that arrives in both files keeps the copy from the most recently
+      modified file. Columns keep Cambium's names; int_cambium__all_assessments
+      maps them into the shared NJ-assessment shape.
     columns:
       # Columns carrying per-column data_tests sort to the top. Every test sets
       # severity explicitly.
@@ -28,8 +31,8 @@ models:
           Date of the earliest online unit start across units 1 through 4,
           coalesced to the parsed assessment session start. The coalesce is
           required, not defensive: unit timestamps are populated for English
-          Language Arts and Science but not Mathematics, so unit-only derivation
-          nulls every Mathematics row.
+          Language Arts and Science but not Mathematics or the end-of-course
+          tests, so unit-only derivation nulls every one of those rows.
         data_tests:
           - not_null:
               config:
@@ -55,9 +58,11 @@ models:
         data_type: string
         quote: true
         description: >-
-          'English Language Arts', 'Mathematics' or 'Science'. kipptaf branches
-          every subject-dependent column on it, so an unrecognized subject fails
-          here rather than silently landing on the ELA branch.
+          'English Language Arts', 'Mathematics' or 'Science' from the NJSLA
+          file; 'Algebra I', 'Algebra II' or 'Geometry' from the end-of-course
+          file. kipptaf branches every subject-dependent column on it, so an
+          unrecognized subject fails here rather than silently landing on the
+          ELA branch.
         data_tests:
           - not_null:
               config:
@@ -68,6 +73,9 @@ models:
                   - English Language Arts
                   - Mathematics
                   - Science
+                  - Algebra I
+                  - Algebra II
+                  - Geometry
               config:
                 severity: error
       - name: academic_year
@@ -79,7 +87,10 @@ models:
         description: Vendor-reported school year, e.g. '2025-2026'.
       - name: assessment_grade
         data_type: string
-        description: The test design level, e.g. 'Grade 5'.
+        description: >-
+          The test design level, e.g. 'Grade 5'. End-of-course rows carry a
+          placeholder 'Grade 11'; the forms have no grade, so use
+          grade_level_when_assessed.
       - name: grade_level_when_assessed
         data_type: int64
         description: The student's grade at the time of testing.
@@ -89,8 +100,8 @@ models:
       - name: test_code
         data_type: string
         description: >-
-          Cambium test code: ELA03 through ELA09, MAT03 through MAT08, and SC05,
-          SC08, SC11 for Science.
+          Cambium test code: ELA03 through ELA09, MAT03 through MAT08, SC05,
+          SC08, SC11 for Science, and ALG01, ALG02, GEO01 for end-of-course.
       - name: test_status
         data_type: string
         description: >-

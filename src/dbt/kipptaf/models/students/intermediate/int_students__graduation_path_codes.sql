@@ -97,6 +97,22 @@ with
             coalesce(m.met_ela, false) as met_ela,
             coalesce(m.met_math, false) as met_math,
 
+            /* an NJGPA row exists for every NJGPA cut score the sheet holds for
+               the student's cut score cohort, scored or not. M/N/O/P rows never
+               reach the sheet, so they count as covered. */
+            logical_or(
+                s.discipline = 'ELA'
+                and (
+                    s.pathway_option = 'NJGPA' or s.pathway_code in ('M', 'N', 'O', 'P')
+                )
+            ) over (partition by s.student_number) as has_njgpa_cutoffs_ela,
+            logical_or(
+                s.discipline = 'Math'
+                and (
+                    s.pathway_option = 'NJGPA' or s.pathway_code in ('M', 'N', 'O', 'P')
+                )
+            ) over (partition by s.student_number) as has_njgpa_cutoffs_math,
+
         from {{ ref("int_students__graduation_pathway_scores") }} as s
         left join
             calcs as u
@@ -115,9 +131,16 @@ with
 
             (r.grade_level = 12 and r.fafsa_season_12th) as fafsa_required,
 
+            (r.grade_level = 11 and not r.njgpa_season_11th) as is_awaiting_results,
+
             (
                 not r.attempted_njgpa_ela and not r.attempted_njgpa_math
             ) as attempted_nothing,
+
+            (
+                (r.attempted_njgpa_ela and not r.has_njgpa_cutoffs_ela)
+                or (r.attempted_njgpa_math and not r.has_njgpa_cutoffs_math)
+            ) as is_cutoff_pending,
 
             /* the alternative pathways, in the order New Jersey prefers them.
                coalesce returns the first that was met. */
@@ -153,7 +176,11 @@ select
         counts_ela,
         counts_math,
         fafsa_required,
+        is_awaiting_results,
         attempted_nothing,
+        is_cutoff_pending,
+        has_njgpa_cutoffs_ela,
+        has_njgpa_cutoffs_math,
         best_alternative_code
     ),
 
@@ -198,6 +225,12 @@ select
         then 'No FAFSA'
         when r.counts_ela and r.counts_math
         then 'Grad Eligible'
+        when r.is_cutoff_pending
+        then 'Pending Cut Score'
+        when r.counts_ela and r.is_awaiting_results and not r.attempted_njgpa_math
+        then 'ELA Only / Awaiting Math'
+        when r.counts_math and r.is_awaiting_results and not r.attempted_njgpa_ela
+        then 'Math Only / Awaiting ELA'
         when r.counts_ela and r.fafsa_required and not r.has_fafsa
         then 'ELA Only / No FAFSA'
         when r.counts_ela
@@ -208,12 +241,8 @@ select
         then 'Math Only'
         when r.has_fafsa and r.fafsa_required
         then 'FAFSA Only'
-        /* An 11th grader holding NJGPA records already is treated like a 12th
-           grader, minus the FAFSA requirement -- testing ahead of their peers
-           usually means they are behind on credits and belong in 12th grade.
-           The grace below is only for those with no records yet. */
-        when r.grade_level = 11 and r.attempted_nothing and not r.njgpa_season_11th
-        then 'Grad Eligible'
+        when r.is_awaiting_results and r.attempted_nothing
+        then 'Awaiting Results'
         else 'Not Grad Eligible'
     end as grad_eligibility,
 

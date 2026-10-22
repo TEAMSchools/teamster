@@ -123,6 +123,47 @@ def test_paramiko_tunnel_listener_closes_on_exit():
     assert not connected
 
 
+def test_forward_handler_tolerates_channel_close_on_dead_transport():
+    """`channel.close()` racing `open_ssh_tunnel`'s `client.close()` must not raise.
+
+    The forwarded client closes its socket (the sensor's `engine.dispose()`)
+    while the tunnel tears the transport down, so the handler's
+    `channel.close()` writes to a closed SSH socket and paramiko raises
+    `EOFError`. The handler must swallow it and still close its local socket.
+    """
+    from teamster.libraries.ssh.resources import _make_forward_handler
+
+    request, peer = socket.socketpair()
+    read_fd, write_fd = os.pipe()
+
+    try:
+        channel = MagicMock()
+        channel.fileno.return_value = read_fd
+        channel.close.side_effect = EOFError()
+
+        transport = MagicMock()
+        transport.open_channel.return_value = channel
+
+        handler_cls = _make_forward_handler(
+            transport=transport,
+            remote_host="oracle.internal",
+            remote_port=1521,
+            log=logging.getLogger(__name__),
+        )
+
+        # Client hangs up: the handler's recv() returns b"" and it unwinds.
+        peer.close()
+
+        handler_cls(request, ("127.0.0.1", 0), MagicMock())
+
+        channel.close.assert_called_once()
+        assert request.fileno() == -1
+    finally:
+        request.close()
+        os.close(read_fd)
+        os.close(write_fd)
+
+
 def test_paramiko_tunnel_cleanup_does_not_hang_on_stuck_handler():
     """Cleanup must not deadlock when a handler thread is mid-`select()`.
 

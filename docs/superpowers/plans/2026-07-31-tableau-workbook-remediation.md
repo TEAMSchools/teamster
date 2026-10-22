@@ -1,18 +1,170 @@
-# Tableau Workbook Remediation Runbook
+# Tableau Permissions Playbook — People Data Dashboards
 
 > **For the human executing this:** every step happens in Tableau Desktop or on
-> Tableau Server. There is no dbt work here — that shipped in PR #4656. Work one
-> workbook at a time; each section below is self-contained and ends with its own
-> verification.
+> Tableau Server. Work one workbook at a time; each section is self-contained
+> and ends with its own verification.
 
-**Goal:** every one of the 13 permission-gated workbooks keeps working before
-**and** after the Entra ID identity cutover, with one canonical Permissions
-block pasted across all of them apart from documented per-workbook variants.
+This file is the **build reference** for the people-data dashboards — staff
+surveys, observations, coaching, compensation, and operations walkthroughs. It
+carries the paste-ready text of every calculated field, the order to create them
+in, and how to attach them. Use it when you are:
 
-**Design doc:**
-`docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md`. That
-is the reasoning; this is the sequence. Where they disagree, the design doc is
-authoritative and this file is stale.
+- building a new gated workbook from scratch — start at _Build a gated
+  workbook_;
+- repairing an existing one — find it under _Per-workbook sections_;
+- restoring an archived workbook — its section still describes its pre-migration
+  calculation, so redo that section before republishing.
+
+[The Tableau people-data permissions guide](../../guides/tableau-permissions.md)
+is the companion page and describes **who can see what and why**. It no longer
+carries calc text. Where the two disagree about behaviour the guide wins; where
+they disagree about the text of a field, **this file wins**.
+
+`docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md` holds
+the design reasoning behind each tier and each peer-exclusion helper.
+
+## Current state
+
+**11 workbooks were remediated** and tagged `entra-ready` on Tableau Server —
+Manager Survey Reports, Manager Survey Rollup, Leadership Development, Coaching
+Conversation Tool, SchoolMint Grow Dashboard, Survey Dashboard, Miami
+Instructional Rubrics, Operations Systems, Stipend and Bonus Dashboard,
+Personalized Survey Links, Federal Grants Timesheet Approval.
+
+**Two of those 11 are leaving the model**, each with a PR awaiting approval.
+Both are deliberate, not gaps to fix:
+
+| Workbook                          | Leaving because                                                                                                                                                                           | PR                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Federal Grants Timesheet Approval | the workbook now reads a live Google Sheet, so it is no longer a dbt consumer and its extract has nothing to gate. `rpt_tableau__grants_timesheets` and its exposure get `enabled: false` | [#4726](https://github.com/TEAMSchools/teamster/pull/4726) |
+| Leadership Development            | leader performance management is moving to Lattice; the app, dashboard, and 8 dbt nodes become archive-only                                                                               | [#4629](https://github.com/TEAMSchools/teamster/pull/4629) |
+
+That leaves **9 gated workbooks** once both land. Leadership Development is also
+one of the three that carry `RLS - Subject Is Senior Leader`, so that set
+becomes **Manager Survey Reports and Manager Survey Rollup**.
+
+**2 workbooks were archived rather than remediated** — Content Team Dashboard
+and Teacher Goals. An archived workbook still holds its pre-migration
+calculation, individual username grants included.
+
+An audit of all 11 on 2026-08-05 read the calculations out of the `.twbx` files
+for the first time and found six gaps. See _Known gaps_ before trusting any
+workbook's gate.
+
+---
+
+## Build a gated workbook
+
+Six steps. Steps 1 and 2 are the ones people skip, and they are the two that
+cause silent failure.
+
+### Step 1 — resolve the field names in this workbook
+
+**Do this before pasting anything, and resolve by underlying column rather than
+by caption.** Every formula in this file is written against the dbt column
+names. Workbooks rename those columns via the field caption, and Tableau's
+calculation editor resolves the **caption** — so a pasted formula referencing
+`[home_business_unit_name]` does not validate where that field is captioned
+`Business Unit`.
+
+Captions are per-datasource and are **not stable across an extract refresh**. A
+refresh brings new columns in unnamed and can leave an old caption sitting on a
+different column, so do not carry a caption list forward from a previous edit or
+from another workbook. Read the Data pane each time.
+
+These are the columns to resolve before pasting:
+
+| Formula text                                                                                                  | What it means                                   |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `[home_business_unit_name]`                                                                                   | the entity of the **person** the row is about   |
+| `[location_clean_name]`                                                                                       | the location of the **person** the row is about |
+| `[home_department_name]`                                                                                      | that person's department                        |
+| `[job_title]`                                                                                                 | that person's title                             |
+| `[sam_account_name]`, `[user_principal_name]`, `[mail]`, `[reports_to_sam_account_name]`, `[reports_to_mail]` | Tier 1 identity                                 |
+
+!!! danger "The same caption can mean two different things in one workbook"
+
+    Operations Systems is the live example. After its refresh:
+
+    | Datasource | `Business Unit` resolves to | Meaning |
+    | --- | --- | --- |
+    | `rpt_tableau__operations_pm` | `home_business_unit_name` | the respondent's own entity |
+    | `rpt_tableau__operations_ekg` | `school_business_unit_name` | the entity of the school **walked** |
+
+    On the ekg datasource `home_business_unit_name` also exists, unnamed. So pasting
+    the canonical entity gate there validates silently and gates on the wrong
+    entity — the respondent's, which on that form is never `KIPP Paterson`. That is
+    the exact defect #4749 fixed, and the caption layout makes it easy to
+    reintroduce.
+
+    Confirm what a caption points at before trusting it: click the field in the
+    Data pane and read the underlying column, or check the datasource's column list.
+
+`rpt_tableau__survey_completion` breaks the identity pattern outright: its
+columns are `[username]` and `[samaccountname]` — no underscores — not
+`[user_principal_name]` and `[sam_account_name]`.
+
+### Step 2 — decide the apply scope, and prefer datasource-wide
+
+Tableau **ANDs** every filter that reaches a mark, so a permission filter's
+blast radius is decided by where you attach it:
+
+| Scope             | How to set it                                                                                     | Covers                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Datasource-wide   | right-click the field on the Filters shelf → **Apply to Worksheets → All Using This Data Source** | every sheet on that datasource, including ones added later |
+| Datasource filter | Data pane → datasource → **Edit Data Source Filters**                                             | same                                                       |
+| Sheet-local       | drop on the Filters shelf, leave as **Only This Worksheet**                                       | that one sheet                                             |
+
+**Default to datasource-wide.** A sheet-local gate has to be re-applied by hand
+on every new sheet, and that is how two of the six audit gaps happened: a sheet
+was added to a dashboard and nobody re-attached the filter.
+
+Use sheet-local only when one datasource genuinely needs two different rules —
+the Survey Dashboard's Intent to Return sheets versus its support sheets, or the
+Stipend workbook's HR download sheets. When you do, say so in a comment on both
+fields.
+
+!!! warning "A datasource-wide gate hides a sheet-local one's defects"
+
+    If both are attached, effective access is the intersection — so a stale
+    sheet-local field cannot widen access while the datasource-wide gate is
+    there. That containment is invisible and temporary: remove the
+    datasource-wide filter, or copy the stale field into a new workbook, and the
+    old behaviour is back. SchoolMint Grow is in exactly this state; see
+    _Known gaps_.
+
+### Step 3 — create the helper fields
+
+In this order, because `Permissions` references them and will not validate until
+they exist. Nothing depends on the order among the first three.
+
+1. `RLS - Entity Gate`
+1. `RLS - Location Gate`
+1. `RLS - Role Gate`
+1. `RLS - Subject Is Senior Leader` — only on workbooks that shield senior
+   leaders from each other
+1. Any workbook-specific gate — see _Workbook-specific gates_
+
+Copy them between workbooks via the Data pane: right-click the field, **Copy**,
+then paste into the next workbook's Data pane. After step 1's rename check, a
+pasted field either resolves cleanly or fails loudly.
+
+### Step 4 — create `Permissions`
+
+Paste _The canonical Permissions block_ below, then apply only the variants
+named in that workbook's section. Keep the five tiers in the same order in every
+workbook so they diff by eye.
+
+### Step 5 — attach it
+
+Put **only** `Permissions` on the Filters shelf, set to `TRUE`, at the scope
+chosen in step 2. The helpers belong on no shelf.
+
+### Step 6 — verify, then tag
+
+Work through _Validation_ below. Seeing **more** than expected is a security
+finding; seeing **less** is a broken gate. Both matter. Then tag the workbook
+`entra-ready` on Tableau Server — that tag is the inventory.
 
 ---
 
@@ -20,28 +172,43 @@ authoritative and this file is stale.
 
 Do not start until all four hold.
 
-1. **PR #4656 is merged and Dagster has materialized the extracts.** The renamed
-   columns do not exist until then, so every field fix below fails against the
-   old views. Confirm one model in BigQuery — `rpt_tableau__content_team` should
-   have `location_clean_name` and no `location`.
+1. **The workbook's extract is current.** Every gate below reads columns from
+   the access contract, and an extract built before those columns existed simply
+   does not have them — so the gate you want cannot be written and the one you
+   can write is wrong. Open the Data pane and confirm the columns are there
+   before editing a calculation; refresh the extract if they are not.
+
+   This is the single most common cause of a gate that looks lazily written. It
+   is what left Operations Systems on a flat list of group memberships for
+   months. The dbt side (PR #4656) landed long ago and every gated workbook has
+   since been refreshed, so this bites a **new** workbook or a restored archive
+   rather than the current nine.
+
 1. **The location groups exist.** See _Groups_ below. A missing group does not
    error; it silently denies, which is the failure this rebuild exists to
    eliminate.
-1. **You have tested whether `ISMEMBEROF()` accepts a non-literal argument** on
-   this Server version. Make a scratch calc:
+1. **`ISMEMBEROF()` takes a literal string only — this is settled, do not
+   re-test it.** The concatenated form
 
    ```text
    ISMEMBEROF('KNJ-SG-Tableau All Staff ' + [location_clean_name])
    ```
 
-   If it validates, the location gate is one line. If it does not, it becomes 26
-   explicit `ISMEMBEROF` branches — one per school location, Rooms excluded.
-   This single answer changes the size of every Tier 5 edit, so settle it first.
+   does not validate. A parameter does not rescue it either: a parameter holds
+   one value per view, so the calc evaluates once instead of per row and
+   degenerates to all-rows-or-none — a bypass, not a gate. The location gate is
+   therefore 26 explicit `ISMEMBEROF` branches, one per school location, Rooms
+   excluded. See _Tier 5_ below.
 
-1. **You know which Tier 2 groups each workbook currently grants.** Tier 2 is
-   the only tier that legitimately differs across the 13, and this runbook
-   cannot tell you a workbook's membership — read it out of the existing calc
-   before you replace it. The HPT audit HTML is the other source.
+1. **You know which Tier 2 groups this workbook currently grants.** Tier 2 is
+   the only tier that legitimately differs between workbooks, and this file
+   cannot tell you a given workbook's membership — read it out of the existing
+   calculation before you replace it.
+
+   The reliable way to read it is the `.twbx`: it is a zip, so extract the
+   `.twb` and search the calculated fields. The Tableau UI hides a dead field
+   and shows a filter's caption rather than the field it actually resolves to,
+   which is how the 2026-08-05 audit found gaps that persona testing had missed.
 
 ---
 
@@ -72,13 +239,38 @@ agree; for 3 they do not, and those 3 would silently fail a mail-only match.
 ### Tier 2 — all-access functional groups
 
 Preserve each workbook's existing membership from this list: `All Data`, `TC`,
-`All HR`, `All T&L`, `Recruiting`, `New Teacher Development`,
-`Leadership Development`.
+`Group Staff Employee Relations`, `All T&L`, `Recruiting`,
+`New Teacher Development`, `Leadership Development`.
 
 Two rules apply everywhere. Remove `Syndicate`. Remove **all 12 individual
 username grants** — this tier is where they lived, and no individual grant
 survives anywhere. The 12 names are held in `.claude/scratch/`, deliberately
 uncommitted because staff usernames are identifiers.
+
+!!! warning "`KNJ-SG-Tableau All HR` was replaced, not joined, on 2026-09-08"
+
+    Every `ISMEMBEROF('KNJ-SG-Tableau All HR')` became
+    `ISMEMBEROF('Group Staff Employee Relations')` — 125 textual occurrences
+    across 17 calculated fields in 8 workbooks. This **narrowed** access: `All
+    HR` had 14 members and `Group Staff Employee Relations` has 5, only 4 of
+    which were in `All HR`, so 10 people lost blanket visibility. That was the
+    intent, not an accident.
+
+    `All HR` still exists as a Tableau group and is still populated. It simply
+    no longer appears in any permission calculation. Do not "restore" it on the
+    assumption that its absence is a bug, and do not add a workbook back to it
+    without checking who is in each group first.
+
+    Two fields carrying `All HR` were **not** row gates and changed anyway,
+    because the rule was applied uniformly: Survey Dashboard's `Calculation1`
+    and Stipend and Bonus's `Permissions HR Download`, which gates a download
+    button rather than a set of rows. HR lost that button.
+
+    Four permission fields never referenced `All HR` and were deliberately left
+    alone, so Employee Relations has no grant on them: Operations Systems
+    `Permissions`, Survey Dashboard `Permissions - Completion` and
+    `Permissions - Support`, and Personalized Survey Links `Permissions - Self`.
+    "All access" is therefore not literally true — it is "everywhere HR had it".
 
 ### Tier 3 — regional ops
 
@@ -116,12 +308,27 @@ IF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools') AND [home_business_unit_n
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KCNA')     AND [home_business_unit_name] = 'KIPP Cooper Norcross Academy' THEN TRUE
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff MIA')      AND [home_business_unit_name] = 'KIPP Miami' THEN TRUE
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [home_business_unit_name] = 'KIPP Paterson' THEN TRUE
-ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF') THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF')
+       AND [home_business_unit_name] IN (
+           'TEAM Academy Charter School',
+           'KIPP Cooper Norcross Academy',
+           'KIPP Miami',
+           'KIPP Paterson'
+       ) THEN TRUE
 ELSE FALSE END
 ```
 
-The Paterson branch is new and unblocks 96 staff. The KTAF branch stays
-unconditional, preserving current behaviour.
+The Paterson branch is new and unblocks 96 staff.
+
+**The KTAF branch is scoped to the four regions, not unconditional.** Central
+office oversees the regions; it does not get visibility into itself. An earlier
+version of this runbook said the branch stays unconditional — that was wrong and
+caused a real leak, found while testing Manager Survey Rollup: two senior
+leaders at the same level, both central office, both reporting to the same
+manager, could see each other. The unconditional branch made the entity gate
+TRUE on every row, and since KTAF staff sit in Rooms — absent from the location
+gate by design — Tier 4 is their only route, so any regional-leadership group
+membership became whole-extract access. Do not restore the unconditional form.
 
 Two things not to "clean up" here. First, **single equality per branch** — dbt
 now normalizes entity, so no extract can emit `TEAM`, `KCNA`, `MIA`, or `KNJ`
@@ -133,17 +340,46 @@ TEAM employee who oversees Paterson gets Paterson visibility by being added to
 the Paterson group, with no calc change. Deriving entity from the viewer's
 roster row would silently revoke access from every cross-entity supervisor.
 
-Location gate:
+Location gate: 26 explicit branches, one per school location. This text is
+byte-identical in all 9 workbooks that carry it — verified by hashing the
+formula on 2026-08-05 — so paste it whole rather than retyping.
 
 ```text
-ISMEMBEROF('KNJ-SG-Tableau All Staff ' + [location_clean_name])
+(
+       ([location_clean_name] = 'KIPP BOLD Academy'               AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP BOLD Academy'))
+    OR ([location_clean_name] = 'KIPP Cooper Norcross High'       AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Cooper Norcross High'))
+    OR ([location_clean_name] = 'KIPP Courage Academy'            AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Courage Academy'))
+    OR ([location_clean_name] = 'KIPP Hatch Middle'               AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Hatch Academy'))                 // BRIDGE
+    OR ([location_clean_name] = 'KIPP Justice Academy'            AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Justice Academy'))
+    OR ([location_clean_name] = 'KIPP Lanning Square Middle'      AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Lanning Square Middle'))
+    OR ([location_clean_name] = 'KIPP Lanning Square Primary'     AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Lanning Square Primary'))
+    OR ([location_clean_name] = 'KIPP Legacy Elementary'          AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Legacy Elementary'))
+    OR ([location_clean_name] = 'KIPP Legacy Middle'              AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Legacy Middle'))
+    OR ([location_clean_name] = 'KIPP Life Academy'               AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Life Academy'))
+    OR ([location_clean_name] = 'KIPP Miami - North Campus'       AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Miami - North Campus'))
+    OR ([location_clean_name] = 'KIPP Miami - Poinciana Campus'   AND ISMEMBEROF('KNJ-SG-Tableau All Staff Poinciana Campus'))                   // BRIDGE
+    OR ([location_clean_name] = 'KIPP Miami Technical High'       AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Miami Technical High'))
+    OR ([location_clean_name] = 'KIPP Newark Collegiate Academy'  AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Newark Collegiate Academy'))
+    OR ([location_clean_name] = 'KIPP Newark Lab High School'     AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Newark Lab High School'))
+    OR ([location_clean_name] = 'KIPP Purpose Academy'            AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Purpose Academy'))
+    OR ([location_clean_name] = 'KIPP Rise Academy'               AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Rise Academy'))
+    OR ([location_clean_name] = 'KIPP Royalty Academy'            AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Royalty Academy'))
+    OR ([location_clean_name] = 'KIPP SPARK Academy'              AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP SPARK Academy'))
+    OR ([location_clean_name] = 'KIPP Seek Academy'               AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Seek Academy'))
+    OR ([location_clean_name] = 'KIPP Sumner Elementary'          AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Sumner Academy'))                // BRIDGE
+    OR ([location_clean_name] = 'KIPP TEAM Academy'               AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP TEAM Academy'))
+    OR ([location_clean_name] = 'KIPP THRIVE Academy'             AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP THRIVE Academy'))
+    OR ([location_clean_name] = 'KIPP Upper Roseville Academy'    AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Upper Roseville Academy'))
+    OR ([location_clean_name] = 'Paterson Prep Elementary School' AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Paterson Prep Elementary'))      // BRIDGE
+    OR ([location_clean_name] = 'Paterson Prep Middle School'     AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP Paterson Prep Middle'))          // BRIDGE
+)
 ```
 
 Rooms are absent by design — central office reaches data through Tiers 2 and 4,
-never through location. If prerequisite 3 failed, expand to 26 explicit
-branches.
+never through location.
 
-Role gate:
+Role gate. **This is the one helper that legitimately differs per workbook** —
+the audit found five distinct shapes across 10 workbooks. The canonical form:
 
 ```text
 ISMEMBEROF('KNJ-SG-Tableau All DSO')
@@ -157,6 +393,156 @@ OR (ISMEMBEROF('KNJ-SG-Tableau All AP')
 The `ISNULL([job_function])` fallback mirrors what dbt now does upstream and is
 load-bearing, not defensive: `job_function` is unpopulated on historical roster
 rows and on newly created work assignments. It is removed when #4631 lands.
+
+The AP branch requires **the row** to be a teacher, so an assistant principal
+sees teachers at their school rather than every employee at it.
+
+The five shapes in use today, so a deviation reads as intent rather than
+accident. **Comment any deviation inline** — Miami's is the model to copy:
+
+| Shape                                                                                         | Workbooks                                                                                                     |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Canonical, as above                                                                           | Coaching Conversation Tool, Manager Survey Reports, Manager Survey Rollup, SchoolMint Grow, Stipend and Bonus |
+| Canonical + `OR ISMEMBEROF('TS-DL-NTN Coordinators')`, marked `// Workbook-specific addition` | Miami Instructional Rubrics                                                                                   |
+| `All DSO` OR `All SL` OR `All AP`, AP unrestricted — **uncommented**                          | Survey Dashboard                                                                                              |
+| `All DSO` OR `All SL` only — **uncommented**                                                  | Operations Systems                                                                                            |
+| `All SL` only — **uncommented**                                                               | Leadership Development                                                                                        |
+
+### Custom group grants that sit beside Tier 5
+
+A named group can be given school-scoped access without going through the three
+gates. This is the shape to copy, added 2026-09-08 for `Paterson TEAM Staff`:
+
+```text
+// Paterson TEAM Staff — scoped like an SL/DSO of a Paterson school.
+// Location-only: both Paterson Prep locations belong to KIPP Paterson
+// alone, so no entity gate is needed. Narrow the list below to
+// restrict this group to a single school.
+OR (
+    ISMEMBEROF('Paterson TEAM Staff')
+    AND [location_clean_name] IN ('Paterson Prep Elementary School', 'Paterson Prep Middle School')
+)
+```
+
+Three things about this shape are deliberate.
+
+**It skips the entity gate on purpose.** The two Paterson Prep locations exist
+only under `KIPP Paterson`, so naming the locations already implies the entity.
+Adding the entity gate would be redundant, and going through the gate properly
+would mean editing all three shared fields for one group.
+
+**Membership is the role qualification.** Everyone in the group is expected to
+hold an SL- or DSO-equivalent remit for Paterson. Both current members were
+already in `KNJ-SG-Tableau All SL` and were failing only entity and location,
+which is exactly why they saw nothing.
+
+**Narrowing later is a one-line edit** — drop a school from the `IN` list. That
+was the reason for putting the whole grant on one line rather than threading the
+group through `RLS - Entity Gate`, `RLS - Location Gate` and `RLS - Role Gate`.
+
+The clause goes in these 15 fields. Two carry a variant:
+
+| Workbook                    | Fields                                                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Coaching Conversation Tool  | `Permissions`                                                                                               |
+| Manager Survey Reports      | `Permissions`                                                                                               |
+| Manager Survey Rollup       | `Permissions`                                                                                               |
+| Miami Instructional Rubrics | `Permissions`                                                                                               |
+| Operations Systems          | `Permissions` on both datasources                                                                           |
+| SchoolMint Grow Dashboard   | `Permissions` on all three datasources, `Permissions - Norming`, `Permissions  - Norming - Individual Data` |
+| Stipend and Bonus Dashboard | `Permissions`                                                                                               |
+| Survey Dashboard            | `Permissions - Completion`, `Permissions - Support`, `Permissions - ITR`                                    |
+
+**Variant 1 — Operations Systems `operations_ekg` reads `[school_clean_name]`,
+not `[location_clean_name]`**, for the same reason its location gate does: the
+row is about the school that was walked, not the respondent's home school.
+Getting this wrong grants on the wrong axis and the mistake is invisible in the
+UI.
+
+**Variant 2 — the ITR copy carries the route-4 peer exclusion.** See _The Intent
+to Return variant_.
+
+Deliberately excluded, and why:
+
+- **Leadership Development** — retiring to Lattice; it took the Tier 2 swap
+  only.
+- **Manager Survey Rollup `Permission (detail)` and `Permissions (summary)`** —
+  legacy fields never brought onto the canonical block; they still reference
+  retired campus groups.
+- **Personalized Survey Links `Permissions - Self`** — self only, no Tier 5 to
+  sit beside.
+- **Stipend and Bonus `Permissions HR Download`** — gates a download button, not
+  rows.
+
+### `RLS - Subject Is Senior Leader`
+
+Needed only where senior leaders are shielded from each other — Manager Survey
+Reports and Manager Survey Rollup. Leadership Development carried it too and is
+being archived in [#4629](https://github.com/TEAMSchools/teamster/pull/4629).
+
+There is no way to ask Tableau whether **the row's person** belongs to a group;
+`ISMEMBEROF()` only ever answers for the current viewer. Subject-side seniority
+has to come from the data.
+
+```text
+IFNULL([job_function], '') = 'Chief Level'
+OR (
+    ISNULL([job_function])
+    AND (
+        CONTAINS(IFNULL([job_title], ''), 'Chief')
+        OR CONTAINS(IFNULL([job_title], ''), 'President')
+        OR CONTAINS(IFNULL([job_title], ''), 'Executive')
+    )
+)
+```
+
+Two aspects are load-bearing:
+
+- **The `IFNULL` wrappers** force TRUE or FALSE and never NULL, so the `NOT` in
+  `Permissions` cannot go three-valued. Without them a null `job_function` makes
+  the branch NULL, NULL is not TRUE in a filter, and every row with a null
+  function silently disappears from council members' views — over a hundred
+  thousand rows in Leadership Development alone.
+- **The title fallback fires only when `job_function` is null.** Around 1,200
+  rows in Leadership Development and 600 in the manager survey have a null
+  function with a senior title. Without it those rows stop being shielded.
+
+!!! warning "Bare `Executive` catches an executive assistant"
+
+    The third title test matches `Executive Assistant`, which is not a senior
+    leader, so an executive assistant is currently hidden from the council on all
+    three workbooks. `RLS - Comp Peer Row` on the Stipend workbook solved the same
+    problem correctly by matching `'EXECUTIVE DIRECTOR'` and documents why. Make
+    these three agree with it.
+
+The council grant in Tier 2 carries the exclusion:
+
+```text
+OR (ISMEMBEROF('Group Staff TEAM Council') AND NOT [RLS - Subject Is Senior Leader])
+```
+
+Note the `NOT`. The helper answers "should this row be shielded", so the grant
+is its negation. Writing the shielded condition here without negating it grants
+the council exactly the rows meant to be hidden — the inversion is easy to miss
+because both forms read plausibly.
+
+!!! danger "The shield only works because the entity gate excludes KTAF-on-KTAF"
+
+    The two are coupled, and that coupling is what a future edit is most likely to
+    break. A shield sitting in one branch of an `OR` chain does nothing about the
+    other branches. If the KTAF branch in the entity gate is ever restored to its
+    unconditional form, Tier 4 bypasses this shield again.
+
+    If the shield ever needs to hold regardless of the entity gate, it has to wrap
+    the whole calculation rather than sit in Tier 2:
+
+    ```text
+    IF [RLS - Subject Is Senior Leader] THEN
+        <Tier 1, plus any network-wide groups you allow>
+    ELSE
+        <the full five-tier chain>
+    END
+    ```
 
 ### Retired-location bridge
 
@@ -181,6 +567,342 @@ explicit `ESE Teacher`. And the `KNJ-SG-Tableau All Staff KIPP Whittier MIddle`
 typo, which has never matched anything.
 
 Keep `Group Staff NJ Regional` and `Group Staff MIA Regional`.
+
+!!! warning "No Tier 3 in any of the 8 workbooks names Paterson"
+
+    Paterson is in NJ and appears in both the entity gate and the location gate,
+    but never in Tier 3 — so NJ regional ops staff see TEAM and KCNA rows and not
+    Paterson rows. Either `'KIPP Paterson'` joins the NJ list or Paterson gets its
+    own regional group. Nobody has decided, and it is an 8-workbook edit, so settle
+    it before touching Tier 3 anywhere.
+
+---
+
+## Workbook-specific gates
+
+Two workbooks compose a non-identity predicate into the tier chain. They are the
+model for extending the pattern rather than forking `Permissions`.
+
+### `RLS - Release Gate` — Coaching Conversation Tool
+
+An observee must not see their own PM scores before the observation is locked,
+or their own PM comments before the term's lockbox date. Their manager and coach
+see both throughout.
+
+```text
+IF [observation_type_abbreviation] = 'PMS'
+THEN IFNULL([locked], FALSE)
+ELSEIF ISNULL([tracking_academic_year])
+THEN TRUE
+ELSE NOT ISNULL([lockbox_date]) AND TODAY() >= [lockbox_date]
+END
+```
+
+It attaches to the three self-match branches of Tier 1, never to the
+`reports_to_*` branches:
+
+```text
+(
+    (
+        LOWER(USERNAME()) = LOWER([sam_account_name])
+        OR LOWER(USERNAME()) = LOWER([mail])
+        OR LOWER(USERNAME()) = LOWER([user_principal_name])
+    )
+    AND [RLS - Release Gate]  // observee waits: PMS for lock, PMC for lockbox date
+)
+OR LOWER(USERNAME()) = LOWER([reports_to_sam_account_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_mail])
+```
+
+Also add a **data source filter** `[is_observed] = 1`, which drops the
+completion-tracking scaffold rows — they carry no scores or comments.
+
+Three deliberate choices:
+
+- **Tier 1 is a sufficient place to gate here, unlike anywhere else.** The
+  extract filters subjects to teachers, and teachers hold no DSO, SL, or AP
+  membership, so Tier 1 is their only route to their own row. On a workbook
+  whose subjects included school leaders this would leak through Tier 5.
+- **`ISNULL([tracking_academic_year])` is the prior-year test, and it is what
+  makes a missing lockbox date fail closed.** Prior-year rows come from the
+  model's second `union all` branch, which hardcodes a null `lockbox_date`; a
+  current-year row always carries a tracking year. Testing the lockbox date for
+  nullness instead would release a current-year term the moment someone forgot
+  to set its date.
+- **`IFNULL([locked], FALSE)` fails closed** on the small number of PMS rows
+  where `locked` is null.
+
+### `RLS - Comp Peer Row` — Stipend and Bonus Dashboard
+
+TRUE for rows whose stipend must be hidden from the broad tiers. Chiefs and
+senior leaders do not see each other's compensation; self and manager visibility
+is preserved in Tier 1.
+
+```text
+[job_function] IN (
+    'Chief Level',
+    'EDs, HOSs, MDOs',
+    'KTAF or Regional Managing Director'
+)
+OR (
+    ISNULL([job_function])
+    AND (
+        CONTAINS(UPPER(IFNULL([job_title], '')), 'CHIEF')
+        OR CONTAINS(UPPER(IFNULL([job_title], '')), 'PRESIDENT')
+        OR CONTAINS(UPPER(IFNULL([job_title], '')), 'MANAGING DIRECTOR')
+        OR CONTAINS(UPPER(IFNULL([job_title], '')), 'HEAD OF SCHOOLS')
+        OR CONTAINS(UPPER(IFNULL([job_title], '')), 'EXECUTIVE DIRECTOR')
+    )
+)
+```
+
+It negates and wraps Tiers 2b through 5, leaving Tier 1 and the comp
+administrators outside the suppression:
+
+```text
+<Tier 1>
+OR ISMEMBEROF('KNJ-SG-Tableau All Data')
+OR ISMEMBEROF('KNJ-SG-Tableau All HR')
+OR (
+    (
+        <Tier 2b TEAM Council, Tier 3, Tier 4, Tier 5>
+    )
+    AND NOT [RLS - Comp Peer Row]
+)
+```
+
+!!! danger "The wrapping parentheses are load-bearing"
+
+    `AND` binds tighter than `OR`, so without them the suppression attaches to Tier
+    5 alone and leaves Tiers 2b, 3, and 4 wide open — including Tier 4, which is
+    how MDSOs, HOSs, and MDOs reach this dashboard. Do not flatten them.
+
+---
+
+## The Intent to Return variant
+
+`Permissions - ITR` on the Survey Dashboard keeps the tier idea but adds a
+**peer exclusion at every level**: a viewer never sees a respondent at their own
+level. Peers and subordinates learn nothing about whether someone plans to
+return; leaders above the respondent legitimately need to know.
+
+This is the live text, copied out of the workbook on 2026-08-06 and reproduced
+**verbatim** so it can be diffed against the calculation editor character for
+character. That means it uses this workbook's field captions, not the dbt column
+names the rest of this file uses.
+
+Note the mixed naming, which is exactly the trap step 1 exists for: `mail` is
+captioned `Mail`, but `reports_to_mail` was never renamed and appears raw. Same
+for `job_title` → `Job Title` and `home_department_name` → `Department`, while
+`sam_account_name`, `user_principal_name` and `reports_to_sam_account_name` stay
+raw. Do not "tidy" these into one style — each token has to match what the Data
+pane shows or the calculation will not validate.
+
+```text
+// Permissions - ITR
+
+// 1. Self, and the manager recorded on the response
+LOWER(USERNAME()) = LOWER([sam_account_name])
+OR LOWER(USERNAME()) = LOWER([Mail])
+OR LOWER(USERNAME()) = LOWER([user_principal_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_sam_account_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_mail])
+
+// 2. Administrators of the process
+OR ISMEMBEROF('KNJ-SG-Tableau All Data')
+OR ISMEMBEROF('KNJ-SG-Tableau All HR')
+OR ISMEMBEROF('KNJ-SG-Tableau All Recruiting')
+OR ISMEMBEROF('Leadership Development')
+
+// 3a. MDSO / HOS / MDO: their region, minus their own level.
+//     They sit above every director, so directors stay visible.
+OR (
+    (
+        ISMEMBEROF('KNJ-SG-Tableau All MDSO')
+        OR ISMEMBEROF('KNJ-SG-Tableau All HOS')
+        OR ISMEMBEROF('KNJ-SG-Tableau All MDO')
+    )
+    AND [RLS - Entity Gate]
+    AND NOT [RLS - ITR Respondent Is Regional Leadership]
+)
+
+// 3b. The Syndicate: their region, minus regional leadership and minus
+//     director-rank peers - but school operations directors stay visible.
+OR (
+    ISMEMBEROF('KNJ-SG-Tableau The Syndicate')
+    AND [RLS - Entity Gate]
+    AND NOT [RLS - ITR Respondent Is Regional Leadership]
+    AND (
+        NOT [RLS - ITR Respondent Is a Department Director]
+        OR [RLS - ITR Respondent Is a School Operations Director]
+    )
+)
+
+// 3c. School Support Directors: their region, minus regional leadership
+//     and minus every director rank.
+OR (
+    ISMEMBEROF('KNJ-SG-Tableau School Support Directors')
+    AND [RLS - Entity Gate]
+    AND NOT [RLS - ITR Respondent Is Regional Leadership]
+    AND NOT [RLS - ITR Respondent Is a Department Director]
+)
+
+// 4. School leaders and DSOs: their school, minus each other
+OR (
+    (ISMEMBEROF('KNJ-SG-Tableau All DSO') OR ISMEMBEROF('KNJ-SG-Tableau All SL'))
+    AND [RLS - Entity Gate]
+    AND [RLS - Location Gate]
+    AND NOT [RLS - ITR Respondent Is School Leadership]
+)
+
+// 5. Assistant principals: teachers at their school, nobody else
+OR (
+    ISMEMBEROF('KNJ-SG-Tableau All AP')
+    AND [RLS - Entity Gate]
+    AND [RLS - Location Gate]
+    AND (
+        CONTAINS(UPPER([Job Title]), 'TEACHER')
+        OR CONTAINS(UPPER([Job Title]), 'LEARNING SPECIALIST')
+    )
+)
+
+// 6. Departmental directors: their own department in their own region,
+//    minus director-rank peers. Associate directors stay visible.
+OR (
+    ISMEMBEROF('KNJ-SG-Tableau Special Education Directors')
+    AND [Department] = 'Special Education'
+    AND [RLS - Entity Gate]
+    AND NOT [RLS - ITR Respondent Is a Department Director]
+)
+OR (
+    ISMEMBEROF('KNJ-SG-Tableau KIPP Forward Directors')
+    AND [Department] = 'KIPP Forward'
+    AND [RLS - Entity Gate]
+    AND NOT [RLS - ITR Respondent Is a Department Director]
+)
+
+// 7. TEAM Council: everyone, except other chief-level respondents.
+OR (
+    ISMEMBEROF('Group Staff TEAM Council')
+    AND NOT [RLS - ITR Respondent Is Chief Level]
+)
+
+// 8. Paterson TEAM Staff: both Paterson Prep schools, minus school
+//    leadership - the same exclusion route 4 puts on SLs and DSOs.
+OR (
+    ISMEMBEROF('Paterson TEAM Staff')
+    AND [location_clean_name] IN ('Paterson Prep Elementary School', 'Paterson Prep Middle School')
+    AND NOT [RLS - ITR Respondent Is School Leadership]
+)
+```
+
+**Branch 8 must keep its exclusion.** Everywhere else the Paterson clause is a
+plain location test, and copying that plain form here would be a real
+over-grant: route 4 stops a school leader seeing other school leaders' answers,
+so a group modelled on school leaders that skipped the exclusion would see ITR
+responses that Paterson's own SLs and DSOs cannot. The asymmetry is the whole
+reason this branch differs from the other 14.
+
+Three things about branch 2 and 3: `All Parliament` is deliberately absent
+because it contains peers and subordinates of the respondents; `TEAM Council`
+also holds network-wide access and appears in branch 7 instead, carrying a
+shield; and `Leadership Development` carries no `KNJ-SG-Tableau` prefix — that
+is the real group name, not a typo.
+
+`AcOps` is **not** in branch 3a. It was removed deliberately; do not re-add it
+by copying the canonical Tier 4.
+
+### The five peer-exclusion helpers
+
+They are shaped differently on purpose — pattern-matching for regional ranks,
+enumeration for school ranks. The reasoning is in the spec.
+
+```text
+// RLS - ITR Respondent Is Regional Leadership
+UPPER([job_title]) = 'HEAD OF SCHOOLS'
+OR CONTAINS(UPPER([job_title]), 'MANAGING DIRECTOR')
+OR CONTAINS(UPPER([job_title]), 'CHIEF')
+OR CONTAINS(UPPER([job_title]), 'PRESIDENT')
+OR CONTAINS(UPPER([job_title]), 'EXECUTIVE DIRECTOR')
+```
+
+```text
+// RLS - ITR Respondent Is School Leadership
+// No ops fellow here on purpose - school leaders and DSOs see them.
+UPPER([job_title]) IN (
+    'SCHOOL LEADER',
+    'DIRECTOR SCHOOL OPERATIONS',
+    'DIRECTOR CAMPUS OPERATIONS',
+    'DIRECTOR OF CAMPUS OPERATIONS'
+)
+OR [RLS - ITR Respondent Is Regional Leadership]
+```
+
+```text
+// RLS - ITR Respondent Is a Department Director
+// Any director rank. Associate directors are not peers.
+CONTAINS(UPPER([job_title]), 'DIRECTOR')
+AND NOT CONTAINS(UPPER([job_title]), 'ASSOCIATE')
+```
+
+```text
+// RLS - ITR Respondent Is a School Operations Director
+// The Syndicate's own line of report - stays visible to them.
+UPPER([job_title]) IN (
+    'DIRECTOR SCHOOL OPERATIONS',
+    'DIRECTOR CAMPUS OPERATIONS',
+    'DIRECTOR OF CAMPUS OPERATIONS',
+    'FELLOW SCHOOL OPERATIONS DIRECTOR'
+)
+```
+
+```text
+// RLS - ITR Respondent Is Chief Level
+// Council peers. Deliberately NOT the shared RLS - Subject Is Senior Leader:
+// that keys on job_function, which is unpopulated here, and its title fallback
+// matches 'Executive' and so catches an executive assistant.
+CONTAINS(UPPER([job_title]), 'CHIEF')
+OR CONTAINS(UPPER([job_title]), 'PRESIDENT')
+```
+
+### Two rules this variant establishes
+
+- **These helpers test job title, not `job_function`.** That contradicts
+  `RLS - Subject Is Senior Leader`, and the reason is data rather than
+  preference: `job_function` is populated on **0.06%** of
+  `rpt_tableau__survey_responses` and **0% for 2019 through 2024**. Revisit
+  after [#4631](https://github.com/TEAMSchools/teamster/issues/4631) backfills
+  history, at which point every title test collapses to a job-function test.
+- **Branch 1 has no peer exclusion, deliberately.** A manager sees their report
+  even when both are director-rank. "No peers" means "no peers you don't
+  manage."
+
+!!! warning "Viewer attributes are current-state; row attributes are historical"
+
+    Tableau group membership follows today's roster. Every column on
+    `rpt_tableau__survey_responses` — `job_title`, `home_department_name`,
+    `location_clean_name`, `reports_to_*` — is a snapshot from when the person
+    answered. So a school leader sees three years of their school's rows including
+    their predecessor's staff, someone who changes schools leaves their answers
+    with the old school's leadership, and **peer exclusions match the row's title,
+    not the person's current one**.
+
+    This is also why test personas must be built from
+    `kipptaf_people.int_people__staff_roster` with `assignment_status = 'Active'`,
+    never from the extract.
+
+!!! note "Do not build an aggregate variant on this extract"
+
+    The tempting way to give a head of schools a school-level retention rate is a
+    second, wider permission field used only on "aggregate" sheets. Sheets gated by
+    a looser field on a row-level extract are one filter swap away from exposing the
+    prose behind them. `is_open_ended` is 1 on **every** ITR row including the
+    categorical `itr_plans`, so it cannot separate aggregate-safe content from
+    prose, and 37% of ITR rows carry a null `question_shortname`.
+
+    Build it in dbt instead — counts by `itr_plans` per location and year, minimum-N
+    suppression, no identity or demographic columns — and publish it as its own
+    datasource with its own permissions.
 
 ---
 
@@ -221,6 +943,24 @@ If a location appears here with no group, create the group before proceeding. If
 a group exists for a location not on this list, it is retired — leave it alone
 but do not reference it.
 
+### Custom groups outside the naming rule
+
+Three groups in live calculations carry no `KNJ-SG-Tableau` prefix and follow no
+naming rule. They are local Tableau groups, not AD-synced, so they will not
+appear in a directory search:
+
+| Group                            | Tier   | Members (2026-09-08) |
+| -------------------------------- | ------ | -------------------- |
+| `Group Staff Employee Relations` | Tier 2 | 5                    |
+| `Paterson TEAM Staff`            | Tier 5 | 2                    |
+| `Leadership Development`         | Tier 2 | —                    |
+
+Verify the exact string before referencing one. `ISMEMBEROF` against a group
+that does not exist does not error — it silently returns false, which reads as
+"that person has no access" rather than "that calculation is broken." Check
+membership too: `Group Staff Employee Relations` looks like a rename of
+`KNJ-SG-Tableau All HR` and is not one.
+
 ---
 
 ## Per-workbook sections
@@ -258,7 +998,11 @@ design doc's earlier estimate.
   `[report_to_sam_account_name]` → `[reports_to_sam_account_name]`
 - **Note:** this model now excludes rows whose employee number resolves to no
   roster record, so a small number of previously-visible rows are gone by design
-- **Verify:** a participant sees their own record; their manager sees it too
+- **Senior-leader shield:** this workbook needs the fifth calculated field plus
+  the council branch in Tier 2. Both are in `RLS - Subject Is Senior Leader`
+  above.
+- **Verify:** a participant sees their own record; their manager sees it too.
+  Also run the two senior-leader personas in _Preview as User_.
 
 ### SchoolMint Grow Dashboard
 
@@ -268,15 +1012,27 @@ design doc's earlier estimate.
   `[location]` → `[location_clean_name]`, `[department]` →
   `[home_department_name]`; and on the two `schoolmint_grow_*` datasources
   `[report_to_sam_account_name]` → `[reports_to_sam_account_name]`
-- **Tier 4 variant:** the `Permissions - Norming*` blocks are the ungated
-  variant that adds `KNJ-SG-Tableau All SL`
+- **This workbook was rebuilt on 2026-09-04 and no longer follows the canonical
+  block. Read _Gap 9_ before editing anything here.** In summary: no
+  datasource-wide filter on `observation_details`, three gates instead of one,
+  all filters sheet-local and `context='true'`, Tier 1 manager-only, zero
+  by-name grants.
+- **Tier 4 variants:** `Permissions - Norming` adds `All SL`, `All DSO` and
+  `All AP` region-scoped; `Permissions  - Norming - Individual Data` adds
+  `All SL` only, so an AP or DSO falls through to Tier 5 on sheets that name
+  specific teachers. Neither is the "ungated" variant this file used to describe
+  — that shape never worked, see _Gap 9_.
 - **Note:** `rpt_tableau__pm_outlier_detection` was **dropped from PR #4656**
   and is unchanged, so any calc referencing it needs no edit. Its remaining work
   is #4663.
 - **Note:** `rpt_tableau__teacher_observations` now excludes observations logged
   against non-teachers, and resolves ESL teachers that previously fell out
-- **Verify:** an AP sees only their own school's teachers; a school leader sees
-  their school; norming sheets show cross-region data for MDSO/HOS/AcOps/SL
+- **Verify** with _Preview as User_, using personas at a school that has data —
+  Paterson has none in this extract. The pair that proves the split is an AP and
+  a school leader at the same school: at KIPP Royalty Academy, `cdunner` (AP)
+  sees all 3 Miami schools on the aggregate norming sheets but only Royalty's
+  teachers on `norming_top_20`, while `wmealing` (SL) sees all 3 on both. A
+  teacher with no leader path and no reports sees nothing anywhere.
 
 ### Coaching Conversation Tool
 
@@ -382,24 +1138,36 @@ design doc's earlier estimate.
 - **Keep:** `subject_preferred_name`, `subject_manager_name`,
   `subject_manager_userprincipalname`, `subject_df_employee_number`,
   `is_manager`, and the `respondent_*` fields — all genuinely different values
-- **Verify:** a rated manager sees their own results; their manager sees them
+- **Senior-leader shield:** this workbook needs the fifth calculated field plus
+  the council branch in Tier 2. Both are in `RLS - Subject Is Senior Leader`
+  above.
+- **Verify:** a rated manager sees their own results; their manager sees them.
+  Also run the two senior-leader personas in _Preview as User_.
 
 ### Manager Survey Rollup
 
 - **Datasource change:** same repoint as Manager Survey Reports
 - **Fields:** same seven `subject_*` repoints
+- **Senior-leader shield:** same as Manager Survey Reports — the fifth
+  calculated field plus the council branch in Tier 2, from
+  `RLS - Subject Is Senior Leader` above. This is the workbook the leak was
+  found in.
 - **Verify:** rollup totals match the pre-repoint numbers — the new extract
   wraps the same intermediate at the same grain, 175,670 rows, so any change in
-  a total means a field was mapped wrong
+  a total means a field was mapped wrong. Also run the two senior-leader
+  personas in _Preview as User_.
 
 ### Teacher Goals
 
 - **No field fixes.** No dbt-side rename touches this workbook.
 - **Apply the canonical Permissions block only.**
-- **No exposure was added** — its datasource could not be determined, because
-  every workbook here uses an embedded extract and the read-only Tableau MCP
-  exposes no workbook-to-table mapping. If you identify the model while in
-  Desktop, say so and the exposure can be added in a one-line PR.
+- **No exposure should be added, and this is now settled.** Read off the server
+  2026-09-04, the Archive copy's five embedded datasources are all pre-dbt
+  `gabby`-era tables — `pm_teacher_goals`, `pm_etr_dashboard`, `staff_roster`,
+  `self_and_others_survey_detail`, and a `Sheet1` workbook connection. None is
+  an `rpt_tableau__` model, so there is nothing for an exposure to point at. If
+  this workbook is ever restored it needs repointing onto a current extract
+  first, and that is a build, not a permissions fix.
 
 ---
 
@@ -419,11 +1187,25 @@ gate. Both matter.
 | School Leader                   | own school                                            |
 | DSO                             | own schools                                           |
 | MDSO / HOS / AcOps              | own region; cross-region **only** on norming sheets   |
-| KTAF central office             | everything, via the unconditional KTAF branch         |
+| KTAF central office             | the four regions, **not** other central office rows   |
 | Paterson school staff           | Paterson rows — this is the branch that did not exist |
 | Room 12 staff under TEAM        | gates through the TEAM branch, not Paterson           |
 | Cross-entity supervisor         | the supervised entity's rows, via group membership    |
 | One of the 3 UPN-mismatch staff | self, proving the UPN hedge works                     |
+
+On the three senior-leader workbooks — Manager Survey Reports, Manager Survey
+Rollup, Leadership Development — add these two. They are the cases that caught
+the real leak, so run them rather than assuming.
+
+| Persona                                          | Expect                                                |
+| ------------------------------------------------ | ----------------------------------------------------- |
+| A KTAF senior leader who is also in an ops group | regional rows yes; **another KTAF senior leader, no** |
+| The manager both senior leaders report to        | **both of them**, via Tier 1                          |
+
+The first passes only if the entity gate excludes KTAF-on-KTAF _and_ the Tier 2
+shield is negated correctly. The second is the counter-test proving you have not
+over-blocked — a manager who cannot see their own reports means the shield is
+too wide.
 
 ### Cutover rehearsal
 
@@ -432,25 +1214,407 @@ anything. Confirm a viewer resolves by `sam_account_name` today, and confirm the
 same viewer's `mail` and `user_principal_name` values are present and correct in
 the extract. If both hold, cutover needs no coordination.
 
+### Enumerate every permission field, do not assume there is one
+
+A workbook is not finished when `Permissions` is correct. Several carry
+additional gates for particular sheets, and **each is a separate copy of the
+tier chain** that has to be brought forward independently. SchoolMint Grow has
+five; the Survey Dashboard has two.
+
+1. Sort the Data pane by name and read every field beginning `Permissions`. Fix
+   or delete each one. A field nothing uses is still a field the next editor
+   will copy.
+1. For each sheet, open the Filters shelf and note **which** permission field it
+   filters on, and at what scope. Do not infer it from the sheet's topic.
+1. Resolve each filter's field to its caption before believing it. A `.twb`
+   filter stores the field's **internal** name, which never changes on rename —
+   a filter reading `Permissions - ITR (copy)_155726081272713223` displays as
+   `Permissions - Support`, and `RLS - Role Gate` in Leadership Development is
+   stored as `RLS - Entity Gate (copy)_1662461611803287552`.
+
+!!! danger "A dead permission field is not harmless"
+
+    It passes every persona test, because nothing filters on it — and it is the
+    natural thing to copy when someone next adds a sheet. The audit found three,
+    one of them 112 lines carrying two unconditional KTAF branches and three
+    by-name grants. Delete dead permission fields; do not leave them for later.
+
+### Rule out a non-permission datasource filter before blaming the gate
+
+A datasource filter that has nothing to do with permissions can hide data
+exactly like a broken gate, and it appears on **no** sheet's filter shelf. Check
+for one before touching a calculation.
+
+This cost real time on Operations Systems. Two schools looked ungated after the
+new school-scoped gate went in; the actual cause was a datasource filter keeping
+`Walkthrough Round = 'Pulse Check Walkthrough'`, and those schools had only ever
+had `Strong Start Walkthrough` rounds. The gate was correct. Eleven of 21
+schools and 60 walkthroughs were hidden — the two that got noticed were simply
+the two someone knew to look for.
+
+How to check quickly, in order:
+
+1. **Query the model, not the extract.** Group the rows by the column you are
+   gating on and confirm the values you expect are present and non-null. If they
+   are missing upstream, no gate change will help.
+1. **Open Edit Data Source Filters** on every datasource in the workbook. Read
+   each one; a hardcoded round, term, or year is a common leftover.
+1. **Only then read the calculation.** If the data has the rows and no
+   datasource filter drops them, the gate is the suspect.
+
+The same trap applies to the `.twbx`: a filter with `user:ui-enumeration='all'`
+is a keep-everything no-op, while one with an explicit
+`<groupfilter function='member'>` list is actively selecting. Do not treat the
+mere presence of a filter as the finding.
+
 ### Confirm the individual grants are actually gone
 
-Search each workbook's calcs for `USERNAME() =` comparisons against literal
-strings. There should be none — Tier 1 compares against fields, never literals.
-That search is the check that no individual grant survived.
+Search every calculation in the workbook — not just `Permissions` — for each of
+these. All four should return nothing:
 
-Separately, confirm each of the 12 formerly-hardcoded individuals still has
-access through a group. Losing them is the one regression this remediation could
-plausibly introduce, and it is silent.
+| Search                                          | Why                                                                                                                                                                                                         |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `USERNAME()` next to a quoted string            | an individual by-name grant. Tier 1 compares against fields, never literals                                                                                                                                 |
+| `The Syndicate`                                 | retired network-wide and grants broadly. The one legitimate use is branch 3b of `Permissions - ITR`                                                                                                         |
+| `All Staff KTAF` not followed by an entity list | the unconditional KTAF branch. The correct form ANDs it with the four-entity list                                                                                                                           |
+| `USERATTRIBUTE`                                 | reads an attribute asserted by a connected app or embedding JWT, not the signed-in identity. On a workbook opened directly on Server there is no such assertion, so it is not a substitute for `USERNAME()` |
+
+Separately, confirm each formerly-hardcoded individual still has access through
+a group. Losing them is the one regression this could plausibly introduce, and
+it is silent.
+
+### Confirm every data sheet is actually reachable by a gate
+
+The audit's most severe finding was not a wrong formula — it was two sheets on a
+landing dashboard that no permission filter reached at all, and a correct field
+that had never been attached to anything.
+
+For each sheet in the workbook, answer: which permission field reaches this
+sheet, at which scope? Title and text sheets with no datasource need no gate;
+everything else does. If the answer is "none", that is the finding.
+
+---
+
+## Next up — start here
+
+Grow is done and verified in Production at revision 219. Four workbooks remain,
+in this order. Each is a self-contained sitting.
+
+### 1. Survey Dashboard — the only undocumented over-grant left
+
+Three findings, and the first is the one that matters.
+
+`Permissions - Completion` is **byte-identical** to `Permissions - Support`.
+Both carry an unconditional `ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF')` and
+**no Tier 1 at all** — they start at Tier 2. _Gap 3_ documents Support and says
+its KTAF grant is accepted until the department gate ships. Nobody wrote down
+that Completion is the same calculation. Worse, _Gap 1_ records Completion
+Tracking as "Fixed — five-tier gate built on `rpt_tableau__survey_completion`",
+and the gate that shipped has four tiers and no self clause.
+
+So the first question is whether the Gap 1 fix inherited the Gap 3 defect
+deliberately or by copy-paste. Ask before changing anything: scoping Completion
+may belong with #4721 rather than ahead of it.
+
+Then `Calculation1` — an **unnamed** 1,417-character field on
+`rpt_tableau__survey_responses` that is the **department gate, already built**.
+It maps `rated_department_code` onto groups (`KNJ-SG-Tableau Dept Compliance`,
+`TS-SG-R9 Development`, `TS-SG-R9 Finance` and more). The playbook says
+department scoping "has not shipped" and to treat it as future state. Something
+is half-built in the workbook. Work out whether it is attached to anything
+before #4728 lands, because a second department gate arriving on top of this one
+would be hard to reason about.
+
+Third, Tier 4 grants `TS-SG-R9 Technology`, which appears in neither the guide's
+group tables nor the _Groups_ section here.
+
+### 2. Manager Survey Rollup — one datasource to detach
+
+The repoint left `int_surveys__manager_survey_details (kipptaf_surveys)`
+attached alongside the extract, carrying two dead permission fields. **No sheet
+reads it**, and the gates on the live datasource audit clean, so this is hygiene
+rather than a leak. Detail in _Gap 7_. Delete both fields and the datasource in
+Desktop; no persona re-run needed.
+
+### 3. Stipend and Bonus — one live by-name grant
+
+`Permissions HR Download` carries 1 by-name `USERNAME()` grant, live on the
+`hr_download` and `pay code audit` sheets. The guide states plainly that
+individual grants are not permitted. Removing it means confirming first that
+whoever it names reaches those sheets another way.
+
+### 4. Manager Survey Reports — a question, not a fix
+
+Its datasource is `rpt_tableau__manager_survey_details (kipptaf_surveys)` while
+Rollup's is the same model in `(kipptaf_tableau)`. One of those datasets is
+wrong. Decide which before touching either workbook.
+
+Leadership Development still holds a dead `Rollup Permissions` field with 2
+by-name grants, and is being archived in
+[#4629](https://github.com/TEAMSchools/teamster/pull/4629). Nothing to do unless
+that PR stalls.
+
+### Before you start any of them
+
+- **Audit from the `.twbx`, not the UI.** The recipe is in
+  `docs/guides/tableau-workbook-editing.md` (landing in
+  [#5157](https://github.com/TEAMSchools/teamster/issues/5157)). The UI hides a
+  dead field and shows a filter's caption rather than the field it resolves to.
+- **Publish from Desktop, not the REST API**, and tick _Embed password_. A REST
+  publish drops the embedded credential and the next extract refresh fails hours
+  later with no other symptom. Then trigger a refresh and confirm it succeeds.
+- **Pick personas that have data.** Paterson has zero rows in the Grow extract
+  and may be empty in others; a persona at an empty school sees nothing and
+  proves nothing. Check row counts by `location_clean_name` first.
+- **Pick personas with no Tier 2 group.** Anyone in `All Data`, `All HR`,
+  `Leadership Development` or `Group Staff TEAM Council` sees everything, so the
+  test proves nothing.
+
+## Known gaps
+
+Found by the 2026-08-05 audit of all 11 shipped workbooks, which read the
+calculations out of the `.twbx` files, and reviewed with the owner the same day.
+The working checklist is in `.claude/scratch/tableau_permissions_audit/`,
+uncommitted because it names staff usernames.
+
+| #   | Workbook                          | Gap                                                                                                                                                                   | Status                                                                                                                                                       |
+| --- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Survey Dashboard                  | `Completion Tracking` and `Individual Tracking` were on the `Home` dashboard and **ungated** — full roster names, employee numbers, job titles, and completion status | **Fixed** — five-tier gate built on `rpt_tableau__survey_completion`                                                                                         |
+| 2   | Miami Instructional Rubrics       | a correct five-tier `Permissions` existed and was **applied at no scope**, so both data sheets were ungated                                                           | **Fixed** — field attached datasource-wide                                                                                                                   |
+| 3   | Survey Dashboard                  | `Permissions - Support` carries the unconditional `All Staff KTAF` branch, still grants `AcOps`, and is the only gate on five sheets                                  | **Accepted for now** — replaced by department scoping in [#4728](https://github.com/TEAMSchools/teamster/pull/4728), Tasks 7-10                              |
+| 4   | Operations Systems                | `rpt_tableau__operations_ekg`'s `Permissions` was 8 lines of group tests with no self clause and no location gate — applied datasource-wide over 10 sheets            | **Fixed** — school-scoped gate built on `school_clean_name`; confirm it is published                                                                         |
+| 5   | Federal Grants Timesheet Approval | no permission fields at all, 7 ungated data sheets                                                                                                                    | **Not a gap** — the workbook reads a live Google Sheet, not a gated extract. Leaving the model in [#4726](https://github.com/TEAMSchools/teamster/pull/4726) |
+| 6   | Leadership Development            | `RLS - Entity Gate` has no Paterson branch, so Paterson rows are invisible to Paterson's own leadership                                                               | **Not worth fixing** — archived for the Lattice migration in [#4629](https://github.com/TEAMSchools/teamster/pull/4629)                                      |
+
+### Gap 7 — Manager Survey Rollup keeps the datasource it was repointed off
+
+Found 2026-09-04 by downloading the `.twbx` and reading the XML. **No live
+leak** — all eight worksheets bind to `rpt_tableau__manager_survey_details`, and
+its gate audits clean: canonical five-tier `Permissions`, 26 location branches,
+region-scoped KTAF entity branch, the senior-leader shield present and ANDed
+onto the TEAM Council branch, and zero by-name `USERNAME()` grants.
+
+What remains is dead weight the repoint left behind:
+
+| Left attached                                           | Carries                                        |
+| ------------------------------------------------------- | ---------------------------------------------- |
+| `int_surveys__manager_survey_details (kipptaf_surveys)` | `Permissions (summary)`, `Permission (detail)` |
+
+These are the "two dead permission fields" in the cleanup note above — this is
+the workbook they are in, and a whole stale datasource comes with them.
+
+Delete them anyway, and delete the datasource. Step 2's warning is the reason:
+containment by a datasource-wide gate is invisible and temporary, and these two
+fields are exactly the kind that get copied into a new workbook.
+`Permission (detail)` is 8,670 characters and tests 45 distinct groups,
+including nine retired locations (`KIPP Liberty Academy`,
+`KIPP Newark Community Prep`, `KIPP Sunrise Academy`, `KIPP Truth Academy`,
+`KIPP Whittier MIddle` — the typo is in the group name — `18th Ave Campus`,
+`Norfolk St Campus`, `Lanning Sq Campus`, `Group Staff Sumner Elementary`) and
+two groups that appear nowhere in the guide: `KNJ-SG-Tableau Parliament` and
+`MRT Special Access`. Pasted into a live workbook it would grant on names that
+no longer mean anything.
+
+**Do this in Desktop:** delete both fields, delete the
+`int_surveys__manager_survey_details` datasource, republish. No persona re-run
+needed — no sheet reads it.
+
+### Gap 8 — Content Team Dashboard is gone, not archived
+
+_Current state_ says two workbooks were archived rather than remediated. Only
+`Teacher Goals` is actually on the site; a name query for
+`Content Team Dashboard` returned nothing on 2026-09-04. It was deleted. Nothing
+to do — but do not go looking for it, and do not count it as a restorable
+archive. Its pre-migration calculation is recoverable only from a Server
+revision history that no longer has a workbook to hang off.
+
+### Gap 9 — SchoolMint Grow, audited and rebuilt 2026-09-04
+
+Audited by reading the `.twbx`, then rebuilt. **This workbook no longer matches
+the canonical block** — the deviations below are deliberate and are the reason
+this section exists.
+
+| Finding                                                                                                             | Status                                                           |
+| ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `Permissions Group Filter (MG)` — dead, 7,245 chars, unconditional KTAF, 39-branch location gate, 10 banned strings | **Fixed** — deleted, published to Production as revision 218     |
+| Cross-region norming did not work: the `Norming*` variants were sheet-local under a datasource-wide gate            | **Fixed** — see _the norming rebuild_ below                      |
+| 15 by-name `USERNAME()` grant clauses, 5 identities, 12 of them live                                                | **Fixed** — zero remain on this workbook                         |
+| `Permissions  - Norming - Individual Data` carried unconditional KTAF, a 37-branch gate, 11 banned strings          | **Fixed** — rewritten from canonical, not patched                |
+| `Permissions - PulseChecker`                                                                                        | **Deleted** — its dashboard and tab placement are being reworked |
+| Teachers could see their own rows here, bypassing the Coaching Conversation Tool's release gate                     | **Fixed** — Tier 1 self-access removed, manager clauses kept     |
+
+#### The norming rebuild
+
+The `norming_*` sheets needed a **higher** ceiling than the rest of the
+datasource, and Step 2's AND makes that impossible while a datasource-wide
+filter is attached. Three options were weighed: add `All SL` to canonical Tier 4
+(widens the PM dashboards too), duplicate the datasource (doubles a 79 MB
+extract), or remove the datasource-wide filter and go sheet-local. The third was
+chosen knowingly, accepting the fail-open trade in Step 2.
+
+So on `rpt_tableau__schoolmint_grow_observation_details` **there is no
+datasource-wide filter**. All 28 sheets carry a sheet-local context filter, and
+there are three gates instead of one:
+
+| Gate                                       | Sheets                          | Tier 4 region branch adds     |
+| ------------------------------------------ | ------------------------------- | ----------------------------- |
+| `Permissions`                              | 12 non-norming                  | nothing — canonical           |
+| `Permissions - Norming`                    | 6 aggregate norming             | `All SL`, `All DSO`, `All AP` |
+| `Permissions  - Norming - Individual Data` | 4 individual norming            | `All SL` only                 |
+| _(datasource-wide, unchanged)_             | `goals`, `teacher_observations` | canonical                     |
+
+The aggregate/individual split is the point. An AP or DSO needs to see how their
+school compares against the region, so they are region-scoped on the six
+aggregate sheets. The four individual sheets name specific teachers, so `All AP`
+and `All DSO` are deliberately absent there and fall through to Tier 5 — own
+school, and for an AP own school's **teachers** only via the role gate. School
+leaders are region-scoped on both.
+
+**Every filter is `context='true'`.** The datasource-wide filter it replaced was
+a context filter, and `norming_top_20` / `norming_bottom_20` are top-N sheets
+whose arithmetic depends on it.
+
+!!! danger "This datasource is fail-open now"
+
+    A sheet added to `observation_details` gets **no gate by default**. That is the
+    cost of the option chosen above, accepted deliberately. Any new sheet needs its
+    permission filter attached by hand, as a context filter, before it is
+    published. Verify with the per-sheet enumeration in _Validation_, never by eye.
+
+#### Tier 1 on this workbook is manager-only
+
+The three self clauses are removed from every copy of every gate here. A
+teammate sees their own observation data in the **Coaching Conversation Tool**,
+where the self clauses are wrapped in `RLS - Release Gate` so an observee waits
+for the lock and the lockbox date. Grow has no release gate, so self-access here
+was a way around it. The `reports_to_*` manager clauses are kept — removing them
+would cut a coach off from their own reports.
+
+#### Accepted, not fixed
+
+**A former manager keeps access to rows they supervised.** `reports_to_*` is a
+snapshot frozen on each row, so a match survives the role change. Measured
+2026-09-04: 459 people appear as a manager on historical rows, 331 are current
+managers, **266 are former managers and 84 of those are still employed**. Each
+sees observations of people they personally supervised at the time, not
+arbitrary staff. The alternative — binding the clause to the current year —
+would strip all 331 current managers of their reports' history, which is worse.
+The correct fix is a current-manager column carried through dbt, the way the
+Intent to Return gate does it; that is a dbt change and has not been filed.
+
+**Paterson has no rows in this extract.** TEAM, KCNA and Miami are the only
+entities present, plus 221 rows for KTAF. The entity gate's Paterson branch can
+never match here. Do not use Paterson staff as test personas for this workbook.
+
+#### Still open
+
+The six `pulse_checker__*` worksheets are orphaned — off every dashboard, no
+longer published as views, still gated by `Permissions - Norming`. They were
+removed from the PM Norming tab because they carried a **different and looser
+definition of the data** than the rest of that tab: no `Academic Year` filter
+where the other 10 sheets pin to `2025`, no
+`Observation Type Abbreviation = "PMS"`, no `Job Title`, and instead their own
+`Observation Type` filter admitting `%null%`. Aligning them is a rework, not a
+patch.
+
+Three cleanups with no live leak remain **elsewhere**: two dead permission
+fields and by-name grants on Leadership Development (2, dead field) and Stipend
+and Bonus (1, live in `Permissions HR Download`).
+
+### Gap 3 — deferred to the department gate, which has not shipped
+
+`Permissions - Support` still grants every `All Staff KTAF` member every row,
+and it is the only gate on the five `support_*` sheets. That is the live
+behaviour today and the guide says so.
+
+The replacement is department scoping: scope a support-survey row to the
+department it rates, so a viewer sees feedback about their own department rather
+than everyone's. [#4721](https://github.com/TEAMSchools/teamster/issues/4721) is
+the issue, [#4728](https://github.com/TEAMSchools/teamster/pull/4728) the PR.
+
+**#4728 is not shipping yet.** It carries only the data layer —
+`rated_department_code` / `rated_department_name` through to
+`rpt_tableau__survey_responses` — and is itself blocked on two things outside
+the repo: Ops appending the two columns to the form-items extension sheet and
+widening its named range, and a taxonomy decision about how merged departments
+resolve to one code. Its dbt Cloud check stays red until the first of those
+happens; that is expected, not a defect.
+
+So the KTAF grant stays live until #4728 lands **and** its Tableau tasks are
+done. Do not treat department scoping as current behaviour anywhere.
+
+Its Tableau slice is Tasks 7-10: the `RLS - Department Gate` field, scoping the
+blanket KTAF grant, deleting `Permissions - Support (Preview)`, removing
+`The Syndicate`, and the #4656 renames. **Two of those are already done** — the
+audit found no `Permissions - Support (Preview)` field and no `The Syndicate`
+reference in `Permissions - Support`. What remains is the department gate, the
+KTAF scoping, and the renames.
+
+### Gap 4 — Operations Systems, as fixed
+
+The broad groups (`All Data`, `TEAM Council`, `All MDSO`, `All MDO`,
+`The Syndicate`) stay cross-regional, deliberately. `All DSO` and `All SL` came
+out of the flat list and are now scoped to the school **walked**:
+
+```text
+//Admin and all access - deliberately cross-regional, no school scoping
+ISMEMBEROF('KNJ-SG-Tableau All Data')
+OR ISMEMBEROF('Group Staff TEAM Council')
+OR ISMEMBEROF('KNJ-SG-Tableau All MDSO')
+OR ISMEMBEROF('KNJ-SG-Tableau All MDO')
+OR ISMEMBEROF('KNJ-SG-Tableau The Syndicate')
+
+//School leaders and DSOs - their own school, on the school WALKED
+OR (
+    (ISMEMBEROF('KNJ-SG-Tableau All DSO') OR ISMEMBEROF('KNJ-SG-Tableau All SL'))
+    AND [RLS - Location Gate]
+)
+```
+
+`RLS - Location Gate` on this datasource is the canonical 26-branch block with
+`[school_clean_name]` substituted for `[location_clean_name]`, bridges
+unchanged. No entity gate on the second clause: the location gate already
+requires membership of that school's staff group, and every school belongs to
+exactly one entity, so an entity test adds nothing but a second place to be
+wrong.
+
+Refreshing the extract first is what made any of this possible — before that it
+carried none of the contract columns. In the refreshed extract
+`school_clean_name` is captioned **`School`** and `school_business_unit_name` is
+captioned `Business Unit`.
+
+Two things left open by choice rather than settled: `All HOS` and `AcOps` are
+**not** granted here though canonical Tier 4 includes them, and there is no Tier
+1 self clause, so an ops teammate does not see walkthroughs they performed at
+schools they do not lead.
+
+!!! note "This is the generalisable lesson"
+
+    A gate that looks unexplainably crude is often a stale extract rather than a
+    lazy author. Before rewriting one, check whether the columns it would need are
+    actually in the workbook's extract.
+
+    Every gated workbook has since been refreshed onto the current datasources, so
+    this is a check for the next new workbook rather than an outstanding condition
+    — and the refresh is what invalidated the caption lists this file used to
+    carry. See step 1.
 
 ---
 
 ## Tagging and close-out
 
-1. Tag each finished workbook `entra-ready` on Server.
-1. The 8 TEMP and Archive copies already tagged `entra-broken-accepted` need no
-   work — confirm none is still published to a Production project.
-1. Note in #4638 which of the 13 are done, so the remaining set is visible
-   without opening Desktop.
+1. Tag each finished workbook `entra-ready` on Server. **Untag the two leavers**
+   when #4726 and #4629 land — a tag query returned 11 on 2026-09-04, so the tag
+   is not yet the nine-workbook inventory the guide points at.
+1. **`entra-broken-accepted` is on zero workbooks** — checked 2026-09-04, the
+   tag does not exist on the site, so the 8 TEMP and Archive copies are
+   unmarked. Either apply it or drop the convention; do not rely on it to tell a
+   deliberately-broken copy from an unreviewed one. The underlying check does
+   pass: both `Teacher Goals` copies sit in `Archive` and `TEMP-KV`, neither in
+   a Production project.
+1. Update _Known gaps_ above. #4638, which tracked the original migration, is
+   closed — this file is now the record of what is outstanding, so a gap that is
+   fixed or newly found belongs in that table rather than on an issue.
 
 ## Rollback
 
@@ -462,6 +1626,9 @@ means pointing back at `int_surveys__manager_survey_details`, which still exists
 and is unchanged — three mart models still read it — so that rollback is also
 clean.
 
-If PR #4656 itself is reverted after these edits land, every field fix here
-breaks in the opposite direction. Sequence the revert as: restore workbook
-revisions first, then revert the dbt PR.
+A workbook revision restore rolls back the calculation but **not** an extract
+refresh. If you refreshed an extract in the same sitting, the restored
+revision's calculations may reference columns the refreshed extract no longer
+carries — the raw `School` column on `rpt_tableau__operations_ekg` is the live
+example, dropped by #4749. Check the field references after a restore rather
+than assuming the revision is self-contained.

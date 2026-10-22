@@ -499,6 +499,7 @@ test("STAFF_SENSITIVE_MEMBERS lists all gated sensitive columns", () => {
     "personal_email",
     "race",
     "salary",
+    "status_reason",
   ]);
 });
 
@@ -883,5 +884,65 @@ test("resolveAccessDataset: a non-dev dataset is refused even locally", () => {
     "../kipptaf_marts",
   ]) {
     assert.equal(a.resolveAccessDataset(raw, false), "kipptaf_marts", raw);
+  }
+});
+
+// --- canSwitchSqlUser (#5517) -----------------------------------------------
+
+const SUPER = "cube_superuser";
+
+test("canSwitchSqlUser: the super-user may switch to either network domain", () => {
+  assert.equal(
+    a.canSwitchSqlUser(SUPER, "someone@apps.teamschools.org", SUPER),
+    true,
+  );
+  assert.equal(a.canSwitchSqlUser(SUPER, "someone@kippmiami.org", SUPER), true);
+});
+
+test("canSwitchSqlUser: the domain match ignores case", () => {
+  assert.equal(a.canSwitchSqlUser(SUPER, "someone@KIPPMiami.org", SUPER), true);
+});
+
+test("canSwitchSqlUser: an address outside the allowlist is refused", () => {
+  for (const email of [
+    "someone@gmail.com",
+    "someone@kippmiami.org.evil.com",
+    "someone@evil.apps.teamschools.org",
+    "someone@teamschools.org",
+    "someone@kippmiami.org@gmail.com",
+  ]) {
+    assert.equal(a.canSwitchSqlUser(SUPER, email, SUPER), false, email);
+  }
+});
+
+test("canSwitchSqlUser: a malformed target is refused, not thrown", () => {
+  for (const email of [
+    "kippmiami.org",
+    "@kippmiami.org",
+    "a@b@kippmiami.org",
+    "",
+    null,
+    undefined,
+    42,
+    ["someone@kippmiami.org"],
+  ]) {
+    assert.equal(a.canSwitchSqlUser(SUPER, email, SUPER), false, String(email));
+  }
+});
+
+test("canSwitchSqlUser: only the configured super-user may switch", () => {
+  assert.equal(
+    a.canSwitchSqlUser("someone@kippmiami.org", "other@kippmiami.org", SUPER),
+    false,
+  );
+});
+
+test("canSwitchSqlUser: an unset super-user refuses every switch", () => {
+  for (const unset of [undefined, null, ""]) {
+    assert.equal(
+      a.canSwitchSqlUser(unset, "someone@kippmiami.org", unset),
+      false,
+      String(unset),
+    );
   }
 });
