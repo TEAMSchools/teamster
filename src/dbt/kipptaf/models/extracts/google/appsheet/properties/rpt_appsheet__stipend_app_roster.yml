@@ -1,37 +1,89 @@
 models:
   - name: rpt_appsheet__stipend_app_roster
+    description:
+      Staff roster for the Stipend and Bonus AppSheet app, one row per employee.
+      The app reads it to fill the teammate dropdown, to decide which stipend
+      rows each user can see from app_permissions, and to limit entry for
+      KIPP_TAF staff to their direct manager through reports_to_google_email.
     columns:
       - name: employee_number
         data_type: int64
+        description: ADP employee number. The app's key for this table.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: payroll_group_code
         data_type: string
+        description:
+          ADP payroll group code, shown as Company Code in the app's ADP
+          download.
       - name: worker_id
         data_type: string
+        description: ADP worker ID.
       - name: payroll_file_number
         data_type: string
+        description: ADP payroll file number.
       - name: position_id
         data_type: string
+        description: ADP position ID, included in the ADP download.
       - name: job_title
         data_type: string
+        description: Job title of the employee's primary assignment.
       - name: google_email
         data_type: string
+        description:
+          Google Workspace email. The app matches USEREMAIL() against it to find
+          the signed-in user's row.
+      - name: reports_to_google_email
+        data_type: string
+        description:
+          Google Workspace email of the employee's direct manager. The app
+          allows only this person, or an app Admin, to enter a stipend for a
+          KIPP_TAF employee.
       - name: assignment_status
         data_type: string
+        description: ADP assignment status (Active, Leave, Terminated).
       - name: campus
         data_type: string
+        description:
+          Campus of the home work location, or the location itself when it
+          belongs to no campus. A campus-based DSO sees stipends for the whole
+          campus.
       - name: app_permissions
         data_type: int64
+        description:
+          Stipend app access level. 3 sees everything; 2 sees staff below level
+          2 in their own entity, or in every entity for KIPP_TAF staff; 1 sees
+          staff at level 1 or below at their location or campus; 0 sees only
+          what they submitted.
       - name: department
         data_type: string
+        description: Home department name.
       - name: eligibility_status
         data_type: string
+        description:
+          eligible when the employee is Active or on Leave with no termination
+          date, or was terminated in the current quarter; ineligible otherwise.
+          The app blocks stipends for ineligible employees.
       - name: entity
         data_type: string
+        description: Home business unit name.
       - name: entity_short
         data_type: string
+        description:
+          Home business unit code (TEAM, KCNA, KIPP_MIAMI, KIPP_TAF, KPAT).
       - name: formatted_name
         data_type: string
+        description: Employee name as Last, First.
       - name: location
         data_type: string
+        description: Home work location name.
       - name: state_cmo
         data_type: string
+        description:
+          Region group from the business unit. NJ for TEAM, KCNA, and KPAT, MIA
+          for KIPP_MIAMI, CMO for KIPP_TAF.
