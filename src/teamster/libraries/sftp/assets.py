@@ -2,12 +2,14 @@ import os
 import re
 import zipfile
 from collections.abc import Callable
+from datetime import datetime
 
 from dagster import (
     AssetExecutionContext,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
+    TimeWindow,
     asset,
 )
 from dagster_shared import check
@@ -148,19 +150,6 @@ def build_sftp_file_asset(
         else:
             partition_key = None
 
-        # the vendor file only ever holds the current partition's data, so a
-        # past partition's file is a frozen snapshot that a re-run would destroy
-        if current_partition_only:
-            last_partition_key = check.not_none(
-                context.assets_def.partitions_def
-            ).get_last_partition_key()
-
-            if partition_key != last_partition_key:
-                raise ValueError(
-                    f"Partition {partition_key} is not the current partition "
-                    f"{last_partition_key}; refusing to overwrite its snapshot"
-                )
-
         if group_name == "iready":
             partition_key = check.inst(obj=partition_key, ttype=MultiPartitionKey)
 
@@ -222,6 +211,7 @@ def build_sftp_file_asset(
             remote_dirs.append(archive_remote_dir(partition_key))
 
         file_matches: list[str] = []
+        file_mtimes: dict[str, int | None] = {}
 
         with (
             ssh.get_connection() as connection,
@@ -239,6 +229,8 @@ def build_sftp_file_asset(
                     continue
 
                 files.sort(key=lambda x: x[0].st_mtime or 0, reverse=True)
+
+                file_mtimes = {path: attr.st_mtime for attr, path in files}
 
                 file_matches = [
                     path
@@ -274,6 +266,24 @@ def build_sftp_file_asset(
             raise Exception(msg)
         else:
             file_match = file_matches[0]
+
+        # the vendor file only ever holds the current partition's data, so a
+        # past partition's file is a frozen snapshot that a re-run would destroy.
+        # Judge by the file's mtime, not the clock: a June 30 file can run after
+        # midnight.
+        if current_partition_only:
+            time_window = check.inst(
+                obj=context.partition_time_window, ttype=TimeWindow
+            )
+            file_datetime = datetime.fromtimestamp(
+                file_mtimes[file_match] or 0, tz=time_window.start.tzinfo
+            )
+
+            if not time_window.start <= file_datetime < time_window.end:
+                raise ValueError(
+                    f"{file_match} was modified {file_datetime}, outside partition "
+                    f"{partition_key}; refusing to overwrite its snapshot"
+                )
 
         local_filepath = ssh.sftp_get(
             remote_filepath=file_match,

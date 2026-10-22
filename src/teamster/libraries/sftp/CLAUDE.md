@@ -28,10 +28,12 @@ Named groups in `remote_dir_regex` / `remote_file_regex` are replaced with
 partition key dimension values via `compose_regex()`. For multi-partition keys,
 each dimension name maps to a group name in the regex.
 
-`build_sftp_file_asset(current_partition_only=True)` raises on any partition but
-the last, before touching SFTP. Use it when the vendor file only ever holds the
-current partition's data, so a past partition is a frozen snapshot a re-run
-would overwrite (Branching Minds).
+`build_sftp_file_asset(current_partition_only=True)` refuses, before download, a
+file whose mtime falls outside the partition's time window. Use it when the
+vendor file only ever holds the current partition's data, so a past partition is
+a frozen snapshot a re-run would overwrite (Branching Minds). It judges by
+mtime, not the clock, so a June 30 file still loads into its year when the run
+starts after midnight.
 
 `iready` has special-cased logic: the current fiscal year partition maps to the
 `Current_Year` directory on the SFTP server.
