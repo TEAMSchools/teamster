@@ -117,7 +117,8 @@ accept a subagent's self-report without the checks there.
 - After opening a PR, offer two things: watch its CI and report back, and
   respond to the `claude-review` findings once they post. On a yes to either,
   invoke `pr-ci-review` and arm a Monitor in that turn.
-- Squash merge. PR body from `.github/pull_request_template.md`.
+- PRs merge with a merge commit, so every branch commit, message included, lands
+  on `main`. PR body from `.github/pull_request_template.md`.
 - Issue refs (`Refs #N`, `Closes #N`) in the body put the PR on project boards.
   Never `gh project item-add` a PR.
 - Invoke `superpowers:receiving-code-review` before processing `claude-review`
