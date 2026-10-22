@@ -340,6 +340,12 @@ upstream cadence decisions — check them before moving an upstream model to a
 cron automation condition (see `.claude/rules/dbt-models.md` → View→table
 flips).
 
+A Tableau workbook reads its `rpt_tableau__*` model through an extract, never a
+live connection. The extract refresh is the only query that runs against the
+model, so an `rpt_tableau__*` model stays a view unless a refresh is measured
+too slow. Do not design a model, or its materialization, for live-connection
+queries.
+
 ## dbt Cloud CI
 
 CI builds this project alone, with `state:modified+` against the Staging
