@@ -1,0 +1,3180 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Miami Focus schedules on the DIBELS dashboard — Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#miami-focus-schedules-on-the-dibels-dashboard-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Miami Focus schedules on the DIBELS dashboard — Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pr-a-sheet-and-shared-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR A — sheet and shared model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PR A — sheet and shared model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-0-credentials-and-workspace-controller-owner-not-dispatched" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 0: Credentials and workspace (controller + owner; not dispatched)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-1-generate-the-new-crosswalk-tab-and-paste-it-controller-owner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Generate the new crosswalk tab and paste it (controller + owner)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-source-staging-model-and-staging-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Source, staging model and staging tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-fill-focus-columns-and-add-rn_core_subject_year-in-the-shared-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Fill Focus columns and add rn_core_subject_year in the shared model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-dim_courses-sis-match" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: dim_courses SIS match
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-consumer-audit-dispatch-to-the-capable-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Consumer audit (dispatch to the capable model)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-stage-for-ci-push-and-ready-pr-a-controller-owner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Stage for CI, push, and ready PR A (controller + owner)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pr-b-dibels-dashboard-stacked-on-pr-a" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR B — DIBELS dashboard (stacked on PR A)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PR B — DIBELS dashboard (stacked on PR A)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-7-stacked-branch-controller-owner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Stacked branch (controller + owner)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-point-the-dashboard-at-the-primary-ela-section" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Point the dashboard at the primary ELA section
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-dibels-docs-and-skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: DIBELS docs and skill
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-10-open-pr-b-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Open PR B (controller)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-09-25-dibels-miami-focus-schedules.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="miami-focus-schedules-on-the-dibels-dashboard-implementation-plan">Miami Focus schedules on the DIBELS dashboard — Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Miami students appear on <code>rpt_tableau__dibels_dashboard</code> with ELA
+teacher, course and section columns in the same form NJ carries, sourced from
+Focus through the shared course-enrollment model.</p>
+<p><strong>Architecture:</strong> PR A adds <code>SIS</code>, <code>Standard_Course_Name</code> and <code>Core_Subject</code>
+columns (plus Focus rows) to the course-subject crosswalk sheet, fills the
+Focus-null columns of <code>int_students__course_enrollments</code>, and adds a
+<code>rn_core_subject_year</code> pick column there. PR B, stacked on PR A, points the
+dashboard's 3 union branches at that column and makes the self-contained filter
+null-safe.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), Google Sheets external source, Python (throwaway
+generator via <code>uv run --with</code>), BigQuery client via ADC.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-09-24-dibels-miami-focus-schedules-design.md</code> — the
+"Revision 2026-09-25" section governs wherever it conflicts with the original
+sections below it.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree:
+  <code>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-dibels-miami-focus-schedules</code>
+  (PR A, PR #5519). Every git call is <code>git -C &lt;worktree&gt;</code>; every path is under
+  the worktree. Never edit <code>/workspaces/teamster/src/...</code>.</li>
+<li>Always <code>uv run</code>; never bare <code>dbt</code> or <code>python</code>. Invoke the <code>dbt-local-dev</code>
+  skill before the first dbt command of a task.</li>
+<li>dbt builds:
+  <code>uv run dbt build --project-dir &lt;worktree&gt;/src/dbt/kipptaf --favor-state --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --select &lt;models&gt;</code>
+  (absolute state path).</li>
+<li><code>--target staging</code> writes (<code>stage_external_sources</code>, <code>dbt build</code>) are shared
+  writes: the owner authorizes each one in the turn before it runs. Subagents
+  never run them.</li>
+<li>No PII values in commits, PR text or comments. Query output with student rows
+  stays in the terminal or the session scratchpad.</li>
+<li>Sheet values are exactly <code>PowerSchool</code> / <code>Focus</code> for <code>SIS</code> and <code>ELA</code> / <code>Math</code>
+  / blank for <code>Core_Subject</code>. The data team maintains the sheet.</li>
+<li>Miami <code>teacherid</code> is the Focus staff id (<code>int_focus__schedule.teacher_id</code>,
+  INT64).</li>
+<li>No course grade anywhere. Do not parse grades from course names in new code.</li>
+<li>NJ output must not change except: the 6 cross-grade duplicate student-years,
+  the Paterson AY2023 <code>ENG01033G1</code> / <code>MAT02035G1</code> students, and students whose
+  old row-number-1 row was a dropped section. Every other NJ difference is a
+  bug.</li>
+<li>SQL: <code>.claude/rules/dbt-sql.md</code> — no <code>qualify</code>, no <code>group by all</code>, ST06 column
+  order, rationale in properties yml rather than inline comments on this hub
+  model (the model is upstream of ~184 models).</li>
+<li>Decided by the owner 2026-09-25: the hub's final
+  <code>full union all corresponding</code> stays in PR A. The SQL rules ban it and say to
+  convert on edit, but converting means enumerating ~245 star-derived columns in
+  both branches, which would bury PR A's behavior change. PR A's description
+  states the exception; conversion is its own change, provable by byte-identical
+  output against prod.</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>A sheet key typed <code>Focus</code> or <code>focus</code> makes the join miss silently, so the
+   student reads unscheduled — pinned by <code>accepted_values</code> + <code>not_null</code> on <code>SIS</code>
+   (Task 2).</li>
+<li>An open-ended named range lands the sheet's empty grid rows as null keys —
+   pinned by the staging <code>where</code> filter, <code>not_null</code> on the key, and the expected
+   row count (Task 2).</li>
+<li>A future-term section outranks the current one of the same subject — pinned
+   by the "started term wins" verification query (Task 3).</li>
+<li>A dropped section ranks 1 — pinned by the "no dropped rank-1 rows" query
+   (Task 3).</li>
+<li>Focus rows newly passing a consumer's filters where the consumer assumes
+   PowerSchool shapes (CSGF high-school enrollment, course-name <code>like</code> filters)
+   — pinned by the per-consumer audit (Task 5).</li>
+</ol>
+<hr />
+<h2 id="pr-a-sheet-and-shared-model">PR A — sheet and shared model</h2>
+<h3 id="task-0-credentials-and-workspace-controller-owner-not-dispatched">Task 0: Credentials and workspace (controller + owner; not dispatched)</h3>
+<p><strong>Files:</strong> none.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Owner refreshes ADC.</strong> In VS Code, run the task <strong>GCloud:
+      Application Default Login</strong>. It impersonates
+      <code>codespaces@teamster-332318.iam.gserviceaccount.com</code> with Drive scope; the
+      plain user login this session had cannot read Sheets
+      (<code>ACCESS_TOKEN_SCOPE_INSUFFICIENT</code>) or Sheets-backed externals.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify ADC type.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-auth<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import google.auth; c,_=google.auth.default(); print(type(c).__name__)"</span>
+</code></pre></div>
+<p>Expected: <code>Credentials</code> from <code>google.auth.impersonated_credentials</code> (printed
+  as <code>Credentials</code>) and no "end user credentials" warning.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Confirm the service account can read the crosswalk spreadsheet</strong>
+      <code>1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE</code> (Task 1 Step 2 is the
+      probe). On a 403, the owner shares it with
+      <code>codespaces@teamster-332318.iam.gserviceaccount.com</code> as Viewer.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Install dbt packages in the worktree.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-dibels-miami-focus-schedules/src/dbt/kipptaf<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<h3 id="task-1-generate-the-new-crosswalk-tab-and-paste-it-controller-owner">Task 1: Generate the new crosswalk tab and paste it (controller + owner)</h3>
+<p>The generator is throwaway: it lives in the session scratchpad and is never
+committed. It modifies existing rows (3 new columns on every row), so the
+handover is the whole tab, pasted over A1 — never a partial patch.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create (scratchpad, not committed): <code>&lt;scratchpad&gt;/build_crosswalk_v3.py</code></li>
+<li>Output (scratchpad): <code>&lt;scratchpad&gt;/crosswalk_v3.tsv</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: the owner's layout of 2026-09-25 — A-F unchanged
+  (<code>PowerSchool Course Number</code> … <code>Discipline</code>), G <code>SIS</code>, H
+  <code>Standard Course Name</code>, I <code>Core Subject</code>, J <code>Duplicate Audit</code> (a sheet-only
+  formula, outside every dbt range). Named range
+  <code>src_google_sheets__assessments__course_subject_crosswalk_v3</code> = <code>A:I</code>;
+  <code>src_assessments__course_subject_crosswalk_v2</code> shrunk to <code>A:F</code> so prod never
+  reads <code>SIS</code> as its 7th column.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the generator.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">google.auth</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.cloud</span><span class="w"> </span><span class="kn">import</span> <span class="n">bigquery</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">googleapiclient.discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">build</span>
+
+<span class="n">spreadsheet_id</span> <span class="o">=</span> <span class="s2">"1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE"</span>
+<span class="n">tab</span> <span class="o">=</span> <span class="s2">"PowerSchool Course/Subject Crosswalk"</span>
+<span class="n">out_path</span> <span class="o">=</span> <span class="s2">"crosswalk_v3.tsv"</span>  <span class="c1"># run from the scratchpad directory</span>
+
+<span class="c1"># The owner's layout, 2026-09-25: new columns at G-I, Duplicate Audit moved</span>
+<span class="c1"># to J. Headers use spaces; dbt declares underscore names positionally, so</span>
+<span class="c1"># header text never reaches the warehouse.</span>
+<span class="n">header_expected</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"PowerSchool Course Number"</span><span class="p">,</span>
+    <span class="s2">"PowerSchool Course Name"</span><span class="p">,</span>
+    <span class="s2">"Illuminate Subject Area"</span><span class="p">,</span>
+    <span class="s2">"Is Foundations"</span><span class="p">,</span>
+    <span class="s2">"Is Advanced Math"</span><span class="p">,</span>
+    <span class="s2">"Discipline"</span><span class="p">,</span>
+    <span class="s2">"SIS"</span><span class="p">,</span>
+    <span class="s2">"Standard Course Name"</span><span class="p">,</span>
+    <span class="s2">"Core Subject"</span><span class="p">,</span>
+    <span class="s2">"Duplicate Audit"</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="c1"># PowerSchool main-class course numbers, measured 2026-09-25 from</span>
+<span class="c1"># int_students__course_enrollments (AY2023-AY2026).</span>
+<span class="n">ps_core</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"ENG01028G1"</span><span class="p">:</span> <span class="s2">"ELA"</span><span class="p">,</span> <span class="s2">"ENG01029G2"</span><span class="p">:</span> <span class="s2">"ELA"</span><span class="p">,</span> <span class="s2">"ENG01030G3"</span><span class="p">:</span> <span class="s2">"ELA"</span><span class="p">,</span>
+    <span class="s2">"ENG01031G4"</span><span class="p">:</span> <span class="s2">"ELA"</span><span class="p">,</span> <span class="s2">"ENG01032G5"</span><span class="p">:</span> <span class="s2">"ELA"</span><span class="p">,</span> <span class="s2">"ENG01033G1"</span><span class="p">:</span> <span class="s2">"ELA"</span><span class="p">,</span>
+    <span class="s2">"ENG01034G2"</span><span class="p">:</span> <span class="s2">"ELA"</span><span class="p">,</span> <span class="s2">"ENG01035G3"</span><span class="p">:</span> <span class="s2">"ELA"</span><span class="p">,</span> <span class="s2">"ENG01036G4"</span><span class="p">:</span> <span class="s2">"ELA"</span><span class="p">,</span>
+    <span class="s2">"MAT02030G1"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span> <span class="s2">"MAT02031G2"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span> <span class="s2">"MAT02032G3"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span>
+    <span class="s2">"MAT02033G4"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span> <span class="s2">"MAT02034G5"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span> <span class="s2">"MAT02035G1"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span>
+    <span class="s2">"MAT02036G2"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span> <span class="s2">"MAT02037G3"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span> <span class="s2">"MAT02038G4"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span>
+    <span class="s2">"MAT52069G1"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span> <span class="s2">"MAT02052G1"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span> <span class="s2">"MAT02052D1"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span>
+    <span class="s2">"MAT02052H4"</span><span class="p">:</span> <span class="s2">"Math"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Focus (Florida state) course codes -&gt; (label, subject), from the spec table.</span>
+<span class="n">focus_codes</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"5010041"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA GrK"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span> <span class="s2">"5010042"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr1"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span>
+    <span class="s2">"5010043"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr2"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span> <span class="s2">"5010044"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr3"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span>
+    <span class="s2">"5010045"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr4"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span> <span class="s2">"5010046"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr5"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span>
+    <span class="s2">"1001010"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr6"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span> <span class="s2">"1001020"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr6"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span>
+    <span class="s2">"1002000"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr6"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span> <span class="s2">"7810011"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr6"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span>
+    <span class="s2">"1001040"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr7"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span> <span class="s2">"1001050"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr7"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span>
+    <span class="s2">"1002010"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr7"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span> <span class="s2">"7810012"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr7"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span>
+    <span class="s2">"1001070"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr8"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span> <span class="s2">"1001080"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr8"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span>
+    <span class="s2">"1002020"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr8"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span> <span class="s2">"7810013"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"ELA Gr8"</span><span class="p">,</span> <span class="s2">"ELA"</span><span class="p">),</span>
+    <span class="s2">"5012020"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math GrK"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span> <span class="s2">"5012030"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr1"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span>
+    <span class="s2">"5012040"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr2"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span> <span class="s2">"5012050"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr3"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span>
+    <span class="s2">"5012060"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr4"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span> <span class="s2">"5012070"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr5"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span>
+    <span class="s2">"1205010"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr6"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span> <span class="s2">"7812015"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr6"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span>
+    <span class="s2">"1205040"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr7"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span> <span class="s2">"7812020"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr7"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span>
+    <span class="s2">"1205070"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr8"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span> <span class="s2">"7812030"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Math Gr8"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span>
+    <span class="s2">"1200310"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Algebra I"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span> <span class="s2">"1200320"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Algebra I"</span><span class="p">,</span> <span class="s2">"Math"</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="n">creds</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">google</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">default</span><span class="p">(</span>
+    <span class="n">scopes</span><span class="o">=</span><span class="p">[</span>
+        <span class="s2">"https://www.googleapis.com/auth/spreadsheets.readonly"</span><span class="p">,</span>
+        <span class="s2">"https://www.googleapis.com/auth/drive.readonly"</span><span class="p">,</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+<span class="n">svc</span> <span class="o">=</span> <span class="n">build</span><span class="p">(</span><span class="s2">"sheets"</span><span class="p">,</span> <span class="s2">"v4"</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="n">creds</span><span class="p">)</span>
+
+<span class="c1"># FORMULA render keeps Duplicate Audit's formula text instead of its value.</span>
+<span class="n">rows</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">svc</span><span class="o">.</span><span class="n">spreadsheets</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="n">spreadsheetId</span><span class="o">=</span><span class="n">spreadsheet_id</span><span class="p">,</span>
+        <span class="nb">range</span><span class="o">=</span><span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">tab</span><span class="si">}</span><span class="s2">'!A:J"</span><span class="p">,</span>
+        <span class="n">valueRenderOption</span><span class="o">=</span><span class="s2">"FORMULA"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"values"</span><span class="p">,</span> <span class="p">[])</span>
+<span class="p">)</span>
+<span class="n">header</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="k">if</span> <span class="n">r</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+<span class="k">assert</span> <span class="n">header</span> <span class="o">==</span> <span class="n">header_expected</span><span class="p">,</span> <span class="n">header</span>
+<span class="n">filled</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">body</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+<span class="k">assert</span> <span class="n">filled</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">filled</span><span class="si">}</span><span class="s2"> cells already filled in G:I; review before overwriting"</span>
+<span class="n">numbers</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">body</span><span class="p">]</span>
+<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">numbers</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">numbers</span><span class="p">)),</span> <span class="s2">"duplicate course numbers on the tab"</span>
+<span class="n">missing</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">ps_core</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">numbers</span><span class="p">))</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">missing</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"PowerSchool core numbers absent from the sheet: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">collisions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">focus_codes</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">numbers</span><span class="p">))</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">collisions</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Focus codes collide with PowerSchool rows: </span><span class="si">{</span><span class="n">collisions</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"original Duplicate Audit, row 2:"</span><span class="p">,</span> <span class="n">body</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">9</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">body</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">9</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
+<span class="n">bq</span> <span class="o">=</span> <span class="n">bigquery</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="s2">"teamster-332318"</span><span class="p">)</span>
+<span class="n">titles</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">short_name</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">title</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">bq</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        select short_name, any_value(trim(title)) as title,</span>
+<span class="sd">        from `teamster-332318`.kipptaf_focus.int_focus__courses</span>
+<span class="sd">        where short_name in unnest(@codes)</span>
+<span class="sd">        group by short_name</span>
+<span class="sd">        """</span><span class="p">,</span>
+        <span class="n">job_config</span><span class="o">=</span><span class="n">bigquery</span><span class="o">.</span><span class="n">QueryJobConfig</span><span class="p">(</span>
+            <span class="n">query_parameters</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">bigquery</span><span class="o">.</span><span class="n">ArrayQueryParameter</span><span class="p">(</span><span class="s2">"codes"</span><span class="p">,</span> <span class="s2">"STRING"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">focus_codes</span><span class="p">))</span>
+            <span class="p">]</span>
+        <span class="p">),</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cell</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">"TRUE"</span> <span class="k">if</span> <span class="n">value</span> <span class="k">else</span> <span class="s2">"FALSE"</span>
+    <span class="k">return</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">audit</span><span class="p">(</span><span class="n">row_number</span><span class="p">):</span>
+    <span class="c1"># Sheet-only duplicate check, now keyed on course number plus SIS (G).</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"=COUNTIFS($A:$A,$A</span><span class="si">{</span><span class="n">row_number</span><span class="si">}</span><span class="s2">,$G:$G,$G</span><span class="si">{</span><span class="n">row_number</span><span class="si">}</span><span class="s2">)"</span>
+
+
+<span class="n">out</span> <span class="o">=</span> <span class="p">[</span><span class="n">header_expected</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">body</span><span class="p">:</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">([</span><span class="n">cell</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">r</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">""</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]</span>
+    <span class="n">row_number</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">r</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span>
+        <span class="o">+</span> <span class="p">[</span><span class="s2">"PowerSchool"</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ps_core</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="s2">""</span><span class="p">),</span> <span class="n">audit</span><span class="p">(</span><span class="n">row_number</span><span class="p">)]</span>
+    <span class="p">)</span>
+
+<span class="k">for</span> <span class="n">code</span><span class="p">,</span> <span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">subject</span><span class="p">)</span> <span class="ow">in</span> <span class="n">focus_codes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">row_number</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">code</span><span class="p">,</span> <span class="n">titles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">label</span><span class="p">),</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span>
+         <span class="s2">"Focus"</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">audit</span><span class="p">(</span><span class="n">row_number</span><span class="p">)]</span>
+    <span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span><span class="p">,</span> <span class="n">lineterminator</span><span class="o">=</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"existing rows:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">body</span><span class="p">),</span> <span class="s2">"| focus rows:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">focus_codes</span><span class="p">),</span>
+      <span class="s2">"| total incl header:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"core ELA/Math on PowerSchool rows:"</span><span class="p">,</span>
+      <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">out</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"PowerSchool"</span> <span class="ow">and</span> <span class="n">r</span><span class="p">[</span><span class="mi">8</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"focus codes without a Focus title (label used):"</span><span class="p">,</span>
+      <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">focus_codes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">titles</span><span class="p">)))</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;scratchpad&gt;<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-api-python-client<span class="w"> </span>--with<span class="w"> </span>google-auth<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>build_crosswalk_v3.py<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span>-i<span class="w"> </span>warn
+</code></pre></div>
+<p>Expected: <code>existing rows: 393 | focus rows: 32 | total incl header: 426</code>,
+  <code>core ELA/Math on PowerSchool rows: 22</code>, and the list of Focus codes with no
+  title (at least <code>1200320</code>, which no Miami student takes yet). A 403 means Task
+  0 Step 3.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Protect prod, then paste.</strong> Order matters: prod reads <code>_v2</code>
+      until PR A merges, and inserting G-I widened <code>_v2</code> to <code>A:J</code>, so prod's 7th
+      declared column (<code>Duplicate_Audit</code>, INT64) now lands on <code>SIS</code>. Text in
+      <code>SIS</code> would fail prod's source table.</li>
+<li>Owner sets <code>src_assessments__course_subject_crosswalk_v2</code> to
+     <code>'PowerSchool Course/Subject Crosswalk'!A:F</code> (Data → Named ranges).</li>
+<li>Controller reads prod's external live through ADC and confirms 393 rows, no
+     error, <code>duplicate_audit</code> null on every row:
+     <code>select count(*), countif(duplicate_audit is null) from</code>teamster-332318<code>.kipptaf_google_sheets.src_google_sheets__assessments__course_subject_crosswalk</code>.
+     The null-for-a-missing-column behavior is inferred, not documented, so this
+     read is the proof; stop if it errors.</li>
+<li>Owner selects A1 and pastes <code>crosswalk_v3.tsv</code> over the tab, then confirms
+     426 rows and 10 columns. Pasted <code>=COUNTIFS</code> text becomes formulas.
+     <code>src_google_sheets__assessments__course_subject_crosswalk_v3</code> stays <code>A:I</code>,
+     as the owner created it.</li>
+<li>Controller repeats the read: 425 rows (Focus codes are unique against
+     PowerSchool numbers, so prod's current unique test still passes), no error.</li>
+</ul>
+<h3 id="task-2-source-staging-model-and-staging-tests">Task 2: Source, staging model and staging tests</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/google/sheets/sources-external.yml</code> (the
+  <code>src_google_sheets__assessments__course_subject_crosswalk</code> block, ~line 1281)</li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__assessments__course_subject_crosswalk.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__assessments__course_subject_crosswalk.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the v3 named range from Task 1.</li>
+<li>
+<p>Produces: <code>stg_google_sheets__assessments__course_subject_crosswalk</code> with
+  columns <code>SIS</code>, <code>Standard_Course_Name</code>, <code>Core_Subject</code> added; unique on (<code>SIS</code>,
+  <code>PowerSchool_Course_Number</code>).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit the source block only.</strong> Bound the edit to this source's
+      block (per the DIBELS skill: never a forward-scanning regex). Change
+      <code>sheet_range: src_assessments__course_subject_crosswalk_v2</code> to
+      <code>src_google_sheets__assessments__course_subject_crosswalk_v3</code>, and replace
+      the <code>Duplicate_Audit</code> column entry (both its lines) with these 3 — v3 maps
+      positions 7-9 to G-I, and <code>Duplicate Audit</code> is outside it:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SIS</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Standard_Course_Name</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Core_Subject</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<p>Audit the removals:
+  <code>git -C &lt;worktree&gt; diff src/dbt/kipptaf/models/google/sheets/sources-external.yml | grep '^-' | grep -v '^---'</code>
+  must show exactly 3 lines: the old <code>sheet_range</code>, <code>- name: Duplicate_Audit</code>
+  and its <code>data_type: int64</code>. Nothing reads <code>Duplicate_Audit</code> (checked
+  2026-09-25: only the staging contract declared it).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Filter phantom rows in the staging SQL.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="k">from</span>
+<span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="k">source</span><span class="p">(</span>
+<span class="w">            </span><span class="ss">"google_sheets"</span><span class="p">,</span>
+<span class="w">            </span><span class="ss">"src_google_sheets__assessments__course_subject_crosswalk"</span><span class="p">,</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span>
+<span class="k">where</span><span class="w"> </span><span class="n">powerschool_course_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Rewrite the staging properties.</strong> Model description plus every
+      column described; tested columns first. Mirror the <code>accepted_values</code>
+      argument form already used elsewhere in <code>src/dbt/kipptaf</code> (grep one
+      example first).</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_google_sheets__assessments__course_subject_crosswalk</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">One row per course per SIS. Classifies PowerSchool and Focus courses for</span>
+<span class="w">      </span><span class="no">subject reporting and names each course's SIS-independent display label.</span>
+<span class="w">      </span><span class="no">Maintained by the data team.</span>
+<span class="w">    </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SIS</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool_Course_Number</span>
+<span class="w">          </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SIS</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">The student information system the course number belongs to,</span>
+<span class="w">          </span><span class="no">PowerSchool or Focus. Part of the key, because a course number is</span>
+<span class="w">          </span><span class="no">only unique within one SIS.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">accepted_values</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">PowerSchool</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">Focus</span><span class="p p-Indicator">]</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool_Course_Number</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">The course number in its SIS. Holds the Florida state course code on</span>
+<span class="w">          </span><span class="no">Focus rows; the header keeps its original name because renaming a</span>
+<span class="w">          </span><span class="no">Sheets header rebuilds the external table.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Core_Subject</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">ELA or Math when the course is a student's main class in that</span>
+<span class="w">          </span><span class="no">subject. Blank for intervention and second courses such as Intensive</span>
+<span class="w">          </span><span class="no">Reading, Foundational ELA and Foundation Skills Math.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">accepted_values</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">ELA</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">Math</span><span class="p p-Indicator">]</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Standard_Course_Name</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">SIS-independent display name. PowerSchool rows carry their</span>
+<span class="w">          </span><span class="no">PowerSchool course name; Focus rows carry the matching NJ-style</span>
+<span class="w">          </span><span class="no">label, for example ELA Gr3.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool_Course_Name</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">The course name in its SIS at the time the row was entered.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Illuminate_Subject_Area</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">Illuminate subject area used by assessment reporting. Blank on Focus</span>
+<span class="w">          </span><span class="no">rows.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Is_Foundations</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Whether the course is a foundations course. Blank on Focus rows.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Is_Advanced_Math</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Whether the course is an advanced math course. Blank on Focus rows.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Discipline</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">Academic discipline used by course and grade reporting. Blank on</span>
+<span class="w">          </span><span class="no">Focus rows.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<p><code>Duplicate_Audit</code> leaves the contract with the source declaration: the sheet's
+  <code>Duplicate Audit</code> column (J) stays as a sheet-only check outside the v3 range.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the build and watch it fail first.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf<span class="w"> </span>--favor-state<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--select<span class="w"> </span>stg_google_sheets__assessments__course_subject_crosswalk<span class="w"> </span>&gt;<span class="w"> </span>&lt;scratchpad&gt;/t2-build-1.log<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="p">;</span><span class="w"> </span>grep<span class="w"> </span>-oE<span class="w"> </span><span class="s2">"PASS=[0-9]+|ERROR=[0-9]+|WARN=[0-9]+"</span><span class="w"> </span>&lt;scratchpad&gt;/t2-build-1.log
+</code></pre></div>
+<p>Expected: ERROR — the dev external still has the 7-column v2 shape, so the
+  contract misses <code>SIS</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Re-stage the dev external.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>run-operation<span class="w"> </span>stage_external_sources<span class="w"> </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--args<span class="w"> </span><span class="s2">"select: google_sheets.src_google_sheets__assessments__course_subject_crosswalk"</span><span class="w"> </span>--vars<span class="w"> </span><span class="s1">'{ext_full_refresh: true}'</span><span class="w"> </span>&gt;<span class="w"> </span>&lt;scratchpad&gt;/t2-stage.log<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="p">;</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span><span class="w"> </span>&lt;scratchpad&gt;/t2-stage.log
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build again; expect all pass.</strong> Re-run Step 4's command.
+      Expected: <code>ERROR=0</code>, <code>WARN=0</code>, and the five new tests plus the model PASS.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Verify the rows.</strong> Resolve the dev relation from
+      <code>&lt;worktree&gt;/src/dbt/kipptaf/target/manifest.json</code>
+      (<code>.nodes["model.kipptaf.stg_google_sheets__assessments__course_subject_crosswalk"].relation_name</code>),
+      then:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">sis</span><span class="p">,</span><span class="w"> </span><span class="n">core_subject</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">&lt;</span><span class="n">dev</span><span class="w"> </span><span class="n">relation</span><span class="o">&gt;</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">sis</span><span class="p">,</span><span class="w"> </span><span class="n">core_subject</span>
+</code></pre></div>
+<p>Expected: PowerSchool null 371, PowerSchool ELA 9, PowerSchool Math 13, Focus
+  ELA 18, Focus Math 14 — 425 rows.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Lint and commit.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;worktree&gt;<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/dbt/kipptaf/models/google/sheets/sources-external.yml<span class="w"> </span>src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__assessments__course_subject_crosswalk.sql<span class="w"> </span>src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__assessments__course_subject_crosswalk.yml<span class="w"> </span>&lt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span>
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dbt): key the course-subject crosswalk on SIS and add Focus rows"</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">"Refs #5518"</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">"Co-Authored-By: Claude Opus 5.5 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<h3 id="task-3-fill-focus-columns-and-add-rn_core_subject_year-in-the-shared-model">Task 3: Fill Focus columns and add <code>rn_core_subject_year</code> in the shared model</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/students/intermediate/int_students__course_enrollments.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/students/intermediate/properties/int_students__course_enrollments.yml</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/tests/int_students__course_enrollments__core_sections_cover_k8.sql</code></li>
+<li>Modify: <code>src/dbt/kipptaf/tests/properties.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 2's staging columns <code>sis</code>, <code>standard_course_name</code>,
+  <code>core_subject</code> (BigQuery resolves the PascalCase headers case-insensitively).</li>
+<li>
+<p>Produces on <code>int_students__course_enrollments</code>: <code>standard_course_name</code> STRING,
+  <code>core_subject</code> STRING (<code>ELA</code>/<code>Math</code>/null), <code>rn_core_subject_year</code> INT64 (1 =
+  the student's primary section in <code>core_subject</code> at that school that year; null
+  on non-core or dropped rows). Focus rows now carry <code>courses_course_name</code>,
+  <code>cc_section_number</code>, <code>cc_teacherid</code>, <code>teacher_lastfirst</code>,
+  <code>rn_course_number_year</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing coverage test.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- tests/int_students__course_enrollments__core_sections_cover_k8.sql</span>
+<span class="k">with</span>
+<span class="w">    </span><span class="c1">-- grain projection, not dup-masking: one row per student per school-year,</span>
+<span class="w">    </span><span class="c1">-- collapsing multiple enrollment stints at the same school</span>
+<span class="w">    </span><span class="n">k8_students</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">schoolid</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_extracts__student_enrollments"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">var</span><span class="p">(</span><span class="ss">"current_academic_year"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">grade_level</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="mi">8</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">expected</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">s</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">s</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">s</span><span class="p">.</span><span class="n">region</span><span class="p">,</span>
+<span class="w">            </span><span class="n">s</span><span class="p">.</span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">subject</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">k8_students</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">        </span><span class="k">cross</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="k">unnest</span><span class="p">([</span><span class="s1">'ELA'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Math'</span><span class="p">])</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subject</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">core_sections</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">cc_academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cc_schoolid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">students_student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">core_subject</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_students__course_enrollments"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">rn_core_subject_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">coverage</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">region</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">subject</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_students</span><span class="p">,</span>
+<span class="w">            </span><span class="n">countif</span><span class="p">(</span><span class="k">c</span><span class="p">.</span><span class="n">students_student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_with_core_section</span><span class="p">,</span>
+<span class="w">            </span><span class="n">safe_divide</span><span class="p">(</span>
+<span class="w">                </span><span class="n">countif</span><span class="p">(</span><span class="k">c</span><span class="p">.</span><span class="n">students_student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">),</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">coverage_rate</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">expected</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="n">core_sections</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">c</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">cc_academic_year</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">cc_schoolid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">students_student_number</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">core_subject</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">subject</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">n_students</span><span class="p">,</span><span class="w"> </span><span class="n">n_with_core_section</span><span class="p">,</span><span class="w"> </span><span class="n">coverage_rate</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">coverage</span>
+<span class="k">where</span><span class="w"> </span><span class="n">coverage_rate</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">95</span>
+</code></pre></div>
+<p>Add to <code>tests/properties.yml</code>, mirroring the neighboring
+  <code>test_focus_course_enrollment_joins_resolve_miami</code> entry's shape
+  (<code>config.meta.dagster.ref.name: int_students__course_enrollments</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_students__course_enrollments__core_sections_cover_k8</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Warns when fewer than 95% of a region's K-8 students this academic year</span>
+<span class="w">    </span><span class="no">hold a primary ELA or math section (`rn_core_subject_year = 1`). The</span>
+<span class="w">    </span><span class="no">likeliest cause is a course missing from the course-subject crosswalk</span>
+<span class="w">    </span><span class="no">sheet -- a new Florida code or a renumbered PowerSchool course -- which</span>
+<span class="w">    </span><span class="no">otherwise leaves students unscheduled with no error. Measured 2026-09-25</span>
+<span class="w">    </span><span class="no">before this test existed: 97.4% NJ and 98.6% Miami for math.</span>
+</code></pre></div>
+<p>Run it:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf<span class="w"> </span>--favor-state<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--select<span class="w"> </span>int_students__course_enrollments__core_sections_cover_k8<span class="w"> </span>&gt;<span class="w"> </span>&lt;scratchpad&gt;/t3-test-1.log<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="p">;</span><span class="w"> </span>grep<span class="w"> </span>-oE<span class="w"> </span><span class="s2">"PASS=[0-9]+|ERROR=[0-9]+|WARN=[0-9]+"</span><span class="w"> </span>&lt;scratchpad&gt;/t3-test-1.log
+</code></pre></div>
+<p>Expected: ERROR — <code>rn_core_subject_year</code> does not exist yet.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: PowerSchool branch — SIS match and 2 sheet columns.</strong> In
+      <code>powerschool_conformed</code>, after <code>csc.discipline,</code> add:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">csc</span><span class="p">.</span><span class="n">standard_course_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">csc</span><span class="p">.</span><span class="n">core_subject</span><span class="p">,</span>
+</code></pre></div>
+<p>and change its crosswalk join to:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_google_sheets__assessments__course_subject_crosswalk"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">csc</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">cc_course_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">csc</span><span class="p">.</span><span class="n">powerschool_course_number</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">csc</span><span class="p">.</span><span class="n">sis</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PowerSchool'</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Focus branch — fill the columns.</strong> In <code>focus_conformed</code>:</li>
+<li>after <code>s.end_date as cc_dateleft,</code> add
+    <code>s.course_period_short_name as cc_section_number,</code> and
+    <code>s.teacher_id as cc_teacherid,</code></li>
+<li>after <code>s._dbt_source_project,</code> add a blank line then
+    <code>csc.standard_course_name,</code> and <code>csc.core_subject,</code></li>
+<li>after <code>{{ extract_region("s") }} as region,</code> add
+    <code>trim(s.course_title) as courses_course_name,</code> and
+    <code>concat(usr.last_name, ', ', usr.first_name) as teacher_lastfirst,</code></li>
+<li>after the <code>sr_email</code> join, add:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_google_sheets__assessments__course_subject_crosswalk"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">csc</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">short_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">csc</span><span class="p">.</span><span class="n">powerschool_course_number</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">csc</span><span class="p">.</span><span class="n">sis</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Focus'</span>
+</code></pre></div>
+<p>Before committing, confirm the PowerSchool <code>teacher_lastfirst</code> format is
+  <code>Last, First</code> (count rows matching <code>r'^[^,]+, [^,]+$'</code> on NJ AY2026); if it
+  differs, match it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Focus <code>rn_course_number_year</code>.</strong> In <code>focus_course_dropped</code>,
+      after the <code>is_dropped_course</code> window, add:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span>
+<span class="w">                    </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">students_student_number</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">cc_academic_year</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">cc_course_number</span>
+<span class="w">                </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">cc_dateenrolled</span><span class="w"> </span><span class="k">desc</span><span class="p">,</span><span class="w"> </span><span class="n">exit_date</span><span class="w"> </span><span class="k">desc</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rn_course_number_year</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Add the pick column after the union.</strong> Replace the final 5 lines
+      (<code>select *, from powerschool_conformed ... from focus_course_dropped</code>)
+      with 2 more CTEs and a final select:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">unioned</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">powerschool_conformed</span>
+
+<span class="w">        </span><span class="k">full</span><span class="w"> </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">corresponding</span>
+
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">focus_course_dropped</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">core_section_inputs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">core_subject</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_dropped_section</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_core_section_candidate</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">cc_dateenrolled</span>
+<span class="w">            </span><span class="o">&lt;=</span><span class="w"> </span><span class="k">current_date</span><span class="p">(</span><span class="s1">'{{ var("local_timezone") }}'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_term_started</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">countif</span><span class="p">(</span><span class="k">not</span><span class="w"> </span><span class="n">is_dropped_section</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">cc_academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">cc_sectionid</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">section_enrolled_count</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">unioned</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="o">*</span><span class="w"> </span><span class="k">except</span><span class="w"> </span><span class="p">(</span><span class="n">is_core_section_candidate</span><span class="p">,</span><span class="w"> </span><span class="n">is_term_started</span><span class="p">,</span><span class="w"> </span><span class="n">section_enrolled_count</span><span class="p">),</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">is_core_section_candidate</span><span class="p">,</span>
+<span class="w">        </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span>
+<span class="w">                </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">                </span><span class="n">cc_academic_year</span><span class="p">,</span>
+<span class="w">                </span><span class="n">cc_schoolid</span><span class="p">,</span>
+<span class="w">                </span><span class="n">students_student_number</span><span class="p">,</span>
+<span class="w">                </span><span class="n">core_subject</span><span class="p">,</span>
+<span class="w">                </span><span class="n">is_core_section_candidate</span>
+<span class="w">            </span><span class="k">order</span><span class="w"> </span><span class="k">by</span>
+<span class="w">                </span><span class="n">is_term_started</span><span class="w"> </span><span class="k">desc</span><span class="p">,</span>
+<span class="w">                </span><span class="n">cc_dateenrolled</span><span class="w"> </span><span class="k">desc</span><span class="p">,</span>
+<span class="w">                </span><span class="n">section_enrolled_count</span><span class="w"> </span><span class="k">desc</span><span class="p">,</span>
+<span class="w">                </span><span class="n">cc_section_number</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span>
+<span class="w">                </span><span class="n">cc_dcid</span><span class="w"> </span><span class="k">asc</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rn_core_subject_year</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">core_section_inputs</span>
+</code></pre></div>
+<p>No inline rationale comments: the "why" goes in the yml (Step 6).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Properties.</strong> Add column entries (descriptions only; the model
+      is not contract-enforced — confirm no <code>contract:</code> in its config):</li>
+<li><code>standard_course_name</code> — SIS-independent course label from the crosswalk
+    sheet, matched on SIS and course number.</li>
+<li><code>core_subject</code> — ELA or Math when the course is the student's main class in
+    that subject, from the crosswalk sheet; null otherwise.</li>
+<li><code>rn_core_subject_year</code> — 1 marks the student's primary section in
+    <code>core_subject</code> at that school that year. Ranks only rows with a
+    <code>core_subject</code> that are not <code>is_dropped_section</code>, and is null on every other
+    row. Order: term already started first (Focus dates a section to its marking
+    period, so a future-term row carries a future date), then latest
+    <code>cc_dateenrolled</code>, then the larger roster of non-dropped students (a same-
+    teacher small-group section loses to the full class), then
+    <code>cc_section_number</code>, then <code>cc_dcid</code>. School is in the partition so a
+    mid-year transfer keeps a section per school. No course grade is used: no
+    SIS course grade is populated reliably.</li>
+<li><code>courses_course_name</code>, <code>cc_section_number</code>, <code>cc_teacherid</code>,
+    <code>teacher_lastfirst</code>, <code>rn_course_number_year</code> — add entries that say what
+    each holds on PowerSchool rows and on Focus rows (trimmed Focus course
+    title; course period short name; Focus staff id, a different id space from
+    PowerSchool's; <code>Last, First</code> from <code>int_focus__users</code>; PowerSchool's
+    definition without <code>cc_termid</code>, ordered by <code>cc_dateenrolled</code> then
+    <code>exit_date</code>).</li>
+<li>
+<p>Update the model description to say the Focus branch now carries course
+    name, section, teacher and course row number.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Build the model and the test.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf<span class="w"> </span>--favor-state<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--select<span class="w"> </span>stg_google_sheets__assessments__course_subject_crosswalk<span class="w"> </span>int_students__course_enrollments<span class="w"> </span>int_students__course_enrollments__core_sections_cover_k8<span class="w"> </span>&gt;<span class="w"> </span>&lt;scratchpad&gt;/t3-build.log<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="p">;</span><span class="w"> </span>grep<span class="w"> </span>-oE<span class="w"> </span><span class="s2">"PASS=[0-9]+|ERROR=[0-9]+|WARN=[0-9]+"</span><span class="w"> </span>&lt;scratchpad&gt;/t3-build.log
+</code></pre></div>
+<p>Expected: <code>ERROR=0</code>; the coverage test PASS (not WARN).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Verify the pick (Review Focus 3 and 4).</strong> Against the dev
+      relation of <code>int_students__course_enrollments</code>, each must return 0:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- a dropped or non-core row ranked</span>
+<span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span>
+<span class="k">from</span><span class="w"> </span><span class="o">&lt;</span><span class="n">dev</span><span class="o">&gt;</span>
+<span class="k">where</span><span class="w"> </span><span class="n">rn_core_subject_year</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="p">(</span><span class="n">is_dropped_section</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">core_subject</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1">-- a not-yet-started section ranked 1 while a started candidate exists</span>
+<span class="k">with</span>
+<span class="w">    </span><span class="n">cands</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">cc_academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">cc_schoolid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">students_student_number</span><span class="p">,</span><span class="w"> </span><span class="n">core_subject</span><span class="p">,</span><span class="w"> </span><span class="n">rn_core_subject_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cc_dateenrolled</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="k">current_date</span><span class="p">(</span><span class="s1">'America/New_York'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_started</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">&lt;</span><span class="n">dev</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">rn_core_subject_year</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">groups_</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">cc_academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">cc_schoolid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">students_student_number</span><span class="p">,</span><span class="w"> </span><span class="n">core_subject</span><span class="p">,</span>
+<span class="w">            </span><span class="n">logical_or</span><span class="p">(</span><span class="n">is_started</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">any_started</span><span class="p">,</span>
+<span class="w">            </span><span class="n">logical_or</span><span class="p">(</span><span class="n">rn_core_subject_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">is_started</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">first_started</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">cands</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">cc_academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">cc_schoolid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">students_student_number</span><span class="p">,</span><span class="w"> </span><span class="n">core_subject</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span>
+<span class="k">from</span><span class="w"> </span><span class="n">groups_</span>
+<span class="k">where</span><span class="w"> </span><span class="n">any_started</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">first_started</span>
+</code></pre></div>
+<p>And the unchanged-rows check. Write <code>&lt;scratchpad&gt;/diff_hub.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.cloud</span><span class="w"> </span><span class="kn">import</span> <span class="n">bigquery</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">bigquery</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="s2">"teamster-332318"</span><span class="p">)</span>
+<span class="n">prod</span> <span class="o">=</span> <span class="s2">"`teamster-332318`.kipptaf_students.int_students__course_enrollments"</span>
+<span class="n">dev</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># the dev relation_name from manifest.json, backticked</span>
+<span class="n">filled</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"courses_course_name"</span><span class="p">,</span>
+    <span class="s2">"cc_section_number"</span><span class="p">,</span>
+    <span class="s2">"cc_teacherid"</span><span class="p">,</span>
+    <span class="s2">"teacher_lastfirst"</span><span class="p">,</span>
+    <span class="s2">"rn_course_number_year"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">cols</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">column_name</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        select column_name,</span>
+<span class="sd">        from `teamster-332318`.kipptaf_students.INFORMATION_SCHEMA.COLUMNS</span>
+<span class="sd">        where table_name = 'int_students__course_enrollments'</span>
+<span class="sd">        order by ordinal_position</span>
+<span class="sd">        """</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+<span class="p">]</span>
+
+<span class="c1"># Focus coverage starts at AY2026 today (min academic_year in int_focus__schedule).</span>
+<span class="n">focus</span> <span class="o">=</span> <span class="s2">"(_dbt_source_project = 'kippmiami' and cc_academic_year &gt;= 2026)"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">columns</span><span class="p">):</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"`</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">`"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">((</span><span class="n">prod</span><span class="p">,</span> <span class="n">dev</span><span class="p">,</span> <span class="s2">"prod"</span><span class="p">),</span> <span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="s2">"dev"</span><span class="p">)):</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">        select count(*) as n,</span>
+<span class="s2">        from (</span>
+<span class="s2">            select to_json_string(struct(</span><span class="si">{</span><span class="n">row</span><span class="si">}</span><span class="s2">)) as j, from </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2"> where </span><span class="si">{</span><span class="n">where</span><span class="si">}</span>
+<span class="s2">            except distinct</span>
+<span class="s2">            select to_json_string(struct(</span><span class="si">{</span><span class="n">row</span><span class="si">}</span><span class="s2">)) as j, from </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2"> where </span><span class="si">{</span><span class="n">where</span><span class="si">}</span>
+<span class="s2">        )</span>
+<span class="s2">        """</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()))</span><span class="o">.</span><span class="n">n</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: rows only in </span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">rel</span><span class="p">,</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">((</span><span class="n">prod</span><span class="p">,</span> <span class="s2">"prod"</span><span class="p">),</span> <span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="s2">"dev"</span><span class="p">)):</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"select count(*) as n, from </span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2"> where </span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">"</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s2"> row count = </span><span class="si">{</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()))</span><span class="o">.</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="n">compare</span><span class="p">(</span><span class="s2">"unchanged set"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"not </span><span class="si">{</span><span class="n">focus</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">cols</span><span class="p">)</span>
+<span class="n">compare</span><span class="p">(</span><span class="s2">"focus set, filled columns excluded"</span><span class="p">,</span> <span class="n">focus</span><span class="p">,</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cols</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filled</span><span class="p">])</span>
+</code></pre></div>
+<p>Run
+  <code>uv run --with google-cloud-bigquery python &lt;scratchpad&gt;/diff_hub.py '&lt;dev relation&gt;'</code>.
+  Expected: every "rows only in" line is 0, and prod and dev row counts match
+  for both sets.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Lint and commit.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;worktree&gt;<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/dbt/kipptaf/models/students/intermediate/int_students__course_enrollments.sql<span class="w"> </span>src/dbt/kipptaf/models/students/intermediate/properties/int_students__course_enrollments.yml<span class="w"> </span>src/dbt/kipptaf/tests/int_students__course_enrollments__core_sections_cover_k8.sql<span class="w"> </span>src/dbt/kipptaf/tests/properties.yml<span class="w"> </span>&lt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span>
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/tests/int_students__course_enrollments__core_sections_cover_k8.sql<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dbt): conform Focus sections and pick a primary core section per student"</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">"Refs #5518"</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">"Co-Authored-By: Claude Opus 5.5 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<h3 id="task-4-dim_courses-sis-match">Task 4: <code>dim_courses</code> SIS match</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/kipptaf/models/marts/dimensions/dim_courses.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the SIS match.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_google_sheets__assessments__course_subject_crosswalk"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">csc</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">course_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">csc</span><span class="p">.</span><span class="n">powerschool_course_number</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">csc</span><span class="p">.</span><span class="n">sis</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PowerSchool'</span>
+</code></pre></div>
+<p><code>int_students__courses</code> unions PowerSchool and Focus courses with no SIS
+  column; Focus courses never matched the sheet before, and their new sheet rows
+  carry blank <code>Discipline</code> and <code>Is_Foundations</code>, so restricting to PowerSchool
+  keeps every output value as it is.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Build and prove no change.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf<span class="w"> </span>--favor-state<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--select<span class="w"> </span>dim_courses<span class="w"> </span>&gt;<span class="w"> </span>&lt;scratchpad&gt;/t4-build.log<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="p">;</span><span class="w"> </span>grep<span class="w"> </span>-oE<span class="w"> </span><span class="s2">"PASS=[0-9]+|ERROR=[0-9]+|WARN=[0-9]+"</span><span class="w"> </span>&lt;scratchpad&gt;/t4-build.log
+</code></pre></div>
+<p>Then <code>to_json_string(t)</code> <code>except distinct</code> between prod
+  <code>kipptaf_marts.dim_courses</code> and the dev relation, both directions. Expected: 0
+  and 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit.</strong>
+      <code>feat(dbt): match dim_courses to the crosswalk's PowerSchool rows</code>.</li>
+</ul>
+<h3 id="task-5-consumer-audit-dispatch-to-the-capable-model">Task 5: Consumer audit (dispatch to the capable model)</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Create (scratchpad): <code>&lt;scratchpad&gt;/consumer-audit.md</code></li>
+<li>
+<p>Modify: only if the owner approves a scoping change in Step 3.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: List consumers.</strong> Every model that refs
+      <code>int_students__course_enrollments</code> or
+      <code>base_powerschool__course_enrollments</code> and reads <code>courses_course_name</code>,
+      <code>cc_section_number</code>, <code>cc_teacherid</code>, <code>teacher_lastfirst</code>,
+      <code>rn_course_number_year</code> or <code>rn_credittype_year</code> (34 found on 2026-09-25;
+      20 filter on a row number).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Classify each</strong> by reading its SQL: (a) Focus rows still
+      excluded by another predicate (PowerSchool-only course names, credit type,
+      explicit region filter); (b) Focus rows newly admitted. For every (b), run
+      its hub-side predicate set against the dev hub and count Miami AY2026 rows
+      that now pass. Known must-reads: <code>rpt_gsheets__csgf_hs_enrollment</code> (feeds
+      the external CSGF submission; its <code>%Honors%</code> / <code>%(DE)</code> flags are
+      case-sensitive and Focus titles are uppercase), <code>rpt_tableau__crdc_roster</code>
+      (<code>%(DE)</code>), <code>int_extracts__student_enrollments</code> (the spine), and the 3
+      Miami dashboards (refreshes off per the owner; list, no action).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Report and decide.</strong> Write <code>consumer-audit.md</code>: one row per
+      consumer, class, Miami rows gained, NJ rows changed (must be 0). Hand
+      every (b) consumer to the owner for accept or scope-out before PR A leaves
+      draft.</p>
+</li>
+</ul>
+<h3 id="task-6-stage-for-ci-push-and-ready-pr-a-controller-owner">Task 6: Stage for CI, push, and ready PR A (controller + owner)</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Owner authorizes the staging re-stage</strong>, then run in its own
+      Bash call:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>run-operation<span class="w"> </span>stage_external_sources<span class="w"> </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>staging<span class="w"> </span>--args<span class="w"> </span><span class="s2">"select: google_sheets.src_google_sheets__assessments__course_subject_crosswalk"</span><span class="w"> </span>--vars<span class="w"> </span><span class="s1">'{ext_full_refresh: true}'</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Push and update PR #5519.</strong> Retitle to
+      <code>feat(dbt): conform Focus course sections in int_students__course_enrollments</code>;
+      rewrite the body from <code>.github/pull_request_template.md</code> (plain language;
+      <code>Refs #5518</code>); include the consumer audit summary and the
+      <code>full union all corresponding</code> decision. Invoke <code>pr-ci-review</code> before
+      marking ready. CI's <code>state:modified+</code> covers the hub's whole descendant
+      graph — budget for unrelated latent failures and check each against prod
+      before treating it as caused here.</li>
+</ul>
+<hr />
+<h2 id="pr-b-dibels-dashboard-stacked-on-pr-a">PR B — DIBELS dashboard (stacked on PR A)</h2>
+<h3 id="task-7-stacked-branch-controller-owner">Task 7: Stacked branch (controller + owner)</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Confirm worktree with the owner</strong>, then:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>gh<span class="w"> </span>issue<span class="w"> </span>develop<span class="w"> </span><span class="m">5518</span><span class="w"> </span>--name<span class="w"> </span>anthonygwalters/feat/claude-dibels-miami-dashboard-schedules<span class="w"> </span>--base<span class="w"> </span>anthonygwalters/feat/claude-dibels-miami-focus-schedules
+git<span class="w"> </span>fetch<span class="w"> </span>origin<span class="w"> </span>anthonygwalters/feat/claude-dibels-miami-dashboard-schedules
+git<span class="w"> </span>worktree<span class="w"> </span>add<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-dibels-miami-dashboard-schedules<span class="w"> </span>anthonygwalters/feat/claude-dibels-miami-dashboard-schedules
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-dibels-miami-dashboard-schedules<span class="w"> </span>branch<span class="w"> </span>--unset-upstream
+</code></pre></div>
+<p>All PR B paths below are under this second worktree (<code>&lt;wtB&gt;</code>). Run <code>dbt deps</code>
+  there first.</p>
+<h3 id="task-8-point-the-dashboard-at-the-primary-ela-section">Task 8: Point the dashboard at the primary ELA section</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>&lt;wtB&gt;/src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__dibels_dashboard.sql</code></li>
+<li>Modify: its properties yml
+  (<code>extracts/tableau/properties/rpt_tableau__dibels_dashboard.yml</code>)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 3's <code>core_subject</code>, <code>rn_core_subject_year</code>,
+  <code>standard_course_name</code>.</li>
+<li>
+<p>Produces: no column change. Output names stay <code>schedule_student_number</code>,
+  <code>teacherid</code>, <code>teacher_name</code>, <code>course_name</code>, <code>course_number</code>, <code>section_number</code>,
+  <code>schedule_student_grade_level</code>, <code>scheduled</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the join in all 3 branches.</strong> Each branch's
+      <code>left join {{ ref("base_powerschool__course_enrollments") }} as c ...</code>
+      block (through the <code>courses_course_name in (...)</code> list) becomes:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_students__course_enrollments"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">c</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">cc_academic_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">cc_schoolid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">students_student_number</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">core_subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ELA'</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">rn_core_subject_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">cc_section_number</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">'%SC%'</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Projections, in all 3 branches.</strong>
+      <code>c.courses_course_name as course_name</code> becomes
+      <code>c.standard_course_name as course_name</code>, and
+      <code>right(c.courses_course_name, 1) as schedule_student_grade_level</code> becomes
+      <code>right(c.standard_course_name, 1) as schedule_student_grade_level</code>. Leave
+      every other <code>c.</code> column as it is.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Null-safe filter, in all 3 branches.</strong>
+      <code>and not s.is_self_contained</code> becomes
+      <code>and s.is_self_contained is not true</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Descriptions.</strong> In the yml, rewrite the schedule columns'
+      descriptions to cover both SIS: <code>teacherid</code> is the PowerSchool teacher id
+      for NJ and for Miami before AY2026, and the Focus staff id for Miami from
+      AY2026; <code>course_name</code> is the crosswalk sheet's standard label; drop any
+      "PowerSchool-only" or "null for Miami" wording.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Union-branch balance.</strong> The DIBELS skill's
+      <code>gr-diff-union-branches.py</code> is not in either checkout, so write
+      <code>&lt;scratchpad&gt;/union_balance.py</code>:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="n">sql</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"--[^\n]*"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+<span class="n">branches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\n\s*union all\s*\n"</span><span class="p">,</span> <span class="n">sql</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">aliases</span><span class="p">(</span><span class="n">branch</span><span class="p">):</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">branch</span><span class="p">[</span><span class="n">branch</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"select"</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="s2">"select"</span><span class="p">)</span> <span class="p">:]</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\nfrom "</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">items</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">cur</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">""</span>
+    <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">body</span><span class="p">:</span>
+        <span class="n">depth</span> <span class="o">+=</span> <span class="n">ch</span> <span class="o">==</span> <span class="s2">"("</span>
+        <span class="n">depth</span> <span class="o">-=</span> <span class="n">ch</span> <span class="o">==</span> <span class="s2">")"</span>
+        <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="s2">","</span> <span class="ow">and</span> <span class="n">depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur</span><span class="p">)</span>
+            <span class="n">cur</span> <span class="o">=</span> <span class="s2">""</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cur</span> <span class="o">+=</span> <span class="n">ch</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur</span><span class="p">)</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">item</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\bas\s+([a-z_][a-z0-9_]*)\s*$"</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">S</span><span class="p">)</span>
+        <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">m</span> <span class="k">else</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">names</span>
+
+
+<span class="n">lists</span> <span class="o">=</span> <span class="p">[</span><span class="n">aliases</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">branches</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"branches:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lists</span><span class="p">),</span> <span class="s2">"| projections:"</span><span class="p">,</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lists</span><span class="p">])</span>
+<span class="n">bad</span> <span class="o">=</span> <span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">names</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">lists</span><span class="p">))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"mismatched ordinals:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bad</span><span class="p">[:</span><span class="mi">10</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</code></pre></div>
+<p>Run it on the edited SQL. Expected: <code>branches: 3</code>, 3 equal counts,
+  <code>mismatched ordinals: 0</code>. Then <code>grep -c "^      - name: "</code> on the yml equals
+  that count.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build.</strong> In <code>&lt;wtB&gt;</code>, build
+      <code>stg_google_sheets__assessments__course_subject_crosswalk int_students__course_enrollments rpt_tableau__dibels_dashboard</code>
+      with the standard flags (PR B needs PR A's models in the same dev build).
+      Expected: <code>ERROR=0</code>; existing dashboard singular tests pass or warn only
+      where prod already warns.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Dev against prod, grouped by <code>model_type</code>.</strong></p>
+</li>
+<li>NJ: row counts and the 6 schedule columns match prod except the 3 listed
+    cases (Global Constraints). List every other difference; each is a bug.</li>
+<li>Miami: rows and students per <code>academic_year</code> and <code>model_type</code> against the
+    spec's estimates (Benchmark AY2023 9,064 / AY2024 20,557 / AY2025 20,400 /
+    AY2026 22,044); <code>scheduled</code> rate per year at least 97% for AY2023-AY2025 and
+    about 98% for AY2026.</li>
+<li>
+<p>Report, do not fix: whether the Benchmark goal join (<code>s.school = g.school</code>)
+    matches Focus-era Miami school names.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Lint and commit.</strong> trunk check the SQL and yml; commit
+      <code>feat(dbt): show Miami on the DIBELS dashboard with Focus ELA schedules</code>
+      with <code>Refs #5518</code>.</p>
+</li>
+</ul>
+<h3 id="task-9-dibels-docs-and-skill">Task 9: DIBELS docs and skill</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>&lt;wtB&gt;/docs/models/dibels-dashboard-data-model.md</code></li>
+<li>
+<p>Modify: <code>&lt;wtB&gt;/.claude/skills/dibels-dashboard/SKILL.md</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Skill.</strong> Replace the "PowerSchool-only: null for Miami (Focus)
+      students" paragraph (Bright Spots section) with where schedules now come
+      from (<code>int_students__course_enrollments</code>, <code>core_subject = 'ELA'</code>,
+      <code>rn_core_subject_year = 1</code>, the crosswalk sheet). Correct the "A whole
+      region missing" section: <code>is_self_contained</code> was a wrong cause for missing
+      AY2026 scores but did drop every Miami row from the dashboard until this
+      change. Add: ACCESS course titles abbreviate Language Arts to <code>LA</code>, so a
+      title search for <code>LANG</code> misses them; and the Florida codes live on the
+      crosswalk sheet, not in SQL.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Reference doc.</strong> Update the filter list (<code>not is_self_contained</code>
+      → <code>is_self_contained is not true</code>, with the reason) and the
+      schedule-column description to name both SIS and the sheet.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Lint and commit.</strong> trunk check both files; commit
+      <code>docs(dbt): record Miami schedules on the DIBELS dashboard</code>.</p>
+</li>
+</ul>
+<h3 id="task-10-open-pr-b-controller">Task 10: Open PR B (controller)</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Push <code>&lt;wtB&gt;</code>'s branch and open a draft PR with base
+      <code>anthonygwalters/feat/claude-dibels-miami-focus-schedules</code>, body from the
+      template, <code>Closes #5518</code>. Note in the body that a stacked PR runs only
+      Trunk, so its dbt verification is the local results above; retarget to
+      <code>main</code> once PR A merges, then CI runs.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

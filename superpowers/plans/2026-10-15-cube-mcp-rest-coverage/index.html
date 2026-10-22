@@ -1,0 +1,2590 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Cube MCP REST Coverage Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cube-mcp-rest-coverage-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cube MCP REST Coverage Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#endpoint-facts-from-gateway-185" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoint facts (from gateway 1.8.5)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review Focus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-fix-stale-access-text-and-the-load-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Fix stale access text and the load description
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-trim-sql-and-accept-sql-api-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Trim sql and accept SQL API input
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-add-dry_run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Add dry_run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-add-cubesql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Add cubesql
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-add-convert_query-and-graphql_to_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Add convert_query and graphql_to_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-update-docs-auth-test-and-the-instructions-string" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Update docs, auth test, and the instructions= string
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-10-15-cube-mcp-rest-coverage.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="cube-mcp-rest-coverage-implementation-plan">Cube MCP REST Coverage Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Make <code>src/cube/mcp/server.py</code> a complete read-only wrapper over the
+Cube REST API, with accurate descriptions and small default responses.</p>
+<p><strong>Architecture:</strong> One file, <code>server.py</code>, keeps every tool. New tools reuse
+<code>_request</code> (auth, error, <code>Continue wait</code> polling). <code>cubesql</code> needs a streaming
+reader, so it gets one small private helper beside <code>_request</code>. Trimming is two
+pure functions, tested directly.</p>
+<p><strong>Tech Stack:</strong> Python 3.13, mcp SDK 2.0 <code>MCPServer</code>, httpx, PyJWT, pytest.</p>
+<p><strong>Spec:</strong> <code>docs/superpowers/specs/2026-10-15-cube-mcp-rest-coverage-design.md</code></p>
+<p>All paths below are relative to the worktree
+<code>/workspaces/teamster/.claude/worktrees/cbini/feat/claude-cube-mcp-rest-coverage</code>.
+Run every command from there with <code>uv run</code>. Use <code>git -C &lt;worktree&gt;</code> for git.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Total tool wall-clock under 60 s; reuse <code>TIMEOUT_SECONDS = 55</code>.</li>
+<li><code>stateless_http=True</code> stays; no tool keeps state between calls.</li>
+<li>Model guidance goes in tool docstrings, not <code>instructions=</code>.</li>
+<li>Every query-object tool passes its query through <code>_with_default_timezone</code>.</li>
+<li>No tool-side row limits. Cube's own limits apply.</li>
+<li><code>canUseTransformedQuery</code> is never read to build a default response.</li>
+<li>No docstring names <code>cube-*</code> groups. Empty catalog / <code>WHERE (1 = 0)</code> causes: no
+  <code>dim_staff_cube_access</code> row for the email, a <code>none</code> scope on that axis, or
+  <code>resolveAccess</code> failing closed.</li>
+<li>Gateway source of truth: <code>src/cube/node_modules/@cubejs-backend/api-gateway</code>
+  1.8.5 (<code>dist/src/gateway.js</code>, <code>dist/src/query.js</code>). Run <code>npm ci</code> in
+  <code>src/cube/</code> (main checkout) if it is missing.</li>
+<li>Tests: <code>uv run pytest tests/cube/test_mcp_server.py -v</code>. Never bare <code>pytest</code>.</li>
+<li>Live probes (<code>tests/cube/test_zz_*.py</code>): load the server with the real
+  <code>CUBE_REST_URL</code>/<code>CUBE_API_SECRET</code> from the conftest secrets, set
+  <code>server.client = httpx.AsyncClient(base_url=server.CUBE_REST_URL, timeout=55)</code>
+  (the lifespan does not run under pytest), and set <code>CUBE_USER_EMAIL</code> to the
+  user's email. If conftest does not supply the Cube secrets, stop and ask the
+  user rather than skipping the probe.</li>
+</ul>
+<h2 id="endpoint-facts-from-gateway-185">Endpoint facts (from gateway 1.8.5)</h2>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Request</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sql</code></td>
+<td><code>POST /sql</code> <code>{"query": &lt;obj&gt;}</code></td>
+<td><code>{"sql": {"sql": [str, list], "preAggregations": [...], "external": bool, ...}}</code></td>
+</tr>
+<tr>
+<td><code>sql</code> (SQL input)</td>
+<td><code>POST /sql</code> <code>{"query": &lt;str&gt;, "format": "sql"}</code></td>
+<td><code>{"sql": &lt;sql4sql result&gt;}</code>; needs <code>sql</code> scope (default scopes include it)</td>
+</tr>
+<tr>
+<td><code>dry_run</code></td>
+<td><code>POST /dry-run</code> <code>{"query": &lt;obj&gt;}</code></td>
+<td><code>{queryType, normalizedQueries, queryOrder, transformedQueries, pivotQuery}</code></td>
+</tr>
+<tr>
+<td><code>cubesql</code></td>
+<td><code>POST /cubesql</code> <code>{"query": &lt;str&gt;, "timezone", "throwContinueWait": true}</code></td>
+<td>chunked NDJSON: first line <code>schema</code>/<code>lastRefreshTime</code>/<code>usedPreAggregations</code>, then <code>{"data": [...]}</code> lines; an error line carries <code>error</code></td>
+</tr>
+<tr>
+<td><code>convert_query</code></td>
+<td><code>POST /convert-query</code> <code>{"input": "sql", "output": "rest", "query": &lt;str&gt;}</code></td>
+<td>rest query object (from native <code>rest4sql</code>)</td>
+</tr>
+<tr>
+<td><code>graphql_to_json</code></td>
+<td><code>POST /graphql-to-json</code> <code>{"query": &lt;str&gt;, "variables": &lt;obj&gt;}</code></td>
+<td><code>{"jsonQuery": &lt;obj&gt;}</code>; on a parse error Cube returns <code>{"jsonQuery": null}</code> with HTTP 200</td>
+</tr>
+</tbody>
+</table>
+<p><code>CUBE_REST_URL</code> already ends in <code>/cubejs-api/v1</code>, so paths are <code>/sql</code>, not
+<code>/v1/sql</code>, matching the existing <code>/load</code> and <code>/meta</code> calls.</p>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li><code>graphql_to_json</code> gets <code>{"jsonQuery": null}</code> for a bad query: the tool must
+   raise a clear error, not return <code>null</code> as if it worked. Test in Task 5.</li>
+<li><code>cubesql</code> stream with an <code>error</code> line partway through (or as the only line):
+   the tool raises with Cube's message, not a JSON decode error or a silent
+   partial result. Test in Task 4.</li>
+<li><code>cubesql</code> gets <code>Continue wait</code> on every attempt: the tool stops at the
+   deadline with the same message shape <code>load</code> uses. Test in Task 4.</li>
+<li><code>sql</code> response with no <code>preAggregations</code> key (a query no rollup covers):
+   trimmed response has <code>preAggregations: []</code>, no <code>KeyError</code>. Test in Task 2.</li>
+<li><code>dry_run</code> with a multi-query (<code>compareDateRange</code>) query: <code>transformedQueries</code>
+   has several entries, and each one is summarized. Test in Task 3.</li>
+</ol>
+<hr />
+<h3 id="task-1-fix-stale-access-text-and-the-load-description">Task 1: Fix stale access text and the <code>load</code> description</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/cube/mcp/server.py:10-27</code> (module docstring), <code>:68-75</code>
+  (<code>UserEmailPrompt</code>), <code>:405-407</code> (<code>meta</code> docstring), <code>:442-530</code> (<code>load</code>
+  docstring)</li>
+<li>Modify: <code>.claude/skills/cube-ops/SKILL.md</code> (line with <code>cube-*</code>)</li>
+<li>Test: <code>tests/cube/test_mcp_server.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>ACCESS_DENIED_CAUSES: str</code> module constant in <code>server.py</code>, the one
+  sentence naming the three causes above. <code>meta</code> and <code>sql</code> docstrings embed it.
+  Docstrings are literals, so the constant is for tests and error text only;
+  write the same sentence into each docstring.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_no_docstring_names_cube_groups</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">_load_server</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">)</span>
+    <span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">server</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">server</span><span class="o">.</span><span class="n">UserEmailPrompt</span><span class="o">.</span><span class="n">model_fields</span><span class="p">[</span><span class="s2">"email"</span><span class="p">]</span><span class="o">.</span><span class="n">description</span><span class="p">]</span>
+    <span class="n">texts</span> <span class="o">+=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">fn</span><span class="o">.</span><span class="vm">__doc__</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">server</span><span class="o">.</span><span class="n">mcp</span><span class="o">.</span><span class="n">_tool_manager</span><span class="o">.</span><span class="n">list_tools</span><span class="p">()]</span>
+    <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="s2">"cube-*"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">text</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_load_docstring_lists_every_operator_and_field</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">_load_server</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">)</span>
+    <span class="n">doc</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">load</span><span class="o">.</span><span class="vm">__doc__</span>
+    <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="s2">"equals"</span><span class="p">,</span> <span class="s2">"notEquals"</span><span class="p">,</span> <span class="s2">"contains"</span><span class="p">,</span> <span class="s2">"notContains"</span><span class="p">,</span> <span class="s2">"startsWith"</span><span class="p">,</span>
+        <span class="s2">"notStartsWith"</span><span class="p">,</span> <span class="s2">"endsWith"</span><span class="p">,</span> <span class="s2">"notEndsWith"</span><span class="p">,</span> <span class="s2">"in"</span><span class="p">,</span> <span class="s2">"notIn"</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">,</span> <span class="s2">"gte"</span><span class="p">,</span>
+        <span class="s2">"lt"</span><span class="p">,</span> <span class="s2">"lte"</span><span class="p">,</span> <span class="s2">"set"</span><span class="p">,</span> <span class="s2">"notSet"</span><span class="p">,</span> <span class="s2">"inDateRange"</span><span class="p">,</span> <span class="s2">"notInDateRange"</span><span class="p">,</span>
+        <span class="s2">"onTheDate"</span><span class="p">,</span> <span class="s2">"beforeDate"</span><span class="p">,</span> <span class="s2">"beforeOrOnDate"</span><span class="p">,</span> <span class="s2">"afterDate"</span><span class="p">,</span>
+        <span class="s2">"afterOrOnDate"</span><span class="p">,</span> <span class="s2">"measureFilter"</span><span class="p">,</span>
+    <span class="p">]:</span>
+        <span class="k">assert</span> <span class="sa">f</span><span class="s2">"`</span><span class="si">{</span><span class="n">op</span><span class="si">}</span><span class="s2">`"</span> <span class="ow">in</span> <span class="n">doc</span><span class="p">,</span> <span class="n">op</span>
+    <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="s2">"ungrouped"</span><span class="p">,</span> <span class="s2">"responseFormat"</span><span class="p">,</span> <span class="s2">"cacheMode"</span><span class="p">,</span> <span class="s2">"compareDateRange"</span><span class="p">,</span>
+        <span class="s2">"joinHints"</span><span class="p">,</span> <span class="s2">"subqueryJoins"</span><span class="p">,</span> <span class="s2">"maskedMembers"</span><span class="p">,</span> <span class="s2">"usedPreAggregations"</span><span class="p">,</span>
+    <span class="p">]:</span>
+        <span class="k">assert</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">doc</span><span class="p">,</span> <span class="n">field</span>
+</code></pre></div>
+<p>Check how mcp SDK 2.0 lists registered tools before writing the first test
+(<code>mcp._tool_manager</code> is the 1.x name). Use whatever accessor 2.0 exposes; if
+none, list the tool functions by name (<code>server.meta</code>, <code>server.load</code>, ...).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests to verify they fail</strong></li>
+</ul>
+<p>Run:
+<code>uv run pytest tests/cube/test_mcp_server.py -k "cube_groups or every_operator" -v</code>
+Expected: both FAIL (<code>cube-*</code> found; <code>notContains</code> missing).</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Rewrite the text</strong></p>
+</li>
+<li>
+<p>Module docstring: the email is the JWT security context; <code>cube.js</code> <code>checkAuth</code>
+  → <code>resolveAccess</code> maps it to access from <code>dim_staff_cube_access</code>. Tools list
+  gets all seven tools.</p>
+</li>
+<li><code>UserEmailPrompt</code> description: "Used as the JWT security context; Cube
+  resolves your access from it."</li>
+<li><code>meta</code> empty-catalog paragraph: the three causes.</li>
+<li><code>load</code>: list all 24 operators; document the fields in the test; replace the
+  single-date advice with <code>onTheDate</code> (keep <code>timeDimensions</code> + <code>dateRange</code> for
+  ranges and granularity); recommend <code>responseFormat: "compact"</code> for large
+  results; state the response carries <code>usedPreAggregations</code>; state row limits
+  (default 10,000 with no <code>limit</code>, error above 50,000) and paging with
+  <code>limit</code>/<code>offset</code> plus <code>total: true</code>. Keep every existing paragraph on grain,
+  academic year, string numerics, PII, and timezone.</li>
+<li><code>cube-ops/SKILL.md</code>: replace the <code>cube-*</code> line with the three causes. Read the
+  file with the Read tool first.</li>
+</ul>
+<p>Before writing the row-limit numbers, check that Cube Cloud does not override
+them. Write a throwaway credentialed test (<code>tests/cube/test_zz_limit_probe.py</code>,
+per <code>tests/CLAUDE.md</code>) that calls <code>server.load</code> with one dimension on a view
+with more than 10,000 rows and no <code>limit</code>, then with <code>limit: 50001</code>. Print only
+<code>len(result["data"])</code> and the error text, never row values. Delete the file
+after. If the results are not 10,000 rows and a limit error, write the numbers
+you observed and note them in the PR.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/cube/test_mcp_server.py -v</code> Expected: all PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>src/cube/mcp/server.py<span class="w"> </span>tests/cube/test_mcp_server.py<span class="w"> </span>.claude/skills/cube-ops/SKILL.md
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(cube): correct Cube MCP access text and document every load option"</span>
+</code></pre></div>
+<h3 id="task-2-trim-sql-and-accept-sql-api-input">Task 2: Trim <code>sql</code> and accept SQL API input</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/cube/mcp/server.py</code> (<code>sql</code> tool)</li>
+<li>Test: <code>tests/cube/test_mcp_server.py</code></li>
+<li>Create: <code>tests/cube/fixtures/cube_sql_response.json</code> (recorded sample)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Produces: <code>_trim_sql(body: dict[str, Any]) -&gt; dict[str, Any]</code>, returning
+  <code>{"sql": &lt;body["sql"]["sql"]&gt;, "external": &lt;body["sql"].get("external")&gt;, "preAggregations": [&lt;preAggregationId&gt;, ...]}</code>.</li>
+<li>Produces:
+  <code>sql(ctx, query: dict[str, Any] | str, full: bool = False) -&gt; dict[str, Any]</code>.
+  A <code>str</code> query is SQL API SQL: <code>POST /sql</code> with
+  <code>{"query": query, "format": "sql"}</code>, returned unchanged (it is already small).
+  A <code>dict</code> query: <code>POST /sql</code> with <code>{"query": _with_default_timezone(query)}</code>,
+  trimmed unless <code>full</code>.</li>
+</ul>
+<p>Spec deviation, flagged for the user's review: the spec missed <code>format: "sql"</code>
+on <code>/v1/sql</code> (compile a SQL API query to warehouse SQL). It is read-only and
+belongs to "every read-only endpoint," so <code>sql</code> takes it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Record the fixture</strong></li>
+</ul>
+<p>Call the live <code>mcp__claude_ai_Cube__sql</code> tool with the 2026-10-15 sample query
+(<code>student_assessment_scores_view.avg_percent_correct</code>, <code>pct_proficient</code>, the
+spec's filters). Save the raw response to
+<code>tests/cube/fixtures/cube_sql_response.json</code>. Before saving, check it holds no
+PII values: it is compiled SQL plus member names, but filter values land in the
+params list; replace any student or staff identifier with <code>"Student A"</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the failing tests</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">FIXTURES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"fixtures"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_trim_sql_is_small_and_keeps_sql_and_preaggs</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">_load_server</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">)</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">((</span><span class="n">FIXTURES</span> <span class="o">/</span> <span class="s2">"cube_sql_response.json"</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+    <span class="n">trimmed</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">_trim_sql</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">trimmed</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">5_000</span>
+    <span class="k">assert</span> <span class="n">trimmed</span><span class="p">[</span><span class="s2">"sql"</span><span class="p">]</span> <span class="o">==</span> <span class="n">raw</span><span class="p">[</span><span class="s2">"sql"</span><span class="p">][</span><span class="s2">"sql"</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">trimmed</span><span class="p">[</span><span class="s2">"preAggregations"</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">"preAggregationId"</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">[</span><span class="s2">"sql"</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"preAggregations"</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="p">]</span>
+    <span class="k">assert</span> <span class="s2">"canUseTransformedQuery"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">trimmed</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_trim_sql_without_preaggregations</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">_load_server</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">)</span>
+    <span class="n">trimmed</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">_trim_sql</span><span class="p">({</span><span class="s2">"sql"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"sql"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"SELECT 1"</span><span class="p">,</span> <span class="p">[]]}})</span>
+    <span class="k">assert</span> <span class="n">trimmed</span><span class="p">[</span><span class="s2">"preAggregations"</span><span class="p">]</span> <span class="o">==</span> <span class="p">[]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_sql_posts_object_query_and_trims</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="o">...</span>  <span class="c1"># fake _request records (method, path, kwargs); returns the fixture</span>
+    <span class="c1"># assert ("POST", "/sql") and kwargs["json"] == {"query": {..., "timezone": "UTC"}}</span>
+    <span class="c1"># assert result == server._trim_sql(fixture)</span>
+    <span class="c1"># full=True: result == fixture</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_sql_posts_sql_string_with_format_sql</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="o">...</span>  <span class="c1"># sql(ctx, "SELECT MEASURE(x.count) FROM x")</span>
+    <span class="c1"># assert kwargs["json"] == {"query": "SELECT MEASURE(x.count) FROM x", "format": "sql"}</span>
+</code></pre></div>
+<p>Update <code>test_load_and_sql_send_utc_timezone_by_default</code>: <code>sql</code> now sends <code>json</code>,
+not <code>params</code>, so read <code>sent[1]["json"]["query"]["timezone"]</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run tests to verify they fail</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/cube/test_mcp_server.py -k sql -v</code> Expected: FAIL
+(<code>_trim_sql</code> not defined).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Implement <code>_trim_sql</code> and the new <code>sql</code></strong></li>
+</ul>
+<p>Docstring: both input kinds; trimmed shape and the <code>full</code> shape; a rollup query
+compiles to <code>FROM prod_pre_aggregations.&lt;rollup&gt;</code>; "why didn't this use a
+pre-aggregation?" goes to <code>dry_run</code>; <code>WHERE (1 = 0)</code> means one of the three
+access causes. Drop the wrong <code>{"status", "query_type"}</code> shape.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the tests</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/cube/test_mcp_server.py -v</code> Expected: all PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>src/cube/mcp/server.py<span class="w"> </span>tests/cube/test_mcp_server.py<span class="w"> </span>tests/cube/fixtures/cube_sql_response.json
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(cube): trim Cube MCP sql response and accept SQL API input"</span>
+</code></pre></div>
+<h3 id="task-3-add-dry_run">Task 3: Add <code>dry_run</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/cube/mcp/server.py</code></li>
+<li>Test: <code>tests/cube/test_mcp_server.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces:
+  <code>_summarize_transformed_query(tq: dict[str, Any] | None) -&gt; dict[str, Any] | None</code>.
+  Keeps the scalar fields that explain a pre-aggregation match (booleans, member
+  lists such as <code>leafMeasures</code>, <code>sortedDimensions</code>, <code>timeDimensions</code>,
+  <code>measures</code>, <code>ungrouped</code>, <code>hasNoTimeDimensionsWithoutGranularity</code>,
+  <code>allFiltersWithinSelectedDimensions</code>, <code>isAdditive</code>), and drops
+  <code>granularityHierarchies</code> and any value over 1 KB once serialized. Read one
+  real <code>transformedQueries</code> entry (Step 1) to pick the exact keys.</li>
+<li>
+<p>Produces:
+  <code>dry_run(ctx, query: dict[str, Any], full: bool = False) -&gt; dict[str, Any]</code>.
+  <code>POST /dry-run</code> with <code>{"query": _with_default_timezone(query)}</code>. Unless
+  <code>full</code>, replace <code>transformedQueries</code> with the summaries.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Capture a real <code>transformedQueries</code> entry</strong></p>
+</li>
+</ul>
+<p>Run a throwaway credentialed test (<code>tests/cube/test_zz_dry_run_probe.py</code>, per
+<code>tests/CLAUDE.md</code>) that calls <code>server.dry_run</code> on the Task 2 sample query with
+<code>full=True</code> and prints
+<code>json.dumps(result["transformedQueries"][0], indent=1)[:4000]</code>. Delete the file
+after. If the server cannot reach Cube from pytest, use the key names in
+<code>@cubejs-backend/schema-compiler</code>'s
+<code>PreAggregations.transformQueryToCanUseForm</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the failing tests</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_dry_run_posts_query_and_summarizes</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="n">big</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"leafMeasures"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"v.m"</span><span class="p">],</span> <span class="s2">"granularityHierarchies"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"y"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">5000</span><span class="p">}}</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"queryType"</span><span class="p">:</span> <span class="s2">"regularQuery"</span><span class="p">,</span> <span class="s2">"normalizedQueries"</span><span class="p">:</span> <span class="p">[{}],</span>
+            <span class="s2">"queryOrder"</span><span class="p">:</span> <span class="p">[{}],</span> <span class="s2">"pivotQuery"</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">"transformedQueries"</span><span class="p">:</span> <span class="p">[</span><span class="n">big</span><span class="p">]}</span>
+    <span class="o">...</span>  <span class="c1"># fake _request returns body; records call</span>
+    <span class="c1"># assert ("POST", "/dry-run"), json == {"query": {..., "timezone": "UTC"}}</span>
+    <span class="c1"># assert "granularityHierarchies" not in result["transformedQueries"][0]</span>
+    <span class="c1"># assert result["transformedQueries"][0]["leafMeasures"] == ["v.m"]</span>
+    <span class="c1"># full=True: result == body</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_dry_run_summarizes_every_query_in_multi_query</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="o">...</span>  <span class="c1"># transformedQueries == [big, big]; both summarized</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_summarize_transformed_query_handles_none</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">_load_server</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">server</span><span class="o">.</span><span class="n">_summarize_transformed_query</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run tests to verify they fail</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/cube/test_mcp_server.py -k dry_run -v</code> Expected: FAIL
+(<code>dry_run</code> not defined).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Implement</strong></li>
+</ul>
+<p>Docstring: validates and normalizes a query without compiling SQL; the place to
+ask why a query did or did not match a pre-aggregation; <code>full=True</code> for Cube's
+raw objects.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the tests</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/cube/test_mcp_server.py -v</code> Expected: all PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>src/cube/mcp/server.py<span class="w"> </span>tests/cube/test_mcp_server.py
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(cube): add dry_run tool to the Cube MCP server"</span>
+</code></pre></div>
+<h3 id="task-4-add-cubesql">Task 4: Add <code>cubesql</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/cube/mcp/server.py</code></li>
+<li>Test: <code>tests/cube/test_mcp_server.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Produces: <code>_parse_cubesql_stream(text: str) -&gt; dict[str, Any]</code>. Splits on
+  newlines, skips blank lines, <code>json.loads</code> each. Returns
+  <code>{"schema": ..., "lastRefreshTime": ..., "usedPreAggregations": ..., "data": [&lt;all rows, in order&gt;]}</code>
+  (keys absent from the stream are omitted). Any line with an <code>error</code> key:
+  return <code>{"error": &lt;that value&gt;}</code> and stop.</li>
+<li>Produces:
+  <code>cubesql(ctx, query: str, timezone: str | None = None) -&gt; dict[str, Any]</code>.
+  <code>POST /cubesql</code> with
+  <code>{"query": query, "timezone": timezone or DEFAULT_QUERY_TIMEZONE, "throwContinueWait": True}</code>.
+  Loop until the deadline: parse the body with <code>_parse_cubesql_stream</code>; if the
+  result's <code>error == "Continue wait"</code>, sleep 1 s and resend; any other <code>error</code>
+  raises <code>RuntimeError(f"Cube POST /cubesql: {error}")</code>; else return.</li>
+<li>Change: <code>_request</code> gains <code>raw: bool = False</code>. When <code>raw</code>, it returns
+  <code>response.text</code> instead of <code>response.json()</code> and skips the <code>Continue wait</code>
+  check. <code>cubesql</code> does its own polling on the parsed result. Keep the HTTP
+  error branch for both.</li>
+</ul>
+<p>Read the whole response body (<code>response.text</code>). httpx buffers it; no streaming
+reader is needed, because the tool returns one object anyway.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">STREAM</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">'{"schema":[{"name":"c","column_type":"Int64"}],"lastRefreshTime":"t","usedPreAggregations":</span><span class="si">{}</span><span class="s1">}</span><span class="se">\n</span><span class="s1">'</span>
+    <span class="s1">'{"data":[["1"],["2"]]}</span><span class="se">\n</span><span class="s1">'</span>
+    <span class="s1">'{"data":[["3"]]}</span><span class="se">\n</span><span class="s1">'</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_parse_cubesql_stream_assembles_chunks</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">_load_server</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">_parse_cubesql_stream</span><span class="p">(</span><span class="n">STREAM</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">out</span><span class="p">[</span><span class="s2">"data"</span><span class="p">]</span> <span class="o">==</span> <span class="p">[[</span><span class="s2">"1"</span><span class="p">],</span> <span class="p">[</span><span class="s2">"2"</span><span class="p">],</span> <span class="p">[</span><span class="s2">"3"</span><span class="p">]]</span>
+    <span class="k">assert</span> <span class="n">out</span><span class="p">[</span><span class="s2">"schema"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">"name"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"c"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_parse_cubesql_stream_error_line</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">_load_server</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">_parse_cubesql_stream</span><span class="p">(</span><span class="s1">'{"schema":[]}</span><span class="se">\n</span><span class="s1">{"error":"boom"}</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">out</span> <span class="o">==</span> <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"boom"</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_cubesql_posts_sql_with_utc_and_continue_wait</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="o">...</span>  <span class="c1"># fake _request(method, path, *, email, raw, json) records; returns STREAM</span>
+    <span class="c1"># assert ("POST", "/cubesql"), raw is True</span>
+    <span class="c1"># assert json == {"query": "SELECT 1", "timezone": "UTC", "throwContinueWait": True}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_cubesql_polls_on_continue_wait_then_returns</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="o">...</span>  <span class="c1"># first call returns '{"error":"Continue wait"}\n', second STREAM</span>
+    <span class="c1"># monkeypatch asyncio.sleep to a no-op; assert 2 calls and data has 3 rows</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_cubesql_raises_at_deadline</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="o">...</span>  <span class="c1"># always Continue wait; monkeypatch time.monotonic to jump past</span>
+    <span class="c1"># the deadline; pytest.raises(RuntimeError, match="did not complete")</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_cubesql_raises_cube_error</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="o">...</span>  <span class="c1"># returns '{"error":"Table not found"}\n';</span>
+    <span class="c1"># pytest.raises(RuntimeError, match="Table not found")</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests to verify they fail</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/cube/test_mcp_server.py -k cubesql -v</code> Expected: FAIL
+(<code>_parse_cubesql_stream</code> not defined).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></li>
+</ul>
+<p>Docstring: SQL API dialect over REST; <code>MEASURE(&lt;measure&gt;)</code> for measures; query
+views, not cubes; <code>GROUP BY</code> the dimensions; no tool-side row limit, so page
+with <code>LIMIT</code>/<code>OFFSET</code>; numeric values come back as strings; same PII paragraph
+as <code>load</code>; the three access causes for an empty result.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify catalog queries live</strong></li>
+</ul>
+<p>Throwaway credentialed test (<code>tests/cube/test_zz_cubesql_probe.py</code>): call
+<code>server.cubesql</code> with
+<code>SELECT table_name FROM information_schema.tables LIMIT 5</code>. Print only the
+result keys and row count, not values. Delete the file after.</p>
+<ul class="task-list">
+<li>If it returns rows: add one docstring line saying catalog queries work.</li>
+<li>
+<p>If it errors: add one docstring line saying they do not, and to use <code>meta</code> for
+  schema questions.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the tests</strong></p>
+</li>
+</ul>
+<p>Run: <code>uv run pytest tests/cube/test_mcp_server.py -v</code> Expected: all PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>src/cube/mcp/server.py<span class="w"> </span>tests/cube/test_mcp_server.py
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(cube): add cubesql tool to the Cube MCP server"</span>
+</code></pre></div>
+<h3 id="task-5-add-convert_query-and-graphql_to_json">Task 5: Add <code>convert_query</code> and <code>graphql_to_json</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/cube/mcp/server.py</code></li>
+<li>Test: <code>tests/cube/test_mcp_server.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces: <code>convert_query(ctx, sql: str) -&gt; dict[str, Any]</code>.
+  <code>POST /convert-query</code> with <code>{"input": "sql", "output": "rest", "query": sql}</code>;
+  returns Cube's body.</li>
+<li>
+<p>Produces:
+  <code>graphql_to_json(ctx, query: str, variables: dict[str, Any] | None = None) -&gt; dict[str, Any]</code>.
+  <code>POST /graphql-to-json</code> with <code>{"query": query, "variables": variables or {}}</code>.
+  Returns <code>body["jsonQuery"]</code>. If it is <code>None</code>, raise
+  <code>RuntimeError("Cube could not parse the GraphQL query")</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_convert_query_posts_sql_to_rest</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="o">...</span>  <span class="c1"># assert ("POST", "/convert-query"),</span>
+    <span class="c1"># json == {"input": "sql", "output": "rest", "query": "SELECT 1"}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_graphql_to_json_returns_json_query</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="o">...</span>  <span class="c1"># fake returns {"jsonQuery": {"measures": ["v.m"]}}</span>
+    <span class="c1"># assert result == {"measures": ["v.m"]}</span>
+    <span class="c1"># assert json == {"query": "{ cube { v { m } } }", "variables": {}}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_graphql_to_json_raises_on_null</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="o">...</span>  <span class="c1"># fake returns {"jsonQuery": None}</span>
+    <span class="c1"># pytest.raises(RuntimeError, match="could not parse")</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests to verify they fail</strong></li>
+</ul>
+<p>Run:
+<code>uv run pytest tests/cube/test_mcp_server.py -k "convert_query or graphql" -v</code>
+Expected: FAIL.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></li>
+</ul>
+<p>Docstrings: each says the result is a REST query object to pass to <code>load</code>,
+<code>sql</code>, or <code>dry_run</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/cube/test_mcp_server.py -v</code> Expected: all PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>src/cube/mcp/server.py<span class="w"> </span>tests/cube/test_mcp_server.py
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(cube): add convert_query and graphql_to_json tools to the Cube MCP server"</span>
+</code></pre></div>
+<h3 id="task-6-update-docs-auth-test-and-the-instructions-string">Task 6: Update docs, auth test, and the <code>instructions=</code> string</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>src/cube/mcp/CLAUDE.md</code> (Files list, Cube REST quirks)</li>
+<li>Modify: <code>src/cube/mcp/server.py</code> (<code>instructions=</code> names the new tools in one
+  sentence; <code>test_module_loads</code> asserts all seven exist)</li>
+<li>
+<p>Test: <code>tests/cube/test_mcp_server.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing test</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_every_tool_sends_minted_token</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+    <span class="c1"># Patch server.client with an httpx.AsyncClient(transport=httpx.MockTransport(handler)).</span>
+    <span class="c1"># handler records request.headers["Authorization"] and returns a minimal valid</span>
+    <span class="c1"># body per path (/sql -&gt; fixture, /dry-run -&gt; body, /cubesql -&gt; STREAM text,</span>
+    <span class="c1"># /convert-query -&gt; {}, /graphql-to-json -&gt; {"jsonQuery": {}}, /load -&gt; {"data": []}).</span>
+    <span class="c1"># Call each tool once; assert every recorded header == server._mint_token(email)</span>
+    <span class="c1"># and has no "Bearer " prefix.</span>
+</code></pre></div>
+<p>This is the one transport-level test; the per-tool tests above fake <code>_request</code>.
+Extend <code>test_module_loads</code> to assert <code>dry_run</code>, <code>cubesql</code>, <code>convert_query</code>,
+<code>graphql_to_json</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run, implement, rerun</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/cube/test_mcp_server.py -v</code> Expected after edits: all
+PASS.</p>
+<p><code>src/cube/mcp/CLAUDE.md</code>: Files list names all seven tools; replace the "<code>/sql</code>
+is GET-only" bullet with: <code>/sql</code> and <code>/dry-run</code> accept POST with a JSON body;
+<code>/cubesql</code> returns newline-delimited JSON, not one object; <code>/graphql-to-json</code>
+returns <code>{"jsonQuery": null}</code> with HTTP 200 on a parse error. Read the file with
+the Read tool first.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/cube/mcp/server.py<span class="w"> </span>src/cube/mcp/CLAUDE.md<span class="w"> </span>tests/cube/test_mcp_server.py<span class="w"> </span>.claude/skills/cube-ops/SKILL.md<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>src/cube/mcp/server.py<span class="w"> </span>src/cube/mcp/CLAUDE.md<span class="w"> </span>tests/cube/test_mcp_server.py
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs(cube): document new Cube MCP tools and REST quirks"</span>
+</code></pre></div>
+<p>PR body notes: claude.ai users must refresh the connector after deploy; the
+<code>sql</code> SQL-input deviation from the spec; the observed row limits; the
+catalog-query result from Task 4.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
