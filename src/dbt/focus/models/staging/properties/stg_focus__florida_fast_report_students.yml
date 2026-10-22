@@ -83,42 +83,39 @@ models:
           meta:
             contains_pii: true
       - name: has_ell
-        description: English language learner flag, as an integer.
-        data_type: int
+        description: Whether the student is an English language learner.
+        data_type: bool
         config:
           meta:
             contains_pii: true
       - name: has_ese
-        description: Exceptional student education flag, as an integer.
-        data_type: int
+        description: Whether the student receives exceptional student education.
+        data_type: bool
         config:
           meta:
             contains_pii: true
       - name: has_504
-        description: Section 504 plan flag, as an integer.
-        data_type: int
+        description: Whether the student has a Section 504 plan.
+        data_type: bool
         config:
           meta:
             contains_pii: true
-      - name: low_percentile
+      - name: is_low_percentile
         description: >-
-          Focus's lowest-percentile flag, as an integer. Focus does not document
-          the cut.
-        data_type: int
+          Focus's lowest-percentile flag. Focus does not document the cut.
+        data_type: bool
         config:
           meta:
             contains_pii: true
-      - name: affects_school_grade
-        description: >-
-          Flag, as an integer, for whether the score counts toward the Florida
-          school grade.
-        data_type: int
+      - name: is_counted_in_school_grade
+        description: Whether the score counts toward the Florida school grade.
+        data_type: bool
         config:
           meta:
             contains_pii: true
-      - name: above_grade_level
-        description: Above-grade-level flag, as an integer.
-        data_type: int
+      - name: is_above_grade_level
+        description: Whether the student tested above grade level.
+        data_type: bool
         config:
           meta:
             contains_pii: true
