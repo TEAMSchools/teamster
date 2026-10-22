@@ -28,6 +28,11 @@ Named groups in `remote_dir_regex` / `remote_file_regex` are replaced with
 partition key dimension values via `compose_regex()`. For multi-partition keys,
 each dimension name maps to a group name in the regex.
 
+`build_sftp_file_asset(current_partition_only=True)` raises on any partition but
+the last, before touching SFTP. Use it when the vendor file only ever holds the
+current partition's data, so a past partition is a frozen snapshot a re-run
+would overwrite (Branching Minds).
+
 `iready` has special-cased logic: the current fiscal year partition maps to the
 `Current_Year` directory on the SFTP server.
 

@@ -108,6 +108,7 @@ def build_sftp_file_asset(
     pdf_row_pattern: str | None = None,
     exclude_dirs: list[str] | None = None,
     ignore_multiple_matches: bool = False,
+    current_partition_only: bool = False,
     archive_remote_dir: Callable[[str], str] | None = None,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
@@ -146,6 +147,19 @@ def build_sftp_file_asset(
             partition_key = context.partition_key
         else:
             partition_key = None
+
+        # the vendor file only ever holds the current partition's data, so a
+        # past partition's file is a frozen snapshot that a re-run would destroy
+        if current_partition_only:
+            last_partition_key = check.not_none(
+                context.assets_def.partitions_def
+            ).get_last_partition_key()
+
+            if partition_key != last_partition_key:
+                raise ValueError(
+                    f"Partition {partition_key} is not the current partition "
+                    f"{last_partition_key}; refusing to overwrite its snapshot"
+                )
 
         if group_name == "iready":
             partition_key = check.inst(obj=partition_key, ttype=MultiPartitionKey)
