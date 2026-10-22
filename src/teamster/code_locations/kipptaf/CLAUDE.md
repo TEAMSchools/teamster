@@ -16,6 +16,7 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `google`                 | Directory, Forms, AppSheet specs, Sheets specs            | directory, forms | bigquery, forms, sheets |
 | `adp`                    | payroll SFTP + WFN API (WFM disabled)                     | WFN schedule     | WFN + payroll sensors   |
 | `airbyte`                | asset specs                                               | schedule         | disabled                |
+| `branchingminds`         | SFTP export assets (fiscal-year partitions)               | —                | sensor                  |
 | `collegeboard`           | SFTP assets                                               | —                | —                       |
 | `coupa`                  | API assets                                                | schedule         | —                       |
 | `deanslist`              | API assets                                                | —                | sensor                  |
