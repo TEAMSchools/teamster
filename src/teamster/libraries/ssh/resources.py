@@ -368,6 +368,10 @@ class SSHResource(DagsterSSHResource):
                 self.get_connection() as connection,
                 connection.open_sftp() as sftp_client,
             ):
+                # paramiko channels default to no timeout: a server that stops
+                # answering mid-listing would block recv() until Dagster kills
+                # the tick. A stalled read now raises TimeoutError -> skip.
+                check.not_none(value=sftp_client.get_channel()).settimeout(self.timeout)
                 return self.listdir_attr_r(sftp_client=sftp_client, **kwargs)
         except TRANSIENT_CONNECT_EXCEPTIONS as e:
             if not _is_transient_connect_failure(e):
