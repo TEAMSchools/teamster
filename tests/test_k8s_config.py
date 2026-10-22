@@ -250,7 +250,8 @@ ARM_TOLERATION = {
 
 def test_compute_class_prefers_arm_then_falls_back_to_amd64():
     """An arm64 stockout left pods Pending until runs failed the start timeout.
-    The class tries arm64 first and provisions amd64 only when arm64 is out.
+    The class tries arm64 first, provisions amd64 only when arm64 is out, and
+    migrates work back to arm64 afterward (why: the ComputeClass comment).
     """
     (compute_class,) = [
         m for m in _helm_values()["extraManifests"] if m["kind"] == "ComputeClass"
@@ -262,6 +263,7 @@ def test_compute_class_prefers_arm_then_falls_back_to_amd64():
         {"podFamily": "general-purpose-arm"},
         {"podFamily": "general-purpose"},
     ]
+    assert compute_class["spec"]["activeMigration"] == {"optimizeRulePriority": True}
 
 
 @pytest.mark.parametrize("config", ["serverK8sConfig", "runK8sConfig"])
