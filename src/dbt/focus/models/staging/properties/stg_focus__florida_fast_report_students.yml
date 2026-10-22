@@ -1,0 +1,149 @@
+models:
+  - name: stg_focus__florida_fast_report_students
+    description: >-
+      Focus's FAST (Florida Assessment of Student Thinking) report. One row per
+      student, school year and subject. Focus builds this table from state FAST
+      results; it is a report output, not a table staff edit.
+
+
+      The PM3 score columns arrive named for one administration (`_2025_pm3_*`)
+      and are renamed here without the year. Rows for every `syear` carry values
+      in them, so the source name does not track `syear`. If Focus renames them
+      for a later window, this model fails at compile until the new names are
+      mapped.
+
+
+      `student_name` and `school_title` are left out — join
+      `stg_focus__students` and `stg_focus__schools` instead.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - syear
+              - subject
+          config:
+            severity: error
+    columns:
+      - name: id
+        description: Primary key — Focus FAST report row id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year).
+        data_type: int
+      - name: subject
+        description: FAST subject, lowercase (`ela`, `math`).
+        data_type: string
+      - name: school_id
+        description: Focus school id (internal integer, not the Florida code).
+        data_type: int
+      - name: student_id
+        description: >-
+          Focus student id — the network student number prefixed with `8400`
+          (Miami-Dade's FLDOE district number).
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: grade_level
+        description: Grade level as Focus prints it on the report.
+        data_type: string
+      - name: lunch_status
+        description: Free or reduced-price lunch status as Focus reports it.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: race
+        description: Race as Focus reports it.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: has_ell
+        description: English language learner flag, as an integer.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: has_ese
+        description: Exceptional student education flag, as an integer.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: has_504
+        description: Section 504 plan flag, as an integer.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: low_percentile
+        description: >-
+          Focus's lowest-percentile flag, as an integer. Focus has not defined
+          the cut; confirm with Focus before reading it as the lowest 25%.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: affects_school_grade
+        description: >-
+          Flag, as an integer, for whether the score counts toward the Florida
+          school grade.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: above_grade_level
+        description: Above-grade-level flag, as an integer.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: l25
+        description: >-
+          Lowest-25% indicator Focus fills in later in the year. Left as text
+          until Focus populates it and the format is known.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: gain
+        description: >-
+          Learning gain Focus fills in later in the year. Left as text until
+          Focus populates it and the format is known.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: percentile
+        description: Percentile on the FAST report, 0 to 100.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: pm3_achievement_level
+        description: PM3 (end-of-year) FAST achievement level, 1 to 5.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: pm3_percentile_rank
+        description: PM3 FAST percentile rank, 0 to 100.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: pm3_scale_score
+        description: PM3 FAST scale score (expanded standard score).
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
