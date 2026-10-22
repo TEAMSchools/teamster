@@ -265,16 +265,16 @@ def _patch_connection(ssh: SSHResource, sftp: MagicMock) -> None:
     object.__setattr__(ssh, "get_connection", lambda: connection)
 
 
-def test_or_skip_bounds_sftp_channel_reads():
+def test_listdir_bounds_sftp_channel_reads():
     """paramiko channels default to no timeout, so a server that stops
-    answering mid-listing would block the sensor tick until Dagster kills it."""
+    answering mid-listing would block the sensor tick until Dagster kills it.
+    Covers direct callers too, not just listdir_attr_r_or_skip."""
     sftp = _build_mock_sftp({".": []})
 
     with build_resources(
         {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
     ) as resources:
-        _patch_connection(resources.ssh, sftp)
-        resources.ssh.listdir_attr_r_or_skip(remote_dir=".")
+        resources.ssh.listdir_attr_r(sftp_client=sftp, remote_dir=".")
 
     sftp.get_channel.return_value.settimeout.assert_called_once_with(
         resources.ssh.timeout

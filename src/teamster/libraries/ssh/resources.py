@@ -225,7 +225,8 @@ class SSHResource(DagsterSSHResource):
             "Timeout for the attempt to connect to remote host. Must exceed"
             " paramiko's banner_timeout + handshake_timeout or connect() reports"
             " a misleading 'No existing session' and abandons the transport"
-            " thread."
+            " thread. Also bounds each SFTP channel read made through"
+            " listdir_attr_r."
         ),
     )
 
@@ -299,6 +300,11 @@ class SSHResource(DagsterSSHResource):
         directory's ``st_mtime`` is older than the max ``st_mtime`` of its
         descendants; if so, do not pass ``dir_mtimes``.
         """
+        # paramiko channels default to no timeout: a server that stops answering
+        # mid-listing would block recv() until the sensor tick or run is killed.
+        # A stalled read now raises TimeoutError instead.
+        check.not_none(value=sftp_client.get_channel()).settimeout(self.timeout)
+
         if exclude_dirs is None:
             exclude_dirs = []
 
@@ -368,10 +374,6 @@ class SSHResource(DagsterSSHResource):
                 self.get_connection() as connection,
                 connection.open_sftp() as sftp_client,
             ):
-                # paramiko channels default to no timeout: a server that stops
-                # answering mid-listing would block recv() until Dagster kills
-                # the tick. A stalled read now raises TimeoutError -> skip.
-                check.not_none(value=sftp_client.get_channel()).settimeout(self.timeout)
                 return self.listdir_attr_r(sftp_client=sftp_client, **kwargs)
         except TRANSIENT_CONNECT_EXCEPTIONS as e:
             if not _is_transient_connect_failure(e):
