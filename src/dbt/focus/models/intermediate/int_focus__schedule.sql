@@ -14,6 +14,19 @@ with
         from {{ ref("stg_focus__marking_periods") }}
     ),
 
+    enrollment_end as (
+        select
+            student_id,
+            school_id,
+            syear,
+
+            if(
+                countif(end_date is null) > 0, null, max(end_date)
+            ) as enrollment_end_date,
+        from {{ ref("stg_focus__student_enrollment") }}
+        group by student_id, school_id, syear
+    ),
+
     schedule as (
         select
             s.id as student_schedule_id,
@@ -70,6 +83,10 @@ with
             mkp.start_date as marking_period_start_date,
             mkp.end_date as marking_period_end_date,
 
+            (
+                select min(d),
+                from unnest([s.end_date, mkp.end_date, ee.enrollment_end_date]) as d
+            ) as effective_end_date,
         from {{ ref("stg_focus__schedule") }} as s
         inner join
             {{ ref("stg_focus__course_periods") }} as cp
@@ -80,6 +97,13 @@ with
             on s.syear = mkp.syear
             and s.school_id = mkp.school_id
             and s.marking_period_id = mkp.schedule_marking_period_id
+        left join
+            enrollment_end as ee
+            on s.student_id = ee.student_id
+            and s.school_id = ee.school_id
+            and s.syear = ee.syear
+        -- drop seats Focus scheduled after the student left, before the stint pick
+        where ee.enrollment_end_date is null or s.start_date <= ee.enrollment_end_date
     )
 
     -- one stint per course period; the pick order is in the model description
