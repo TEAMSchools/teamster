@@ -218,6 +218,25 @@ models:
           truancy flag. Consequence: on a session day whose register was never
           taken this reports the prior value rather than null.
 
+      - name: n_absent_days_rolling_90
+        data_type: float64
+        description: >-
+          Absences in the student's last 91 days on the attendance record for
+          the academic year, through and including this date -- the count behind
+          Miami's truancy rule (15 or more makes is_truant true). Days on the
+          record, not calendar days, so it differs from a count over the 90
+          calendar days before a date; a day on the record with no recorded
+          attendance still takes one of the 91 places. Accumulates per student
+          per year and does not reset when the student changes schools.
+
+          Carried across break days and gated on n_membership_days_ytd exactly
+          like is_truant, so the count and the flag resolve on the same rows.
+          Computed for every region, though only Miami's truancy rule reads it.
+        config:
+          meta:
+            source_model: int_students__attendance_daily
+            source_column: n_absent_running_90
+
       - name: is_absent
         data_type: int64
         description: >-
@@ -425,15 +444,16 @@ unit_tests:
             0.0 as is_iss,
             0.0 as is_suspended,
             1.0 as membershipvalue,
-            'Present' as attendance_category
+            'Present' as attendance_category,
+            0.0 as n_absent_running_90
           union all
-          select 2, 'kippnewark', date '2025-09-01', 'A', 0.901, 0.901, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present'
+          select 2, 'kippnewark', date '2025-09-01', 'A', 0.901, 0.901, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present', 0.0
           union all
-          select 3, 'kippnewark', date '2025-09-01', 'A', 0.9, 0.9, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present'
+          select 3, 'kippnewark', date '2025-09-01', 'A', 0.9, 0.9, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present', 0.0
           union all
-          select 4, 'kippnewark', date '2025-09-01', 'A', 0.8, 0.8, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present'
+          select 4, 'kippnewark', date '2025-09-01', 'A', 0.8, 0.8, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present', 0.0
           union all
-          select 5, 'kippnewark', date '2025-09-01', 'A', 0.799, 0.799, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present'
+          select 5, 'kippnewark', date '2025-09-01', 'A', 0.799, 0.799, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 'Present', 0.0
 
       - input: ref('int_students__schools')
         format: sql
@@ -468,6 +488,7 @@ unit_tests:
           attendance_value,
           present_weight,
           is_truant,
+          n_absent_days_rolling_90,
           n_membership_days_ytd,
           n_present_days_ytd,
           ada_tier,
@@ -487,6 +508,7 @@ unit_tests:
             week_start_monday date, is_in_session_day bool, term_key string,
             attendance_code string, attendance_value float64,
             present_weight float64, is_truant bool,
+            n_absent_days_rolling_90 float64,
             n_membership_days_ytd float64, n_present_days_ytd float64,
             ada_tier string, membership_value float64,
             is_chronically_absent bool, is_absent int64, is_tardy int64,
@@ -496,39 +518,115 @@ unit_tests:
           (
           'e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
-          'A', 0.95, 0.95, false,
+          'A', 0.95, 0.95, false, 0.0,
           1.0, 0.95, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '88069d903ef3d092c4eeb74fdb9bd014', 'bb5dba58abf65aa286355188dbabbabe',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
-          'A', 0.901, 0.901, false,
+          'A', 0.901, 0.901, false, 0.0,
           1.0, 0.901, 'Tier 2', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '7afe022f600a6ca5344d8c145da2a9a2', 'd19e8f58fae7d84a143ad77654b70fd6',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
-          'A', 0.9, 0.9, false,
+          'A', 0.9, 0.9, false, 0.0,
           1.0, 0.9, 'Tier 3', 1.0,
           true, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           'e0003d963cf966b7fd5598cd9617d126', 'b67399aa30b11a32d67d205700423eb6',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
-          'A', 0.8, 0.8, false,
+          'A', 0.8, 0.8, false, 0.0,
           1.0, 0.8, 'Tier 3', 1.0,
           true, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           'a6a93c5cfe4ecf2c99dabdb483691a9f', '6bc1cec9217a9de43e98d3fffa4e7d57',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
-          'A', 0.799, 0.799, false,
+          'A', 0.799, 0.799, false, 0.0,
           1.0, 0.799, 'Tier 4', 1.0,
           true, 0, 0, 1, 0, 0, 0, 'Present'
           )
         ])
+
+  - name: test_days_absent_rolling_90_carries_across_a_break_day
+    description:
+      Two school days around a break day. The rolling 90-day absence count comes
+      from the attendance row, which a break day does not have, so the break day
+      must carry the prior school day's count rather than read null -- a date
+      pinned to a weekend still answers the truancy question.
+    model: fct_student_attendance_enrollment_daily
+    given:
+      - input: ref('int_students__enrollment_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippmiami' as _dbt_source_project,
+            2025 as academic_year,
+            date '2025-09-01' as entrydate,
+            date '2025-09-05' as calendardate,
+            date '2025-09-01' as week_start_monday,
+            100 as schoolid,
+            cast(null as string) as term,
+            true as is_in_session_day,
+            1.0 as membershipvalue
+          union all
+          select 1, 'kippmiami', 2025, date '2025-09-01', date '2025-09-06', date '2025-09-01', 100, cast(null as string), false, 0.0
+          union all
+          select 1, 'kippmiami', 2025, date '2025-09-01', date '2025-09-08', date '2025-09-08', 100, cast(null as string), true, 1.0
+
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippmiami' as _dbt_source_project,
+            date '2025-09-05' as calendardate,
+            'A' as att_code,
+            0.0 as attendancevalue,
+            0.0 as is_present_weighted,
+            false as is_truant,
+            1.0 as is_absent,
+            cast(null as float64) as is_tardy,
+            cast(null as float64) as is_ontime,
+            cast(null as float64) as is_oss,
+            cast(null as float64) as is_iss,
+            cast(null as float64) as is_suspended,
+            1.0 as membershipvalue,
+            'Absent' as attendance_category,
+            3.0 as n_absent_running_90
+          union all
+          select 1, 'kippmiami', date '2025-09-08', 'A', 0.0, 0.0, false, 1.0, null, null, null, null, null, 1.0, 'Absent', 4.0
+
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippmiami' as _dbt_source_project,
+            'loc-abc' as location_key
+
+      - input: ref('dim_terms')
+        format: sql
+        rows: |
+          select
+            999 as school_id,
+            'NOMATCH' as term_name,
+            1900 as academic_year,
+            'RT' as `type`,
+            'term-none' as term_key
+    expect:
+      rows:
+        - date_key: 2025-09-05
+          n_absent_days_rolling_90: 3.0
+        - date_key: 2025-09-06
+          n_absent_days_rolling_90: 3.0
+        - date_key: 2025-09-08
+          n_absent_days_rolling_90: 4.0
 
   - name: test_days_cumulative_does_not_reset_across_a_school_change
     description:
@@ -585,7 +683,8 @@ unit_tests:
             0.0 as is_iss,
             0.0 as is_suspended,
             1.0 as membershipvalue,
-            'Present' as attendance_category
+            'Present' as attendance_category,
+            0.0 as n_absent_running_90
           from unnest(generate_date_array(
             date '2025-09-01', date '2025-09-10'
           )) as d
@@ -625,6 +724,7 @@ unit_tests:
           attendance_value,
           present_weight,
           is_truant,
+          n_absent_days_rolling_90,
           n_membership_days_ytd,
           n_present_days_ytd,
           ada_tier,
@@ -644,6 +744,7 @@ unit_tests:
             week_start_monday date, is_in_session_day bool, term_key string,
             attendance_code string, attendance_value float64,
             present_weight float64, is_truant bool,
+            n_absent_days_rolling_90 float64,
             n_membership_days_ytd float64, n_present_days_ytd float64,
             ada_tier string, membership_value float64,
             is_chronically_absent bool, is_absent int64, is_tardy int64,
@@ -653,70 +754,70 @@ unit_tests:
           (
           'e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
-          'A', 1.0, 1.0, false,
+          'A', 1.0, 1.0, false, 0.0,
           1.0, 1.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-02', 'loc-abc', 2025, date '2025-09-01', true, null,
-          'A', 1.0, 1.0, false,
+          'A', 1.0, 1.0, false, 0.0,
           2.0, 2.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-03', 'loc-abc', 2025, date '2025-09-01', true, null,
-          'A', 1.0, 1.0, false,
+          'A', 1.0, 1.0, false, 0.0,
           3.0, 3.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           'df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-04', 'loc-abc', 2025, date '2025-09-01', true, null,
-          'A', 1.0, 1.0, false,
+          'A', 1.0, 1.0, false, 0.0,
           4.0, 4.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           'ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-05', 'loc-abc', 2025, date '2025-09-01', true, null,
-          'A', 1.0, 1.0, false,
+          'A', 1.0, 1.0, false, 0.0,
           5.0, 5.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-06', 'loc-xyz', 2025, date '2025-09-01', true, null,
-          'A', 1.0, 1.0, false,
+          'A', 1.0, 1.0, false, 0.0,
           6.0, 6.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '3e0dab96a6aa3a11932d4cf6e71c5804', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-07', 'loc-xyz', 2025, date '2025-09-01', true, null,
-          'A', 1.0, 1.0, false,
+          'A', 1.0, 1.0, false, 0.0,
           7.0, 7.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-08', 'loc-xyz', 2025, date '2025-09-01', true, null,
-          'A', 1.0, 1.0, false,
+          'A', 1.0, 1.0, false, 0.0,
           8.0, 8.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-09', 'loc-xyz', 2025, date '2025-09-01', true, null,
-          'A', 1.0, 1.0, false,
+          'A', 1.0, 1.0, false, 0.0,
           9.0, 9.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-10', 'loc-xyz', 2025, date '2025-09-01', true, null,
-          'A', 1.0, 1.0, false,
+          'A', 1.0, 1.0, false, 0.0,
           10.0, 10.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           )

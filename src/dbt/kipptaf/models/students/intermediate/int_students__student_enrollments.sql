@@ -481,6 +481,35 @@ with
             fleid,
             is_504,
         from focus_final
+    ),
+
+    -- Rebuilt here for both regions from last_enrolled_date, because the
+    -- PowerSchool package counts exitdate as an enrolled day (#6058).
+    stint_flags as (
+        select
+            * except (is_enrolled_oct01, is_enrolled_oct15, is_enrolled_mar15),
+
+            if(
+                entrydate <= date(academic_year, 10, 1)
+                and last_enrolled_date >= date(academic_year, 10, 1),
+                true,
+                false
+            ) as is_enrolled_oct01_stint,
+
+            if(
+                entrydate <= date(academic_year, 10, 15)
+                and last_enrolled_date >= date(academic_year, 10, 15),
+                true,
+                false
+            ) as is_enrolled_oct15_stint,
+
+            if(
+                entrydate <= date(academic_year + 1, 3, 15)
+                and last_enrolled_date >= date(academic_year + 1, 3, 15),
+                true,
+                false
+            ) as is_enrolled_mar15_stint,
+        from with_region
     )
 
 select
@@ -698,7 +727,19 @@ select
         + 1
     ) as salesforce_graduation_year,
 
-from with_region as ar
+    max(ar.is_enrolled_oct01_stint) over (
+        partition by ar.student_number, ar.academic_year, ar._dbt_source_project
+    ) as is_enrolled_oct01,
+
+    max(ar.is_enrolled_oct15_stint) over (
+        partition by ar.student_number, ar.academic_year, ar._dbt_source_project
+    ) as is_enrolled_oct15,
+
+    max(ar.is_enrolled_mar15_stint) over (
+        partition by ar.student_number, ar.academic_year, ar._dbt_source_project
+    ) as is_enrolled_mar15,
+
+from stint_flags as ar
 left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
     on ar.students_dcid = suf.studentsdcid
