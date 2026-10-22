@@ -1,5 +1,4 @@
 with
-    -- a term grade is kept when any school enrollment overlaps the term;
     -- grain projection, not dup-masking: a mid-term transfer overlaps 2 stints
     enrolled_term_grades as (
         select distinct fg.cc_dcid, fg._dbt_source_project, fg.storecode,
@@ -11,6 +10,8 @@ with
             and fg._dbt_source_project = enr._dbt_source_project
             and fg.termbin_end_date >= enr.entrydate
             and fg.termbin_start_date < enr.exitdate
+            -- a stint ending on or before its start covers no day
+            and enr.entrydate < enr.exitdate
     ),
 
     reporting_terms as (
