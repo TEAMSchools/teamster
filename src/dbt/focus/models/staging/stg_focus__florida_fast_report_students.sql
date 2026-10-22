@@ -17,7 +17,9 @@ select
     gain,
 
     cast(percentile as int64) as percentile,
-    cast(_2025_pm3_achievement_level as int64) as pm3_achievement_level,
-    cast(_2025_pm3_percentile_rank as int64) as pm3_percentile_rank,
-    cast(_2025_pm3_scale_score_expanded_standard_score_ as int64) as pm3_scale_score,
+    cast(_2025_pm3_achievement_level as int64) as pm3_2025_achievement_level,
+    cast(_2025_pm3_percentile_rank as int64) as pm3_2025_percentile_rank,
+    cast(
+        _2025_pm3_scale_score_expanded_standard_score_ as int64
+    ) as pm3_2025_scale_score,
 from {{ source("focus", "florida_fast_report_students") }}

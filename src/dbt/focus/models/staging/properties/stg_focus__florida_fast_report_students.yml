@@ -6,11 +6,11 @@ models:
       results; it is a report output, not a table staff edit.
 
 
-      The PM3 score columns arrive named for one administration (`_2025_pm3_*`)
-      and are renamed here without the year. Rows for every `syear` carry values
-      in them, so the source name does not track `syear`. If Focus renames them
-      for a later window, this model fails at compile until the new names are
-      mapped.
+      The PM3 score columns keep the administration year Focus puts in their
+      source names (`_2025_pm3_*` becomes `pm3_2025_*`). Rows for every `syear`
+      carry values in them, so the year in the name, not `syear`, says which
+      administration a score comes from. When Focus adds columns for another
+      administration, they are not projected here until someone maps them.
 
 
       `student_name` and `school_title` are left out — join
@@ -35,26 +35,41 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: syear
-        description: Focus school year (start year).
-        data_type: int
-      - name: subject
-        description: FAST subject, lowercase (`ela`, `math`).
-        data_type: string
-      - name: school_id
-        description: Focus school id (internal integer, not the Florida code).
-        data_type: int
       - name: student_id
         description: >-
           Focus student id — the network student number prefixed with `8400`
           (Miami-Dade's FLDOE district number).
         data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
         config:
           meta:
             contains_pii: true
+      - name: syear
+        description: Focus school year (start year).
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: subject
+        description: FAST subject, lowercase (`ela`, `math`).
+        data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        description: Focus school id (internal integer, not the Florida code).
+        data_type: int
       - name: grade_level
         description: Grade level as Focus prints it on the report.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: lunch_status
         description: Free or reduced-price lunch status as Focus reports it.
         data_type: string
@@ -87,8 +102,8 @@ models:
             contains_pii: true
       - name: low_percentile
         description: >-
-          Focus's lowest-percentile flag, as an integer. Focus has not defined
-          the cut; confirm with Focus before reading it as the lowest 25%.
+          Focus's lowest-percentile flag, as an integer. Focus does not document
+          the cut.
         data_type: int
         config:
           meta:
@@ -109,16 +124,16 @@ models:
             contains_pii: true
       - name: l25
         description: >-
-          Lowest-25% indicator Focus fills in later in the year. Left as text
-          until Focus populates it and the format is known.
+          Lowest-25% indicator. Focus fills it in later in the year, so it is
+          kept as text.
         data_type: string
         config:
           meta:
             contains_pii: true
       - name: gain
         description: >-
-          Learning gain Focus fills in later in the year. Left as text until
-          Focus populates it and the format is known.
+          Learning gain. Focus fills it in later in the year, so it is kept as
+          text.
         data_type: string
         config:
           meta:
@@ -129,20 +144,26 @@ models:
         config:
           meta:
             contains_pii: true
-      - name: pm3_achievement_level
-        description: PM3 (end-of-year) FAST achievement level, 1 to 5.
+      - name: pm3_2025_achievement_level
+        description: >-
+          FAST achievement level, 1 to 5, from the PM3 administration Focus
+          labels 2025.
         data_type: int
         config:
           meta:
             contains_pii: true
-      - name: pm3_percentile_rank
-        description: PM3 FAST percentile rank, 0 to 100.
+      - name: pm3_2025_percentile_rank
+        description: >-
+          FAST percentile rank, 0 to 100, from the PM3 administration Focus
+          labels 2025.
         data_type: int
         config:
           meta:
             contains_pii: true
-      - name: pm3_scale_score
-        description: PM3 FAST scale score (expanded standard score).
+      - name: pm3_2025_scale_score
+        description: >-
+          FAST scale score (expanded standard score) from the PM3 administration
+          Focus labels 2025.
         data_type: int
         config:
           meta:
