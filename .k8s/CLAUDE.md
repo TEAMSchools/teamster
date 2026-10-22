@@ -70,9 +70,10 @@ skill.
   existing node of the class, so after a stockout a busy amd64 node keeps taking
   every new run/step pod. The class sets `activeMigration.optimizeRulePriority`
   to move work back to arm64 once it has capacity. Migration never evicts a
-  `safe-to-evict: "false"` pod, so a running step is never killed. Unverified:
-  whether GKE cordons an amd64 node it cannot fully drain. If amd64 nodes still
-  outlive a stockout, that is why.
+  `safe-to-evict: "false"` pod, so a running step is never killed. Unverified
+  (#6077): whether GKE's own migration cordon (not `kubectl cordon`) applies to
+  an amd64 node it cannot fully drain. If amd64 nodes still outlive a stockout,
+  that is why.
 - **No node affinity on CCC pods carrying `safe-to-evict`.** Autopilot treats
   the annotation as an extended-duration request and adds a
   `cloud.google.com/extended-duration-pods` key, which Warden
