@@ -1,5 +1,8 @@
 """Check dbt models against the architecture rules in .claude/rules/dbt-architecture.md.
 
+Architecture rules only. A check on test metadata (ticketing or traceability
+meta keys) goes in its own script, not here.
+
 Usage: uv run scripts/check_dbt_standard.py --project-dir src/dbt/<project>
     [--diff <git diff -U0 file>] [--write-baseline] [--check-issues]
 

@@ -179,7 +179,7 @@ with
 
             'mod_standards_domains' as source_model,
             'Report Card' as report_type,
-        from {{ ref("int_assessments__response_rollup") }} as ar
+        from {{ ref("int_assessments__standard_rollup") }} as ar
         inner join
             {{ ref("stg_google_sheets__assessments__standard_domains") }} as sd
             on ar.response_type_code = sd.standard_code
@@ -195,8 +195,7 @@ with
             and ar.assessment_id = rcr.assessment_id
             and co.region = rcr.report_card_region
         where
-            ar.response_type = 'standard'
-            and ar.academic_year in (
+            ar.academic_year in (
                 {{ var("current_academic_year") }},
                 {{ var("current_academic_year") }} - 1
             )

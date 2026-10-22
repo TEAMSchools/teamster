@@ -42,7 +42,7 @@ with
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on f.info_title = rt.name
-            and r.last_submitted_date between rt.start_date and rt.end_date
+            and r.last_submitted_date_local between rt.start_date and rt.end_date
             and rt.type = 'SURVEY'
         left join
             {{ ref("int_people__staff_roster_history") }} as srh

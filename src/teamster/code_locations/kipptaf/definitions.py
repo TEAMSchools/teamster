@@ -11,6 +11,7 @@ from teamster.code_locations.kipptaf import (
     DBT_PROJECT,
     adp,
     airbyte,
+    branchingminds,
     collegeboard,
     couchdrop,
     coupa,
@@ -60,6 +61,7 @@ defs = Definitions(
                     dlt,
                     google,
                     adp,
+                    branchingminds,
                     collegeboard,
                     coupa,
                     deanslist,
@@ -94,6 +96,7 @@ defs = Definitions(
     sensors=[
         *google.sensors,
         *adp.sensors,
+        *branchingminds.sensors,
         *couchdrop.sensors,
         *deanslist.sensors,
         AutomationConditionSensorDefinition(

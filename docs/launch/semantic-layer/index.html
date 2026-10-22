@@ -1188,7 +1188,12 @@
         function renderKpis() {
           const ds = DATA.dashboards;
           const m = tally(ds.flatMap((d) => d.measures));
-          const dm = tally(ds.flatMap((d) => d.dimensions));
+          // One dimension row serves every dashboard that uses it: count each name once.
+          const dm = tally([
+            ...new Map(
+              ds.flatMap((d) => d.dimensions).map((x) => [x.name, x]),
+            ).values(),
+          ]);
           const done = ds.filter((d) => d.transitioned).length;
           const started = ds.filter((d) => stageInfo(d).key === "prog").length;
           const today = new Date();
@@ -1208,7 +1213,7 @@
               ${bar(m, "metrics")}<div class="kpi-foot">A number a dashboard calculates, like attendance rate or % proficient. Counted once for each dashboard that uses it.</div></div>
             <div class="kpi"><span class="eyebrow">Dimensions ready in Cube</span>
               <div class="kpi-value">${dm.ready} <small>of ${dm.total}</small></div>
-              ${bar(dm, "dimensions")}<div class="kpi-foot">What you filter or slice a metric by, like school or grade level. Counted once for each dashboard that uses it.</div></div>
+              ${bar(dm, "dimensions")}<div class="kpi-foot">What you filter or slice a metric by, like school or grade level. Counted once, however many dashboards use it.</div></div>
             <div class="kpi"><span class="eyebrow">Next milestone</span>
               ${next ? `<div class="kpi-ms">${esc(next.code)} ${esc(next.name)}</div><div class="kpi-foot">Due ${fmtDate(next.due)}</div>` : `<div class="kpi-ms muted">None scheduled</div>`}
               <div class="kpi-foot">${unsched} open milestones have no due date yet</div></div>`;

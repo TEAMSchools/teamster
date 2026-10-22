@@ -400,14 +400,17 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   `staff-pii-<staff_pii_scope>`, and the forward-compat staff tiers, each listed
   under _View access policies_. `none` on any axis → no group for that axis →
   default-deny on the views gated by it.
-- **`access_policy` blocks, it does not strip.** When a user requests a member
-  their tier excludes, Cube denies the whole query — it does not silently drop
-  the column and return the rest. BI tools connected via the SQL API (Superset)
-  avoid this because the field list is filtered per-user at connection time. In
-  Tableau, a workbook published by someone with broader access may error at
-  query time for viewers with narrower access. A `queryRewrite` member-strip
-  approach (detect and remove inaccessible members before execution) is tracked
-  in [#4268](https://github.com/TEAMSchools/teamster/issues/4268).
+- **A field-level grant blocks, it does not strip.** Cube's `member_level` can
+  grant a group a subset of a view's members, and members union across all of a
+  viewer's groups. A query that names a member none of the viewer's groups grant
+  fails as a whole (`You requested hidden member` with auth on, 0 rows in dev
+  mode); Cube does not drop that column and return the rest. So a Tableau
+  workbook that names a field outside a narrower audience's grant breaks for
+  that audience. Every view here uses `includes: "*"` and keeps gated fields in
+  their own view (`staff_directory` vs `staff_pii`), so a workbook built on a
+  view works for everyone who can open it. A per-field grant on a mixed view,
+  such as an aggregates-only group on a view that also carries student
+  identifiers, is possible; its workbooks must use only that group's members.
 - **`canSwitchSqlUser`** only allows the SQL super-user
   (`CUBEJS_SQL_SUPER_USER`) to switch to an address on `NETWORK_EMAIL_DOMAINS`
   in `src/cube/access.js` (`apps.teamschools.org`, `kippmiami.org`) — the
@@ -447,25 +450,38 @@ enrolled calendar day, break days included, so any date resolves — no anchor
 flag, and none available. Pin `attendance_date`, not `dates_date_day` (see the
 partition-pruning rule above).
 
-Query-time **window functions** over the daily fact do not scale: multi-stage
-`rank` timed out, and scoping to one month did not help, so the cost is
-structural rather than volume. Even a plain additive aggregate by academic year
-is slow, so any query-time period-end computation on this fact lands within a
-factor of the Cube MCP server's 55-second poll deadline — the same failure
-[#4333](https://github.com/TEAMSchools/teamster/issues/4333) fixed for the
-assessment cubes. Precompute in dbt instead.
+**Nested-aggregate and rank multi-stage measures are viable on both attendance
+facts, the daily one included.** `add_group_by` (a per-school ratio summed or
+averaged across schools) and `type: rank` with `reduce_by` both return within a
+few seconds over five academic years of
+`fct_student_attendance_enrollment_daily` on a local Cube server, well inside
+the Cube MCP server's 55-second poll deadline. Other multi-stage types
+(`time_shift`, `group_by` percent-of-total) are untested here. The cost is slot
+time, not latency: Cube's compiled multi-stage SQL burns many times the slot
+time of the equivalent hand-written query. So precompute in dbt for cost when a
+value is a fixed period-end figure read often, and reach for multi-stage when
+the second aggregation level depends on the query's own slice. Use
+`add_group_by`/`reduce_by`; the `grain` parameter in current Cube docs replaces
+them, but check it against the deployed Cube version before relying on it.
 
-**Multi-stage WITHOUT a window is a different story and is viable.**
-`add_group_by` + `reduce_by` compiles to a two-level GROUP BY (no window
-functions in the SQL) and is the only way to express a second aggregation level
-— mean-of-school-rates, or a count of schools past a threshold — over a row the
-periods fact already precomputed. On
-`student_attendance_enrollment_periods_view` it reads the same bytes as the flat
-query and burns far more slot time, but still returns in a couple of seconds
-because the base is small. Nothing on either view answers that question today.
-The catch is semantic, not performance: a mean-of-school-rates measure beside
-the pooled `pct_chronically_absent` puts two different network numbers on one
-view, so it needs a `description` naming which question each answers.
+A value pinned to a range's last date (students enrolled on that date, beside
+membership days summed over the range) is a `rolling_window` measure with
+`trailing: 1 day` and `offset: end`. It can sit in one query with range totals,
+and a `type: number` measure can divide one by the other. Two traps:
+
+- With a `granularity`, each bucket reads the bucket's own last date, and the
+  last bucket does not clip to the query's range end: a month-grain query ending
+  10/15 returns the 10/31 headcount for October. Query the as-of date without a
+  granularity.
+- There is no academic-year granularity (see the custom-granularity rule under
+  _Authoring conventions_), so a query grouped by `dates_academic_year` pins
+  every year to the range end and returns rows for the final year only. Per-year
+  period-end values need one query per year, or a dbt row.
+
+The catch with a second aggregation level is semantic: a mean-of-school-rates
+measure beside the pooled `pct_chronically_absent` puts two different network
+numbers on one view, so it needs a `description` naming which question each
+answers.
 
 ## Jinja in cube YAML
 

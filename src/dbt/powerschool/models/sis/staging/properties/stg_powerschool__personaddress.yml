@@ -14,6 +14,9 @@ models:
             contains_pii: true
       - name: linetwo
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           The second line of the address. Indexed with Street and Unit.
           Optional.
@@ -25,9 +28,15 @@ models:
             contains_pii: true
       - name: postalcode
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description: The zip code element of the address. Optional.
       - name: unit
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           The suite or apartment number element of the address. Indexed with
           Street and Line Two. Optional.
@@ -78,20 +87,35 @@ models:
           - type: foreign_key
       - name: geocodelatitude
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
         description:
           The latitude coordinates for the student's address. Optional.
       - name: geocodelongitude
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
         description:
           The longitude coordinates for the student's address. Optional.
       - name: addressline3
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description: The third line of the person's address.
       - name: addressline4
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description: The fourth line of the person's address.
       - name: addressline5
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description: The fifth line of the person's address.
       - name: countycodesetid
         data_type: int64

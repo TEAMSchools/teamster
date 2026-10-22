@@ -230,6 +230,17 @@ Rationale and background go in the model's YAML `description:`.
 - Bad: `from a full join b on ...`, then `coalesce(a.x, b.x)` for every column.
 - Enforced by: review.
 
+#### S20. A literal that encodes a business rule gets a comment
+
+A cutover year, threshold, or id in logic gets a one-line comment naming what it
+is. A value that changes every year belongs in a `var()` instead.
+
+- Why: a bare `2026` cannot tell a reader whether it is a cutover, a start year,
+  or a value someone forgot to roll over.
+- Good: `-- Miami's Focus cutover year.` above `where syear >= 2026`.
+- Bad: a bare `where syear >= 2026`.
+- Enforced by: review.
+
 ### Review rubric
 
 Reviewers, human or Claude, check these and cite the rule ID:
@@ -243,7 +254,8 @@ Reviewers, human or Claude, check these and cite the rule ID:
    correctly (S10, S11, S19).
 6. Date-range joins are half-open where ranges touch (S13).
 7. Nested logic is split into named columns past 1 level (S8, S9).
-8. Comments say only what the line cannot show (S18).
+8. Comments say only what the line cannot show, and every business-rule literal
+   has one (S18, S20).
 
 <!-- --8<-- [end:sql-style] -->
 

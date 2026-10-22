@@ -119,7 +119,12 @@ with
         -- side. Course history also carries an invariant the schedule join
         -- depends on: every row has a null `course_period_id` (15,278 of
         -- 15,278) and drops out of that inner join anyway.
-        where g.academic_year >= 2026 and pg.student_id is null
+        where
+            g.academic_year >= 2026
+            and pg.student_id is null
+            -- E rows are exam grades, not term grades; they collide with the
+            -- posted grade on this model's grain
+            and g.grade_type_token is distinct from 'E'
     )
 
 select *,
