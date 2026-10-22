@@ -2,6 +2,30 @@
 
 Refs #6003.
 
+## Revision 2026-10-22: review on #6011
+
+Charlie's review on #6011, and the reply to it, changed the design:
+
+- Cube is out for this work. The 10/21 data team meeting decided it, and the
+  reply on #6011 is the only written record. Tableau reads the dbt `rpt_`
+  models.
+- The self-contained, out-of-district and residence columns go on
+  `dim_student_enrollments`, not on `dim_student_enrollment_status` (section 1).
+- Self-contained and out-of-district are year-level flags in v1 (section 1).
+- The residence code is per stint: the re-enrollment record for an earlier
+  stint, and the student record for the current stint (section 1).
+- Miami surveys come from an extended kippmiami `int_fldoe__fte_pivot`, not from
+  a new kipptaf source (section 6).
+- `rpt_` models are views unless a table is needed (section 9).
+- Tests follow the marts and `rpt_` rule (section 11). Comparisons between 2
+  models become one-time acceptance checks.
+- The monthly snapshot captures the stint-level inputs and the rules sheet, not
+  the totals (section 8).
+
+Kept after review: the running membership-day count on the fact (section 1),
+because Cube is not there to compute it. The FRESH reconciliation (section 7)
+stays until the review gives a reason to remove it.
+
 ## Intent
 
 Finance does not trust the enrollment and average daily enrollment (ADE) numbers
@@ -46,7 +70,8 @@ proposal line by line on Monday 2026-10-26.
 - Staff with roster access can click a count and see the students in it.
 - The SIS can be reconciled against FRESH (Finalsite) as of today, with every
   student in the gap given 1 reason.
-- From launch on, a monthly snapshot records what the dashboard said.
+- From launch on, a monthly snapshot records the inputs behind each number, so a
+  number that moves later can be explained.
 
 ## Non-goals
 
@@ -61,6 +86,7 @@ proposal line by line on Monday 2026-10-26.
   building that export, so v1 reads the existing state-file survey data, and the
   survey model must allow a later swap to Focus (section 6).
 - Historical snapshots before launch.
+- Building the numbers in Cube. The 10/21 data team meeting ruled it out.
 - The Tableau workbook. This spec and its plan cover the dbt models and tests.
   The workbook gets its own plan once the models land, so the _Consumers_
   section below records intent, not build scope.
@@ -91,6 +117,11 @@ The work fails, even if every model builds, if any of these happen:
   2020.2 or later. The server version is not yet checked.
 - PII handling follows `.claude/rules/ferpa-pii.md`. The roster is the only
   model with names or school-facing ids, and it is tagged.
+- Tests follow _Tests on marts and `rpt_` models_ in `.claude/rules/dbt-yaml.md`
+  (section 11).
+- #6066 (open) changes the daily fact: a Miami stint's last enrolled day now
+  counts, and the October and March enrollment flags gain per-stint `_stint`
+  versions. Build on it once it merges, and re-run the verified counts below.
 
 ## Decisions to stamp with stakeholders
 
@@ -155,9 +186,10 @@ questions_, item 1).
 ```text
 fct_student_attendance_enrollment_daily (+ 1 column) ─┐
 dim_school_calendars ─────────────────────────────────┤
-dim_student_enrollments ──────────────────────────────┤
-dim_student_enrollment_status (+ 3 columns) ──────────┼─▶ totals rpt ─▶ monthly snapshot
+dim_student_enrollments (+ 3 columns) ────────────────┤
+dim_student_enrollment_status ────────────────────────┼─▶ totals rpt
 stg_google_sheets__finance__ade_rules (new) ──────────┘
+stint-level inputs + rules sheet ─────────────────────────▶ monthly snapshot
 marts above ──────────────────────────────────────────────▶ all-year counts rpt
 finance targets sheet (restructured) ─────────────────────▶ targets rpt
 marts above + student identity ───────────────────────────▶ roster rpt (PII, row-level security)
@@ -173,10 +205,21 @@ Model names below are proposals. Rename to repo conventions as needed.
   days per stint (`membership_value = 1` on school days, attendance not
   required). A4 rules out a second student-day model, so the column goes on the
   existing fact.
-- `dim_student_enrollment_status` (1 row per stint) gains `is_self_contained`,
+- `dim_student_enrollments` (1 row per stint) gains `is_self_contained`,
   `is_out_of_district` and the district of residence code. Today these exist
-  only on `int_extracts__student_enrollments`. Grep `src/cube/model/` before
-  adding columns to either mart.
+  only on `int_extracts__student_enrollments`. They are not statuses, so they do
+  not go on `dim_student_enrollment_status`, which rolls up the IEP, English
+  learner and meal status dims. Grep `src/cube/model/` before adding columns to
+  either mart.
+  - `is_self_contained` and `is_out_of_district` are year-level flags in v1.
+    `base_powerschool__student_enrollments` keeps 1 program per student per year
+    from `int_powerschool__spenrollments`, so every stint in a year carries the
+    same value.
+  - The residence code is per stint: `stg_powerschool__s_nj_ren_x` for a stint
+    that comes from a re-enrollment record, and `stg_powerschool__s_nj_stu_x`
+    for the student's current stint, which has no re-enrollment row.
+    `int_students__student_enrollments` reads the student-level value for every
+    stint today, so an earlier stint carries the student's current code.
 
 ### 2. Totals table (`rpt_tableau__enrollment_ade_daily`)
 
@@ -226,8 +269,8 @@ My call, so finance can see the All year preset without roster access:
 distinct-student counts precomputed at 4 levels (school and grade, school,
 region, network) with the totals table's status and residence columns. No
 student rows. A level column tells Tableau which rows to show, since these
-counts cannot be summed across levels. A test checks that each region's count is
-no more than the sum of its schools' counts.
+counts cannot be summed across levels. A unit test checks that a student who
+changes schools counts once at region level and once at each school.
 
 ### 3. Rules sheet (`stg_google_sheets__finance__ade_rules`)
 
@@ -242,7 +285,9 @@ team after finance decides:
 | `self_contained_handling` | `broken_out` (own rows and own targets: Camden, Newark) or `rolled_in` (counted against the school's regular targets: Miami, and Paterson, which has no self-contained students). Neither value drops students. |
 | `notes`                   | free text shown in the dashboard's definitions                                                                                                                                                                  |
 
-A test fails if any region in the totals table lacks a rule row for its year.
+The totals table joins the rules sheet, so a region with no rule row for its
+year shows up as a null rule column there. A `not_null` test on that column, on
+the totals table, fails the build.
 
 ### 4. Targets (`rpt_tableau__enrollment_targets`)
 
@@ -272,8 +317,9 @@ A test fails if any region in the totals table lacks a rule row for its year.
 - Row-level security follows the existing pattern: a Tableau username column for
   the staff allowed to see each row, as in `rpt_tableau__student_course_grades`.
   Finance users get no rows.
-- Serves click-through. A test checks that, for sample dates, the roster's count
-  of students enrolled matches the totals table.
+- Serves click-through. The roster and the totals table both read the daily
+  fact, so they cover the same students. Acceptance check 3 confirms it once; it
+  is not a standing test.
 
 ### 6. Miami surveys (`rpt_tableau__miami_fte_surveys`)
 
@@ -289,10 +335,15 @@ A test fails if any region in the totals table lacks a rule row for its year.
   dashboard.
 - kipptaf reads the surveys today through `int_fldoe__fte_pivot`, which keeps
   only student, year and FTE per survey (joined to students on state student
-  number) and drops school and grade. A student can sit at different schools for
-  Survey 2 and Survey 3, so the interface model reads `stg_fldoe__fte` through a
-  new kipptaf source and union passthrough instead of reshaping the pivot. That
-  model carries student names, so tag PII on the passthrough.
+  number) and drops school and grade. Extend the kippmiami
+  `int_fldoe__fte_pivot` with each survey's `school_number` and `grade` as
+  per-survey columns, so a student who sits at different schools for Survey 2
+  and Survey 3 keeps both. kipptaf needs no new source, and no model carrying
+  student names reaches kipptaf.
+- This ships as 1 PR. The `kippmiami_fldoe` source already routes `staging` to
+  `zz_stg_`, so build the changed pivot with `--target staging` before pushing.
+  The steps are in "Single-PR cross-project workflow" in
+  `src/dbt/kipptaf/CLAUDE.md`.
 - Count each survey at the school and grade the state file gives. Before a
   survey's file lands, that survey shows no number. Finance watches enrolled
   headcount from Focus in the totals table until then.
@@ -335,22 +386,27 @@ data team.
   7. SIS changed after the latest Finalsite file
   8. Unexplained
 - Show gross and net: students only in the SIS, only in Finalsite, and the
-  difference. A test checks that the signed reasons sum exactly to SIS minus
-  FRESH.
-- Thresholds on gross unexplained students per region (about 20 to warn, about
-  100 to error, values pending finance) run as dbt tests, so they surface as
-  Dagster asset checks. Test the table, not a view, so the checks rerun on new
-  data.
-- Drift guard: while `current_academic_year` equals
-  `finalsite_recruitment_year`, a test compares this model's Finalsite-side
-  count per region with FRESH's Progress to Goals count.
+  difference. A unit test checks that the signed reasons sum exactly to SIS
+  minus FRESH.
+- Gross unexplained students per region get 2 thresholds, values pending finance
+  (about 20 and about 100). The lower one is a warning on the Reconciliation
+  page, not a warn test. The higher one is an `error` test, so it surfaces as a
+  Dagster asset check. Build this model as a table so the test reruns when new
+  data lands; a test reruns only when a table rebuilds.
+- Drift guard, as a one-time check: while `current_academic_year` equals
+  `finalsite_recruitment_year`, this model's Finalsite-side count per region
+  matches FRESH's Progress to Goals count (acceptance check 7).
 
 ### 8. Monthly snapshot
 
-- Append the totals table's rows for the snapshot date on the 1st of each month,
-  on Oct 15, on Mar 15, and on each school's last school day. Start at launch.
-- Keyed by snapshot date. The Trends page compares "then" (snapshot) with "now"
-  (today's recomputed value for that date).
+- Snapshot the inputs, not the totals: the stint-level rows the totals table
+  reads (stint dates, school, grade, the status and residence columns, and
+  membership days to date) and the rules sheet. Totals show that a number moved;
+  only the inputs show why.
+- Take it on the 1st of each month, on Oct 15, on Mar 15, and on each school's
+  last school day. Start at launch.
+- Keyed by snapshot date. The Trends page rebuilds "then" from the snapshot's
+  inputs and compares it with "now" (today's recomputed value for that date).
 - There is no launch date until the 10/26 review. The snapshot ships with
   whatever launches as v1; its first row is the first snapshot date after
   launch.
@@ -360,9 +416,11 @@ data team.
 
 - Every page shows when the data last updated, from the totals table's build
   time.
-- Build the totals, roster, surveys and reconciliation tables on the daily
-  fact's cron tick (06:00 and 15:00 America/New_York). The current Ops Dashboard
-  refreshes hourly. Finance confirms twice daily is enough (item 9).
+- `rpt_` models are views unless something shows that a table is needed. The
+  reconciliation model is the one table (section 7). It rebuilds on the daily
+  fact's cron tick (06:00 and 15:00 America/New_York), and the views can be no
+  fresher than that fact. The current Ops Dashboard refreshes hourly. Finance
+  confirms twice daily is enough (item 9).
 
 ### 10. Consumers
 
@@ -375,8 +433,24 @@ data team.
 - At launch, a one-time note per region explains how the new numbers differ from
   the old ones: Paterson and Miami ADE now filled in, which rounding applies,
   and which definition of enrolled.
-- Cube is not a v1 consumer. Keeping the ADE inputs on the mart leaves that door
-  open.
+- Cube is not a consumer. The 10/21 data team meeting ruled out building on Cube
+  for this work. The ADE inputs stay on the marts, so Cube can read them later
+  if that decision changes.
+
+### 11. Tests
+
+Every model here is a mart or an `rpt_` model, so _Tests on marts and `rpt_`
+models_ in `.claude/rules/dbt-yaml.md` applies:
+
+- Only `error` tests and unit tests. No warn tests.
+- A grain test on every model: `unique` on its key, with `not_null` on any
+  natural-key grain column that can be null.
+- The model's own logic gets a unit test: the reconciliation's signed reasons
+  (section 7), the all-year counts (section 2b), the as-of date resolving to a
+  school's latest school day, and rounding applied per student.
+- No standing test compares 2 separately built models. Where 2 models must cover
+  the same students, both read 1 shared upstream model, and the acceptance
+  checks below confirm it once.
 
 ## Phase 0 (before 10/26)
 
@@ -399,6 +473,8 @@ Inputs to collect:
   is not yet identified. Finding it is part of Phase 0 (acceptance check 5).
 
 ## Acceptance checks
+
+These are one-time checks during the build, not dbt tests (section 11).
 
 1. Newark enrolled today matches a PowerSchool all-district active search for
    the same day, within refresh lag.
@@ -464,7 +540,8 @@ Data team:
 - The roster's entitlement source for row-level security.
 - Snapshot mechanism (an incremental append on a cron, or a dbt snapshot).
 - How the as-of date presets resolve to school days in Tableau.
-- Materializations and automation conditions, matching the daily fact's cron.
+- The reconciliation table's automation condition, matching the daily fact's
+  cron.
 - Whether to validate district of residence codes against the state's district
   code list, kept as a sheet. The current data has 89 New Jersey enrollment
   records with no code and 42 codes with only 1 or 2 students.
