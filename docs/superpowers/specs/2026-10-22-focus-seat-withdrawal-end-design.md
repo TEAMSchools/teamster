@@ -94,8 +94,8 @@ This is a shared write and needs the user's go-ahead.
   before the exit): 0 Miami seats not dropped with `exit_date` after the
   withdrawal. Take the withdrawal from `int_students__student_enrollment_union`,
   whose `exitdate` is on the same first-day-not-enrolled convention as
-  `exit_date`. `int_extracts__student_enrollments` carries Miami's `exitdate`
-  unshifted, 1 day earlier.
+  `exit_date`. `int_extracts__student_enrollments.exitdate` keeps each SIS's own
+  convention by design; its `last_enrolled_date` is the cross-region column.
 - `is_dropped_section` count for Miami unchanged.
 - NJ rows unchanged.
 - #6085 validation re-run (graded rows dropped from `fct_grades_term`).
