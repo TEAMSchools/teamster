@@ -429,20 +429,19 @@ data_tests:
     description: >-
       Warns if Miami's current-year `is_dropped_section` rate leaves the band
       the inference was validated against, or if the flag goes null again. Focus
-      has no drop convention, so the Miami value is inferred (#4968): the
-      schedule row's end_date falls before its marking period ends, and the
-      student still holds an open schedule row that year. The second half
-      excludes a withdrawal sweep. Both halves are assumptions about Focus
+      has no drop convention, so the Miami value is the Focus schedule
+      `is_dropped` inference: the seat closed before its marking period ends and
+      not with a withdrawal. A seat that closes on or after the end of an
+      enrollment stint at that school, before any re-enrollment there, is
+      treated as part of the withdrawal. Both halves are assumptions about Focus
       behavior, and this test is what notices when either stops holding -- a
-      bulk close of schedule rows, or a change that breaks the sweep exclusion,
-      would show up as a rate spike. Shipped at 2.97% (576 of 19,363 AY2026
-      rows) against a like-for-like NJ band of 0.23% to 8.55% at the same point
-      in the year. The 20% ceiling sits above every NJ completed-year rate
-      (17.35% Camden AY2025 is the highest measured), so it does not fire when
-      Miami's own year finishes accumulating. The null check is the other
-      direction: a regression in the Focus branch would restore the nulls this
-      replaced, and a null flag silently removes Miami from every report using
-      the bare `not is_dropped_section` idiom (#4996).
+      bulk close of schedule rows, or seats closed before the enrollment end is
+      set, would show up as a rate spike. The 20% ceiling sits above every NJ
+      completed-year rate, so it does not fire when Miami's own year finishes
+      accumulating. The null check is the other direction: a regression in the
+      Focus branch would restore the nulls this replaced, and a null flag
+      silently removes Miami from every report using the bare `not
+      is_dropped_section` idiom (#4996).
     config:
       severity: warn
       meta:

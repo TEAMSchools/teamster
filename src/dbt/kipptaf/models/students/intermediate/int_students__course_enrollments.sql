@@ -115,6 +115,7 @@ with
             date_add(s.end_date, interval 1 day) as cc_dateleft,
             s.course_period_short_name as cc_section_number,
             s.teacher_id as cc_teacherid,
+            s.is_dropped as is_dropped_section,
 
             -- The Focus package resolves the seat's last day from the drop, the
             -- term end and the withdrawal; shift it to PowerSchool's day-after
@@ -154,16 +155,6 @@ with
             -- Focus's homeroom boolean is null on every row; identified by
             -- title instead, matching int_focus__advisory. See #4868.
             coalesce(s.course_title like 'Homeroom%', false) as is_homeroom,
-
-            -- The coalesce is required, not defensive: end_date is null on open
-            -- rows and `null < date` is null. #4968 #6098
-            coalesce(
-                s.end_date < (
-                    select min(d),
-                    from unnest([s.marking_period_end_date, s.enrollment_end_date]) as d
-                ),
-                false
-            ) as is_dropped_section,
 
             -- New Jersey state reporting crosswalk; Miami is Florida, so
             -- correctly absent rather than deferred.
