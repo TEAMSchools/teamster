@@ -20,6 +20,7 @@ with
             co.hos as head_of_school,
             co.advisor_teachernumber as hr_teachernumber,
 
+            asr.source,
             asr.assessment_id,
             asr.title,
             asr.scope,
@@ -31,6 +32,7 @@ with
             asr.module_type,
             asr.module_code,
             asr.response_type,
+            asr.response_type_id,
             asr.response_type_code as standard_code,
             asr.response_type_description as standard_description,
             asr.response_type_root_description as domain_description,
@@ -65,6 +67,18 @@ with
             ) as is_foundations,
 
             case
+                -- Focus courses carry no credit type, so Apex rows key on the
+                -- subject; keep these lists in step with the Focus subjects in
+                -- the course subject crosswalk
+                when
+                    asr.source = 'apex'
+                    and asr.subject_area in ('Text Study', 'English 100')
+                then if(co.grade_level >= 9, 'ENG', 'Text Study')
+                when
+                    asr.source = 'apex'
+                    and asr.subject_area
+                    in ('Mathematics', 'Algebra I', 'Geometry Honors')
+                then if(co.grade_level >= 9, 'MATH', 'Mathematics')
                 when co.grade_level >= 9 and asr.source = 'apex'
                 then ea.courses_credittype
                 when co.grade_level >= 9
@@ -111,6 +125,7 @@ select
     d.is_pathways,
     d.school,
     d.school_level,
+    d.source,
     d.assessment_id,
     d.title,
     d.scope,
@@ -122,6 +137,7 @@ select
     d.module_type,
     d.module_code as module_number,
     d.response_type,
+    d.response_type_id,
     d.standard_code,
     d.standard_description,
     d.domain_description,
