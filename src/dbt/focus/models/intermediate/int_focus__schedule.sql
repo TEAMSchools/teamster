@@ -27,30 +27,43 @@ with
         group by student_id, school_id, syear
     ),
 
-    enrollment_gaps as (
+    enrollment_stints as (
         select
             student_id,
             school_id,
             syear,
-            end_date,
+            start_date,
 
-            lead(start_date) over (
-                partition by student_id, school_id, syear order by start_date
-            ) as next_start_date,
+            -- an open stint covers every later date
+            coalesce(end_date, cast('9999-12-31' as date)) as end_date,
         from {{ ref("stg_focus__student_enrollment") }}
+        -- a stint that ends before it starts would let two gaps overlap
+        where end_date is null or end_date >= start_date
     ),
 
-    withdrawal_closes as (
-        -- grain projection, not dup-masking: one row per seat closed in a gap
-        select distinct s.id as student_schedule_id,
-        from {{ ref("stg_focus__schedule") }} as s
-        inner join
-            enrollment_gaps as g
-            on s.student_id = g.student_id
-            and s.school_id = g.school_id
-            and s.syear = g.syear
-            and g.end_date <= s.end_date
-            and (g.next_start_date is null or s.end_date < g.next_start_date)
+    enrollment_coverage as (
+        select
+            student_id,
+            school_id,
+            syear,
+
+            max(end_date) over (
+                partition by student_id, school_id, syear
+                order by start_date, end_date
+                rows between unbounded preceding and current row
+            ) as gap_start_date,
+
+            lead(start_date) over (
+                partition by student_id, school_id, syear order by start_date, end_date
+            ) as next_start_date,
+        from enrollment_stints
+    ),
+
+    -- disjoint by construction, so a seat matches at most one gap
+    enrollment_gaps as (
+        select student_id, school_id, syear, gap_start_date, next_start_date,
+        from enrollment_coverage
+        where next_start_date is null or gap_start_date < next_start_date
     ),
 
     schedule as (
@@ -116,7 +129,7 @@ with
 
             -- coalesce is required: end_date is null on open seats
             coalesce(s.end_date < mkp.end_date, false)
-            and wc.student_schedule_id is null as is_dropped,
+            and g.student_id is null as is_dropped,
         from {{ ref("stg_focus__schedule") }} as s
         inner join
             {{ ref("stg_focus__course_periods") }} as cp
@@ -132,7 +145,13 @@ with
             on s.student_id = ee.student_id
             and s.school_id = ee.school_id
             and s.syear = ee.syear
-        left join withdrawal_closes as wc on s.id = wc.student_schedule_id
+        left join
+            enrollment_gaps as g
+            on s.student_id = g.student_id
+            and s.school_id = g.school_id
+            and s.syear = g.syear
+            and s.end_date >= g.gap_start_date
+            and (g.next_start_date is null or s.end_date < g.next_start_date)
         -- drop seats Focus scheduled after the student left, before the stint pick
         where ee.enrollment_end_date is null or s.start_date <= ee.enrollment_end_date
     )

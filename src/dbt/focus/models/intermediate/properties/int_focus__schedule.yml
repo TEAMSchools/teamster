@@ -221,9 +221,12 @@ models:
           Whether the student left the section before it ended — an inference,
           because Focus records no drop. True when end_date falls before
           marking_period_end_date and the seat did not close with a withdrawal.
-          A withdrawal close ends on or after the end of one of the student's
-          enrollment stints at this school and year, and before the next stint
-          there starts, so a student who leaves and later re-enrolls at the same
-          school keeps the first withdrawal's closes out of the drops. A seat
-          closed before the student's first stint starts still counts as a drop.
-          False on every open seat.
+          A withdrawal close falls in a gap in the student's enrollment at this
+          school and year — on or after the day every stint so far has ended,
+          and before the next stint starts. So a student who leaves and later
+          re-enrolls at the same school keeps the first withdrawal's closes out
+          of the drops, and a stint that ends while a longer one is still open
+          is not a withdrawal. A stint that ends before it starts is ignored. A
+          seat closed before the student's first stint starts still counts as a
+          drop, and so does an early close at a school where the student has no
+          enrollment that year. False on every open seat.

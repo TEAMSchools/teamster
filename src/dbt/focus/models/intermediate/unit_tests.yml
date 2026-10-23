@@ -784,9 +784,11 @@ unit_tests:
       Student 25's seat matches no marking period, so it still ends at the
       withdrawal rather than going null. is_dropped is true only for a seat
       closed before the withdrawal (12, 18, and 23, which closed before student
-      21's enrollment began). Seat 22 closes on student 20's withdrawal day and
-      seat 21 on student 22's first withdrawal, before the re-enrollment, so
-      both closed with the withdrawal and are not drops.
+      21's enrollment began), or while the student was still enrolled (24, after
+      student 22 re-enrolled, and 25, whose student 26 holds an open stint that
+      covers a shorter stint's end). Seat 22 closes on student 20's withdrawal
+      day and seat 21 on student 22's first withdrawal, before the
+      re-enrollment, so both closed with the withdrawal and are not drops.
     given:
       - input: ref('stg_focus__schedule')
         format: sql
@@ -891,6 +893,20 @@ unit_tests:
             cast(null as string), cast(null as string), cast(null as string),
             cast(null as string), cast(null as string), cast(null as string),
             cast(null as string), cast(null as string)
+          union all
+          select 24, 2026, 100, 22, 20, 39, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-09-15',
+            date '2026-10-01', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 25, 2026, 100, 26, 20, 40, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-10-20', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
       - input: ref('stg_focus__marking_periods')
         format: sql
         rows: |
@@ -912,7 +928,8 @@ unit_tests:
             cast(null as string) as does_attendance,
             cast(null as string) as does_grades,
             cast(null as string) as does_gpa
-          from unnest([30, 31, 32, 33, 34, 35, 36, 37, 38]) as course_period_id
+          from unnest([30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40])
+            as course_period_id
       - input: ref('stg_focus__courses')
         format: sql
         rows: |
@@ -968,6 +985,18 @@ unit_tests:
             syear: 2026
             start_date: 2026-08-13
             end_date: 2026-10-16
+          - id: 8
+            student_id: 26
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: null
+          - id: 9
+            student_id: 26
+            school_id: 100
+            syear: 2026
+            start_date: 2026-09-01
+            end_date: 2026-10-01
     expect:
       rows:
         - student_schedule_id: 11
@@ -1013,6 +1042,14 @@ unit_tests:
         - student_schedule_id: 23
           end_date: 2026-08-12
           effective_end_date: 2026-08-12
+          is_dropped: true
+        - student_schedule_id: 24
+          end_date: 2026-10-01
+          effective_end_date: 2026-10-01
+          is_dropped: true
+        - student_schedule_id: 25
+          end_date: 2026-10-20
+          effective_end_date: 2026-10-20
           is_dropped: true
 
   - name: test_int_focus__students_iep_from_ese_log
