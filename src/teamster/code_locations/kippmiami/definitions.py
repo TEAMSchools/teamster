@@ -4,7 +4,6 @@ from dagster import (
     Definitions,
     load_assets_from_modules,
 )
-from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kippmiami import (
     CODE_LOCATION,
@@ -19,6 +18,7 @@ from teamster.code_locations.kippmiami import (
     renlearn,
 )
 from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE, SSH_FOCUS
+from teamster.core.executors import zombie_aware_k8s_job_executor
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DLT_RESOURCE,
@@ -36,7 +36,7 @@ from teamster.core.resources import (
 )
 
 defs = Definitions(
-    executor=k8s_job_executor,
+    executor=zombie_aware_k8s_job_executor,
     assets=load_assets_from_modules(
         modules=[
             dbt,
