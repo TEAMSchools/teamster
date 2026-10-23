@@ -947,27 +947,35 @@ unit_tests:
       rows:
         - student_schedule_id: 11
           end_date: null
+          enrollment_end_date: 2026-10-16
           effective_end_date: 2026-10-16
         - student_schedule_id: 12
           end_date: 2026-09-29
+          enrollment_end_date: 2026-10-16
           effective_end_date: 2026-09-29
         - student_schedule_id: 14
           end_date: null
+          enrollment_end_date: 2026-10-16
           effective_end_date: 2026-10-16
         - student_schedule_id: 15
           end_date: null
+          enrollment_end_date: null
           effective_end_date: 2027-01-15
         - student_schedule_id: 16
           end_date: null
+          enrollment_end_date: null
           effective_end_date: 2027-01-15
         - student_schedule_id: 17
           end_date: null
+          enrollment_end_date: null
           effective_end_date: 2027-01-15
         - student_schedule_id: 18
           end_date: 2026-09-29
+          enrollment_end_date: 2026-10-16
           effective_end_date: 2026-09-29
         - student_schedule_id: 20
           end_date: null
+          enrollment_end_date: 2026-10-16
           effective_end_date: 2026-10-16
 
   - name: test_int_focus__students_iep_from_ese_log

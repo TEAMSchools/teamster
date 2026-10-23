@@ -84,14 +84,13 @@ models:
           Whether the student unenrolled from this section before its expected
           end. PowerSchool derives it from its `sectionid < 0` convention. Focus
           has no equivalent, so the Miami value is an INFERENCE: the schedule
-          row's `end_date` falls before its marking period ends, and the student
-          still holds an open schedule row that year. The second half excludes a
-          withdrawal sweep, which closes every one of a leaver's rows at once
-          and is not a drop -- it stands in for PowerSchool's own `dateleft =
-          exitdate` exclusion. Both regions therefore mean the same thing by the
-          column, reached two different ways. Measured 2026-08-27: 2.97% of
-          Miami AY2026 rows, against 0.23% to 8.55% across the three NJ regions
-          at the same point in the year. See #4968.
+          row's `end_date` falls before both its marking period end and the
+          student's enrollment end at that school (the Focus schedule
+          `enrollment_end_date`). A seat that ends on or after the withdrawal is
+          part of the withdrawal, not a drop -- the comparison stands in for
+          PowerSchool's own `dateleft = exitdate` exclusion. Both regions
+          therefore mean the same thing by the column, reached two different
+          ways.
         data_type: bool
       - name: is_dropped_course
         description: >-

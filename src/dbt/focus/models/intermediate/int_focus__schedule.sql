@@ -83,6 +83,8 @@ with
             mkp.start_date as marking_period_start_date,
             mkp.end_date as marking_period_end_date,
 
+            ee.enrollment_end_date,
+
             (
                 select min(d),
                 from unnest([s.end_date, mkp.end_date, ee.enrollment_end_date]) as d

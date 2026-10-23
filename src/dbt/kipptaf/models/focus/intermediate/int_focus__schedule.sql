@@ -1,3 +1,4 @@
+-- the column list resolves from the kippmiami relation at compile time
 with
     union_relations as (
         {{

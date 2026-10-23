@@ -155,21 +155,13 @@ with
             -- title instead, matching int_focus__advisory. See #4868.
             coalesce(s.course_title like 'Homeroom%', false) as is_homeroom,
 
-            -- An inferred flag; the derivation and its measurement are in the
-            -- column description. Two things this expression does not show:
-            -- the window excludes a withdrawal sweep, which closes every one of
-            -- a leaver's rows at once, and the coalesce is required rather than
-            -- defensive -- end_date is null on 96.8% of Miami rows and
-            -- `null < date` is null, so without it the flag reads null on every
-            -- open row. #4968
-            -- TODO(#6098): the package now removes seats scheduled after a
-            -- withdrawal, so a leaver with no open seat left reads as a sweep
+            -- The coalesce is required, not defensive: end_date is null on open
+            -- rows and `null < date` is null. #4968 #6098
             coalesce(
-                s.end_date < s.marking_period_end_date
-                and countif(s.end_date is null) over (
-                    partition by s.student_id, s.academic_year
-                )
-                > 0,
+                s.end_date < (
+                    select min(d),
+                    from unnest([s.marking_period_end_date, s.enrollment_end_date]) as d
+                ),
                 false
             ) as is_dropped_section,
 
