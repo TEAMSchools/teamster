@@ -11,6 +11,8 @@ dagster-tmp
 CLAUDE.local.md
 # throwaway credentialed test scripts, see tests/CLAUDE.md
 tests/**/test_zz_*.py
+# local rehearsal copies of cube_validate checks files
+.claude/skills/cube-dashboard/checks/*.rehearsal.yml
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,python,dbt
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,python,dbt

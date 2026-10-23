@@ -1,0 +1,112 @@
+"""Cut drafting from the workbook."""
+
+import yaml
+
+# trunk-ignore(pyright/reportAttributeAccessIssue)
+from cube_validate import cuts, workbook
+
+
+def _wb():
+    return workbook.Workbook(
+        dashboards={"Overview": ["ADA by School", "Trend"]},
+        filters=[
+            workbook.FilterCard("Overview", "region", "Region", "ds", False, True),
+            workbook.FilterCard(
+                "Overview",
+                "academic_year",
+                "Year",
+                "ds",
+                False,
+                False,
+                default_values=("2026",),
+            ),
+        ],
+        params=[workbook.Param("Overview", "Metric", ("ADA", "Tardy"), "ADA")],
+        actions=[
+            workbook.Action(
+                "Overview", "Click school", "ADA by School", "filter", "Overview", ()
+            )
+        ],
+    )
+
+
+def test_draft_cuts_one_per_piece_of_logic():
+    got = cuts.draft_cuts(
+        _wb(),
+        ["Overview"],
+        {"Region": ["Camden", "Newark"], "Year": ["2025", "2026"]},
+    )
+    assert got == [
+        {"id": "default"},
+        {"id": "filter-region", "filters": {"Region": "Camden"}},
+        {"id": "filter-year", "filters": {"Year": "2025"}},
+        {"id": "param-metric-tardy", "params": {"Metric": "Tardy"}},
+        {
+            "id": "click-ada-by-school",
+            "click": {"source_sheet": "ADA by School", "mark": "largest"},
+        },
+    ]
+
+
+def test_plan_yaml_lists_sheets_columns_and_cuts():
+    text = cuts.plan_yaml(
+        _wb(), ["Overview"], ["student_number", "region"], {"Region": ["Camden"]}
+    )
+    d = yaml.safe_load(text)
+    assert d["sheets"] == {"ADA by School": {}, "Trend": {}}
+    assert d["extract_columns"] == ["student_number", "region"]
+    assert d["cuts"][0] == {"id": "default"}
+
+
+def test_plan_yaml_prints_each_cards_default_values():
+    d = yaml.safe_load(cuts.plan_yaml(_wb(), ["Overview"], [], {}))
+    assert d["filter_card_defaults"] == {
+        "Overview": {"Region": "(All)", "Year": "2026"}
+    }
+
+
+def test_plan_yaml_prints_defaults_per_dashboard_and_lists_multi_values():
+    wb = workbook.Workbook(
+        dashboards={"A": ["S"], "B": ["S"]},
+        filters=[
+            workbook.FilterCard(
+                "A",
+                "region",
+                "Region",
+                "ds",
+                False,
+                False,
+                default_values=("Camden", "Newark", "Paterson"),
+            ),  # fmt: skip
+            workbook.FilterCard(
+                "B", "region", "Region", "ds", False, False, default_values=("Newark",)
+            ),
+        ],
+        params=[],
+        actions=[],
+    )
+    d = yaml.safe_load(cuts.plan_yaml(wb, ["A", "B"], [], {}))
+    assert d["filter_card_defaults"] == {
+        "A": {"Region": ["Camden", "Newark", "Paterson"]},
+        "B": {"Region": "Newark"},
+    }
+    assert d["filter_cards"] == ["Region"]
+
+
+def test_a_parameter_on_three_dashboards_gives_one_cut():
+    wb = workbook.Workbook(
+        dashboards={"A": ["S"], "B": ["S"], "C": ["S"]},
+        filters=[],
+        params=[workbook.Param(d, "Metric", ("ADA", "Tardy"), "ADA") for d in "ABC"],
+        actions=[],
+    )
+    d = yaml.safe_load(cuts.plan_yaml(wb, ["A", "B", "C"], [], {}))
+    ids = [c["id"] for c in d["cuts"]]
+    assert ids == ["default", "param-metric-tardy"]
+
+
+def test_plan_yaml_lists_every_dashboard_and_extract():
+    d = yaml.safe_load(cuts.plan_yaml(_wb(), [], [], {}, ["rpt (ds)", "other (ds)"]))
+    assert d["dashboards"] == ["Overview"]
+    assert d["datasources"] == ["rpt (ds)", "other (ds)"]
+    assert list(d)[:2] == ["dashboards", "datasources"]
