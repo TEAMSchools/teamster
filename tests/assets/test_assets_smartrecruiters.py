@@ -76,6 +76,17 @@ def test_pending_report_waits_on_in_flight_file(monkeypatch):
     assert len(gets) == 3
 
 
+def test_pending_report_downloads_completed_file(monkeypatch):
+    result, gets = _materialize_offline(
+        monkeypatch,
+        post_error=PENDING_400,
+        file_pages=[[{"reportFileId": "f2", "reportFileStatus": "COMPLETED"}]],
+    )
+
+    assert result.success
+    assert len(gets) == 2
+
+
 def test_other_post_error_still_fails(monkeypatch):
     result, gets = _materialize_offline(
         monkeypatch, post_error='{"message":"Report not found."}', file_pages=[]
