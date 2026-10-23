@@ -134,6 +134,17 @@ models:
           Reporting-terms sheet name the submission matched. Null on the archive
           arm.
 
+      - name: term_start_date
+        description: >-
+          First day of the SURVEY reporting-terms window the submission matched.
+          Null on both Alchemer arms and on a Google Forms submission that fell
+          in no window.
+
+      - name: term_end_date
+        description: >-
+          Last day of the SURVEY reporting-terms window the submission matched.
+          Null wherever term_start_date is null.
+
       - name: survey_response_link
         description: >-
           Deep link to the individual response in the source system. Null on the
