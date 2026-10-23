@@ -5,7 +5,8 @@ models:
       current year) for the career launch survey AppSheet app, with their
       contact details, current enrollment, and how many survey responses they
       have submitted. A response counts for an alumnus when its respondent email
-      matches their primary or secondary Salesforce email, or when the career
+      matches their primary or secondary Salesforce email, when its respondent
+      Salesforce id is their contact id (Manual Uploads), or when the career
       launch reconciliation sheet maps it to their contact. Responses the
       reconciliation sheet marks Exclude never count.
     config:
@@ -16,7 +17,9 @@ models:
         data_type: string
         description: Salesforce contact id of the alumnus.
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
       - name: first_name
         data_type: string
         description: Alumnus first name from Salesforce.

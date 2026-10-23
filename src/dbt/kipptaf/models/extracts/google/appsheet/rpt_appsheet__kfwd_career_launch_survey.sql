@@ -52,6 +52,7 @@ with
             on r.sf_email = su.respondent_user_principal_name
             or r.sf_secondary_email = su.respondent_user_principal_name
             or sr.survey_response_id = su.response_id
+            or r.contact_id = su.respondent_salesforce_id
         left join excluded_responses as er on su.response_id = er.survey_response_id
         where er.survey_response_id is null
         group by r.contact_id
