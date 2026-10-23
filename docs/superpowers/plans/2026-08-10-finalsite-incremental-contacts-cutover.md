@@ -68,9 +68,10 @@ incremental pull — staging silently shrinks to the few contacts changed since
 yesterday. If the cutover slips past 2026-10-07, set `start_date` to the new
 cutover-day-minus-one and update this step's partition key to match, in the same
 change, before merging. A cutover after the day's 12:00 tick leaves the cutover
-day's own partition unwritten, since the next tick is tomorrow's 00:15. That is
-not a data gap — the seed plus tomorrow's `since = today` pull cover it — so the
-_Ongoing_ check below can ignore it; backfilling it is also harmless.
+day's own partition unwritten, since the next tick is tomorrow's 00:15. The data
+is covered — the seed plus tomorrow's `since = today` pull — but the gap still
+fails `NOT any_deps_missing` on `stg_finalsite__contacts`, which then never
+rebuilds. Backfill the cutover day's partition in every location.
 
 ## 5. Delete the legacy root object (manual, destructive)
 
@@ -185,9 +186,18 @@ read same-day contacts.
 `since` is derived from the partition key, so partition `D+1` asks for
 `since = D` and never re-requests changes made on `D-1`. One failed tick is
 harmless — the other tick that day covers the same window. **A day where both
-ticks fail does not self-heal**, and nothing currently alerts on it.
+ticks fail does not self-heal**. Any gap also blocks `stg_finalsite__contacts`
+from rebuilding (`NOT any_deps_missing`), so its freshness policy
+(`CONTACTS_STAGING_FRESHNESS_POLICY`) fails and alerts `#dagster-alerts`.
 
-Check the `contacts` asset for gaps in the Dagster UI's partition view. Backfill
-any missing partition before the next tick; a backfilled partition requests its
-own `D-1` window, which closes the gap. The longer a gap sits, the more contacts
-hold stale values with no error raised anywhere.
+On that alert, check the `contacts` asset for gaps in the Dagster UI's partition
+view. Backfill any missing partition; a backfilled partition requests its own
+`D-1` window, which closes the gap, and staging rebuilds on the next automation
+tick.
+
+## Revision 2026-10-23
+
+Step 4 said a missing cutover-day partition could be ignored. It cannot: the gap
+froze `stg_finalsite__contacts` in all four locations from 2026-10-07 until a
+backfill on 2026-10-19 (#6013). Step 4 and _Ongoing_ now say to backfill, and
+the staging freshness policy surfaces a gap.

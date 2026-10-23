@@ -14,11 +14,13 @@ from teamster.code_locations.kippmiami import (
     extracts,
     finalsite,
     fldoe,
+    freshness,
     iready,
     renlearn,
 )
 from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE, SSH_FOCUS
 from teamster.core.executors import zombie_aware_k8s_job_executor
+from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DLT_RESOURCE,
@@ -37,19 +39,22 @@ from teamster.core.resources import (
 
 defs = Definitions(
     executor=zombie_aware_k8s_job_executor,
-    assets=load_assets_from_modules(
-        modules=[
-            dbt,
-            dlt,
-            extracts,
-            finalsite,
-            fldoe,
-            iready,
-            # Add `powerschool` here (and to the import above) to rebuild the
-            # frozen PowerSchool archive; remove both again afterwards. See
-            # src/teamster/code_locations/kippmiami/CLAUDE.md.
-            renlearn,
-        ]
+    assets=apply_freshness_policies(
+        load_assets_from_modules(
+            modules=[
+                dbt,
+                dlt,
+                extracts,
+                finalsite,
+                fldoe,
+                iready,
+                # Add `powerschool` here (and to the import above) to rebuild the
+                # frozen PowerSchool archive; remove both again afterwards. See
+                # src/teamster/code_locations/kippmiami/CLAUDE.md.
+                renlearn,
+            ]
+        ),
+        policies=freshness.policies,
     ),
     schedules=[
         *dlt.schedules,
