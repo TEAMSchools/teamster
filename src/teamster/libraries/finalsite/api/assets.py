@@ -32,8 +32,9 @@ CONTACTS_PARTITIONS_DEF = DailyPartitionsDefinition(
 # so a failed policy here usually means: backfill the gap partition. See #6013.
 CONTACTS_STAGING_FRESHNESS_POLICY = FreshnessPolicy.cron(
     deadline_cron="0 1,13 * * *",
-    # Dagster caps this at the shortest gap between deadlines.
-    lower_bound_delta=timedelta(hours=12),
+    # Under 12h so the spring DST shift cannot stretch the 13:00 window back over
+    # the 00:15 rebuild; Dagster also caps it at the shortest gap between deadlines.
+    lower_bound_delta=timedelta(hours=11),
     timezone="America/New_York",
 )
 
