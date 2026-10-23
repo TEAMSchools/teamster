@@ -46,8 +46,7 @@ with
 
             coalesce(e.end_date, date(e.syear + 1, 6, 30)) as exitdate,
 
-            -- Focus custom field custom_9, catalog title "Second School", a
-            -- checkbox. Unchecked marks the primary or home-campus enrollment.
+            -- TODO(#6107): always false since the where filter below; drop it.
             coalesce(e.second_school = 'Y', false) as is_second_school,
 
             case
@@ -88,10 +87,8 @@ with
         -- school as well.
         left join
             {{ ref("int_focus__school_year_first_day") }} as fd on e.syear = fd.syear
-        -- A second-school enrollment (custom_9) is a campus the student takes
-        -- courses at while staying enrolled at the primary one, not a stint.
-        -- Kept in, it would trim the primary stint as if the student had
-        -- transferred (#6094). Its courses match no stint downstream.
+        -- custom_9 "Second School": not a stint; kept, it would trim the
+        -- primary stint like a transfer (#6094).
         where e.second_school is null
     ),
 
