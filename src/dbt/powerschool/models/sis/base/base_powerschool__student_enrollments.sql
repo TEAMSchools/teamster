@@ -29,9 +29,6 @@ with
                 year_in_school,
                 year_in_network,
                 is_enrolled_y1,
-                is_enrolled_oct01,
-                is_enrolled_oct15,
-                is_enrolled_mar15,
                 is_enrolled_recent,
                 is_enrolled_fdos,
                 is_retained_year
@@ -44,18 +41,6 @@ with
             ) as year_in_network,
 
             max(is_enrolled_y1) over (partition by studentid, yearid) as is_enrolled_y1,
-
-            max(is_enrolled_oct01) over (
-                partition by studentid, yearid
-            ) as is_enrolled_oct01,
-
-            max(is_enrolled_oct15) over (
-                partition by studentid, yearid
-            ) as is_enrolled_oct15,
-
-            max(is_enrolled_mar15) over (
-                partition by studentid, yearid
-            ) as is_enrolled_mar15,
 
             max(is_enrolled_recent) over (
                 partition by studentid, yearid
