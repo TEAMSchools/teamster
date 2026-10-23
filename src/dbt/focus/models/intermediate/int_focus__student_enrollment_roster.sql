@@ -46,9 +46,6 @@ with
 
             coalesce(e.end_date, date(e.syear + 1, 6, 30)) as exitdate,
 
-            -- TODO(#6107): always false since the where filter below; drop it.
-            coalesce(e.second_school = 'Y', false) as is_second_school,
-
             case
                 g.short_name
                 when 'PK'
