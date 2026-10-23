@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import kubernetes.config
 import pytest
 from dagster_k8s import k8s_job_executor
+from dagster_k8s.executor import K8sStepHandler
 from kubernetes.client import V1JobStatus
 from kubernetes.client.exceptions import ApiException
 
@@ -63,17 +64,27 @@ def test_running_job_is_healthy():
     assert _handler(V1JobStatus(active=1)).check_step_health(Mock()).is_healthy
 
 
-def test_failed_job_keeps_upstream_reason():
-    result = _handler(V1JobStatus(failed=1)).check_step_health(Mock())
+@pytest.mark.parametrize("status", [None, V1JobStatus(failed=1)])
+def test_missing_or_failed_job_matches_upstream(status):
+    # the handler copies upstream's checks; this fails if a dagster-k8s upgrade
+    # changes them
+    handler = _handler(status)
+
+    result = handler.check_step_health(Mock())
+    upstream = K8sStepHandler.check_step_health(handler, Mock())
 
     assert not result.is_healthy
-    assert str(result.unhealthy_reason).startswith("Discovered failed Kubernetes job")
+    assert result.unhealthy_reason == upstream.unhealthy_reason
 
 
-def test_missing_job_keeps_upstream_reason():
-    result = _handler(None).check_step_health(Mock())
+def test_reads_job_status_once_per_check():
+    handler = _handler(_completed(121))
 
-    assert "could not be found" in str(result.unhealthy_reason)
+    handler.check_step_health(Mock())
+
+    get_job_status = handler._api_client.get_job_status
+    assert isinstance(get_job_status, Mock)
+    assert get_job_status.call_count == 1
 
 
 def test_status_api_error_propagates():

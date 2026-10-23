@@ -37,10 +37,6 @@ class ZombieAwareK8sStepHandler(K8sStepHandler):
     def check_step_health(
         self, step_handler_context: StepHandlerContext
     ) -> CheckStepHealthResult:
-        result = super().check_step_health(step_handler_context)
-        if not result.is_healthy:
-            return result
-
         step_key = self._get_step_key(step_handler_context)
         job_name = self._get_k8s_step_job_name(step_handler_context)
         container_context = self._get_container_context(step_handler_context)
@@ -48,12 +44,24 @@ class ZombieAwareK8sStepHandler(K8sStepHandler):
         status = self._api_client.get_job_status(
             namespace=check.not_none(container_context.namespace), job_name=job_name
         )
-        if status is None or not status.succeeded or status.completion_time is None:
-            return result
+
+        # the missing and failed checks copy upstream's, so its Job status read
+        # is not repeated; re-sync them on a dagster-k8s upgrade
+        if not status:
+            return CheckStepHealthResult.unhealthy(
+                reason=f"Kubernetes job {job_name} for step {step_key} could not be found."
+            )
+        if status.failed:
+            return CheckStepHealthResult.unhealthy(
+                reason=f"Discovered failed Kubernetes job {job_name} for step {step_key}.",
+            )
+
+        if not status.succeeded or status.completion_time is None:
+            return CheckStepHealthResult.healthy()
 
         age = (datetime.now(UTC) - status.completion_time).total_seconds()
         if age <= ZOMBIE_JOB_GRACE_SECONDS:
-            return result
+            return CheckStepHealthResult.healthy()
 
         return CheckStepHealthResult.unhealthy(
             reason=(
