@@ -259,18 +259,6 @@ with
             if(exitcode = 'G1', cohort_primary, null) as cohort_graduated,
             if(exitdate is not null, true, false) as is_enrolled_y1,
 
-            if(
-                date(academic_year, 10, 1) between entrydate and exitdate, true, false
-            ) as is_enrolled_oct01,
-            if(
-                date(academic_year, 10, 15) between entrydate and exitdate, true, false
-            ) as is_enrolled_oct15,
-            if(
-                date(academic_year + 1, 3, 15) between entrydate and exitdate,
-                true,
-                false
-            ) as is_enrolled_mar15,
-
             case
                 when yearid = yearid_prev
                 then false
