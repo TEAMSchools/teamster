@@ -30,10 +30,19 @@ with
             and r.ktc_cohort <= {{ var("current_academic_year") }}
     ),
 
-    excluded_responses as (
-        select survey_response_id,
-        from {{ ref("int_surveys__kfwd_career_launch_reconciliation") }}
-        where reconcile_or_exclude = 'Exclude'
+    survey_responses as (
+        select
+            cr.response_id,
+            cr.response_date_submitted,
+            cr.respondent_user_principal_name,
+            cr.respondent_salesforce_id,
+
+            sr.sf_contact_id as reconciled_contact_id,
+        from {{ ref("int_surveys__kfwd_career_launch_responses") }} as cr
+        left join
+            {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
+            on cr.response_id = sr.survey_response_id
+        where sr.reconcile_or_exclude is distinct from 'Exclude'
     ),
 
     survey_stats as (
@@ -44,17 +53,12 @@ with
 
             max(su.response_date_submitted) as latest_survey_date,
         from roster as r
-        left join
-            {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
-            on r.contact_id = sr.sf_contact_id
         inner join
-            {{ ref("int_surveys__kfwd_career_launch_responses") }} as su
+            survey_responses as su
             on r.sf_email = su.respondent_user_principal_name
             or r.sf_secondary_email = su.respondent_user_principal_name
-            or sr.survey_response_id = su.response_id
+            or r.contact_id = su.reconciled_contact_id
             or r.contact_id = su.respondent_salesforce_id
-        left join excluded_responses as er on su.response_id = er.survey_response_id
-        where er.survey_response_id is null
         group by r.contact_id
     )
 

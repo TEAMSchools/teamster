@@ -102,6 +102,7 @@ with
             r.contact_mobile_phone as primary_phone,
             r.contact_home_phone as secondary_phone,
 
+            e.id as enrollment_id,
             e.pursuing_degree_type,
             e.type,
             e.start_date,
@@ -307,7 +308,6 @@ with
     ),
 
     survey_filtered as (
-        -- 1 row per response; joined on the roster it repeats the contact
         select sc.*, sr.sf_contact_id as reconciled_contact_id,
         from survey_clean as sc
         left join
@@ -333,6 +333,7 @@ select
     r.actual_college_grad_date,
     r.current_kipp_student,
     r.contact_owner_name,
+    r.enrollment_id,
     r.pursuing_degree_type,
     r.type,
     r.start_date,
