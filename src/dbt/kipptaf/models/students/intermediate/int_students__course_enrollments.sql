@@ -115,6 +115,7 @@ with
             date_add(s.end_date, interval 1 day) as cc_dateleft,
             s.course_period_short_name as cc_section_number,
             s.teacher_id as cc_teacherid,
+            s.is_dropped as is_dropped_section,
 
             -- The Focus package resolves the seat's last day from the drop, the
             -- term end and the withdrawal; shift it to PowerSchool's day-after
@@ -154,24 +155,6 @@ with
             -- Focus's homeroom boolean is null on every row; identified by
             -- title instead, matching int_focus__advisory. See #4868.
             coalesce(s.course_title like 'Homeroom%', false) as is_homeroom,
-
-            -- An inferred flag; the derivation and its measurement are in the
-            -- column description. Two things this expression does not show:
-            -- the window excludes a withdrawal sweep, which closes every one of
-            -- a leaver's rows at once, and the coalesce is required rather than
-            -- defensive -- end_date is null on 96.8% of Miami rows and
-            -- `null < date` is null, so without it the flag reads null on every
-            -- open row. #4968
-            -- TODO(#6098): the package now removes seats scheduled after a
-            -- withdrawal, so a leaver with no open seat left reads as a sweep
-            coalesce(
-                s.end_date < s.marking_period_end_date
-                and countif(s.end_date is null) over (
-                    partition by s.student_id, s.academic_year
-                )
-                > 0,
-                false
-            ) as is_dropped_section,
 
             -- New Jersey state reporting crosswalk; Miami is Florida, so
             -- correctly absent rather than deferred.
