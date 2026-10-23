@@ -101,4 +101,13 @@ def test_wrapper_installs_subclass_handler(monkeypatch):
 
     executor = zombie_aware_k8s_job_executor.executor_creation_fn(init_context)  # type: ignore[arg-type]
 
-    assert isinstance(executor._step_handler, ZombieAwareK8sStepHandler)  # type: ignore[attr-defined]
+    handler = executor._step_handler  # type: ignore[attr-defined]
+    assert isinstance(handler, ZombieAwareK8sStepHandler)
+    # _handler() stubs these, so only the real instance catches an upstream rename
+    for name in (
+        "_get_step_key",
+        "_get_k8s_step_job_name",
+        "_get_container_context",
+        "_api_client",
+    ):
+        assert hasattr(handler, name), name

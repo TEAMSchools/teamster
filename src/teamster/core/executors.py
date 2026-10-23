@@ -77,7 +77,7 @@ def zombie_aware_k8s_job_executor(init_context: InitExecutorContext) -> Executor
         StepDelegatingExecutor,
     )
     # the subclass adds no instance state, so swapping the class keeps every
-    # field upstream set
+    # field upstream set; do not give it an __init__ or attributes of its own
     check.inst(
         step_executor._step_handler, K8sStepHandler
     ).__class__ = ZombieAwareK8sStepHandler
