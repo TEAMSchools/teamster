@@ -12,7 +12,9 @@ Produces a GCS Avro asset. The asset:
    generating (a timed-out run's, or SmartRecruiters' own scheduled one), so the
    asset falls back to polling the newest existing file. Without that, a run
    retry can never succeed.
-2. Polls until the report file is ready (status-based loop with retries)
+2. Polls until the report file is ready (status-based loop with retries). A
+   `FAILED` file raises with its `errorReason` instead of polling until the
+   run's max runtime.
 3. Downloads the CSV and parses it with `csv_string_to_records()`
 
 `report_id` is stored in asset metadata and passed to the API.
