@@ -11,6 +11,7 @@ from dagster import (
     schedule,
 )
 from dagster_shared import check
+from dateutil.relativedelta import relativedelta
 
 from teamster.core.utils.classes import FiscalYear
 
@@ -21,6 +22,7 @@ def build_deanslist_job_schedule(
     execution_timezone: str,
     asset_selection: list[AssetsDefinition],
     current_fiscal_year: FiscalYear | None = None,
+    lookback_months: int = 0,
 ):
     @schedule(
         name=schedule_name,
@@ -46,9 +48,13 @@ def build_deanslist_job_schedule(
                         }
                     )
             elif isinstance(asset.partitions_def, MultiPartitionsDefinition):
-                fy_start_fmt = check.not_none(
-                    value=current_fiscal_year
-                ).start.isoformat()
+                # a prior-year partition requests UpdatedSince=<its month> with no
+                # upper bound, so keeping the last one scheduled catches every
+                # late edit to that year (e.g. board dates entered in the summer)
+                cutoff_fmt = (
+                    check.not_none(value=current_fiscal_year).start
+                    - relativedelta(months=lookback_months)
+                ).isoformat()
 
                 partitions_def_identifier = (
                     asset.partitions_def.get_serializable_unique_identifier()
@@ -62,7 +68,7 @@ def build_deanslist_job_schedule(
 
                 for school in school_partition_keys:
                     for date in date_partition_keys:
-                        if date >= fy_start_fmt:
+                        if date >= cutoff_fmt:
                             run_request_kwargs.append(
                                 {
                                     "key": asset.key,
