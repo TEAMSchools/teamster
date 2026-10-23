@@ -98,12 +98,14 @@ description:
   `TaintManagerEviction`, any `DisruptionTarget`), the replacement hits
   Dagster's `verify_step()` duplicate-start guard, logs
   `Attempted to run <step_key> again even though it was already started. Exiting to prevent re-running the step.`,
-  and exits 0. Step state never advances; run hangs until
-  `run_monitoring.max_runtime_seconds`. Signature: duplicate
-  `StepWorkerStartedEvent` → "already started" `EngineEvent` → silence →
-  `RunCancelingEvent` at the max_runtime mark. Don't chase the asset's code or
-  query — check the auto-retry; if it succeeded, this was infra disruption, no
-  fix needed.
+  and exits 0, so the Job reads Complete. `zombie_aware_k8s_job_executor`
+  (`src/teamster/core/executors.py`) fails the step once the Job has been
+  Complete for 60 s without a step result, and the run's auto-retry takes over.
+  Signature: duplicate `StepWorkerStartedEvent` → "already started"
+  `EngineEvent` → step failure
+  `failed health check: ... completed without a step result`. Don't chase the
+  asset's code or query — check the auto-retry; if it succeeded, this was infra
+  disruption, no fix needed.
 - **`required` antiAffinity authorizes scheduler preemption** of the target pods
   when no other node fits, but only of pods at LOWER priority. While run pods
   sat at 1000 and code servers at 0, `runK8sConfig.affinity.podAntiAffinity` let

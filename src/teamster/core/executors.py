@@ -1,9 +1,17 @@
 from datetime import UTC, datetime
 
+from dagster import (
+    Executor,
+    InitExecutorContext,
+    executor,
+    multiple_process_executor_requirements,
+)
+from dagster._core.executor.step_delegating import StepDelegatingExecutor
 from dagster._core.executor.step_delegating.step_handler.base import (
     CheckStepHealthResult,
     StepHandlerContext,
 )
+from dagster_k8s import k8s_job_executor
 from dagster_k8s.executor import K8sStepHandler
 from dagster_shared import check
 
@@ -53,3 +61,23 @@ class ZombieAwareK8sStepHandler(K8sStepHandler):
                 "on Dagster's duplicate-start guard."
             )
         )
+
+
+@executor(
+    name=k8s_job_executor.name,
+    # trunk-ignore(pyright/reportArgumentType): the same schema object upstream passes in
+    config_schema=k8s_job_executor.config_schema,
+    requirements=multiple_process_executor_requirements(),
+)
+def zombie_aware_k8s_job_executor(init_context: InitExecutorContext) -> Executor:
+    """`k8s_job_executor` with `ZombieAwareK8sStepHandler` as its step handler."""
+    step_executor = check.inst(
+        check.not_none(k8s_job_executor.executor_creation_fn)(init_context),
+        StepDelegatingExecutor,
+    )
+    # the subclass adds no instance state, so swapping the class keeps every
+    # field upstream set
+    check.inst(
+        step_executor._step_handler, K8sStepHandler
+    ).__class__ = ZombieAwareK8sStepHandler
+    return step_executor
