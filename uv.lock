@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.13, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
@@ -3992,7 +3992,7 @@ wheels = [
 
 [[package]]
 name = "tableauserverclient"
-version = "0.41"
+version = "0.42"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "defusedxml" },
@@ -4001,9 +4001,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6e/28/7a2263194b8aca4efb77705c1255370c0cb2dc94b3b62ed16e01d659a028/tableauserverclient-0.41.tar.gz", hash = "sha256:e491975b9f0e19467fb6423b814511a9f549c22bce78c868079a25fbe81a0e95", size = 639331, upload-time = "2026-06-25T23:41:19.292Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/58/ec/722516d0a6d461756f069fced79614c55b459b25acff909ab1c5e0e7d26d/tableauserverclient-0.42.tar.gz", hash = "sha256:3474de006b4b7a5df539e800bb512e79b1bc382ba63309222b8388821664a1c3", size = 676947, upload-time = "2026-10-15T21:11:43.196Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/b6/3a91c755bf64c07f29a50bad69006a98606da122491894e047a475c81979/tableauserverclient-0.41-py3-none-any.whl", hash = "sha256:c1d5bed75d22899847f44c7ee0fdf9b12cf8f4a855c49d6100f2f6c6ea4fe2a3", size = 214856, upload-time = "2026-06-25T23:41:18.095Z" },
+    { url = "https://files.pythonhosted.org/packages/0d/67/b7f0ebc9152d93db4d415358c3ce34e49004a7294c9427e3b1e7b958e702/tableauserverclient-0.42-py3-none-any.whl", hash = "sha256:ba7509091eebc83b58f4f49a34fd0c30adb9597e6f3a06109bed059b0a8ff993", size = 228860, upload-time = "2026-10-15T21:11:41.981Z" },
 ]
 
 [[package]]
