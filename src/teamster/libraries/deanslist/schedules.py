@@ -48,9 +48,9 @@ def build_deanslist_job_schedule(
                         }
                     )
             elif isinstance(asset.partitions_def, MultiPartitionsDefinition):
-                # a prior-year partition requests UpdatedSince=<its month> with no
-                # upper bound, so keeping the last one scheduled catches every
-                # late edit to that year (e.g. board dates entered in the summer)
+                # the prior year's June partition requests that whole fiscal year
+                # filtered by UpdatedSince, so keeping it scheduled catches late
+                # edits to prior-year records
                 cutoff_fmt = (
                     check.not_none(value=current_fiscal_year).start
                     - relativedelta(months=lookback_months)

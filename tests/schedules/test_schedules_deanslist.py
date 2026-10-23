@@ -17,11 +17,13 @@ def test_deanslist_schedule_lookback_months():
 
     from dagster import (
         MonthlyPartitionsDefinition,
+        MultiPartitionKey,
         MultiPartitionsDefinition,
         RunRequest,
         StaticPartitionsDefinition,
         asset,
     )
+    from dagster_shared import check
 
     from teamster.core.utils.classes import FiscalYear
     from teamster.libraries.deanslist.schedules import build_deanslist_job_schedule
@@ -54,7 +56,10 @@ def test_deanslist_schedule_lookback_months():
             "Iterator[RunRequest]", schedule(context=build_schedule_context())
         )
 
-        return sorted(str(r.partition_key).split("|")[0] for r in run_requests)
+        return sorted(
+            check.inst(r.partition_key, MultiPartitionKey).keys_by_dimension["date"]
+            for r in run_requests
+        )
 
     assert dates(0) == ["2026-07-01", "2026-08-01", "2026-09-01"]
     assert dates(1) == ["2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01"]
