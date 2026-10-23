@@ -66,6 +66,12 @@ def build_smartrecruiters_report_asset(
             if report_file_record:
                 report_file_status = report_file_record[0]["reportFileStatus"]
 
+                if report_file_status == "FAILED":
+                    raise RuntimeError(
+                        f"Report file {report_file_id} failed: "
+                        f"{report_file_record[0].get('errorReason')}"
+                    )
+
             context.log.info(report_file_status)
             if report_file_status == "COMPLETED":
                 break

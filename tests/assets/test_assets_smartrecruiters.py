@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import pytest
 from dagster import materialize, mem_io_manager
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
@@ -84,6 +85,26 @@ def test_pending_report_downloads_completed_file(monkeypatch):
     )
 
     assert result.success
+    assert len(gets) == 2
+
+
+@pytest.mark.parametrize("first_status", ["RUNNING", "FAILED"])
+def test_failed_report_file_fails_fast(monkeypatch, first_status):
+    failed = {
+        "reportFileId": "f2",
+        "reportFileStatus": "FAILED",
+        "errorReason": "MAX_REPORT_FILE_SIZE_EXCEEDED",
+    }
+
+    result, gets = _materialize_offline(
+        monkeypatch,
+        post_error=PENDING_400,
+        file_pages=[[{**failed, "reportFileStatus": first_status}], [failed]],
+    )
+
+    [failure] = [e for e in result.all_events if e.is_step_failure]
+
+    assert "MAX_REPORT_FILE_SIZE_EXCEEDED" in str(failure.step_failure_data.error)
     assert len(gets) == 2
 
 
