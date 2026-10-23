@@ -42,7 +42,7 @@ def _completed(seconds_ago: int) -> V1JobStatus:
 
 
 def test_succeeded_past_grace_is_unhealthy():
-    result = _handler(_completed(61)).check_step_health(Mock())
+    result = _handler(_completed(121)).check_step_health(Mock())
 
     assert not result.is_healthy
     assert "completed without a step result" in str(result.unhealthy_reason)
@@ -50,7 +50,7 @@ def test_succeeded_past_grace_is_unhealthy():
 
 
 def test_succeeded_inside_grace_is_healthy():
-    assert _handler(_completed(30)).check_step_health(Mock()).is_healthy
+    assert _handler(_completed(90)).check_step_health(Mock()).is_healthy
 
 
 def test_succeeded_without_completion_time_is_healthy():

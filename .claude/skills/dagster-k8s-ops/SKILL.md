@@ -100,12 +100,17 @@ description:
   `Attempted to run <step_key> again even though it was already started. Exiting to prevent re-running the step.`,
   and exits 0, so the Job reads Complete. `zombie_aware_k8s_job_executor`
   (`src/teamster/core/executors.py`) fails the step once the Job has been
-  Complete for 60 s without a step result, and the run's auto-retry takes over.
-  Signature: duplicate `StepWorkerStartedEvent` → "already started"
+  Complete for 120 s without a step result. An op with a `RetryPolicy` retries
+  the step in the same run; any other op fails the run, and the run's auto-retry
+  takes over. Signature: duplicate `StepWorkerStartedEvent` → "already started"
   `EngineEvent` → step failure
   `failed health check: ... completed without a step result`. Don't chase the
   asset's code or query — check the auto-retry; if it succeeded, this was infra
-  disruption, no fix needed.
+  disruption, no fix needed. A run that instead fails with
+  `Attempted to mark step ... as complete that was not known to be in flight`
+  right after that health-check failure means the step had actually succeeded
+  and its success event arrived more than 120 s late: raise
+  `ZOMBIE_JOB_GRACE_SECONDS`.
 - **`required` antiAffinity authorizes scheduler preemption** of the target pods
   when no other node fits, but only of pods at LOWER priority. While run pods
   sat at 1000 and code servers at 0, `runK8sConfig.affinity.podAntiAffinity` let

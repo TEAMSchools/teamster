@@ -15,9 +15,10 @@ from dagster_k8s import k8s_job_executor
 from dagster_k8s.executor import K8sStepHandler
 from dagster_shared import check
 
-# Far above the run pod's lag in reading a step's success event, so a healthy
-# step never trips it (Refs #6103).
-ZOMBIE_JOB_GRACE_SECONDS = 60
+# Far above the run pod's lag in reading a step's success event. A healthy step
+# that tripped it would fail the whole run when its late success arrives
+# (Dagster's in-flight invariant), so err long (Refs #6103).
+ZOMBIE_JOB_GRACE_SECONDS = 120
 
 
 class ZombieAwareK8sStepHandler(K8sStepHandler):
