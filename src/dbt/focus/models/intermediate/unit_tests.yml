@@ -110,9 +110,9 @@ unit_tests:
       two schools with neither marked: the newer stint wins on
       enrollment_created_at while carrying the LOWER id, so a pass only if the
       ordering reads the timestamp rather than the id. Student 3 covers the
-      primary leg: two schools with the SECOND one marked and created later, so
-      recency alone would keep the second school and only reading
-      is_second_school first keeps the home campus.
+      second-school filter: two schools with the SECOND one marked and created
+      later, so recency alone would keep the second school and only dropping the
+      marked row keeps the home campus.
     given:
       - input: ref('int_focus__students')
         format: sql
@@ -208,7 +208,9 @@ unit_tests:
       2026-08-14, the day stint 42 starts, the way Focus dates a transfer: 41
       trims to 2026-08-13. Stint 42 is the last and stays open to June 30. A
       second student with one open stint proves a stint with no successor is
-      untouched.
+      untouched. A third student holds an open primary stint 100 and a
+      second-school stint 101 that starts later; 101 is not a transfer, so it
+      drops out and 100 stays open to June 30.
     given:
       - input: ref('int_focus__students')
         format: sql
@@ -220,6 +222,9 @@ unit_tests:
             cast(null as date) as dob
           union all
           select 5, 5, 'E', 'Five', cast(null as string), cast(null as string),
+            cast(null as date)
+          union all
+          select 10, 10, 'J', 'Ten', cast(null as string), cast(null as string),
             cast(null as date)
       - input: ref('int_focus__student_enrollment')
         format: sql
@@ -254,6 +259,16 @@ unit_tests:
             cast(null as int64), cast(null as int64),
             date '2026-08-10', cast(null as date), cast(null as string),
             timestamp '2026-07-01 00:00:00'
+          union all
+          select 100, 10, 2026, 100, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 101, 10, 2026, 200, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-09-04', cast(null as date), 'Y',
+            timestamp '2026-09-04 00:00:00'
           )
       # empty: left-joined, contributes nothing to the trim under test
       - input: ref('int_focus__schools')
@@ -284,6 +299,10 @@ unit_tests:
         - student_number: 5
           student_enrollment_id: 50
           startdate: 2026-08-10
+          exitdate: 2027-06-30
+        - student_number: 10
+          student_enrollment_id: 100
+          startdate: 2026-08-12
           exitdate: 2027-06-30
 
   - name: test_int_focus__student_enrollment_roster_enroll_status_is_current
