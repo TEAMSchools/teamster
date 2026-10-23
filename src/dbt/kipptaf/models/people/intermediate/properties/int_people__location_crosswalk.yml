@@ -65,3 +65,43 @@ models:
         data_type: int64
       - name: campus_name
         data_type: string
+        description: |
+          Campus the location belongs to. A school takes its parent campus from
+          stg_google_sheets__people__campus_crosswalk. A campus-level location
+          (location_is_campus) with no crosswalk row is its own campus, so staff
+          based at the campus share a campus_name with staff at its schools. A
+          crosswalk row always wins, which lets an office location such as
+          Room 11 roll up to a differently named campus. NULL for a school with
+          no crosswalk row.
+
+unit_tests:
+  - name: test_int_people__location_crosswalk_campus_name
+    description:
+      Locks how campus_name resolves. A school takes its crosswalk campus. A
+      campus-level location with no crosswalk row takes its own clean name. A
+      campus-level location with a crosswalk row takes the crosswalk campus. A
+      school with no crosswalk row stays null.
+    model: int_people__location_crosswalk
+    given:
+      - input: ref('stg_google_sheets__people__location_crosswalk')
+        rows:
+          - { Name: School A, Clean_Name: School A }
+          - { Name: Campus X Alias, Clean_Name: Campus X }
+          - { Name: Office 1, Clean_Name: Office 1 }
+          - { Name: School B, Clean_Name: School B }
+      - input: ref('stg_google_sheets__people__locations')
+        rows:
+          - { location_name: School A, is_campus: false }
+          - { location_name: Campus X, is_campus: true }
+          - { location_name: Office 1, is_campus: true }
+          - { location_name: School B, is_campus: false }
+      - input: ref('stg_google_sheets__people__campus_crosswalk')
+        rows:
+          - { Location_Name: School A, Name: Campus X }
+          - { Location_Name: Office 1, Name: Campus Y }
+    expect:
+      rows:
+        - { location_name: School A, campus_name: Campus X }
+        - { location_name: Campus X Alias, campus_name: Campus X }
+        - { location_name: Office 1, campus_name: Campus Y }
+        - { location_name: School B, campus_name: null }
