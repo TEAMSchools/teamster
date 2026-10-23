@@ -7,7 +7,11 @@ platform). Assets fetch pre-built reports via the SmartRecruiters Reporting API.
 
 Produces a GCS Avro asset. The asset:
 
-1. POSTs to the reporting API to trigger report execution
+1. POSTs to the reporting API to trigger report execution. The API answers 400
+   "pending generation" while another file of the same report is still
+   generating (a timed-out run's, or SmartRecruiters' own scheduled one), so the
+   asset falls back to polling the newest existing file. Without that, a run
+   retry can never succeed.
 2. Polls until the report file is ready (status-based loop with retries)
 3. Downloads the CSV and parses it with `csv_string_to_records()`
 
