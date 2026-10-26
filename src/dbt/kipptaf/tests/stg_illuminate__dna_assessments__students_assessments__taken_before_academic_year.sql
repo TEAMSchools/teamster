@@ -10,9 +10,10 @@ with
             creator_last_name,
             creator_email_1,
 
-            date(academic_year_clean, 7, 1) as academic_year_start_date,
+            -- safe: the filter below may run after this projection
+            safe.date(academic_year_clean, 7, 1) as academic_year_start_date,
         from {{ ref("int_illuminate__assessments") }}
-        -- Illuminate holds 0 and 1 as junk academic years
+        -- Illuminate holds 0 and -1 as junk academic years
         where academic_year_clean >= 2000
     )
 

@@ -143,8 +143,8 @@ data_tests:
       1 between consecutive school years. Each year is the student's
       highest-grade stint, with no-shows excluded. A skipped grade puts the
       student ahead of the cohort they entered with, which matters for the
-      4-year graduation cohort. Fix the grade level on the enrollment, or add
-      the missing enrollment year, in Focus. New Jersey's version is
+      4-year graduation cohort. Fix the grade level on the enrollment, or move
+      the enrollment to the right school year, in Focus. New Jersey's version is
       int_powerschool__ps_enrollment_all__no_skipped_grade in the powerschool
       package.
     config:
