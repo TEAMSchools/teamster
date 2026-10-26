@@ -35,9 +35,9 @@ In scope:
   `gradebook-expectations-upload` skill.
 - A private Slack channel where Claude in Slack runs that skill against BigQuery
   through a connector attached to that one channel.
-- In this repo: a dbt exposure recording the skill as a consumer, and three
-  small additions to the `gradebook-audit` Claude Code skill so the data team
-  keeps the end-user skill in step with the models.
+- In this repo: a dbt exposure recording the skill as a consumer, and small
+  additions to the `gradebook-audit` Claude Code skill so the data team keeps
+  the end-user skill in step with the models.
 
 Out of scope, decided on 2026-10-07:
 
@@ -150,9 +150,10 @@ Verified against the model SQL during review on 2026-10-07.
   far more student data than gradebook scores. Two ways to set the grant, for
   the engineer and the FERPA owner to choose between before the runbook's
   dry-run step:
-  - **Narrow (preferred):** make the three kipptaf datasets authorized datasets
-    on their upstreams, then grant table-level Data Viewer on the five relations
-    only. The account can then read exactly those five.
+  - **Narrow (preferred):** authorize each dataset that holds a view in the
+    chain on the datasets that view reads, down to the district sources (the dry
+    run, run as the account, lists them), then grant table-level Data Viewer on
+    the five relations only. The account can then read exactly those five.
   - **Wide (accepted risk):** dataset-level Data Viewer on the datasets the dry
     run names. Acceptable only because the channel holds two staff with
     network-wide legitimate educational interest, and must be revisited before
