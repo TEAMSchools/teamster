@@ -37,19 +37,50 @@ with
             on c.academic_year = s.academic_year
             and c.scope = s.expected_scope
             and c.score_type = s.expected_score_type
-        where s.expected_test_type = 'Practice'
+        where s.expected_test_type = 'Practice' and c.uses_bands_of is null
     ),
 
-    responses as (
+    apex_modules as (
+        select
+            assessment_id,
+            uses_bands_of,
+
+            count(*) over (partition by uses_bands_of) as n_modules_expected,
+        from {{ ref("stg_google_sheets__kippfwd__practice_scale_score_conversion") }}
+        where uses_bands_of is not null
+    ),
+
+    apex_sections as (
         select
             a.academic_year,
-            a.illuminate_student_id,
-            a.powerschool_student_number,
+            a.student_number,
+
+            m.uses_bands_of as assessment_id,
+
+            max(m.n_modules_expected) as n_modules_expected,
+            min(a.administered_at) as administered_at,
+            max(a.date_taken) as test_date,
+            sum(a.points) as points,
+            count(distinct a.assessment_id) as n_modules_taken,
+            string_agg(a.title, ' + ' order by a.title) as assessment_title,
+        from {{ ref("int_assessments__response_rollup") }} as a
+        inner join apex_modules as m on a.assessment_id = m.assessment_id
+        where a.source = 'apex' and a.response_type = 'overall'
+        group by a.academic_year, a.student_number, m.uses_bands_of
+    ),
+
+    converted_responses as (
+        select
+            a.academic_year,
+            a.student_number as powerschool_student_number,
             a.assessment_id,
             a.title as assessment_title,
             a.date_taken as test_date,
+            a.administered_at,
+            a.response_type,
             a.response_type_description,
             a.points,
+            a.percent_correct,
 
             ssk.test_type,
             ssk.scope,
@@ -63,49 +94,107 @@ with
             ssk.score_type,
             ssk.expected_total_subjects_tested,
             ssk.course_discipline,
-
-            initcap(a.response_type) as response_type,
-
-            format_date('%B', a.date_taken) as test_month,
-
-            round(a.percent_correct / 100, 2) as percent_correct,
-
-            concat(
-                format_date('%b', a.administered_at),
-                ' ',
-                format_date('%g', a.administered_at)
-            ) as administration_round,
-
-            max(if(a.response_type = 'overall', a.points, null)) over (
-                partition by
-                    a.academic_year, a.powerschool_student_number, a.assessment_id
-            ) as raw_score,
-
-            max(if(a.response_type = 'overall', ssk.aligned_scale_score, null)) over (
-                partition by
-                    a.academic_year, a.powerschool_student_number, a.assessment_id
-            ) as scale_score,
-
-            count(distinct ssk.subject_area) over (
-                partition by
-                    a.academic_year,
-                    a.powerschool_student_number,
-                    ssk.scope_round,
-                    ssk.grade_level
-            ) as actual_total_subjects_tested,
-
+            ssk.aligned_scale_score,
         from {{ ref("int_assessments__response_rollup") }} as a
         inner join
             -- `a.assessment_id` is `canonical_assessment_id`, because
             -- `response_rollup` output is canonical-grain. The sheet's
-            -- `assessment_id` values align to canonical today (12 of 12),
-            -- because Practice SAT/ACT are not canonicalized into multi-member
+            -- `assessment_id` values align to canonical because Practice SAT/ACT are
+            -- not canonicalized into multi-member
             -- groups. If multipart Practice administrations arrive later, the
             -- sheet must reference the canonical (lowest) `assessment_id`.
             conversion as ssk
             on a.assessment_id = ssk.assessment_id
             and a.points between ssk.raw_score_low and ssk.raw_score_high
-        where a.response_type in ('group', 'overall')
+        -- the sheet lists Illuminate ids, which Apex ids can repeat
+        where a.response_type in ('group', 'overall') and a.source = 'illuminate'
+
+        union all
+
+        select
+            a.academic_year,
+            a.student_number as powerschool_student_number,
+            a.assessment_id,
+            a.assessment_title,
+            a.test_date,
+            a.administered_at,
+
+            'overall' as response_type,
+
+            cast(null as string) as response_type_description,
+
+            a.points,
+
+            cast(null as numeric) as percent_correct,
+
+            ssk.test_type,
+            ssk.scope,
+            ssk.aligned_scope,
+            ssk.scope_round,
+            ssk.grade_level,
+            ssk.subject,
+            ssk.subject_area,
+            ssk.aligned_subject_area,
+            ssk.`grouping`,
+            ssk.score_type,
+            ssk.expected_total_subjects_tested,
+            ssk.course_discipline,
+            ssk.aligned_scale_score,
+        from apex_sections as a
+        inner join
+            conversion as ssk
+            on a.assessment_id = ssk.assessment_id
+            and a.points between ssk.raw_score_low and ssk.raw_score_high
+        where a.n_modules_taken = a.n_modules_expected
+    ),
+
+    responses as (
+        select
+            academic_year,
+            powerschool_student_number,
+            assessment_id,
+            assessment_title,
+            test_date,
+            response_type_description,
+            points,
+            test_type,
+            scope,
+            aligned_scope,
+            scope_round,
+            grade_level,
+            `subject`,
+            subject_area,
+            aligned_subject_area,
+            `grouping`,
+            score_type,
+            expected_total_subjects_tested,
+            course_discipline,
+
+            initcap(response_type) as response_type,
+
+            format_date('%B', test_date) as test_month,
+
+            round(percent_correct / 100, 2) as percent_correct,
+
+            concat(
+                format_date('%b', administered_at),
+                ' ',
+                format_date('%g', administered_at)
+            ) as administration_round,
+
+            max(if(response_type = 'overall', points, null)) over (
+                partition by academic_year, powerschool_student_number, assessment_id
+            ) as raw_score,
+
+            max(if(response_type = 'overall', aligned_scale_score, null)) over (
+                partition by academic_year, powerschool_student_number, assessment_id
+            ) as scale_score,
+
+            count(distinct subject_area) over (
+                partition by
+                    academic_year, powerschool_student_number, scope_round, grade_level
+            ) as actual_total_subjects_tested,
+        from converted_responses
     ),
 
     scores as (
@@ -283,6 +372,9 @@ select
     s.*,
 
     g.previous_total_score_change,
+
+    -- the practice module in dim_assessments and dim_assessment_administrations
+    lower(concat(s.scope, '_', replace(s.subject_area, ' ', '_'))) as module_code,
 
     /* response_type stays in the partition so group rows rank among themselves
        and never displace the subject row before being nulled. */

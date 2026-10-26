@@ -1,15 +1,16 @@
 models:
   - name: rpt_gsheets__college_assessments_long
     description: >-
-      **Excludes Miami by design.** SAT and ACT results for students in testing
-      grades. Miami's high school starts at grade 9 and has no college-testing
-      cohort yet, so there is nothing for Miami to report. Revisit when Miami
-      reaches grade 11. Ratified on #4996. One row per student per sitting, with
-      the Composite, EBRW and Math results for that sitting pivoted into columns
-      rather than split across three rows. Scoped to students currently enrolled
-      in a high school grade this academic year whose graduation year is later
-      than this one. A student who transferred out mid-year drops off, along
-      with the scores they earned while enrolled.
+      College assessment results (SAT, PSAT 8/9, PSAT10, PSAT NMSQT, ACT),
+      official and practice, for current high school students in the class of
+      this school year or later. One row per student per test, administration
+      type, and test date, with the Composite, EBRW/Reading and Math results for
+      that sitting pivoted into columns rather than split across three rows.
+      Scoped to students enrolled this academic year with enroll status 0, so a
+      student who transferred out mid-year drops off, along with the scores they
+      earned while enrolled. Students with no Composite, EBRW/Reading or Math
+      result have no rows. No region is filtered, so a Miami student with
+      results would appear.
 
 
       The CCR course, teacher and section are grouped rather than aggregated, as
@@ -132,9 +133,8 @@ models:
         description: >-
           Course standing in for the student's College and Career Readiness
           schedule. Falls back to KIPP Newark Lab's Advisory course, then
-          homeroom, when the student has no active College and Career section —
-          from SY26-27 the regions schedule those for grades 11 and 12 only. `No
-          Data` means no active course enrollment at all.
+          homeroom, when the student has no active College and Career section.
+          No Data means no active course enrollment at all.
       - name: "`CCR Teacher Name`"
         data_type: string
         description: Teacher of record for the CCR course, last name first.
@@ -183,8 +183,8 @@ models:
       - name: "`Highest Score by Test - Composite`"
         data_type: string
         description: >-
-          Whether this sitting is the student's highest composite for this test
-          type.
+          Whether this sitting is the student's highest composite on this test
+          (rn_highest = 1).
       - name: "`Meeting High School Grad Benchmark - Composite`"
         data_type: string
         description: >-
@@ -204,8 +204,8 @@ models:
       - name: "`Highest Score by Test - EBRW`"
         data_type: string
         description: >-
-          Whether this sitting is the student's highest EBRW or Reading score
-          for this test type.
+          Whether this sitting is the student's highest EBRW or Reading score on
+          this test (rn_highest = 1).
       - name: "`Meeting HS Grad Benchmark - EBRW`"
         data_type: string
         description: >-
@@ -222,8 +222,8 @@ models:
       - name: "`Highest Score by Test - Math`"
         data_type: string
         description: >-
-          Whether this sitting is the student's highest Math score for this test
-          type.
+          Whether this sitting is the student's highest Math score on this test
+          (rn_highest = 1).
       - name: "`Meeting High School Grad Benchmark - Math`"
         data_type: string
         description: >-

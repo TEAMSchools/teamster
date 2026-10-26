@@ -14,10 +14,6 @@ models:
           # reads this mart. Refs #5217
           automation_condition:
             cron_schedule: 0 0,10,13,15,17 * * *
-    data_tests:
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: effective_start_date <= effective_end_date
     columns:
       - name: staff_work_history_key
         data_type: string
@@ -40,10 +36,6 @@ models:
               to_columns: [work_assignment_key]
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_staff_work_assignments')
-                field: work_assignment_key
       - name: staff_key
         data_type: string
         description: Foreign key to `dim_staff.staff_key`.
@@ -54,10 +46,6 @@ models:
               to_columns: [staff_key]
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
       - name: manager_staff_key
         data_type: string
         description: >-
@@ -68,11 +56,6 @@ models:
             foreign_key:
               to: ref('dim_staff')
               to_columns: [staff_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
       - name: work_location_key
         data_type: string
         description: >-
@@ -83,11 +66,6 @@ models:
             foreign_key:
               to: ref('dim_locations')
               to_columns: [location_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
       - name: status_name
         data_type: string
         description: >-

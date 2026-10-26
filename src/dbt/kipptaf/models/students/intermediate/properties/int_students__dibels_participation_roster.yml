@@ -3,17 +3,23 @@ models:
     description: >-
       Expected-versus-actual DIBELS testing per student per round, for all three
       data models that run in parallel K-8: Benchmark, the in-house PM goal
-      method, and Amplify's aimline. One row per student per round per model.
+      method, and Amplify's aimline. One row per student per enrolled grade per
+      round per model.
 
-      The two expectation gates are appended as the driving table --
+      The two expectation gates, filtered to live rows (assessment_include and
+      pm_goal_include both null) and counted up from measure grain to round
+      grain, are appended as the driving table --
       int_google_sheets__dibels_expected_assessments for Benchmark and the
       internal PM method,
-      int_google_sheets__dibels__expected_assessments_by_levels for aimline.
-      expected_row_count is computed in those gates rather than here, so the
-      cohort partition aimline needs lives next to the column that causes it.
-      Enrolled students are joined next, matching the gate's expected grade to
-      the enrolled grade, and int_amplify__all_assessments is joined last for
-      what was actually tested.
+      int_google_sheets__dibels__expected_assessments_by_levels for aimline,
+      which also groups by cohort. Enrolled K-8 students (enroll_status 0, 2 or
+      3, ELA enrollments) are joined next, matching the gate's expected grade to
+      the enrolled grade and requiring the round window's start or end date to
+      fall inside the enrollment stint. int_amplify__all_assessments is joined
+      last for what was actually tested; it is at measure grain, so that join
+      repeats each round row once per scored measure. A row_number keeps one row
+      per grain key, preferring the latest-exiting stint, which collapses both
+      that repetition and a student with two stints in one window.
 
       The three models gate eligibility three different ways -- Benchmark gates
       nothing, the internal method wants probe-eligible students, aimline wants
@@ -51,8 +57,8 @@ models:
       - name: academic_year
         data_type: int64
         description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026').
+          Academic year as the starting calendar year -- 2025 is SY25-26, from
+          the expectation gate.
         config:
           meta:
             source_system: Amplify
@@ -64,7 +70,7 @@ models:
           The city form of the region -- Newark, Camden, Miami, Paterson.
       - name: student_number
         data_type: int64
-        description: Student Number assigned by the school. Indexed.
+        description: Student number assigned by the school.
         config:
           meta:
             source_system: PowerSchool
@@ -75,8 +81,8 @@ models:
       - name: grade_level
         data_type: int64
         description:
-          "The grade the student is in. Since this is an integer: 0=Kindergarten
-          1, -2=Preschool. Indexed."
+          Enrolled grade level, with kindergarten as 0. Limited to grade 8 and
+          below. Matched to the expectation gate's grade.
         config:
           meta:
             source_system: PowerSchool
@@ -84,7 +90,10 @@ models:
             source_column: grade_level
       - name: enroll_status
         data_type: int64
-        description: The enrollment status of the student.
+        description:
+          Enrollment status of the stint that matched the round window -- 0, 2
+          or 3; other statuses are excluded. The latest-exiting stint wins when
+          two match.
         config:
           meta:
             source_system: PowerSchool
@@ -117,10 +126,12 @@ models:
       - name: expected_row_count
         data_type: int64
         description: >-
-          How many measures the student owes for this round, passed through from
-          the expectation gate that produced the row. On the aimline gate it is
-          scoped to the student's own cohort, since the two cohorts can be
-          expected on different measures.
+          How many measures the student owes for this round -- a count of the
+          expectation gate's live rows for the year, region, grade, season and
+          round, recomputed here rather than read from the gate's own
+          expected_row_count. On the aimline gate it is scoped to the student's
+          own cohort, since the two cohorts can be expected on different
+          measures.
       - name: actual_row_count
         data_type: int64
         description: >-
@@ -131,11 +142,12 @@ models:
       - name: completed_test_round
         data_type: boolean
         description: >-
-          True when actual_row_count reaches expected_row_count. Benchmark rows
-          have three additional fallbacks -- a student holding a composite for
-          the season counts as complete even without every measure. Those
-          fallbacks can only fire on a Benchmark row, since a PM row's
-          admin_season is BOY to MOY or MOY to EOY rather than a single season.
+          True when actual_row_count equals expected_row_count exactly -- a
+          count above expected reads false. Benchmark rows have three additional
+          fallbacks -- a student holding a composite other than No data for the
+          season counts as complete even without every measure. Those fallbacks
+          can only fire on a Benchmark row, since a PM row's admin_season is BOY
+          to MOY or MOY to EOY rather than a single season.
       - name: participation_group
         data_type: string
         description: >-
@@ -159,7 +171,10 @@ models:
           column is the one field that carries all three: a student who sat
           nothing in the round is Not Tested, one who sat some but not all of
           the measures the round expected is Round Incomplete, and one who sat
-          everything is Fully Tested.
+          everything is Fully Tested. Checked in that order. Because
+          completed_test_round requires an exact match, a PM row whose
+          actual_row_count exceeds expected_row_count also lands in Round
+          Incomplete.
 
           Not Tested keys on actual_row_count reaching zero rather than on
           completed_test_round, which cannot tell nothing-sat from
@@ -174,4 +189,4 @@ models:
           expected measure.
       - name: completed_test_round_int
         data_type: int64
-        description: Conditional on completed_test_round.
+        description: completed_test_round as 1/0, for aggregation.

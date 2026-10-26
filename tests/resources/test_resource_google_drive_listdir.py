@@ -1,6 +1,9 @@
 from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
+from googleapiclient import discovery
+from googleapiclient.http import HttpMockSequence
+
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 
 MIN_MODIFIED_TIME = datetime(2026, 3, 1, tzinfo=UTC)
@@ -194,3 +197,26 @@ def test_min_modified_time_query_construction():
         " or modifiedTime > '2026-03-01T00:00:00.000000Z')"
     )
     assert call_kwargs["q"] == expected_q
+
+
+def test_files_list_retries_transient_5xx(monkeypatch):
+    """A Drive 500 is retried instead of failing the sensor tick."""
+    monkeypatch.setattr("googleapiclient.http.time.sleep", lambda _: None)
+
+    http = HttpMockSequence(
+        [
+            ({"status": "500"}, b'{"error": {"message": "Internal Error"}}'),
+            ({"status": "200"}, b'{"files": [{"id": "f1"}]}'),
+        ]
+    )
+    resource = _build_drive_resource()
+    resource._service = discovery.build("drive", "v3", http=http).files()
+
+    files = resource.files_list(
+        corpora="drive",
+        drive_id="fake-drive-id",
+        include_items_from_all_drives=True,
+        supports_all_drives=True,
+    )
+
+    assert files == [{"id": "f1"}]

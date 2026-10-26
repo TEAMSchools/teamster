@@ -31,7 +31,9 @@ select
 
     null as `15 Session Type ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("base_powerschool__course_enrollments") }}
+from {{ ref("int_students__course_enrollments") }}
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
 where
-    cc_academic_year = {{ current_school_year(var("local_timezone")) }}
+    _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
+    and cc_academic_year = {{ current_school_year(var("local_timezone")) }}
     and not is_dropped_section

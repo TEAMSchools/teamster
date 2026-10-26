@@ -5,6 +5,11 @@ models:
       category grade from storedgrades or pgfinalgrades and the best section
       picked per row.
 
+      Both grade sources can hold more than 1 row for the same enrollment and
+      term, so each keeps 1 before the join. Stored grades use the spine's pick
+      (counts toward GPA, same section, latest stored). PG final grades keep
+      the latest update.
+
       Built once a day at local midnight instead of eagerly. Every consumer is
       a daily batch: the DeansList final-grades extract at 01:25, and the
       Tableau gradebook batch plus kipptaf `int_students__category_grades` at

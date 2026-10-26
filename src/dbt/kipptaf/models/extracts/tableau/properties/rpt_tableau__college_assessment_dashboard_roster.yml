@@ -1,9 +1,17 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_roster
     description: >-
-      **Excludes Miami by design.** Same college-testing population as the
-      `rpt_gsheets__college_assessments_*` extracts, which Miami has no cohort
-      for yet. Ratified on #4996.
+      Current high school students graduating this year or later, one row per
+      student per expected administration and score category. Starts from the
+      Expected Assessments tab joined on region, and left joins scores from
+      int_tableau__college_assessment_roster_scores, so an administration with
+      no score still appears with a null score. Adds official lifetime attempt
+      counts, official SAT highlights, and the student's college-readiness
+      course. Excludes out-of-district students.
+
+
+      Miami has no rows on the Expected Assessments tab, so it drops out at that
+      join by design; it has no college-testing cohort.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -12,92 +20,185 @@ models:
               - expected_field_name_score_category
     columns:
       - name: region
+        description: >-
+          Region the student's school belongs to.
         data_type: string
       - name: schoolid
+        description: >-
+          PowerSchool identifier for the student's school.
         data_type: int64
       - name: school
+        description: >-
+          The student's school.
         data_type: string
       - name: student_number
+        description: >-
+          PowerSchool student number.
         data_type: int64
       - name: salesforce_id
+        description: >-
+          Salesforce contact identifier for the student.
         data_type: string
       - name: student_name
+        description: >-
+          Student's full name, last name first.
         data_type: string
       - name: student_first_name
+        description: >-
+          Student's first name.
         data_type: string
       - name: student_last_name
+        description: >-
+          Student's last name.
         data_type: string
       - name: grade_level
+        description: >-
+          Grade the student is enrolled in this academic year.
         data_type: int64
       - name: student_email
+        description: >-
+          Student's network email address.
         data_type: string
       - name: enroll_status
+        description: >-
+          PowerSchool enrollment status code; 0 is currently enrolled.
         data_type: int64
       - name: ktc_cohort
+        description: >-
+          KIPP Through College cohort the student belongs to.
         data_type: int64
       - name: graduation_year
+        description: >-
+          Year the student is expected to graduate high school.
         data_type: int64
       - name: year_in_network
+        description: >-
+          Count of years the student has attended a network school.
         data_type: int64
       - name: iep_status
+        description: >-
+          Whether the student has an IEP.
         data_type: string
       - name: grad_iep_exempt_status_overall
+        description: >-
+          Whether the student is exempt from graduation testing requirements
+          because of an IEP.
         data_type: string
       - name: cumulative_y1_gpa
+        description: >-
+          Weighted cumulative year-one GPA earned to date.
         data_type: float64
       - name: cumulative_y1_gpa_projected
+        description: >-
+          Weighted cumulative year-one GPA projected for the full year.
         data_type: float64
       - name: college_match_gpa
+        description: >-
+          GPA used to match the student to colleges.
         data_type: numeric
       - name: college_match_gpa_bands
+        description: >-
+          Band the college match GPA falls into.
         data_type: string
       - name: expected_test_type
+        description: >-
+          Official or Practice, from the Expected Assessments tab.
         data_type: string
       - name: expected_scope
+        description: >-
+          Test of the expected administration.
         data_type: string
       - name: expected_score_type
+        description: >-
+          Score type of the expected administration.
         data_type: string
       - name: expected_grouping
+        description: >-
+          Total, EBRW, Math, or Growth, derived from the score type.
         data_type: string
       - name: expected_grade_level
+        description: >-
+          Grade the administration is expected in.
         data_type: int64
       - name: expected_admin_season
+        description: >-
+          Season of the administration — Fall, Winter, or Spring.
         data_type: string
       - name: expected_months_included
+        description: >-
+          Months (official) or practice rounds (practice) that belong to the
+          season, comma-separated.
         data_type: string
       - name: expected_field_name
+        description: >-
+          Label for the administration — grade, season, test type, scope, and
+          grouping.
         data_type: string
       - name: expected_score_category
+        description: >-
+          Scale Score, or Score Change on Growth rows.
         data_type: string
       - name: expected_admin_season_order
+        description: >-
+          Position of the season in the tab's single sequence across all grades.
         data_type: int64
       - name: score
+        description: >-
+          The student's score for this administration and score category, from
+          int_tableau__college_assessment_roster_scores. Null when the student
+          has none.
         data_type: numeric
       - name: sat_total_superscore
+        description: >-
+          Best official SAT superscore across all sittings. Repeated on every
+          row for the student.
         data_type: numeric
       - name: sat_ebrw_highest
+        description: >-
+          Highest official SAT EBRW score across all sittings. Repeated on every
+          row for the student.
         data_type: numeric
       - name: sat_math_highest
+        description: >-
+          Highest official SAT Math score across all sittings. Repeated on every
+          row for the student.
         data_type: numeric
       - name: expected_field_name_score_category
+        description: >-
+          expected_field_name and expected_score_category joined, the column the
+          workbook pivots on.
         data_type: string
       - name: psat89_count_lifetime
+        description: >-
+          Lifetime official PSAT 8/9 sittings; 0 when none.
         data_type: int64
       - name: psat10_count_lifetime
+        description: >-
+          Lifetime official PSAT10 sittings; 0 when none.
         data_type: int64
       - name: psatnmsqt_count_lifetime
+        description: >-
+          Lifetime official PSAT NMSQT sittings; 0 when none.
         data_type: int64
       - name: sat_count_lifetime
+        description: >-
+          Lifetime official SAT sittings; 0 when none.
         data_type: int64
       - name: act_count_lifetime
+        description: >-
+          Lifetime official ACT sittings; 0 when none.
         data_type: int64
       - name: ccr_course
         description: >-
           Name of the course standing in for the student's College and Career
-          Readiness (CCR) schedule. Falls back through `ccr_course_source` when
-          the student has no active CCR course.
+          Readiness (CCR) schedule, from int_students__ccr_schedule. Falls back
+          through the tiers ccr_course_source names when the student has no
+          active CCR course.
         data_type: string
       - name: ccr_teacher_name
+        description: >-
+          Teacher of record for ccr_course, last name first. No Data when the
+          student has no active course enrollment.
         data_type: string
       - name: ccr_section
         description: >-

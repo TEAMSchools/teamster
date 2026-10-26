@@ -221,6 +221,6 @@ select
         2
     ) as gpa_semester,
 from gpa_calcs as gc
-left join {{ ref("stg_powerschool__students") }} as s on gc.studentid = s.id
+inner join {{ ref("stg_powerschool__students") }} as s on gc.studentid = s.id
 left join
     {{ ref("stg_powerschool__schools") }} as sch on gc.schoolid = sch.school_number

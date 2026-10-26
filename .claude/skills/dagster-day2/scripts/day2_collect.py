@@ -67,7 +67,10 @@ CATEGORY_RULES: list[tuple[str, list[str]]] = [
     ),
     ("K8s API failure", ["DagsterK8sUnrecoverableAPIError"]),
     ("Backoff limit", ["BackoffLimitExceeded"]),
-    ("Step preempt-hang", ["Exiting to prevent re-running"]),
+    (
+        "Step preempt-hang",
+        ["Exiting to prevent re-running", "completed without a step result"],
+    ),
     (
         "Network/SSH",
         [

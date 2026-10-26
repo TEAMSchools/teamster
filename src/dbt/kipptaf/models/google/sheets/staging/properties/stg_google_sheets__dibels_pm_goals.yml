@@ -15,18 +15,26 @@ models:
       two disagree. And it carries history, unlike the goal-setting model, which
       computes `current_academic_year` only.
 
-      `benchmark_goal` and `benchmark_goal_padded` split what used to be a
-      single column holding the padded figure under the bare name.
-      `benchmark_goal` is now Amplify's published grade-level standard and
+      `benchmark_goal` is Amplify's published grade-level standard and
       `benchmark_goal_padded` is that standard plus academics' 3-word planning
       buffer — the figure every calculation reads and the bar the at-grade-level
-      verdict compares against. Both years already on the sheet were backfilled,
-      so consumers read the padded column directly and need no fallback.
+      verdict compares against. Consumers read the padded column directly.
 
-      `benchmark_goal_padded` carries a `not_null` test for that reason. It is a
-      hand-pasted column, and a paste that omits it would otherwise make every
-      at-grade-level comparison read 0 — `if(score >= null, 1, 0)` returns 0,
-      not null. Failing the build is the intended behaviour.
+      `benchmark_goal_padded` is a hand-pasted column, and a paste that omits it
+      would make every at-grade-level comparison read 0 — `if(score >= null, 1,
+      0)` returns 0, not null. Its `not_null` test fails the build instead.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - admin_season
+              - assessment_grade_int
+              - measure_standard
+              - round_number
+          config:
+            severity: error
     columns:
       - name: benchmark_goal_padded
         data_type: float64

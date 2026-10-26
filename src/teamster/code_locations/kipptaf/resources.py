@@ -7,9 +7,6 @@ from teamster.libraries.google.directory.resources import GoogleDirectoryResourc
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
 from teamster.libraries.level_data.grow.resources import GrowResource
-from teamster.libraries.powerschool.enrollment.resources import (
-    PowerSchoolEnrollmentResource,
-)
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
@@ -49,10 +46,6 @@ LDAP_RESOURCE = LdapResource(
     port=EnvVar("LDAP_PORT"),
     user=EnvVar("LDAP_USER"),
     password=EnvVar("LDAP_PASSWORD"),
-)
-
-POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(
-    api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000
 )
 
 GROW_RESOURCE = GrowResource(

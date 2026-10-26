@@ -30,6 +30,19 @@ with
         from {{ ref("base_powerschool__final_grades") }} as fg
     ),
 
+    focus_posted_grades as (
+        -- grain projection, not dup-masking
+        select distinct
+            _dbt_source_project,
+            student_id,
+            course_period_id,
+            marking_period_id,
+
+            'DT' as superseded_grade_type_token,
+        from {{ ref("int_focus__report_card_grades") }}
+        where grade_type_token is null and course_period_id is not null
+    ),
+
     focus_conformed as (
         select
             g._dbt_source_relation,
@@ -92,6 +105,13 @@ with
         left join
             {{ ref("stg_google_sheets__people__locations") }} as loc
             on fs.school_number = loc.focus_school_id
+        left join
+            focus_posted_grades as pg
+            on g._dbt_source_project = pg._dbt_source_project
+            and g.student_id = pg.student_id
+            and g.course_period_id = pg.course_period_id
+            and g.marking_period_id = pg.marking_period_id
+            and g.grade_type_token = pg.superseded_grade_type_token
         -- Imported course history predates the Focus cutover and overlaps the
         -- frozen PowerSchool archive for the years the archive covers. The
         -- archive branch above already owns those years, so admit only rows at
@@ -99,7 +119,12 @@ with
         -- side. Course history also carries an invariant the schedule join
         -- depends on: every row has a null `course_period_id` (15,278 of
         -- 15,278) and drops out of that inner join anyway.
-        where g.academic_year >= 2026
+        where
+            g.academic_year >= 2026
+            and pg.student_id is null
+            -- E rows are exam grades, not term grades; they collide with the
+            -- posted grade on this model's grain
+            and g.grade_type_token is distinct from 'E'
     )
 
 select *,

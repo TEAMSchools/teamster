@@ -162,6 +162,19 @@ models:
         data_type: int64
       - name: is_suspended_y1_iss_2plus_int
         data_type: int64
+      - name: is_suspended_y1_oss_2plus_days
+        data_type: boolean
+        description:
+          True when the student's out-of-school suspension (OSS) days for the
+          academic year total two or more, summed across OSS penalties entered
+          during the student's enrolled weeks at any school. In-school
+          suspension days do not count, and a penalty with no day count adds
+          zero. Counts days, not incidents, unlike
+          is_suspended_y1_oss_2plus_int. Repeats on every row for the student
+          and year, so it works as a roster filter.
+        config:
+          meta:
+            contains_pii: true
       - name: is_tier3_4
         data_type: boolean
       - name: ssds_period

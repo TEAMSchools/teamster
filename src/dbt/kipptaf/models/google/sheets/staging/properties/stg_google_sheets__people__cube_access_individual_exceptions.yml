@@ -1,0 +1,382 @@
+models:
+  - name: stg_google_sheets__people__cube_access_individual_exceptions
+    description: >-
+      Cube access individual-exception grants, maintained by the data team in
+      Google Sheets. Keyed on google_email, not employee_number, so a grant can
+      reach a contractor who holds a KTAF Google login but has no ADP employment
+      record -- dim_staff_cube_access emits a row for such a grantee off this
+      sheet (see its non_employee_grantees CTE), where the work-assignment spine
+      alone would emit nothing. A grantee may have multiple rows -- each row
+      grants at most one additional location (network/region/school) that is
+      unioned into that person's normal location remit, and/or overrides one or
+      more of the five staff sensitive-field scopes. A row is only live when
+      status = 'active', grant_date has arrived, and expiry_date has not passed,
+      judged against today in the local timezone at the moment Cube reads the
+      mart rather than when this table was built. A null on either date is not
+      live — an access grant with no stated bound denies rather than runs
+      forever, and the not_null tests below report it. dim_staff_cube_access
+      ignores every non-live row as if it didn't exist. At most one live row per
+      grantee may set a remit-override column
+      (test_cube_access_individual_exceptions_single_remit_row) -- those columns
+      describe the person, not a location, so they don't multiply across a
+      person's location-grant rows.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - google_email
+              - additional_location_scope
+              - additional_location_name
+          config:
+            severity: error
+            where: >-
+              status = 'active' and grant_date <= current_date('{{
+              var("local_timezone") }}') and expiry_date >= current_date('{{
+              var("local_timezone") }}')
+      # additional_location_name has to say the same thing as the row's tier,
+      # in all three cases. A real name means the tier is region or school; the
+      # word all means it is network; the word none means the row grants no
+      # location at all. Catches a school name typed onto a network row (which
+      # reads as granting that one school while actually granting every
+      # location), an all left behind on a row that names a real school, and a
+      # remit-only row still claiming a location. The two not-applicable cases
+      # are opposites -- network reaches everything, a remit-only row reaches
+      # nothing -- so one shared sentinel would be wrong on whichever it did not
+      # describe.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              case
+                  when additional_location_scope is null
+                      then additional_location_name = 'none'
+                  when additional_location_scope = 'network'
+                      then additional_location_name = 'all'
+                  else additional_location_name not in ('all', 'none')
+              end
+          config:
+            severity: error
+      # A row grants one location, so when a row reaches both axes -- neither
+      # of them 'none' -- they must name the same tier -- there is a single additional_location_name and it
+      # cannot be a region for staff and a school for students at once. To give
+      # someone different breadth per axis, use two rows.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >-
+              additional_student_location_scope = 'none' or
+              additional_staff_location_scope = 'none' or
+              additional_student_location_scope =
+              additional_staff_location_scope
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >-
+              expiry_date >= grant_date or expiry_date is null or grant_date is
+              null
+          config:
+            severity: warn
+    columns:
+      - name: google_email
+        data_type: string
+        description: >-
+          The grantee's KTAF Google address -- the key this whole sheet is read
+          by, matching dim_staff_cube_access.google_email, which is what Cube
+          looks a viewer up on. Lower-cased and trimmed in the staging model,
+          because Cube's identity read is a case-sensitive match against the JWT
+          email claim. Not unique -- a grantee may have multiple live rows, one
+          per additional location grant. An address with no ADP employment
+          record behind it is expected: that is the contractor case this sheet
+          exists to cover.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          # A grant whose address matches no Google account at all grants
+          # nothing: dim_staff_cube_access's non-employee leg requires a
+          # directory row, so the row resolves to no identity and denies.
+          # Catches the two ways that happens -- a typo, and an account deleted
+          # outright rather than suspended. A suspended or archived account
+          # still HAS a directory row, so it passes here and is excluded in the
+          # mart instead. The directory asset syncs three times a day, so a
+          # newly created contractor account resolves within hours; error
+          # severity per the staging-layer convention.
+          - relationships:
+              arguments:
+                to: ref('stg_google_directory__users')
+                field: lower(primary_email)
+              config:
+                where: >-
+                  status = 'active' and grant_date <= current_date('{{
+                  var("local_timezone") }}') and expiry_date >= current_date('{{
+                  var("local_timezone") }}')
+                severity: error
+      - name: additional_student_location_scope
+        data_type: string
+        description: >-
+          How far this row's location grant reaches for STUDENT data, in the
+          same vocabulary the role sheet uses for student_location_scope --
+          network (every location, so additional_location_name is not needed),
+          region (additional_location_name must match a
+          dim_regions.legal_entity), or school (additional_location_name must
+          match a dim_locations.name). Write none to grant no student access. A
+          blank cell is not a synonym for none -- the not_null test below is
+          error severity, so an unfilled cell fails the build rather than
+          reading as a deliberate no. There is no "all" value -- network is the
+          word for every location, and any narrower set is one row per region or
+          school.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: additional_staff_location_scope
+        data_type: string
+        description: >-
+          How far this row's location grant reaches for STAFF data, in the same
+          vocabulary the role sheet uses for staff_location_scope, and with the
+          same values as additional_student_location_scope above. Write none to
+          grant no staff access. Independent of the student axis, so a row can
+          widen one without the other -- but when a row sets both they must name
+          the same tier, since the row carries a single
+          additional_location_name.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: additional_location_scope
+        data_type: string
+        description: >-
+          The row's single location tier, derived in the staging model as the
+          first non-null of the student and staff axis scopes. Not a sheet
+          column -- it exists so the grain test, the two foreign-key checks
+          below, and dim_staff_cube_access can all read one tier instead of
+          re-deriving it. NULL when the row grants no location at all (a
+          remit-override-only row). NULL here is the one legitimate empty in
+          this model -- it is derived, not typed, so no form field maps to it.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: additional_location_name
+        data_type: string
+        description: >-
+          The specific region or school this row grants, matched against
+          dim_regions.legal_entity (when additional_location_scope = region) or
+          dim_locations.name (when additional_location_scope = school). Required
+          whenever additional_location_scope is region or school. Otherwise it
+          carries the word matching the row's breadth: all when the scope is
+          network, since that grant does reach every location, and none on a
+          remit-override-only row, which reaches no location at all. Those two
+          cases are opposites, so one shared not-applicable value would be wrong
+          on whichever of them it did not describe. Never blank, so a Google
+          Form can require it.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('dim_regions')
+                field: legal_entity
+              config:
+                where: >-
+                  additional_location_scope = 'region' and status = 'active' and
+                  grant_date <= current_date('{{ var("local_timezone") }}') and
+                  expiry_date >= current_date('{{ var("local_timezone") }}')
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: "`name`"
+              config:
+                where: >-
+                  additional_location_scope = 'school' and status = 'active' and
+                  grant_date <= current_date('{{ var("local_timezone") }}') and
+                  expiry_date >= current_date('{{ var("local_timezone") }}')
+                severity: error
+      - name: staff_department_scope
+        data_type: string
+        description: >-
+          Department remit bounding the staff sensitive fields. Required, and
+          never blank -- write inherit to leave the person's department or role
+          setting alone, or none to REVOKE it below that setting. At most one
+          live row per grantee may set this to anything other than inherit.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [inherit, all, own_group, none]
+              config:
+                severity: error
+      - name: staff_pii_scope
+        data_type: string
+        description: >-
+          Staff PII field visibility (per-field sensitive scope enum). Required,
+          and never blank -- write inherit to leave the person's department or
+          role setting alone, or none to REVOKE it below that setting. The only
+          one of the five remit columns that gates a live view today. At most
+          one live row per grantee may set this to anything other than inherit.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - inherit
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
+      - name: staff_compensation_scope
+        data_type: string
+        description: >-
+          Staff compensation field visibility (same vocabulary and the same
+          required inherit/none distinction as staff_pii_scope). No view
+          consumes this yet, so it grants nothing today.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - inherit
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
+      - name: staff_observations_scope
+        data_type: string
+        description: >-
+          Staff observation field visibility (same vocabulary and the same
+          required inherit/none distinction as staff_pii_scope). No view
+          consumes this yet, so it grants nothing today.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - inherit
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
+      - name: staff_benefits_scope
+        data_type: string
+        description: >-
+          Staff benefits field visibility (same vocabulary and the same required
+          inherit/none distinction as staff_pii_scope). No view consumes this
+          yet, so it grants nothing today.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - inherit
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
+      - name: status
+        data_type: string
+        description: >-
+          active/expired/revoked. Only active rows (also gated by grant_date and
+          expiry_date) are read by dim_staff_cube_access. Set to revoked to end
+          a grant early while keeping the row for audit history, rather than
+          deleting it.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [active, expired, revoked]
+              config:
+                severity: error
+      - name: business_justification
+        data_type: string
+        description: >-
+          Free-text business reason for this row's grant, for sheet-level
+          auditing only. Not read by dim_staff_cube_access.
+        config:
+          meta:
+            contains_pii: true
+      - name: requested_by
+        data_type: string
+        description: >-
+          ADP employee number of the staff member who requested this grant.
+          Audit only -- not read by dim_staff_cube_access.
+        config:
+          meta:
+            contains_pii: true
+      - name: approved_by
+        data_type: string
+        description: >-
+          ADP employee number of the staff member who approved this grant. Audit
+          only -- not read by dim_staff_cube_access.
+        config:
+          meta:
+            contains_pii: true
+      - name: grant_date
+        data_type: date
+        description: >-
+          The date this row's grant takes effect. Required -- write the real
+          start date, or today's date for "right away". A future grant_date
+          excludes the row from dim_staff_cube_access until that date arrives.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: expiry_date
+        data_type: date
+        description: >-
+          The date this row's grant stops applying. Required -- write 9999-12-31
+          for a grant that never expires, matching the open-ended sentinel
+          dim_work_assignment_status already uses. A past expiry_date excludes
+          the row from dim_staff_cube_access regardless of status. Prefer a real
+          date: exceptional access that time-boxes itself cannot be forgotten.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: notes
+        data_type: string
+        description: >-
+          Free-text reason for the exception, for sheet-level auditing only. Not
+          read by dim_staff_cube_access.
+        config:
+          meta:
+            contains_pii: true

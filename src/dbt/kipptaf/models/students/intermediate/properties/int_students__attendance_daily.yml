@@ -58,6 +58,22 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: attendance_category
+        description: >-
+          Coarse attendance category from the is_* flags, in priority order —
+          Out-of-School Suspension, In-School Suspension, Absent, Tardy,
+          Present. Null when is_absent is null, meaning unknown, never Present.
+          The only place the ladder is defined; downstream models read this
+          column rather than recompute it.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Out-of-School Suspension
+                  - In-School Suspension
+                  - Absent
+                  - Tardy
+                  - Present
       - name: _dbt_source_relation
         description: >-
           Originating source relation for the union branch (PowerSchool
@@ -167,8 +183,10 @@ models:
           rows. See #4927.
       - name: n_absent_running_90
         description: >-
-          Rolling count of is_absent over the trailing 90 calendar days,
-          partitioned by student and academic year, ordered by calendardate.
+          Rolling count of is_absent over the student's last 91 rows of this
+          model in the academic year -- this row and the 90 before it, ordered
+          by calendardate. Rows are days on the attendance record, not calendar
+          days, and a row with no recorded attendance still takes a place.
       - name: pct_absent_running_student_year
         description: >-
           Running average of is_absent for the student-year to date, ordered by

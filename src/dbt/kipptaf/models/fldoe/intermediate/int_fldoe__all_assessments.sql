@@ -71,6 +71,8 @@ select
     'Actual' as results_type,
     'KTAF FL' as district_state,
 
+    cast(fl.assessment_grade as int) as grade_level,
+
     case
         when fl.test_code = 'ALG01' and fl.assessment_grade = '8'
         then concat(fl.test_code, '_', 'MS')

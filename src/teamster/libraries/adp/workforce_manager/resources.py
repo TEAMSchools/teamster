@@ -1,17 +1,17 @@
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Response, Session, exceptions
 from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 
 class AdpWorkforceManagerResource(ConfigurableResource):
     subdomain: str
-    app_key: str
-    client_id: str
-    client_secret: str
+    app_key: str = Field(repr=False)
+    client_id: str = Field(repr=False)
+    client_secret: str = Field(repr=False)
     username: str
-    password: str
+    password: str = Field(repr=False)
 
     _session: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr()

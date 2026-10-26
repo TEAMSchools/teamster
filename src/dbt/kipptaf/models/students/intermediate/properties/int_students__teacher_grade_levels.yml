@@ -22,6 +22,7 @@ models:
               - teachernumber
               - academic_year
               - grade_level
+              - _dbt_source_project
     columns:
       - name: teachernumber
         description: >-
@@ -66,8 +67,9 @@ models:
       - name: grade_level_rank
         description: >-
           Rank of this grade level among all grades this teacher taught in this
-          academic year, ordered by grade_level_ratio descending. 1 is the
-          teacher's primary grade level for the year.
+          academic year, ordered by grade_level_ratio descending. When 2 grades
+          share the top ratio, the lower grade ranks first. 1 is the teacher's
+          primary grade level for the year.
       - name: _dbt_source_relation
         description: >-
           Source relation, passed through from the PowerSchool union view. Null

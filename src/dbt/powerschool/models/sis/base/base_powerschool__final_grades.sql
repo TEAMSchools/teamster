@@ -52,6 +52,9 @@ with
             on enr.cc_schoolid = tb.schoolid
             and enr.cc_abs_termid = tb.termid
             and tb.storecode_type in ('Q', 'E')
+            -- cc_dateleft is the first day not enrolled: no row for a term
+            -- that starts after the student left the section
+            and enr.cc_dateleft > tb.date1
         where
             enr.cc_academic_year = {{ var("current_academic_year") }}
             and not enr.is_dropped_section

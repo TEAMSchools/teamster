@@ -1,17 +1,44 @@
 models:
   - name: stg_google_sheets__crdc__sced_code_crosswalk
+    description: >-
+      Manually maintained crosswalk from SCED course codes to CRDC course,
+      subject, and AP groups. `rpt_tableau__crdc_roster` joins it on the SCED
+      code built from a course's NCES subject area and course ID. Reference data
+      with no student information.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sced_code
+          config:
+            severity: error
     columns:
       - name: sced_code
         data_type: string
+        description: >-
+          SCED course code, the NCES subject area followed by the NCES course
+          ID.
       - name: sced_course_name
         data_type: string
+        description: SCED course name.
       - name: crdc_course_group
         data_type: string
+        description: CRDC course group the code belongs to.
       - name: crdc_subject_group
         data_type: string
+        description: >-
+          CRDC subject group, for example `Algebra I`, `Biology`, or `Computer
+          Science`. Drives which CRDC course section a course counts toward.
       - name: crdc_ap_group
         data_type: string
+        description: >-
+          CRDC AP subject group. Blank for courses that are not AP or that CRDC
+          does not count as AP.
       - name: ap_tag
         data_type: boolean
+        description: True when the crosswalk marks the code as an AP course.
       - name: duplicate
         data_type: numeric
+        description: >-
+          Helper column from the sheet, apparently marking repeated SCED codes.
+          Not read by the roster model.

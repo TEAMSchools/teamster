@@ -1,0 +1,34 @@
+# Eval family 4: assessment traps. Each prompt names the trap it must avoid
+# (traps.TRAPS). No real names or student values: this file is committed and
+# sent to a model provider on every run.
+- id: f4_iready_grade
+  family: 4
+  trap: grade_filter_on_vendor
+  prompt:
+    What share of 3rd graders were at or above grade level on the i-Ready math
+    BOY diagnostic in 2025-26?
+- id: f4_star_no_level
+  family: 4
+  trap: null_via_equals
+  prompt: How many STAR scores in 2025-26 have no proficiency level?
+- id: f4_qa3_math
+  family: 4
+  trap: module_code_without_subject
+  prompt: What was the QA3 math proficiency rate in Newark in 2025-26?
+- id: f4_vendor_diagnostics
+  family: 4
+  trap: internal_flag_for_source
+  prompt: Compare proficiency across our vendor diagnostics in 2025-26.
+- id: f4_all_checkpoints
+  family: 4
+  trap: formative_alone
+  prompt:
+    What's our proficiency rate across all internal checkpoints in 2025-26?
+- id: f4_most_recent
+  family: 4
+  trap: most_recent_not_named_round
+  prompt: How did students do on the most recent i-Ready reading diagnostic?
+- id: f4_paterson_iready
+  family: 4
+  trap: paterson_zero_as_failure
+  prompt: Show i-Ready math proficiency for Paterson schools in 2025-26.

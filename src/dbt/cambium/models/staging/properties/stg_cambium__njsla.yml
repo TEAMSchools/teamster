@@ -1,11 +1,14 @@
 models:
   - name: stg_cambium__njsla
     description: >-
-      Cambium TIDE NJSLA district summative record file, one row per student per
-      subject test, filtered to summative, attempted records. Carries English
-      Language Arts, Mathematics and Science in one file. Columns keep Cambium's
-      names; kipptaf int_pearson__all_assessments maps them into the shared NJ-
-      assessment shape.
+      Cambium TIDE NJSLA and end-of-course (EOC) district summative record
+      files, one row per student per test, filtered to summative, attempted
+      records. The NJSLA file carries English Language Arts, Mathematics and
+      Science; the EOC file, with the same header, carries Algebra I, Algebra II
+      and Geometry. A re-issued NJSLA file can bundle the EOC tests too, so a
+      test that arrives in both files keeps the copy from the most recently
+      modified file. Columns keep Cambium's names; int_cambium__all_assessments
+      maps them into the shared NJ-assessment shape.
     columns:
       # Columns carrying per-column data_tests sort to the top. Every test sets
       # severity explicitly.
@@ -27,8 +30,9 @@ models:
         description: >-
           Date of the earliest online unit start across units 1 through 4,
           coalesced to the parsed assessment session start. The coalesce is
-          required, not defensive: unit timestamps are populated for ELA only,
-          so unit-only derivation nulls every Mathematics row.
+          required, not defensive: unit timestamps are populated for English
+          Language Arts and Science but not Mathematics or the end-of-course
+          tests, so unit-only derivation nulls every one of those rows.
         data_tests:
           - not_null:
               config:
@@ -54,9 +58,11 @@ models:
         data_type: string
         quote: true
         description: >-
-          'English Language Arts', 'Mathematics' or 'Science'. kipptaf branches
-          every subject-dependent column on it, so an unrecognized subject fails
-          here rather than silently landing on the ELA branch.
+          'English Language Arts', 'Mathematics' or 'Science' from the NJSLA
+          file; 'Algebra I', 'Algebra II' or 'Geometry' from the end-of-course
+          file. kipptaf branches every subject-dependent column on it, so an
+          unrecognized subject fails here rather than silently landing on the
+          ELA branch.
         data_tests:
           - not_null:
               config:
@@ -67,6 +73,9 @@ models:
                   - English Language Arts
                   - Mathematics
                   - Science
+                  - Algebra I
+                  - Algebra II
+                  - Geometry
               config:
                 severity: error
       - name: academic_year
@@ -78,70 +87,129 @@ models:
         description: Vendor-reported school year, e.g. '2025-2026'.
       - name: assessment_grade
         data_type: string
-        description: The test design level, e.g. 'Grade 5'.
+        description: >-
+          The test design level, e.g. 'Grade 5'. End-of-course rows carry a
+          placeholder 'Grade 11'; the forms have no grade, so use
+          grade_level_when_assessed.
       - name: grade_level_when_assessed
         data_type: int64
         description: The student's grade at the time of testing.
+        config:
+          meta:
+            contains_pii: true
       - name: test_code
         data_type: string
         description: >-
-          Cambium test code: ELA03 through ELA09, MAT03 through MAT08, and SC05,
-          SC08, SC11 for Science.
+          Cambium test code: ELA03 through ELA09, MAT03 through MAT08, SC05,
+          SC08, SC11 for Science, and ALG01, ALG02, GEO01 for end-of-course.
       - name: test_status
         data_type: string
         description: >-
           Cambium test lifecycle status, e.g. 'completed'. Not filtered on.
+        config:
+          meta:
+            contains_pii: true
       - name: test_performance_level
         data_type: numeric
         description: >-
           1 through 5 for English Language Arts and Mathematics, 1 through 4 for
           Science.
+        config:
+          meta:
+            contains_pii: true
       - name: test_scale_score
         data_type: numeric
         description: Scale score.
+        config:
+          meta:
+            contains_pii: true
       - name: test_score_complete
         data_type: numeric
         description: >-
           Entirely NULL from Cambium, where Pearson set it to 1 on every
           filtered row. Deliberately not synthesized.
+        config:
+          meta:
+            contains_pii: true
       - name: state_student_identifier
         data_type: int64
         description: NJ SMART state student identifier (10 digits).
+        config:
+          meta:
+            contains_pii: true
       - name: local_student_identifier
         data_type: int64
         description: >-
           PowerSchool student_number. Null for a small number of students each
-          administration; patched in kipptaf from the student crosswalk sheet.
+          administration. kipptaf int_assessments__state_nj_scores overrides it
+          from the student crosswalk sheet where the sheet lists this row's
+          student_test_uuid.
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
         description: Student first name as reported by Cambium.
+        config:
+          meta:
+            contains_pii: true
       - name: last_or_surname
         data_type: string
         description: Student surname as reported by Cambium.
+        config:
+          meta:
+            contains_pii: true
       - name: student_with_disabilities
         data_type: string
         description: N, IEP, 504, or B (both IEP and 504).
+        config:
+          meta:
+            contains_pii: true
       - name: multilingual_learner
         data_type: string
         description: Y/N multilingual learner flag.
+        config:
+          meta:
+            contains_pii: true
       - name: hispanic_or_latino_ethnicity
         data_type: string
         description: Y/N federal ethnicity flag.
+        config:
+          meta:
+            contains_pii: true
       - name: american_indian_or_alaska_native
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true
       - name: asian
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true
       - name: black_or_african_american
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true
       - name: native_hawaiian_or_other_pacific_islander
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true
       - name: two_or_more_races
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true
       - name: white
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true

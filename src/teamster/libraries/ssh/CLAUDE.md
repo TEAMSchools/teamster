@@ -4,7 +4,10 @@ Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
 `dagster-ssh`'s `SSHResource` with three extra capabilities:
 
 - `listdir_attr_r()` — recursive SFTP directory listing returning
-  `(SFTPAttributes, path)` tuples
+  `(SFTPAttributes, path)` tuples. Skips (does not raise on) a listing entry
+  that isn't a single, non-traversing path component — see
+  `_is_safe_listing_filename`. Regression:
+  `tests/resources/test_resource_ssh_listdir.py`.
 - `listdir_attr_r_or_skip()` — connect + `listdir_attr_r` with failure triage;
   **the entry point every SFTP sensor should use**
 - `open_ssh_tunnel()` — in-process paramiko local port forward, used by the dlt
@@ -36,26 +39,21 @@ if isinstance(files, SkipReason):
 
 ## Key Fields Added
 
-| Field                | Type          | Purpose                                                                                                                                                                                                             |
-| -------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tunnel_remote_host` | `str \| None` | Remote bind host for local port forwarding                                                                                                                                                                          |
-| `test`               | `bool`        | Unused by any method on this class since the sshpass tunnel (its only reader) was retired in #4442; kept because other resource construction paths (e.g. `tests/resources/test_resource_ssh_rekey.py`) still set it |
-| `enable_legacy_rsa`  | `bool`        | Re-enable paramiko's dropped `ssh-rsa` host-key algorithm                                                                                                                                                           |
+| Field                | Type          | Purpose                                                                                                                                             |
+| -------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tunnel_remote_host` | `str \| None` | Remote bind host for local port forwarding                                                                                                          |
+| `test`               | `bool`        | Unused by any method on this class; kept because other resource construction paths (e.g. `tests/resources/test_resource_ssh_rekey.py`) still set it |
+| `enable_legacy_rsa`  | `bool`        | Re-enable paramiko's dropped `ssh-rsa` host-key algorithm                                                                                           |
 
 ## Notes
 
 - `SFTPAttributes.st_mtime` and `st_mode` are `int | None` in paramiko's type
   stubs — wrap in `check.not_none()` when comparing
-- `open_ssh_tunnel()` is the in-process paramiko forward used by the dlt
-  PowerSchool path (password from resource config / `PS_SSH_PASSWORD`). Renamed
-  from `open_ssh_tunnel_paramiko` in #4442; the sshpass subprocess tunnel it
-  replaced is retired. The archived odbc library's `open_ssh_tunnel()`
-  references (comments/docstrings) predate the rename and describe the removed
-  sshpass semantics — that code is dead and was left as-is.
+- The archived odbc library's `open_ssh_tunnel()` comments and docstrings
+  describe the removed sshpass semantics, not the current paramiko tunnel. That
+  code is dead.
 - The PowerSchool SSH password is passed via `EnvVar("PS_SSH_PASSWORD")` in
-  `get_powerschool_ssh_resource()` (`core/resources.py`) — the retired sshpass
-  tunnel's secret-file-vs-`password`-field branch (gated on `test`) no longer
-  exists
+  `get_powerschool_ssh_resource()` (`core/resources.py`).
 - paramiko 5.0 disabled `ssh-rsa` at three independent layers, and ALL three
   must be temporarily re-enabled for a connect against a legacy-only server
   (e.g. GlobalSCAPE EFT 8.1) to succeed:

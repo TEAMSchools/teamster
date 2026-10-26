@@ -110,9 +110,9 @@ unit_tests:
       two schools with neither marked: the newer stint wins on
       enrollment_created_at while carrying the LOWER id, so a pass only if the
       ordering reads the timestamp rather than the id. Student 3 covers the
-      primary leg: two schools with the SECOND one marked and created later, so
-      recency alone would keep the second school and only reading
-      is_second_school first keeps the home campus.
+      second-school filter: two schools with the SECOND one marked and created
+      later, so recency alone would keep the second school and only dropping the
+      marked row keeps the home campus.
     given:
       - input: ref('int_focus__students')
         format: sql
@@ -208,7 +208,9 @@ unit_tests:
       2026-08-14, the day stint 42 starts, the way Focus dates a transfer: 41
       trims to 2026-08-13. Stint 42 is the last and stays open to June 30. A
       second student with one open stint proves a stint with no successor is
-      untouched.
+      untouched. A third student holds an open primary stint 100 and a
+      second-school stint 101 that starts later; 101 is not a transfer, so it
+      drops out and 100 stays open to June 30.
     given:
       - input: ref('int_focus__students')
         format: sql
@@ -220,6 +222,9 @@ unit_tests:
             cast(null as date) as dob
           union all
           select 5, 5, 'E', 'Five', cast(null as string), cast(null as string),
+            cast(null as date)
+          union all
+          select 10, 10, 'J', 'Ten', cast(null as string), cast(null as string),
             cast(null as date)
       - input: ref('int_focus__student_enrollment')
         format: sql
@@ -254,6 +259,16 @@ unit_tests:
             cast(null as int64), cast(null as int64),
             date '2026-08-10', cast(null as date), cast(null as string),
             timestamp '2026-07-01 00:00:00'
+          union all
+          select 100, 10, 2026, 100, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 101, 10, 2026, 200, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-09-04', cast(null as date), 'Y',
+            timestamp '2026-09-04 00:00:00'
           )
       # empty: left-joined, contributes nothing to the trim under test
       - input: ref('int_focus__schools')
@@ -285,6 +300,134 @@ unit_tests:
           student_enrollment_id: 50
           startdate: 2026-08-10
           exitdate: 2027-06-30
+        - student_number: 10
+          student_enrollment_id: 100
+          startdate: 2026-08-12
+          exitdate: 2027-06-30
+
+  - name: test_int_focus__student_enrollment_roster_enroll_status_is_current
+    model: int_focus__student_enrollment_roster
+    description: >-
+      Every stint carries the student's current status, read from the most
+      recent stint, the way PowerSchool stamps one student-level value on every
+      year. Student 6 closed AY2025 with a routine year-end W01 and is enrolled
+      in AY2026, so both years read 0. Student 7 closed AY2025 the same way then
+      withdrew in AY2026 with W3A, so both years read 2. Student 8 graduated in
+      AY2025 with W06 after a routine AY2024 close, so both years read 3.
+      Student 9 moved campuses within AY2026, closing the first stint with W02
+      and holding the second open, so both stints read 0; the later exitdate
+      decides which same-year stint is most recent.
+    given:
+      - input: ref('int_focus__students')
+        format: sql
+        rows: |
+          select 6 as student_id, 6 as student_number, 'F' as first_name,
+            'Six' as last_name,
+            cast(null as string) as florida_education_identifier,
+            cast(null as string) as student_e_mail_address,
+            cast(null as date) as dob
+          union all
+          select 7, 7, 'G', 'Seven', cast(null as string), cast(null as string),
+            cast(null as date)
+          union all
+          select 8, 8, 'H', 'Eight', cast(null as string), cast(null as string),
+            cast(null as date)
+          union all
+          select 9, 9, 'I', 'Nine', cast(null as string), cast(null as string),
+            cast(null as date)
+      - input: ref('int_focus__student_enrollment')
+        format: sql
+        rows: |
+          select
+            *,
+            cast(null as string) as prior_district_label,
+            cast(null as string) as prior_state_label,
+            cast(null as string) as prior_country_label,
+            cast(null as string) as educational_choice_label,
+            cast(null as string) as student_offender_transfer_label,
+          from (
+          select 60 as id, 6 as student_id, 2025 as syear,
+            100 as school_id, cast(null as int64) as grade_id,
+            cast(null as int64) as enrollment_code,
+            1 as drop_code,
+            date '2025-08-12' as start_date, date '2026-06-04' as end_date,
+            cast(null as string) as second_school,
+            timestamp '2025-07-01 00:00:00' as created_at
+          union all
+          select 61, 6, 2026, 100, cast(null as int64), cast(null as int64),
+            cast(null as int64), date '2026-08-12', cast(null as date),
+            cast(null as string), timestamp '2026-07-01 00:00:00'
+          union all
+          select 70, 7, 2025, 100, cast(null as int64), cast(null as int64),
+            1, date '2025-08-12', date '2026-06-04', cast(null as string),
+            timestamp '2025-07-01 00:00:00'
+          union all
+          select 71, 7, 2026, 100, cast(null as int64), cast(null as int64),
+            2, date '2026-08-12', date '2026-09-15', cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 80, 8, 2024, 300, cast(null as int64), cast(null as int64),
+            1, date '2024-08-12', date '2025-06-04', cast(null as string),
+            timestamp '2024-07-01 00:00:00'
+          union all
+          select 81, 8, 2025, 300, cast(null as int64), cast(null as int64),
+            3, date '2025-08-12', date '2026-06-04', cast(null as string),
+            timestamp '2025-07-01 00:00:00'
+          union all
+          select 90, 9, 2026, 100, cast(null as int64), cast(null as int64),
+            4, date '2026-08-12', date '2026-09-01', cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 91, 9, 2026, 200, cast(null as int64), cast(null as int64),
+            cast(null as int64), date '2026-09-02', cast(null as date),
+            cast(null as string), timestamp '2026-09-02 00:00:00'
+          )
+      # empty: left-joined, contributes nothing to the status under test
+      - input: ref('int_focus__schools')
+        rows: []
+      # empty: left-joined, contributes nothing to the status under test
+      - input: ref('stg_focus__school_gradelevels')
+        rows: []
+      - input: ref('stg_focus__student_enrollment_codes')
+        format: sql
+        rows: |
+          select 1 as id, 'W01' as short_name,
+            cast(null as string) as grad_type
+          union all
+          select 2, 'W3A', 'transfer'
+          union all
+          select 3, 'W06', 'graduated'
+          union all
+          select 4, 'W02', cast(null as string)
+      # empty: left-joined, contributes nothing to the status under test
+      - input: ref('int_focus__school_year_first_day')
+        rows: []
+    expect:
+      rows:
+        - student_enrollment_id: 60
+          exitcode: W01
+          enroll_status: 0
+        - student_enrollment_id: 61
+          exitcode: null
+          enroll_status: 0
+        - student_enrollment_id: 70
+          exitcode: W01
+          enroll_status: 2
+        - student_enrollment_id: 71
+          exitcode: W3A
+          enroll_status: 2
+        - student_enrollment_id: 80
+          exitcode: W01
+          enroll_status: 3
+        - student_enrollment_id: 81
+          exitcode: W06
+          enroll_status: 3
+        - student_enrollment_id: 90
+          exitcode: W02
+          enroll_status: 0
+        - student_enrollment_id: 91
+          exitcode: null
+          enroll_status: 0
 
   - name: test_int_focus__attendance_daily_code_mapping_and_scaffold
     model: int_focus__attendance_daily
@@ -459,7 +602,7 @@ unit_tests:
             cast(null as string) as exclude_from_fte,
             cast(null as string) as pmrn
           union all
-          select 2, 2026, 100, 10, 20, 30, 501, 'QTR', cast(null as string),
+          select 2, 2026, 100, 11, 20, 30, 501, 'QTR', cast(null as string),
             cast(null as string), cast(null as string), cast(null as date),
             cast(null as date), cast(null as string), cast(null as string),
             cast(null as string), cast(null as string), cast(null as string),
@@ -503,6 +646,9 @@ unit_tests:
             cast(null as numeric) as credit_hours,
             cast(null as numeric) as course_hours,
             cast(null as string) as homeroom
+      # empty: left-joined, no student here has an enrollment end
+      - input: ref('stg_focus__student_enrollment')
+        rows: []
     expect:
       rows:
         - student_schedule_id: 1
@@ -515,6 +661,396 @@ unit_tests:
           marking_period_id: 501
           marking_period_type: quarter
           marking_period_start_date: 2026-08-10
+
+  - name: test_int_focus__schedule_one_stint_per_course_period
+    model: int_focus__schedule
+    description: >-
+      A drop and re-add leaves several schedule rows for one student and course
+      period. Student 10 has a closed stint (1) and the open re-add (2); the
+      open one wins. Student 11 has only closed term stints (3, 4); the latest
+      schedule id wins, so the pick is stable across builds. Student 12 has a
+      closed full-year stint (5) and a newer closed term stint (6); full-year
+      wins before schedule id is considered.
+    given:
+      - input: ref('stg_focus__schedule')
+        format: sql
+        rows: |
+          select 1 as id, 2026 as syear, 100 as school_id, 10 as student_id,
+            20 as course_id, 30 as course_period_id, 501 as marking_period_id,
+            'QTR' as mp, cast(null as string) as course_weight,
+            cast(null as string) as days,
+            cast(null as string) as rotation_days,
+            date '2026-08-10' as start_date, date '2026-09-01' as end_date,
+            cast(null as string) as fefp_number,
+            cast(null as string) as dual_enrollment_indicator,
+            cast(null as string) as class_minutes_weekly,
+            cast(null as string) as reading_intervention_component,
+            cast(null as string) as basic_skills_exam,
+            cast(null as string) as location_of_student,
+            cast(null as string) as eoc_exam_term,
+            cast(null as string) as exempt_from_total_clock_hours,
+            cast(null as string) as exclude_from_fte,
+            cast(null as string) as pmrn
+          union all
+          select 2, 2026, 100, 10, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-09-15',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 3, 2026, 100, 11, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-10',
+            date '2026-08-10', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 4, 2026, 100, 11, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-09-01', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 5, 2026, 100, 12, 20, 30, 0, 'FY', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-10',
+            date '2026-08-20', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 6, 2026, 100, 12, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-21',
+            date '2026-09-01', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+      - input: ref('stg_focus__marking_periods')
+        format: sql
+        rows: |
+          select 501 as marking_period_id, 2026 as syear, 100 as school_id,
+            'Quarter 1' as title, 'Q1' as short_name, 'quarter' as type,
+            date '2026-08-10' as start_date, date '2026-10-16' as end_date
+      - input: ref('stg_focus__course_periods')
+        format: sql
+        rows: |
+          select 30 as course_period_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as string) as custom_title,
+            cast(null as int64) as teacher_id, cast(null as string) as room,
+            cast(null as int64) as period_id,
+            cast(null as int64) as calendar_id,
+            cast(null as int64) as team_id,
+            cast(null as int64) as grade_scale_id,
+            cast(null as string) as credits,
+            cast(null as string) as does_attendance,
+            cast(null as string) as does_grades,
+            cast(null as string) as does_gpa
+      - input: ref('stg_focus__courses')
+        format: sql
+        rows: |
+          select 20 as course_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as int64) as subject_id,
+            cast(null as int64) as grad_subject_id,
+            cast(null as string) as grade_level,
+            cast(null as numeric) as credit_hours,
+            cast(null as numeric) as course_hours,
+            cast(null as string) as homeroom
+      # empty: left-joined, no student here has an enrollment end
+      - input: ref('stg_focus__student_enrollment')
+        rows: []
+    expect:
+      rows:
+        - student_schedule_id: 2
+          student_id: 10
+        - student_schedule_id: 4
+          student_id: 11
+        - student_schedule_id: 5
+          student_id: 12
+
+  - name: test_int_focus__schedule_ends_seats_at_withdrawal
+    model: int_focus__schedule
+    description: >-
+      Focus leaves a withdrawn student's seats open. Student 20 left on
+      2026-10-16 — open seat 11 ends that day, seat 12 keeps its earlier drop
+      date, seat 14 starts on the withdrawal day and is kept, and seat 13 starts
+      after it and is removed. Student 21 is still enrolled, and student 22
+      withdrew and came back, so neither is clamped. Student 23 has no
+      enrollment at the seat's school and keeps the term end. Student 24 has a
+      closed stint (18) and a re-add after withdrawing (19) in one course
+      period; the re-add is removed before the stint pick, so 18 survives.
+      Student 25's seat matches no marking period, so it still ends at the
+      withdrawal rather than going null. is_dropped is true only for a seat
+      closed before the withdrawal (12, 18, and 23, which closed before student
+      21's enrollment began), or while the student was still enrolled (24, after
+      student 22 re-enrolled, and 25, whose student 26 holds an open stint that
+      covers a shorter stint's end). Seat 22 closes on student 20's withdrawal
+      day and seat 21 on student 22's first withdrawal, before the
+      re-enrollment, so both closed with the withdrawal and are not drops.
+    given:
+      - input: ref('stg_focus__schedule')
+        format: sql
+        rows: |
+          select 11 as id, 2026 as syear, 100 as school_id, 20 as student_id,
+            20 as course_id, 30 as course_period_id, 502 as marking_period_id,
+            'SEM' as mp, cast(null as string) as course_weight,
+            cast(null as string) as days,
+            cast(null as string) as rotation_days,
+            date '2026-08-12' as start_date, cast(null as date) as end_date,
+            cast(null as string) as fefp_number,
+            cast(null as string) as dual_enrollment_indicator,
+            cast(null as string) as class_minutes_weekly,
+            cast(null as string) as reading_intervention_component,
+            cast(null as string) as basic_skills_exam,
+            cast(null as string) as location_of_student,
+            cast(null as string) as eoc_exam_term,
+            cast(null as string) as exempt_from_total_clock_hours,
+            cast(null as string) as exclude_from_fte,
+            cast(null as string) as pmrn
+          union all
+          select 12, 2026, 100, 20, 20, 31, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-09-29', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 13, 2026, 100, 20, 20, 32, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-10-20',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 14, 2026, 100, 20, 20, 33, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-10-16',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 15, 2026, 100, 21, 20, 30, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 16, 2026, 100, 22, 20, 30, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 17, 2026, 100, 23, 20, 30, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 18, 2026, 100, 24, 20, 34, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-09-29', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 19, 2026, 100, 24, 20, 34, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-10-20',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 20, 2026, 100, 25, 20, 35, 999, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 21, 2026, 100, 22, 20, 36, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-09-01', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 22, 2026, 100, 20, 20, 37, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-10-16', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 23, 2026, 100, 21, 20, 38, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-08-12', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 24, 2026, 100, 22, 20, 39, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-09-15',
+            date '2026-10-01', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select 25, 2026, 100, 26, 20, 40, 502, 'SEM', cast(null as string),
+            cast(null as string), cast(null as string), date '2026-08-12',
+            date '2026-10-20', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+      - input: ref('stg_focus__marking_periods')
+        format: sql
+        rows: |
+          select 502 as marking_period_id, 2026 as syear, 100 as school_id,
+            'Semester 1' as title, 'S1' as short_name, 'semester' as type,
+            date '2026-08-12' as start_date, date '2027-01-15' as end_date
+      - input: ref('stg_focus__course_periods')
+        format: sql
+        rows: |
+          select course_period_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as string) as custom_title,
+            cast(null as int64) as teacher_id, cast(null as string) as room,
+            cast(null as int64) as period_id,
+            cast(null as int64) as calendar_id,
+            cast(null as int64) as team_id,
+            cast(null as int64) as grade_scale_id,
+            cast(null as string) as credits,
+            cast(null as string) as does_attendance,
+            cast(null as string) as does_grades,
+            cast(null as string) as does_gpa
+          from unnest([30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40])
+            as course_period_id
+      - input: ref('stg_focus__courses')
+        format: sql
+        rows: |
+          select 20 as course_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as int64) as subject_id,
+            cast(null as int64) as grad_subject_id,
+            cast(null as string) as grade_level,
+            cast(null as numeric) as credit_hours,
+            cast(null as numeric) as course_hours,
+            cast(null as string) as homeroom
+      - input: ref('stg_focus__student_enrollment')
+        rows:
+          - id: 1
+            student_id: 20
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: 2026-10-16
+          - id: 2
+            student_id: 21
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: null
+          - id: 3
+            student_id: 22
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: 2026-09-01
+          - id: 4
+            student_id: 22
+            school_id: 100
+            syear: 2026
+            start_date: 2026-09-15
+            end_date: null
+          - id: 5
+            student_id: 23
+            school_id: 200
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: 2026-09-01
+          - id: 6
+            student_id: 24
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: 2026-10-16
+          - id: 7
+            student_id: 25
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: 2026-10-16
+          - id: 8
+            student_id: 26
+            school_id: 100
+            syear: 2026
+            start_date: 2026-08-13
+            end_date: null
+          - id: 9
+            student_id: 26
+            school_id: 100
+            syear: 2026
+            start_date: 2026-09-01
+            end_date: 2026-10-01
+    expect:
+      rows:
+        - student_schedule_id: 11
+          end_date: null
+          effective_end_date: 2026-10-16
+          is_dropped: false
+        - student_schedule_id: 12
+          end_date: 2026-09-29
+          effective_end_date: 2026-09-29
+          is_dropped: true
+        - student_schedule_id: 14
+          end_date: null
+          effective_end_date: 2026-10-16
+          is_dropped: false
+        - student_schedule_id: 15
+          end_date: null
+          effective_end_date: 2027-01-15
+          is_dropped: false
+        - student_schedule_id: 16
+          end_date: null
+          effective_end_date: 2027-01-15
+          is_dropped: false
+        - student_schedule_id: 17
+          end_date: null
+          effective_end_date: 2027-01-15
+          is_dropped: false
+        - student_schedule_id: 18
+          end_date: 2026-09-29
+          effective_end_date: 2026-09-29
+          is_dropped: true
+        - student_schedule_id: 20
+          end_date: null
+          effective_end_date: 2026-10-16
+          is_dropped: false
+        - student_schedule_id: 21
+          end_date: 2026-09-01
+          effective_end_date: 2026-09-01
+          is_dropped: false
+        - student_schedule_id: 22
+          end_date: 2026-10-16
+          effective_end_date: 2026-10-16
+          is_dropped: false
+        - student_schedule_id: 23
+          end_date: 2026-08-12
+          effective_end_date: 2026-08-12
+          is_dropped: true
+        - student_schedule_id: 24
+          end_date: 2026-10-01
+          effective_end_date: 2026-10-01
+          is_dropped: true
+        - student_schedule_id: 25
+          end_date: 2026-10-20
+          effective_end_date: 2026-10-20
+          is_dropped: true
 
   - name: test_int_focus__students_iep_from_ese_log
     description: >-
@@ -590,3 +1126,518 @@ unit_tests:
         - { student_id: 2, has_iep: false, spedlep: null }
         - { student_id: 3, has_iep: false, spedlep: null }
         - { student_id: 4, has_iep: false, spedlep: null }
+
+  - name: test_int_focus__apex_assessments_subject
+    model: int_focus__apex_assessments
+    given:
+      - input: ref('stg_focus__apex_assessments')
+        rows:
+          - { id: 1, title: a1, syear: 2026 }
+          - { id: 2, title: a2, syear: 2026 }
+          - { id: 3, title: a3, syear: 2026 }
+          - { id: 4, title: a4, syear: 2026 }
+          - { id: 5, title: a5, syear: 2026 }
+          - { id: 6, title: a6, syear: 2026 }
+      - input: ref('stg_focus__apex_assessment_items')
+        rows:
+          - { assessment_id: 1, item_id: 1 }
+          - { assessment_id: 2, item_id: 2 }
+          - { assessment_id: 3, item_id: 3 }
+          - { assessment_id: 4, item_id: 4 }
+          - { assessment_id: 5, item_id: 5 }
+          - { assessment_id: 5, item_id: 6 }
+      - input: ref('stg_focus__apex_item_questions')
+        rows:
+          - { item_id: 1, question_id: 1 }
+          - { item_id: 2, question_id: 2 }
+          - { item_id: 3, question_id: 3 }
+          - { item_id: 4, question_id: 4 }
+          - { item_id: 5, question_id: 1 }
+          - { item_id: 6, question_id: 3 }
+      - input: ref('stg_focus__apex_question_standards')
+        rows:
+          - { question_id: 1, standard_id: 1 }
+          - { question_id: 2, standard_id: 2 }
+          - { question_id: 3, standard_id: 3 }
+          - { question_id: 4, standard_id: 4 }
+      - input: ref('stg_focus__standards')
+        rows:
+          - { id: 1, category_1_id: 1 }
+          - { id: 2, category_1_id: 2 }
+          - { id: 3, category_1_id: 3 }
+          - { id: 4, category_1_id: 4 }
+      - input: ref('stg_focus__standard_categories_1')
+        rows:
+          - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
+          - { id: 2, title: Language Arts (B.E.S.T.)(Focus) }
+          - { id: 3, title: Science (Florida SC)(Focus) }
+          - { id: 4, title: Social Studies (Florida SS)(Focus) }
+      - input: ref('stg_focus__apex_band_set_assessments')
+        rows: []
+      - input: ref('stg_focus__apex_band_sets')
+        rows: []
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows: []
+    expect:
+      rows:
+        - { assessment_id: 1, subject_area: Mathematics }
+        - { assessment_id: 2, subject_area: Text Study }
+        - { assessment_id: 3, subject_area: Science }
+        - { assessment_id: 4, subject_area: Social Studies }
+        - { assessment_id: 5, subject_area: null }
+        - { assessment_id: 6, subject_area: null }
+
+  - name: test_int_focus__apex_assessments_band_set
+    model: int_focus__apex_assessments
+    given:
+      - input: ref('stg_focus__apex_assessments')
+        rows:
+          - { id: 1, title: a1, syear: 2026 }
+          - { id: 2, title: a2, syear: 2026 }
+      - input: ref('stg_focus__apex_band_set_assessments')
+        rows:
+          - { assessment_id: 1, band_set_id: 10 }
+          - { assessment_id: 2, band_set_id: 20 }
+          - { assessment_id: 3, band_set_id: 10 }
+      - input: ref('stg_focus__apex_band_sets')
+        rows:
+          - { id: 10, is_default: false }
+      - input: ref('stg_focus__apex_assessment_items')
+        rows: []
+      - input: ref('stg_focus__apex_item_questions')
+        rows: []
+      - input: ref('stg_focus__apex_question_standards')
+        rows: []
+      - input: ref('stg_focus__standards')
+        rows: []
+      - input: ref('stg_focus__standard_categories_1')
+        rows: []
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows: []
+    expect:
+      rows:
+        - { assessment_id: 1, band_set_id: 10 }
+        - { assessment_id: 2, band_set_id: null }
+
+  - name: test_int_focus__apex_assessments_administered_at
+    model: int_focus__apex_assessments
+    given:
+      - input: ref('stg_focus__apex_assessments')
+        rows:
+          - { id: 1, title: a1, syear: 2026 }
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { assessment_id: 1, start_date: 2026-09-15 }
+          - { assessment_id: 1, start_date: 2026-09-08 }
+      - input: ref('stg_focus__apex_band_set_assessments')
+        rows: []
+      - input: ref('stg_focus__apex_band_sets')
+        rows: []
+      - input: ref('stg_focus__apex_assessment_items')
+        rows: []
+      - input: ref('stg_focus__apex_item_questions')
+        rows: []
+      - input: ref('stg_focus__apex_question_standards')
+        rows: []
+      - input: ref('stg_focus__standards')
+        rows: []
+      - input: ref('stg_focus__standard_categories_1')
+        rows: []
+    expect:
+      rows:
+        - { assessment_id: 1, administered_at: 2026-09-08 }
+
+  - name: test_int_focus__apex_assessments_year_fallback
+    description: >-
+      A null Focus syear falls back to the school year of the first assignment
+      start date, rolling over on 1 July; a set syear is kept.
+    model: int_focus__apex_assessments
+    given:
+      - input: ref('stg_focus__apex_assessments')
+        format: sql
+        rows: |
+          select 1 as id, 'a1' as title, cast(null as int64) as syear
+          union all
+          select 2, 'a2', cast(null as int64)
+          union all
+          select 3, 'a3', 2025
+          union all
+          select 4, 'a4', cast(null as int64)
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { assessment_id: 1, start_date: 2026-10-05 }
+          - { assessment_id: 2, start_date: 2027-03-01 }
+          - { assessment_id: 3, start_date: 2026-10-05 }
+      - input: ref('stg_focus__apex_band_set_assessments')
+        rows: []
+      - input: ref('stg_focus__apex_band_sets')
+        rows: []
+      - input: ref('stg_focus__apex_assessment_items')
+        rows: []
+      - input: ref('stg_focus__apex_item_questions')
+        rows: []
+      - input: ref('stg_focus__apex_question_standards')
+        rows: []
+      - input: ref('stg_focus__standards')
+        rows: []
+      - input: ref('stg_focus__standard_categories_1')
+        rows: []
+    expect:
+      rows:
+        - { assessment_id: 1, academic_year: 2026 }
+        - { assessment_id: 2, academic_year: 2026 }
+        - { assessment_id: 3, academic_year: 2025 }
+        - { assessment_id: 4, academic_year: null }
+
+  - name: test_int_focus__apex_results_session_pick
+    model: int_focus__apex_results
+    given:
+      - input: ref('stg_focus__apex_sessions')
+        rows:
+          - {
+              id: 1,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 1,
+              score_max: 10,
+            }
+          - {
+              id: 2,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: true,
+              excused: false,
+              completed_at: 2026-09-12 16:00:00,
+              score_actual: 9,
+              score_max: 10,
+            }
+          - {
+              id: 3,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-11 16:00:00,
+              score_actual: 5,
+              score_max: 10,
+            }
+          - {
+              id: 4,
+              assessment_id: 1,
+              assignment_id: 2,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-13 16:00:00,
+              score_actual: 8,
+              score_max: 10,
+            }
+          - {
+              id: 5,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: true,
+              completed_at: 2026-09-14 16:00:00,
+              score_actual: 7,
+              score_max: 10,
+            }
+          - {
+              id: 6,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: false,
+              discarded: false,
+              excused: false,
+              completed_at: null,
+              score_actual: 3,
+              score_max: 10,
+            }
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { id: 1, assessment_id: 1 }
+      - input: ref('int_focus__apex_assessments')
+        rows:
+          - { assessment_id: 1, band_set_id: null }
+      - input: ref('stg_focus__apex_session_responses')
+        rows: []
+      - input: ref('stg_focus__apex_question_standards')
+        rows: []
+      - input: ref('stg_focus__standards')
+        rows: []
+      - input: ref('stg_focus__standard_categories_1')
+        rows: []
+      - input: ref('stg_focus__apex_band_levels')
+        rows: []
+    expect:
+      rows:
+        - {
+            student_number: 100,
+            response_type: overall,
+            session_id: 3,
+            date_taken: 2026-09-11,
+            percent_correct: 50.0,
+          }
+
+  - name: test_int_focus__apex_results_overall_uses_session_score
+    model: int_focus__apex_results
+    given:
+      - input: ref('stg_focus__apex_sessions')
+        rows:
+          - {
+              id: 1,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 6,
+              score_max: 10,
+            }
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { id: 1, assessment_id: 1 }
+      - input: ref('int_focus__apex_assessments')
+        rows:
+          - { assessment_id: 1, band_set_id: null }
+      - input: ref('stg_focus__apex_session_responses')
+        rows:
+          - { session_id: 1, question_id: 1, score_actual: 4, score_max: 5 }
+          - { session_id: 1, question_id: 2, score_actual: 3, score_max: 5 }
+      - input: ref('stg_focus__apex_question_standards')
+        rows:
+          - { question_id: 1, standard_id: 1 }
+          - { question_id: 2, standard_id: 1 }
+      - input: ref('stg_focus__standards')
+        rows:
+          - { id: 1, short_name: MA.3.A.1, title: std one, category_1_id: 1 }
+      - input: ref('stg_focus__standard_categories_1')
+        rows:
+          - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
+      - input: ref('stg_focus__apex_band_levels')
+        rows: []
+    expect:
+      rows:
+        - {
+            response_type: overall,
+            response_type_id: 1,
+            points: 6,
+            points_possible: 10,
+            percent_correct: 60.0,
+          }
+        - {
+            response_type: standard,
+            response_type_id: 1,
+            points: 7,
+            points_possible: 10,
+            percent_correct: 70.0,
+          }
+
+  - name: test_int_focus__apex_results_standard_rollup
+    model: int_focus__apex_results
+    given:
+      - input: ref('stg_focus__apex_sessions')
+        rows:
+          - {
+              id: 1,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 2,
+              score_max: 6,
+            }
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { id: 1, assessment_id: 1 }
+      - input: ref('int_focus__apex_assessments')
+        rows:
+          - { assessment_id: 1, band_set_id: null }
+      - input: ref('stg_focus__apex_session_responses')
+        rows:
+          - { session_id: 1, question_id: 1, score_actual: 2, score_max: 2 }
+          - { session_id: 1, question_id: 2, score_actual: 0, score_max: 2 }
+          - { session_id: 1, question_id: 3, score_actual: null, score_max: 2 }
+      - input: ref('stg_focus__apex_question_standards')
+        rows:
+          - { question_id: 1, standard_id: 1 }
+          - { question_id: 2, standard_id: 1 }
+          - { question_id: 2, standard_id: 2 }
+          - { question_id: 3, standard_id: 2 }
+      - input: ref('stg_focus__standards')
+        rows:
+          - { id: 1, short_name: A, title: std a, category_1_id: 1 }
+          - { id: 2, short_name: B, title: std b, category_1_id: 1 }
+      - input: ref('stg_focus__standard_categories_1')
+        rows:
+          - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
+      - input: ref('stg_focus__apex_band_levels')
+        rows: []
+    expect:
+      rows:
+        - {
+            response_type: overall,
+            response_type_code: null,
+            points: 2,
+            points_possible: 6,
+            percent_correct: 33.3,
+          }
+        - {
+            response_type: standard,
+            response_type_code: A,
+            points: 2,
+            points_possible: 4,
+            percent_correct: 50.0,
+          }
+        - {
+            response_type: standard,
+            response_type_code: B,
+            points: 0,
+            points_possible: 2,
+            percent_correct: 0.0,
+          }
+
+  - name: test_int_focus__apex_results_bands
+    model: int_focus__apex_results
+    given:
+      - input: ref('stg_focus__apex_sessions')
+        rows:
+          - {
+              id: 1,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 6,
+              score_max: 10,
+            }
+          - {
+              id: 2,
+              assessment_id: 2,
+              assignment_id: 2,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 6,
+              score_max: 10,
+            }
+          - {
+              id: 3,
+              assessment_id: 3,
+              assignment_id: 3,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 6,
+              score_max: 10,
+            }
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { id: 1, assessment_id: 1 }
+          - { id: 2, assessment_id: 2 }
+          - { id: 3, assessment_id: 3 }
+      - input: ref('int_focus__apex_assessments')
+        rows:
+          - { assessment_id: 1, band_set_id: 9 }
+          - { assessment_id: 2, band_set_id: 8 }
+          - { assessment_id: 3, band_set_id: null }
+      - input: ref('stg_focus__apex_session_responses')
+        rows:
+          - { session_id: 1, question_id: 1, score_actual: 1, score_max: 2 }
+          - { session_id: 1, question_id: 2, score_actual: 79, score_max: 200 }
+      - input: ref('stg_focus__apex_question_standards')
+        rows:
+          - { question_id: 1, standard_id: 1 }
+          - { question_id: 2, standard_id: 2 }
+      - input: ref('stg_focus__standards')
+        rows:
+          - { id: 1, short_name: A, title: std a, category_1_id: 1 }
+          - { id: 2, short_name: B, title: std b, category_1_id: 1 }
+      - input: ref('stg_focus__standard_categories_1')
+        rows:
+          - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
+      - input: ref('stg_focus__apex_band_levels')
+        rows:
+          - { band_set_id: 9, label: Low Level 1, min_score: 0, max_score: 39 }
+          - { band_set_id: 9, label: Level 2, min_score: 40, max_score: 44 }
+          - { band_set_id: 9, label: Level 3, min_score: 45, max_score: 54 }
+          - { band_set_id: 9, label: Level 4, min_score: 55, max_score: 100 }
+          - { band_set_id: 8, label: Advanced, min_score: 0, max_score: 100 }
+    expect:
+      rows:
+        - {
+            assessment_id: 1,
+            response_type_code: null,
+            percent_correct: 60.0,
+            performance_band_label: Level 4,
+            performance_band_label_number: 4,
+            is_mastery: true,
+          }
+        - {
+            assessment_id: 1,
+            response_type_code: A,
+            percent_correct: 50.0,
+            performance_band_label: Level 3,
+            performance_band_label_number: 3,
+            is_mastery: true,
+          }
+        - {
+            assessment_id: 1,
+            response_type_code: B,
+            percent_correct: 39.5,
+            performance_band_label: Low Level 1,
+            performance_band_label_number: 1,
+            is_mastery: false,
+          }
+        - {
+            assessment_id: 2,
+            response_type_code: null,
+            percent_correct: 60.0,
+            performance_band_label: Advanced,
+            performance_band_label_number: 1,
+            is_mastery: null,
+          }
+        - {
+            assessment_id: 3,
+            response_type_code: null,
+            percent_correct: 60.0,
+            performance_band_label: null,
+            performance_band_label_number: null,
+            is_mastery: null,
+          }

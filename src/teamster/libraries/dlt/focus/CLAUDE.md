@@ -8,12 +8,12 @@ and asset keys: see `../CLAUDE.md`. All tables come from the `public` schema
 
 ## Differences from Illuminate
 
-| Aspect              | Illuminate                              | Focus                                                                 |
-| ------------------- | --------------------------------------- | --------------------------------------------------------------------- |
-| Schema dimension    | Multi-schema (asset key includes it)    | Single `public` schema                                                |
-| Type adapters       | `unbounded_numeric_adapter`             | `interval_to_microseconds_adapter`, `widen_unbounded_numeric_adapter` |
-| Query callbacks     | `filter_date_taken_callback` (optional) | None                                                                  |
-| Nullability adapter | `remove_nullability_adapter`            | `remove_nullability_adapter`                                          |
+| Aspect              | Illuminate                              | Focus                                                                                |
+| ------------------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| Schema dimension    | Multi-schema (asset key includes it)    | Single `public` schema                                                               |
+| Type adapters       | `unbounded_numeric_adapter`             | `interval_to_microseconds_adapter`, `widen_unbounded_numeric_adapter`, JSON → `Text` |
+| Query callbacks     | `filter_date_taken_callback` (optional) | `json_as_text_query_adapter`                                                         |
+| Nullability adapter | `remove_nullability_adapter`            | `remove_nullability_adapter`                                                         |
 
 ## Nullability adapter (required)
 
@@ -68,6 +68,16 @@ declared precision/scale) to `Numeric(76, 38)` — BigQuery `BIGNUMERIC`. A
 `stg_focus__*` model projecting such a column must `cast(col as numeric)` to
 hold its `numeric` contract.
 
+## JSON as text (source-wide)
+
+`json_as_text_query_adapter` selects every Postgres `json`/`jsonb` column as
+`CAST(col AS TEXT)`, and `_widening_type_adapter` declares the matching `Text`
+hint, so **every Focus JSON column lands as a BigQuery STRING**: parse it with
+`parse_json` in staging. Without the cast, psycopg hands dlt parsed Python
+values, and a column whose first non-null value is a scalar while a later one is
+a list fails the extract with `PyToArrowConversionException` (#5828,
+`apex_session_responses.response`).
+
 ## Empty source tables
 
 A configured table with 0 rows in Focus is **created empty** in BigQuery: the
@@ -112,13 +122,20 @@ of them a run carries. A table is loaded only when its probed signature
 (`COUNT(*)` + `MAX(updated_at)`) differs from the one the last successful load
 wrote to dlt `resource_state`.
 
-- **Gating cannot move into the op.** A `replace` resource that yields zero rows
-  truncates its table, so a skip has to be an exclusion from the run. Probing in
-  the op would also plan all 79 assets every tick and emit
-  `ASSET_FAILED_TO_MATERIALIZE` for the skipped ones.
-- **The signature is written inside the extracted resource.** dlt commits state
-  only from resources that reached the load package, so a failed load keeps the
-  old baseline and the table re-selects on the next tick — failures self-heal.
+- **Tiering**: `0 4 * * *` targets only the count-only tables (derived from
+  `cursor_column: null` in `config/focus.yaml`, not hardcoded) and is their
+  unconditional daily reload, because a count-only probe can't see an in-place
+  edit that leaves row count unchanged. Every other table is gated by the
+  intraday sensor's probe alone and gets no separate unconditional reload, so
+  its `updated_at` must move on every edit. Before adding a table with a cursor,
+  confirm edited rows show `updated_at > created_at`; if they don't, give it
+  `cursor_column: null`. The sensor probes every table in `config/focus.yaml`
+  every 15 minutes regardless of tier.
+- **Gating cannot move into the op**: a zero-row `replace` truncates (see
+  `../CLAUDE.md`), and probing in the op would plan every asset every tick and
+  emit `ASSET_FAILED_TO_MATERIALIZE` for the skipped ones. Signature state
+  follows the `powerschool/` contract in `../CLAUDE.md` — a failed load keeps
+  the old baseline and the table re-selects next tick.
 - **A 0-row table** carries `{count: 0, max_cursor: null}` and gates out after
   its first load, so the empty-table materialization runs once, not every tick.
   Verified: dlt does commit resource_state for a table that yields only
@@ -132,18 +149,49 @@ wrote to dlt `resource_state`.
   (see the design spec's _Partially resolved risk_ section).
 - **Enable order matters.** The sensor selects any table with no stored
   signature, so enabling it before every table has a seeded baseline makes the
-  first tick select all 79 tables at once. The `0 4 * * *` schedule now only
-  seeds the count-only tables (`co_teachers`) — it is no longer a full-79-table
-  refresh, so it cannot be relied on to seed the other 78 by itself. Seed all 79
-  with a manual launch of the Focus asset job first, then enable the sensor.
+  first tick select every table at once. The 04:00 schedule seeds only the
+  count-only tables, so seed them all with a manual launch of the Focus asset
+  job first, then enable the sensor. Once the sensor runs, a table added to
+  `config/focus.yaml` needs no seeding: the first tick after deploy loads it.
 
 ## Testing Constraints
 
 Focus uses an IP allowlist. Codespace cannot reach the database. Connection
 verification requires a branch deployment (GKE has static egress IP).
 
-Branch-deployment dlt runs write to the **prod** BQ dataset
-(`dagster_<district>_dlt_focus`) — dlt has no branch-deployment redirect (unlike
-the GCS IO managers). A newly-configured table can be materialized in the branch
-deployment and then queried directly via BigQuery MCP to verify the load; note
-it is not isolated from prod for that source.
+### Querying the database directly
+
+For a table we do not sync, or a check BigQuery cannot answer, hand the user
+`scripts/focus-db-query.sh <file.sql>`. It runs psql in a throwaway pod in the
+`dagster-cloud` namespace with the `op-focus-db-kippmiami` secret, and the
+cluster's egress is already allowlisted. The connection goes through PgBouncer
+(port 6432), which rejects startup options: `PGOPTIONS` fails with
+`unsupported startup parameter in options`. Set read-only mode and timeouts
+inside the SQL file (`begin transaction read only;`
+`set local statement_timeout = '5min';` … `rollback;`); the script refuses a
+file without the first line. psql's output lands in Cloud Logging through the
+pod log, so write queries that return counts or aggregates, never student-level
+rows.
+
+Branch-deployment dlt runs write to the prod `dagster_<district>_dlt_focus`
+dataset (see `../CLAUDE.md`), so a newly-configured table materialized in a
+branch deployment can be queried directly via BigQuery MCP to verify the load.
+
+**Pre-merge gate for new tables.** Before merging a PR that adds tables to
+`config/focus.yaml`, launch a run of only the new tables in the PR's branch
+deployment, then confirm each one exists in BigQuery with the expected row
+count. Unit tests run on SQLite, which reflects and returns only some Postgres
+types the way psycopg does (it does parse a `JSON`-declared column, which is how
+the #5828 tests reproduce that failure), so a new table can still pass CI and
+fail its first prod load. In prod a failed load is expensive: it keeps the old
+baselines, the sensor re-selects the same tables every tick, and every intraday
+Focus sync stalls until a revert deploys. Launch the branch run while no prod
+Focus run is in flight: both share the prod dataset and dlt state, and the
+concurrency pool doesn't span deployments.
+
+After merge, launch one prod run of the same tables. The branch run's
+materializations are recorded only in the branch deployment, and the intraday
+sensor requests only tables whose signature changed, so an unchanged table never
+gets a prod materialization. Its downstream `stg_focus__*` model then stays
+blocked on `any_deps_missing` indefinitely, though the data is already in
+BigQuery.

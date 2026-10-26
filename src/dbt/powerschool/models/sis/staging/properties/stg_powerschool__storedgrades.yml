@@ -2,7 +2,25 @@ models:
   - name: stg_powerschool__storedgrades
     description:
       All of the students' historical grade information is maintained in this
-      table.
+      table. A student can carry more than one stored grade for the same year,
+      course, and term — a double-write, or grades stored under two sections of
+      the course. A warning test lists them. To fix one, delete the duplicate
+      stored grade in PowerSchool, keeping the one stored under the section the
+      student took. int_powerschool__student_course_grades_spine keeps one per
+      group for Q1 to Q4 and Y1.
+    data_tests:
+      # Permanent warning: the Ops cleanup worklist for duplicate stored grades.
+      # The dedupe lives in int_powerschool__student_course_grades_spine.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - yearid
+              - course_number
+              - storecode
+          config:
+            severity: warn
+            where: course_number is not null
     columns:
       - name: dcid
         data_type: int64

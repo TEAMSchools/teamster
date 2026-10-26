@@ -14,6 +14,12 @@ headers) distinction. First day of school = `min(school_date)` per `syear` over
 in this package; kipptaf's copy of the same name is a thin passthrough
 `source()`-ing this package's built output, not a re-derivation).
 
+The ERD omits the Apex `apex_*` tables. Before adding an Apex table or test,
+check Focus's
+[Apex schema reference](https://fe.focusschoolsoftware.com/josh2/docs/apex_schema_reference.html)
+for its unique keys and join targets; it predates the live database, so trust a
+staged column it lacks.
+
 The kipptaf `rpt_focus__*` SFTP extracts keep a `trunk-ignore(sqlfluff/ST06)` —
 the Focus import column order is contract-fixed. ST06 firing is
 expression-shape-dependent, so keep the ignore even when a diff makes it look
@@ -117,27 +123,29 @@ deleted — **never `0`**. Filter `where deleted is null` in staging (`= 0`
 matches nothing) and omit the column. Present on `students`, `users`, `schools`,
 `address`, `student_enrollment_codes`, the `custom_field*` tables; absent on
 others (e.g. `custom_field_log_entries`). `inactive`/`active`/`archived` are raw
-attributes, not delete sentinels.
+attributes, not delete sentinels. The `apex_*` tables differ: `deleted` is BOOL
+with `false` on live rows, so filter `deleted is not true` (`is null` returns
+zero rows and still passes every test). Apex deletes do not cascade to child or
+link rows; those models say which parent to join.
 
 **Primary keys.** Most tables PK on `id`; some on `<entity>_id` (`address_id`,
 `course_id`, `course_period_id`, `marking_period_id`, `period_id`,
 students→`student_id`, users→`staff_id` (`profile_id` is null for nearly all
 rows).
 
-**Cross-table `relationships` tests are `severity: warn` here — keep them that
-way.** The load has no cross-table snapshot: every table is its own
+**Add a cross-table `relationships` test only for an orphan you have seen
+persist.** The load has no cross-table snapshot: every table is its own
 `@dlt.resource` with `write_disposition="replace"` and `parallelized=True`, each
 opening its own engine, so two related tables are read seconds apart from a live
 Postgres. A row written between the parent read and the child read lands as an
-orphan that no code change can prevent, and the Dagster run retry cannot absorb
-it — the retry re-runs dbt against identical data. The next dlt load clears it.
-Precedent: assignment 424551 on 2026-09-15 orphaned
-`stg_focus__gradebook_assignments_join_course_periods` for one load and healed
-on the next. A **persistent** orphan — one still present after a later
-`_dlt_load_id` — is a real defect; that is what these warnings are for.
-Single-table tests (`unique`, `not_null`) stay `severity: error`: one table IS
-read atomically. Raising a `relationships` test back to `error` would fail a
-whole district build on a teacher saving an assignment mid-load.
+orphan until the next load, so a `relationships` test here fires on teacher
+activity, not on defects. The two kept, `stg_focus__test_history_scores`
+`administration_id` and `stg_focus__students_join_people` `person_id`, guard
+persistent orphans. Any `relationships` test stays `severity: warn`, because at
+`error` a teacher saving mid-load fails the whole district build. Single-table
+key tests (`unique`, `not_null` on a Focus id) stay `severity: error`, since one
+table IS read atomically. A single-table test of what staff entered (a duplicate
+FLEID, a blank ELL code) is a source-data check and lands at `warn`.
 
 ## Model Structure
 
@@ -150,11 +158,6 @@ use `sources-bigquery.yml` with a plain schema var. Intermediate
 (`int_focus__*`) models layer on top.
 
 ## Cross-Project Usage
-
-This project is never run standalone in production. District projects reference
-it as a dbt package and override variables. `{{ project_name }}` in source
-definitions resolves to the consuming district project name, enabling correct
-Dagster asset key lineage.
 
 To add a NEW kipptaf dependency on Focus data in a single PR, declare the dlt
 landing dataset (`dagster_kippmiami_dlt_focus`) as a BQ-native

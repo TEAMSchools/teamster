@@ -38,14 +38,15 @@ locations:
                 # Preferred, not required. With one replica per location this
                 # spreads nothing; as `required` its only live effect was
                 # forbidding the replacement pod from the outgoing pod's node
-                # during a rollover -- the one node guaranteed to have arm64
-                # Scale-Out capacity sized for a code server and, by the run-pod
-                # anti-affinity, no run pods on it. Under `preferred` that node
-                # becomes FEASIBLE again, which is what removes the NAP wait --
-                # the scheduler still penalizes it, twice counting the hostname
-                # topologySpreadConstraint, and will usually pick elsewhere when
-                # anything else fits. Cross-location spreading is unchanged; it
-                # comes from topologySpreadConstraints in the Helm values.
+                # during a rollover -- the one node guaranteed to have
+                # `dagster-arm-first` capacity sized for a code server and, by
+                # the run-pod anti-affinity, no run pods on it. Under
+                # `preferred` that node becomes FEASIBLE again, which is what
+                # removes the NAP wait -- the scheduler still penalizes it,
+                # twice counting the hostname topologySpreadConstraint, and will
+                # usually pick elsewhere when anything else fits. Cross-location
+                # spreading is unchanged; it comes from
+                # topologySpreadConstraints in the Helm values.
                 # Rollover co-location risks are modelled in the spec:
                 # docs/superpowers/specs/2026-08-18-code-server-scheduling-resilience-design.md
                 preferredDuringSchedulingIgnoredDuringExecution:
@@ -400,11 +401,6 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: site-id
-              - name: PS_ENROLLMENT_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-powerschool-enrollment-api
-                    key: api-key
               - name: LDAP_HOST_IP
                 valueFrom:
                   secretKeyRef:
@@ -808,11 +804,6 @@ locations:
                   secretKeyRef:
                     name: op-tableau-server-api
                     key: site-id
-              - name: PS_ENROLLMENT_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-powerschool-enrollment-api
-                    key: api-key
               - name: LDAP_HOST_IP
                 valueFrom:
                   secretKeyRef:

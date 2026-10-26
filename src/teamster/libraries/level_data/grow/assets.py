@@ -17,6 +17,37 @@ from teamster.core.asset_checks import (
 from teamster.libraries.level_data.grow.resources import GrowResource
 
 
+def normalize_regional_admin_schools(records: list[dict]) -> None:
+    """Coerce each user's `regionalAdminSchools` entries to `Ref` records in place.
+
+    Grow returns bare school ids, and some entries arrive as an array serialized
+    into an object (`{"0": id, "1": id}`). The Avro schema expects `Ref`
+    records, so wrap each id with an empty `name`. Any other shape passes through
+    unchanged, so an unexpected payload still fails the Avro write instead of
+    storing wrong ids.
+    """
+    # TODO(#6031): store the field as ids and drop this
+    for record in records:
+        schools = record.get("regionalAdminSchools")
+
+        if not isinstance(schools, list):
+            continue
+
+        normalized = []
+
+        for school in schools:
+            if isinstance(school, str):
+                normalized.append({"_id": school, "name": None})
+            elif (
+                isinstance(school, dict) and school and all(k.isdigit() for k in school)
+            ):
+                normalized.extend({"_id": i, "name": None} for i in school.values())
+            else:
+                normalized.append(school)
+
+        record["regionalAdminSchools"] = normalized
+
+
 def build_grow_asset(
     asset_key, endpoint, partitions_def, schema, op_tags=None
 ) -> AssetsDefinition:
@@ -69,6 +100,9 @@ def build_grow_asset(
         )
 
         records = endpoint_content["data"]
+
+        if endpoint == "users":
+            normalize_regional_admin_schools(records)
 
         yield Output(
             value=(records, schema), metadata={"records": endpoint_content["count"]}

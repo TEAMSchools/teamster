@@ -9,38 +9,82 @@ models:
               - detailed_status
           config:
             severity: error
+    description: >
+      Hand-maintained Google Sheet that maps each Finalsite detailed status, per
+      enrollment type, to the FRESH dashboard's funnel groups and conversion
+      metrics. One row per recruitment cycle (_dagster_partition_key),
+      enrollment type, and detailed status. A pass-through of the sheet plus
+      file_year.
     columns:
       - name: _dagster_partition_key
         data_type: string
+        description: >
+          Recruitment cycle the row applies to, entered in the sheet. Must match
+          the Finalsite status report's partition key, which downstream models
+          join on.
       - name: enrollment_type
         data_type: string
+        description: Finalsite enrollment type (new or returning).
       - name: detailed_status
         data_type: string
+        description: >
+          Finalsite status name being mapped. Matches detailed_status in
+          int_finalsite__status_report_unpivot.
       - name: detailed_status_ranking
         data_type: int64
+        description: >
+          Order of the status in the funnel, used to pick a student's latest
+          status when several share a date. Must match the status_order CASE in
+          int_finalsite__status_report_unpivot.
       - name: detailed_status_branched_ranking
         data_type: int64
+        description: >
+          Alternate status ordering from the sheet. Not read downstream.
       - name: valid_detailed_status
         data_type: boolean
+        description: >
+          True when the status applies to this enrollment type. Downstream joins
+          drop rows where this is false.
       - name: fs_status_field
         data_type: string
+        description: Finalsite date column the status comes from.
       - name: qa_flag
         data_type: boolean
+        description: >
+          True marks a row to exclude. Downstream joins drop rows where this is
+          true.
       - name: status_enrollment
         data_type: string
+        description: >
+          Enrollment funnel group this status counts toward. Unpivoted with the
+          other group columns into status_group_name / status_group_value.
       - name: status_group_numerator
         data_type: string
+        description: Funnel group this status counts toward as a numerator.
       - name: status_group_denominator
         data_type: string
+        description: Funnel group this status counts toward as a denominator.
       - name: conversion_metric_numerator_1
         data_type: string
+        description: >
+          First conversion metric this status counts in as a numerator.
       - name: conversion_metric_numerator_2
         data_type: string
+        description: >
+          Second conversion metric this status counts in as a numerator.
       - name: conversion_metric_numerator_3
         data_type: string
+        description: >
+          Third conversion metric this status counts in as a numerator.
       - name: conversion_metric_denominator_1
         data_type: string
+        description: >
+          First conversion metric this status counts in as a denominator.
       - name: conversion_metric_denominator_2
         data_type: string
+        description: >
+          Second conversion metric this status counts in as a denominator.
       - name: file_year
         data_type: int64
+        description: >
+          Cycle year, the first four characters of _dagster_partition_key.

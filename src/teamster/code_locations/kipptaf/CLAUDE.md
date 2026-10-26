@@ -7,8 +7,6 @@ CODE_LOCATION = "kipptaf"
 LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 ```
 
-GCS bucket: `teamster-kipptaf`
-
 ## Active Integrations
 
 | Module                   | Assets                                                    | Schedules        | Sensors                 |
@@ -18,6 +16,7 @@ GCS bucket: `teamster-kipptaf`
 | `google`                 | Directory, Forms, AppSheet specs, Sheets specs            | directory, forms | bigquery, forms, sheets |
 | `adp`                    | payroll SFTP + WFN API (WFM disabled)                     | WFN schedule     | WFN + payroll sensors   |
 | `airbyte`                | asset specs                                               | schedule         | disabled                |
+| `branchingminds`         | SFTP export assets (fiscal-year partitions)               | —                | sensor                  |
 | `collegeboard`           | SFTP assets                                               | —                | —                       |
 | `coupa`                  | API assets                                                | schedule         | —                       |
 | `deanslist`              | API assets                                                | —                | sensor                  |
@@ -28,7 +27,6 @@ GCS bucket: `teamster-kipptaf`
 | `nsc`                    | SFTP assets                                               | —                | —                       |
 | `overgrad`               | API assets                                                | —                | —                       |
 | `performance_management` | SFTP assets                                               | —                | —                       |
-| `powerschool`            | enrollment API                                            | schedule         | —                       |
 | `smartrecruiters`        | report assets                                             | schedule         | —                       |
 | `tableau`                | workbook refresh assets                                   | schedule         | —                       |
 | `zendesk`                | assets                                                    | schedule         | —                       |
@@ -95,6 +93,12 @@ GET (`/workers/{aoid}`), which returns the worker regardless — so a
 single-worker probe does NOT predict which partitions a bulk re-pull will place
 them in.
 
+A `workers_sync` `zero_api_errors` failure with `EMPLOYEE_NOT_FOUND` is usually
+one of these ghosts: the record was deleted in ADP after its partition left the
+window, staging keeps it open, and the roster sends the sync to the deleted OID.
+Check the `stg_adp_workforce_now__workers__ghost_open_records` asset check
+before you debug the sync itself. The fix is the re-pull above.
+
 ## Illuminate DLT Schedule Split
 
 Illuminate DLT assets are split across two schedules in
@@ -111,13 +115,13 @@ New DLT assets must be assigned to the appropriate schedule.
 
 ## Adding a secret env var to `dagster-cloud.yaml`
 
-Env mappings duplicate across `server_k8s_config` and `run_k8s_config`, and each
-splits into a credentials block (password/username) and a host/port block — 4
-insertion points per secret. Missing `run_k8s_config` leaves run pods broken
-while the code server boots clean.
+4 insertion points per secret: `server_k8s_config` and `run_k8s_config` each
+split into a credentials block (password/username) and a host/port block. Why
+both configs: `src/teamster/CLAUDE.md` → _Resource Model_.
 
 ## Disabled Integrations
 
 `adp` WFM is not integrated (no schedules or assets). Reusable library code for
-`alchemer`, `dayforce`, `fivetran`, and `adp/workforce_manager` is preserved
-under `src/teamster/libraries/` for future use.
+`alchemer`, `dayforce`, `fivetran`, `adp/workforce_manager`, and
+`powerschool/enrollment` is preserved under `src/teamster/libraries/` for future
+use.

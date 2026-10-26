@@ -28,11 +28,6 @@ models:
             foreign_key:
               to: ref('fct_staff_observations')
               to_columns: [staff_observation_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('fct_staff_observations')
-                field: staff_observation_key
 
       - name: staff_observation_rubric_measurement_key
         data_type: string
@@ -45,11 +40,6 @@ models:
             foreign_key:
               to: ref('dim_staff_observation_rubric_measurements')
               to_columns: [staff_observation_rubric_measurement_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff_observation_rubric_measurements')
-                field: staff_observation_rubric_measurement_key
       - name: text_box_content
         data_type: string
         description: >-

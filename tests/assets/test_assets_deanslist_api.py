@@ -205,78 +205,6 @@ def test_asset_deanslist_followups_kippcamden():
     _test_asset(assets=year_partitioned_assets, asset_name="followups")
 
 
-def test_asset_deanslist_lists_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        static_partitioned_assets,
-    )
-
-    _test_asset(assets=static_partitioned_assets, asset_name="lists")
-
-
-def test_asset_deanslist_terms_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        static_partitioned_assets,
-    )
-
-    _test_asset(assets=static_partitioned_assets, asset_name="terms")
-
-
-def test_asset_deanslist_roster_assignments_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        static_partitioned_assets,
-    )
-
-    _test_asset(assets=static_partitioned_assets, asset_name="roster_assignments")
-
-
-def test_asset_deanslist_users_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        static_partitioned_assets,
-    )
-
-    _test_asset(assets=static_partitioned_assets, asset_name="users")
-
-
-def test_asset_deanslist_rosters_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        static_partitioned_assets,
-    )
-
-    _test_asset(assets=static_partitioned_assets, asset_name="rosters")
-
-
-def test_asset_deanslist_students_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        static_partitioned_assets,
-    )
-
-    _test_asset(assets=static_partitioned_assets, asset_name="students")
-
-
-def test_asset_deanslist_homework_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        month_partitioned_assets,
-    )
-
-    _test_asset(assets=month_partitioned_assets, asset_name="homework")
-
-
-def test_asset_deanslist_comm_log_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        year_partitioned_assets,
-    )
-
-    _test_asset(assets=year_partitioned_assets, asset_name="comm_log")
-
-
-def test_asset_deanslist_followups_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        year_partitioned_assets,
-    )
-
-    _test_asset(assets=year_partitioned_assets, asset_name="followups")
-
-
 def test_asset_deanslist_dff_stats_kippcamden():
     from teamster.code_locations.kippcamden.deanslist.assets import (
         static_partitioned_assets,
@@ -291,26 +219,6 @@ def test_asset_deanslist_dff_stats_kippnewark():
     )
 
     _test_asset(assets=static_partitioned_assets, asset_name="dff_stats")
-
-
-def test_asset_deanslist_dff_stats_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        static_partitioned_assets,
-    )
-
-    _test_asset(assets=static_partitioned_assets, asset_name="dff_stats")
-
-
-def test_asset_deanslist_behavior_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        year_partitioned_assets,
-    )
-
-    _test_asset(
-        assets=year_partitioned_assets,
-        asset_name="behavior",
-        partition_key="2024-07-01|472",
-    )
 
 
 def test_asset_deanslist_behavior_kippcamden():
@@ -346,18 +254,6 @@ def test_asset_deanslist_incidents_kippcamden():
         assets=month_partitioned_assets,
         asset_name="incidents",
         partition_key="2024-11-01|473",
-    )
-
-
-def test_asset_deanslist_incidents_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        month_partitioned_assets,
-    )
-
-    _test_asset(
-        assets=month_partitioned_assets,
-        asset_name="incidents",
-        partition_key="2024-11-01|472",
     )
 
 

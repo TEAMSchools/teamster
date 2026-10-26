@@ -7,12 +7,13 @@ views:
       attendance is still a row. Contains direct student identifiers — see
       access_policy for PII gating.
 
-      count_students is a distinct-student count over whatever slice is queried.
-      Leave the date open for ever-enrolled over a range; pin it to one date for
-      a point-in-time headcount as of that date. There is no anchor filter and
-      none is needed — break days carry a row, so a weekend or a holiday
-      resolves exactly like a school day. Filter is_in_session_day = true for
-      anything that should count school days only.
+      count_students is the enrollment headcount: distinct students enrolled in
+      whatever slice is queried, whether or not their attendance has been
+      recorded. Leave the date open for ever-enrolled over a range; pin it to
+      one date for a point-in-time headcount as of that date. There is no anchor
+      filter and none is needed — break days carry a row, so a weekend or a
+      holiday resolves exactly like a school day. Filter is_in_session_day =
+      true for anything that should count school days only.
 
       Filter attendance_date, not dates_date_day, for a single date or a date
       range. The two return identical rows, but attendance_date compiles to a
@@ -46,22 +47,33 @@ views:
       region this month — is two queries, one per view. Do not substitute a tier
       percentage for an attendance rate.
 
-      Every rate on this view divides by count_students, which counts students
-      with recorded attendance. No minimum-day floor applies -- one measured day
-      is enough -- but a student whose attendance was never recorded is outside
-      both the numerator and the denominator. Population and denominator are the
-      same number, so they cannot drift apart and an unmeasured student cannot
-      pull a rate down.
+      Every student-weighted rate on this view divides by
+      count_students_measured, the students with at least 1 recorded attendance
+      day. No minimum-day floor applies -- one measured day is enough -- but a
+      student whose attendance was never recorded is outside both the numerator
+      and the denominator, so an unmeasured student cannot pull a rate down.
+      count_students counts that student; count_students_measured does not.
 
     cubes:
       - join_path: student_attendance_enrollment_daily
         includes:
           - count_students
+          - count_students_measured
           - is_in_session_day
           - avg_daily_attendance
           - pct_tardy
           - pct_ontime
           - count_absent_days
+          - count_absent_days_weighted
+          - attendance_points
+          - count_iss_days
+          - count_oss_days
+          - days_to_90_percent
+          - count_present_days
+          - count_tardy_days
+          - count_membership_days
+          - sum_attendance_value
+          - sum_membership_value
           - attendance_date
           - attendance_code
           - attendance_category
@@ -77,6 +89,7 @@ views:
           - is_truant
           - n_membership_days_ytd
           - n_present_days_ytd
+          - n_absent_days_rolling_90
           - ada_tier
           - is_chronically_absent
           - count_chronically_absent
@@ -103,7 +116,11 @@ views:
           - location_name
           - abbreviation
           - region_key
-          - grade_band
+          - name: grade_band
+            meta:
+              ai_context: >-
+                A grade_band filter is a school filter. For a student's grade,
+                use grade_level.
           - campus
           - city
 
@@ -191,6 +208,7 @@ views:
             - is_chronically_absent
             - n_membership_days_ytd
             - n_present_days_ytd
+            - n_absent_days_rolling_90
         - name: Date
           members:
             - dates_academic_year
@@ -261,29 +279,22 @@ views:
             - dates_school_week_start_date
 
     access_policy:
-      # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
-      # holds exactly one student-<scope> group (buildGroups); none => no group =>
-      # default-deny. row_level uses this view's flat location member names (see
-      # the includes/folders below), not cube-qualified paths.
+      # Row-level location scoping (was queryRewrite.studentRowFilters). A
+      # single flat `student` group (buildGroups) gated on the viewer's
+      # precomputed allowed_student_abbreviations array being non-empty — not
+      # three separate tier groups. The array is the viewer's base
+      # student_location_scope UNIONED with every individual-exception grant
+      # that has includes_student_data (see src/cube/access.js), which lets an
+      # exception add one specific extra school, not just a whole network/
+      # region tier. row_level uses this view's flat location member name (see
+      # the includes/folders below), not a cube-qualified path.
       # Teacher fields (staff_homeroom_teacher_* names) ride the wildcard
       # include — staff-directory-tier info, not student PII.
-      - group: student-region
-        member_level:
-          includes: "*"
-        row_level:
-          filters:
-            - member: locations_region_key
-              operator: equals
-              values: ["{ securityContext.region_key }"]
-      - group: student-school
+      - group: student
         member_level:
           includes: "*"
         row_level:
           filters:
             - member: locations_abbreviation
               operator: equals
-              values: ["{ securityContext.location_abbreviation }"]
-      - group: student-network
-        member_level:
-          includes: "*"
-        # network: no row_level (sees all locations)
+              values: "{ securityContext.allowed_student_abbreviations }"

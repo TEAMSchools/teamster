@@ -2,7 +2,8 @@ models:
   - name: dim_assessments
     description: >-
       Assessment definition dimension. One row per unique assessment definition.
-      Covers internal Illuminate assessments, NJ and FL state assessments, and
+      Covers internal assessments (Illuminate and Focus Assessments), vendor
+      diagnostics (i-Ready, DIBELS, STAR), NJ and FL state assessments, and
       college-entrance assessments (SAT, ACT, AP). scope indicates whether
       scores are linked at the enrollment level or student level.
 
@@ -22,24 +23,23 @@ models:
       materialized: table
       meta:
         dagster:
-          # 5x/day, raised from nightly (#4559) so the whole assessment star
-          # shares one tick — dim_assessment_administrations has an FK test to
-          # this model, and a nightly dim under 5x/day administrations leaves a
-          # window where a new Illuminate assessment is in administrations but
-          # not yet here. Rationale in fct_assessment_scores_enrollment_scoped.
-          # Refs #4821
+          # Shares the whole assessment star's tick, not a slower one:
+          # dim_assessment_administrations has an FK test to this model, and a
+          # slower dim leaves a window where a new Illuminate assessment is in
+          # administrations but not yet here. Rationale in
+          # fct_assessment_scores_enrollment_scoped. Refs #4559, #4821
           automation_condition:
-            cron_schedule: 0 0,10,13,15,17 * * *
+            cron_schedule: 30 0,10,13,15,17 * * *
     columns:
       - name: assessment_key
         data_type: string
         description: >-
           Surrogate key derived from type, module_code, source_assessment_id,
-          and test_type. Primary key. For Illuminate, member-grained — one row
-          per actual `assessment_id`. For state/college/AP, canonical
-          (`source_assessment_id` is null). Drilldown from
-          `dim_assessment_administrations` (canonical-grain) to this dim goes
-          through `bridge_assessment_administration_members`.
+          and test_type. Primary key. For Illuminate and Focus Assessments,
+          member-grained — one row per actual `assessment_id`. For
+          state/college/AP, canonical (`source_assessment_id` is null).
+          Drilldown from `dim_assessment_administrations` (canonical-grain) to
+          this dim goes through `bridge_assessment_administration_members`.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -47,15 +47,21 @@ models:
         data_tests:
           - unique
 
+      # NJ and FL state types stay separate so historical state assessments do
+      # not collide on shared module_codes (for example ELA05).
       - name: type
         data_type: string
         description: >-
-          Source system category: `illuminate` (internal KIPP), `state_nj`
-          (NJSLA, NJGPA, PARCC — share module_codes per grade across history),
-          `state_fl` (FAST, FSA — share test_codes), `college` (SAT, ACT, PSAT —
-          both Official and Practice variants), or `ap`. Two jurisdictions kept
-          distinct so historical NJ and FL state assessments don't collide on
-          shared module_codes (e.g., ELA05).
+          Source-system category — illuminate and apex (KIPP-authored internal
+          interims, from Illuminate and from Focus Assessments, Focus's Apex
+          module); iready, dibels and star (vendor diagnostics); college (SAT,
+          ACT and PSAT, Official and Practice); ap; the NJ state tests
+          state_nj_njsla, state_nj_njsla_science, state_nj_njgpa and
+          state_nj_parcc; the FL state tests state_fl_fast, state_fl_science,
+          state_fl_eoc and state_fl_fsa; and the _unknown fallbacks. An open
+          list. From spring 2026, NJSLA and NJGPA are computer-adaptive, and no
+          field separates adaptive from fixed-form scores. NJSLA Science did not
+          change.
 
       - name: title
         data_type: string
@@ -63,11 +69,22 @@ models:
           Display name of the assessment (Ed-Fi
           edFi_assessment.assessmentTitle).
 
+      # Ed-Fi academic_subject_descriptor.
       - name: academic_subject
         data_type: string
         description: >-
-          Subject tested (e.g., Mathematics, English Language Arts, Reading,
-          Science, Composite). Ed-Fi academic_subject_descriptor.
+          Subject tested; the vocabulary is per source. State tests: English
+          Language Arts, Mathematics, Science, and course names for
+          end-of-course tests (Algebra I, Algebra II, Geometry, Civics). i-Ready
+          and STAR: Math and Reading, plus Early Literacy for STAR. DIBELS:
+          Reading. Illuminate: course-level names, with no English Language Arts
+          value; its ELA equivalent is Text Study, alongside Writing, English
+          100–400, CCR and AP courses, and math appears as Mathematics and
+          course names such as Algebra I and Geometry. Focus Assessments: Text
+          Study, Mathematics, Science and Social Studies. College: Math, EBRW,
+          Reading, English, Science, and score names such as Combined and
+          Composite. AP: the course name (for example Biology, Calculus BC).
+          Distinct from the course's discipline.
 
       - name: category
         data_type: string
@@ -79,26 +96,40 @@ models:
       - name: module_code
         data_type: string
         description: >-
-          Module or test code that identifies the specific assessment variant
-          (e.g., QA1, ELA05, act_composite, sat_total_score).
+          Code identifying the assessment within its source. Illuminate and
+          Focus Assessments: the checkpoint code within a module type (for
+          example QA1, MQQ2), from tags set in the assessment app; one code
+          spans every subject assessed in that round, and an untagged assessment
+          has none. State tests: subject and grade (for example ELA05, MAT08,
+          ALG01; ELAGP and MATGP for NJGPA). i-Ready and STAR: the subject.
+          DIBELS: Composite. College: the test and score (for example sat_math,
+          act_composite, psat10_ebrw). AP: the College Board exam number.
 
       - name: module_type
         data_type: string
         description: >-
-          Module type for internal Illuminate assessments (e.g., QA, CR). Null
-          for state and college assessments.
+          Module type of an internal assessment, from tags set in the assessment
+          app. An open list: QA (Quick Assessments), MQQ (Multiple-Choice Quick
+          Questions), CRQ (Constructed Response Questions), UA (Unit
+          Assessment), TP (Test Prep Quiz), ET (Exit Ticket), WPP (Writing
+          Process Piece), BL, and older types. Illuminate and Focus Assessments
+          share the codes. Null for an untagged assessment and for every other
+          source.
 
       - name: grade_level_tested
         data_type: int64
         description: >-
-          Grade level the assessment targets. Null for college-entrance
-          assessments which are not grade-specific.
+          Grade the assessment targets; 0 is kindergarten. Illuminate, Focus
+          Assessments and state tests only; null for every other source, for the
+          NJSLA end-of-course tests (Algebra I, Geometry, Algebra II), and for a
+          small share of Illuminate and Focus Assessments tests.
 
       - name: is_internal_assessment
         data_type: boolean
         description: >-
-          TRUE for KIPP-created internal assessments administered via
-          Illuminate. FALSE for external state and college assessments.
+          TRUE for the KIPP-authored interims, Illuminate and Focus Assessments;
+          FALSE for every other source, including the i-Ready, DIBELS and STAR
+          diagnostics KIPP administers itself.
 
       - name: scope
         data_type: string
@@ -112,8 +143,7 @@ models:
         description: >-
           Cross-test-family normalized bucket for comparing scores across SAT
           and ACT (e.g., EBRW and Reading combine into EBRW/Reading). Populated
-          for college-entrance assessments; null for AP, state, and internal
-          Illuminate rows.
+          for college-entrance assessments; null for every other source.
 
       - name: aligned_academic_subject
         data_type: string
@@ -121,23 +151,24 @@ models:
           Within-test-family normalized academic subject used for cross-test
           comparison (e.g., SAT EBRW and PSAT EBRW both align to EBRW). Ed-Fi
           academic_subject_descriptor alignment. Populated for college-entrance
-          assessments; null for AP, state, and internal Illuminate rows.
+          assessments; null for every other source.
 
       - name: credit_category
         data_type: string
         description: >-
           Ed-Fi credit_category_descriptor capturing graduation-requirement
           categorization (e.g., ENG, MATH, SCI). Populated for college-entrance
-          assessments; null for AP, state, and internal Illuminate rows.
+          assessments; null for every other source.
 
       - name: source_assessment_id
         data_type: int64
         description: >-
-          Illuminate `assessment_id` for internal Illuminate assessments; null
-          for state, college (Official + Practice), and AP rows. Used as a
-          discriminator in `assessment_key` so distinct Illuminate assessments
-          hash to different keys even when their other natural-key columns
-          coincide.
+          The source system's own assessment id for internal assessments
+          (Illuminate and Focus Assessments); null for every other source. Each
+          source numbers its assessments separately, so an id is unique only
+          together with type. Used as a discriminator in `assessment_key` so
+          distinct internal assessments hash to different keys even when their
+          other natural-key columns coincide.
 
       - name: test_type
         data_type: string
@@ -145,5 +176,6 @@ models:
           `'Official'` for college-entrance assessments delivered by the test
           vendor (SAT, ACT, PSAT). `'Practice'` for mock administrations of the
           same assessments delivered through Illuminate. Null for Illuminate,
-          state, and AP rows. Discriminator in `assessment_key` so Official and
-          Practice sittings of the same test family don't collide.
+          Focus Assessments, state, and AP rows. Discriminator in
+          `assessment_key` so Official and Practice sittings of the same test
+          family don't collide.

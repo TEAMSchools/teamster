@@ -1,5 +1,9 @@
 models:
   - name: rpt_illuminate__sites
+    description: >-
+      School site feed for Illuminate. Newark, Camden, and Paterson only; Miami
+      left Illuminate ahead of AY2026-27 and is excluded by an inclusive region
+      filter.
     columns:
       - name: "`01 Site ID`"
         data_type: int64

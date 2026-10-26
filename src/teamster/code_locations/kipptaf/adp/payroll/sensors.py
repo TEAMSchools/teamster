@@ -9,6 +9,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     sensor,
 )
 from dagster_shared import check
@@ -32,14 +33,12 @@ def adp_payroll_sftp_sensor(
 
     tick_cursor = float(context.cursor or "0.0")
 
-    with (
-        ssh_couchdrop.get_connection() as connection,
-        connection.open_sftp() as sftp_client,
-    ):
-        files = ssh_couchdrop.listdir_attr_r(
-            sftp_client=sftp_client,
-            remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll",
-        )
+    files = ssh_couchdrop.listdir_attr_r_or_skip(
+        remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
+    )
+
+    if isinstance(files, SkipReason):
+        return files
 
     add_dynamic_partition_keys = set()
 
@@ -75,6 +74,7 @@ def adp_payroll_sftp_sensor(
         match = check.not_none(value=pattern.match(string=path))
 
         group_dict = match.groupdict()
+        group_dict["group_code"] = group_dict["group_code"].upper()
 
         partition_key = MultiPartitionKey(group_dict)
 

@@ -7,7 +7,7 @@ models:
 
 
       NJ-only by design: this unions the district PowerSchool packages, and
-      Miami's gradebook is in Focus, not PowerSchool. Ratified on #4996.
+      Miami's gradebook is in Focus, not PowerSchool.
 
 
       Every column except _dbt_source_relation and _dbt_source_project comes
@@ -17,8 +17,6 @@ models:
       meta:
         contains_pii: true
     data_tests:
-      # TODO(#3915): returns to error when the storedgrades double-write cleanup
-      # completes. All duplicates are prior-year storedgrades rows.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -28,6 +26,8 @@ models:
               - quarter
               - course_number
               - category_name_code
+          config:
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string

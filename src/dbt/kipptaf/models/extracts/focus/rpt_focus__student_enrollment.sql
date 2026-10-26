@@ -40,18 +40,21 @@ select
 
     ida.focus_student_id_prefixed as student_id,
 
-    if(
-        e.grade_canonical_name = 'k',
-        'KG',
-        -- non-digit grade names (e.g. pk) yield null here; Miami is K-9 today
-        lpad(regexp_extract(e.grade_canonical_name, r'\d+'), 2, '0')
-    ) as grade_id,
+    case
+        e.grade_canonical_name
+        when 'k'
+        then 'KG'
+        when 'pre_k'
+        then 'PK'
+        else lpad(regexp_extract(e.grade_canonical_name, r'\d+'), 2, '0')
+    end as grade_id,
 
     format_date('%Y%m%d', e.start_date) as start_date,
 
     -- enrollment_code is the entry action and does not change on transfer_out;
     -- a withdrawal is expressed by drop_code + end_date, not by clearing the
     -- entry code.
+    -- TODO(#5992): confirm the Florida entry code for pre_k
     case when e.grade_canonical_name = 'k' then 'E05' else 'E01' end as enrollment_code,
 
     -- enrollment_end_date is gated to transfer_out upstream in

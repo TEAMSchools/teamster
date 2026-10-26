@@ -79,7 +79,7 @@ select
     /* highest of the flavor of PSAT */
     row_number() over (
         partition by powerschool_student_number, test_type, score_type
-        order by score desc
+        order by score desc, latest_psat_date desc, cb_id asc
     ) as rn_highest,
 
 from psat

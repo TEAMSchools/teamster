@@ -4,25 +4,25 @@ from dagster import (
     Definitions,
     load_assets_from_modules,
 )
-from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kippmiami import (
     CODE_LOCATION,
     DBT_PROJECT,
     couchdrop,
     dbt,
-    deanslist,
     dlt,
     extracts,
     finalsite,
     fldoe,
+    freshness,
     iready,
     renlearn,
 )
 from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE, SSH_FOCUS
+from teamster.core.executors import zombie_aware_k8s_job_executor
+from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
-    DEANSLIST_RESOURCE,
     DLT_RESOURCE,
     GCS_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
@@ -33,26 +33,32 @@ from teamster.core.resources import (
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
+    get_powerschool_oracle_resource,
+    get_powerschool_ssh_resource,
 )
 
 defs = Definitions(
-    executor=k8s_job_executor,
-    assets=load_assets_from_modules(
-        modules=[
-            dbt,
-            dlt,
-            extracts,
-            deanslist,
-            finalsite,
-            fldoe,
-            iready,
-            renlearn,
-        ]
+    executor=zombie_aware_k8s_job_executor,
+    assets=apply_freshness_policies(
+        load_assets_from_modules(
+            modules=[
+                dbt,
+                dlt,
+                extracts,
+                finalsite,
+                fldoe,
+                iready,
+                # Add `powerschool` here (and to the import above) to rebuild the
+                # frozen PowerSchool archive; remove both again afterwards. See
+                # src/teamster/code_locations/kippmiami/CLAUDE.md.
+                renlearn,
+            ]
+        ),
+        policies=freshness.policies,
     ),
     schedules=[
         *dlt.schedules,
         *extracts.schedules,
-        *deanslist.schedules,
         *finalsite.schedules,
     ],
     sensors=[
@@ -67,8 +73,8 @@ defs = Definitions(
     ],
     resources={
         "db_bigquery": BIGQUERY_RESOURCE,
+        "db_powerschool": get_powerschool_oracle_resource(),
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
-        "deanslist": DEANSLIST_RESOURCE,
         "dlt": DLT_RESOURCE,
         "finalsite": FINALSITE_RESOURCE,
         "gcs": GCS_RESOURCE,
@@ -79,6 +85,7 @@ defs = Definitions(
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_focus": SSH_FOCUS,
         "ssh_iready": SSH_IREADY,
+        "ssh_powerschool": get_powerschool_ssh_resource(),
         "ssh_renlearn": SSH_RENLEARN,
     },
 )

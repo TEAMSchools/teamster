@@ -85,11 +85,8 @@ with
            Upstream accumulates per student-school and its uniqueness key is
            (studentid, schoolid, academic_year), so a student at two schools in
            one year legitimately produces two rows and would fan this CTE out.
-           AY2023 onward has none; AY2019-AY2022 had 11-29 a year, values
-           genuinely differing. A recurrence would NOT fail CI — this model's
-           own key test is severity warn for the unrelated #3915 storedgrades
-           issue, so it would only inflate that warn count. Compare the count
-           against prod rather than trusting a green build.
+           Only older years have such students; a recurrence fails this model's
+           key test.
 
            That same per-school accumulation splits the middle- and high-school
            series, so a grade 9 row pairs a high-school projection with a
@@ -129,6 +126,7 @@ with
             enr.year_in_network,
             enr.rn_undergrad,
             enr.is_self_contained as is_pathways,
+            enr.is_hs_honors_program,
             enr.is_out_of_district,
             enr.is_retained_year,
             enr.is_retained_ever,
@@ -340,6 +338,7 @@ select
     s.rn_undergrad,
     s.is_out_of_district,
     s.is_pathways,
+    s.is_hs_honors_program,
     s.is_retained_year,
     s.is_retained_ever,
     s.student_slideback,
@@ -462,6 +461,9 @@ select
 
     s.gpa_band_projected_unweighted
     - s.gpa_band_unweighted_prior_year as gpa_band_change_from_prior_year,
+
+    /* the B cutoff, by the same affine identity need_next uses below */
+    g.need_60 + (83 - 60) / 10 * (g.need_70 - g.need_60) as need_83,
 
     g.need_next,
 

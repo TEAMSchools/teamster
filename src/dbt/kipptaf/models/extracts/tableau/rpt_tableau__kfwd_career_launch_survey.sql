@@ -88,6 +88,8 @@ with
             r.contact_current_kipp_student as current_kipp_student,
             r.contact_owner_name,
             r.contact_postsec_advisor as postsec_advisor,
+            r.contact_postsec_advisor_name as postsec_advisor_name,
+            r.contact_college_counselor_name as college_counselor,
             r.es_graduated,
             r.tier,
             r.contact_advising_provider as advising_provider,
@@ -100,6 +102,7 @@ with
             r.contact_mobile_phone as primary_phone,
             r.contact_home_phone as secondary_phone,
 
+            e.id as enrollment_id,
             e.pursuing_degree_type,
             e.type,
             e.start_date,
@@ -109,8 +112,6 @@ with
 
             a.adjusted_6_year_minority_graduation_rate as ecc,
             a.name as institution,
-
-            sr.survey_response_id as reconciliation_response_id,
 
             p.college_programs,
 
@@ -206,9 +207,6 @@ with
             and e.type not in ('High School', 'Middle School')
             and e.status = 'Graduated'
         left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
-        left join
-            {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
-            on r.contact_id = sr.sf_contact_id
         left join programs as p on r.contact_id = p.student
         left join
             {{ ref("stg_google_appsheet__kfwd_career_conversations__output") }} as cc
@@ -309,17 +307,13 @@ with
         from survey_pivot
     ),
 
-    excluded_responses as (
-        select survey_response_id,
-        from {{ ref("int_surveys__kfwd_career_launch_reconciliation") }}
-        where reconcile_or_exclude = 'Exclude'
-    ),
-
     survey_filtered as (
-        select sc.*,
+        select sc.*, sr.sf_contact_id as reconciled_contact_id,
         from survey_clean as sc
-        left join excluded_responses as er on sc.response_id = er.survey_response_id
-        where er.survey_response_id is null
+        left join
+            {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
+            on sc.response_id = sr.survey_response_id
+        where sr.reconcile_or_exclude is distinct from 'Exclude'
     )
 
 select
@@ -339,6 +333,7 @@ select
     r.actual_college_grad_date,
     r.current_kipp_student,
     r.contact_owner_name,
+    r.enrollment_id,
     r.pursuing_degree_type,
     r.type,
     r.start_date,
@@ -347,7 +342,6 @@ select
     r.status,
     r.ecc,
     r.institution,
-    r.reconciliation_response_id,
     r.college_programs,
     r.is_basta,
     r.is_braven,
@@ -365,6 +359,7 @@ select
     r.tier,
     r.advising_provider,
     r.postsec_advisor,
+    r.college_counselor,
     r.most_recent_iep_date,
     r.middle_school_attended,
     r.high_school_graduated_from,
@@ -423,6 +418,10 @@ select
     sp.annual_income_clean,
 
     if(
+        r.contact_id = sp.reconciled_contact_id, sp.response_id, null
+    ) as reconciliation_response_id,
+
+    if(
         r.expected_grad_date_month < 7,
         concat('Spring ', r.expected_grad_date_year),
         concat('Fall ', r.expected_grad_date_year)
@@ -438,7 +437,7 @@ select
 
     if(r.most_recent_iep_date is not null, true, false) as is_special_education,
 
-    if(r.advising_provider = 'KIPP NYC', 'Collab', r.contact_owner_name) as advisor,
+    if(r.advising_provider = 'KIPP NYC', 'Collab', r.postsec_advisor_name) as advisor,
 
     if(
         r.contact_id is not null,
@@ -457,6 +456,6 @@ full join
     and (
         r.sf_email = sp.respondent_user_principal_name
         or r.sf_secondary_email = sp.respondent_user_principal_name
-        or r.reconciliation_response_id = sp.response_id
+        or r.contact_id = sp.reconciled_contact_id
         or r.contact_id = sp.respondent_salesforce_id
     )

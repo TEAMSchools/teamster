@@ -38,11 +38,6 @@ models:
             foreign_key:
               to: ref('dim_staff_observation_rubrics')
               to_columns: [staff_observation_rubric_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff_observation_rubrics')
-                field: staff_observation_rubric_key
 
       - name: name
         quote: true

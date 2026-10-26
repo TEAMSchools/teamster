@@ -5,16 +5,8 @@ and four district projects into network-level marts, reporting, and extracts.
 
 ## Source File Conventions
 
-Each integration uses two source files with the **same `name:` under
-`sources:`** (dbt merges at parse time):
-
-| File                   | Points to                          | Schema expression                    |
-| ---------------------- | ---------------------------------- | ------------------------------------ |
-| `sources-external.yml` | GCS Avro / Google Sheets externals | dev-prefixed (env-isolated)          |
-| `sources-bigquery.yml` | Native BQ tables (Airbyte, frozen) | plain hardcoded (e.g. `kipptaf_foo`) |
-
-When both files exist for the same source, `sources-bigquery.yml` omits
-`schema:`.
+The two-file convention is in `.claude/rules/dbt-yaml.md` → Source File
+Conventions.
 
 **Archive pattern**: Disable the model (`config: enabled: false` in properties
 YAML) → add BQ-native entry in `sources-bigquery.yml` → update downstream
@@ -28,16 +20,11 @@ any tab change. Archive tabs must be converted to BQ-native sources.
 
 ### Cross-region joins (critical)
 
-Union models carry `_dbt_source_relation` but values differ across models (they
-include schema + table name). **Never join on
-`a._dbt_source_relation = b._dbt_source_relation`** — join the materialized
-`_dbt_source_project` column:
-
-```sql
-inner join {{ ref("other_union_model") }} as b
-    on a.id = b.id
-    and a._dbt_source_project = b._dbt_source_project
-```
+Join unioned models on `_dbt_source_project` (A10 in
+`.claude/rules/dbt-architecture.md`). Union models also carry
+`_dbt_source_relation`, but its values differ across models (they include
+schema + table name). **Never join on
+`a._dbt_source_relation = b._dbt_source_relation`.**
 
 The `union_dataset_join_clause` macro that wrapped this comparison was deleted
 in [#3142](https://github.com/TEAMSchools/teamster/issues/3142). Five stale
@@ -91,7 +78,7 @@ its upstream producer — never re-derive it downstream.
 `base_` models using `star()` resolve columns from BigQuery at run time, not
 SQL. YAML properties drift silently. **Rule**: enumerate columns explicitly when
 joining these models (see `INFORMATION_SCHEMA.COLUMNS` query in
-`src/dbt/CLAUDE.md`).
+`.claude/rules/dbt-sql.md`).
 
 `union_relations` views have a related issue (stale compiled SQL) but are
 handled automatically by `dbt_union_relations_automation_condition()`.
@@ -103,6 +90,14 @@ Pure `union_relations()` views over per-region district staging tables (e.g.
 are functionally intermediates. Uniqueness tests and `materialized: table`
 belong on the per-region source-system staging models, not on the kipptaf-level
 view. Don't add either when creating a new one.
+
+Exception: make a union view a table when it hosts a `relationships` test
+against a kipptaf model, such as the location crosswalk. A test on a view runs
+only when the view's code changes, not when new data loads. A package can't
+`ref()` kipptaf, so the per-region model can't hold the test either. The table
+is the only place the check runs on every load. Find the current ones with
+`rg -l 'a test on a view runs only' models/`, and don't turn them back into
+views.
 
 Contract-enforcement here is per-model, NOT directory-wide: the `powerschool:`
 block in `dbt_project.yml` sets only `+schema:` (no `staging: +contract`), so
@@ -144,11 +139,9 @@ over per-region finalsite sources.
   (`sources-kippmiami.yml`, `sources-kippcamden.yml`, `sources-kippnewark.yml`,
   `sources-kipppaterson.yml`) carry the `staging`→`zz_stg_` branch (single-PR
   pattern — a cross-region finalsite union needs the staged copies for CI).
-  Newark gained it in #4400 (DeansList contacts) alongside a column add to
-  `int_finalsite__student_contacts`; before pushing any finalsite column-adding
-  PR, seed the staged copies per district (`dbt clone --target staging` +
-  `dbt build --select <model> --target staging`) so CI's union-wrapper rebuild
-  sees the new columns.
+  Before pushing any finalsite column-adding PR, seed the staged copies per
+  district (_Single-PR cross-project workflow_ below) so CI's union-wrapper
+  rebuild sees the new columns.
 
 ### `extracts/powerschool/` special case
 
@@ -223,28 +216,28 @@ already, so daily passes BigQuery's 4,000-partition cap inside a decade. See
 
 **Miami is the exception, deliberately.** Focus is Miami's sole enrollment
 source and has no placeholder equivalent, so the Focus cutover removed Miami's
-1,002 placeholder rows (420 students, AY2022-AY2025) — from the spine in #4775
-and from `base_powerschool__student_enrollments` in #4868. The
-retain-graduate-placeholder rule below still binds the three NJ regions. Do not
-"restore" Miami placeholders by reviving the frozen archive branch; that was
-decided against on 2026-08-14.
+placeholder rows from the spine and from
+`base_powerschool__student_enrollments`. The retain-graduate-placeholder rule
+below still binds the three NJ regions. Do not "restore" Miami placeholders by
+reviving the frozen archive branch; that was decided against.
 
 **Point-in-time enrollment headcount uses entry/exit dates, not
 `enroll_status`.** `count_students` on the `student_attendance_enrollment_daily`
-Cube counts distinct students over whatever slice is queried. There are no
-anchor measures and no anchor columns — pin `dates_date_day` to a date for a
-point-in-time figure, leave it open for ever-enrolled over a range.
-`fct_student_attendance_enrollment_daily` carries a row for every calendar day
-inside a stint, break days included, so any date resolves for every school.
+Cube counts distinct enrolled students over whatever slice is queried, whether
+or not their attendance has been recorded; rates divide by
+`count_students_measured` instead. There are no anchor measures and no anchor
+columns — pin `dates_date_day` to a date for a point-in-time figure, leave it
+open for ever-enrolled over a range. `fct_student_attendance_enrollment_daily`
+carries a row for every calendar day inside a stint, break days included, so any
+date resolves for every school.
 
 **Each stint's day window is clamped to its school's academic year, and that
 clamp is load-bearing.** PowerSchool rolls NJ stints over on 1 July while Focus
-dates Miami stints to the real first day of school (19,979 Newark July entries
-against 2,955 Miami August entries, AY2024-26). An unclamped window would report
-Newark at roughly 20,000 students in mid-July against almost no Miami students,
-purely from a source-system date convention. Clamping to the school year makes
-any calendar date comparable across regions; mid-July correctly returns nobody
-anywhere.
+dates Miami stints to the real first day of school. An unclamped window would
+report Newark at roughly 20,000 students in mid-July against almost no Miami
+students, purely from a source-system date convention. Clamping to the school
+year makes any calendar date comparable across regions; mid-July correctly
+returns nobody anywhere.
 
 **Miami is present across history on
 `fct_student_attendance_enrollment_daily`.** Its rows come from
@@ -253,10 +246,10 @@ retain Miami — the calendar keeps the frozen PowerSchool archive for the years
 Focus does not cover. Miami _attendance_ for those years comes from that same
 archive, re-keyed onto Focus enrollment stints (#5114), so pre-AY2026 figures
 are four regions. Every rate excludes null attendance from both numerator and
-denominator (#4744), so a day nobody measured sits outside the population as
-well as the rate. Paterson `attendance_value` is unreliable (upstream PS
-conversion-items gap, #4193) but `membership_value` is clean, so enrollment
-counts include Paterson correctly.
+denominator (#4744), so a day nobody measured sits outside every rate; a student
+with no measured day still counts in `count_students`. Paterson
+`attendance_value` is unreliable (upstream PS conversion-items gap, #4193) but
+`membership_value` is clean, so enrollment counts include Paterson correctly.
 
 **School calendars diverge at year-end; never anchor a point-in-time count on a
 network-wide `max(date)`.** Mid-year months share a last in-session day across
@@ -276,15 +269,11 @@ stays here is what to do and what not to do.
 - **`int_powerschool__student_enrollment_union`** — retain graduate placeholder
   rows; derived enrollment models and `dim_student_enrollments` stay
   alumni-inclusive. Include `academic_year` in surrogate key inputs.
-- **`stg_powerschool__cc` double-writes** — filter `is_dropped_section` first
-  when date-range joining `base_powerschool__course_enrollments`. Do NOT add
-  defensive dedupes (`qualify row_number() = 1` or `dbt_utils.deduplicate()`)
-  for the residual fan-out. Downgrade the affected mart PK uniqueness test to
-  `severity: warn` with a `TODO(#3915)` so it returns to error when source
-  cleanup completes. `base_powerschool__student_enrollments` date-range joins
-  currently need no tiebreaker. Tracked in
-  [#3900](https://github.com/TEAMSchools/teamster/issues/3900); Ops cleanup in
-  [#3915](https://github.com/TEAMSchools/teamster/issues/3915).
+- **`stg_powerschool__cc` double-writes** — the package
+  `base_powerschool__course_enrollments` already dedupes them, so consumers need
+  no dedupe of their own. A duplicate in a downstream key means a new fan-out:
+  fix that join, and keep the consumer's uniqueness test at error. The
+  `stg_powerschool__cc` warnings stay permanently as the Ops worklist.
 - **`int_people__location_crosswalk`** — consumers joining on an aliased name
   (e.g. `fct_staff_observations` on `gro.school_name`) must use this model.
   Canonical-grain consumers, meaning one row per logical school, use
@@ -310,8 +299,13 @@ stays here is what to do and what not to do.
   `stg_renlearn__star`.
 - **`stg_adp_workforce_now__workers` ghosts** — fix by rematerializing the ADP
   `workers` partitions spanning the record's active dates; the re-pull drops the
-  ghost and downstream tables rebuild via automation. Detection check tracked in
-  [#4407](https://github.com/TEAMSchools/teamster/issues/4407).
+  ghost and downstream tables rebuild via automation. The
+  `stg_adp_workforce_now__workers__ghost_open_records` asset check flags them.
+- **`stg_people__employee_numbers` on a deleted and re-created hire** — the new
+  worker_id gets a new employee number, and the old number stays active. IdAuto
+  matches AD accounts on employee number, so have IT update the existing AD
+  account to the new number and worker_id. Do not re-point the old number at the
+  new worker_id: the new number has already reached other systems.
 
 ## Exposures
 
@@ -319,7 +313,14 @@ Every external consumer **must** have a dbt exposure in `models/exposures/`.
 Files grouped by tool: `tableau.yml`, `google-sheets.yml`, etc.
 
 Required fields: `name`, `label`, `type`, `owner.name: Data Team`, `depends_on`,
-`url`, `config.meta.dagster.kinds`.
+`config.meta.dagster.kinds`.
+
+`url` is optional in dbt and is not the convention for every tool. Add it only
+where it is that tool's canonical locator and you have the real value. Google
+Sheets: yes — a Sheet has no other address (64 of 65 carry one). Tableau: no —
+the workbook is addressed by its LSID in `asset.metadata.id` (46 of 50 carry
+one; 3 have a `url` and 2 of those are `TBD`). Never synthesize one from the
+Tableau API to fill the field.
 
 **Tableau workbooks** — add `asset.metadata.id` (LSID) when known. Add
 `cron_schedule` only if Dagster owns the refresh:
@@ -338,65 +339,20 @@ config:
 These crons become real Dagster refresh schedules
 (`code_locations/kipptaf/tableau/schedules.py`) and set the freshness floor for
 upstream cadence decisions — check them before moving an upstream model to a
-cron automation condition (see `src/dbt/CLAUDE.md` → View→table flips).
+cron automation condition (see `.claude/rules/dbt-models.md` → View→table
+flips).
+
+A Tableau workbook reads its `rpt_tableau__*` model through an extract, never a
+live connection. The extract refresh is the only query that runs against the
+model, so an `rpt_tableau__*` model stays a view unless a refresh is measured
+too slow. Do not design a model, or its materialization, for live-connection
+queries.
 
 ## dbt Cloud CI
 
-CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
-defers to Staging environment.
-
-A refactor touching many models pulls them into `state:modified+`, so CI builds
-models it has never built — expect latent `severity: error` failures unrelated
-to your change (a 56-file sweep surfaced 5 duplicate PKs sitting in prod). Query
-prod for the same count before assuming you caused it, and budget for triage
-when scoping a wide sweep.
-
-`state:modified+` is branch-vs-deferred-environment, NOT commit-vs-commit. A
-docs-only or `.md`-only push to a branch that already modifies dbt models
-re-runs the whole selection — measured at 918 relations and ~4.5 min on a
-13-file PR whose last commit touched only `.md`. Batch doc commits before
-pushing, or land them in a separate PR. Verify what a run actually built with
-`creation_time` in `region-us.INFORMATION_SCHEMA.TABLES` filtered to
-`dbt_cloud_pr_<job>_<pr>%` — step duration and warning counts are both weak
-proxies.
-
-CI is scoped to the kipptaf project only. PRs touching only a district project
-(kipppaterson, kippnewark, kippcamden, kippmiami) get a no-op kipptaf CI run
-that selects no models — kipptaf CI green is not evidence the district-side
-changes are correct. Verify via local `uv run dbt build` against the district
-project.
-
-`Clone - Staging (Modified)` clones only `state:modified` models, not their
-parents. When CI fails on a stale staging defer table for an unmodified upstream
-(column missing after a recent merge), trigger the full `Clone - Staging` job —
-or `dbt clone --select <upstream>` against staging. Trigger via
-`mcp__dbt__trigger_job_run` with the `Clone - Staging (On-Demand)` job ID from
-`mcp__dbt__list_jobs` (~5 min run); after success, empty-commit + push
-re-triggers Build - CI.
-
-`Clone - Staging` refreshes only kipptaf-level relations — NOT district-level
-`zz_stg_kipp<district>_*`. A CI orphan / row-count delta that reconciles exactly
-against per-district prod-vs-`zz_stg` gaps is that staleness, not your change;
-re-running Clone - Staging won't fix it.
-
-Distinct from stale staging defer — **stale per-PR shadow**: a model that was
-`state:modified` in an earlier run (e.g. before the branch merged `main`) but is
-now unmodified leaves a stale copy in the per-PR schema
-(`dbt_cloud_pr_<job>_<pr>_<schema>`, one dataset per dbt custom schema). dbt
-prefers an existing same-schema relation over the staging defer, so consumers
-fail `Name <col> not found` even when `zz_stg_*` has the column. Confirm via
-`INFORMATION_SCHEMA.COLUMNS` on the per-PR vs `zz_stg_*` schema, then drop the
-stale per-PR relation (match `drop view`/`drop table` to its type) — or
-`drop schema ... cascade` the whole `dbt_cloud_pr_<job>_<pr>_*` set to avoid
-model-by-model whack-a-mole — and re-run. Claude is DDL-blocked (BQ MCP / `bq`
-are SELECT-only), so hand the drops to the user.
-
-Re-triggering Build - CI: prefer `mcp__dbt__retry_job_run(run_id=<failed run>)`
-— it retries the _existing_ run, keeping the PR-schema override
-(`trigger_job_run` loses it; that's why the fallback is empty-commit + push).
-But `dbt retry` replays the prior run's compiled SQL and re-runs only
-errored/skipped nodes — so after changing external state (dropping PR schemas,
-refreshing staging) use a fresh build (empty-commit + push), not retry.
+CI builds this project alone, with `state:modified+` against the Staging
+environment. Its selection, retries, and stale staging or per-PR copies are in
+the `pr-ci-review` skill; seeding district copies for one PR is below.
 
 ## Single-PR cross-project workflow
 
@@ -406,26 +362,30 @@ touching both a district model and a kipptaf consumer:
 1. Add `target=staging` branch to affected `sources-kipp*.yml` (routes to
    `zz_stg_<district>_<source>`).
 2. From each affected district project, run broad clone (no `--select`):
-   `uv --directory <worktree> run dbt clone --target staging --state target/prod`
-   to seed `zz_stg_<district>_*` from prod.
+   `uv run dbt clone --project-dir <worktree>/src/dbt/<district> --target staging --state /workspaces/teamster/src/dbt/<district>/target/prod`
+   to seed `zz_stg_<district>_*` from prod. This is a shared write: follow
+   _Shared staging writes_ in `.claude/rules/dbt-yaml.md`. Absolute `--state`
+   and the clone's silent skips: `dbt-local-dev`.
 3. Push; CI reads staged regional via the schema branch.
 
 `dbt clone` only seeds upstreams UNCHANGED in this PR (it copies prod schema).
 For district/package models you MODIFIED, clone gives the OLD schema — instead
 `stage_external_sources --target staging` their externals, then
-`dbt build --select <model> --target staging` into `zz_stg_`. Also clone+build
-`zz_stg_kipptaf` itself — under `--target staging` kipptaf reads its own models
-from there. Seed EVERY district that unions into the kipptaf model (e.g.
-`kipppaterson`, which feeds `stg_pearson__njsla`/`_science` via its own
-`int_pearson__*`, not the package `stg_*`).
+`uv run dbt build --select <model> --target staging` into `zz_stg_`. Also
+clone+build `zz_stg_kipptaf` itself — under `--target staging` kipptaf reads its
+own models from there. Each of these is a shared write under the same rule. Seed
+EVERY district that unions into the kipptaf model (e.g. `kipppaterson`, which
+feeds `stg_pearson__njsla`/`_science` via its own `int_pearson__*`, not the
+package `stg_*`).
 
-Alternative to the two-PR pattern in `src/dbt/CLAUDE.md`.
+Alternative to the two-PR pattern in `.claude/rules/dbt-models.md`.
 
 ## Stale-wide `zz_stg` union defer copy
 
 When a kipptaf `union_relations` wrapper's `zz_stg` defer copy is wider than
 current (e.g. a district lags a column-drop rollout, so the prod-cloned copy
-still carries the dropped column), rebuild the wrapper `--target staging`:
+still carries the dropped column), rebuild the wrapper `--target staging` (a
+shared write: _Shared staging writes_ in `.claude/rules/dbt-yaml.md`):
 `union_relations` recomputes the column intersection from the CURRENT district
 `zz_stg` sources, yielding a corrected (narrow) copy — no prod rematerialization
 and no waiting on the lagging district. Used to unblock CI on a downstream
@@ -454,9 +414,9 @@ snapshot — before removing it.
 - **`rpt_`** — analyst-built reporting views for external tools. Live in
   `models/extracts/`.
 - **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
-  `models/marts/`. Actively being developed; see
-  `src/dbt/kipptaf/models/marts/CLAUDE.md` for column-naming rubric, hash-change
-  discipline, and strict-chain rules.
+  `models/marts/`. The column-naming rubric and strict-chain rules are in
+  `.claude/rules/dbt-marts.md`; hash-change discipline and mart operations are
+  in `src/dbt/kipptaf/models/marts/CLAUDE.md`.
 
 New KIPP Forward Google Sheets extracts take the `rpt_gsheets__kfwd_` prefix.
 Existing models use both `kfwd_` and `kippfwd_`; `kfwd_` is the going-forward

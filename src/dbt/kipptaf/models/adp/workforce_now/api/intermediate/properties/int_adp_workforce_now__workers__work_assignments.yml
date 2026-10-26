@@ -1,5 +1,25 @@
 models:
   - name: int_adp_workforce_now__workers__work_assignments
+    data_tests:
+      - dbt_utils.expression_is_true:
+          description: >-
+            Catches a non-terminated ADP work assignment record, current or
+            historical, whose home work location code matches no row on the
+            locations Google Sheet. Downstream, dim_work_assignment_locations
+            records no location for that span, and on the current record
+            dim_staff_cube_access gives the staff member no location, so Cube
+            denies them student data. Fix by filling ADP_Location_Code for that
+            location on the locations sheet, which repairs every record at that
+            code.
+          arguments:
+            expression: |
+              home_work_location__name_code__code_value is null
+              or location_key is not null
+          config:
+            severity: error
+            # terminated assignments at retired codes (Pathways, Whittier) are
+            # excluded from the location join on purpose
+            where: assignment_status__status_code__name != 'Terminated'
     columns:
       - name: location_key
         data_type: string
@@ -12,13 +32,25 @@ models:
               arguments:
                 to: ref("dim_locations")
                 field: location_key
+      - name: home_work_location__name_code__code_value
+        data_type: string
+        description:
+          ADP code for the assignment's home work location. Joins to
+          adp_location_code in stg_google_sheets__people__locations to resolve
+          location_key.
+        data_tests:
+          - not_null:
+              description: >-
+                Catches a non-terminated ADP work assignment record, current or
+                historical, with no home work location. Downstream,
+                dim_work_assignment_locations records no location for that span,
+                and on the current record dim_staff_cube_access gives the staff
+                member no location, so Cube denies them student data. Fix by
+                setting the home work location on the assignment in ADP.
+              config:
+                where: assignment_status__status_code__name != 'Terminated'
       - name: home_work_location__name_code__name
         data_type: string
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref("stg_google_sheets__people__location_crosswalk")
-                field: name
         description:
           First non-null of home_work_location__name_code__long_name,
           home_work_location__name_code__short_name.
@@ -104,8 +136,6 @@ models:
       - name: base_remuneration__daily_rate_amount__name_code__long_name
         data_type: string
       - name: base_remuneration__daily_rate_amount__name_code__short_name
-        data_type: string
-      - name: home_work_location__name_code__code_value
         data_type: string
       - name: home_work_location__name_code__long_name
         data_type: string

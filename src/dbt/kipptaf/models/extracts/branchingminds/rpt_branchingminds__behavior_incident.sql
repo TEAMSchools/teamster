@@ -7,7 +7,7 @@ select
     cast(i.incident_id as string) as incident_id,
 
     cast(loc.powerschool_school_id as string) as school_id,
-from {{ ref("int_deanslist__incidents") }} as i
+from {{ ref("int_students__behavioral_incidents") }} as i
 inner join
     {{ ref("stg_google_sheets__people__locations") }} as loc
     on i.location_key = loc.location_key
@@ -18,8 +18,5 @@ where
     i._dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
     and i.is_active
     and dd.is_current_academic_year
-    and (
-        i.referral_tier is null
-        or i.referral_tier not in ('Social Work', 'Non-Behavioral')
-    )
-    and (i.category is null or i.category not like 'Documentation%')
+    -- uncategorized incidents stay in the feed, as before the package flag
+    and (i.is_behavioral_referral or i.category is null)

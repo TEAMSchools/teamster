@@ -106,9 +106,8 @@ from raw PowerSchool course-enrollment/NJSLA queries, not a CSGF report):
 
 **12.** **"What gateway math course(s) do you offer?"** → **Algebra 1**
 [confirmed]. The course catalog only has Algebra I variants; "Integrated
-Mathematics I" / "NC Math 1" only appear in the CSGF HS enrollment model's
-_transfer-student_ course-name catch list (matching incoming credits from other
-states) -- not something KTAF itself teaches. Don't let that list suggest
+Mathematics I" / "NC Math 1" only ever appeared in transfer grades from other
+states -- not something KTAF itself teaches. Don't let that list suggest
 Integrated Math is offered.
 
 **13.** **"In what grade is gateway math typically first offered to students?"**

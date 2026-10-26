@@ -7,6 +7,10 @@ on:
       - main
     paths:
       - .github/workflows/mkdocs-gh-deploy.yaml
+      - .claude/rules/dbt-architecture.md
+      - .claude/rules/dbt-marts.md
+      - .claude/rules/dbt-yaml.md
+      - .claude/rules/dbt-sql.md
       - docs/**
       - mkdocs.yml
       - "!docs/superpowers/**"
@@ -33,7 +37,7 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
 
       # https://github.com/astral-sh/setup-uv
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
 
       - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
 

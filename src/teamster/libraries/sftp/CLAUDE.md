@@ -28,6 +28,13 @@ Named groups in `remote_dir_regex` / `remote_file_regex` are replaced with
 partition key dimension values via `compose_regex()`. For multi-partition keys,
 each dimension name maps to a group name in the regex.
 
+`build_sftp_file_asset(current_partition_only=True)` refuses, before download, a
+file whose mtime falls outside the partition's time window. Use it when the
+vendor file only ever holds the current partition's data, so a past partition is
+a frozen snapshot a re-run would overwrite (Branching Minds). It judges by
+mtime, not the clock, so a June 30 file still loads into its year when the run
+starts after midnight.
+
 `iready` has special-cased logic: the current fiscal year partition maps to the
 `Current_Year` directory on the SFTP server.
 
@@ -36,3 +43,11 @@ each dimension name maps to a group name in the regex.
 Assets yield `Output(value=(records, avro_schema))` and a schema validity check.
 Empty files and zero-row CSVs produce a warning but don't fail. PDFs are parsed
 via `pypdf` if `pdf_row_pattern` is provided.
+
+## Local download paths
+
+All three factories route their `sftp_get` target through
+`resolve_local_filepath()`, which nests the remote path under
+`/tmp/dagster/{asset_key}/` and raises if it would resolve outside that
+directory (traversal). Regression:
+`tests/libraries/test_sftp_local_filepath.py`.

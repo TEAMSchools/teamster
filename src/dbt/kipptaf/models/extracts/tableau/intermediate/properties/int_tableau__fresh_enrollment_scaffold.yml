@@ -1,9 +1,8 @@
 models:
   - name: int_tableau__fresh_enrollment_scaffold
     description: >
-      School x grade spine for the FRESH dashboard, fully SIS-derived. Replaces
-      the hand-maintained stg_google_sheets__finalsite__school_scaffold, which
-      is now retired -- every row type it supplied is computed here. PowerSchool
+      School x grade spine for the FRESH dashboard, fully SIS-derived; nothing
+      is hand-entered. One row per region, school and grade. PowerSchool
       supplies schools and grade membership for Newark/Camden/Paterson; Focus
       supplies both for Miami (Miami's live SIS), joined through
       stg_google_sheets__people__locations to reach the PowerSchool-space
@@ -18,15 +17,16 @@ models:
       may not be entered in the SIS yet even though Finalsite is already
       recruiting for it, so that grade won't appear until the SIS has at least
       one enrolled student in it. The three row types no SIS produces directly
-      are derived -- grade_level = -9 whole-school totals, schoolid = 0 region
-      rollups, and net-new schools/grades anti-joined off
-      int_finalsite__status_report_unpivot. That last branch is gated by a
-      predicate comparing the two year vars, which renders as a constant
-      (finalsite_recruitment_year != current_academic_year -- e.g. "2026 !=
-      2026"). It looks odd in the compiled SQL but is deliberate: both sides are
-      compile-time literals, so BigQuery folds it and the CTE contributes zero
-      rows until SRE's recruitment year runs ahead of PowerSchool's academic
-      year. Once it does, the branch activates on its own. See
+      are derived -- grade_level = -9 whole-school totals (one per school),
+      schoolid = 0 region rollups (one per region and grade; no -9 row at region
+      level), and net-new schools/grades from
+      int_finalsite__status_report_unpivot that are not already in the SIS
+      spine. That last branch is gated by a predicate comparing the two year
+      vars, which renders as a constant (finalsite_recruitment_year !=
+      current_academic_year, e.g. "2026 != 2026"). It looks odd in the compiled
+      SQL but is deliberate: both sides are compile-time literals, so the branch
+      contributes zero rows until SRE's recruitment year runs ahead of
+      PowerSchool's academic year, then activates on its own. See
       docs/models/fresh-dashboard-data-model.md for the full build and for why
       school_level here can disagree with the goals sheet.
     data_tests:
@@ -49,24 +49,24 @@ models:
             severity: warn
             where: schoolid != 0
           description: >
-            Drift guard on the net-new anti-join key. finalsite_new suppresses a
-            Finalsite school/grade already in the SIS spine by matching
-            (schoolid, grade_level); the model's primary key also carries
-            region. If int_finalsite__status_report_unpivot's region ever
-            disagrees with extract_region()'s output for the same school, the
-            primary key still passes while this check (which drops region)
-            catches the resulting duplicate school/grade pair under two region
-            labels. Region-level rollup rows (schoolid = 0) legitimately repeat
-            across regions and are excluded.
+            Drift guard on the net-new anti-join. finalsite_new suppresses a
+            Finalsite school/grade already in the SIS spine by matching (region,
+            schoolid, grade_level). If int_finalsite__status_report_unpivot's
+            region ever disagrees with extract_region()'s output for the same
+            school, the anti-join misses and the same school/grade appears under
+            two region labels. The primary key still passes because it includes
+            region; this check drops region and catches the duplicate. Region
+            rollup rows (schoolid = 0) legitimately repeat across regions and
+            are excluded.
     columns:
       - name: enrollment_academic_year
         data_type: int64
         description: >
-          The current Finalsite recruitment cycle, sourced from the
-          finalsite_recruitment_year dbt variable (dbt_project.yml). The
-          variable is manually bumped each cycle, not auto-derived -- unlike
-          current_academic_year which bumps on a fixed July 1 date, SRE's
-          recruitment cycle timeline is fluid.
+          The current Finalsite recruitment cycle in start-year form
+          (AY2026-2027 = 2026), from the finalsite_recruitment_year dbt
+          variable. The same value on every row. The variable is bumped by hand
+          each cycle, not derived, because SRE's recruitment cycle has no fixed
+          rollover date.
       - name: region
         data_type: string
         description: One of "Newark", "Camden", "Miami", "Paterson".
@@ -86,13 +86,13 @@ models:
       - name: grade_level
         data_type: int64
         description: >
-          -9 = whole-school total row, derived one per school in the spine, else
-          0-12. -9 rather than -1, because -1 means Pre-K in
-          stg_finalsite__status_report.grade_level and the two conventions must
-          not collide. -1 never appears here.
+          -9 = whole-school total row, one per school in the spine; otherwise
+          the enrolled grade (K = 0). -9 rather than -1, because -1 means Pre-K
+          in stg_finalsite__status_report.grade_level and the two conventions
+          must not collide.
       - name: org
         data_type: string
-        description: Always "KTAF" (verified constant, network-wide).
+        description: Always "KTAF".
       - name: school_level
         data_type: string
         description: >
@@ -100,8 +100,9 @@ models:
           else ES) -- NOT read from either SIS's own per-school field, which is
           a single value per school and cannot reproduce a level that varies by
           grade within one school. NULL on grade_level = -9 rows, which span
-          bands. These are NJ bands, so Miami grade 5 reports MS even though
-          Miami's real ES/MS boundary is 5/6 -- an accepted divergence from
+          bands; banded as usual on region rollup rows. These are NJ bands, so
+          Miami grade 5 reports MS even though Miami's real ES/MS boundary is
+          5/6 -- an accepted divergence from
           stg_google_sheets__finalsite__goals, which uses Miami's real boundary.
           See docs/models/fresh-dashboard-data-model.md.
       - name: scaffold_source

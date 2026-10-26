@@ -55,6 +55,9 @@ select
     c.contact_type,
     c.contact_phone_type,
 
+    dr.state_district_id as ext__district_sisid,
+    dr.state_school_id as ext__school_sisid,
+
     null as hispanic_latino,
     null as home_language,
     null as frl_status,
@@ -84,6 +87,8 @@ left join
     contacts as c
     on sr.student_number = c.student_number
     and sr._dbt_source_project = c._dbt_source_project
+left join
+    {{ ref("dim_regions") }} as dr on sr._dbt_source_project = dr.dagster_code_location
 where
     sr.academic_year = {{ var("current_academic_year") }}
     and sr.rn_year = 1

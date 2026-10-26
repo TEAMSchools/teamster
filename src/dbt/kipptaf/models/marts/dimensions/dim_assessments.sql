@@ -12,10 +12,10 @@ with
             m.module_code,
             m.module_type,
             m.is_internal_assessment,
+            m.source as assessment_type,
 
             c.grade_level,
 
-            'illuminate' as assessment_type,
             'enrollment' as assessment_scope,
 
             cast(null as string) as combined_academic_subject,
@@ -25,20 +25,21 @@ with
         from {{ ref("int_assessments__assessments_members") }} as m
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on m.canonical_assessment_id = c.canonical_assessment_id
+            on m.source = c.source
+            and m.canonical_assessment_id = c.canonical_assessment_id
         where m.is_internal_assessment
     ),
 
     -- grain projection, not dup-masking
-    state_nj_parcc as (
+    state_nj_assessments as (
         select distinct
+            assessment_type,
+            assessment_name as title,
             subject_area,
             discipline as scope,
             module_code,
             test_grade as grade_level,
 
-            'state_nj_parcc' as assessment_type,
-            'PARCC' as title,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
@@ -48,140 +49,20 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-        from {{ ref("stg_pearson__parcc") }}
-        where testscalescore is not null
-    ),
-
-    -- grain projection, not dup-masking
-    state_nj_njsla as (
-        select distinct
-            subject_area,
-            discipline as scope,
-            module_code,
-            test_grade as grade_level,
-
-            'state_nj_njsla' as assessment_type,
-            'NJSLA' as title,
-            false as is_internal_assessment,
-            'enrollment' as assessment_scope,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-            cast(null as string) as combined_academic_subject,
-            cast(null as string) as aligned_academic_subject,
-            cast(null as string) as credit_category,
-            cast(null as string) as test_type,
-        from {{ ref("stg_pearson__njsla") }}
-        where testscalescore is not null
-    ),
-
-    -- grain projection, not dup-masking
-    state_nj_njsla_science as (
-        select distinct
-            subject_area,
-            discipline as scope,
-            module_code,
-            test_grade as grade_level,
-
-            'state_nj_njsla_science' as assessment_type,
-            'NJSLA Science' as title,
-            false as is_internal_assessment,
-            'enrollment' as assessment_scope,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-            cast(null as string) as combined_academic_subject,
-            cast(null as string) as aligned_academic_subject,
-            cast(null as string) as credit_category,
-            cast(null as string) as test_type,
-        from {{ ref("stg_pearson__njsla_science") }}
-        where testscalescore is not null
-    ),
-
-    -- grain projection, not dup-masking
-    state_nj_njgpa as (
-        select distinct
-            subject_area,
-            discipline as scope,
-            module_code,
-            test_grade as grade_level,
-
-            'state_nj_njgpa' as assessment_type,
-            'NJGPA' as title,
-            false as is_internal_assessment,
-            'enrollment' as assessment_scope,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-            cast(null as string) as combined_academic_subject,
-            cast(null as string) as aligned_academic_subject,
-            cast(null as string) as credit_category,
-            cast(null as string) as test_type,
-        from {{ ref("stg_pearson__njgpa") }}
-        where testscalescore is not null
-    ),
-
-    -- grain projection, not dup-masking
-    -- not strictly required -- these rows hash identically to the Pearson NJGPA
-    -- rows -- but kept so this dimension does not depend on Pearson history
-    state_nj_njgpa_cambium as (
-        select distinct
-            subject_area,
-            discipline as scope,
-            module_code,
-            test_grade as grade_level,
-
-            'state_nj_njgpa' as assessment_type,
-            'NJGPA' as title,
-            false as is_internal_assessment,
-            'enrollment' as assessment_scope,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-            cast(null as string) as combined_academic_subject,
-            cast(null as string) as aligned_academic_subject,
-            cast(null as string) as credit_category,
-            cast(null as string) as test_type,
-        from {{ ref("int_pearson__all_assessments") }}
-        where
-            _dbt_source_relation like '%cambium%'
-            and assessment_type = 'state_nj_njgpa'
-            and testscalescore is not null
-    ),
-
-    -- grain projection, not dup-masking
-    state_fl_fast as (
-        select distinct
-            assessment_subject as subject_area,
-            discipline as scope,
-            test_code as module_code,
-            grade_level,
-
-            'state_fl_fast' as assessment_type,
-            'FAST' as title,
-            false as is_internal_assessment,
-            'enrollment' as assessment_scope,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-            cast(null as string) as combined_academic_subject,
-            cast(null as string) as aligned_academic_subject,
-            cast(null as string) as credit_category,
-            cast(null as string) as test_type,
-        from {{ ref("stg_fldoe__fast") }}
+        from {{ ref("int_assessments__state_nj_scores") }}
         where scale_score is not null
     ),
 
     -- grain projection, not dup-masking
-    state_fl_fsa as (
+    state_fl_assessments as (
         select distinct
+            assessment_type,
+            assessment_name as title,
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
             grade_level,
 
-            'state_fl_fsa' as assessment_type,
-            'FSA' as title,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
@@ -191,53 +72,7 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-        from {{ ref("stg_fldoe__fsa") }}
-        where scale_score is not null
-    ),
-
-    -- grain projection, not dup-masking
-    state_fl_eoc as (
-        select distinct
-            assessment_subject as subject_area,
-            discipline as scope,
-            test_code as module_code,
-            grade_level,
-
-            'state_fl_eoc' as assessment_type,
-            'EOC' as title,
-            false as is_internal_assessment,
-            'enrollment' as assessment_scope,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-            cast(null as string) as combined_academic_subject,
-            cast(null as string) as aligned_academic_subject,
-            cast(null as string) as credit_category,
-            cast(null as string) as test_type,
-        from {{ ref("stg_fldoe__eoc") }}
-        where scale_score is not null
-    ),
-
-    -- grain projection, not dup-masking
-    state_fl_science as (
-        select distinct
-            assessment_subject as subject_area,
-            discipline as scope,
-            test_code as module_code,
-            grade_level,
-
-            'state_fl_science' as assessment_type,
-            'Science' as title,
-            false as is_internal_assessment,
-            'enrollment' as assessment_scope,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-            cast(null as string) as combined_academic_subject,
-            cast(null as string) as aligned_academic_subject,
-            cast(null as string) as credit_category,
-            cast(null as string) as test_type,
-        from {{ ref("stg_fldoe__science") }}
+        from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
     ),
 
@@ -339,13 +174,14 @@ with
     -- grain projection, not dup-masking
     -- One row per (scope, subject_area), matching Official college's per-subject
     -- grain, where Official uses `score_type` as `module_code` (for example
-    -- 'sat_math'). Practice derives a parallel `module_code` by concatenating
-    -- scope and subject area, so SAT Math and SAT Reading each get their own
-    -- `assessment_key`.
+    -- 'sat_math'). Practice reads a parallel `module_code` (scope and subject
+    -- area) from the practice model, so SAT Math and SAT Reading each get their
+    -- own `assessment_key`.
     practice_assessments as (
         select distinct
             scope,
             subject_area,
+            module_code,
 
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
@@ -362,8 +198,6 @@ with
             'Practice' as test_type,
 
             scope as title,
-
-            lower(concat(scope, '_', replace(subject_area, ' ', '_'))) as module_code,
         from {{ ref("int_assessments__college_assessment_practice") }}
     ),
 
@@ -403,31 +237,10 @@ with
         from illuminate_assessments
         union all
         select {{ union_cols }},
-        from state_nj_njgpa
+        from state_nj_assessments
         union all
         select {{ union_cols }},
-        from state_nj_njgpa_cambium
-        union all
-        select {{ union_cols }},
-        from state_nj_njsla
-        union all
-        select {{ union_cols }},
-        from state_nj_njsla_science
-        union all
-        select {{ union_cols }},
-        from state_nj_parcc
-        union all
-        select {{ union_cols }},
-        from state_fl_eoc
-        union all
-        select {{ union_cols }},
-        from state_fl_fast
-        union all
-        select {{ union_cols }},
-        from state_fl_fsa
-        union all
-        select {{ union_cols }},
-        from state_fl_science
+        from state_fl_assessments
         union all
         select {{ union_cols }},
         from iready_assessments
@@ -448,11 +261,8 @@ with
         from ap_assessments
     ),
 
-    -- Dedup after union: state_nj and state_fl historically share module_codes
-    -- (e.g., ELA06, SCI05) for the same logical grade-level state assessment.
-    -- Per src/dbt/CLAUDE.md "Canonical attributes from a partition": pick all
-    -- attributes from a single row (ordered by title for determinism) rather
-    -- than independent min() calls that could draw from different rows.
+    -- one row per assessment_key: collapses same-key rows that differ on
+    -- non-key attributes, picking every attribute from a single row
     all_assessments as (
         {{
             dbt_utils.deduplicate(

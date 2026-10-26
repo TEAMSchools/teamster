@@ -14,6 +14,7 @@ with
             co.academic_year,
             co.student_number,
             co.grade_level,
+            co._dbt_source_project,
 
             pp.student_id,
             pp.assessment_grade,
@@ -85,6 +86,7 @@ select
     py.student_number,
     py.academic_year,
     py.grade_level,
+    py._dbt_source_project,
     py.student_id,
     py.assessment_subject,
     py.discipline,

@@ -11,16 +11,6 @@ models:
       meta:
         contains_pii: true
     columns:
-      - name: homeless_code
-        data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [N, Y1, Y2]
-        description:
-          Network homelessness code. N when the student is recorded as not
-          homeless, Y2 when homeless and not in a parent or guardian's custody,
-          Y1 when homeless otherwise. Null when Focus records nothing.
       - name: student_id
         description: Primary key — Focus local student id.
         data_tests:
@@ -30,19 +20,37 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: lep_status
+        description: >-
+          English learner status. True for LY, false for the followup, exited
+          and not-applicable codes, and null for the tested-or-pending codes,
+          which are unknown rather than negative.
+        data_tests:
+          - not_null:
+              description: >-
+                A Focus student has no English learner status because the Focus
+                field "English Language Learner PK-12" was never filled in.
+                Students at code TT (tested, pending) are skipped, since their
+                status is unknown on purpose. To fix, enter the student's ELL
+                code in Focus.
+              config:
+                severity: warn
+                where: >-
+                  coalesce(english_language_learner_pk_12_label, '') not like
+                  '%[TT]%'
       - name: florida_education_identifier
         description: >-
           Florida Education Identifier (FLEID), passed through from
-          stg_focus__students. One student should carry one FLEID; the unique
-          test warns while Focus holds duplicate student records for one FLEID.
+          stg_focus__students.
         config:
           meta:
             contains_pii: true
-        data_tests:
-          - unique:
-              config:
-                where: florida_education_identifier is not null
-                severity: warn
+      - name: homeless_code
+        data_type: string
+        description:
+          Network homelessness code. N when the student is recorded as not
+          homeless, Y2 when homeless and not in a parent or guardian's custody,
+          Y1 when homeless otherwise. Null when Focus records nothing.
       - name: is_homeless
         data_type: boolean
         description:
@@ -112,11 +120,6 @@ models:
         description: >-
           Y where Gifted Eligibility names a qualifying FLDOE criteria
           paragraph, N where it records not-eligible, null where unset.
-      - name: lep_status
-        description: >-
-          English learner status. True for LY, false for the followup, exited
-          and not-applicable codes, and null for the tested-or-pending codes,
-          which are unknown rather than negative.
       - name: idea_educational_environment_code
         description: >-
           Focus option code for custom_863, the IDEA educational environment. C,

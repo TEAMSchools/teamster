@@ -1,0 +1,22 @@
+models:
+  - name: int_renlearn__star
+    description: >-
+      STAR assessments from stg_renlearn__star, with each student's tests ranked
+      newest first within a subject and year, and within a subject, year, and
+      screening window.
+    columns:
+      - name: assessment_id
+        data_type: string
+        description: Renaissance assessment id. One row per assessment.
+        data_tests:
+          - unique
+      - name: rn_subject_round
+        data_type: int64
+        description: >-
+          1 for the student's most recent test (by completed_date) in the
+          subject partition, fiscal year, and screening window.
+      - name: rn_subject_year
+        data_type: int64
+        description: >-
+          1 for the student's most recent test (by completed_date) in the
+          subject partition and fiscal year.

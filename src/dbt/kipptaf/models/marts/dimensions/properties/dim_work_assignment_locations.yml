@@ -30,11 +30,6 @@ models:
             foreign_key:
               to: ref('dim_staff_work_assignments')
               to_columns: [work_assignment_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff_work_assignments')
-                field: work_assignment_key
 
       - name: location_key
         data_type: string
@@ -48,13 +43,6 @@ models:
             foreign_key:
               to: ref('dim_locations')
               to_columns: [location_key]
-        data_tests:
-          # TODO: #3686 — adp_location vs dim_locations.location_name coverage
-          # gap (same class as #3672). Promote to error once crosswalk is clean.
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
 
       - name: effective_start_date
         data_type: date
@@ -74,3 +62,39 @@ models:
         description: >-
           TRUE if this is the most recent location version for the work
           assignment (effective_end_date = 9999-12-31).
+
+unit_tests:
+  - name: test_dim_work_assignment_locations_null_first_record
+    description:
+      Locks change detection at an assignment's first record. Assignment A has
+      no location on its only record, B starts with no location and gains one,
+      and C keeps one location across two records. A keeps 1 null row, B keeps
+      its leading null row and the change, and C collapses to 1 row.
+    model: dim_work_assignment_locations
+    given:
+      - input: ref('int_adp_workforce_now__workers__work_assignments')
+        format: sql
+        rows: |
+          select 'A' as item_id, date '2026-07-01' as effective_date_start, cast(null as string) as location_key
+          union all select 'B', date '2026-07-02', null
+          union all select 'B', date '2026-08-02', 'L1'
+          union all select 'C', date '2026-07-03', 'L1'
+          union all select 'C', date '2026-08-03', 'L1'
+    expect:
+      rows:
+        - location_key: null
+          effective_start_date: 2026-07-01
+          effective_end_date: 9999-12-31
+          is_current: true
+        - location_key: null
+          effective_start_date: 2026-07-02
+          effective_end_date: 2026-08-01
+          is_current: false
+        - location_key: L1
+          effective_start_date: 2026-08-02
+          effective_end_date: 9999-12-31
+          is_current: true
+        - location_key: L1
+          effective_start_date: 2026-07-03
+          effective_end_date: 9999-12-31
+          is_current: true

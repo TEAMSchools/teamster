@@ -18,7 +18,7 @@
   a bulk launch into per-partition runs to dodge the classifier is not allowed;
   hand a partition-range backfill to the Dagster UI.
 - **Touch a worktree through the main-checkout path.** Use `git -C <worktree>`
-  and `/workspaces/teamster/.worktrees/<branch>/<path>` on every call.
+  and `/workspaces/teamster/.claude/worktrees/<branch>/<path>` on every call.
 - **Run bare `python`, `dbt`, or `dagster`.** Always `uv run`.
 
 ## Read the nearest CLAUDE.md first
@@ -50,18 +50,29 @@ specifics live there.
 - Naming: [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/)
   for commits and branches. Branch
   `<gh-username>/<commit-type>/claude-<brief-description>`; username from
-  `mcp__github__get_me`.
-- With an issue: `gh issue develop <number> --name <branch>` (add `--checkout`
-  for a branch switch), then
-  `git worktree add /workspaces/teamster/.worktrees/<branch> <branch>`. The path
-  must be absolute.
-- Without an issue (user declined):
+  `mcp__github__get_me`. `gh issue develop --name` fails on names containing
+  `log`, `auth`, or `secret`: rename and retry.
+- Create, with an issue: `gh issue develop <number> --name <branch>` (add
+  `--checkout` for a branch switch), then
+  `git worktree add /workspaces/teamster/.claude/worktrees/<branch> <branch>`.
+  The path must be absolute; a relative one nests one worktree inside another.
+  Keep worktrees under `.claude/worktrees/`: `.claude/rules/worktrees.md` loads
+  on the first read there and nowhere else. Merging a linked branch's PR closes
+  the issue whatever the body says, so when the issue must outlive the PR (it
+  tracks `standard-baseline.tsv` rows or deferred work), use the no-issue form
+  below and write `Refs #N`.
+- Create, without an issue (user declined):
   `git worktree add -b <branch> <abs-path> origin/main` or
   `git checkout -b <branch>`. Name `origin/main`; local `main` is often behind.
-- Stacked branch: `gh issue develop <num> --name <branch> --base <parent>`, then
-  `git worktree add`. Base other than `main` skips `claude-review`; dbt Cloud CI
-  still runs (see `.github/CLAUDE.md`). Unset the upstream right after, per
-  `.claude/rules/worktrees.md`.
+- Create, stacked: `gh issue develop <num> --name <branch> --base <parent>`,
+  then `git worktree add`. Base other than `main` skips both `claude-review` and
+  dbt Cloud CI; only Trunk runs (see `pr-ci-review`). Unset the upstream right
+  after, per `.claude/rules/worktrees.md`.
+- Work: stay in the main checkout and reach the worktree by absolute path. Never
+  call `EnterWorktree` (`path` or `name`), even when a skill asks for a native
+  worktree tool. It moves the session transcript into the worktree's project
+  folder, which drops it from the VS Code session list; a session that visits
+  several worktrees is filed under the last one only.
 - Linking an existing remote branch to an issue: `mcp__github__create_branch`
   and GraphQL `createLinkedBranch` both no-op. Deleting the remote branch is
   classifier-blocked even with consent. Create the branch under a NEW name and
@@ -69,11 +80,7 @@ specifics live there.
 - The consent classifier reads only the assistant message before the tool call,
   never `AskUserQuestion` answers. After out-of-band consent
   (`git worktree add -b`, `git checkout -b`, bulk Asana `create_tasks`),
-  re-confirm in plain text in the same turn. `gh issue develop --name` fails on
-  branch names containing `log`, `auth`, or `secret`: rename and retry.
-- Worktree mechanics (paths, cwd, `uv` and dbt invocation, CLAUDE.md
-  re-injection) are in `.claude/rules/worktrees.md`, which loads on the first
-  read under `.worktrees/`. For Bash-only worktree work, read it first.
+  re-confirm in plain text in the same turn.
 - Before resuming a branch, merging `origin/main`, resolving a conflict, or
   diagnosing a CI failure in a file the branch never touched: invoke
   `resuming-a-branch`.
@@ -94,9 +101,8 @@ Decide these two things before every `Agent` call, including the first:
   parallel, or needs a fresh reviewer, even on the same tier. Otherwise do it
   inline: a small edit with the files already loaded is cheaper on the main
   model than a cold subagent on a cheaper one.
-- Which `model`. Pass the cheapest one you expect to finish on the first try.
-  Name it explicitly on every dispatch; pick the capable model for judgment
-  calls and reviews you will act on.
+- Which `model`. Pass the cheapest one you expect to finish on the first try;
+  pick the capable model for judgment calls and reviews you will act on.
 
 Model and effort rules, dispatch-prompt rules, and Workflow cleanup inject from
 `.claude/context/agent.md` on the first `Agent` or `Workflow` call. Do not
@@ -108,12 +114,23 @@ accept a subagent's self-report without the checks there.
   verified. The _Never_ block covers `main` only: a feature-branch push and
   `create_pull_request` run on the same credentials as every other `git` and
   `gh` call in the session, so never hand them to the user as needing theirs.
-- Squash merge. PR body from `.github/pull_request_template.md`.
+- After opening a PR, offer two things: watch its CI and report back, and
+  respond to the `claude-review` findings once they post. On a yes to either,
+  invoke `pr-ci-review` and arm a Monitor in that turn.
+- PRs merge with a merge commit, so every branch commit, message included, lands
+  on `main`. PR body from `.github/pull_request_template.md`.
 - Issue refs (`Refs #N`, `Closes #N`) in the body put the PR on project boards.
   Never `gh project item-add` a PR.
 - Invoke `superpowers:receiving-code-review` before processing `claude-review`
   findings, and post a per-finding verdict as a PR comment. Everything else
   about review and CI: invoke `pr-ci-review`.
+- A finding you do not fix is declined (give the reason; nothing to record) or
+  deferred. A deferred finding links its record when you report it: an open
+  issue, a comment on one, a `standard-baseline.tsv` row, or a `TODO(#N)`. If
+  none covers it, file the issue first. "Out of scope", "backlog", or "left to
+  the author" with no link drops the work, since the user reads the verdict as
+  handled. This covers `claude-review` verdicts and executing-plans "Deferred
+  minors", whose ledger is deleted at finish.
 
 ## Tooling
 
@@ -132,6 +149,10 @@ accept a subagent's self-report without the checks there.
   later turn.
 - Never pipe `Bash(run_in_background=true)` output through `head`/`tail`/`grep`.
   The pipe truncates the output file. Filter afterward.
+- Never poll a `Bash(run_in_background=true)` job: its exit notifies you, and
+  the output file holds the result. For any other process wait, never `pgrep -f`
+  a string that also appears in your own command; the waiting shell matches
+  itself and the loop never exits.
 - IDE selection arrives only in `<ide_selection>` tags. If the user says "this"
   with no selection, ask for the snippet.
 - One-off deps: `uv run --with <pkg> python script.py`, not `uv add --dev`.
@@ -144,8 +165,6 @@ accept a subagent's self-report without the checks there.
   [tests/CLAUDE.md](tests/CLAUDE.md).
 - Arm the Monitor in the same turn you say you will watch something. An exited
   monitor and a waiting one are both silent.
-- Do not truncate or hand off work because the session feels long. The harness
-  compacts automatically.
 - The Claude CLI is not on `$PATH`. The user runs `claude` commands, including
   plugin and marketplace commands, in their terminal.
 
@@ -163,12 +182,13 @@ accept a subagent's self-report without the checks there.
 
 ## Linting
 
-- Do not run `trunk fmt` or `trunk check` as a routine; the commit and push
-  hooks do. But a clean commit hook is not lint-clean. Before pushing SQL, YAML,
-  or markdown (specs and plans included), run
+- Do not run `trunk fmt` or `trunk check` as a routine. The commit hook only
+  formats, so before pushing SQL, YAML, or markdown (specs and plans included),
+  run
   `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`
-  with cwd inside the edited checkout. `--force` is required or committed files
-  are skipped and markdownlint under-reports.
+  with cwd inside the edited checkout and fix lint findings; formatting is the
+  hook's. `--force` is required or committed files are skipped and markdownlint
+  under-reports.
 - Suppress with `trunk-ignore(linter/rule): reason` on the line before the
   flagged line, never linter-native syntax.
 - Binary paths, worktree invocation, CI-only markdownlint rules: invoke
@@ -193,28 +213,34 @@ and before posting query rows to git, GitHub, or agent output. Short form:
 names, contact, `student_number` and other school-facing ids, birth data, free
 text about a person, and student-level grades, attendance, or status flags are
 PII; database surrogate keys (`studentid`, `dcid`) and aggregates without small
-cells are not.
+cells are not. Surrogate keys go untagged but are still redacted on outbound
+surfaces.
 
 ## Superpowers skill overrides
 
 - Branch creation always goes through _Before you start_ and _Branches_,
-  including inside `superpowers:brainstorming` ("Write design doc"),
+  including inside `superpowers:brainstorming` ("Where it goes"),
   `superpowers:writing-plans` ("Save plans to:"), and
   `superpowers:using-git-worktrees`. Pause the skill, run the flow, then write
-  specs to `docs/superpowers/specs/...` or plans to `docs/superpowers/plans/...`
-  on the new branch. After committing a spec, push it and comment its branch URL
+  the spec or plan on the new branch. The flow's `git worktree add` satisfies
+  `using-git-worktrees` Step 1a; do not call its native tool (see _Work_).
+- After committing a spec, push it and comment its branch URL
   (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on the
-  issue — `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
+  issue. `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
   `docs/guides/superpowers.md` never loads into context.
-- `finishing-a-development-branch` / `using-git-worktrees`: this repo uses `uv`,
-  not `poetry`/`pip`. Run `uv run dbt build --select <model>+` alongside the
-  skills' other tests.
-- `subagent-driven-development`: a plan step of roughly 10 lines or fewer whose
-  files are already in context is done inline, not dispatched. The skill assumes
-  every task is dispatched; the repo's dispatch-or-inline test in _Subagents_
-  governs.
+- `superpowers:brainstorming` "Size the Work": when unsure which size a request
+  is, including whether it is a quick, clear task, ask the user before acting.
+- "The project's suite" (TDD, `finishing-a-development-branch`,
+  `using-git-worktrees` baseline) means `uv run pytest <touched tests>` plus
+  `uv run dbt build --select <model>+` for modified models. Never bare
+  `uv run pytest`: `tests/` holds live integration tests against real source
+  systems. Setup is `uv sync`, never the skills' `poetry install` /
+  `pip install`.
 - Ponytail yields to superpowers process skills. It governs the size of what
   gets built inside them, not whether they run.
+- executing-plans: a task's ledger line is not a stopping point. Run task-start
+  for the next task in the same turn; only the skill's four stop conditions end
+  the run.
 
 ## Compact Instructions
 
@@ -233,6 +259,12 @@ When summarizing the conversation, always preserve:
   verbatim error messages.
 - Dead ends already tried, gotchas discovered, and workarounds applied this
   session.
+- Corrected conclusions in their corrected form only, with one line naming what
+  they replaced. Never carry both versions forward.
+- During plan execution (executing-plans or subagent-driven-development): the
+  plan file path, the ledger path, which tasks are complete, and that execution
+  continues through every remaining task without check-ins. The next step names
+  the remaining task range, not only the current task.
 
 Discard freely: full file contents already on disk, verbose tool output, and
 exploration that led nowhere (keep only the conclusion).
@@ -258,8 +290,8 @@ exploration that led nowhere (keep only the conclusion).
   shape: [src/cube/CLAUDE.md](src/cube/CLAUDE.md). If
   `dbt:answering-natural-language-questions-with-dbt` auto-loads, do not follow
   it; there is no dbt Semantic Layer here.
-- BigQuery MCP: warehouse inspection (raw rows, schema diffs,
-  `INFORMATION_SCHEMA`), engineering tasks, and ad-hoc SQL only after
+- BigQuery MCP (`execute_sql_readonly`): warehouse inspection (raw rows, schema
+  diffs, `INFORMATION_SCHEMA`), engineering tasks, and ad-hoc SQL only after
   `cube meta` shows no view covers the columns.
 - dbt MCP `show`: only when `ref()`/`source()` resolution is needed.
 - Dagster: two servers, one tool per job, and `dagster-plus` (Dagster's own
@@ -282,6 +314,7 @@ exploration that led nowhere (keep only the conclusion).
   - `gh run *`, `gh workflow *`, `gh repo edit`
   - `gh api` only to PATCH an existing comment or PR body (`-F body=@<file>`),
     POST a PR review-thread reply, read a file at a pinned SHA with the raw
-    Accept header, create/add labels, `-X GET search/issues`
+    Accept header, GET a PR body (`--jq .body`), create/add labels,
+    `-X GET search/issues`
 
   Mechanics and failure modes: `.claude/context/github.md`.

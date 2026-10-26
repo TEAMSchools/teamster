@@ -9,6 +9,7 @@
 | `cube-rest-mcp-launch.sh`     | MCP launcher (dev mode only): fetch `CUBE_API_SECRET`, exec `src/cube/mcp/server.py` in stdio. Default cube MCP path is the Cloud Run deploy — use this only when iterating on the server itself.                                                                                                                                    |
 | `tableau-mcp-launch.sh`       | MCP launcher: fetch Tableau connection config (server/site/PAT) from 1Password item `Tableau Server PAT - Dagster` (Data Team vault), exec `@tableau/mcp-server`. Reuses the same PAT as the Dagster Tableau refresh assets.                                                                                                         |
 | `avro-schema-update.py`       | Rewrite Avro data in GCS with updated schema (flat records only — stringifies values and drops nulls; for nested schemas use `reencode_avro_partitions.py`)                                                                                                                                                                          |
+| `focus-db-query.sh`           | Run a read-only SQL file against the Focus Postgres database from a throwaway GKE pod (`bash scripts/focus-db-query.sh <file.sql>`). The user runs it; it needs their `kubectl` context. Results print to stdout. See `libraries/dlt/focus/CLAUDE.md` → _Querying the database directly_.                                            |
 | `bq-cleanup.sh`               | Drop orphaned BigQuery datasets / tables / views (dry-run by default; `--execute` to drop)                                                                                                                                                                                                                                           |
 | `cube_rls_matrix.py`          | Validate Cube row-level security per viewer over the local SQL API — one connection per viewer email running the same query, so any scope difference is attributable to access policy. Viewer emails are PII: pass via `--viewers` or `--viewers-file`, never hardcoded. Needs the Cube dev server with the SQL API enabled (#4526). |
 | `dbt-yaml.py`                 | **Non-functional** — shells out to `generate_model_yaml`, a `dbt-codegen` macro; that package is not in any `packages.yml`, so the run errors with "could not find a macro". Write properties YAML by hand.                                                                                                                          |
@@ -19,10 +20,12 @@
 - `dbt-manifest.py` — requires `dbt parse` to have run first (reads
   `target/manifest.json`)
 - `gen-automations-doc.py` — requires dbt manifests to be parsed. **Do NOT run
-  in the codespace**: it imports every code location incl. `kipptaf`, which
-  fails at module load (eager `EnvVar`), and the script `continue`s past the
-  failed import → writes a catalog with `kipptaf` silently DROPPED. Run only in
-  a bootstrapped terminal where all locations import.
+  in the codespace**: it imports every code location's `definitions` and
+  `continue`s past a failed import, writing a catalog with that location
+  silently DROPPED. Without its dbt manifest any location fails; even with one,
+  `kipptaf` (Illuminate/Zendesk dlt credentials) and `kippmiami` (Focus
+  `FOCUS_DB`) fail at module load on eager credential resolution. Run only in a
+  bootstrapped terminal where all locations import.
 - `generate_marts_reference.py` — no prerequisites; run after adding/removing a
   fact table or changing FK constraints:
   `uv run scripts/generate_marts_reference.py`. Like `automations.md`, commit

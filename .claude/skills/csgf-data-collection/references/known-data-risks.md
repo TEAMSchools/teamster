@@ -4,19 +4,18 @@ Referenced from `SKILL.md`. Full forensic detail behind each risk the router
 summarizes; read this before assuming a fix already landed or that a past
 finding still applies unchanged.
 
-**Fixed 2026-09-11: SAT/ACT/AP Scores/AP Offerings must scope to the same
-population as HS Enrollment, or CSGF flags "ID not on Enrollment Tab."** HS
-Enrollment's own instructions say to only include students who completed the
-school year (`enroll_status in (0, 3)`); the other four HS-scoped models had no
-such filter and included mid-year transfers-out too. Full writeup in
+**SAT/ACT/AP Scores must scope to the same population as HS Enrollment, or CSGF
+flags "ID not on Enrollment Tab."** HS Enrollment's own instructions say to only
+include students who completed the school year. HS Enrollment, SAT, ACT, AP
+Scores and the school-level AP Offerings all test that with `is_enrolled_recent`
+on the prior-year row. Never add an `enroll_status` filter: on a past-year row
+it is the student's status today, so it drops students who finished the year and
+left over the summer (183 AY2025 students on 2026-09-29). Full writeup in
 `docs/models/csgf-data-model.md`. If you see this exact error on a future
-cycle's HSDC tabs, check whether a newly-added HS-scoped model has the same gap
-before assuming it's a data problem.
+cycle's HSDC tabs, check whether a newly-added HS-scoped model has a different
+filter before assuming it's a data problem.
 
-**Year anchoring across the eight `rpt_gsheets__csgf_*` models** (verified by
-reading each model's SQL directly, not just taken from prior notes -- see
-[issue #4897](https://github.com/TEAMSchools/teamster/issues/4897) for the
-original observation this confirms):
+**Year anchoring across the eight `rpt_gsheets__csgf_*` models:**
 
 | Model                      | Years of data referenced                                                                                                                                    |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,18 +50,11 @@ used to be abbreviated codes (`KHS`/`NCA`/`NLH`) -- fixed to full names
 (`KIPP Newark Lab High School` / etc.), confirmed against CSGF's Portal task
 labels.
 
-**Both fixes above are only in PR #5059 (this branch), not yet in prod as of
-2026-09-11.** Confirmed live: prod's `rpt_gsheets__csgf_hs_grad_data` (a VIEW,
-last recreated 2026-07-17 per `__TABLES__.last_modified_time`) still outputs the
-old abbreviated codes -- `git branch --contains` on the fixing commit
-(`b7344ed8b`) shows only this PR's branch, and `origin/main`'s copy of the file
-is still the pre-fix version from 2025-10-08. A view re-executes live but
-against its own STORED definition, which only updates when Dagster recreates it
-after a deploy -- so this won't self-correct by waiting. **Don't treat this
-model as fixed for the actual submission until #5059 merges and kipptaf
-redeploys** (confirm via `mcp__dagster__get_location_load_history` showing a
-`LOADED` entry with the merge commit's hash, same check as any prod-deploy
-verification). PR #5059 has since merged and deployed -- these fixes are live.
+**Both fixes above shipped in PR #5059 and are live in prod.** For any future
+fix to these views: a view re-executes live but against its own STORED
+definition, which only updates when Dagster recreates it after a deploy. Confirm
+the deploy via `mcp__dagster__get_location_load_history` (a `LOADED` entry with
+the merge commit's hash) before treating the fix as live.
 
 **New this cycle (2026-09-11): CSGF added "Total Number of Graduates" to the HS
 Grad Data task** -- a real, distinct field from the existing "# Stud in Adj
@@ -80,11 +72,55 @@ definition before assuming it maps to an existing model column -- two columns
 that sound similar (here, "graduates" vs. "4-year cohort grads") can be
 genuinely different metrics.**
 
-**`rpt_gsheets__csgf_enrollment` currently under-reports Miami** (as of this
-cycle -- owner is aware and fixing separately from this skill; check whether
-it's still open before relying on this note). The model is driven by
-`stg_powerschool__schools`, a frozen PowerSchool-era Miami school catalog that
-was never updated after Miami's cutover to Focus as its SIS. Concretely:
+**Counting early graduates (not adopted; PR #5435).** `grad_roster`'s
+`is_4yr_grad` only counts a graduate whose `academic_year + 1` exactly equals
+their `cohort`. A student who graduates ahead of their cohort year fails that
+equality and never reaches the numerator -- but still counts in
+`adjusted_cohort` through `is_entry_cohort`, which only asks whether they
+entered grade 9 at the school. Net effect: an early graduate depresses the
+reported rate, and early graduation is growing: a handful a year through AY2024,
+then 14 in AY2025 (counting `exitcode = 'G1'` rows at a high school outside
+Miami).
+
+[Issue #5432](https://github.com/TEAMSchools/teamster/issues/5432) proposed
+relaxing the predicate to `academic_year + 1 <= co.cohort`, so an early graduate
+counts in the cohort they entered with -- matching how New Jersey's own adjusted
+cohort rate treats early graduates. A late graduate still would not count, since
+this stays a 4-year rate. For the class of 2026 (the cohort the model reports
+today), the change would move the network total from 374 graduates to 377; two
+of the three high schools move, one does not.
+
+[PR #5435](https://github.com/TEAMSchools/teamster/pull/5435) implemented this
+in
+`src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__csgf_hs_grad_data.sql`,
+its properties YAML, and `docs/models/csgf-data-model.md`. **Not adopted as of
+2026-09-28** -- the PR rests on an unconfirmed assumption (whether CSGF's own
+4-year-graduate definition matches New Jersey's adjusted-cohort treatment of
+early graduates) and was closed without merging; Walters, the collection owner,
+decided not to take it for this cycle. HS Grad Data was already submitted and
+accepted under the old equality.
+
+To apply later: confirm CSGF's definition (ask CSGF directly, or check
+`field-definitions.md` if it's since been documented there), then reintroduce
+the change. The core diff, from the `grad_roster` CTE:
+
+```diff
+             case
+-                when co.academic_year + 1 = co.cohort and co.exitcode = 'G1'
++                when co.academic_year + 1 <= co.cohort and co.exitcode = 'G1'
+                 then 1
+                 else 0
+             end as is_4yr_grad,
+```
+
+`is_cohort_grad_year`, computed one line above with the same old equality, is
+deliberately untouched by the PR -- it feeds nothing downstream today, but
+whoever revisits this may want it aligned too, or dropped.
+
+**`rpt_gsheets__csgf_enrollment` under-reported Miami before PR #5059** (the fix
+is described below). The model was driven by `stg_powerschool__schools`, a
+frozen PowerSchool-era Miami school catalog that was never updated after Miami's
+cutover to Focus as its SIS. Concretely:
 
 - Two Focus-marked-`(Closed)` schools (Sunrise, Liberty) still appear in the
   catalog and show up in the extract with every enrollment/demographic column
@@ -104,16 +140,15 @@ was never updated after Miami's cutover to Focus as its SIS. Concretely:
   buildings as of this cycle: Courage, Royalty, Miami Tech, Legacy ES, Legacy
   MS) rather than trusting the extract's row count at face value.
 
-**Fixed (2026-09-11, this branch): `rpt_gsheets__csgf_enrollment` now sources
-Miami from Focus instead of the frozen PowerSchool catalog.** Added a
-`focus_schools` CTE (`int_focus__schools` joined to
-`stg_google_sheets__people__locations`, filtered `school_level is not null` --
-confirmed this correctly excludes Sunrise/Liberty, since Focus itself nulls
-their level on closure, and also excludes 2 non-school placeholder Focus records
-that happen to share the same null). Rebuilt in dev and confirmed all 5 real
-Miami schools now appear with real enrollment counts and real principal
-demographics -- no more missing rows, no more null-column ghost rows for the
-closed schools. Not yet merged (same PR #5059 as the other fixes above).
+**Fixed in PR #5059 (live): `rpt_gsheets__csgf_enrollment` now sources Miami
+from Focus instead of the frozen PowerSchool catalog.** Added a `focus_schools`
+CTE (`int_focus__schools` joined to `stg_google_sheets__people__locations`,
+filtered `school_level is not null` -- confirmed this correctly excludes
+Sunrise/Liberty, since Focus itself nulls their level on closure, and also
+excludes 2 non-school placeholder Focus records that happen to share the same
+null). Rebuilt in dev and confirmed all 5 real Miami schools now appear with
+real enrollment counts and real principal demographics -- no more missing rows,
+no more null-column ghost rows for the closed schools.
 
 **Corrected, confirmed against the real Portal task instructions (2026-09-11):
 `total_budgeted_enrollment` is NULL for EVERY school network-wide, not just
@@ -162,23 +197,31 @@ For `rpt_gsheets__csgf_hs_enrollment` specifically (verified and documented on
 the model itself -- see its properties YAML `description:` for the authoritative
 version): its enrollment/demographic fields come through
 `int_extracts__student_enrollments`, which already includes Miami via Focus, so
-those will be correct. But its course-tag CTEs (`transfer_course_tags` ->
-`stg_powerschool__storedgrades`, `local_course_tags` ->
-`base_powerschool__course_enrollments`) are PowerSchool-only with no Focus
-equivalent wired in -- Miami HS students will get **NULL, not `'N'`**, for
+those will be correct. But its course flags (`earned_course_grades` ->
+`stg_powerschool__storedgrades`) are PowerSchool-only with no Focus equivalent
+wired in -- Miami HS students will read a silent **`N`** for
 `has_participated_in_ap_courses` / `_honors_courses` /
-`_dual_enrollment_courses` / `_cte_courses`, since the `course_tags` CTE
-produces no rows for them at all. A Focus course/grade source needs to be added
-to those two CTEs before this model rolls to AY2026. The other 6 HS models
-likely have the same PowerSchool-only gap somewhere in their lineage -- not yet
-verified per-model.
+`_dual_enrollment_courses` / `_cte_courses`, since `course_tags` produces no
+rows for them and the final select coalesces a missing flag to `N`; the flag
+tests pass, so nothing warns. A Focus grade source needs to be added before this
+model rolls to AY2026. `rpt_gsheets__csgf_hs_ap_offerings` has the same gap (it
+reads `base_powerschool__course_enrollments`). SAT, ACT and AP Scores read
+College Board-derived scores, so they are not PowerSchool-limited.
 
-**`rpt_gsheets__csgf_hs_enrollment`'s fixes are also only on PR #5059, not yet
-in prod, same staleness pattern as `hs_grad_data` above.** Confirmed live:
-prod's view (last recreated 2026-07-24) still lacks `exited_hs` entirely, still
-misses `FDC` in the FRL/SED flag, and still carries the old `passed_algebra_i`
-output column with the comma-bug-corrupted IN-list behind it. Rebuilt this
-branch's version in dev
+**HS Enrollment course flags count only grades earned at the school of
+enrollment.** CSGF asks whether a student "has earned a grade in any AP / honors
+/ dual enrollment / CTE course at school of enrollment." The model counts a
+course only when the student has a non-transfer Y1 stored grade for it (any
+grade, an F included), in grade 9 or above, stored at the same school as their
+reporting-year enrollment row. Semester courses count (PowerSchool stores their
+final as a Y1 on the semester term); a section with quarter grades but no Y1
+does not. A student with no qualifying Y1 at all reads `N`. CTE is `N` for
+everyone because PowerSchool has no CTE college credits recorded on any course.
+The rule is on the model's properties YAML `description:`.
+
+**`rpt_gsheets__csgf_hs_enrollment`'s fixes also shipped in PR #5059 and are
+live:** `exited_hs`, `FDC` in the FRL/SED flag, and the corrected
+`passed_algebra_i` IN-list. Validated in dev before merge
 (`int_extracts__student_enrollments rpt_gsheets__csgf_hs_enrollment`, since
 `exited_hs` is a same-PR addition to the upstream too -- deferring to stale prod
 for just the report model fails with `Name exited_hs not found inside e`) --

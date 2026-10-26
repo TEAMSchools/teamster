@@ -206,6 +206,28 @@ cubes:
         type: number
         public: true
 
+      - name: n_absent_days_rolling_90
+        description: >-
+          Absences in the student's last 91 days on the attendance record for
+          the academic year, through and including this date -- the count behind
+          Miami's truancy rule (15 or more makes is_truant true). Days on the
+          record, not calendar days, so it differs from a count over the 90
+          calendar days before a date; a day on the record with no recorded
+          attendance still takes one of the 91 places. Accumulates per student
+          per year and does not reset when the student changes schools.
+
+          Carried across break days and gated on n_membership_days_ytd exactly
+          like is_truant, so the count and the flag resolve on the same rows.
+          Computed for every region, though only Miami's truancy rule reads it.
+        sql: n_absent_days_rolling_90
+        type: number
+        public: true
+        meta:
+          ai_context: >-
+            A per-student value: group by student and pin attendance_date to
+            read each student's count as of that date. Never sum it across
+            students or days.
+
       - name: ada_tier
         description: >-
           Cumulative ADA band as of this date. Tier 1 at 95% and above, Tier 2
@@ -228,7 +250,7 @@ cubes:
           Whether ada_tier is Tier 3 or Tier 4 as of this date. Derived from
           ada_tier, never recomputed, so the flag and the tier cannot drift
           apart. A student with only a handful of membership days still carries
-          a tier -- show count_students beside any rate built on this.
+          a tier -- show count_students_measured beside any rate built on this.
         sql: is_chronically_absent
         type: boolean
         public: true
@@ -236,13 +258,9 @@ cubes:
     measures:
       - name: count_students
         description: >-
-          Distinct students with recorded attendance in the queried slice, and
-          the denominator for every rate here. Enrollment decides which rows
-          exist, by entry and exit dates rather than status, but a student whose
-          attendance was never recorded is excluded — a day nobody measured
-          cannot support a headcount or a rate, and counting it once inflated
-          every denominator it reached. Population and denominator are therefore
-          the same number and cannot drift apart.
+          Distinct students enrolled in the queried slice, by entry and exit
+          dates, whether or not their attendance has been recorded. This is the
+          enrollment headcount.
 
           Leave the date open for an ever-enrolled count over a range; pin
           attendance_date to a single date for a point-in-time headcount as of
@@ -252,9 +270,22 @@ cubes:
           every calendar day a student was enrolled, break days included, so a
           weekend or holiday resolves the same as a school day.
 
-           For students served across a whole period
-          use student_attendance_enrollment_periods_view.count_students, which
+          For students served across a whole period use
+          student_attendance_enrollment_periods_view.count_students, which
           answers a different question from enrolled on a given date.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
+
+      - name: count_students_measured
+        description: >-
+          Distinct students in the queried slice with at least 1 recorded
+          attendance day in the academic year so far, and the denominator for
+          pct_chronically_absent and pct_truant. A student whose attendance was
+          never recorded can never reach those numerators, so counting them
+          would pull both rates down. Lower than count_students by the enrolled
+          students nobody has marked yet, mostly new enrollees in their first
+          days.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
@@ -273,17 +304,37 @@ cubes:
       # keeps via membership_value > 0 — no such row exists today (zero rows
       # outside {0, 1} across all 12.8M), but if dual enrollment ever produces
       # one, ADA and count_absent_days will span different day sets.
-      - name: _sum_attendance_value
+      - name: sum_attendance_value
+        description: >-
+          Attendance value summed over full-membership days (membership_value =
+          1) -- days attended, with a partial day counting its fraction. The
+          numerator of avg_daily_attendance. Unlike count_present_days, which
+          counts every non-absent day as 1, this is the fractional sum.
         sql: attendance_value
         type: sum
-        public: false
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
 
-      - name: _sum_membership_value
+      - name: sum_membership_value
+        description: >-
+          Membership value summed over every day in the slice, including days
+          with no recorded attendance; break days add zero.
+          count_membership_days is the same sum restricted to full-membership
+          days with recorded attendance, which is the day set ADA uses.
         sql: membership_value
         type: sum
-        public: false
+        public: true
+
+      - name: count_membership_days
+        description: >-
+          Full-membership days (membership_value = 1) with a recorded attendance
+          value — the "possible days" denominator of avg_daily_attendance. Days
+          with no recorded attendance are excluded, matching ADA. For ADA itself
+          use avg_daily_attendance.
+        sql: membership_value
+        type: sum
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
           - sql: "{CUBE}.attendance_value IS NOT NULL"
@@ -295,27 +346,39 @@ cubes:
           recorded attendance value are excluded from both numerator and
           denominator, matching the attendance dashboard; counting them in the
           denominator alone would report them as absences.
-        sql: "{_sum_attendance_value} / NULLIF({_sum_membership_value}, 0)"
+        sql: "{sum_attendance_value} / NULLIF({count_membership_days}, 0)"
         type: number
         format: percent
         public: true
 
       # Same numerator/denominator symmetry as ADA: a tardy code recorded on a
       # day with no attendance value is excluded here, because
-      # _count_present_days already excludes it (is_absent is NULL whenever
+      # count_present_days already excludes it (is_absent is NULL whenever
       # attendance_value is, so `is_absent = 0` never matches).
-      - name: _sum_tardy
+      - name: count_tardy_days
+        description: >-
+          Tardy days among full-membership days with a recorded attendance value
+          — the numerator of pct_tardy, whose denominator is count_present_days.
+          Miami has no daily tardy data from AY2026 on, so its days add nothing
+          here while still counting in count_present_days. A total that includes
+          Miami from AY2026 on understates tardies; filter Miami out for those
+          years.
         sql: is_tardy
         type: sum
-        public: false
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
           - sql: "{CUBE}.attendance_value IS NOT NULL"
 
-      - name: _count_present_days
+      - name: count_present_days
+        description: >-
+          Full-membership days (membership_value = 1) on which the student was
+          not absent — the denominator of pct_tardy and pct_ontime. For ADA use
+          avg_daily_attendance rather than dividing this by
+          count_membership_days.
         sql: "1"
         type: sum
-        public: false
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
           - sql: "{CUBE}.is_absent = 0"
@@ -324,13 +387,16 @@ cubes:
         description: >-
           Percentage of present days where the student was tardy (tardy days /
           present days). Absent days and days with no recorded attendance value
-          are excluded from both numerator and denominator.
+          are excluded from both numerator and denominator. Miami has no daily
+          tardy data from AY2026 on, but its present days stay in the
+          denominator, so a rate that includes Miami from AY2026 on reads low;
+          filter Miami out for those years.
 
           Date filter behavior: filtering to a single date returns that day's
           tardy rate only. For a cumulative YTD rate as of a given date, use a
           date range from the start of the academic year (e.g. 2025-07-01
           through the target date).
-        sql: "1.0 * {_sum_tardy} / NULLIF({_count_present_days}, 0)"
+        sql: "1.0 * {count_tardy_days} / NULLIF({count_present_days}, 0)"
         type: number
         format: percent
         public: true
@@ -340,15 +406,17 @@ cubes:
           Percentage of present days where the student arrived on time (on-time
           days / present days). Complement of pct_tardy. Absent days and days
           with no recorded attendance value are excluded from both numerator and
-          denominator.
+          denominator. Miami has no daily tardy data from AY2026 on, so every
+          Miami present day in those years counts as on time and a rate that
+          includes them reads high; filter Miami out for those years.
 
           Date filter behavior: filtering to a single date returns that day's
           on-time rate only. For a cumulative YTD rate as of a given date, use a
           date range from the start of the academic year (e.g. 2025-07-01
           through the target date).
         sql: >-
-          1.0 * ({_count_present_days} - {_sum_tardy}) /
-          NULLIF({_count_present_days}, 0)
+          1.0 * ({count_present_days} - {count_tardy_days}) /
+          NULLIF({count_present_days}, 0)
         type: number
         format: percent
         public: true
@@ -364,6 +432,83 @@ cubes:
         public: true
         filters:
           - sql: "{CUBE}.membership_value > 0"
+
+      # The fallback keys on is_tardy being null, never on region, so Miami
+      # tardies count here with no edit once the fact carries them.
+      # TODO(#4927): drop the Miami sentence from the description then.
+      - name: count_absent_days_weighted
+        description: >-
+          Absence days plus one third of a day for each tardy, over days with
+          membership -- three tardies weigh the same as one absence. A day whose
+          source records no daily tardies counts its absence only; Miami has no
+          daily tardy data from AY2026 on, so Miami from AY2026 on is absences
+          alone.
+        sql: "{CUBE}.is_absent + COALESCE({CUBE}.is_tardy, 0) / 3.0"
+        type: sum
+        public: true
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+
+      # TODO(#4927): Miami tardy codes score here once the fact carries them.
+      - name: attendance_points
+        description: >-
+          Attendance points over days with membership -- 1 for each A or AD
+          attendance code and one third for each T or T10, 0 for every other
+          code. Narrower than count_absent_days_weighted: other absence codes
+          and other tardy codes score nothing. Miami records no tardy codes from
+          AY2026 on, so Miami from AY2026 on scores its A and AD absences only.
+        sql: >-
+          CASE
+            WHEN {CUBE}.attendance_code IN ('A', 'AD') THEN 1.0
+            WHEN {CUBE}.attendance_code IN ('T', 'T10') THEN 1.0 / 3
+            ELSE 0.0
+          END
+        type: sum
+        public: true
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+
+      # TODO(#4927): drop the Miami sentence from both descriptions once the
+      # fact carries Miami suspension codes.
+      - name: count_iss_days
+        description: >-
+          In-school suspension days (S and ISS codes) over days with membership.
+          Miami's suspension flags are not populated from AY2026 on, so Miami
+          from AY2026 on returns null, not zero.
+        sql: is_iss
+        type: sum
+        public: true
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+
+      - name: count_oss_days
+        description: >-
+          Out-of-school suspension days (OS, OSS, OSSP and SHI codes) over days
+          with membership. Miami's suspension flags are not populated from
+          AY2026 on, so Miami from AY2026 on returns null, not zero, even on a
+          day coded OSS.
+        sql: is_oss
+        type: sum
+        public: true
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+
+      # 0.105 is 1 - 0.895: the target is 89.5%, the lowest ADA that rounds to
+      # 90%. Matches the Attendance Dashboard's Days to 90% calc.
+      - name: days_to_90_percent
+        description: >-
+          Days of perfect attendance needed to bring ADA to 90% (89.5%, which
+          rounds to 90%) -- absences divided by 0.105, minus membership days,
+          over the same day set as avg_daily_attendance. Negative when ADA is
+          already above the line: the size of the cushion, in days.
+        sql: "{count_absent_days} / 0.105 - {count_membership_days}"
+        type: number
+        public: true
+        meta:
+          ai_context: >-
+            Answers per student: group by student over the academic year to
+            date. Summed over a school it is the school's days to 90%, not a
+            per-student figure.
 
       # Pin attendance_date for every measure below. Each one counts students
       # whose cumulative position crossed a line, and the fact re-stamps that
@@ -381,9 +526,9 @@ cubes:
           Students at Tier 3 or Tier 4 as of the pinned date. Pin
           attendance_date. No minimum-membership-day floor is applied, so early
           in an academic year this counts students judged on very few days --
-          show count_students beside it. Counts distinct students, so a student
-          who changed schools counts once at each school when grouped by school
-          and once overall when not; the cumulative position it reads
+          show count_students_measured beside it. Counts distinct students, so a
+          student who changed schools counts once at each school when grouped by
+          school and once overall when not; the cumulative position it reads
           accumulates per student across the change rather than resetting.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
@@ -394,13 +539,16 @@ cubes:
       - name: pct_chronically_absent
         description: >-
           Share of students at Tier 3 or Tier 4 as of the pinned date.
-          Denominator is count_students, every student in the queried slice. No
-          minimum-membership-day floor applies. Numerator and denominator share
-          the same population, so a student whose attendance was never recorded
-          is outside both and cannot pull the rate down.  Pin attendance_date,
-          and show count_students beside this: a rate over students with only a
+          Denominator is count_students_measured, every student in the queried
+          slice with recorded attendance. No minimum-membership-day floor
+          applies. Numerator and denominator share the same population, so a
+          student whose attendance was never recorded is outside both and cannot
+          pull the rate down. Pin attendance_date, and show
+          count_students_measured beside this: a rate over students with only a
           few membership days each is volatile, not wrong.
-        sql: "1.0 * {count_chronically_absent} / NULLIF({count_students}, 0)"
+        sql:
+          "1.0 * {count_chronically_absent} / NULLIF({count_students_measured},
+          0)"
         type: number
         format: percent
         public: true
@@ -424,13 +572,13 @@ cubes:
       - name: pct_truant
         description: >-
           Share of students meeting regional truancy criteria as of the pinned
-          date. Denominator is count_students, every student in the queried
-          slice. No minimum-membership-day floor applies. Numerator and
-          denominator share the same population, so a student whose attendance
-          was never recorded is outside both and cannot pull the rate down.
-           Truancy has no eligibility concept
-          in either regional rule. Pin attendance_date.
-        sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
+          date. Denominator is count_students_measured, every student in the
+          queried slice with recorded attendance. No minimum-membership-day
+          floor applies. Numerator and denominator share the same population, so
+          a student whose attendance was never recorded is outside both and
+          cannot pull the rate down. Truancy has no eligibility concept in
+          either regional rule. Pin attendance_date.
+        sql: "1.0 * {count_truants} / NULLIF({count_students_measured}, 0)"
         type: number
         format: percent
         public: true

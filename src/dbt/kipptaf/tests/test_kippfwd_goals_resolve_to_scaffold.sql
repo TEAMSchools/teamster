@@ -6,7 +6,7 @@
 -- psat10nmsqt_total is expected to fail here today: it is a combined PSAT10 and
 -- PSAT NMSQT goal with no scaffold equivalent, because a combined row has no
 -- single honest expected_scope. Adding one means widening the scaffold's
--- expected_scope accepted values to admit PSAT10/NMSQT. TODO(#4658).
+-- expected_scope accepted values to admit PSAT10/NMSQT. TODO(#6034).
 select
     g.academic_year, g.test_type, g.grade_level, g.score_type, g.expected_metric_type,
 

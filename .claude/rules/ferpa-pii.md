@@ -6,11 +6,11 @@ paths:
 
 # FERPA and PII: what counts, and how this repo handles it
 
-Loads on the first read of dbt YAML or a Cube file. Distilled 2026-09-09 from
-the U.S. Department of Education's student privacy site and the regulation it
-links to. The outbound rule (never emit PII values to commits, PR comments,
-issues, or agent output) lives in the root CLAUDE.md _Never_ block; this file
-decides what "PII" means when you apply it.
+Loads on the first read of dbt YAML or a Cube file. Distilled from the U.S.
+Department of Education's student privacy site and the regulation it links to.
+The outbound rule (never emit PII values to commits, PR comments, issues, or
+agent output) lives in the root CLAUDE.md _Never_ block; this file decides what
+"PII" means when you apply it.
 
 Sources, in order of authority:
 
@@ -166,9 +166,9 @@ acceptable; both forms are `config.meta.contains_pii: true`.
   when no one answers is tiers 1 through 3.
 - **Outbound surfaces** (commits, PR comments, issue bodies, scheduled agents):
   redact values from any tier-1 through tier-4 column to `Student A` or to the
-  column name before posting. Aggregates with no small cell may go out as
-  numbers. The row content of a query result is PII even when the query had no
-  name column. Asana and the `#data_team` Slack channel are internal staff
-  surfaces and take unredacted values; for any other Slack channel, ask first.
+  column name before posting. Tier 4 is redacted here although it is not tagged:
+  a posted key sits next to the row content that makes it linkable. Aggregates
+  with no small cell may go out as numbers. The row content of a query result is
+  PII even when the query had no name column.
 - **Staff data** is outside FERPA but not outside policy. `staff_pii` in Cube
-  and the root CLAUDE.md line about staff contact information govern it.
+  governs it; redact staff contact fields on outbound surfaces like tier 1.

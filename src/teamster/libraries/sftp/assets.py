@@ -2,12 +2,14 @@ import os
 import re
 import zipfile
 from collections.abc import Callable
+from datetime import datetime
 
 from dagster import (
     AssetExecutionContext,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
+    TimeWindow,
     asset,
 )
 from dagster_shared import check
@@ -45,6 +47,43 @@ def compose_regex(
         return regexp
 
 
+def resolve_local_filepath(asset_key_string: str, remote_filepath: str) -> str:
+    """Map a remote SFTP path to its download location under `/tmp/dagster`.
+
+    The remote directory structure is kept intact — two files sharing a basename
+    in different remote folders must not collide — and the resolved path is
+    checked to stay inside the asset's own transient directory, so a remote
+    path that traverses upward can never redirect the download elsewhere on
+    disk.
+
+    Args:
+        asset_key_string: The asset key in slash form
+            (``AssetKey.to_user_string()``), used as the per-asset directory.
+        remote_filepath: The remote path as matched on the SFTP server.
+
+    Returns:
+        The normalized local path under ``/tmp/dagster/{asset_key_string}/``.
+
+    Raises:
+        ValueError: if the remote path resolves outside the asset's directory.
+    """
+    # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+    local_dir = f"/tmp/dagster/{asset_key_string}"
+
+    # The f-string join (not `Path(local_dir) / remote_filepath`) is load
+    # bearing: pathlib's `/` operator discards everything before an absolute
+    # right-hand operand, so an absolute `remote_filepath` would escape
+    # `local_dir` entirely and this check would never see it.
+    local_filepath = os.path.normpath(f"{local_dir}/{remote_filepath}")
+
+    if not local_filepath.startswith(f"{local_dir}{os.sep}"):
+        raise ValueError(
+            f"Remote filepath '{remote_filepath}' resolves outside '{local_dir}'"
+        )
+
+    return local_filepath
+
+
 def extract_pdf_to_dict(stream: str, pdf_row_pattern: str):
     records = []
 
@@ -71,6 +110,7 @@ def build_sftp_file_asset(
     pdf_row_pattern: str | None = None,
     exclude_dirs: list[str] | None = None,
     ignore_multiple_matches: bool = False,
+    current_partition_only: bool = False,
     archive_remote_dir: Callable[[str], str] | None = None,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
@@ -171,6 +211,7 @@ def build_sftp_file_asset(
             remote_dirs.append(archive_remote_dir(partition_key))
 
         file_matches: list[str] = []
+        file_mtimes: dict[str, int | None] = {}
 
         with (
             ssh.get_connection() as connection,
@@ -188,6 +229,8 @@ def build_sftp_file_asset(
                     continue
 
                 files.sort(key=lambda x: x[0].st_mtime or 0, reverse=True)
+
+                file_mtimes = {path: attr.st_mtime for attr, path in files}
 
                 file_matches = [
                     path
@@ -224,9 +267,30 @@ def build_sftp_file_asset(
         else:
             file_match = file_matches[0]
 
+        # the vendor file only ever holds the current partition's data, so a
+        # past partition's file is a frozen snapshot that a re-run would destroy.
+        # Judge by the file's mtime, not the clock: a June 30 file can run after
+        # midnight.
+        if current_partition_only:
+            time_window = check.inst(
+                obj=context.partition_time_window, ttype=TimeWindow
+            )
+            file_datetime = datetime.fromtimestamp(
+                file_mtimes[file_match] or 0, tz=time_window.start.tzinfo
+            )
+
+            if not time_window.start <= file_datetime < time_window.end:
+                raise ValueError(
+                    f"{file_match} was modified {file_datetime}, outside partition "
+                    f"{partition_key}; refusing to overwrite its snapshot"
+                )
+
         local_filepath = ssh.sftp_get(
             remote_filepath=file_match,
-            local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file_match}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+            local_filepath=resolve_local_filepath(
+                asset_key_string=context.asset_key.to_user_string(),
+                remote_filepath=file_match,
+            ),
         )
 
         if os.path.getsize(local_filepath) == 0:
@@ -358,7 +422,10 @@ def build_sftp_archive_asset(
 
         local_filepath = ssh.sftp_get(
             remote_filepath=file_match,
-            local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file_match}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+            local_filepath=resolve_local_filepath(
+                asset_key_string=context.asset_key.to_user_string(),
+                remote_filepath=file_match,
+            ),
         )
 
         # fail if the archive is empty: it cannot be a readable zip, so treat it
@@ -374,12 +441,11 @@ def build_sftp_archive_asset(
         ).replace("\\", "")
 
         with zipfile.ZipFile(file=local_filepath) as zf:
-            zf.extract(
+            local_filepath = zf.extract(
                 member=archive_file_regex_composed,
-                path=f"/tmp/dagster/{context.asset_key.to_user_string()}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+                # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+                path=f"/tmp/dagster/{context.asset_key.to_user_string()}",
             )
-
-        local_filepath = f"/tmp/dagster/{context.asset_key.to_user_string()}/{archive_file_regex_composed}"  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
 
         if os.path.getsize(local_filepath) == 0:
             context.log.warning(msg=f"File is empty: {local_filepath}")
@@ -421,7 +487,16 @@ def build_sftp_folder_asset(
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
+    add_source_file_modified_timestamp: bool = False,
 ):
+    """Build an asset that concatenates every matching file in a folder.
+
+    Args:
+        add_source_file_modified_timestamp: stamp each row with its file's SFTP
+            mtime as `source_file_modified_timestamp`, so a consumer can keep
+            the most recently delivered copy of a record that appears in more
+            than one file. The asset's Avro schema must declare the field.
+    """
     if group_name is None:
         group_name = asset_key[1]
 
@@ -473,8 +548,8 @@ def build_sftp_folder_asset(
             )
 
         file_matches = [
-            path
-            for _, path in files
+            (attr, path)
+            for attr, path in files
             if re.search(
                 pattern=f"{remote_dir_regex_composed}/{remote_file_regex_composed}",
                 string=path,
@@ -495,12 +570,15 @@ def build_sftp_folder_asset(
 
             return None
 
-        local_filepaths = []
+        local_files = []
 
-        for file in file_matches:
+        for attr, file in file_matches:
             local_filepath = ssh.sftp_get(
                 remote_filepath=file,
-                local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+                local_filepath=resolve_local_filepath(
+                    asset_key_string=context.asset_key.to_user_string(),
+                    remote_filepath=file,
+                ),
             )
 
             # skip if file is empty
@@ -508,9 +586,9 @@ def build_sftp_folder_asset(
                 context.log.warning(msg=f"File is empty: {local_filepath}")
                 continue
 
-            local_filepaths.append(local_filepath)
+            local_files.append((local_filepath, attr.st_mtime))
 
-        for file_path in local_filepaths:
+        for file_path, file_mtime in local_files:
             records = file_to_records(
                 file_path=file_path,
                 encoding=file_encoding,
@@ -523,6 +601,10 @@ def build_sftp_folder_asset(
 
             if n_rows == 0:
                 context.log.warning(msg="File contains 0 rows")
+
+            if add_source_file_modified_timestamp:
+                for row in records:
+                    row["source_file_modified_timestamp"] = file_mtime
 
             all_records.extend(records)
 

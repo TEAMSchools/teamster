@@ -47,7 +47,7 @@ permissions:
 jobs:
   prerun:
     if: github.actor != 'dependabot[bot]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
@@ -58,7 +58,7 @@ jobs:
       # output.result='skip' which is used to skip other steps in this workflow.
       - name: Pre-run checks
         id: prerun
-        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@132f6634913e072a5d1870ff94f4240620a6deeb # v1.13.23
+        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@400654901e183927d1259237bc4eaf541bc52113 # v1.13.26
 
   build:
     needs:
@@ -71,6 +71,11 @@ jobs:
           - linux-amd64
           - linux-arm64
     runs-on: teamschools-${{ matrix.runner }}
+    # job-level block replaces the workflow-level one: only build pushes to GHCR
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
     timeout-minutes: 60
     steps:
       - name: Prepare
@@ -96,6 +101,13 @@ jobs:
       - name: gcloud auth configure-docker
         run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
 
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -110,8 +122,16 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          cache-from: type=gha,scope=build-${{ matrix.runner }}
-          cache-to: type=gha,mode=max,scope=build-${{ matrix.runner }}
+          # registry, not gha: the repo's 10 GB Actions cache evicts our layers (#5393)
+          # GHCR, not Artifact Registry: runners are GitHub-hosted, so pulling
+          # from GCP is billed as internet egress on every build
+          cache-from:
+            type=registry,ref=ghcr.io/teamschools/teamster-buildcache:${{
+            inputs.code-location }}-${{ matrix.runner }}
+          cache-to:
+            type=registry,ref=ghcr.io/teamschools/teamster-buildcache:${{
+            inputs.code-location }}-${{ matrix.runner
+            }},mode=max,ignore-error=true
           platforms: ${{ env.PLATFORM_PAIR }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
@@ -126,7 +146,7 @@ jobs:
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload digest
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: digests-${{ matrix.runner }}
           path: /tmp/digests/*
@@ -134,7 +154,7 @@ jobs:
           retention-days: 1
 
   merge:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     needs:
       - prerun
@@ -143,7 +163,7 @@ jobs:
       needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
     steps:
       - name: Download digests
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: /tmp/digests
           pattern: digests-*
@@ -176,7 +196,9 @@ jobs:
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}
 
   deploy:
-    runs-on: ubuntu-latest
+    # the dagster-cloud-cli pex cannot run on the only Python ubuntu-26.04
+    # ships (free-threaded 3.14); keep every job here on 24.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     needs:
       - prerun
@@ -195,7 +217,7 @@ jobs:
       # Validate dagster_cloud.yaml and the connection to dagster.cloud
       - name: Validate configuration
         id: ci-validate
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@132f6634913e072a5d1870ff94f4240620a6deeb # v1.13.23
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@400654901e183927d1259237bc4eaf541bc52113 # v1.13.26
         if: needs.prerun.outputs.result != 'skip'
         with:
           command: |
@@ -205,7 +227,7 @@ jobs:
       # the build session
       - name: Initialize build session
         id: ci-init
-        uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@132f6634913e072a5d1870ff94f4240620a6deeb # v1.13.23
+        uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@400654901e183927d1259237bc4eaf541bc52113 # v1.13.26
         if: needs.prerun.outputs.result != 'skip'
         with:
           project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
@@ -216,7 +238,7 @@ jobs:
 
       - name: Update build session with image tag
         id: ci-set-build-output
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@132f6634913e072a5d1870ff94f4240620a6deeb # v1.13.23
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@400654901e183927d1259237bc4eaf541bc52113 # v1.13.26
         if: needs.prerun.outputs.result != 'skip'
         with:
           command: |
@@ -225,7 +247,7 @@ jobs:
       # Deploy all code locations in this build session to Dagster Cloud
       - name: Deploy to Dagster Cloud
         id: ci-deploy
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@132f6634913e072a5d1870ff94f4240620a6deeb # v1.13.23
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@400654901e183927d1259237bc4eaf541bc52113 # v1.13.26
         if: needs.prerun.outputs.result != 'skip'
         with:
           command: ci deploy
@@ -234,7 +256,7 @@ jobs:
       # and failure
       - name: Update PR comment for branch deployments
         id: ci-notify
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@132f6634913e072a5d1870ff94f4240620a6deeb # v1.13.23
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@400654901e183927d1259237bc4eaf541bc52113 # v1.13.26
         if: needs.prerun.outputs.result != 'skip' && always()
         with:
           command: ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}
@@ -242,7 +264,7 @@ jobs:
       # Generate a summary that shows up on the Workflow Summary page
       - name: Generate a summary
         id: ci-summary
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@132f6634913e072a5d1870ff94f4240620a6deeb # v1.13.23
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@400654901e183927d1259237bc4eaf541bc52113 # v1.13.26
         if: needs.prerun.outputs.result != 'skip' && always()
         with:
           command: ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY

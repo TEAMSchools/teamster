@@ -42,6 +42,25 @@ models:
             where: rn_year = 1
             severity: warn
     columns:
+      - name: grad_iep_exempt_status_overall
+        data_type: string
+        data_tests:
+          - not_null
+          # TODO(#5900): the one-subject values warn until someone decides
+          # whether a student can be IEP exempt in only one subject.
+          - accepted_values:
+              arguments:
+                values:
+                  - Not Grad IEP Exempt
+                  - "Yes"
+        description: >-
+          NJ graduation pathway IEP exemption for currently enrolled students,
+          from the PowerSchool NJ state fields. Yes when both the math and ELA
+          graduation pathways are M (IEP exempt), "Math only. No ELA match." or
+          "ELA only. No Math match." when only one is M and the other pathway is
+          filled in, and Not Grad IEP Exempt otherwise. That includes a student
+          with one pathway M and the other blank, and every student whose
+          enroll_status is not 0.
       - name: _dbt_source_project
         data_type: string
       - name: studentid
@@ -289,10 +308,26 @@ models:
         data_type: int64
       - name: rn_all
         data_type: int64
+        description:
+          Stint order across all years, latest first. 1 is the student's most
+          recent enrollment. PowerSchool numbers within each district's
+          studentid, so a student enrolled in two districts has two 1s. Focus
+          (Miami) numbers by network student_number.
       - name: rn_year
         data_type: int64
+        description:
+          Stint order within the academic year, latest exit date first. Filter
+          on 1 to reduce this model to one row per student per year, instead of
+          select distinct. PowerSchool numbers within each district's studentid,
+          so a student enrolled in two districts in one year has two 1s; the
+          model-level warn test on student_number and academic_year where
+          rn_year = 1 flags those. Focus (Miami) numbers by network
+          student_number.
       - name: rn_school
         data_type: int64
+        description:
+          Stint order within each school across years, latest first. Null for
+          Focus (Miami) enrollments.
       - name: grade_level_prev
         data_type: int64
       - name: yearid_prev
@@ -307,10 +342,37 @@ models:
         data_type: boolean
       - name: is_enrolled_oct01
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on October 1
+          of the academic year, the same on every stint that year. For a count
+          by school or grade as of the date, use is_enrolled_oct01_stint.
       - name: is_enrolled_oct15
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on October 15
+          of the academic year, the same on every stint that year. For a count
+          by school or grade as of the date, use is_enrolled_oct15_stint.
       - name: is_enrolled_mar15
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on March 15 of
+          the academic year, the same on every stint that year. For a count by
+          school or grade as of the date, use is_enrolled_mar15_stint.
+      - name: is_enrolled_oct01_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered October 1 of the academic year — entry date
+          on or before it, last_enrolled_date on or after it.
+      - name: is_enrolled_oct15_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered October 15 of the academic year — entry
+          date on or before it, last_enrolled_date on or after it.
+      - name: is_enrolled_mar15_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered March 15 of the academic year — entry date
+          on or before it, last_enrolled_date on or after it.
       - name: is_enrolled_recent
         data_type: boolean
       - name: is_enrolled_fdos
@@ -647,6 +709,14 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__studentcorefields
             source_column: spedlep
+      - name: iep_status
+        data_type: string
+        description:
+          Has IEP when `spedlep` starts with `SPED`, otherwise No IEP, including
+          when `spedlep` is null.
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
         description: Student Limited English Proficiency status.
@@ -850,22 +920,6 @@ models:
       - name: overgrad_fafsa_opt_out
         data_type: string
         description: Conditional on fafsa_opt_out.
-      - name: grad_iep_exempt_status_overall
-        data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - Not Grad IEP Exempt
-                  - "Yes"
-        description:
-          The enrollment status of the student. Conditional on enroll_status,
-          grad_iep_exempt_overall.
-      - name: iep_status
-        data_type: string
-        description:
-          Database extension field associated to the Students table. Conditional
-          on spedlep.
       - name: ml_status
         data_type: string
         description:
@@ -937,6 +991,24 @@ models:
       - name: is_sipps
         data_type: boolean
         description: Conditional on students_student_number.
+      - name: is_hs_honors_program
+        data_type: boolean
+        description: >-
+          True when the student has a PowerSchool High School Honors Program
+          record that covers the as-of date, which is the earlier of today and
+          June 30 at the end of the academic year. A student who leaves the
+          program mid-year reads false from the day after the exit date. An exit
+          date earlier than the entry date counts as still in the program; that
+          covers blank exit dates, which PowerSchool stores as 1900-01-01, and
+          date typos. The flag follows the program record, not the enrollment,
+          so a student who left the school mid-year reads true when the honors
+          record still covers the as-of date and false when staff closed the
+          record as the student left. The value is per student per academic
+          year, so it repeats on every enrollment row in that year. Null for
+          Miami, whose SIS has no equivalent program record.
+        config:
+          meta:
+            contains_pii: true
       - name: student_slideback
         data_type: boolean
         description: >
@@ -958,6 +1030,11 @@ models:
           academic year — a registration that was cancelled before the school
           year began (summer melt or pre-year transfer). These stints have no
           course enrollments and should be excluded from course-level reporting.
+      - name: is_current_academic_year
+        data_type: boolean
+        description: >
+          True when academic_year equals the project's current_academic_year
+          variable, which rolls over each July. False otherwise.
       - name: aligned_gender
         data_type: string
         description: >

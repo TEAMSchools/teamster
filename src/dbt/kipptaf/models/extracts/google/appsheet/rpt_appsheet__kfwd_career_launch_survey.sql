@@ -21,18 +21,28 @@ with
             r.contact_owner_name as contact_owner,
             r.contact_postsec_advisor as postsec_advisor,
 
-            sr.survey_response_id as reconciliation_response_id,
-
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
         from {{ ref("int_kippadb__roster") }} as r
-        left join
-            {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
-            on r.contact_id = sr.sf_contact_id
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.contact_id is not null
             and r.ktc_cohort <= {{ var("current_academic_year") }}
+    ),
+
+    survey_responses as (
+        select
+            cr.response_id,
+            cr.response_date_submitted,
+            cr.respondent_user_principal_name,
+            cr.respondent_salesforce_id,
+
+            sr.sf_contact_id as reconciled_contact_id,
+        from {{ ref("int_surveys__kfwd_career_launch_responses") }} as cr
+        left join
+            {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
+            on cr.response_id = sr.survey_response_id
+        where sr.reconcile_or_exclude is distinct from 'Exclude'
     ),
 
     survey_stats as (
@@ -44,10 +54,11 @@ with
             max(su.response_date_submitted) as latest_survey_date,
         from roster as r
         inner join
-            {{ ref("int_surveys__kfwd_career_launch_responses") }} as su
+            survey_responses as su
             on r.sf_email = su.respondent_user_principal_name
             or r.sf_secondary_email = su.respondent_user_principal_name
-            or r.reconciliation_response_id = su.response_id
+            or r.contact_id = su.reconciled_contact_id
+            or r.contact_id = su.respondent_salesforce_id
         group by r.contact_id
     )
 

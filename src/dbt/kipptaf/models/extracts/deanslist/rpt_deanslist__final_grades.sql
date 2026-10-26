@@ -17,7 +17,6 @@ with
             enr.sections_section_number,
             enr.students_student_number,
             enr.teacher_lastfirst,
-            enr.students_grade_level as grade_level,
 
             rt.name as term_name,
             rt.code as term_code,
@@ -34,6 +33,7 @@ with
         where
             enr.cc_academic_year = {{ var("current_academic_year") }}
             and not enr.is_dropped_course
+            and enr._dbt_source_project != 'kippmiami'
     ),
 
     enr_deduplicate as (
@@ -73,36 +73,11 @@ with
             fg.term_percent_grade_adjusted_rt3,
             fg.term_percent_grade_adjusted_rt4,
             fg.y1_percent_grade_adjusted,
-
-            if(
-                enr._dbt_source_relation like '%miami%' and enr.grade_level = 0,
-                fg.term_letter_grade_rt1,
-                fg.term_letter_grade_adjusted_rt1
-            ) as term_letter_grade_adjusted_rt1,
-
-            if(
-                enr._dbt_source_relation like '%miami%' and enr.grade_level = 0,
-                fg.term_letter_grade_rt2,
-                fg.term_letter_grade_adjusted_rt2
-            ) as term_letter_grade_adjusted_rt2,
-
-            if(
-                enr._dbt_source_relation like '%miami%' and enr.grade_level = 0,
-                fg.term_letter_grade_rt3,
-                fg.term_letter_grade_adjusted_rt3
-            ) as term_letter_grade_adjusted_rt3,
-
-            if(
-                enr._dbt_source_relation like '%miami%' and enr.grade_level = 0,
-                fg.term_letter_grade_rt4,
-                fg.term_letter_grade_adjusted_rt4
-            ) as term_letter_grade_adjusted_rt4,
-
-            if(
-                enr._dbt_source_relation like '%miami%' and enr.grade_level = 0,
-                fg.y1_letter_grade,
-                fg.y1_letter_grade_adjusted
-            ) as y1_letter_grade,
+            fg.term_letter_grade_adjusted_rt1,
+            fg.term_letter_grade_adjusted_rt2,
+            fg.term_letter_grade_adjusted_rt3,
+            fg.term_letter_grade_adjusted_rt4,
+            fg.y1_letter_grade_adjusted as y1_letter_grade,
 
             round(
                 coalesce(

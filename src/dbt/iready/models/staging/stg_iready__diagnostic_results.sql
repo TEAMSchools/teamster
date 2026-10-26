@@ -304,4 +304,13 @@ select
 
     overall_scale_score + typical_growth as overall_scale_score_plus_typical_growth,
     overall_scale_score + stretch_growth as overall_scale_score_plus_stretch_growth,
+
+    row_number() over (
+        partition by student_id, `subject`, completion_date
+        order by
+            academic_year_int asc,
+            `start_date` desc,
+            overall_scale_score desc,
+            duration_min desc
+    ) as rn_subj_day,
 from calcs
