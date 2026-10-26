@@ -8,6 +8,7 @@ with
             exitdate,
             academic_year,
         from {{ ref("int_students__student_enrollment_union") }}
+        where rn_year = 1
     ),
 
     reporting_terms as (
