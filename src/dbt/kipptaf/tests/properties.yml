@@ -322,14 +322,45 @@ data_tests:
 
   - name: int_assessments__scaffold__replacement_region_untagged
     description: >-
-      Returns students on a replacement curriculum who took an Illuminate
-      assessment that is not tagged for their region. Fix each row in one of two
-      ways. If the region should give this assessment, add the region to the
-      assessment's regions_assessed in the AppSheet Illuminate assessments
+      A student on a replacement curriculum took an Illuminate assessment that
+      is not tagged for the student's region. Fix each row in one of two ways.
+      If the region should give this assessment, add the region to the
+      assessment's regions_assessed tag in the AppSheet Illuminate assessments
       extension. If the student should not have taken it, remove the student's
       assessment in Illuminate. Until then,
       bridge_assessment_expectations_student_scoped leaves the row out, because
       dim_assessment_administrations has no administration for that region.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_assessments__scaffold
+
+  - name: stg_illuminate__dna_assessments__students_assessments__taken_before_academic_year
+    description: >-
+      A student took an Illuminate assessment before the assessment's academic
+      year began (date taken before 1 July of the start year). Usually the
+      assessment was copied from a prior year and kept the old academic year.
+      Downstream, the score sits in a school year it was not taken in. Correct
+      the assessment's academic year, or the date taken, in Illuminate.
+      Assessments whose academic year is not a real year are skipped.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_illuminate__dna_assessments__students_assessments
+
+  - name: stg_illuminate__dna_repositories__repository_fields__sight_words_unique_label
+    description: >-
+      An Illuminate Sight Words Quiz repository holds the same field label more
+      than once, often the placeholder TBD. Downstream, the sight words
+      dashboard repeats the student's row for that word. Rename or remove the
+      duplicate field in the repository in Illuminate.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_illuminate__dna_repositories__repository_fields
 
   - name: int_assessments__resolved_section_enrollments__unique_per_score
     description: >-
