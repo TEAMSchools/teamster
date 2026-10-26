@@ -1,16 +1,11 @@
 /*
- * NOTE (post-#3899): This model is retained for two purposes only:
- *  - The subject-of-evaluation overlay (subject_df_employee_number and
- *    subject staff columns), joined onto submissions_grain in
- *    fct_survey_submissions.
- *  - The historic Alchemer Manager archive (survey_id =
- *    'historic_alchemer_Manager_survey'), sourced directly by
- *    fct_survey_submissions and dim_survey_administrations.
+ * Question-grain Manager Survey detail for rpt_tableau__manager_survey_details,
+ * fct_survey_responses and bridge_survey_questions, plus the historic Alchemer
+ * Manager archive (survey_id = 'historic_alchemer_Manager_survey') that
+ * int_surveys__alchemer_submissions reads.
  *
- * Manager Survey respondent identity (live Google Forms) now flows through
- * int_surveys__survey_responses, not this model. Do not extend the
- * Google-Forms arm here; add new logic to int_surveys__survey_responses
- * or wait for the int_surveys__survey_submissions extraction (#3918).
+ * The subject comes from int_surveys__submission_subjects, and submission
+ * ranking lives in int_surveys__survey_submissions. Do not re-derive either here.
  */
 with
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below

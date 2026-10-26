@@ -204,8 +204,9 @@ unit_tests:
     description: >-
       A Renewal approver who rates two staff members keeps one latest submission
       per rated person. Two Re-Commitment submissions with no email for the same
-      student rank against each other. Candidate Offer submissions fall in no
-      administration, so neither is ranked.
+      student rank against each other; a third for another student ranks on its
+      own. Candidate Offer submissions fall in no administration, so neither is
+      ranked.
     model: int_surveys__survey_submissions
     given:
       - input: ref('stg_google_forms__responses')
@@ -240,6 +241,11 @@ unit_tests:
               'f_fam', 'family_old', null, null,
               timestamp('2026-03-04 12:00:00'), timestamp('2026-03-04 12:00:00'),
               date('2026-03-04'), 'link'
+          union all
+          select
+              'f_fam', 'family_other', null, null,
+              timestamp('2026-03-03 12:00:00'), timestamp('2026-03-03 12:00:00'),
+              date('2026-03-03'), 'link'
           union all
           select
               'f_off', 'no_term_a', 'y@example.org', 'y',
@@ -311,6 +317,8 @@ unit_tests:
           select 'f_fam', 'family_new', null, 840012345
           union all
           select 'f_fam', 'family_old', null, 840012345
+          union all
+          select 'f_fam', 'family_other', null, 840054321
       - input: source('surveys', 'int_surveys__alchemer_submissions')
         format: sql
         rows: |
@@ -358,6 +366,10 @@ unit_tests:
         - survey_response_id: family_old
           round_rn: 2
           respondent_student_number: 840012345
+          subject_employee_number: null
+        - survey_response_id: family_other
+          round_rn: 1
+          respondent_student_number: 840054321
           subject_employee_number: null
         - survey_response_id: no_term_a
           round_rn: 1

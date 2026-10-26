@@ -116,6 +116,15 @@ select
     term_name,
     survey_response_link,
 
+    respondent_student_number,
+    subject_employee_number,
+    respondent_identifier,
+    rank_respondent,
+    rank_subject,
+
+    {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
+    as survey_submission_key,
+
     -- no administration: never ranked
     if(
         term_code is null,
@@ -126,15 +135,6 @@ select
             order by date_submitted desc, survey_response_id desc
         )
     ) as round_rn,
-
-    respondent_student_number,
-    subject_employee_number,
-    respondent_identifier,
-    rank_respondent,
-    rank_subject,
-
-    {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
-    as survey_submission_key,
 from gforms_keyed
 
 union all
@@ -154,11 +154,11 @@ select
     term_code,
     term_name,
     survey_response_link,
-    round_rn,
     respondent_student_number,
     subject_employee_number,
     respondent_identifier,
     rank_respondent,
     rank_subject,
     survey_submission_key,
+    round_rn,
 from {{ source("surveys", "int_surveys__alchemer_submissions") }}
