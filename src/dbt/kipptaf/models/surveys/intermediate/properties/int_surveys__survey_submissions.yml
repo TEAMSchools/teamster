@@ -162,3 +162,6 @@ models:
           only on Alchemer and the archive arm, from
           int_surveys__alchemer_submissions; null on Google Forms and on surveys
           that rate no one.
+        config:
+          meta:
+            contains_pii: true

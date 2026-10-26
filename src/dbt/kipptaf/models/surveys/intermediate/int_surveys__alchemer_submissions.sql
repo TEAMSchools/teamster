@@ -22,6 +22,7 @@ with
             survey_id,
             response_id,
             respondent_mail,
+            subject_employee_number,
 
             lower(
                 regexp_extract(respondent_mail, r'^([^@]+)')
@@ -65,6 +66,7 @@ with
             rt.name as term_name,
 
             ri.respondent_mail as respondent_email,
+            ri.subject_employee_number,
 
             aa.subject_answer,
 
@@ -90,11 +92,6 @@ with
             concat(
                 sr.survey_link_default, '?snc=', sr.session_id, '&sg_navigate=start'
             ) as survey_response_link,
-
-            -- answers read "Last, First - Title [employee number]"
-            safe_cast(
-                regexp_extract(aa.subject_answer, r'\[(\d+)\]') as int64
-            ) as subject_employee_number,
 
             case
                 -- 2022 NJ & Miami Family Survey; other surveys name no student
@@ -234,23 +231,35 @@ with
         from archive_submissions
     ),
 
+    submissions_cast as (
+        select
+            *,
+
+            cast(
+                respondent_student_number as string
+            ) as respondent_student_number_string,
+            cast(
+                respondent_employee_number as string
+            ) as respondent_employee_number_string,
+            cast(subject_employee_number as string) as subject_employee_number_string,
+        from all_submissions
+    ),
+
     submissions_keyed as (
         select
             *,
 
             coalesce(
-                cast(respondent_employee_number as string), respondent_email
+                respondent_employee_number_string, respondent_email
             ) as respondent_identifier,
             coalesce(
-                cast(respondent_student_number as string),
-                cast(respondent_employee_number as string),
+                respondent_student_number_string,
+                respondent_employee_number_string,
                 respondent_email,
                 survey_response_id
             ) as rank_respondent,
-            coalesce(
-                cast(subject_employee_number as string), subject_answer
-            ) as rank_subject,
-        from all_submissions
+            coalesce(subject_employee_number_string, subject_answer) as rank_subject,
+        from submissions_cast
     )
 
 select

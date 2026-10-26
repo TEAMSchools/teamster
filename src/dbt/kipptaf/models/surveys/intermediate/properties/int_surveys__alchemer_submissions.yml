@@ -146,10 +146,14 @@ models:
 
       - name: subject_employee_number
         description: >-
-          Employee number of the staff member the submission rates, the
-          bracketed number at the end of the subject_df_employee_number answer;
-          on the archive, the subject the archive records. Null on surveys that
-          rate no one and on answers that carry only a name.
+          Employee number of the staff member the submission rates, as the
+          frozen int_surveys__response_identifiers table resolved it from the
+          subject_df_employee_number answer and its correction sheet; on the
+          archive, the subject the archive records. Null on surveys that rate no
+          one and on answers that table could not resolve.
+        config:
+          meta:
+            contains_pii: true
 
       - name: respondent_identifier
         description: >-
