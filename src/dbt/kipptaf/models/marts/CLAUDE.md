@@ -19,9 +19,10 @@ and `Driver`. `gh project` commands: `.claude/context/github.md`; the
 `GITHUB_TOKEN=` prefix: `gh-token-scopes` skill. `Status` auto-sets to Todo on
 add — skip.
 
-**Ops-tracked grouping**: file ONE `ops-tracked` issue per underlying source
-(one Google Sheet, one config file) — bullets per orphan bucket inside. Don't
-split per-bucket when the action is one sheet-editing session.
+A source-data fix goes to Asana, not a GitHub issue (`pr-ci-review`). File one
+Asana task per underlying source (one Google Sheet, one config file), with
+bullets per orphan bucket inside. Don't split per-bucket when the action is one
+sheet-editing session.
 
 ## Pre-merge checklist (marts PRs)
 
