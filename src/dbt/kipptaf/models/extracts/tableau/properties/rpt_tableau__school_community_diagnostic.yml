@@ -1,5 +1,12 @@
 models:
   - name: rpt_tableau__school_community_diagnostic
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_id
+              - survey_response_id
+              - question_shortname
     columns:
       - name: survey_id
         data_type: string

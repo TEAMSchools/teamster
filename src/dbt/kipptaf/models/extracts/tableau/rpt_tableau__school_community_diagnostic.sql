@@ -57,6 +57,7 @@ left join
     {{ ref("int_extracts__student_enrollments") }} as se1
     on sr.respondent_email = se1.student_email
     and sr.academic_year = se1.academic_year
+    and se1.rn_year = 1
 left join
     {{ ref("int_surveys__survey_submissions") }} as ss
     on sr.survey_id = ss.survey_id
@@ -65,6 +66,7 @@ left join
     {{ ref("int_extracts__student_enrollments") }} as se2
     on ss.respondent_student_number = se2.student_number
     and ss.academic_year = se2.academic_year
+    and se2.rn_year = 1
 left join
     {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.question_shortname = ac.question_code
@@ -96,7 +98,7 @@ select
     'PowerSchool' as survey_id,
     'PowerSchool Family School Community Diagnostic' as survey_title,
 
-    sr.external_student_id as survey_response_id,
+    cast(sr.id as string) as survey_response_id,
     sr.data_item_key as question_shortname,
 
     safe_cast(sr.submitted as timestamp) as date_submitted,
@@ -135,6 +137,7 @@ left join
     {{ ref("int_extracts__student_enrollments") }} as se
     on sr.external_student_id = safe_cast(se.student_number as string)
     and rt.academic_year = se.academic_year
+    and se.rn_year = 1
 left join
     {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.data_item_key = ac.question_code
