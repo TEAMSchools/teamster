@@ -28,9 +28,9 @@ models:
       - name: schoolid
         data_type: int64
         description:
-          The school where the student earned the most GPA credit hours that
-          year, ties broken by the higher school number. A label for the row,
-          not a join key.
+          The school with the most potential GPA credit hours for the student
+          that year, summed over its term grade rows, ties broken by the higher
+          school number. A label for the row, not a join key.
       - name: students_dcid
         data_type: int64
       - name: students_student_number
