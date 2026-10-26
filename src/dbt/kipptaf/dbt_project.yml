@@ -33,6 +33,12 @@ data_tests:
         +severity: error
     extracts:
       +severity: error
+    # tests declared on a sheet model run only in the google_sheet asset set,
+    # where their checks attach (selectors.yml)
+    google:
+      sheets:
+        staging:
+          +tags: google_sheet
 
 vars:
   local_timezone: America/New_York

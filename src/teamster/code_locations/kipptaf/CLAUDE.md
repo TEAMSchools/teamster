@@ -51,7 +51,9 @@ requirements and selection criteria:
 The core selector excludes `tag:google_sheet` with
 `indirect_selection: cautious`. A plain `exclude=` uses eager selection, which
 drops every test that reads any sheet model, including tests whose check belongs
-to a core model. Do not move the exclude back into `exclude=`.
+to a core model. Do not move the exclude back into `exclude=`. A test whose
+check belongs to a sheet model carries `tag:google_sheet` so it leaves core
+(`.claude/rules/dbt-yaml.md`).
 
 `core_dbt_assets` is the one used by `TableauServerResource` dependencies
 (imported as `core_dbt_assets` from `kipptaf.dbt.assets`).

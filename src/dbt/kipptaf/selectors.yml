@@ -3,8 +3,11 @@ selectors:
     description: >-
       Everything except the adp_payroll lineage and the google_sheet models,
       which build in their own Dagster asset sets. The google_sheet exclude is
-      cautious so a test that reads a sheet model and a core model stays in the
-      core set, where its check attaches to the core model.
+      cautious so a test that reads a sheet model and a core model, and whose
+      check belongs to the core model, stays in the core set. A test whose check
+      belongs to a sheet model carries tag:google_sheet and leaves core. The
+      sheets set selects eagerly, so a mixed-parent test also runs there; only
+      the set holding its check records the result.
     definition:
       union:
         - method: fqn
