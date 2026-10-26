@@ -51,6 +51,7 @@ with
             {{ ref("int_assessments__state_scores") }} as pp
             on co.fleid = pp.state_student_id
             and co.academic_year = pp.benchmark_academic_year
+            and co._dbt_source_project = pp._dbt_source_project
             and pp.score_source = 'state_fl'
             and pp.assessment_name = 'FAST'
             and pp.administration_period = 'PM3'
