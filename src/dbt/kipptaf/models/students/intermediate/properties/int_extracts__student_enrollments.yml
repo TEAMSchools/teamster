@@ -1089,6 +1089,9 @@ models:
           school_level.
       - name: fafsa_status_mismatch_category
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         data_tests:
           - accepted_values:
               arguments:
