@@ -84,6 +84,10 @@ select
     survey_response_link,
     round_rn,
 
+    -- TODO(#5978): resolve family students and rated people on Google Forms
+    cast(null as int64) as respondent_student_number,
+    cast(null as int64) as subject_employee_number,
+
     coalesce(
         cast(respondent_employee_number as string), respondent_email
     ) as respondent_identifier,
@@ -110,6 +114,8 @@ select
     term_name,
     survey_response_link,
     round_rn,
+    respondent_student_number,
+    subject_employee_number,
     respondent_identifier,
     survey_submission_key,
 from {{ source("surveys", "int_surveys__alchemer_submissions") }}
