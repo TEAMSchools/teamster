@@ -29,6 +29,29 @@ with
         from {{ source("surveys", "int_surveys__response_identifiers") }}
     ),
 
+    alchemer_answers as (
+        select
+            survey_id,
+            response_id,
+
+            max(
+                if(
+                    question_short_name = 'subject_df_employee_number',
+                    response_value,
+                    null
+                )
+            ) as subject_answer,
+            max(
+                if(question_short_name = 'student_number', response_value, null)
+            ) as student_number_answer,
+            logical_or(
+                starts_with(question_short_name, 'miami_')
+                and trim(response_value) != ''
+            ) as has_miami_answer,
+        from {{ source("alchemer", "base_alchemer__survey_results") }}
+        group by survey_id, response_id
+    ),
+
     /*
      * Inner join to reporting terms: an Alchemer response outside every SURVEY
      * window is not a submission, as it was before the response-grain rewrite.
@@ -43,7 +66,7 @@ with
 
             ri.respondent_mail as respondent_email,
 
-            1 as round_rn,
+            aa.subject_answer,
 
             cast(sr.survey_id as string) as survey_id,
             cast(sr.response_id as string) as survey_response_id,
@@ -67,6 +90,23 @@ with
             concat(
                 sr.survey_link_default, '?snc=', sr.session_id, '&sg_navigate=start'
             ) as survey_response_link,
+
+            -- answers read "Last, First - Title [employee number]"
+            safe_cast(
+                regexp_extract(aa.subject_answer, r'\[(\d+)\]') as int64
+            ) as subject_employee_number,
+
+            case
+                -- 2022 NJ & Miami Family Survey; other surveys name no student
+                when
+                    sr.survey_id != 6829997
+                    or not regexp_contains(aa.student_number_answer, r'^\d{5,6}$')
+                then null
+                -- Miami's PowerSchool-to-Focus student number prefix
+                when aa.has_miami_answer
+                then safe_cast(concat('8400', aa.student_number_answer) as int64)
+                else safe_cast(aa.student_number_answer as int64)
+            end as respondent_student_number,
         from alchemer_responses as sr
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
@@ -81,6 +121,10 @@ with
             alchemer_identifiers as ri
             on sr.survey_id = ri.survey_id
             and sr.response_id = ri.response_id
+        left join
+            alchemer_answers as aa
+            on sr.survey_id = aa.survey_id
+            and sr.response_id = aa.response_id
         left join
             {{ ref("int_people__staff_roster_history") }} as srh
             on (
@@ -114,6 +158,7 @@ with
             campaign_academic_year,
             campaign_reporting_term,
             respondent_df_employee_number,
+            subject_df_employee_number,
             effective_survey_response_id,
         from {{ ref("int_surveys__manager_survey_details") }}
         where
@@ -152,7 +197,9 @@ with
             term_code,
             term_name,
             survey_response_link,
-            round_rn,
+            respondent_student_number,
+            subject_employee_number,
+            subject_answer,
         from api_submissions
 
         union all
@@ -179,8 +226,31 @@ with
 
             cast(null as string) as term_name,
             cast(null as string) as survey_response_link,
-            cast(null as int) as round_rn,
+            cast(null as int64) as respondent_student_number,
+
+            subject_df_employee_number as subject_employee_number,
+
+            cast(null as string) as subject_answer,
         from archive_submissions
+    ),
+
+    submissions_keyed as (
+        select
+            *,
+
+            coalesce(
+                cast(respondent_employee_number as string), respondent_email
+            ) as respondent_identifier,
+            coalesce(
+                cast(respondent_student_number as string),
+                cast(respondent_employee_number as string),
+                respondent_email,
+                survey_response_id
+            ) as rank_respondent,
+            coalesce(
+                cast(subject_employee_number as string), subject_answer
+            ) as rank_subject,
+        from all_submissions
     )
 
 select
@@ -198,12 +268,17 @@ select
     term_code,
     term_name,
     survey_response_link,
-    round_rn,
-
-    coalesce(
-        cast(respondent_employee_number as string), respondent_email
-    ) as respondent_identifier,
+    respondent_student_number,
+    subject_employee_number,
+    respondent_identifier,
+    rank_respondent,
+    rank_subject,
 
     {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
     as survey_submission_key,
-from all_submissions
+
+    row_number() over (
+        partition by survey_id, academic_year, term_code, rank_respondent, rank_subject
+        order by date_submitted desc, survey_response_id desc
+    ) as round_rn,
+from submissions_keyed
