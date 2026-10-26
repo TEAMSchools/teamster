@@ -147,12 +147,12 @@ data_tests:
     description: >-
       A PowerSchool student holds 2 different Bucket special programs for the
       same subject and school year at the same time (overlapping dates, or the
-      same enter date). Downstream, the student's tier for that subject is then
-      picked arbitrarily. The lower-numbered bucket is correct, because Bucket 1
-      means the student was proficient the year before; delete the other
-      special-program record in PowerSchool. Back-to-back buckets, where one
-      exits before the next enters, are normal mid-year amendments and are not
-      flagged.
+      same enter date). Downstream, int_students__bucket_assignments keeps one
+      of them by enter date and other tiebreaks, not by which is correct. The
+      lower-numbered bucket is correct, because Bucket 1 means the student was
+      proficient the year before; delete the other special-program record in
+      PowerSchool. Back-to-back buckets, where one exits before the next enters,
+      are normal mid-year amendments and are not flagged.
     config:
       severity: warn
       meta:
