@@ -1,0 +1,112 @@
+models:
+  - name: int_surveys__submission_subjects
+    description: >-
+      The one place a Google Forms submission's subject is decided, at 1 row per
+      submission that answered a subject question. The subject is the staff
+      member the submission rates, or, on a family form, the student the family
+      answers for. int_surveys__survey_submissions ranks on these columns, and
+      every model that needs a submission's subject reads them here rather than
+      parsing the answer itself.
+
+      Rules are keyed by question abbreviation, so any form that reuses one of
+      these abbreviations gets the rule with no change here. A form with no rule
+      has no row and ranks on its respondent alone.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_id
+              - survey_response_id
+          config:
+            severity: error
+    columns:
+      - name: survey_id
+        description: Google Forms form id.
+
+      - name: survey_response_id
+        description: Google Forms response id.
+
+      - name: subject_employee_number
+        description: >-
+          Employee number of the staff member the submission rates — the 6-digit
+          number in brackets in the answer to the subject_employee_number or
+          employee_name question, which renders a staff picker as "Name
+          (123456)". Null when the answer carries no bracketed 6-digit number.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: respondent_student_number
+        description: >-
+          Student a family submission answers for, from the
+          family_respondent_number answer on the Miami Re-Commitment form with
+          the 8400 prefix that maps a PowerSchool student number to Focus. Null
+          on every other form and when the answer is not a 5- or 6-digit number.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_int_surveys__submission_subjects_rules
+    description: >-
+      Manager Survey and Renewal answers yield the bracketed employee number; a
+      Renewal answer with no bracketed number yields a null subject. A 5-digit
+      Re-Commitment answer gets the 8400 prefix; a 4-digit one yields a null
+      student. A form with no subject question has no row.
+    model: int_surveys__submission_subjects
+    given:
+      - input: ref('int_google_forms__form_responses')
+        format: sql
+        rows: |
+          select
+              'f_mgr' as form_id,
+              'manager' as response_id,
+              'Manager Survey' as info_title,
+              'subject_employee_number' as item_abbreviation,
+              'Person A (123456)' as text_value
+          union all
+          select
+              'f_mgr', 'manager', 'Manager Survey', 'q1', '4'
+          union all
+          select
+              'f_ren', 'renewal', 'Renewal Approval Tool Processing',
+              'employee_name', 'Person B (234567)'
+          union all
+          select
+              'f_ren', 'no_bracket', 'Renewal Approval Tool Processing',
+              'employee_name', 'Person C'
+          union all
+          select
+              'f_fam', 'family',
+              'KIPP Miami Re-Commitment Form & Family School Community Diagnostic',
+              'family_respondent_number', '12345'
+          union all
+          select
+              'f_fam', 'family_bad',
+              'KIPP Miami Re-Commitment Form & Family School Community Diagnostic',
+              'family_respondent_number', '1234'
+          union all
+          select
+              'f_sup', 'other', 'Support Survey', 'q1', '5'
+    expect:
+      rows:
+        - survey_id: f_mgr
+          survey_response_id: manager
+          subject_employee_number: 123456
+          respondent_student_number: null
+        - survey_id: f_ren
+          survey_response_id: renewal
+          subject_employee_number: 234567
+          respondent_student_number: null
+        - survey_id: f_ren
+          survey_response_id: no_bracket
+          subject_employee_number: null
+          respondent_student_number: null
+        - survey_id: f_fam
+          survey_response_id: family
+          subject_employee_number: null
+          respondent_student_number: 840012345
+        - survey_id: f_fam
+          survey_response_id: family_bad
+          subject_employee_number: null
+          respondent_student_number: null
