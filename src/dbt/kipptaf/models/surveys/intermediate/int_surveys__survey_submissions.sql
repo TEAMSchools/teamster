@@ -16,6 +16,7 @@ with
 
             ss.subject_employee_number,
             ss.respondent_student_number,
+            ss.subject_answer,
 
             coalesce(
                 srh.employee_number, srh_alias.employee_number
@@ -80,7 +81,7 @@ with
             cast(
                 respondent_employee_number as string
             ) as respondent_employee_number_string,
-            cast(subject_employee_number as string) as rank_subject,
+            cast(subject_employee_number as string) as subject_employee_number_string,
         from live_gforms
     ),
 
@@ -97,6 +98,7 @@ with
                 respondent_email,
                 survey_response_id
             ) as rank_respondent,
+            coalesce(subject_employee_number_string, subject_answer) as rank_subject,
         from gforms_cast
     )
 

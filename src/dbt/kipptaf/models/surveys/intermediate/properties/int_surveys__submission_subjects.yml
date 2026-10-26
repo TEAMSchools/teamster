@@ -26,6 +26,15 @@ models:
       - name: survey_response_id
         description: Google Forms response id.
 
+      - name: subject_answer
+        description: >-
+          Raw answer to the subject_employee_number or employee_name question.
+          Ranking falls back to it when the answer carries no employee number,
+          so two different unparsed subjects still rank apart.
+        config:
+          meta:
+            contains_pii: true
+
       - name: subject_employee_number
         description: >-
           Employee number of the staff member the submission rates — the 6-digit
@@ -92,21 +101,26 @@ unit_tests:
       rows:
         - survey_id: f_mgr
           survey_response_id: manager
+          subject_answer: Person A (123456)
           subject_employee_number: 123456
           respondent_student_number: null
         - survey_id: f_ren
           survey_response_id: renewal
+          subject_answer: Person B (234567)
           subject_employee_number: 234567
           respondent_student_number: null
         - survey_id: f_ren
           survey_response_id: no_bracket
+          subject_answer: Person C
           subject_employee_number: null
           respondent_student_number: null
         - survey_id: f_fam
           survey_response_id: family
+          subject_answer: null
           subject_employee_number: null
           respondent_student_number: 840012345
         - survey_id: f_fam
           survey_response_id: family_bad
+          subject_answer: null
           subject_employee_number: null
           respondent_student_number: null

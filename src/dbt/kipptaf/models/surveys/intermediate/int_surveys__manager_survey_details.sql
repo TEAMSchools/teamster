@@ -1,12 +1,5 @@
-/*
- * Question-grain Manager Survey detail for rpt_tableau__manager_survey_details,
- * fct_survey_responses and bridge_survey_questions, plus the historic Alchemer
- * Manager archive (survey_id = 'historic_alchemer_Manager_survey') that
- * int_surveys__alchemer_submissions reads.
- *
- * The subject comes from int_surveys__submission_subjects, and submission
- * ranking lives in int_surveys__survey_submissions. Do not re-derive either here.
- */
+-- subject comes from int_surveys__submission_subjects and ranking lives in
+-- int_surveys__survey_submissions; do not re-derive either here
 with
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     response_identifiers as (

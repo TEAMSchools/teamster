@@ -203,9 +203,10 @@ unit_tests:
   - name: test_int_surveys__survey_submissions_round_rn
     description: >-
       A Renewal approver who rates two staff members keeps one latest submission
-      per rated person. Two Re-Commitment submissions with no email for the same
-      student rank against each other; a third for another student ranks on its
-      own. Candidate Offer submissions fall in no administration, so neither is
+      per rated person, including two whose answers carry no employee number.
+      Two Re-Commitment submissions with no email for the same student rank
+      against each other; a third for another student ranks on its own.
+      Candidate Offer submissions fall in no administration, so neither is
       ranked.
     model: int_surveys__survey_submissions
     given:
@@ -231,6 +232,16 @@ unit_tests:
               'f_ren', 'approver_repeat', 'x@example.org', 'x',
               timestamp('2026-03-01 12:00:00'), timestamp('2026-03-01 12:00:00'),
               date('2026-03-01'), 'link'
+          union all
+          select
+              'f_ren', 'approver_unparsed_1', 'x@example.org', 'x',
+              timestamp('2026-03-06 12:00:00'), timestamp('2026-03-06 12:00:00'),
+              date('2026-03-06'), 'link'
+          union all
+          select
+              'f_ren', 'approver_unparsed_2', 'x@example.org', 'x',
+              timestamp('2026-03-07 12:00:00'), timestamp('2026-03-07 12:00:00'),
+              date('2026-03-07'), 'link'
           union all
           select
               'f_fam', 'family_new', null, null,
@@ -308,17 +319,22 @@ unit_tests:
               'f_ren' as survey_id,
               'approver_subject_1' as survey_response_id,
               111111 as subject_employee_number,
-              cast(null as int64) as respondent_student_number
+              cast(null as int64) as respondent_student_number,
+              'Person A (111111)' as subject_answer
           union all
-          select 'f_ren', 'approver_subject_2', 222222, null
+          select 'f_ren', 'approver_subject_2', 222222, null, 'Person B (222222)'
           union all
-          select 'f_ren', 'approver_repeat', 111111, null
+          select 'f_ren', 'approver_repeat', 111111, null, 'Person A (111111)'
           union all
-          select 'f_fam', 'family_new', null, 840012345
+          select 'f_ren', 'approver_unparsed_1', null, null, 'Person C'
           union all
-          select 'f_fam', 'family_old', null, 840012345
+          select 'f_ren', 'approver_unparsed_2', null, null, 'Person D'
           union all
-          select 'f_fam', 'family_other', null, 840054321
+          select 'f_fam', 'family_new', null, 840012345, null
+          union all
+          select 'f_fam', 'family_old', null, 840012345, null
+          union all
+          select 'f_fam', 'family_other', null, 840054321, null
       - input: source('surveys', 'int_surveys__alchemer_submissions')
         format: sql
         rows: |
@@ -359,6 +375,14 @@ unit_tests:
           round_rn: 2
           respondent_student_number: null
           subject_employee_number: 111111
+        - survey_response_id: approver_unparsed_1
+          round_rn: 1
+          respondent_student_number: null
+          subject_employee_number: null
+        - survey_response_id: approver_unparsed_2
+          round_rn: 1
+          respondent_student_number: null
+          subject_employee_number: null
         - survey_response_id: family_new
           round_rn: 1
           respondent_student_number: 840012345

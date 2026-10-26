@@ -7,6 +7,13 @@ with
             max(
                 if(
                     item_abbreviation in ('subject_employee_number', 'employee_name'),
+                    text_value,
+                    null
+                )
+            ) as subject_answer,
+            max(
+                if(
+                    item_abbreviation in ('subject_employee_number', 'employee_name'),
                     regexp_extract(text_value, r'\((\d{6})\)'),
                     null
                 )
@@ -33,6 +40,7 @@ with
 select
     form_id as survey_id,
     response_id as survey_response_id,
+    subject_answer,
 
     safe_cast(subject_employee_number_answer as int64) as subject_employee_number,
     safe_cast(respondent_student_number_answer as int64) as respondent_student_number,
