@@ -131,16 +131,20 @@ nest `cast()` inside another function.
 - Bad: `date(cast(entry_ts as timestamp))` in a mart.
 - Enforced by: review.
 
-#### S10. No calculations on table columns in `where` or 1-sided in `on`
+#### S10. `where` and `on` hold only plain comparisons
 
-Precompute them as named columns upstream. Literals, `{{ var(...) }}`, and
-`current_date(...)` on the other side are fine; so are expressions that combine
-both join sides.
+A filter in `where`, or 1-sided in `on`, compares a column to a literal, a
+variable, or another column. Two kinds of logic become a named column upstream
+instead: a calculation on a column, and a rule built from several conditions
+(any `or`, or 3 or more literal comparisons on one table). Name a rule column
+with `is_` (S14). Literals, `{{ var(...) }}`, and `current_date(...)` on the
+other side are fine; so are expressions that combine both join sides.
 
-- Why: the filter or join reads as plain columns, and the derived value can be
-  tested.
-- Good: `where is_enrolled`.
-- Bad: `where date_diff(exit_date, entry_date, day) > 0`.
+- Why: the join or filter reads as keys plus a named condition, and the rule has
+  1 home where it can be tested.
+- Good: `where is_enrolled`; `and py.is_annual_state_test`.
+- Bad: `where date_diff(exit_date, entry_date, day) > 0`;
+  `and ((py.score_source = 'state_nj' and ...) or (...))`.
 - Enforced by: review.
 
 #### S11. Row filters on the preserved table go in `where`
