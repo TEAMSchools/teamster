@@ -130,10 +130,11 @@ data_tests:
       student ahead of the cohort they entered with, which matters for New
       Jersey's 4-year adjusted cohort graduation rate. Fix the grade level on
       the stint, or add the missing enrollment year, in PowerSchool. Summer
-      credit recovery can produce the same shape with correct records, because
-      the summer school is not in this model; leave those as they are. Miami's
-      version is int_focus__student_enrollment_roster__no_skipped_grade in the
-      focus package.
+      school stints are left out, so a student promoted through summer credit
+      recovery can produce the same shape with correct records; leave those as
+      they are. Miami's version is
+      int_focus__student_enrollment_roster__no_skipped_grade in the focus
+      package.
     config:
       severity: warn
       meta:

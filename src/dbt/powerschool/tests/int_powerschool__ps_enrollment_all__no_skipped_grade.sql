@@ -14,9 +14,12 @@ with
                 extract(year from entrydate) - 1
             ) as academic_year,
         from {{ ref("int_powerschool__ps_enrollment_all") }}
-        -- no-shows share entry and exit date and never held the grade
+        -- 999999 is graduates, 12345 is summer school; no-shows share entry and
+        -- exit date and never held the grade
         where
-            schoolid != 999999 and grade_level between 0 and 12 and entrydate < exitdate
+            schoolid not in (999999, 12345)
+            and grade_level between 0 and 12
+            and entrydate < exitdate
     ),
 
     stints_ranked as (
