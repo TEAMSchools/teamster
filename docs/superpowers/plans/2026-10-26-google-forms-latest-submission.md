@@ -168,6 +168,10 @@ for prod checks.
   - Mock the terms sheet with one SURVEY window per title.
   - Mock the staff roster history so emails resolve to employee numbers. Mock
     the directory addresses with zero rows.
+  - `family_new` and `family_old` are the same student (840012345 via the
+    subjects mock).
+  - Assert `survey_response_id`, `round_rn`, `respondent_student_number` and
+    `subject_employee_number` on every row.
   - Expected `round_rn` per row:
 
   | row                  | title             | term | respondent | subject | submitted | expect `round_rn` |
@@ -179,10 +183,6 @@ for prod checks.
   | `family_old`         | Re-Commitment     | F1   | no email   | —       | day 4     | 2                 |
   | `no_term_a`          | Candidate Offer   | none | staff Y    | —       | day 1     | 1                 |
   | `no_term_b`          | Candidate Offer   | none | staff Y    | —       | day 2     | 1                 |
-  - `family_new` and `family_old` are the same student (840012345 via the
-    subjects mock).
-  - Assert `survey_response_id`, `round_rn`, `respondent_student_number` and
-    `subject_employee_number` on every row.
 
 - [ ] **Step 2: Run it to watch it fail.**
       `uv run dbt test --select int_surveys__survey_submissions,test_type:unit --target dev`
