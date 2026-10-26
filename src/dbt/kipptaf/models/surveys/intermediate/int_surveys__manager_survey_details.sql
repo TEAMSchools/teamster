@@ -29,9 +29,7 @@ with
             rt.name as campaign_name,
             rt.code as campaign_reporting_term,
 
-            safe_cast(
-                regexp_extract(fr.text_value, r'\((\d{6})\)') as int
-            ) as subject_df_employee_number,
+            ss.subject_employee_number as subject_df_employee_number,
         from {{ ref("int_google_forms__form_responses") }} as fr
         inner join
             {{ ref("stg_ldap__user_person") }} as up
@@ -41,6 +39,10 @@ with
             on fr.last_submitted_date_local between rt.start_date and rt.end_date
             and rt.type = 'SURVEY'
             and rt.code in ('MGR1', 'MGR2')
+        left join
+            {{ ref("int_surveys__submission_subjects") }} as ss
+            on fr.form_id = ss.survey_id
+            and fr.response_id = ss.survey_response_id
         where
             fr.form_id = '1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'
             and fr.question_id = '315a6c37'
