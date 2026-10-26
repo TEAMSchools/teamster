@@ -2,10 +2,10 @@ models:
   - name: int_students__gpa_term
     description: >-
       Term-grained GPA, one row per student, academic year and reporting term.
-      schoolid labels the row (the school with the most credit hours that year)
-      and is not part of the grain. Reads the shared `int_powerschool__gpa`
-      package union and keys it on `student_number`, the student key every SIS
-      shares. PowerSchool only: Focus's `student_gpa_calculated` can carry term
+      schoolid labels the row (the student's current school that year) and is
+      not part of the grain. Reads the shared `int_powerschool__gpa` package
+      union and keys it on `student_number`, the student key every SIS shares.
+      PowerSchool only: Focus's `student_gpa_calculated` can carry term
       marking-period rows, but their GPA values are empty, so Miami has no
       usable term GPA from AY2026 on. Miami rows here come from the frozen
       PowerSchool archive and stop at AY2025. Cumulative GPA lives in

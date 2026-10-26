@@ -44,9 +44,11 @@ models:
       - name: schoolid
         data_type: int64
         description:
-          The school with the most potential GPA credit hours for the student
-          that year, summed over its term grade rows, ties broken by the higher
-          school number. A label for the row, not a join key.
+          The student's current school that year, the school of their latest
+          enrollment that year. When the student has GPA grades but no
+          enrollment that year, the school with the most potential GPA credit
+          hours, ties broken by the higher school number. A label for the row,
+          not a join key.
       - name: yearid
         data_type: int64
         description:

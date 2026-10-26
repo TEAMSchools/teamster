@@ -89,6 +89,12 @@ with
         group by studentid, yearid, schoolid
     ),
 
+    current_school as (
+        select studentid, yearid, schoolid,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where rn_year = 1
+    ),
+
     grade_rollup as (
         select
             studentid,
@@ -132,9 +138,9 @@ with
         select
             gr.*,
 
-            sc.schoolid,
-
             gr.yearid + 1990 as academic_year,
+
+            coalesce(cs.schoolid, sc.schoolid) as schoolid,
 
             round(
                 safe_divide(weighted_gpa_points_term, total_credit_hours_term), 2
@@ -153,6 +159,10 @@ with
             on gr.studentid = sc.studentid
             and gr.yearid = sc.yearid
             and sc.rn_credits = 1
+        left join
+            current_school as cs
+            on gr.studentid = cs.studentid
+            and gr.yearid = cs.yearid
     )
 
 select
