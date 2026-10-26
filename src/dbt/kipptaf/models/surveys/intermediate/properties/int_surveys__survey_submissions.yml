@@ -143,4 +143,22 @@ models:
         description: >-
           Recency rank of this submission among the same respondent's
           submissions to the same form in the same reporting term, 1 being the
-          latest. Always 1 on Alchemer. Null on the archive arm.
+          latest. Alchemer and the archive arm also rank per rated person, and
+          rank a 2022 family submission by its student; see
+          int_surveys__alchemer_submissions.
+
+      - name: respondent_student_number
+        description: >-
+          Student a family submission is about. Populated only on the 2022
+          Alchemer NJ & Miami Family Survey, from
+          int_surveys__alchemer_submissions; null on Google Forms.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: subject_employee_number
+        description: >-
+          Employee number of the staff member the submission rates. Populated
+          only on Alchemer and the archive arm, from
+          int_surveys__alchemer_submissions; null on Google Forms and on surveys
+          that rate no one.
