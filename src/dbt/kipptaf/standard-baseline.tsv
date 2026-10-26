@@ -9,6 +9,10 @@ exposure.dbt_snapshots	A8	kipptaf.snapshot_people__employee_numbers	#5808
 exposure.dbt_snapshots	A8	kipptaf.snapshot_people__student_logins	#5808
 exposure.fresh_dashboard	A8	kipptaf.int_tableau__finalsite_student_scaffold	#5808
 exposure.google_form_dropdown_teachers	A8	kipptaf.int_people__staff_roster	#5808
+exposure.gradebook_flag_triage_skill	A8	kipptaf.int_extracts__course_enrollments_by_term	#6147
+exposure.gradebook_flag_triage_skill	A8	kipptaf.int_powerschool__gradebook_assignment_scores_rollup	#6147
+exposure.gradebook_flag_triage_skill	A8	kipptaf.int_powerschool__gradebook_assignments_scores	#6147
+exposure.gradebook_flag_triage_skill	A8	kipptaf.int_powerschool__u_expectations_qtd_unpivot	#6147
 exposure.grants_timesheet_roster_feed	A8	kipptaf.int_people__staff_roster	#5808
 exposure.kfwd_missing_account_audit_refreshes_nightly	A8	kipptaf.int_kippadb__roster	#5808
 exposure.kipp_alumni_employees	A8	kipptaf.int_people__staff_roster	#5808
