@@ -1,30 +1,3 @@
-with
-    /* Student Number from Family Surveys */
-    family_responses as (
-        select
-            survey_id,
-            survey_response_id,
-            academic_year,
-
-            safe_cast(
-                max(
-                    if(
-                        question_shortname
-                        in ('student_number', 'family_respondent_number'),
-                        answer,
-                        null
-                    )
-                ) over (partition by answer order by date_submitted) as int
-            ) as respondent_number,
-        from {{ ref("int_surveys__survey_responses") }}
-        where
-            survey_title in (
-                'KIPP NJ & KIPP Miami Family Survey',
-                'KIPP Miami Re-Commitment Form & Family School Community Diagnostic'
-            )
-            and question_shortname in ('student_number', 'family_respondent_number')
-    )
-
 /* Google Forms and Alchemer Responses */
 select
     sr.survey_id,
@@ -44,7 +17,7 @@ select
     coalesce(se1.spedlep, se2.spedlep) as student_spedlep,
 
     coalesce(
-        srh.employee_number, se1.student_number, fr.respondent_number
+        srh.employee_number, se1.student_number, ss.respondent_student_number
     ) as respondent_number,
 
     coalesce(srh.home_work_location_region, se1.region, se2.region) as region,
@@ -85,13 +58,13 @@ left join
     on sr.respondent_email = se1.student_email
     and sr.academic_year = se1.academic_year
 left join
-    family_responses as fr
-    on sr.survey_id = fr.survey_id
-    and sr.survey_response_id = fr.survey_response_id
+    {{ ref("int_surveys__survey_submissions") }} as ss
+    on sr.survey_id = ss.survey_id
+    and sr.survey_response_id = ss.survey_response_id
 left join
     {{ ref("int_extracts__student_enrollments") }} as se2
-    on fr.respondent_number = se2.student_number
-    and fr.academic_year = se2.academic_year
+    on ss.respondent_student_number = se2.student_number
+    and ss.academic_year = se2.academic_year
 left join
     {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.question_shortname = ac.question_code
@@ -114,6 +87,7 @@ where
         'School Community Diagnostic Staff Survey',
         'KIPP Miami Re-Commitment Form & Family School Community Diagnostic'
     )
+    and sr.round_rn = 1
 
 union all
 
