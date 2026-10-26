@@ -174,11 +174,16 @@ unit_tests:
           select 200, 'School 200', 'S200', 'HS'
     expect:
       rows:
+        # student 1's GPA spans both schools: (4 + 3 + 2) / 3
         - studentid: 1
           schoolid: 200
           yearid: 35
           term_name: Q1
+          gpa_y1: 3.0
+          is_current: true
         - studentid: 2
           schoolid: 100
           yearid: 35
           term_name: Q1
+          gpa_y1: 4.0
+          is_current: true
