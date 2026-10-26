@@ -192,3 +192,64 @@ models:
           Vendor source system of the score, pearson for New Jersey and fldoe
           for Florida. The source_system value the vendor subject crosswalk
           uses.
+      - name: benchmark_academic_year
+        data_type: int64
+        description: >-
+          School year in which this score serves as a student's prior-year
+          benchmark. academic_year + 1 for end-of-year scores (New Jersey Spring
+          and Florida PM3) and for every Florida EOC score, since an EOC ends a
+          course whenever it is taken. academic_year for FAST PM1, a fall score
+          that benchmarks its own year. Null for mid-year windows (NJGPA Fall
+          and FAST PM2). Set by the test window only; each consumer chooses
+          which tests, subjects, and grades count.
+unit_tests:
+  - name: int_assessments__state_scores__benchmark_academic_year
+    description: >-
+      End-of-year windows and every EOC map to the next school year, FAST PM1
+      maps to its own year, and mid-year windows map to null.
+    model: int_assessments__state_scores
+    given:
+      - input: ref("int_assessments__state_nj_scores")
+        rows:
+          - state_student_id: nj1
+            academic_year: 2024
+            assessment_name: NJSLA
+            administration_period: Spring
+          - state_student_id: nj2
+            academic_year: 2024
+            assessment_name: NJGPA
+            administration_period: Fall
+      - input: ref("int_fldoe__all_assessments")
+        rows:
+          - student_id: fl1
+            academic_year: 2024
+            assessment_name: FAST
+            administration_window: PM1
+          - student_id: fl2
+            academic_year: 2024
+            assessment_name: FAST
+            administration_window: PM2
+          - student_id: fl3
+            academic_year: 2024
+            assessment_name: FAST
+            administration_window: PM3
+          - student_id: fl4
+            academic_year: 2024
+            assessment_name: EOC
+            administration_window: PM2
+      - input: ref("stg_google_sheets__assessments__vendor_subject_crosswalk")
+        rows: []
+    expect:
+      rows:
+        - state_student_id: nj1
+          benchmark_academic_year: 2025
+        - state_student_id: nj2
+          benchmark_academic_year: null
+        - state_student_id: fl1
+          benchmark_academic_year: 2024
+        - state_student_id: fl2
+          benchmark_academic_year: null
+        - state_student_id: fl3
+          benchmark_academic_year: 2025
+        - state_student_id: fl4
+          benchmark_academic_year: 2025
