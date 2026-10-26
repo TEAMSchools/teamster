@@ -21,6 +21,18 @@ models:
       survey dashboard refreshes hourly through int_surveys__survey_responses,
       so this model rebuilds when its inputs change rather than on a nightly
       cron.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_title
+              - academic_year
+              - term_code
+              - rank_respondent
+              - rank_subject
+          config:
+            where: round_rn = 1 and term_code is not null
+            severity: error
     config:
       materialized: table
     columns:
@@ -141,27 +153,253 @@ models:
 
       - name: round_rn
         description: >-
-          Recency rank of this submission among the same respondent's
-          submissions to the same form in the same reporting term, 1 being the
-          latest. Alchemer and the archive arm also rank per rated person, and
-          rank a 2022 family submission by its student; see
-          int_surveys__alchemer_submissions.
+          Recency rank of this submission among submissions to the same survey
+          title, academic year and reporting term by the same rank_respondent
+          about the same rank_subject, 1 being the latest. Every consumer that
+          keeps only the latest submission filters round_rn = 1. On Google Forms
+          a submission that falls in no reporting term is never ranked and is
+          always 1, so workflow forms with no administration keep every
+          submission.
 
       - name: respondent_student_number
         description: >-
-          Student a family submission is about. Populated only on the 2022
-          Alchemer NJ & Miami Family Survey, from
-          int_surveys__alchemer_submissions; null on Google Forms.
+          Student a family submission is about. Google Forms takes it from
+          int_surveys__submission_subjects (the Miami Re-Commitment form);
+          Alchemer takes it from int_surveys__alchemer_submissions (the 2022 NJ
+          & Miami Family Survey). Null on every other survey.
         config:
           meta:
             contains_pii: true
 
       - name: subject_employee_number
         description: >-
-          Employee number of the staff member the submission rates. Populated
-          only on Alchemer and the archive arm, from
-          int_surveys__alchemer_submissions; null on Google Forms and on surveys
-          that rate no one.
+          Employee number of the staff member the submission rates. Google Forms
+          takes it from int_surveys__submission_subjects; Alchemer and the
+          archive arm from int_surveys__alchemer_submissions. Null on surveys
+          that rate no one and when the answer names no employee number.
         config:
           meta:
             contains_pii: true
+
+      - name: rank_respondent
+        description: >-
+          Respondent identity round_rn partitions on — respondent_student_number
+          as a string, else respondent_identifier, else survey_response_id so a
+          submission with no respondent ranks alone.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: rank_subject
+        description: >-
+          Rated-person identity round_rn partitions on — subject_employee_number
+          as a string. Alchemer falls back to the raw subject answer. Null on
+          surveys that rate no one.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_int_surveys__survey_submissions_round_rn
+    description: >-
+      A Renewal approver who rates two staff members keeps one latest submission
+      per rated person, including two whose answers carry no employee number.
+      Two Re-Commitment submissions with no email for the same student rank
+      against each other; a third for another student ranks on its own.
+      Candidate Offer submissions fall in no administration, so neither is
+      ranked.
+    model: int_surveys__survey_submissions
+    given:
+      - input: ref('stg_google_forms__responses')
+        format: sql
+        rows: |
+          select
+              'f_ren' as form_id,
+              'approver_subject_1' as response_id,
+              'x@example.org' as respondent_email,
+              'x' as respondent_local_part,
+              timestamp('2026-03-02 12:00:00') as create_timestamp,
+              timestamp('2026-03-02 12:00:00') as last_submitted_timestamp,
+              date('2026-03-02') as last_submitted_date_local,
+              'link' as response_link
+          union all
+          select
+              'f_ren', 'approver_subject_2', 'x@example.org', 'x',
+              timestamp('2026-03-03 12:00:00'), timestamp('2026-03-03 12:00:00'),
+              date('2026-03-03'), 'link'
+          union all
+          select
+              'f_ren', 'approver_repeat', 'x@example.org', 'x',
+              timestamp('2026-03-01 12:00:00'), timestamp('2026-03-01 12:00:00'),
+              date('2026-03-01'), 'link'
+          union all
+          select
+              'f_ren', 'approver_unparsed_1', 'x@example.org', 'x',
+              timestamp('2026-03-06 12:00:00'), timestamp('2026-03-06 12:00:00'),
+              date('2026-03-06'), 'link'
+          union all
+          select
+              'f_ren', 'approver_unparsed_2', 'x@example.org', 'x',
+              timestamp('2026-03-07 12:00:00'), timestamp('2026-03-07 12:00:00'),
+              date('2026-03-07'), 'link'
+          union all
+          select
+              'f_fam', 'family_new', null, null,
+              timestamp('2026-03-05 12:00:00'), timestamp('2026-03-05 12:00:00'),
+              date('2026-03-05'), 'link'
+          union all
+          select
+              'f_fam', 'family_old', null, null,
+              timestamp('2026-03-04 12:00:00'), timestamp('2026-03-04 12:00:00'),
+              date('2026-03-04'), 'link'
+          union all
+          select
+              'f_fam', 'family_other', null, null,
+              timestamp('2026-03-03 12:00:00'), timestamp('2026-03-03 12:00:00'),
+              date('2026-03-03'), 'link'
+          union all
+          select
+              'f_off', 'no_term_a', 'y@example.org', 'y',
+              timestamp('2026-03-01 12:00:00'), timestamp('2026-03-01 12:00:00'),
+              date('2026-03-01'), 'link'
+          union all
+          select
+              'f_off', 'no_term_b', 'y@example.org', 'y',
+              timestamp('2026-03-02 12:00:00'), timestamp('2026-03-02 12:00:00'),
+              date('2026-03-02'), 'link'
+      - input: ref('stg_google_forms__form')
+        format: sql
+        rows: |
+          select 'f_ren' as form_id, 'Renewal' as info_title
+          union all
+          select 'f_fam', 'Re-Commitment'
+          union all
+          select 'f_off', 'Candidate Offer'
+      - input: ref('stg_google_sheets__reporting__terms')
+        format: sql
+        rows: |
+          select
+              'Renewal' as name,
+              'R1' as code,
+              'SURVEY' as type,
+              2025 as academic_year,
+              date('2026-02-01') as start_date,
+              date('2026-04-30') as end_date
+          union all
+          select
+              'Re-Commitment', 'F1', 'SURVEY', 2025, date('2026-02-01'),
+              date('2026-04-30')
+      - input: ref('int_people__staff_roster_history')
+        format: sql
+        rows: |
+          select
+              100001 as employee_number,
+              'x' as sam_account_name,
+              'x@example.org' as google_email,
+              'Person X' as formatted_name,
+              'x@example.org' as user_principal_name,
+              timestamp('2025-01-01') as effective_date_start_timestamp,
+              timestamp('9999-12-31') as effective_date_end_timestamp,
+              true as primary_indicator
+          union all
+          select
+              100002, 'y', 'y@example.org', 'Person Y', 'y@example.org',
+              timestamp('2025-01-01'), timestamp('9999-12-31'), true
+      - input: ref('int_google_directory__users__addresses')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as address,
+              cast(null as string) as primary_email,
+          limit 0
+      - input: ref('int_surveys__submission_subjects')
+        format: sql
+        rows: |
+          select
+              'f_ren' as survey_id,
+              'approver_subject_1' as survey_response_id,
+              111111 as subject_employee_number,
+              cast(null as int64) as respondent_student_number,
+              'Person A (111111)' as subject_answer
+          union all
+          select 'f_ren', 'approver_subject_2', 222222, null, 'Person B (222222)'
+          union all
+          select 'f_ren', 'approver_repeat', 111111, null, 'Person A (111111)'
+          union all
+          select 'f_ren', 'approver_unparsed_1', null, null, 'Person C'
+          union all
+          select 'f_ren', 'approver_unparsed_2', null, null, 'Person D'
+          union all
+          select 'f_fam', 'family_new', null, 840012345, null
+          union all
+          select 'f_fam', 'family_old', null, 840012345, null
+          union all
+          select 'f_fam', 'family_other', null, 840054321, null
+      - input: source('surveys', 'int_surveys__alchemer_submissions')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as survey_id,
+              cast(null as string) as survey_response_id,
+              cast(null as string) as survey_title,
+              cast(null as string) as respondent_email,
+              cast(null as int64) as respondent_employee_number,
+              cast(null as string) as respondent_preferred_name,
+              cast(null as string) as respondent_samaccountname,
+              cast(null as string) as respondent_userprincipalname,
+              cast(null as timestamp) as date_started,
+              cast(null as timestamp) as date_submitted,
+              cast(null as int64) as academic_year,
+              cast(null as string) as term_code,
+              cast(null as string) as term_name,
+              cast(null as string) as survey_response_link,
+              cast(null as int64) as round_rn,
+              cast(null as int64) as respondent_student_number,
+              cast(null as int64) as subject_employee_number,
+              cast(null as string) as respondent_identifier,
+              cast(null as string) as rank_respondent,
+              cast(null as string) as rank_subject,
+              cast(null as string) as survey_submission_key,
+          limit 0
+    expect:
+      rows:
+        - survey_response_id: approver_subject_1
+          round_rn: 1
+          respondent_student_number: null
+          subject_employee_number: 111111
+        - survey_response_id: approver_subject_2
+          round_rn: 1
+          respondent_student_number: null
+          subject_employee_number: 222222
+        - survey_response_id: approver_repeat
+          round_rn: 2
+          respondent_student_number: null
+          subject_employee_number: 111111
+        - survey_response_id: approver_unparsed_1
+          round_rn: 1
+          respondent_student_number: null
+          subject_employee_number: null
+        - survey_response_id: approver_unparsed_2
+          round_rn: 1
+          respondent_student_number: null
+          subject_employee_number: null
+        - survey_response_id: family_new
+          round_rn: 1
+          respondent_student_number: 840012345
+          subject_employee_number: null
+        - survey_response_id: family_old
+          round_rn: 2
+          respondent_student_number: 840012345
+          subject_employee_number: null
+        - survey_response_id: family_other
+          round_rn: 1
+          respondent_student_number: 840054321
+          subject_employee_number: null
+        - survey_response_id: no_term_a
+          round_rn: 1
+          respondent_student_number: null
+          subject_employee_number: null
+        - survey_response_id: no_term_b
+          round_rn: 1
+          respondent_student_number: null
+          subject_employee_number: null
