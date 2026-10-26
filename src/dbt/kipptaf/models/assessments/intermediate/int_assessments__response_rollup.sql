@@ -106,13 +106,11 @@ with
     ),
 
     -- Per-partition tiebreak for location columns. NOT a canonical attribute —
-    -- school / _dbt_source_project are per-response location data that vary
-    -- across rows in the same (student, canonical_assessment, is_replacement)
-    -- partition because of upstream Illuminate canonicalization defects
-    -- (#3801) carrying wrong academic_year tags onto duplicated assessments.
-    -- first_value on a deterministic ordering picks both columns from the
-    -- same row so independent min() drift can't split them. Once #3801 is
-    -- resolved, the partition becomes pure and this CTE can be removed.
+    -- school / _dbt_source_project can vary within a (student,
+    -- canonical_assessment, is_replacement) partition when the student is
+    -- rostered to the canonical assessment at a second school. The ordering
+    -- credits the result to the school of the sitting; first_value picks both
+    -- columns from the same row so independent min() drift can't split them.
     tiebroken_attrs as (
         select
             *,
@@ -165,7 +163,7 @@ with
 
             -- selected_* values are constant per partition (windowed in
             -- tiebroken_attrs). any_value() makes that explicit without
-            -- independent-min() drift. See #3801.
+            -- independent-min() drift.
             any_value(selected_school_id) as powerschool_school_id,
             any_value(selected_region) as region,
             any_value(selected_dbt_source_project) as _dbt_source_project,
