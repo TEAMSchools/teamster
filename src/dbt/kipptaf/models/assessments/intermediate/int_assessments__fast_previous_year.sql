@@ -16,16 +16,17 @@ with
             co.grade_level,
             co._dbt_source_project,
 
-            pp.student_id,
-            pp.assessment_grade,
-            pp.assessment_subject,
+            pp.state_student_id as student_id,
+            pp.test_grade as assessment_grade,
+            pp.raw_subject as assessment_subject,
             pp.discipline,
-            pp.scale_score as prev_pm3_scale,
-            pp.achievement_level as prev_pm3_achievement_level,
-            pp.achievement_level_int as prev_pm3_level_int,
+            pp.performance_level_label as prev_pm3_achievement_level,
+            pp.performance_level as prev_pm3_level_int,
 
             cw.sublevel_name as prev_pm3_sublevel_name,
             cw.sublevel_number as prev_pm3_sublevel_number,
+
+            cast(pp.scale_score as int64) as prev_pm3_scale,
 
             case
                 when fa.has_fte3_data
@@ -37,26 +38,26 @@ with
 
             round(
                 rank() over (
-                    partition by
-                        pp.academic_year, pp.assessment_grade, pp.assessment_subject
+                    partition by pp.academic_year, pp.test_grade, pp.raw_subject
                     order by pp.scale_score asc
                 ) / count(*) over (
-                    partition by
-                        pp.academic_year, pp.assessment_grade, pp.assessment_subject
+                    partition by pp.academic_year, pp.test_grade, pp.raw_subject
                 ),
                 4
             ) as fldoe_percentile_rank,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join fte_survey_availability as fa on co.academic_year = fa.academic_year
         inner join
-            {{ ref("stg_fldoe__fast") }} as pp
-            on co.fleid = pp.student_id
-            and co.academic_year = (pp.academic_year + 1)
-            and pp.administration_window = 'PM3'
+            {{ ref("int_assessments__state_scores") }} as pp
+            on co.fleid = pp.state_student_id
+            and co.academic_year = pp.benchmark_academic_year
+            and pp.score_source = 'state_fl'
+            and pp.assessment_name = 'FAST'
+            and pp.administration_period = 'PM3'
         left join
             {{ ref("stg_google_sheets__iready__crosswalk") }} as cw
-            on pp.assessment_subject = cw.test_name
-            and pp.assessment_grade = cw.grade_level
+            on pp.raw_subject = cw.test_name
+            and pp.test_grade = cw.grade_level
             and pp.scale_score between cw.scale_low and cw.scale_high
             and cw.source_system = 'FAST_NEW'
             and cw.destination_system = 'FL'
