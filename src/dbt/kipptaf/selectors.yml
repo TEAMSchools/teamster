@@ -1,0 +1,18 @@
+selectors:
+  - name: core_dbt_assets
+    description: >-
+      Everything except the adp_payroll lineage and the google_sheet models,
+      which build in their own Dagster asset sets. The google_sheet exclude is
+      cautious so a test that reads a sheet model and a core model stays in the
+      core set, where its check attaches to the core model.
+    definition:
+      union:
+        - method: fqn
+          value: "*"
+        - exclude:
+            - method: source
+              value: adp_payroll
+              children: true
+            - method: tag
+              value: google_sheet
+              indirect_selection: cautious

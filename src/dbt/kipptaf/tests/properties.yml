@@ -104,7 +104,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: int_finalsite__status_report_unpivot
+            name: stg_google_sheets__finalsite__status_crosswalk
 
   - name: test_int_tableau__fresh_goals_scaffold_region_matches_scaffold
     description: >-
@@ -125,7 +125,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: int_tableau__fresh_goals_scaffold
+            name: stg_google_sheets__finalsite__goals
 
   - name: test_stg_google_sheets__finalsite__status_crosswalk_single_year
     description: >-
@@ -365,7 +365,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: int_collegeboard__ap_unpivot
+            name: stg_collegeboard__ap
 
   - name: rpt_focus__demographics__language_crosswalk_resolves
     description: >-
@@ -401,7 +401,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: dim_student_section_enrollments
+            name: int_students__course_enrollments
 
   - name: test_miami_section_enrollment_orphan_rate
     description: >-
@@ -954,7 +954,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: stg_google_sheets__student_graduation_path_cutoffs
+            name: int_students__graduation_path_codes
 
   - name: int_extracts__student_enrollments__miami_cohort_not_ahead_of_entry
     description: >-
@@ -1013,7 +1013,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: rpt_schoolmint_grow__users
+            name: stg_schoolmint_grow__schools
 
   - name: stg_google_sheets__assessments__vendor_subject_crosswalk__covers_all_sources
     description: >-

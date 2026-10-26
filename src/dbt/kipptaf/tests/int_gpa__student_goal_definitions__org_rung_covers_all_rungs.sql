@@ -1,3 +1,4 @@
+-- depends_on: {{ ref("stg_google_sheets__gpa_goals") }}
 with
     org_goals as (
         select academic_year, metric, grade_low, grade_high,
