@@ -26,7 +26,6 @@ models:
             combination_of_columns:
               - student_number
               - academic_year
-              - schoolid
               - term_name
               - _dbt_source_project
           config:

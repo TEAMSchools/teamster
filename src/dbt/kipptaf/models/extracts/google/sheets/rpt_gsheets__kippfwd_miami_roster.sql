@@ -98,7 +98,7 @@ with
        term rows, and a direct join to the raw ref fanned prod out to 1,274
        rows for 365 students. */
     gpa_term as (
-        select _dbt_source_project, studentid, yearid, schoolid, gpa_y1,
+        select _dbt_source_project, studentid, yearid, gpa_y1,
         from {{ ref("int_powerschool__gpa_term") }}
         where is_current
     )
@@ -230,7 +230,6 @@ left join
     gpa_term as gpa
     on psy.studentid = gpa.studentid
     and psy.yearid = gpa.yearid
-    and psy.schoolid = gpa.schoolid
     and psy._dbt_source_project = gpa._dbt_source_project
 where
     e.rn_year = 1

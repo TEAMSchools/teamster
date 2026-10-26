@@ -22,6 +22,18 @@ models:
               - yearid
           config:
             where: is_current
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: schoolid != 999999
+          description: >-
+            A student's GPA row is labeled with the graduated-students school
+            (999999). The label comes from the student's latest PowerSchool
+            enrollment that year, so a graduate placeholder enrollment that
+            starts before the graduation year ended became the latest one. Fix
+            the entry date of the 999999 enrollment in PowerSchool. Until then
+            the row shows no school name.
+          config:
+            severity: warn
     columns:
       - name: studentid
         data_type: int64
