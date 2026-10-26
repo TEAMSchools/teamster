@@ -12,7 +12,6 @@ sources:
                 - int_surveys__response_identifiers
       - name: int_surveys__alchemer_submissions
         config:
-          enabled: false
           meta:
             dagster:
               asset_key:
@@ -21,7 +20,6 @@ sources:
                 - int_surveys__alchemer_submissions
       - name: int_surveys__alchemer_responses
         config:
-          enabled: false
           meta:
             dagster:
               asset_key:

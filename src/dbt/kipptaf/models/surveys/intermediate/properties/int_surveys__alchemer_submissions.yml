@@ -14,6 +14,7 @@ models:
       archive arm collapses int_surveys__manager_survey_details, which is
       question-grain, to one row per effective_survey_response_id.
     config:
+      enabled: false
       materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
@@ -22,6 +23,7 @@ models:
               - survey_id
               - survey_response_id
           config:
+            enabled: false
             severity: error
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -32,6 +34,7 @@ models:
               - rank_respondent
               - rank_subject
           config:
+            enabled: false
             where: round_rn = 1
             severity: error
     columns:
@@ -47,6 +50,7 @@ models:
         data_tests:
           - not_null:
               config:
+                enabled: false
                 severity: error
 
       - name: survey_id
