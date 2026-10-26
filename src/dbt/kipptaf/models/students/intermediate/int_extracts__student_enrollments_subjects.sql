@@ -272,17 +272,7 @@ left join
     and co.academic_year = py.benchmark_academic_year
     and co._dbt_source_project = py._dbt_source_project
     and sj.illuminate_subject_area = py.illuminate_subject_area
-    /* NJSLA is the only Pearson assessment carrying a proficiency, and
-       it runs one window a year; NJGPA's Fall and Spring rows carry none. */
-    and (
-        (py.score_source = 'state_nj' and py.assessment_name = 'NJSLA')
-        or (
-            py.score_source = 'state_fl'
-            and py.scale_score is not null
-            and py.assessment_name = 'FAST'
-            and py.administration_period = 'PM3'
-        )
-    )
+    and py.is_annual_state_test
 left join
     prev_yr_iready as pr
     on co.student_number = pr.student_id

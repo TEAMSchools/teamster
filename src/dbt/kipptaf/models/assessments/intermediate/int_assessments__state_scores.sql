@@ -138,6 +138,17 @@ select
 
     coalesce(x.illuminate_subject_area, u.raw_subject) as illuminate_subject_area,
 
+    coalesce(
+        (u.score_source = 'state_nj' and u.assessment_name = 'NJSLA')
+        or (
+            u.score_source = 'state_fl'
+            and u.assessment_name = 'FAST'
+            and u.administration_period = 'PM3'
+            and u.scale_score is not null
+        ),
+        false
+    ) as is_annual_state_test,
+
     case
         when u.score_source = 'state_fl' and u.assessment_name = 'EOC'
         then u.academic_year + 1

@@ -202,6 +202,13 @@ models:
           that benchmarks its own year. Null for mid-year windows (NJGPA Fall
           and FAST PM2). Set by the test window only; each consumer chooses
           which tests, subjects, and grades count.
+      - name: is_annual_state_test
+        data_type: boolean
+        description: >-
+          True for each state's annual end-of-year test with a result. NJSLA in
+          New Jersey, the only Pearson assessment carrying a proficiency (NJGPA
+          rows carry none). FAST PM3 with a scale score in Florida. False for
+          every other row, including EOC and science.
 unit_tests:
   - name: int_assessments__state_scores__benchmark_academic_year
     description: >-
@@ -253,3 +260,51 @@ unit_tests:
           benchmark_academic_year: 2025
         - state_student_id: fl4
           benchmark_academic_year: 2025
+  - name: int_assessments__state_scores__is_annual_state_test
+    description: >-
+      NJSLA and FAST PM3 with a scale score are true. NJGPA, other FAST windows,
+      a PM3 row with no scale score, and EOC are false.
+    model: int_assessments__state_scores
+    given:
+      - input: ref("int_assessments__state_nj_scores")
+        rows:
+          - state_student_id: nj1
+            assessment_name: NJSLA
+            administration_period: Spring
+          - state_student_id: nj2
+            assessment_name: NJGPA
+            administration_period: Spring
+      - input: ref("int_fldoe__all_assessments")
+        rows:
+          - student_id: fl1
+            assessment_name: FAST
+            administration_window: PM1
+            scale_score: 300
+          - student_id: fl2
+            assessment_name: FAST
+            administration_window: PM3
+            scale_score: 300
+          - student_id: fl3
+            assessment_name: FAST
+            administration_window: PM3
+            scale_score: null
+          - student_id: fl4
+            assessment_name: EOC
+            administration_window: PM3
+            scale_score: 300
+      - input: ref("stg_google_sheets__assessments__vendor_subject_crosswalk")
+        rows: []
+    expect:
+      rows:
+        - state_student_id: nj1
+          is_annual_state_test: true
+        - state_student_id: nj2
+          is_annual_state_test: false
+        - state_student_id: fl1
+          is_annual_state_test: false
+        - state_student_id: fl2
+          is_annual_state_test: true
+        - state_student_id: fl3
+          is_annual_state_test: false
+        - state_student_id: fl4
+          is_annual_state_test: false
