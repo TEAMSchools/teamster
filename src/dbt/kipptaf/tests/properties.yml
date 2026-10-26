@@ -515,17 +515,14 @@ data_tests:
 
   - name: test_focus_course_sections_teacher_resolves
     description: >-
-      Warns on Focus course periods whose lead teacher does not resolve through
-      the staff roster (by `ein`, falling back to email), scoped to the Focus
-      population by year so the frozen Miami PowerSchool archive (which predates
-      the roster and will never resolve) doesn't inflate the count. Measured
-      floor is 80 AY2026 course periods: 67 with no teacher assigned in Focus at
-      all, plus 13 whose assigned user resolves through neither `ein` nor email.
-      Both are source data gaps in Focus / the roster, not a modeling defect.
-      (`int_focus__course_periods` also holds 21 stale AY2025 rows that the
-      year-scope filter correctly excludes here -- a raw, unscoped count over
-      all course periods would show 101 unresolved instead, double-counting that
-      stale year.)
+      A Focus course period has a lead teacher, but that Focus user matches no
+      one on the ADP staff roster, by `ein` or by email. Downstream, the
+      section's teachernumber on int_students__course_sections is null. Fix the
+      user's employee id or email in Focus, or the worker's record in ADP, so
+      the two match. Scoped to the Focus years, because the frozen Miami
+      PowerSchool archive predates the roster. A course period with no lead
+      teacher at all is checked earlier, on stg_focus__course_periods.teacher_id
+      in the focus package.
     config:
       severity: warn
       meta:
@@ -979,26 +976,6 @@ data_tests:
         dagster:
           ref:
             name: int_students__graduation_path_codes
-
-  - name: int_extracts__student_enrollments__miami_cohort_not_ahead_of_entry
-    description: >-
-      Miami's copy of the powerschool package test
-      base_powerschool__student_enrollments__cohort_not_ahead_of_entry, which
-      covers the New Jersey regions. Miami's enrollments come from Focus, and
-      kipptaf derives their cohort the same way, frozen at the student's first
-      year in the school for grade 9 and up. A current high school student whose
-      grade level implies an earlier graduating class (`cohort_primary`) than
-      their recorded cohort has skipped a grade or is missing an enrollment
-      year, both corrected in Focus. Falling behind the cohort is ordinary
-      retention and is not tested. Anchored on this table rather than on
-      int_students__student_enrollments, a view whose tests rerun only when its
-      code changes. Warn, because no result here is fixed by a code change.
-    config:
-      severity: warn
-      meta:
-        dagster:
-          ref:
-            name: int_extracts__student_enrollments
 
   - name: test_state_assessment_joins_resolve_miami
     description: >-

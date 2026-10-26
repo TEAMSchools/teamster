@@ -61,10 +61,8 @@ models:
           - not_null:
               config:
                 severity: error
-      # The name tests live here rather than on rpt_deanslist__family_contacts,
-      # a view whose tests rerun only when its code changes. rpt_focus__contacts
-      # keeps its own, since it reads names from Finalsite, not from this model.
-      # warn: each row is a source-system record missing a name.
+      # Missing names are tested at the source package models,
+      # int_focus__student_contacts and int_finalsite__student_contacts.
       - name: contact_first_name
         data_type: string
         description:
@@ -76,8 +74,6 @@ models:
         config:
           meta:
             contains_pii: true
-        data_tests:
-          - not_null
       - name: contact_last_name
         data_type: string
         description:
@@ -86,8 +82,6 @@ models:
         config:
           meta:
             contains_pii: true
-        data_tests:
-          - not_null
       - name: personid
         data_type: string
         description:
