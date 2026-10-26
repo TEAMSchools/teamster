@@ -122,22 +122,22 @@ models:
       - name: custom_attributes
         data_type:
           array<struct<field_id string, field_name string, field_display_name
-          string, value struct<boolean_value bool, string_value string,
-          array_string_value array<string>>>>
+          string, value struct<boolean_value bool, double_value float64,
+          string_value string, array_string_value array<string>>>>
         description:
           Repeated key-value custom fields; `value` is a typed union struct
-          (boolean / string / string-array). Passed through whole for downstream
-          pivoting. Tagged PII because the field set is open-ended and carries
-          indirect identifiers (housing status, race, program flags) alongside
-          benign values — the array cannot be assumed non-sensitive.
+          (boolean / number / string / string-array). Passed through whole for
+          downstream pivoting. Tagged PII because the field set is open-ended
+          and carries indirect identifiers (housing status, race, program flags)
+          alongside benign values — the array cannot be assumed non-sensitive.
         config:
           meta:
             contains_pii: true
       - name: id_attributes
         data_type:
           array<struct<field_id string, field_name string, field_display_name
-          string, value struct<boolean_value bool, string_value string,
-          array_string_value array<string>>>>
+          string, value struct<boolean_value bool, double_value float64,
+          string_value string, array_string_value array<string>>>>
         description:
           Repeated identifier fields (e.g. minted student number) in the same
           key-value shape as `custom_attributes`. Passed through whole. Tagged
@@ -149,9 +149,9 @@ models:
       - name: track_attributes
         data_type:
           array<struct<field_id string, field_name string, field_display_name
-          string, value struct<boolean_value bool, string_value string,
-          array_string_value array<string>>, school_year struct<id string, name
-          string, start_year int64, created_at string>>>
+          string, value struct<boolean_value bool, double_value float64,
+          string_value string, array_string_value array<string>>, school_year
+          struct<id string, name string, start_year int64, created_at string>>>
         description:
           Repeated per-school-year ("track") custom fields; same key-value shape
           as `custom_attributes` plus the `school_year` the value applies to.
