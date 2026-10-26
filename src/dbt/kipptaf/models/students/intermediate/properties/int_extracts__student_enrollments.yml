@@ -1099,7 +1099,8 @@ models:
                   grade_level != 99 and academic_year = {{
                   var('current_academic_year')}}
         description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Categorical
-          mapping of academic_year, fafsa_opt_out, grade_level,
-          salesforce_contact_df_has_fafsa.
+          Flags a grade 12 student whose Salesforce contact says they have a
+          FAFSA while Overgrad records a FAFSA opt-out. Reads
+          "Salesforce/Overgrad has FAFSA opt-out mismatch" from academic year
+          2024 on, and "No issues" otherwise. KIPP Forward fixes a mismatch by
+          correcting the FAFSA status in Salesforce or the opt-out in Overgrad.
