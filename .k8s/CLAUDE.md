@@ -53,31 +53,48 @@ skill.
   (`autopilot-compute-class-limitation`) rejects multiple values for the same
   key but accepts multiple keys. Use `cloud.google.com/compute-class` +
   `kubernetes.io/arch` together to hard-pin both class and CPU architecture.
-- **Built-in `Scale-Out` only — do NOT use Custom ComputeClasses (CCCs).** CCCs
-  flip the billing model from per-pod (Autopilot pod-based) to per-VM +
-  Autopilot Performance Premium (per-vCPU/GiB management fee), even when the
-  underlying machine family is the same hardware Scale-Out runs on. Our pods
-  don't fill a t2d-standard-4, so we'd pay for empty capacity. CCCs also
-  silently drop `safe-to-evict: "false"` (extended-duration).
-- **Pod placement** — code server and run pods pin to Scale-Out arm64 (T2A);
-  agent pins to Scale-Out amd64 (T2D — image is amd64-only).
-- **No fallback — arm64 STOCKOUT will leave code server / run pods Pending.**
-  PDB-protected code servers tolerate this (last-good Deployment continues to
-  serve). Run pods queue until capacity returns. There is no graceful amd64
-  fallback under pod-priced billing — the only route to ordered fallback is
-  CCCs, which we rejected on cost. If STOCKOUT becomes recurring, manually flip
-  the affected pod's `kubernetes.io/arch` to `amd64` until capacity returns.
+- **Custom ComputeClasses (CCCs): `podFamily` rules only.** A CCC whose
+  priorities use `podFamily` keeps per-pod billing and honors
+  `safe-to-evict: "false"` against autoscaler scale-down. A CCC with
+  machine-family or machine-type rules bills per VM plus a management fee, and
+  our pods don't fill a node, so do not use those.
+- **Pod placement** — code server and run/step pods use the `dagster-arm-first`
+  CCC (`extraManifests`): `general-purpose-arm` first, `general-purpose` amd64
+  when GKE cannot provision arm64. Their `nodeSelector` names only the class (an
+  arch key would disable the fallback), and they carry an explicit
+  `kubernetes.io/arch=arm64:NoSchedule` toleration, since Autopilot adds it only
+  to pods that select arm64. A code server that fell back stays on amd64 (the
+  pricier tier) until its next redeploy. The agent pins to built-in Scale-Out
+  amd64 (image is amd64-only). Asserted in `tests/test_k8s_config.py`.
+- **Class priorities steer only new nodes.** kube-scheduler packs pods onto any
+  existing node of the class, so after a stockout a busy amd64 node keeps taking
+  every new run/step pod. The class sets `activeMigration.optimizeRulePriority`
+  to move work back to arm64 once it has capacity. Migration never evicts a
+  `safe-to-evict: "false"` pod, so a running step is never killed. Unverified
+  (#6077): whether GKE's own migration cordon (not `kubectl cordon`) applies to
+  an amd64 node it cannot fully drain. If amd64 nodes still outlive a stockout,
+  that is why.
+- **No node affinity on CCC pods carrying `safe-to-evict`.** Autopilot treats
+  the annotation as an extended-duration request and adds a
+  `cloud.google.com/extended-duration-pods` key, which Warden
+  (`autogke-node-affinity-selector-limitation`) rejects next to node affinity.
+  Pod anti-affinity is fine.
+- **CCC pods get no extended run time.** `safe-to-evict` still blocks autoscaler
+  scale-down, but node upgrades and maintenance can drain them (the cluster's
+  maintenance window is weekends). A drained code server is recreated by its
+  Deployment; a drain during the agent's metadata upload can still leave the
+  location in a terminal `ERROR` (see `dagster-k8s-ops`).
 - **Do NOT use `Balanced` or `Performance`** — Balanced minimum requests (1 vCPU
-  / 4 GiB) exceed ours (500m / 2 GiB). Performance has the same node-based
-  pricing penalty as CCCs.
+  / 4 GiB) exceed ours (500m / 2 GiB). Performance bills per node.
 - **`safe-to-evict: "false"` (extended-duration) is on agent, run, and code
-  server pods.** Under built-in Scale-Out it works as documented — blocks
-  cluster autoscaler eviction. Mutually exclusive with spot; do not move any of
-  them to a spot tier. Run pods also have `podFailurePolicy` (`DisruptionTarget`
-  → `Ignore`) as a secondary guard for non-autoscaler disruptions; the agent
-  does not. The code-server annotation depends on run pods and code servers
-  sharing priority 0: reintroducing a priority gap turns it back into the #4921
-  preemption storm. Asserted in `tests/test_k8s_config.py`.
+  server pods.** It blocks cluster autoscaler eviction on both built-in
+  Scale-Out and the `dagster-arm-first` CCC. Mutually exclusive with spot; do
+  not move any of them to a spot tier. Run pods also have `podFailurePolicy`
+  (`DisruptionTarget` → `Ignore`) as a secondary guard for non-autoscaler
+  disruptions; the agent does not. The code-server annotation depends on run
+  pods and code servers sharing priority 0: reintroducing a priority gap turns
+  it back into the #4921 preemption storm. Asserted in
+  `tests/test_k8s_config.py`.
 - **Spot + built-in Scale-Out + arch is supported under pod-priced billing** —
   set `cloud.google.com/gke-spot: "true"` alongside the compute-class + arch
   nodeSelector; Autopilot auto-injects the toleration. Mutually exclusive with

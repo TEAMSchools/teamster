@@ -81,8 +81,8 @@ and listed eight such facts and five places the skill contradicted the SQL.
   issues are public. After redacting, search for the claim in other words across
   the repo, not only for the removed string: on the PowerSchool plugin, two
   prose passages restated the redacted facts, and one shipped in a distributed
-  zip. Redact before the first push: a squash merge keeps the text off `main`,
-  but the PR diff, the branch, and commit subjects keep it public.
+  zip. Redact before the first push: PRs merge with a merge commit, so every
+  branch commit lands on `main`, and the PR diff keeps the text public too.
 - No standalone bold line as a heading (markdownlint MD036, `docs/CLAUDE.md`).
 - Add the page to the `mkdocs.yml` nav under `Models`.
 

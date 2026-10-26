@@ -1,3 +1,4 @@
+-- depends_on: {{ ref("stg_google_sheets__gpa_goals") }}
 with
     /* scoped to years the student spine actually covers, so a goal entered ahead
        of its academic year does not fail before enrollment exists.

@@ -3,10 +3,12 @@ models:
     description: |
       Bridges internal assessment expectations that cannot be attributed to
       a student section enrollment to their student and assessment
-      administration. Covers two classes: replacement assessments (which
-      have no enrollment by definition) and ES Writing in grades K-4
+      administration. Covers three classes: replacement assessments (which
+      have no enrollment by definition), ES Writing in grades K-4
       Newark/Camden (where no PowerSchool course-enrollment row exists for
-      the writing program). Rows whose expectations can be attributed to a
+      the writing program), and Apex results whose student did not match
+      exactly 1 section. Apex rows cover only students who tested, so every
+      Apex expectation is met. Rows whose expectations can be attributed to a
       section enrollment live in `bridge_assessment_expectations_enrollment_scoped`.
     config:
       materialized: table
@@ -27,34 +29,6 @@ models:
         data_tests:
           - unique
 
-      - name: student_key
-        data_type: string
-        description: FK to dim_students.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_students')
-              to_columns: [student_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_students')
-                field: student_key
-
-      - name: assessment_administration_key
-        data_type: string
-        description: FK to dim_assessment_administrations.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_assessment_administrations')
-              to_columns: [assessment_administration_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_assessment_administrations')
-                field: assessment_administration_key
-
       - name: term_key
         data_type: string
         description: >-
@@ -65,8 +39,87 @@ models:
             foreign_key:
               to: ref('dim_terms')
               to_columns: [term_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
+
+      - name: student_key
+        data_type: string
+        description: FK to dim_students.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
+
+      - name: assessment_administration_key
+        data_type: string
+        description: FK to dim_assessment_administrations.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
+
+unit_tests:
+  - name: test_bridge_assessment_expectations_student_scoped_drops_untagged_replacement
+    description:
+      A replacement row whose region is not tagged on the assessment has no
+      administration in dim_assessment_administrations, so the bridge leaves it
+      out. Feeds a tagged replacement row, an untagged replacement row, and a
+      non-replacement row, whose is_region_tagged is null; asserts the untagged
+      replacement row is dropped and the other two are kept. The scaffold's own
+      unit test covers how is_region_tagged is computed.
+    model: bridge_assessment_expectations_student_scoped
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows:
+          - student_number: 1001
+            source: illuminate
+            assessment_id: 1
+            administered_at: 2025-10-08
+            region: Newark
+            _dbt_source_project: kippnewark
+            is_internal_assessment: true
+            is_replacement: true
+            is_region_tagged: true
+            cc_dcid: null
+          - student_number: 1002
+            source: illuminate
+            assessment_id: 1
+            administered_at: 2025-10-08
+            region: Paterson
+            _dbt_source_project: kipppaterson
+            is_internal_assessment: true
+            is_replacement: true
+            is_region_tagged: false
+            cc_dcid: null
+          - student_number: 1003
+            source: illuminate
+            assessment_id: 1
+            administered_at: 2025-10-08
+            region: Paterson
+            _dbt_source_project: kipppaterson
+            is_internal_assessment: true
+            is_replacement: false
+            is_region_tagged: null
+            cc_dcid: null
+      - input: ref('int_assessments__assessments_members')
+        rows:
+          - source: illuminate
+            assessment_id: 1
+            module_code: QA1
+            academic_year: 2026
+            canonical_assessment_id: 1
+      - input: ref('int_assessments__assessments_canonical')
+        format: sql
+        rows: |
+          select
+            'illuminate' as source,
+            1 as canonical_assessment_id,
+            date '2025-10-08' as administered_date
+      - input: ref('stg_google_sheets__reporting__terms')
+        rows: []
+    expect:
+      rows:
+        # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
+        - assessment_expectation_key: 26e913105f4ab32f98c5a17a5a538725
+        # trunk-ignore(gitleaks/generic-api-key): surrogate key fixture, not a secret
+        - assessment_expectation_key: 5e6753698640e0de72f3cf353f2d238e

@@ -5,7 +5,6 @@ from dagster import (
     load_assets_from_modules,
 )
 from dagster_dlt import DagsterDltResource
-from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kippcamden import (
     CODE_LOCATION,
@@ -24,6 +23,7 @@ from teamster.code_locations.kippcamden import (
     titan,
 )
 from teamster.code_locations.kippcamden.resources import FINALSITE_RESOURCE
+from teamster.core.executors import zombie_aware_k8s_job_executor
 from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
@@ -43,7 +43,7 @@ from teamster.core.resources import (
 )
 
 defs = Definitions(
-    executor=k8s_job_executor,
+    executor=zombie_aware_k8s_job_executor,
     assets=apply_freshness_policies(
         load_assets_from_modules(
             modules=[

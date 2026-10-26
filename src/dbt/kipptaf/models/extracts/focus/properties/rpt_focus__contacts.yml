@@ -22,7 +22,8 @@ models:
       are appended from the four `emrg_N` slots on
       `int_finalsite__contact_custom_attributes` — they are custom fields on the
       student's own record rather than relationship rows, so the relationship
-      filter never sees them. Phone slots `CONTACT1_*` and `CONTACT2_*` map a
+      filter never sees them. A slot becomes a row only when it has both a first
+      and a last name. Phone slots `CONTACT1_*` and `CONTACT2_*` map a
       guardian's two phones; an emergency row additionally fills `CONTACT3_*`
       from its third phone. `TYPE` and `VALUE` for `CONTACT4` through `CONTACT7`
       are always null — no branch of this model populates those slots. Every
@@ -1940,6 +1941,188 @@ unit_tests:
           cast(null as string) as contact7_unlisted,
           cast(null as string) as contact7_callout,
           cast(null as string) as contact7_sms
+
+  - name: test_contacts_emergency_without_last_name_dropped
+    description:
+      Finalsite can hold an emergency contact with a first name only. An
+      emergency slot whose last name is blank or null produces no row, so every
+      row the feed sends carries a last name.
+    model: rpt_focus__contacts
+    given:
+      - input: ref('int_finalsite__enrollment_lifecycle')
+        rows:
+          - { finalsite_enrollment_id: enr-stu-9 }
+      - input: ref('stg_finalsite__contact_relationships')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as finalsite_enrollment_id,
+            cast(null as string) as relationship_id,
+            cast(null as string) as rel_id,
+            cast(null as string) as rel_name,
+            cast(null as string) as rel_type,
+            cast(null as bool) as is_primary,
+            cast(null as bool) as is_financial,
+            cast(null as bool) as has_portal_access
+          from (select 1) where false
+      - input: ref('stg_finalsite__contacts')
+        rows:
+          - { finalsite_enrollment_id: enr-stu-9, status: enrolled }
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'enr-stu-9' as finalsite_enrollment_id,
+            '8400009' as focus_student_id_prefixed
+      - input: ref('int_finalsite__contact_address_of_record')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as finalsite_enrollment_id,
+            cast(null as string) as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip
+      - input: ref('int_finalsite__contact_custom_attributes')
+        format: sql
+        rows: |
+          select
+            'enr-stu-9' as finalsite_enrollment_id,
+            'Momtest' as emrg_1_name_first_name,
+            cast(null as string) as emrg_1_name_middle_name,
+            '' as emrg_1_name_last_name,
+            cast(null as string) as emrg_1_email,
+            cast(null as string) as emrg_1_relationship_ss,
+            '  mother  ' as emrg_1_relationship_txt,
+            cast(null as bool) as emrg_1_custody_yn,
+            cast(null as bool) as emrg_1_lives_with_yn,
+            cast(null as bool) as emrg_1_pickup_yn,
+            cast(null as string) as emrg_1_phone_1_type,
+            cast(null as string) as emrg_1_phone_1_number,
+            cast(null as string) as emrg_1_phone_2_type,
+            cast(null as string) as emrg_1_phone_2_number,
+            cast(null as string) as emrg_1_phone_3_type,
+            cast(null as string) as emrg_1_phone_3_number,
+            cast(null as bool) as emrg_1_phone_1_opt_in,
+            cast(null as bool) as emrg_1_phone_2_opt_in,
+            cast(null as bool) as emrg_1_phone_3_opt_in,
+            'Dadtest' as emrg_2_name_first_name,
+            cast(null as string) as emrg_2_name_middle_name,
+            cast(null as string) as emrg_2_name_last_name,
+            cast(null as string) as emrg_2_email,
+            cast(null as string) as emrg_2_relationship_ss,
+            cast(null as string) as emrg_2_relationship_txt,
+            cast(null as bool) as emrg_2_custody_yn,
+            cast(null as bool) as emrg_2_lives_with_yn,
+            cast(null as bool) as emrg_2_pickup_yn,
+            cast(null as string) as emrg_2_phone_1_type,
+            cast(null as string) as emrg_2_phone_1_number,
+            cast(null as string) as emrg_2_phone_2_type,
+            cast(null as string) as emrg_2_phone_2_number,
+            cast(null as string) as emrg_2_phone_3_type,
+            cast(null as string) as emrg_2_phone_3_number,
+            cast(null as bool) as emrg_2_phone_1_opt_in,
+            cast(null as bool) as emrg_2_phone_2_opt_in,
+            cast(null as bool) as emrg_2_phone_3_opt_in,
+            cast(null as string) as emrg_3_name_first_name,
+            cast(null as string) as emrg_3_name_last_name,
+            cast(null as string) as emrg_3_email,
+            cast(null as string) as emrg_3_relationship_ss,
+            cast(null as string) as emrg_3_relationship_txt,
+            cast(null as bool) as emrg_3_custody_yn,
+            cast(null as bool) as emrg_3_lives_with_yn,
+            cast(null as bool) as emrg_3_pickup_yn,
+            cast(null as string) as emrg_3_phone_1_type,
+            cast(null as string) as emrg_3_phone_1_number,
+            cast(null as string) as emrg_3_phone_2_type,
+            cast(null as string) as emrg_3_phone_2_number,
+            cast(null as string) as emrg_3_phone_3_type,
+            cast(null as string) as emrg_3_phone_3_number,
+            cast(null as bool) as emrg_3_phone_1_opt_in,
+            cast(null as bool) as emrg_3_phone_2_opt_in,
+            cast(null as bool) as emrg_3_phone_3_opt_in,
+            cast(null as string) as emrg_4_name_first_name,
+            cast(null as string) as emrg_4_name_last_name,
+            cast(null as string) as emrg_4_email,
+            cast(null as string) as emrg_4_relationship_ss,
+            cast(null as string) as emrg_4_relationship_txt,
+            cast(null as bool) as emrg_4_custody_yn,
+            cast(null as bool) as emrg_4_lives_with_yn,
+            cast(null as bool) as emrg_4_pickup_yn,
+            cast(null as string) as emrg_4_phone_1_type,
+            cast(null as string) as emrg_4_phone_1_number,
+            cast(null as string) as emrg_4_phone_2_type,
+            cast(null as string) as emrg_4_phone_2_number,
+            cast(null as string) as emrg_4_phone_3_type,
+            cast(null as string) as emrg_4_phone_3_number,
+            cast(null as bool) as emrg_4_phone_1_opt_in,
+            cast(null as bool) as emrg_4_phone_2_opt_in,
+            cast(null as bool) as emrg_4_phone_3_opt_in
+    expect:
+      format: sql
+      rows: |
+        select
+          '8400009' as student_id,
+          'Mother' as student_relation,
+          1 as sort_order,
+          'Momtest' as first_name,
+          cast(null as string) as middle_name,
+          'Xyz' as last_name,
+          'Y' as resides_with_stud,
+          'Y' as custody,
+          'Y' as emergency,
+          'Y' as pickup,
+          cast(null as string) as address,
+          cast(null as string) as address2,
+          cast(null as string) as city,
+          cast(null as string) as state,
+          cast(null as string) as zipcode,
+          cast(null as string) as email,
+          cast(null as string) as contact1_type,
+          cast(null as string) as contact1_value,
+          cast(null as string) as contact1_blocked,
+          cast(null as string) as contact1_unlisted,
+          cast(null as string) as contact1_callout,
+          cast(null as string) as contact1_sms,
+          cast(null as string) as contact2_type,
+          cast(null as string) as contact2_value,
+          cast(null as string) as contact2_blocked,
+          cast(null as string) as contact2_unlisted,
+          cast(null as string) as contact2_callout,
+          cast(null as string) as contact2_sms,
+          cast(null as string) as contact3_type,
+          cast(null as string) as contact3_value,
+          cast(null as string) as contact3_blocked,
+          cast(null as string) as contact3_unlisted,
+          cast(null as string) as contact3_callout,
+          cast(null as string) as contact3_sms,
+          cast(null as string) as contact4_type,
+          cast(null as string) as contact4_value,
+          cast(null as string) as contact4_blocked,
+          cast(null as string) as contact4_unlisted,
+          cast(null as string) as contact4_callout,
+          cast(null as string) as contact4_sms,
+          cast(null as string) as contact5_type,
+          cast(null as string) as contact5_value,
+          cast(null as string) as contact5_blocked,
+          cast(null as string) as contact5_unlisted,
+          cast(null as string) as contact5_callout,
+          cast(null as string) as contact5_sms,
+          cast(null as string) as contact6_type,
+          cast(null as string) as contact6_value,
+          cast(null as string) as contact6_blocked,
+          cast(null as string) as contact6_unlisted,
+          cast(null as string) as contact6_callout,
+          cast(null as string) as contact6_sms,
+          cast(null as string) as contact7_type,
+          cast(null as string) as contact7_value,
+          cast(null as string) as contact7_blocked,
+          cast(null as string) as contact7_unlisted,
+          cast(null as string) as contact7_callout,
+          cast(null as string) as contact7_sms
+        from (select 1)
+        where false
 
   - name: test_contacts_custody_flags
     description:

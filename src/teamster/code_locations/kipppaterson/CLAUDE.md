@@ -17,7 +17,7 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `cambium`               | SFTP assets                  | sensor (`couchdrop_sftp_sensor`)                                      |
 | `deanslist`             | API assets                   | schedule (nightly)                                                    |
 | `edplan`                | SFTP assets                  | sensor (`build_edplan_sftp_sensor`)                                   |
-| `finalsite`             | API + SFTP assets            | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
+| `finalsite`             | API + SFTP assets            | schedule (`contacts`, 00:15 + 12:00 ET) + sensor (`status_report`)    |
 | `pearson`               | SFTP assets                  | manual only (retired; Cambium replaced it)                            |
 | `extracts`              | BigQuery→SFTP                | schedule (3am)                                                        |
 | `titan`                 | SFTP assets                  | sensor (`build_titan_sftp_sensor`)                                    |
@@ -64,13 +64,14 @@ Consequences:
 ## Schedules
 
 Titan `person_data` and `stg_titan__person_data` carry a 1:00am
-`FreshnessPolicy.cron` (matching Newark and Camden); no other Paterson asset has
-a freshness check. PowerSchool dlt runs on an intraday change-detection sensor
-(`kipppaterson__powerschool__dlt__intraday_sensor`, 15-min probe) plus one
-nightly cron schedule (unconditional full-refresh + re-baseline, matching
-kippnewark's cadence). DeansList, Finalsite `contacts`, and the PowerSchool
-autocomm `extracts` job add nightly schedules; Cambium and Finalsite
-`status_report` (`couchdrop_sftp_sensor`), Amplify
+`FreshnessPolicy.cron` (matching Newark and Camden). `stg_finalsite__contacts`
+carries the shared `CONTACTS_STAGING_FRESHNESS_POLICY` from the finalsite
+library, as in every district. PowerSchool dlt runs on an intraday
+change-detection sensor (`kipppaterson__powerschool__dlt__intraday_sensor`,
+15-min probe) plus one nightly cron schedule (unconditional full-refresh +
+re-baseline, matching kippnewark's cadence). DeansList, Finalsite `contacts`,
+and the PowerSchool autocomm `extracts` job add nightly schedules; Cambium and
+Finalsite `status_report` (`couchdrop_sftp_sensor`), Amplify
 (`build_amplify_mclass_sftp_sensor`), Titan (`build_titan_sftp_sensor`), EdPlan
 (`build_edplan_sftp_sensor`), and PowerSchool intraday are sensor-driven. The
 `AutomationConditionSensor` targets `AssetSelection.all()`, so it covers the

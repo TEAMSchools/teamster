@@ -12,10 +12,10 @@ with
             m.module_code,
             m.module_type,
             m.is_internal_assessment,
+            m.source as assessment_type,
 
             c.grade_level,
 
-            'illuminate' as assessment_type,
             'enrollment' as assessment_scope,
 
             cast(null as string) as combined_academic_subject,
@@ -25,7 +25,8 @@ with
         from {{ ref("int_assessments__assessments_members") }} as m
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on m.canonical_assessment_id = c.canonical_assessment_id
+            on m.source = c.source
+            and m.canonical_assessment_id = c.canonical_assessment_id
         where m.is_internal_assessment
     ),
 
@@ -173,13 +174,14 @@ with
     -- grain projection, not dup-masking
     -- One row per (scope, subject_area), matching Official college's per-subject
     -- grain, where Official uses `score_type` as `module_code` (for example
-    -- 'sat_math'). Practice derives a parallel `module_code` by concatenating
-    -- scope and subject area, so SAT Math and SAT Reading each get their own
-    -- `assessment_key`.
+    -- 'sat_math'). Practice reads a parallel `module_code` (scope and subject
+    -- area) from the practice model, so SAT Math and SAT Reading each get their
+    -- own `assessment_key`.
     practice_assessments as (
         select distinct
             scope,
             subject_area,
+            module_code,
 
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
@@ -196,8 +198,6 @@ with
             'Practice' as test_type,
 
             scope as title,
-
-            lower(concat(scope, '_', replace(subject_area, ' ', '_'))) as module_code,
         from {{ ref("int_assessments__college_assessment_practice") }}
     ),
 

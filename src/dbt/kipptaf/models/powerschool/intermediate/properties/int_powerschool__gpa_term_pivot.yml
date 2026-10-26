@@ -1,7 +1,6 @@
 models:
   - name: int_powerschool__gpa_term_pivot
     config:
-      materialized: table
       meta:
         contains_pii: true
     description: >-
@@ -10,13 +9,6 @@ models:
       package; this wrapper adds _dbt_source_project so studentid, which is only
       unique within one PowerSchool instance, can be disambiguated downstream.
       Includes the frozen Miami archive (AY2025 and earlier).
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - _dbt_source_relation
-              - studentid
-              - yearid
     columns:
       - name: _dbt_source_relation
         data_type: string

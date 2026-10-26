@@ -73,6 +73,16 @@ with
                 order by a.cc_termid desc, a.cc_dateenrolled desc, a.cc_dateleft desc
             ) as rn_student_year_illuminate_subject_desc,
 
+            row_number() over (
+                partition by a._dbt_source_project, a.cc_studyear, cx.ap_course_subject
+                order by
+                    a.is_dropped_section asc,
+                    a.cc_termid desc,
+                    a.cc_dateenrolled desc,
+                    a.cc_dateleft desc,
+                    a.cc_dcid desc
+            ) as rn_ap_course_subject_year,
+
         from {{ ref("int_powerschool__course_enrollments_union") }} as a
         cross join focus_academic_year_boundary as fay
         left join
@@ -100,15 +110,17 @@ with
             -- Term dates, not event dates -- see the column descriptions. A
             -- future-term row therefore carries a future date. #5002
             s.start_date as cc_dateenrolled,
-            s.end_date as cc_dateleft,
+            -- Focus end dates are the last day enrolled; PowerSchool's are the
+            -- first day not enrolled. Shift Focus onto PowerSchool's convention.
+            date_add(s.end_date, interval 1 day) as cc_dateleft,
             s.course_period_short_name as cc_section_number,
             s.teacher_id as cc_teacherid,
+            s.is_dropped as is_dropped_section,
 
-            -- Focus records the departure and the scheduled term end as two
-            -- facts; PowerSchool conflates them into cc_dateleft. Resolve the
-            -- neutral column from whichever this SIS actually has, rather than
-            -- back-filling PowerSchool's conflated column. #5043
-            coalesce(s.end_date, s.marking_period_end_date) as exit_date,
+            -- The Focus package resolves the seat's last day from the drop, the
+            -- term end and the withdrawal; shift it to PowerSchool's day-after
+            -- convention rather than back-filling cc_dateleft. #5043
+            date_add(s.effective_end_date, interval 1 day) as exit_date,
             st.student_number as students_student_number,
             loc.powerschool_school_id as sections_schoolid,
             loc.powerschool_school_id as cc_schoolid,
@@ -126,25 +138,23 @@ with
                 sr_ein.powerschool_teacher_number, sr_email.powerschool_teacher_number
             ) as teachernumber,
 
+            -- TODO(#5750): the crosswalk's Focus ELA and Math rows carry only
+            -- core_subject; drop the fallback once the sheet fills
+            -- Illuminate_Subject_Area for them
+            coalesce(
+                csc.illuminate_subject_area,
+                case
+                    csc.core_subject
+                    when 'ELA'
+                    then 'Text Study'
+                    when 'Math'
+                    then 'Mathematics'
+                end
+            ) as illuminate_subject_area,
+
             -- Focus's homeroom boolean is null on every row; identified by
             -- title instead, matching int_focus__advisory. See #4868.
             coalesce(s.course_title like 'Homeroom%', false) as is_homeroom,
-
-            -- An inferred flag; the derivation and its measurement are in the
-            -- column description. Two things this expression does not show:
-            -- the window excludes a withdrawal sweep, which closes every one of
-            -- a leaver's rows at once, and the coalesce is required rather than
-            -- defensive -- end_date is null on 96.8% of Miami rows and
-            -- `null < date` is null, so without it the flag reads null on every
-            -- open row. #4968
-            coalesce(
-                s.end_date < s.marking_period_end_date
-                and countif(s.end_date is null) over (
-                    partition by s.student_id, s.academic_year
-                )
-                > 0,
-                false
-            ) as is_dropped_section,
 
             -- New Jersey state reporting crosswalk; Miami is Florida, so
             -- correctly absent rather than deferred.
@@ -199,6 +209,19 @@ with
                     cc_course_number
                 order by cc_dateenrolled desc, exit_date desc, cc_dcid asc
             ) as rn_course_number_year,
+
+            row_number() over (
+                partition by
+                    _dbt_source_project,
+                    students_student_number,
+                    cc_academic_year,
+                    illuminate_subject_area
+                order by
+                    is_dropped_section asc,
+                    cc_dateenrolled desc,
+                    exit_date desc,
+                    cc_dcid asc
+            ) as rn_student_year_illuminate_subject_desc,
         from focus_conformed
     ),
 
@@ -450,6 +473,7 @@ with
             standardized_discipline,
             is_homeroom,
             rn_student_year_illuminate_subject_desc,
+            rn_ap_course_subject_year,
         from powerschool_conformed
 
         union all
@@ -688,7 +712,7 @@ with
             cast(null as string) as nces_subject_area,
             cast(null as string) as school_code_override,
             cast(null as int64) as sla_include_tf,
-            cast(null as string) as illuminate_subject_area,
+            illuminate_subject_area,
             cast(null as bool) as is_foundations,
             cast(null as bool) as is_advanced_math,
             cast(null as string) as discipline,
@@ -700,7 +724,8 @@ with
             is_ap_course,
             cast(null as string) as standardized_discipline,
             is_homeroom,
-            cast(null as int64) as rn_student_year_illuminate_subject_desc,
+            rn_student_year_illuminate_subject_desc,
+            cast(null as int64) as rn_ap_course_subject_year,
         from focus_course_dropped
     ),
 
@@ -967,6 +992,7 @@ select
     standardized_discipline,
     is_homeroom,
     rn_student_year_illuminate_subject_desc,
+    rn_ap_course_subject_year,
 
     if(
         is_core_section_candidate,

@@ -1,4 +1,19 @@
 exposures:
+  - name: academic_goal_rollup_dashboard
+    label: Academic Goal Roll-Up
+    type: dashboard
+    owner:
+      name: Data Team - awalters
+    depends_on:
+      - ref("rpt_tableau__academic_goals_dashboard")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 15cb4859-ab6d-46a7-8e4f-1aa786785aa3
   - name: crdc_dashboard
     label: CRDC Dashboard
     type: dashboard
@@ -11,12 +26,16 @@ exposures:
         dagster:
           kinds:
             - tableau
+          asset:
+            metadata:
+              id: 9cc6fe34-8ae9-4c56-aa5f-6e6c229f6f5d
   - name: attrition_dashboard
     label: Attrition Dashboard
     type: dashboard
     owner:
       name: Data Team
     depends_on:
+      - ref("int_people__staff_roster")
       - ref("rpt_tableau__staff_attrition_details")
     config:
       meta:
@@ -91,7 +110,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__adp_pension_and_benefits_enrollments")
       - ref("rpt_tableau__finance_accounting_people_model")
-      # - ref("rpt_tableau__staff_attrition")
+      - ref("rpt_tableau__staff_attrition_details")
     config:
       meta:
         dagster:
@@ -108,8 +127,6 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__gpa_goals")
-    # TODO(#4581): update to the published GPA Goals workbook URL
-    url: http://SAC-RPT-01/#/site/KIPPNJ/workbooks/TBD
     config:
       meta:
         dagster:
@@ -140,6 +157,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_gsheets__kfwd_rem_roster")
+      - ref("rpt_tableau__kfwd_aid_report")
       - ref("rpt_tableau__kfwd_career_launch_survey")
       - ref("rpt_tableau__kfwd_contact_notes")
       - ref("rpt_tableau__kfwd_dashboard")
@@ -281,7 +299,6 @@ exposures:
       - ref("rpt_tableau__schoolmint_grow_observation_details")
       - ref("rpt_tableau__schoolmint_grow_goals")
       - ref("rpt_tableau__teacher_observations")
-      - ref("rpt_tableau__pm_outlier_detection")
     config:
       meta:
         dagster:
@@ -360,8 +377,10 @@ exposures:
       - ref("rpt_tableau__gpa_goals")
       - ref("rpt_tableau__gpa_goal_progress")
       - ref("rpt_tableau__gpa_cumulative_year")
+      - ref("rpt_tableau__gpa_course_pace")
       - ref("rpt_tableau__student_course_grades")
       - ref("rpt_tableau__gradebook_audit")
+      - ref("rpt_tableau__gradebook_es_comments")
     config:
       meta:
         dagster:
@@ -377,9 +396,11 @@ exposures:
     owner:
       name: Data Team - awalters
     depends_on:
-      - ref("rpt_tableau__gradebook_gpa")
-      - ref("rpt_tableau__gradebook_gpa_cumulative")
-      - ref("rpt_tableau__gradebook_es_comments")
+      - ref("rpt_tableau__gpa_cumulative_year")
+      - ref("rpt_tableau__gpa_goal_progress")
+      - ref("rpt_tableau__gpa_goals")
+      - ref("rpt_tableau__gradebook_audit")
+      - ref("rpt_tableau__student_course_grades")
     config:
       meta:
         dagster:
@@ -516,6 +537,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__stipend_and_bonus_app")
+      - source("google_appsheet_frozen", "snapshot__stipend_and_bonus__output")
     config:
       meta:
         dagster:
@@ -587,6 +609,7 @@ exposures:
       - ref("rpt_tableau__miami_k2_iready")
       - ref("rpt_tableau__miami_k2_star")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -621,7 +644,6 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__smartrecruiters")
-      - ref("rpt_tableau__seat_tracker")
       - ref("rpt_tableau__seat_tracker_snapshot")
     config:
       meta:
@@ -658,8 +680,6 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__survey_links")
-      - ref("rpt_tableau__survey_completion")
-      - ref("rpt_tableau__survey_responses")
     config:
       meta:
         dagster:
@@ -746,6 +766,9 @@ exposures:
         dagster:
           kinds:
             - tableau
+          asset:
+            metadata:
+              id: 0c1f3b3f-f49a-45cb-8424-05bbbab619e9
   - name: topline_cascade_dashboard
     label: Topline Cascade Dashboard
     type: dashboard
@@ -819,8 +842,6 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__gpa_goal_progress")
-    # TODO(#4619): update to the published Cumulative GPA Monitor workbook URL
-    url: http://SAC-RPT-01/#/site/KIPPNJ/workbooks/TBD
     config:
       meta:
         dagster:
@@ -832,6 +853,7 @@ exposures:
     owner:
       name: Data Team
     depends_on:
+      - ref("int_surveys__manager_survey_details")
       - ref("rpt_tableau__manager_survey_details")
     config:
       meta:

@@ -19,13 +19,12 @@ clean-targets:
 
 vars:
   bigquery_external_connection_name: null
-  # Staging relations int_cambium__all_assessments reads. A district that
-  # disables some of these models overrides this list in its dbt_project.yml
-  # (see kipppaterson); the NJGPA branch compiles only when stg_cambium__njgpa
-  # is listed.
+  # Staging relations int_cambium__all_assessments reads. stg_cambium__njsla
+  # carries the end-of-course tests too. A district that disables NJGPA
+  # overrides this list in its dbt_project.yml (see kipppaterson); the NJGPA
+  # branch compiles only when stg_cambium__njgpa is listed.
   cambium_state_assessment_relations:
     - stg_cambium__njsla
-    - stg_cambium__eoc
     - stg_cambium__njgpa
 
 models:

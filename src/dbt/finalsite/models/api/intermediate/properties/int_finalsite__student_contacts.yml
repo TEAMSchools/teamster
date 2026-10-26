@@ -36,6 +36,24 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: relationship
+        data_type: string
+        description:
+          Relationship to the student — the relationship's `rel_type` for
+          `contact_1` and `contact_2`, or `emrg_N_relationship_ss` (falling back
+          to `emrg_N_relationship_txt`) for an emergency slot.
+        data_tests:
+          - not_null:
+              description: >-
+                A Finalsite parent contact's relationship link has no
+                relationship type. Downstream feeds that require one send a
+                placeholder. To fix, set the relationship type on the link
+                between the student and the parent in Finalsite. Emergency
+                contacts are checked on int_finalsite__contact_custom_attributes
+                instead.
+              config:
+                severity: warn
+                where: not is_emergency
       - name: contact_slot
         data_type: string
         description:
@@ -82,12 +100,6 @@ models:
         config:
           meta:
             contains_pii: true
-      - name: relationship
-        data_type: string
-        description:
-          Relationship to the student — the relationship's `rel_type` for
-          `contact_1` and `contact_2`, or `emrg_N_relationship_ss` (falling back
-          to `emrg_N_relationship_txt`) for an emergency slot.
       - name: email
         data_type: string
         description:

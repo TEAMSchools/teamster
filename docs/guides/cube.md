@@ -623,16 +623,14 @@ Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,
 discarding hand-authored definitions.
 
-When a user requests a field their access tier excludes, Cube **blocks the
-entire query** — it does not silently drop the column and return the rest. In
-practice this only surfaces in Tableau, where a workbook published by someone
-with broad access (e.g. `staff-pii`) may error at query time for viewers with
-narrower access. BI tools that connect via Cube's SQL API (Superset) avoid this
-because each user's field list is filtered at connection time. A member-strip
-approach that drops inaccessible fields transparently is tracked in
-[#4268](https://github.com/TEAMSchools/teamster/issues/4268). Until then, build
-Tableau workbooks using only the fields your least-privileged audience can see,
-or publish separate workbooks per access tier.
+Every view today grants all of its fields to anyone who can open it, limited to
+the rows their scope allows. Sensitive fields live in their own view
+(`staff_pii` beside `staff_directory`), so a workbook built on a view works for
+everyone who can open that view. Cube can also grant a group only some fields of
+a view. If a view does that, a query that names a field outside the viewer's
+grant **fails as a whole**; Cube does not drop the field and return the rest.
+Build a workbook on such a view using only the fields its narrowest audience can
+see.
 
 ## Using Cube with Claude
 
@@ -818,6 +816,8 @@ Performed in the Cube Cloud UI by an admin:
    - `CUBEJS_DB_BQ_CREDENTIALS` — service account JSON (base64-encoded)
    - `CUBEJS_SQL_SUPER_USER=cube-superset-service` — SQL API super-user for
      Superset user impersonation (follow-up integration)
+   - `CUBEJS_DB_EXPORT_BUCKET=teamster-cube-exports` and
+     `CUBEJS_DB_EXPORT_BUCKET_TYPE=gcp` — see step 7
 
    Cube Cloud automatically generates `CUBEJS_API_SECRET`, the SQL API username,
    and the SQL API password on deployment creation — find them under the
@@ -827,3 +827,13 @@ Performed in the Cube Cloud UI by an admin:
    `roles/bigquery.jobUser` on the `teamster-332318` project — both for the
    warehouse data (`dim_*` / `fct_*`) and for `dim_staff_cube_access` /
    `dim_staff_reporting_chain` used for identity resolution
+7. Pre-aggregation builds go through the Cloud Storage export bucket
+   `gs://teamster-cube-exports` (in `teamster-332318`, location US): BigQuery
+   `EXTRACT`s each build to the bucket and Cube Store loads it from there,
+   instead of Cube paging rows through its own server. The service account needs
+   `roles/storage.objectAdmin` on the bucket, plus BigQuery Data Editor, which
+   it also needs to write build tables to `prod_pre_aggregations`. A lifecycle
+   rule deletes objects after 1 day, because Cube does not clean up its export
+   files. Keep the bucket for Cube exports only — the rule deletes anything else
+   in it — and separate from Cube Store's own storage bucket. Removing the two
+   `CUBEJS_DB_EXPORT_BUCKET*` variables falls back to the slower paged load.

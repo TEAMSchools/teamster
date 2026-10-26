@@ -7,10 +7,12 @@ data_tests:
       different school or year produces silent NULLs in
       `int_powerschool__ps_adaadm_daily_ctod` because the `(fteid,
       attendance_conversion_id)` join in that model resolves only when the FTE
-      matches the school's bell-schedule conversion config. Schools at sentinel
-      `schoolid = 999999` (graduated students) are included — they should
-      reference one of PowerSchool's 999999-scoped FTEs, not a real-school FTE
-      carried over from prior enrollment.
+      matches the school's bell-schedule conversion config. Graduated stints
+      (`schoolid = 999999`) and stints with no days left after clipping
+      (`entrydate >= exitdate_clipped`) are excluded — neither gets a membership
+      day, so a mismatched FTE there never reaches attendance. Fix it in
+      PowerSchool by setting the enrollment's FTE to the one defined for that
+      school and year.
     config:
       severity: warn
       meta:
@@ -21,21 +23,15 @@ data_tests:
 
   - name: test_int_powerschool__ps_enrollment_all__no_overlapping_stints
     description: >-
-      For each `studentid`, at any school, no stint's `entrydate` may fall
-      inside an earlier stint's half-open `[entrydate, exitdate)`. An
-      overlapping pair makes `int_powerschool__ps_membership_reg` emit 2 rows
-      for every in-session day in the overlap, and every attendance model
-      downstream double-counts those student-days. `exitdate_clipped` on this
-      model cuts the earlier stint off at the later stint's `entrydate` so
-      `ps_membership_reg` stays at one row per student-day while Ops fixes the
-      stints, but the source defect is only visible here. The existing
-      `(studentid, entrydate)` and `(studentid, exitdate)` uniqueness tests miss
-      overlaps whose dates differ. Runs at warn severity. Failing with 56 stints
-      as of 2026-09-08 (kippnewark 36, kippcamden 3, kipppaterson 17), most of
-      them cross-school stints from yearid 26. None reach an in-session calendar
-      day, so the clip changes 0 rows today. The 2026-08-20 Newark incident
-      (#5160) produced 558 duplicate student-days before Ops corrected the
-      stints.
+      A PowerSchool student has two enrollment stints that overlap, at the same
+      or different schools. A stint's `entrydate` falls inside an earlier
+      stint's half-open `[entrydate, exitdate)`, usually because the old stint
+      was left open after a transfer. Fix it in PowerSchool by closing the
+      earlier stint, or correcting its exit date, so it ends on or before the
+      later stint's entry date. Downstream, `exitdate_clipped` on this model
+      cuts the earlier stint off at the later stint's `entrydate`, so
+      `int_powerschool__ps_membership_reg` stays at one row per student-day
+      instead of double-counting the overlap in attendance.
     config:
       severity: warn
       meta:
@@ -46,12 +42,12 @@ data_tests:
 
   - name: int_powerschool__student_enrollment_union_no_shared_stint_boundary
     description: >-
-      Within a `student_number` partition, consecutive enrollment stints must
-      not share a boundary date. A `lead(entrydate)` value equal to the current
-      row's `exitdate` indicates a same-day exit and re-entry that fans out
-      half-open date-range joins on the boundary day (e.g. survey attribution,
-      attendance windows). Currently 78 violations across ~100k stints
-      network-wide.
+      A PowerSchool student's enrollment stint exits on the same date the next
+      stint enters. The normal pattern is an exit on one day and re-entry the
+      next, so a shared boundary date puts the student in both stints that day
+      and fans out date-range joins on it (for example survey attribution and
+      attendance windows). Fix it in PowerSchool by moving the earlier stint's
+      exit date back one day, or the later stint's entry date forward one day.
     config:
       severity: warn
       meta:
@@ -87,18 +83,66 @@ data_tests:
       student-and-year identifier -- consecutive enrollment rows must not have
       date ranges that overlap by more than one day. A single shared boundary
       day is a normal sequential transfer and is allowed; multi-day overlap is
-      the source-side defect behind the cc date-range fan-out (#3900, Ops
-      cleanup #3915). Moved here from kipptaf, where it read the network-level
-      union and was therefore blind to Miami, whose PowerSchool archive holds no
-      AY2026 rows. Runs at warn severity. Failing with 10,807 rows as of
-      2026-08-28: kippnewark 7,901, kippcamden 2,783, kipppaterson 123. Note:
-      kippmiami does not consume the powerschool package — its legacy
-      PowerSchool stack was removed in #4441 once the SIS had moved to Focus —
-      so Miami is not monitored by this test.
+      the source-side defect that fans out cc date-range joins. Dropped sections
+      (`is_dropped_section`) are excluded, because a drop and its replacement
+      section normally overlap and most consumers filter drops out. A failure
+      means PowerSchool holds two live section enrollments in one course for the
+      same student and year. Fix it in PowerSchool by dropping the duplicate
+      section enrollment, or end-dating it the day the other one starts.
+      Downstream, `rn_course_number_year` on
+      base_powerschool__course_enrollments ranks the enrollments per student,
+      year, and course, so consumers that filter on 1 keep only the latest.
     config:
       severity: warn
       meta:
         dagster:
           ref:
             name: base_powerschool__course_enrollments
+            package: powerschool
+
+  - name: base_powerschool__course_enrollments__no_concurrent_ap_subject
+    description: >-
+      A student enrolled in two different courses carrying the same AP subject
+      code at the same time. The AP subject code (`ap_course_subject`, from the
+      NJ course extension) says which AP exam a course prepares for, so two
+      concurrent courses with one code usually means a support course such as a
+      recitation section was tagged as if it were the AP course itself.
+      Downstream, the student then looks enrolled in that AP course twice. The
+      fix is in PowerSchool, clearing the AP subject on the support course;
+      kipptaf's `int_students__course_enrollments.rn_ap_course_subject_year`
+      keeps consumers to one course per subject in the meantime. A sequential
+      switch between two courses with the same code is not flagged. Dropped
+      sections are excluded, as in the overlap test above. Warn, since each row
+      is a PowerSchool course record to correct.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: base_powerschool__course_enrollments
+            package: powerschool
+
+  - name: base_powerschool__student_enrollments__cohort_not_ahead_of_entry
+    description: >-
+      A current high school student should never be ahead of the cohort they
+      entered with. For grade 9 and up, cohort freezes at the student's first
+      year in the school, which is correct for New Jersey's 4-year adjusted
+      cohort graduation rate. Falling behind that cohort is ordinary retention
+      and is not a defect, so only the other direction is tested -- a student
+      whose grade level implies an earlier graduating class (`cohort_primary`)
+      than their recorded cohort. Three causes produce that shape. A skipped
+      grade and a missing enrollment year are records problems, corrected in
+      PowerSchool. Summer credit recovery is not -- a student can advance a
+      grade over the summer with no enrollment row to show for it, because
+      int_powerschool__student_enrollment_union filters out the summer school,
+      so the records are already right. Warn rather than error, because no
+      result here is fixed by a code change. Miami's version is
+      int_extracts__student_enrollments__miami_cohort_not_ahead_of_entry in
+      kipptaf.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: base_powerschool__student_enrollments
             package: powerschool

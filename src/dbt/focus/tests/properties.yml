@@ -54,7 +54,7 @@ data_tests:
       nor is_email_title set (an unmapped title needing a new mapping), or has
       both set (an ambiguous title the model silently excludes as email,
       potentially dropping a real phone value). A null title is treated as
-      unmapped.
+      unmapped. Rows with no value are ignored.
     config:
       severity: warn
       meta:
@@ -64,23 +64,38 @@ data_tests:
             package: focus
   - name: stg_focus__student_enrollment__one_primary_per_stint
     description: >-
-      Guards the tie-break of the same-start-date dedupe in
-      int_focus__student_enrollment. When a student holds two enrollments
-      sharing a year and a start date at different schools, exactly one must
-      leave the Focus "Second School" checkbox (custom_9) unchecked -- that row
-      is the primary, home-campus enrollment, and it is the one the dedupe
-      keeps. Two unchecked rows leave the dedupe with no signal and it picks
-      between two schools arbitrarily; zero unchecked rows mean the primary
-      record is missing. Either way a student is attributed to a campus by
-      accident, which is what happened before the tie-break read this field
-      (#5003). Asserted on the staging model because the dedupe has already
-      dropped one row by the intermediate layer, and a uniqueness test on the
+      Guards the same-start-date dedupe in int_focus__student_enrollment_roster.
+      When a student holds two enrollments sharing a year and a start date at
+      different schools, exactly one must leave the Focus "Second School"
+      checkbox (custom_9) unchecked -- that row is the primary, home-campus
+      enrollment, and the roster drops the marked one before the dedupe. Two
+      unchecked rows leave the dedupe to pick between two schools arbitrarily;
+      zero unchecked rows drop the student from the roster. Either way a student
+      is attributed to a campus by accident. Asserted on the staging model
+      because the roster has already dropped rows, and a uniqueness test on the
       deduped grain cannot fail by construction. Same-school duplicates are out
       of scope; the dedupe resolves those without a primary marker, as are
       groups where one row has no school at all -- there is no second school to
       be primary over, and no such row exists in Focus today.
     config:
       severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_focus__student_enrollment
+            package: focus
+  - name: stg_focus__student_enrollment__second_school_has_open_primary
+    description: >-
+      Every Focus enrollment marked "Second School" (custom_9) must sit inside a
+      primary enrollment the same student holds that year, open on the second
+      school's start date. int_focus__student_enrollment_roster drops
+      second-school rows, so one with no open primary either removes the student
+      from the roster or, when the primary closed first, hides a real transfer
+      and leaves the student without a stint from that date. Any returned row is
+      a Focus data-entry problem -- uncheck "Second School" on a real transfer,
+      or add the missing primary enrollment.
+    config:
+      severity: warn
       meta:
         dagster:
           ref:
@@ -95,10 +110,8 @@ data_tests:
       a test on the roster could not fail; this one reads the pre-trim
       enrollment rows. Strict on the boundary, so a stint that starts on the day
       another ends passes as a sequential transfer, and an open stint ends June
-      30 like the roster's default. Failing with 1 pair as of 2026-09-04, one
-      AY2026 student open at 2 schools from 2026-09-04. Runs at warn severity.
-      Any returned row is a failure, and the fix is in Focus: close the stale
-      stint.
+      30 like the roster's default. Any returned row is a failure, and the fix
+      is in Focus — close the earlier stint.
     config:
       severity: warn
       meta:
@@ -110,15 +123,12 @@ data_tests:
     description: >-
       A student must not sit in two course periods of the same course, in the
       same class period, at overlapping times. Resolved through the marking
-      period: int_focus__schedule.end_date is null on 18,412 of 19,699 rows
-      because Focus bounds a schedule row by its course period's marking period,
-      so a literal reading makes every Semester 1 row collide with its Semester
-      2 partner (188 false pairs). Scoped to a shared period_id -- the same
-      course in different class periods is a separate 776-group pattern with Ops
-      for a ruling. Failing with 2 rows as of 2026-08-28, both the same student
-      in two courses at period_id 2373, where the outgoing section runs
-      2026-08-12 to 2026-08-13 while the incoming one starts 2026-08-12. Runs at
-      warn severity. Any returned row is a failure.
+      period dates on int_focus__schedule — its end_date is null on most rows
+      because Focus bounds a schedule row by its marking period, so a literal
+      reading makes every Semester 1 row collide with its Semester 2 partner.
+      Scoped to a shared period_id — the same course in different class periods
+      is a separate pattern with Ops for a ruling. Any returned row is a
+      failure.
     config:
       severity: warn
       meta:

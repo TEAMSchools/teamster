@@ -16,6 +16,7 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `google`                 | Directory, Forms, AppSheet specs, Sheets specs            | directory, forms | bigquery, forms, sheets |
 | `adp`                    | payroll SFTP + WFN API (WFM disabled)                     | WFN schedule     | WFN + payroll sensors   |
 | `airbyte`                | asset specs                                               | schedule         | disabled                |
+| `branchingminds`         | SFTP export assets (fiscal-year partitions)               | —                | sensor                  |
 | `collegeboard`           | SFTP assets                                               | —                | —                       |
 | `coupa`                  | API assets                                                | schedule         | —                       |
 | `deanslist`              | API assets                                                | —                | sensor                  |
@@ -41,11 +42,18 @@ dbt side is cleanly named `coupa`.
 Kipptaf splits dbt into **three separate asset groups** with different resource
 requirements and selection criteria:
 
-| Asset variable            | `select`              | `exclude`                              | Notes                                         |
-| ------------------------- | --------------------- | -------------------------------------- | --------------------------------------------- |
-| `core_dbt_assets`         | — (all)               | `source:adp_payroll+ tag:google_sheet` | Main run                                      |
-| `google_sheet_dbt_assets` | `tag:google_sheet`    | —                                      | Separate to isolate brittle gsheet deps       |
-| `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                      | Partitioned by payroll file; cannot be merged |
+| Asset variable            | `select`                   | `exclude`                            | Notes                                         |
+| ------------------------- | -------------------------- | ------------------------------------ | --------------------------------------------- |
+| `core_dbt_assets`         | selector `core_dbt_assets` | (in `src/dbt/kipptaf/selectors.yml`) | Main run                                      |
+| `google_sheet_dbt_assets` | `tag:google_sheet`         | —                                    | Separate to isolate brittle gsheet deps       |
+| `adp_payroll_dbt_assets`  | `source:adp_payroll+`      | —                                    | Partitioned by payroll file; cannot be merged |
+
+The core selector excludes `tag:google_sheet` with
+`indirect_selection: cautious`. A plain `exclude=` uses eager selection, which
+drops every test that reads any sheet model, including tests whose check belongs
+to a core model. Do not move the exclude back into `exclude=`. A test whose
+check belongs to a sheet model carries `tag:google_sheet` so it leaves core
+(`.claude/rules/dbt-yaml.md`).
 
 `core_dbt_assets` is the one used by `TableauServerResource` dependencies
 (imported as `core_dbt_assets` from `kipptaf.dbt.assets`).
@@ -91,6 +99,12 @@ date). The `_test_get_worker` harness in
 GET (`/workers/{aoid}`), which returns the worker regardless — so a
 single-worker probe does NOT predict which partitions a bulk re-pull will place
 them in.
+
+A `workers_sync` `zero_api_errors` failure with `EMPLOYEE_NOT_FOUND` is usually
+one of these ghosts: the record was deleted in ADP after its partition left the
+window, staging keeps it open, and the roster sends the sync to the deleted OID.
+Check the `stg_adp_workforce_now__workers__ghost_open_records` asset check
+before you debug the sync itself. The fix is the re-pull above.
 
 ## Illuminate DLT Schedule Split
 

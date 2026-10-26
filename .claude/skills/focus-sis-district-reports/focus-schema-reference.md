@@ -57,7 +57,20 @@ field value codes_.
 5. **`custom_fields` table** — master registry: `source_class` (owning entity),
    `type`, `column_name`, `default_value`/`fallback_value`, `system`/`required`,
    `deleted`.
-6. **No coverage anywhere above** (a module-specific table like
+6. **Apex assessment tables (`apex_*`)** — Focus's
+   [Apex schema reference](https://fe.focusschoolsoftware.com/josh2/docs/apex_schema_reference.html)
+   lists every column, unique key, and join target, each join marked confirmed,
+   likely, or unresolved. It predates the live database, so a column in a
+   staging model but not on the page is real (`apex_sessions.manually_seeded`).
+   Two traps it records: `apex_session_grade_history.session_id` is VARCHAR
+   (cast before joining to `apex_sessions.id`), and `apex_sessions.form_id` and
+   the `apex_form_*` tables are unwired, so do not join on them. WebFetch
+   returns only the page header: the tables are JSON in `window.APEX_DATA`
+   inside the HTML. Extract it with
+   `curl -s <url> | grep -o 'window.APEX_DATA = .*' | sed -E 's/^window\.APEX_DATA = //; s/;? *<\/script>.*$//' | jq '.tables.apex_sessions'`
+   (each table under `.tables` has `cols`, `unique`, `index`, `purpose`,
+   `audit`).
+7. **No coverage anywhere above** (a module-specific table like
    `positive_behaviors`) — ask the user for a screenshot of the table's columns
    rather than guessing.
 

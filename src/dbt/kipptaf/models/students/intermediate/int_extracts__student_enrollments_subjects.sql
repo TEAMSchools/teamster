@@ -49,37 +49,16 @@ with
             and rn_student_program_year_desc = 1
     ),
 
-    prev_yr_state_test as (
-        select
-            _dbt_source_project,
-
-            state_student_id as statestudentidentifier,
-            aggregated_proficiency as state_test_aggregated_proficiency,
-            illuminate_subject_area as `subject`,
-
-            academic_year + 1 as academic_year_plus,
-        from {{ ref("int_assessments__state_scores") }}
-        where
-            /* NJSLA is the only Pearson assessment carrying a proficiency, and
-               it runs one window a year; NJGPA's Fall and Spring rows carry none. */
-            (score_source = 'state_nj' and assessment_name = 'NJSLA')
-            or (
-                score_source = 'state_fl'
-                and scale_score is not null
-                and assessment_name = 'FAST'
-                and administration_period = 'PM3'
-            )
-    ),
-
     prev_yr_iready as (
         select
+            _dbt_source_project,
             student_id,
             `subject`,
             iready_proficiency,
 
             academic_year_int + 1 as academic_year_plus,
 
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__iready_diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
     ),
 
@@ -104,6 +83,22 @@ with
             and rn_course_number_year = 1
             and sections_section_number in ('mgmath', 'mgela')
             and not is_dropped_section
+    ),
+
+    algebra_i_ms as (
+        -- grain projection, not dup-masking: one row per project, student, year
+        select distinct
+            _dbt_source_project,
+            students_student_number as student_number,
+            cc_academic_year as academic_year,
+
+            'Math' as iready_subject,
+        from {{ ref("int_students__course_enrollments") }}
+        where
+            illuminate_subject_area = 'Algebra I MS'
+            and not is_dropped_section
+            -- the goal generator applies this exclusion to NJ regions only
+            and _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
     ),
 
     dibels as (
@@ -142,32 +137,6 @@ with
 
         from {{ ref("int_amplify__all_assessments") }}
         where measure_standard = 'Composite'
-    ),
-
-    -- trunk-ignore(sqlfluff/ST03)
-    bucket_programs as (
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            academic_year,
-            enter_date,
-
-            trim(split(specprog_name, '-')[offset(0)]) as bucket,
-            trim(split(specprog_name, '-')[offset(1)]) as discipline,
-
-        from {{ ref("int_powerschool__spenrollments") }}
-        where specprog_name like 'Bucket%'
-    ),
-
-    bucket_dedupe as (
-        {{
-            dbt_utils.deduplicate(
-                relation="bucket_programs",
-                partition_by="_dbt_source_relation, studentid, academic_year, discipline",
-                order_by="enter_date desc",
-            )
-        }}
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
@@ -217,9 +186,16 @@ select
 
     a.values_column as ps_grad_path_code,
 
+    b.bucket_store,
+
+    cc.teacher_lastfirst as course_teacher_lastfirst,
+
+    -- Focus rows null sections_section_number and carry cc_section_number
+    coalesce(cc.sections_section_number, cc.cc_section_number) as course_section_number,
+
     coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
-    coalesce(py.state_test_aggregated_proficiency, 'No Test') as state_test_proficiency,
+    coalesce(py.aggregated_proficiency, 'No Test') as state_test_proficiency,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
@@ -235,12 +211,14 @@ select
 
     if(ie.student_number is not null, true, false) as is_magoosh,
 
+    if(am.student_number is not null, true, false) as is_algebra_i_ms,
+
     if(nj.iready_subject is not null, true, false) as bucket_two,
 
     if(ie.student_number is not null or co.is_sipps, true, false) as is_exempt_iready,
 
     if(
-        co.grade_level <= 3, pr.iready_proficiency, py.state_test_aggregated_proficiency
+        co.grade_level <= 3, pr.iready_proficiency, py.aggregated_proficiency
     ) as bucket_one,
 
     if(
@@ -285,18 +263,21 @@ left join
     {{ ref("int_assessments__fast_previous_year") }} as fp
     on co.academic_year = fp.academic_year
     and co.student_number = fp.student_number
+    and co._dbt_source_project = fp._dbt_source_project
     and sj.discipline = fp.discipline
 left join
-    prev_yr_state_test as py
+    {{ ref("int_assessments__state_scores") }} as py
     /* TODO: find records that only match on SID */
-    on co.state_studentnumber = py.statestudentidentifier
-    and co.academic_year = py.academic_year_plus
+    on co.state_studentnumber = py.state_student_id
+    and co.academic_year = py.benchmark_academic_year
     and co._dbt_source_project = py._dbt_source_project
-    and sj.illuminate_subject_area = py.subject
+    and sj.illuminate_subject_area = py.illuminate_subject_area
+    and py.is_annual_state_test
 left join
     prev_yr_iready as pr
     on co.student_number = pr.student_id
     and co.academic_year = pr.academic_year_plus
+    and co._dbt_source_project = pr._dbt_source_project
     and sj.iready_subject = pr.subject
 left join
     dibels as db
@@ -317,17 +298,31 @@ left join
     and co._dbt_source_project = ie._dbt_source_project
     and sj.iready_subject = ie.iready_subject
 left join
+    algebra_i_ms as am
+    on co.student_number = am.student_number
+    and co.academic_year = am.academic_year
+    and co._dbt_source_project = am._dbt_source_project
+    and sj.iready_subject = am.iready_subject
+left join
     intervention_nj as nj
     on co.studentid = nj.studentid
     and co.academic_year = nj.academic_year
     and co._dbt_source_project = nj._dbt_source_project
     and sj.iready_subject = nj.iready_subject
 left join
-    bucket_dedupe as b
-    on co.studentid = b.studentid
+    {{ ref("int_students__bucket_assignments") }} as b
+    on co.student_number = b.student_number
     and co.academic_year = b.academic_year
     and co._dbt_source_project = b._dbt_source_project
-    and sj.discipline = b.discipline
+    and sj.iready_subject = b.subject
+left join
+    {{ ref("int_students__course_enrollments") }} as cc
+    on co.student_number = cc.students_student_number
+    and co.academic_year = cc.cc_academic_year
+    and co._dbt_source_project = cc._dbt_source_project
+    and sj.illuminate_subject_area = cc.illuminate_subject_area
+    and not cc.is_dropped_section
+    and cc.rn_student_year_illuminate_subject_desc = 1
 left join
     mtss_dedupe as mtss
     on co.studentid = mtss.studentid

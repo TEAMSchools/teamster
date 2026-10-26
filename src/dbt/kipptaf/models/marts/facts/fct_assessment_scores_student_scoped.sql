@@ -32,9 +32,9 @@ with
         }}
     ),
 
-    -- Practice (mock SAT/ACT through Illuminate). One row per student x
-    -- (scope, test_date, administration_round). Inputs scoped to the
-    -- response_type='group' grain of int_assessments__college_assessment_practice.
+    -- Practice (mock SAT/ACT through Illuminate). Ranks every Group, Subject and
+    -- Total row together, so the order by lists the practice model's full grain
+    -- to keep rn_highest, a key input, the same on every rebuild.
     practice_assessments as (
         select
             powerschool_student_number as student_number,
@@ -45,10 +45,19 @@ with
             scale_score,
             administration_round,
             test_type,
+            module_code,
 
             row_number() over (
                 partition by powerschool_student_number, scope
-                order by scale_score desc, test_date desc
+                order by
+                    scale_score desc,
+                    test_date desc,
+                    response_type asc,
+                    assessment_id asc,
+                    response_type_description asc,
+                    academic_year asc,
+                    scope_round asc,
+                    grade_level asc
             ) as rn_highest,
         from {{ ref("int_assessments__college_assessment_practice") }}
     ),
@@ -163,24 +172,18 @@ select
         )
     }} as assessment_score_key,
 
-    if(
-        pa.student_number is not null,
-        {{ dbt_utils.generate_surrogate_key(["pa.student_number"]) }},
-        cast(null as string)
-    ) as student_key,
+    {{ student_key("pa.student_number", nullable=true) }} as student_key,
 
     {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "'college'",
-                "pa.scope",
-                "pa.test_date",
-                "pa.academic_year",
-                "cast(null as string)",
-                "pa.administration_round",
-                "cast(null as int64)",
-                "pa.test_type",
-            ]
+        assessment_administration_key(
+            "'college'",
+            "pa.module_code",
+            "pa.test_date",
+            "pa.academic_year",
+            "null",
+            "pa.administration_round",
+            "null",
+            "pa.test_type",
         )
     }} as assessment_administration_key,
 

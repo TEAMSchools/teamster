@@ -3,11 +3,12 @@ models:
     description: >-
       Kipptaf-level union_relations passthrough of kippmiami's
       int_focus__schedule, exposing Miami's student schedules at network level —
-      one row per student per scheduled course period, with section, course, and
-      marking-period context resolved. Deduplicated to the currently-open stint
-      when Focus carries a same-day-superseded row alongside it for the same
-      student and course period. Column docs/tests live on the kippmiami source
-      model.
+      one row per student per course period, with section, course, and
+      marking-period context resolved. The grain is set in the package model,
+      which keeps one stint when Focus holds several for a student and course
+      period (a drop and re-add); its description gives the pick order. Read
+      stg_focus__schedule for every stint. Column docs and tests live on the
+      kippmiami source model.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

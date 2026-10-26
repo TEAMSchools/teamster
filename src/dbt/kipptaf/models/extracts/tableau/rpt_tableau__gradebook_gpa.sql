@@ -188,40 +188,18 @@ with
 
     y1_historical as (
         select
-            tr._dbt_source_relation,
-            tr._dbt_source_project,
-            tr.studentid,
-            tr.academic_year,
-            tr.yearid,
-            tr.schoolid,
-            tr.schoolname,
-            tr.grade_level,
-            tr.course_number,
-            tr.course_name,
-            tr.sectionid,
-            tr.teacher_name,
-            tr.storecode,
-            tr.termid,
-            tr.`percent` as y1_course_final_percent_grade_adjusted,
-            tr.grade as y1_course_final_letter_grade_adjusted,
-            tr.earnedcrhrs as y1_course_final_earned_credits,
-            tr.potentialcrhrs as y1_course_final_potential_credit_hours,
-            tr.gpa_points as y1_course_final_grade_points,
-            tr.excludefromgpa,
-
-            cast(tr.academic_year as string)
-            || '-'
-            || right(cast(tr.academic_year + 1 as string), 2) as academic_year_display,
-
-        from {{ ref("stg_powerschool__storedgrades") }} as tr
-        left join
-            student_roster as co
-            on tr.studentid = co.studentid
-            and tr.academic_year = co.academic_year
-            and tr.schoolid = co.schoolid
-            and tr.storecode = co.`quarter`
-            and tr._dbt_source_project = co._dbt_source_project
-        where tr.storecode = 'Y1'
+            _dbt_source_project,
+            studentid,
+            yearid,
+            course_number,
+            `quarter`,
+            y1_course_final_percent_grade_adjusted,
+            y1_course_final_letter_grade_adjusted,
+            y1_course_final_earned_credits,
+            y1_course_final_potential_credit_hours,
+            y1_course_final_grade_points,
+        from {{ ref("int_powerschool__student_course_grades_spine") }}
+        where `quarter` = 'Y1'
     ),
 
     quarter_and_ip_y1_grades as (
@@ -463,7 +441,7 @@ left join
     y1_historical as y1h
     on s.studentid = y1h.studentid
     and s.yearid = y1h.yearid
-    and s.`quarter` = y1h.storecode
+    and s.`quarter` = y1h.`quarter`
     and s._dbt_source_project = y1h._dbt_source_project
     and ce.course_number = y1h.course_number
     and ce._dbt_source_project = y1h._dbt_source_project

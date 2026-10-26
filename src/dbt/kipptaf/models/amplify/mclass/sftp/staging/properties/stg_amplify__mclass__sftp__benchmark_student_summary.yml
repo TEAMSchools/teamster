@@ -7,7 +7,11 @@ models:
       _dbt_source_relation names the source district. Column docs live on the
       package model yml under src/dbt/amplify/models/mclass/sftp/staging/.
     config:
-      # materialized: table
+      # Not a view: a test on a view runs only when its code changes, and the
+      # school_name relationships test below must catch a new mCLASS school
+      # missing from the crosswalk on every load. No package can hold it,
+      # because the crosswalk is a kipptaf model.
+      materialized: table
       meta:
         contains_pii: true
     columns:
@@ -17,5 +21,7 @@ models:
         data_tests:
           - relationships:
               arguments:
-                to: ref("stg_google_sheets__people__location_crosswalk")
-                field: name
+                to: ref("int_people__location_crosswalk")
+                field: location_name
+              config:
+                severity: error

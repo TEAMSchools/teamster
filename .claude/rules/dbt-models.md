@@ -20,10 +20,10 @@ first, wait for Dagster to materialize prod, then kipptaf. kipptaf
 (dbt Cloud CI), NOT prod — and a district prod merge does NOT refresh those
 copies, so kipptaf CI keeps reading the stale `zz_stg_*` table (missing the new
 column) and fails deterministically. Refresh it before/with the kipptaf PR:
-`dbt clone --select <model> --target staging --state src/dbt/<district>/target/prod --full-refresh --project-dir src/dbt/<district>`
-per district (metadata-cheap when the prod relation is a TABLE; needs direct
-user authorization — recreates shared `zz_stg_*` tables), then trigger a fresh
-CI `dbt build` (not `dbt retry`, which replays stale compiled SQL).
+`uv run dbt clone --select <model> --target staging --state src/dbt/<district>/target/prod --full-refresh --project-dir src/dbt/<district>`
+per district (metadata-cheap when the prod relation is a TABLE; a shared write,
+so follow _Shared staging writes_ in `.claude/rules/dbt-yaml.md`), then trigger
+a fresh CI `dbt build` (not `dbt retry`, which replays stale compiled SQL).
 Kipptaf-level test tightenings (e.g. restoring `severity: error` on a mart PK
 that depended on the upstream value change) belong in the follow-up PR.
 
@@ -44,8 +44,7 @@ config blocks before the move, and rename the model's singular tests and their
 **Before re-attempting a materialization or automation-condition change, check
 whether it was already reverted**:
 `git log -S '<config key>' -- <properties yml>`. A reverted perf change reads as
-an obvious win and CI passes for a while — that is how #4464 got re-done here,
-eight days after #4587 reverted it.
+an obvious win and CI passes for a while.
 
 A table model with a plan of hundreds of stages (straggler-fragile, e.g.
 [#4153](https://github.com/TEAMSchools/teamster/issues/4153)) usually inherits
@@ -65,11 +64,14 @@ materializations before flattening SQL. When flipping views to cron tables:
 
 ### Table→view materialization conversion needs a drop
 
-`create or replace view` does not drop a pre-existing table at the same path —
-the conversion silently keeps serving the stale table. Ship table→view
-conversions with either an explicit
-`DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
-`dbt build --select <model> --full-refresh` once after merge.
+dbt-bigquery's view materialization drops a pre-existing table at the same path
+only under `--full-refresh`; otherwise it raises `relation_wrong_type`
+(`bigquery__handle_existing_table`). Dagster's dbt runs never pass
+`--full-refresh`, so until someone does, the model keeps serving the old table
+and every triggered rebuild fails. A properties-yml-only flip also never fires a
+rebuild on its own (see above), so a flipped union view sits frozen at merge-day
+data. Run `uv run dbt build --select <models> --full-refresh` right after the
+deploy lands.
 
 ### Snapshot meta-column config changes need a manual DDL migration
 
@@ -94,8 +96,8 @@ stored definition. BigQuery validates view SQL at read time, so every
 `relationships` / `unique` test on the staging model fails with
 `Name <col> not found inside <alias>; failed to parse view ...`. Confirm the
 stored SQL is stale via `INFORMATION_SCHEMA.VIEWS.view_definition`, then
-rematerialize each dependent view through Dagster `launch_run` — not a code
-change.
+rematerialize each dependent view through `mcp__dagster-plus__launch_asset_run`
+— not a code change.
 
 ### `dbt_utils.union_relations` is compile-time
 
@@ -114,8 +116,10 @@ values land after the next prod rebuild. A column ADD/rename DOES: an unmodified
 kipptaf union wrapper is `--defer`'d to the Staging env (not `zz_stg`), so the
 new column never appears and downstream models fail `Name <col> not found`. To
 land it single-PR, force the wrapper `state:modified` (a doc comment is enough)
-AND `dbt build --select <pkg-model> --project-dir <district> --target staging`
-into `zz_stg_<district>_<source>` so CI's wrapper rebuild sees the column. The
+AND
+`uv run dbt build --select <pkg-model> --project-dir <district> --target staging`
+into `zz_stg_<district>_<source>` so CI's wrapper rebuild sees the column (a
+shared write: _Shared staging writes_ in `.claude/rules/dbt-yaml.md`). The
 `state:modified` trigger must be a `.sql` edit (a comment) — a properties.yml
 `description` change does NOT mark a model modified. Diagnose which side is
 stale from the CI error's `compiled_code` `from` clause: a ref resolving to
@@ -139,58 +143,52 @@ an inline SQL comment, on hub models.
 **Validating a NEW union wrapper locally**: the column list resolves at compile
 from the source relation's `INFORMATION_SCHEMA`, so a dev-target compile expands
 to nothing — the `zz_<user>_*` dataset holds no copy.
-`dbt compile --select <wrapper> --target staging` resolves against the same
-`zz_stg_*` relations dbt Cloud CI reads, and is not a warehouse write so it
+`uv run dbt compile --select <wrapper> --target staging` resolves against the
+same `zz_stg_*` relations dbt Cloud CI reads, and is not a warehouse write so it
 needs no authorization. Read the compiled SQL to confirm columns were listed; an
 empty expansion still compiles clean.
 
 ### Comments and descriptions
 
-- One content test for SQL comments, YAML comments, and `description:` alike.
-  Keep the constraint and the why a future editor needs. Cut values another file
-  owns and point to that file instead (`dlt/<source>/schedules.py`, an exposure,
-  the model whose cron tick you share). Cut one-off measurements (GiB, row or
-  rebuild counts) and history; those go in the commit and PR. A `Refs #N`
-  pointer may stay in a comment, never a description. Where each kind of note
-  goes: `.claude/rules/dbt-sql.md` and _YAML conventions_ in
-  `.claude/rules/dbt-yaml.md`.
-- Editing inside a comment or description brings that whole block up to the
-  test. Sweep the rest of the file only when asked: a `.sql` comment edit marks
-  the model `state:modified` and widens CI's rebuild.
+The content test is in `.claude/rules/comments.md`. dbt-specific: a `.sql`
+comment edit marks the model `state:modified` and widens CI's rebuild, so sweep
+comments beyond the block you are editing only when asked.
 
 ### Per-layer requirements
 
 **All staging models must**:
 
-1. Have `contract: enforced: true` (set at directory level in `dbt_project.yml`)
+1. Have `contract: enforced: true` (set at directory level in `dbt_project.yml`,
+   except kipptaf union views below)
 2. Have a uniqueness test — either `unique:` on a single column or
    `dbt_utils.unique_combination_of_columns`
 
 **All intermediate models must**:
 
 1. Have a uniqueness test
-2. Not be consumed directly by external tools or reports — a reporting view
-   (`rpt_*`) must always sit between an intermediate model and an external
-   consumer, buffering external dependencies from internal schema evolution
 
 **All `rpt_`, `dim_*`, and `fct_*` models must**:
 
 1. Have `contract: enforced: true`
-2. Have a uniqueness test
+2. Have a uniqueness test. The kipptaf `rpt_` models listed on
+   [#5990](https://github.com/TEAMSchools/teamster/issues/5990) lack one; add it
+   in any PR that modifies one (_Tests on marts and `rpt_` models_ in
+   `.claude/rules/dbt-yaml.md`).
 
-**Exception** — thin cross-project wrapper `rpt_` models (a district
-`rpt_powerschool__autocomm_*` or other `extracts/` wrapper sourcing
-`kipptaf_extracts`) are contract-columns-only: NO uniqueness test or
-descriptions, which live on the kipptaf source view. See `kipptaf/CLAUDE.md` →
-`extracts/powerschool/` special case before adding either.
+**Exceptions** — a kipptaf `stg_` union view over district staging, and a thin
+cross-project wrapper `rpt_` (a district `rpt_powerschool__autocomm_*` or other
+`extracts/` wrapper sourcing `kipptaf_extracts`), carry NO uniqueness test; it
+lives on the model they wrap. The district wrapper is contract-columns-only (no
+descriptions); a union view enforces a contract only where its own properties
+file sets it. See `kipptaf/CLAUDE.md` → `extracts/powerschool/` special case and
+_kipptaf-level `stg_*` union views_ before adding either.
 
 ### Retiring a crosswalk or lookup as redundant
 
 Check the join TYPE per consumer first. An INNER join makes the table a
 membership filter — often gating an outbound feed — not a lookup, and its row
 set may encode no derivable rule. Likewise count the rows any replacement
-`coalesce` fallback actually fires on: one written to preserve a single row
-fired on 251.
+`coalesce` fallback actually fires on, not the rows it was written for.
 
 ### Retiring a model is always a disable, never a delete
 
@@ -198,9 +196,9 @@ Set `config: enabled: false` in the properties yml and leave the `.sql` and the
 prod relation in place. Applies even when the model has no exposure and zero
 remaining `ref()`s — a consumer nobody knew about then degrades to frozen data
 instead of vanishing. Do not propose deletion as the tidier option, and do not
-issue a `drop view` for the orphaned relation. Disabling a model does NOT
-disable its tests (see _Test config defaults_ in `.claude/rules/dbt-yaml.md`) —
-add `enabled: false` to each of those too.
+issue a `drop view` for the orphaned relation. Disabling a model leaves singular
+tests that ref it and `relationships` tests pointing at it enabled (see _Test
+config defaults_ in `.claude/rules/dbt-yaml.md`); disable or remove those too.
 
 Exception, decided on #5162: a kipptaf `select *` union passthrough over
 district sources with no remaining `ref()` is deleted outright, source entries
@@ -215,9 +213,9 @@ actually disappeared. `dbt parse` on main and on the branch, then diff the
 unintended was dropped.
 
 Parse BOTH sides with `--no-partial-parse` — partial parse caches node
-enable/disable state and under-reports (767 vs 772 tests this session). Re-parse
-main fresh too: the main checkout's manifest is a stale artifact that reports
-since-deleted models as REMOVED and since-added ones as ADDED.
+enable/disable state and under-reports. Re-parse main fresh too: the main
+checkout's manifest is a stale artifact that reports since-deleted models as
+REMOVED and since-added ones as ADDED.
 
 ### Flattened child-array model naming
 

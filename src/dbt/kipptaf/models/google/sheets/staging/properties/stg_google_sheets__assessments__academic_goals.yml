@@ -4,9 +4,12 @@ models:
       Assessment goal targets from the academic goals Google Sheet, at grade,
       school, region, network, grade-band, and assessment-band levels. One row
       per sheet row. The intended key (year, school, grade, state assessment
-      code, subject) is tested at warn severity, because the sheet is
-      hand-entered and can carry duplicate rows; downstream,
-      `dim_assessment_goals` keeps the higher school goal when it does.
+      code, subject) is tested because the sheet is hand-entered and can carry
+      duplicate rows. To fix a duplicate, remove the extra goal row for that
+      academic year, school, grade, state assessment code and subject on the
+      academic goals sheet. Downstream, `dim_assessment_goals` keeps the higher
+      school goal, but `int_assessments__academic_goals` does not dedupe, so the
+      Tableau extracts built on it (the DDI dashboard among them) fan out.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -50,3 +53,9 @@ models:
       - name: Assessment_Band_Goal
         data_type: float64
         description: Assessment-band goal.
+      - name: Region_Grade_Goal
+        data_type: float64
+        description: >-
+          Region-level goal for this one grade, set only where it differs from
+          the grade-band goal (for example a city grade 3 goal inside a grades
+          3-8 band); null otherwise.

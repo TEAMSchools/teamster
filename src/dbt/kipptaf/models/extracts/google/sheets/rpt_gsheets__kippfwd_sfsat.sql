@@ -42,6 +42,8 @@ with
             on b.powerschool_student_number = e.student_number
             and e.rn_year = 1
             and e.rn_undergrad = 1
+            -- TODO(#5181): Miami stays out until KIPP Forward reviews this feed for it.
+            and e.region != 'Miami'
         where sf.`date` is null and e.salesforce_id is not null
     )
 

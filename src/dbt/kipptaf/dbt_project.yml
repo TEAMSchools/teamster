@@ -23,6 +23,22 @@ data_tests:
   +severity: warn
   +store_failures: true
   +store_failures_as: view
+  kipptaf:
+    marts:
+      bridges:
+        +severity: error
+      facts:
+        +severity: error
+      dimensions:
+        +severity: error
+    extracts:
+      +severity: error
+    # tests declared on a sheet model run only in the google_sheet asset set,
+    # where their checks attach (selectors.yml)
+    google:
+      sheets:
+        staging:
+          +tags: google_sheet
 
 vars:
   local_timezone: America/New_York
@@ -80,6 +96,12 @@ models:
         +enabled: false
     assessments:
       +schema: assessments
+    branchingminds:
+      +schema: branchingminds
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     cambium:
       +schema: cambium
     collegeboard:

@@ -1,0 +1,73 @@
+models:
+  - name: stg_branchingminds__current_student_tier_levels
+    description:
+      Each student's current tier level per subject in Branching Minds, from the
+      nightly current tier levels export. The file is a current-state snapshot,
+      so each fiscal-year partition is a different snapshot and
+      source_fiscal_year is part of the grain; past years hold their final
+      pre-rollover copy. BrM's student demographics are dropped; join to our
+      student models on student_number instead.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - tier_update_id
+              - source_fiscal_year
+          config:
+            severity: error
+    columns:
+      - name: tier_update_id
+        data_type: int64
+        description: BrM ID of the tier update that set the current tier.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: student_number
+        data_type: int64
+        description: Student number from BrM's local student ID.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_powerschool__students")
+                field: student_number
+              config:
+                severity: warn
+                description:
+                  A BrM student whose local ID matches no PowerSchool
+                  student_number. Fix the student's local ID in Branching Minds.
+      - name: source_fiscal_year
+        data_type: int64
+        description:
+          Fiscal year (ending year) of the export partition, which is the
+          snapshot this row belongs to.
+      - name: subject_area
+        data_type: string
+        description: Subject area the tier applies to.
+      - name: tier_level
+        data_type: int64
+        description: Current tier level.
+      - name: tier_update_date
+        data_type: date
+        description: Date the current tier was set.
+      - name: last_evaluation_date
+        data_type: date
+        description: Date the student's tier was last evaluated.
+      - name: tier_update_method
+        data_type: string
+        description: How the tier was set, as BrM labels it.
+      - name: tier_change_reason
+        data_type: string
+        description: Reason given for the tier change.
+      - name: tier_change_reason_notes
+        data_type: string
+        description: Free-text notes on the tier change.
+      - name: district
+        data_type: string
+        description: BrM district code.
+      - name: school_id
+        data_type: int64
+        description: BrM school ID.

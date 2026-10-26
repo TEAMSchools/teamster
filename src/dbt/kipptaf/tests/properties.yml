@@ -1,4 +1,20 @@
 data_tests:
+  - name: test_illuminate_assessment_split_standard
+    description: >-
+      Illuminate keeps some standards, such as Common Core, in more than one
+      standards set. Lists current-year assessments that align items to one
+      standard (same code and description) through records in more than one set,
+      which splits that standard's scores across records.
+      int_assessments__standard_rollup merges the split, so reports stay right.
+      Fix it in Illuminate by realigning the assessment's items to one set's
+      record.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_illuminate__dna_assessments__assessment_standards
+
   - name: rpt_gsheets__dibels_bm_goals_calculations__region_counts_school_invariant
     description: >-
       The n_admin_season_region_gl_* columns are region-wide figures carried on
@@ -43,6 +59,8 @@ data_tests:
       score type's grade rows, or a per-grade goal that disagrees where no over
       time goal exists to override it.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -69,23 +87,6 @@ data_tests:
           ref:
             name: int_google_sheets__kippfwd__goals_unpivot
 
-  - name: test_kippfwd_miami_roster_current_year_not_empty
-    description: >-
-      rpt_gsheets__kippfwd_miami_roster must hold at least one row for
-      var("current_academic_year"). This is the exact regression this model
-      shipped once already -- the prior version verified only the prior academic
-      year and silently produced zero current-year rows after the July rollover,
-      because Miami PowerSchool holds no current-year data and the model still
-      read PowerSchool-anchored joins for its year filter. Fails loudly if the
-      current year ever again comes back empty, instead of only being caught by
-      manual spot-checking.
-    config:
-      severity: error
-      meta:
-        dagster:
-          ref:
-            name: rpt_gsheets__kippfwd_miami_roster
-
   - name: test_int_finalsite__status_order_matches_crosswalk_ranking
     description: >-
       detailed_status_ranking (stg_google_sheets__finalsite__status_crosswalk,
@@ -101,11 +102,13 @@ data_tests:
       in one but missing from the other, scoped to the current Finalsite
       academic year.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
           ref:
-            name: int_finalsite__status_report_unpivot
+            name: stg_google_sheets__finalsite__status_crosswalk
 
   - name: test_int_tableau__fresh_goals_scaffold_region_matches_scaffold
     description: >-
@@ -123,10 +126,12 @@ data_tests:
       the same school/grade -- that row is being silently dropped from
       int_tableau__fresh_goals_scaffold's inner join.
     config:
+      tags:
+        - google_sheet
       meta:
         dagster:
           ref:
-            name: int_tableau__fresh_goals_scaffold
+            name: stg_google_sheets__finalsite__goals
 
   - name: test_stg_google_sheets__finalsite__status_crosswalk_single_year
     description: >-
@@ -139,6 +144,8 @@ data_tests:
       or double-count rows with no error. This test fails loudly on that
       condition instead.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -171,6 +178,7 @@ data_tests:
       resolver). Guards the primary-exclusivity invariant that resolver's grain
       depends on.
     config:
+      severity: error
       meta:
         dagster:
           ref:
@@ -184,13 +192,8 @@ data_tests:
       simultaneously-active classifications for the same student in the same
       source — most often caused by EdPlan emitting two snapshot rows with
       overlapping date ranges and different `spedlep` values.
-
-      TODO(#4801): downgraded to warn for one bad Focus record — enrollment
-      771691 carries an end date two years past its school year, so it contains
-      two of the same student's other AY2021 stints. Restore severity: error
-      once Ops corrects it.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -216,12 +219,8 @@ data_tests:
       not overlap. The NJ leg trims each Titan annual window's end to
       day-before-next-row's-start so academic-year boundary overlaps don't
       surface in the dim.
-
-      TODO(#4801): downgraded to warn for the same bad Focus record as the IEP
-      span test — enrollment 771691. Restore severity: error once Ops corrects
-      it.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -285,6 +284,8 @@ data_tests:
       a canonical row, so a master row without aliases is unreachable from most
       upstream lookups).
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -292,20 +293,52 @@ data_tests:
             name: stg_google_sheets__people__locations
 
   - name: test_sf_contact_note_duplicate
+    description: >-
+      Salesforce Contact Notes entered more than once for the same student, from
+      AY2025 on, for students with no outside advising provider. Two notes are
+      duplicates when contact, subject, comments, next steps, date, status and
+      type all match; whitespace differences in the text are ignored. Notes with
+      blank comments are skipped, because two blank call logs on one day can be
+      two real calls. Each row is an extra copy, and the copy with the lowest
+      note name is kept. KIPP Forward deletes each listed note in Salesforce.
     config:
       meta:
         dagster:
           ref:
             name: stg_kippadb__contact_note
 
+  - name: int_assessments__assessments_members__no_cross_source_canonical
+    description: >-
+      Asserts that every assessment's canonical pick comes from its own source.
+      Illuminate and Apex assessment ids share one integer space, so a canonical
+      group keyed on id alone could merge an Apex assessment into an Illuminate
+      one. Returns members whose (source, canonical_assessment_id) matches no
+      member's (source, assessment_id).
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_assessments__assessments_members
+
+  - name: int_assessments__scaffold__replacement_region_untagged
+    description: >-
+      Returns students on a replacement curriculum who took an Illuminate
+      assessment that is not tagged for their region. Fix each row in one of two
+      ways. If the region should give this assessment, add the region to the
+      assessment's regions_assessed in the AppSheet Illuminate assessments
+      extension. If the student should not have taken it, remove the student's
+      assessment in Illuminate. Until then,
+      bridge_assessment_expectations_student_scoped leaves the row out, because
+      dim_assessment_administrations has no administration for that region.
+
   - name: int_assessments__resolved_section_enrollments__unique_per_score
     description: >-
       Asserts that int_assessments__resolved_section_enrollments contains one
       row per score. The score grain spans all three source branches (internal,
-      state_nj, state_fl): (powerschool_student_number, _dbt_source_project,
-      source_type, canonical_assessment_id, academic_year,
-      administration_period, subject_area). NULL-safe via format("%T|...") so
-      NULL canonical_assessment_id on state rows and NULL
+      state_nj, state_fl): (student_number, _dbt_source_project, source_type,
+      source, canonical_assessment_id, academic_year, administration_period,
+      subject_area). NULL-safe via format("%T|...") so NULL
+      canonical_assessment_id on state rows and NULL
       academic_year/administration_period on internal rows do not collapse the
       distinct count.
     config:
@@ -323,6 +356,7 @@ data_tests:
       quarters that do not cover the row's own date, which is the #4484 defect.
       Failure rows name the score, its date, and the quarter it landed in.
     config:
+      severity: error
       meta:
         dagster:
           ref:
@@ -341,7 +375,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: int_collegeboard__ap_unpivot
+            name: stg_collegeboard__ap
 
   - name: rpt_focus__demographics__language_crosswalk_resolves
     description: >-
@@ -373,10 +407,11 @@ data_tests:
       made the test's join, date predicate and drop filter null-safe; earlier
       baselines predate all three and are not comparable.
     config:
+      severity: warn
       meta:
         dagster:
           ref:
-            name: dim_student_section_enrollments
+            name: int_students__course_enrollments
 
   - name: test_miami_section_enrollment_orphan_rate
     description: >-
@@ -404,20 +439,19 @@ data_tests:
     description: >-
       Warns if Miami's current-year `is_dropped_section` rate leaves the band
       the inference was validated against, or if the flag goes null again. Focus
-      has no drop convention, so the Miami value is inferred (#4968): the
-      schedule row's end_date falls before its marking period ends, and the
-      student still holds an open schedule row that year. The second half
-      excludes a withdrawal sweep. Both halves are assumptions about Focus
+      has no drop convention, so the Miami value is the Focus schedule
+      `is_dropped` inference: the seat closed before its marking period ends and
+      not with a withdrawal. A seat that closes on or after the end of an
+      enrollment stint at that school, before any re-enrollment there, is
+      treated as part of the withdrawal. Both halves are assumptions about Focus
       behavior, and this test is what notices when either stops holding -- a
-      bulk close of schedule rows, or a change that breaks the sweep exclusion,
-      would show up as a rate spike. Shipped at 2.97% (576 of 19,363 AY2026
-      rows) against a like-for-like NJ band of 0.23% to 8.55% at the same point
-      in the year. The 20% ceiling sits above every NJ completed-year rate
-      (17.35% Camden AY2025 is the highest measured), so it does not fire when
-      Miami's own year finishes accumulating. The null check is the other
-      direction: a regression in the Focus branch would restore the nulls this
-      replaced, and a null flag silently removes Miami from every report using
-      the bare `not is_dropped_section` idiom (#4996).
+      bulk close of schedule rows, or seats closed before the enrollment end is
+      set, would show up as a rate spike. The 20% ceiling sits above every NJ
+      completed-year rate, so it does not fire when Miami's own year finishes
+      accumulating. The null check is the other direction: a regression in the
+      Focus branch would restore the nulls this replaced, and a null flag
+      silently removes Miami from every report using the bare `not
+      is_dropped_section` idiom (#4996).
     config:
       severity: warn
       meta:
@@ -461,6 +495,24 @@ data_tests:
           ref:
             name: int_students__course_enrollments
 
+  - name: int_students__final_grades__enrollment_covers_term
+    description: >-
+      Warns when a graded term grade attaches to a course enrollment whose dates
+      do not overlap the grade's term. Each grade joins one enrollment through
+      cc_dcid; for Focus that is the stint int_focus__schedule kept for the
+      student and course period, so a wrong pick there surfaces here. Blank
+      placeholder rows (no letter or percent grade) are skipped, since
+      PowerSchool writes them for terms the student never reached. exit_date is
+      the first day not enrolled in both SIS, so an enrollment that exits on the
+      term's first day misses it. Any returned row is a failure. Check the
+      student's schedule in the SIS; a re-add in the wrong course period or a
+      backdated drop is the usual cause.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_students__final_grades
+
   - name: test_focus_course_sections_teacher_resolves
     description: >-
       Warns on Focus course periods whose lead teacher does not resolve through
@@ -498,6 +550,8 @@ data_tests:
       that lands on a real but inactive address, and any future spine change
       that drops a population the sheet still writes against.
     config:
+      tags:
+        - google_sheet
       severity: warn
       meta:
         dagster:
@@ -515,6 +569,8 @@ data_tests:
       a strict permissiveness order). Fails loudly on that condition instead of
       dim_staff_cube_access silently picking one via an aggregate.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -527,6 +583,7 @@ data_tests:
       means the latest-graded-year CTE fanned out; zero means no year has posted
       Y1 grades, which would leave the dashboard with no default year.
     config:
+      severity: error
       meta:
         dagster:
           ref:
@@ -557,6 +614,8 @@ data_tests:
       NOT caught here — grade 12 has no Y1 GPA goal by design, and detecting
       that case would need the intent recorded in the sheet.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -580,6 +639,8 @@ data_tests:
       aggregation_hash alone is not unique across years and metrics, so the
       check needs the full three-column key.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -724,16 +785,27 @@ data_tests:
           ref:
             name: rpt_parentsquare__students
 
+  - name: int_surveys__survey_submissions__windowed_survey_has_term
+    description: >-
+      Catches a submission to a survey that has SURVEY windows on the reporting
+      terms Google Sheet but falls outside every window for its title, so it has
+      no academic year or term code. Fix by adding or extending that survey's
+      window on the reporting terms sheet, or accept the submission as late. A
+      title with no SURVEY window at all is not checked.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_surveys__survey_submissions
+
   - name: int_students__calendar_day__zero_enrollment_in_session_days
     description: >-
-      Focus in-session days at a school that enrolled nobody that year. Five
-      Focus schools carry unfiltered 212-day calendars including holidays and
-      breaks; two of them are closed but still map to live network location
-      keys, so their days reach dim_school_calendars. The fix belongs in Focus
-      configuration, so this warns rather than errors -- it makes the rows
-      visible without hiding them.
+      Catches Focus in-session calendar days at a school that enrolled nobody
+      that school year, usually a closed school or an unfiltered calendar that
+      still counts holidays and breaks. When the school still maps to a live
+      network location, its days reach dim_school_calendars. Fix the school's
+      calendar, or retire the closed school, in Focus.
     config:
-      severity: warn
       meta:
         dagster:
           ref:
@@ -750,6 +822,8 @@ data_tests:
       the lowered value, which is the grain the join actually uses, and so
       subsumes the raw unique test rather than sitting alongside it.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -780,6 +854,8 @@ data_tests:
       leaking, so this warns rather than errors -- it surfaces the abbreviations
       Ops still needs to map without blocking a build.
     config:
+      tags:
+        - google_sheet
       severity: warn
       meta:
         dagster:
@@ -794,6 +870,8 @@ data_tests:
       scope its population, so a school goal without a network parent would drop
       those students with no error.
     config:
+      tags:
+        - google_sheet
       severity: error
       meta:
         dagster:
@@ -820,62 +898,6 @@ data_tests:
         dagster:
           ref:
             name: rpt_tableau__gpa_goal_progress
-
-  - name: stg_cambium__njgpa__not_empty
-    description: >-
-      stg_cambium__njgpa must never build empty. If Cambium drops or renames a
-      column the model depends on -- Summative Flag, say -- that column reads
-      entirely NULL, the district staging filter (where summative_flag = 'Y' and
-      test_attemptedness_flag = 'Y') returns zero rows, and unique / not_null
-      pass vacuously over an empty relation. The Avro schema check cannot catch
-      it either: it compares record fields against schema fields and warns only
-      on extras, so a removed column produces no signal and fastavro writes
-      null. Without this test NJGPA disappears from every downstream model with
-      every other test still green. Declared here in kipptaf rather than in the
-      cambium package because both district projects set an unscoped
-      `data_tests: +severity: warn`, which overrides installed-package test
-      config -- an `error` declared in the package silently resolves to `warn`,
-      leaving this guard non-blocking. kipptaf's root-project tests do hold
-      `error`.
-    config:
-      severity: error
-      meta:
-        dagster:
-          ref:
-            name: stg_cambium__njgpa
-
-  - name: stg_cambium__njsla__not_empty
-    description: >-
-      stg_cambium__njsla must never build empty, for the same reason as its
-      NJGPA sibling above -- a dropped or renamed Cambium column reads entirely
-      NULL, the district staging filter returns zero rows, and every unique /
-      not_null test passes vacuously over an empty relation. NJSLA carries the
-      additional risk that Science, ELA and Mathematics all arrive in the one
-      file, so a single silent column change removes three assessments at once.
-      Declared here in kipptaf rather than in the cambium package because the
-      district projects' unscoped `data_tests: +severity: warn` overrides
-      installed-package test config.
-    config:
-      severity: error
-      meta:
-        dagster:
-          ref:
-            name: stg_cambium__njsla
-
-  - name: stg_cambium__eoc__not_empty
-    description: >-
-      stg_cambium__eoc must never build empty, for the same reason as its NJGPA
-      and NJSLA siblings above -- a dropped or renamed Cambium column reads
-      entirely NULL, the district staging filter returns zero rows, and every
-      unique / not_null test passes vacuously over an empty relation, removing
-      Algebra I, Algebra II and Geometry at once. Declared here in kipptaf for
-      the same severity reason.
-    config:
-      severity: error
-      meta:
-        dagster:
-          ref:
-            name: stg_cambium__eoc
 
   - name: int_students__graduation_path_codes__cutoff_within_score_scale
     description: >-
@@ -938,44 +960,45 @@ data_tests:
       Every student who sat the NJGPA needs a cut score row that accepts their
       score. This finds students the model records as having attempted the
       assessment for a discipline but whose NJGPA rows all carry a null scale
-      score, meaning no cut score row matched on their cohort, score type and
-      assessment version. Those students fall through to a final_grad_path_code
-      of R, which is indistinguishable from genuinely meeting no pathway. DLM,
-      portfolio, no-pathway and incomplete-credit students are excluded because
-      they are coded straight from PowerSchool and never reach the cut score
-      join at all. NJDOE publishes cut scores per graduating class only after
-      the administration is scored, and a retained or accelerated student can
-      sit a version their own cohort has no row for, so warn rather than error
-      -- the value is the named list of who is unscoreable, not a blocked build.
+      score, meaning their cohort has NJGPA cut score rows but none matched on
+      score type and assessment version -- typically a retained or accelerated
+      student who sat a version their cohort has no row for. Those students fall
+      through to a final_grad_path_code of R, which is indistinguishable from
+      genuinely meeting no pathway. Students whose cohort has no NJGPA cut score
+      rows at all are left out, because NJDOE publishes cut scores per
+      graduating class only after the administration is scored and the model
+      already labels them Pending Cut Score. DLM, portfolio, no-pathway and
+      incomplete-credit students are excluded because they are coded straight
+      from PowerSchool and never reach the cut score join at all. To fix a row,
+      add the missing cohort, score type and assessment version to the
+      graduation cut score Google Sheet. Warn rather than error -- the value is
+      the named list of who is unscoreable, not a blocked build.
     config:
       severity: warn
       meta:
         dagster:
           ref:
-            name: stg_google_sheets__student_graduation_path_cutoffs
+            name: int_students__graduation_path_codes
 
-  - name: int_students__student_enrollments__cohort_not_ahead_of_entry
+  - name: int_extracts__student_enrollments__miami_cohort_not_ahead_of_entry
     description: >-
-      A high school student should never be ahead of the cohort they entered
-      with. For grade 9 and up, cohort freezes at the student's first year in
-      the school, which is correct for New Jersey's 4-year adjusted cohort
-      graduation rate. Falling behind that cohort is ordinary retention and is
-      not a defect, so only the other direction is tested -- a student whose
-      grade level implies an earlier graduating class than their recorded
-      cohort. Three causes produce that shape. A skipped grade and a missing
-      enrollment year are records problems, corrected in PowerSchool. Summer
-      credit recovery is not -- a student can advance a grade over the summer
-      with no enrollment row to show for it, because
-      int_powerschool__student_enrollment_union filters out the summer school,
-      so the records are already right. Warn rather than error, because no
-      result here is fixed by a code change, and because the cut score join no
-      longer depends on the two agreeing.
+      Miami's copy of the powerschool package test
+      base_powerschool__student_enrollments__cohort_not_ahead_of_entry, which
+      covers the New Jersey regions. Miami's enrollments come from Focus, and
+      kipptaf derives their cohort the same way, frozen at the student's first
+      year in the school for grade 9 and up. A current high school student whose
+      grade level implies an earlier graduating class (`cohort_primary`) than
+      their recorded cohort has skipped a grade or is missing an enrollment
+      year, both corrected in Focus. Falling behind the cohort is ordinary
+      retention and is not tested. Anchored on this table rather than on
+      int_students__student_enrollments, a view whose tests rerun only when its
+      code changes. Warn, because no result here is fixed by a code change.
     config:
       severity: warn
       meta:
         dagster:
           ref:
-            name: int_students__student_enrollments
+            name: int_extracts__student_enrollments
 
   - name: test_state_assessment_joins_resolve_miami
     description: >-
@@ -1014,7 +1037,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: rpt_schoolmint_grow__users
+            name: stg_schoolmint_grow__schools
 
   - name: stg_google_sheets__assessments__vendor_subject_crosswalk__covers_all_sources
     description: >-
@@ -1023,6 +1046,8 @@ data_tests:
       because an unmapped subject falls back to its raw value rather than
       dropping the row.
     config:
+      tags:
+        - google_sheet
       meta:
         dagster:
           ref:
@@ -1044,20 +1069,16 @@ data_tests:
       changed identically and wrongly would still pass. Do not cite it as proof
       of more than it covers.
 
-      The shape it does rule out is the one that slipped through: a check that
-      re-applies the extract's own string-matching CASE compares the expression
-      to itself and passes whatever it does. That is not hypothetical -- the
-      column shipped with the Aimline half matching on a `like 'Met%'` prefix,
-      which 'Meeting Aimline' does not satisfy, so all 13,886 met-aimline rows
-      on AY2025 rendered as `?` instead of `A` and a self-referential check
-      reported zero mismatches. This test reproduces that failure at 13,886
-      rows.
+      The shape it does rule out is a check that re-applies the extract's own
+      string-matching CASE, which compares the expression to itself and passes
+      whatever it does. A prefix match such as like 'Met%' misses 'Meeting
+      Aimline' and renders a met-aimline round as ? instead of A; this test
+      fails on that.
 
-      Warn rather than error because a mismatch makes the string misleading
-      rather than the extract unbuildable, and because the fix is a reporting
-      correction that wants triage rather than a blocked deploy.
+      A mismatch makes the string misleading; a passing build promises it is
+      not.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -1074,20 +1095,13 @@ data_tests:
       expected, including ones the student did not sit. A plain coalesce(pm.x,
       'Not Tested') puts the real round verdict on the sat rows and Not Tested
       on the rest, so a partially-tested student lands in two buckets at once
-      and a percent-of-total distribution sums past 100.
+      and a percent-of-total distribution sums past 100. The students at risk
+      are the Round Incomplete population.
 
-      Measured before the fix on AY2025 BOY->MOY R3, aimline, currently
-      enrolled: 397 of 3,338 students split on pm_round_status,
-      round_benchmark_status and round_trajectory_status -- exactly the Round
-      Incomplete population, none anywhere else. The first aimline Region
-      Overview build showed category shares summing to 114% because of it, with
-      no error and plausible-looking bars.
-
-      Warn rather than error because a split makes a distribution misleading
-      rather than the extract unbuildable, and triage wants the extract
-      readable.
+      A split makes a distribution misleading; a passing build promises it is
+      not.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -1098,9 +1112,7 @@ data_tests:
       under it or none of them. The two multi-standard codes come off a single
       probe administration -- NWF-CLS and NWF-WRC are two scores from one NWF
       sitting, ORF and ORF-Accu from one passage -- so a partial code group is
-      not a thing the assessment can produce. Measured on AY2025: 0 partial
-      groups on Internal, 0 on Aimline, against 12,466 and 10,568 fully-scored
-      ones.
+      not a thing the assessment can produce.
 
       met_measure_name_code_goal depends on that. It rolls the standard-level
       verdicts up with an avg() over the code partition, and the rollup reads
@@ -1109,12 +1121,10 @@ data_tests:
       the whole measure's -- so a student who sat Decoding, met it, and never
       sat Letter Sounds would read as having met NWF. Wrong, and silent.
 
-      Warn rather than error because the condition is a source-behaviour change,
-      not a build failure, and the extract is still usable while it is triaged.
       What to do when it fires is in the dibels-dashboard skill,
       references/model-architecture.md.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
@@ -1166,3 +1176,50 @@ data_tests:
         dagster:
           ref:
             name: stg_adp_workforce_now__workers
+
+  - name: int_iready__diagnostic_results__one_region_per_student_year
+    description: >-
+      Each student's i-Ready Diagnostics for one subject and academic year must
+      all resolve to one region. The package computes the most_recent_* columns
+      and rn_subj_year per student, subject and year without a region, because
+      the NJ i-Ready table holds Newark, Camden and Paterson together and the
+      region is only known once kipptaf maps each school through the location
+      crosswalk. A student tested under two regions in one year would get the
+      other region's latest values and lose rn_subj_year = 1 in one region, so
+      region-scoped reports would drop them without an error.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_iready__diagnostic_results
+
+  - name: stg_google_sheets__ignite__treatment_sections__resolved_rows_match_a_section
+    description: >-
+      Every resolved row on the Ignite treatment sections sheet must name a real
+      PowerSchool section (school, academic year, course number and section
+      number). int_ignite__treatment_assignment inner-joins these rows to
+      sections, so a row that names no section silently drops its treated
+      students rather than raising an error.
+    config:
+      tags:
+        - google_sheet
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__ignite__treatment_sections
+
+  - name: test_kippfwd_goals_resolve_to_scaffold
+    description: >-
+      Every KIPP Forward goal must have a scaffold row for its academic year,
+      test type and score type. Both branches of
+      int_google_sheets__kippfwd__goals_unpivot are driven from the scaffold, so
+      a goal with no scaffold row is dropped entirely rather than reported with
+      a null threshold.
+    config:
+      tags:
+        - google_sheet
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kippfwd__goals

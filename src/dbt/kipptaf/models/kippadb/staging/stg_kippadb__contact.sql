@@ -1,3 +1,15 @@
+with
+    source as (
+        select
+            *,
+
+            safe_cast(school_specific_id__c as int) as school_specific_id_int,
+
+            if(kipp_region_name__c = 'KIPP Miami', 'kippmiami', null) as region_project,
+        from {{ source("kippadb", "contact") }}
+        where not isdeleted
+    )
+
 select
     id,
     ownerid as owner_id,
@@ -56,7 +68,6 @@ select
     middle_skilling_trade_military_interest__c as cte_military_interest,
 
     safe_cast(kipp_hs_class__c as int) as kipp_hs_class,
-    safe_cast(school_specific_id__c as int) as school_specific_id,
 
     mailingstreet
     || ' '
@@ -80,5 +91,6 @@ select
         + 1
     ) as graduation_year,
 
-from {{ source("kippadb", "contact") }}
-where not isdeleted
+    {{ focus_student_number("school_specific_id_int", none, "region_project") }}
+    as school_specific_id,
+from source

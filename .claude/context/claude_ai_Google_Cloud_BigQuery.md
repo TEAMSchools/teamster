@@ -10,12 +10,15 @@ Three identities reach BigQuery here, and they differ in what they can read:
   reads everything that user can, PII included. Default for warehouse
   inspection. Cannot read GOOGLE_SHEETS external tables.
 - **ADC from Python** — carries Drive scope and does not expire. The only client
-  that reads a sheet-backed external live.
+  that reads a sheet-backed external live, and the client for shell contexts
+  such as Monitor poll loops: a Monitor script cannot call an MCP tool, and a
+  loop on `bq` dies when its creds expire. Put the query in a scratchpad script
+  and run it with `uv run python <script.py>` each iteration.
 - **`bq` CLI** — gcloud USER creds that expire mid-session: SELECTs that worked
   early fail later with "Reauthentication failed" or "You do not currently have
   an active account selected" (non-interactive can't `gcloud auth login`); both
   mean expiry, not a missing grant. Switch to the MCP or ADC rather than
-  retrying. For shell contexts (Monitor poll loops) and CSV dumps only.
+  retrying. For one-off CSV dumps only.
 
 ## MCP tools
 
@@ -23,13 +26,11 @@ Three identities reach BigQuery here, and they differ in what they can read:
   `permissions.deny`. The read-only tool is enforced by Google's server, not a
   local hook: a non-SELECT fails with
   `MCP execute_sql_readonly tool allows only SELECT statements.` before BigQuery
-  resolves any table (verified 2026-09-25 with an `INSERT` into a nonexistent
-  table). Warehouse DML/DDL still goes to the user's terminal.
-- **Results are capped at 3,000 rows, silently.** A 3,500-row query returned
-  exactly 3,000 rows with no `totalRows`, `pageToken`, or marker (verified
-  2026-09-25). Never read a 3,000-row result as complete: page on with
-  `get_query_results` passing the returned `jobId`, `location: "US"`, and
-  `startIndex: "3000"`.
+  resolves any table. Warehouse DML/DDL still goes to the user's terminal.
+- **Results are capped at 3,000 rows, silently.** A larger result returns
+  exactly 3,000 rows with no `totalRows`, `pageToken`, or marker. Never read a
+  3,000-row result as complete: page on with `get_query_results` passing the
+  returned `jobId`, `location: "US"`, and `startIndex: "3000"`.
 - A query past the ~20s synchronous wait returns `jobComplete: false` with a
   `jobId`. Poll `get_query_results` until `jobComplete: true`, or `cancel_job`.
   Google's docs cap a query at three minutes.
@@ -41,9 +42,7 @@ Three identities reach BigQuery here, and they differ in what they can read:
   from the user's own in `JOBS_BY_PROJECT`.
 
 The MCP cannot read GOOGLE_SHEETS external tables:
-`Access Denied: BigQuery BigQuery: Permission denied while getting Drive credentials`
-(verified 2026-09-25 against
-`kipptaf_google_sheets.src_google_sheets__state_test_comparison_demographics`).
+`Access Denied: BigQuery BigQuery: Permission denied while getting Drive credentials`.
 Its OAuth token carries the `bigquery` scope only, and sharing the file does not
 change that. ADC does have Drive scope, so query the external directly from a
 Python client instead — no dbt build, no `stage_external_sources`, and it reads
@@ -60,7 +59,7 @@ rows = client.query("select ... from `teamster-332318`.<dataset>.<src_table>")
 Build into a dev/staging table only when something downstream must read it, not
 to look at rows.
 
-`bq` CLI fallback for shell contexts (Monitor poll loops): binary at
+`bq` CLI for one-off CSV dumps: binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
 SELECT-only constraints apply. `bq query` with the SQL passed as a positional
 arg crashes its flag parser when the query text starts with a `--` comment
@@ -68,9 +67,10 @@ arg crashes its flag parser when the query text starts with a `--` comment
 separator does NOT help. Start the query with `WITH`/`SELECT` (strip leading
 comment lines). Pass backtick/quote-heavy SQL via `"$(cat file.sql)"` to dodge
 shell-quoting. `--max_rows` defaults to 100 — raise it for full dumps. To hand
-PII to Ops, redirect to a local `.claude/scratch/*.csv`
-(`bq query --format=csv ... > file`; the `>` keeps PII out of the tool result),
-verify with `wc -l`, and reference the FILE (never the values) in any tracker.
+PII to Ops, redirect to a CSV in the session scratchpad (absolute path in the
+system prompt; `bq query --format=csv ... > file`; the `>` keeps PII out of the
+tool result), verify with `wc -l`, and reference the FILE (never the values) in
+any tracker.
 
 ## Metadata and staleness
 

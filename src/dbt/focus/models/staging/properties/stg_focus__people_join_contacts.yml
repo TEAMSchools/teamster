@@ -69,10 +69,11 @@ models:
         data_type: boolean
       - name: phone_type
         description: >-
-          Inferred phone type (mobile / home / work / daytime), mapped from
-          title by regex to the vocabulary shared with the Finalsite contacts
-          intermediate. Focus titles are free-typed and Focus publishes no type
-          vocabulary, so this mapping is inferred and guarded by the
+          Inferred phone type (mobile / home / work / daytime / alternate),
+          mapped from title by regex. The first four are the vocabulary shared
+          with the Finalsite contacts intermediate; alternate is Focus-only.
+          Focus titles are free-typed and Focus publishes no type vocabulary, so
+          this mapping is inferred and guarded by the
           focus_unmapped_phone_contact_titles test. Null when title matches no
           phone-type pattern.
         data_type: string

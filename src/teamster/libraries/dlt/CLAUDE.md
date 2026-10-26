@@ -36,9 +36,10 @@ PyArrow backend. Probe-gated, same style as `powerschool/`.
   param for it: no caller passes one, so there is no precedence to resolve.
 - Tiering (04:00 schedule vs intraday sensor): see `focus/CLAUDE.md` → _Probe
   gating_.
-- `cursor_column` is `updated_at` for every Focus table except `co_teachers`,
-  which is count-only. A new table must declare one in `config/focus.yaml`; the
-  code location reads `a["cursor_column"]`, so omitting it fails at module load.
+- `cursor_column` is `updated_at` for every Focus table except the count-only
+  ones, which declare `null`. A new table must declare one in
+  `config/focus.yaml`; the code location reads `a["cursor_column"]`, so omitting
+  it fails at module load.
 
 ### `salesforce/`
 
@@ -112,6 +113,13 @@ library keeps its OWN sensor — powerschool needs an SSH tunnel plus an Oracle
 resource, focus a plain Postgres URL. Do not merge them into a generic sensor
 factory; `illuminate/` (#4446) is the third intended consumer of the helpers,
 not of a shared sensor.
+
+Any dlt call in a code-server process outside a traced pipeline step
+(`sync_destination()`, `resolve_configuration()`) must start with
+`get_resolved_traces().clear()`, as both intraday sensors do. dlt empties that
+per-thread config-trace log only when a traced step ends, and each entry pins
+its pipeline, so a sensor without the clear grows the code server until it is
+OOM-killed.
 
 ### Illuminate: unbounded Postgres `numeric`
 

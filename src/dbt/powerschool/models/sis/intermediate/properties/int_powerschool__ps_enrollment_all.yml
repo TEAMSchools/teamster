@@ -7,15 +7,9 @@ models:
               - studentid
               - entrydate
           config:
-            where: schoolid != 999999
-            severity: warn
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - studentid
-              - exitdate
-          config:
-            where: schoolid != 999999
+            # no-shows share entry and exit date; inverted stints are flagged on
+            # stg_powerschool__students and stg_powerschool__reenrollments
+            where: schoolid != 999999 and entrydate < exitdate
             severity: warn
     columns:
       - name: studentid

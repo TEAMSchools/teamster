@@ -24,6 +24,7 @@ with
             ada.is_iss,
             ada.is_suspended,
             ada.attendance_category,
+            ada.n_absent_running_90,
 
             coalesce(ada.membershipvalue, ed.membershipvalue) as membershipvalue,
         from {{ ref("int_students__enrollment_daily") }} as ed
@@ -62,7 +63,8 @@ with
     --
     -- is_truant is carried rather than summed because it is a status, not an
     -- event: without the carry it would be null on every break day while
-    -- ada_tier beside it resolved.
+    -- ada_tier beside it resolved. The rolling absence count behind the Miami
+    -- truancy rule is carried with it, for the same reason.
     running as (
         select
             *,
@@ -96,6 +98,12 @@ with
                 order by calendardate asc
                 rows between unbounded preceding and current row
             ) as is_truant_carried,
+
+            last_value(n_absent_running_90 ignore nulls) over (
+                partition by student_number, _dbt_source_project, academic_year
+                order by calendardate asc
+                rows between unbounded preceding and current row
+            ) as n_absent_running_90_carried,
         from daily
     ),
 
@@ -167,6 +175,9 @@ select
     -- attendance for cannot support either verdict (#4744), so the two now
     -- resolve over exactly the same rows and one denominator serves both.
     if(n_membership_days_ytd > 0, is_truant_carried, null) as is_truant,
+    if(
+        n_membership_days_ytd > 0, n_absent_running_90_carried, null
+    ) as n_absent_days_rolling_90,
 
     n_membership_days_ytd,
     n_present_days_ytd,
