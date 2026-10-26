@@ -36,6 +36,35 @@ models:
           config:
             severity: error
     columns:
+      - name: contact_first_name
+        description: Contact first name.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              name: int_focus__student_contacts__contact_first_name_not_null
+              description: >-
+                A Focus contact linked to a student has no first name.
+                Downstream, the contact feeds rosters and family messaging with
+                a blank name. Enter the first name on the person record in
+                Focus.
+              config:
+                severity: warn
+      - name: contact_last_name
+        description: Contact last name.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              name: int_focus__student_contacts__contact_last_name_not_null
+              description: >-
+                A Focus contact linked to a student has no last name.
+                Downstream, the contact feeds rosters and family messaging with
+                a blank name. Enter the last name on the person record in Focus.
+              config:
+                severity: warn
       - name: student_id
         description: Focus student id (links to stg_focus__students).
         config:
@@ -77,16 +106,6 @@ models:
             contains_pii: true
       - name: contact_name
         description: Contact full name (first + last).
-        config:
-          meta:
-            contains_pii: true
-      - name: contact_first_name
-        description: Contact first name.
-        config:
-          meta:
-            contains_pii: true
-      - name: contact_last_name
-        description: Contact last name.
         config:
           meta:
             contains_pii: true
