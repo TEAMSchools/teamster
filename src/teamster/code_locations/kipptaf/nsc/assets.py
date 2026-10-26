@@ -8,7 +8,8 @@ student_tracker = build_sftp_folder_asset(
     remote_file_regex=r".+\.csv",
     ssh_resource_key="ssh_couchdrop",
     avro_schema=STUDENT_TRACKER_SCHEMA,
-    slugify_replacements=[["2_year_4_year", "two_year_four_year"]],
+    # slugify matches replacements before it swaps "-" for the "_" separator
+    slugify_replacements=[["2-year-4-year", "two_year_four_year"]],
 )
 
 assets = [
