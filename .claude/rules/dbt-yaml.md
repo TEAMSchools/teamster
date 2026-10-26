@@ -357,6 +357,17 @@ A singular test that reads more than one model needs `meta.dagster.ref` in
 `tests/properties.yml`, or Dagster never sees its result: `build_dbt_assets`
 drops the observation dagster-dbt falls back to.
 
+The ref must name a model the test reads. dagster-dbt builds a check only from a
+test's dbt parents, so a ref to any other model (a downstream view, a sibling)
+silently never becomes a check. To attach a test that reads only a source, add
+`-- depends_on: {{ ref("<model>") }}` to its SQL.
+
+In kipptaf, a singular test whose ref is a `stg_google_sheets__*` model also
+needs `tags: [google_sheet]` in its `config:`. Without the tag it also runs in
+the core dbt run (`src/dbt/kipptaf/selectors.yml`), which has no check for it,
+so an `error` failure there fails the core run with no check to show why.
+Generic tests declared on a sheet model get the tag from `dbt_project.yml`.
+
 dagster-dbt resolves `meta.dagster.ref` via `(name, package, version)`. Omitting
 `package:` defaults to the running project — so a test under
 `src/dbt/<source>/tests/` referencing a model in its own package silently misses

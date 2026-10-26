@@ -42,11 +42,18 @@ dbt side is cleanly named `coupa`.
 Kipptaf splits dbt into **three separate asset groups** with different resource
 requirements and selection criteria:
 
-| Asset variable            | `select`              | `exclude`                              | Notes                                         |
-| ------------------------- | --------------------- | -------------------------------------- | --------------------------------------------- |
-| `core_dbt_assets`         | — (all)               | `source:adp_payroll+ tag:google_sheet` | Main run                                      |
-| `google_sheet_dbt_assets` | `tag:google_sheet`    | —                                      | Separate to isolate brittle gsheet deps       |
-| `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                      | Partitioned by payroll file; cannot be merged |
+| Asset variable            | `select`                   | `exclude`                            | Notes                                         |
+| ------------------------- | -------------------------- | ------------------------------------ | --------------------------------------------- |
+| `core_dbt_assets`         | selector `core_dbt_assets` | (in `src/dbt/kipptaf/selectors.yml`) | Main run                                      |
+| `google_sheet_dbt_assets` | `tag:google_sheet`         | —                                    | Separate to isolate brittle gsheet deps       |
+| `adp_payroll_dbt_assets`  | `source:adp_payroll+`      | —                                    | Partitioned by payroll file; cannot be merged |
+
+The core selector excludes `tag:google_sheet` with
+`indirect_selection: cautious`. A plain `exclude=` uses eager selection, which
+drops every test that reads any sheet model, including tests whose check belongs
+to a core model. Do not move the exclude back into `exclude=`. A test whose
+check belongs to a sheet model carries `tag:google_sheet` so it leaves core
+(`.claude/rules/dbt-yaml.md`).
 
 `core_dbt_assets` is the one used by `TableauServerResource` dependencies
 (imported as `core_dbt_assets` from `kipptaf.dbt.assets`).
