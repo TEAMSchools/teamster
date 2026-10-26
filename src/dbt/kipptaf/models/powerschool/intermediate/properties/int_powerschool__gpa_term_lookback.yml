@@ -2,23 +2,25 @@ models:
   - name: int_powerschool__gpa_term_lookback
     description:
       Point-in-time lookbacks over `snapshot_powerschool__gpa_term` — one row
-      per student-school for the current academic year, carrying the Y1 GPA
-      measures in effect at the end of the day 1, 2, and 4 weeks before the
-      current day (local time). Lookbacks cross terms (the snapshot tracks the
-      current-term row) but never academic years — a boundary that predates the
-      year's first snapshot version returns null. Check-strategy snapshots never
-      close a row when it disappears from the source, so a withdrawn student's
-      lookbacks return last-known values — consumers must scope by enrollment.
-      The failing-count lookbacks are null wherever the version in effect
-      carries no Y1 GPA, because the snapshot writes a zero count for a student
-      with no graded courses, which would otherwise read as failing nothing.
+      per student for the current academic year, carrying the Y1 GPA measures in
+      effect at the end of the day 1, 2, and 4 weeks before the current day
+      (local time). Lookbacks cross terms and school labels (the snapshot tracks
+      the current-term row, filed under the student's current school) but never
+      academic years — a boundary that predates the year's first snapshot
+      version returns null. When two versions overlap a boundary, which happens
+      only for rows written before the snapshot closed stale labels, the newer
+      version wins. The snapshot closes a row once it leaves the source, but a
+      withdrawn student's last version stays current, so consumers must scope by
+      enrollment. The failing-count lookbacks are null wherever the version in
+      effect carries no Y1 GPA, because the snapshot writes a zero count for a
+      student with no graded courses, which would otherwise read as failing
+      nothing.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - _dbt_source_relation
               - studentid
-              - schoolid
           config:
             severity: error
     columns:
@@ -32,9 +34,6 @@ models:
         data_type: int64
         description:
           The internal number and ID of the associated Students record.
-      - name: schoolid
-        data_type: int64
-        description: The School_Number of the associated Schools record.
       - name: yearid
         data_type: int64
         description:
@@ -273,12 +272,41 @@ unit_tests:
                   'America/New_York'
               ),
               timestamp('9999-12-31')
+          union all
+          /* student 7: a stale version (old school label) and a newer one both
+             span every boundary — the newer version wins at each horizon */
+          select
+              '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`',
+              7,
+              101,
+              35,
+              cast(2.0 as float64),
+              cast(2.0 as float64),
+              3,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 40 day),
+                  'America/New_York'
+              ),
+              timestamp('9999-12-31')
+          union all
+          select
+              '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`',
+              7,
+              102,
+              35,
+              cast(3.0 as float64),
+              cast(2.9 as float64),
+              1,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 35 day),
+                  'America/New_York'
+              ),
+              timestamp('9999-12-31')
     expect:
       rows:
         - {
             _dbt_source_relation: "`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`",
             studentid: 1,
-            schoolid: 101,
             yearid: 35,
             gpa_y1_1_week_prior: 3.5,
             gpa_y1_2_week_prior: 3.2,
@@ -293,7 +321,6 @@ unit_tests:
         - {
             _dbt_source_relation: "`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`",
             studentid: 2,
-            schoolid: 101,
             yearid: 35,
             gpa_y1_1_week_prior: 2.7,
             gpa_y1_2_week_prior: 2.5,
@@ -308,7 +335,6 @@ unit_tests:
         - {
             _dbt_source_relation: "`teamster-332318`.`kippcamden_powerschool`.`int_powerschool__gpa_term`",
             studentid: 3,
-            schoolid: 202,
             yearid: 35,
             gpa_y1_1_week_prior: 2.0,
             gpa_y1_2_week_prior: null,
@@ -323,7 +349,6 @@ unit_tests:
         - {
             _dbt_source_relation: "`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`",
             studentid: 6,
-            schoolid: 101,
             yearid: 35,
             gpa_y1_1_week_prior: 3.4,
             gpa_y1_2_week_prior: null,
@@ -334,4 +359,18 @@ unit_tests:
             n_failing_y1_1_week_prior: 1,
             n_failing_y1_2_week_prior: null,
             n_failing_y1_4_week_prior: null,
+          }
+        - {
+            _dbt_source_relation: "`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`",
+            studentid: 7,
+            yearid: 35,
+            gpa_y1_1_week_prior: 3.0,
+            gpa_y1_2_week_prior: 3.0,
+            gpa_y1_4_week_prior: 3.0,
+            gpa_y1_unweighted_1_week_prior: 2.9,
+            gpa_y1_unweighted_2_week_prior: 2.9,
+            gpa_y1_unweighted_4_week_prior: 2.9,
+            n_failing_y1_1_week_prior: 1,
+            n_failing_y1_2_week_prior: 1,
+            n_failing_y1_4_week_prior: 1,
           }

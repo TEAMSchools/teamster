@@ -269,7 +269,6 @@ with
         left join
             {{ ref("int_powerschool__gpa_term_lookback") }} as lb
             on enr.studentid = lb.studentid
-            and enr.schoolid = lb.schoolid
             and enr.yearid = lb.yearid
             and enr._dbt_source_project = lb._dbt_source_project
         /* both comparison joins are current-year-only (as-of columns), gated
