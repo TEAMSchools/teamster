@@ -118,4 +118,4 @@ select
     subject_employee_number,
     respondent_identifier,
     survey_submission_key,
-from {{ source("surveys", "int_surveys__alchemer_submissions") }}
+from {{ ref("int_surveys__alchemer_submissions") }}

@@ -278,7 +278,12 @@ select
     as survey_submission_key,
 
     row_number() over (
-        partition by survey_id, academic_year, term_code, rank_respondent, rank_subject
-        order by date_submitted desc, survey_response_id desc
+        partition by
+            survey_title, academic_year, term_code, rank_respondent, rank_subject
+        /* the AY2022 Manager archive repeats API submissions; the API copy wins */
+        order by
+            survey_id = 'historic_alchemer_Manager_survey' asc,
+            date_submitted desc,
+            survey_response_id desc
     ) as round_rn,
 from submissions_keyed

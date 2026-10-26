@@ -14,7 +14,6 @@ models:
       archive arm collapses int_surveys__manager_survey_details, which is
       question-grain, to one row per effective_survey_response_id.
     config:
-      enabled: false
       materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
@@ -23,36 +22,19 @@ models:
               - survey_id
               - survey_response_id
           config:
-            enabled: false
             severity: error
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - survey_id
+              - survey_title
               - academic_year
               - term_code
               - rank_respondent
               - rank_subject
           config:
-            enabled: false
             where: round_rn = 1
             severity: error
     columns:
-      - name: round_rn
-        description: >-
-          Recency rank of the submission among the same respondent's submissions
-          to the same survey in the same reporting term, about the same rated
-          person where the survey rates one; 1 is the latest by date_submitted,
-          then survey_response_id. The respondent is respondent_student_number,
-          else respondent_identifier; a submission with neither ranks alone.
-          Always 1 on the archive, whose effective response id already encodes
-          respondent, subject, and term.
-        data_tests:
-          - not_null:
-              config:
-                enabled: false
-                severity: error
-
       - name: survey_id
         description: >-
           Alchemer survey id as a string, or the literal
@@ -136,6 +118,17 @@ models:
 
       - name: survey_response_link
         description: Deep link to the response in Alchemer. Null on the archive.
+
+      - name: round_rn
+        description: >-
+          Recency rank of the submission among the same respondent's submissions
+          to the same survey title in the same reporting term, about the same
+          rated person where the survey rates one; 1 is the latest by
+          date_submitted, then survey_response_id. The respondent is
+          respondent_student_number, else respondent_identifier; a submission
+          with neither ranks alone. The Manager Survey archive ranks alongside
+          the Alchemer API rows and loses every tie to them, so an archive row
+          that repeats an API submission is never 1.
 
       - name: respondent_student_number
         description: >-

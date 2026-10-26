@@ -12,7 +12,9 @@ sources:
                 - int_surveys__response_identifiers
       - name: int_surveys__alchemer_submissions
         config:
+          enabled: false
           meta:
+            contains_pii: true
             dagster:
               asset_key:
                 - kipptaf
@@ -20,7 +22,9 @@ sources:
                 - int_surveys__alchemer_submissions
       - name: int_surveys__alchemer_responses
         config:
+          enabled: false
           meta:
+            contains_pii: true
             dagster:
               asset_key:
                 - kipptaf
