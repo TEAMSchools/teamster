@@ -499,6 +499,37 @@ def test_run_refuses_a_probe_changed_since_its_proof(fakes, tmp_path, capsys):
     assert fakes.bq.ran == []
 
 
+SHARED_VIEW = (
+    "select * from `teamster-332318`.`kipptaf_int`.`int_d` "
+    "join `teamster-332318`.`kipptaf_marts`.`dim_locations` using (k)"
+)
+
+
+def test_run_reads_a_table_both_sides_share_at_1_moment(fakes, tmp_path):
+    fakes.bq.views = {"rpt_d": SHARED_VIEW}
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    reconcile = _reconcile(fakes.bq)
+    stamps = set(re.findall(r"dim_locations`[^']*?TIMESTAMP '([^']+)'", reconcile))
+    assert stamps == {utc_literal(START)}
+    assert _literal_after(reconcile, "fct_f") == utc_literal(END)
+    # The cells query reads Cube as of the end, as before.
+    cells = [s for s in fakes.bq.ran if "AS value" in s and "fct_f" in s]
+    assert {_literal_after(s, "dim_locations") for s in cells} == {utc_literal(END)}
+
+
+def test_run_refuses_a_shared_table_that_changed_during_the_build(
+    fakes, tmp_path, capsys
+):
+    fakes.bq.views = {"rpt_d": SHARED_VIEW}
+    fakes.bq.changed = ("dim_locations",)
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 1
+    err = capsys.readouterr().err
+    assert "kipptaf_marts.dim_locations" in err and "changed during the build" in err
+
+
 def test_run_refuses_sql_it_cannot_time_travel(fakes, tmp_path, capsys):
     text = YML.replace(
         "    probe: avg(is_present)\n",

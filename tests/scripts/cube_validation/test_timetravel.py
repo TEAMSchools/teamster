@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.timetravel import TableInfo, as_of, pin_clock
+from cube_validation.timetravel import TableInfo, as_of, pin_clock, repin
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TS = datetime(2026, 10, 22, 19, 0, 0, tzinfo=timezone.utc)
@@ -233,3 +233,27 @@ def test_extract_from_is_not_a_table_ref():
     result = as_of("select extract(year from s.d) from unnest([1]) as x", TS, catalog)
 
     assert result.tables == frozenset()
+
+
+def test_repin_moves_only_the_named_tables():
+    catalog = FakeCatalog(
+        {
+            "ds.a": TableInfo("TABLE", None),
+            "ds.b": TableInfo("TABLE", None),
+        }
+    )
+    sql = (
+        "SELECT 1 FROM ds.a AS `x` JOIN `teamster-332318`.`ds`.`a` "
+        "JOIN `teamster-332318`.`ds`.`b` as bb"
+    )
+    later = TS + timedelta(seconds=12)
+    rewritten = as_of(sql, later, catalog).sql
+
+    out = repin(rewritten, ["ds.a"], later, TS)
+
+    assert out.count(CLAUSE) == 2
+    assert "`teamster-332318.ds.a` AS `x` " + CLAUSE in out
+    assert (
+        "`teamster-332318.ds.b` as bb FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-22 19:00:12"
+        in out
+    )

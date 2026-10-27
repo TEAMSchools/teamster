@@ -41,7 +41,7 @@ from .cube_client import (
 from .decisions import Applied
 from .moment import WINDOW, Build, changed_between, fact_builds, pick_moment
 from .report import MeasureResult, RunResult
-from .timetravel import PROJECT, AsOf, as_of, utc_literal
+from .timetravel import PROJECT, AsOf, as_of, repin, utc_literal
 
 API_DECIMALS = checks.DECIMALS
 CHECK_API_CUTS = 3
@@ -381,6 +381,7 @@ class _Sides:
     clauses: dict[str, list[str]] = dataclasses.field(default_factory=dict)
     sql: dict[str, tuple[str, str]] = dataclasses.field(default_factory=dict)
     fingerprints: dict[str, dict[str, str]] = dataclasses.field(default_factory=dict)
+    moved: dict[str, bool] = dataclasses.field(default_factory=dict)
 
 
 def _cube_sql(
@@ -457,9 +458,22 @@ def _compare_one(
         cube_parts.append(_masked(cube_at, build.end))
         dash_parts.append(_masked(dash_at, build.start))
         columns = _unique(p.cube for p in _row_pairs(comparison))
+        shared = sorted(cube_at.tables & dash_at.tables)
+        unknown = [t for t in shared if t not in sides.moved]
+        changed = set(changed_between(wh, unknown, build.start, build.end))
+        sides.moved |= {t: t in changed for t in unknown}
+        if moved := [t for t in shared if sides.moved[t]]:
+            raise Refusal(
+                f"comparison {comparison.id!r}: both sides read {', '.join(moved)}, "
+                "which changed during the build; BigQuery reads a table at 1 "
+                "moment per query, so the rows cannot be reconciled at this build"
+            )
+        # Unchanged between start and end, so the Cube side reads its shared
+        # tables at the start: BigQuery refuses 1 table at 2 moments.
+        cube_rows_sql = repin(cube_at.sql, shared, build.end, build.start)
         result = wh.rows(
             compare.reconcile_sql(
-                wrap_cube(cube_at.sql, cfg.view, columns, dates, None),
+                wrap_cube(cube_rows_sql, cfg.view, columns, dates, None),
                 dash_at.sql,
                 comparison.rows,
                 comparison.dims,

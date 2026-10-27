@@ -9,6 +9,7 @@ as is and reported in `AsOf.live`. The module is pure: the catalog is passed in.
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Literal, Protocol
@@ -217,6 +218,33 @@ def as_of(sql: str, ts: datetime, catalog: Catalog) -> AsOf:
         tables=frozenset(tables),
         live=frozenset(live),
     )
+
+
+def repin(sql: str, tables: Iterable[str], old: datetime, new: datetime) -> str:
+    """Move some tables of `as_of` output from moment `old` to moment `new`.
+
+    BigQuery refuses a query that reads 1 table at 2 moments. A query joining
+    2 sides rewritten at different moments moves the shared tables of 1 side;
+    the caller first checks those tables did not change between the moments.
+
+    Args:
+        sql: Output of `as_of(..., old, ...)`.
+        tables: `dataset.table` names to move.
+        old: The moment `sql` reads them at.
+        new: The moment to read them at instead.
+    """
+    for key in tables:
+        pattern = re.compile(
+            "("
+            + re.escape(f"`{PROJECT}.{key}`")
+            + r"(?:\s+as\s+`?\w+`?)?"
+            + r" FOR SYSTEM_TIME AS OF TIMESTAMP ')"
+            + re.escape(utc_literal(old))
+            + "'",
+            re.IGNORECASE,
+        )
+        sql = pattern.sub(lambda m: f"{m[1]}{utc_literal(new)}'", sql)
+    return sql
 
 
 def _as(alias: str) -> str:
