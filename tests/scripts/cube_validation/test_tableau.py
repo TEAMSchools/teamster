@@ -1,0 +1,432 @@
+import xml.etree.ElementTree as ET
+import zipfile
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.config import ColumnPair, Comparison
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.tableau import (
+    RefreshMovedError,
+    Tableau,
+    displayed_decimals,
+    drop_number_formats,
+    formula_fingerprint,
+    prove,
+    split_cuts,
+)
+
+FIXTURE = Path(__file__).parent / "fixtures" / "sheet_formats.twb"
+T0 = datetime(2026, 10, 22, 20, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 27, 15, 0, tzinfo=timezone.utc)
+
+
+def _twb(crlf: bool = False) -> str:
+    text = FIXTURE.read_text(encoding="utf-8", newline="")
+    return text.replace("\n", "\r\n") if crlf else text
+
+
+def _formats(xml: str) -> dict[str, list[str]]:
+    """Return default-format per column name and text-format per field."""
+    root = ET.fromstring(xml)
+    out: dict[str, list[str]] = {}
+    for col in root.iter("column"):
+        if col.get("default-format") is not None:
+            out.setdefault(col.get("name") or "", []).append(col.get("default-format"))
+    for ws in root.iter("worksheet"):
+        for fmt in ws.iter("format"):
+            if fmt.get("attr") == "text-format":
+                out.setdefault(fmt.get("field") or "", []).append(fmt.get("value"))
+    return out
+
+
+def test_drop_number_formats_removes_only_named_measures():
+    src = _twb(crlf=True)
+    out = drop_number_formats(src, ["Rate"])
+
+    before, after = _formats(src), _formats(out)
+    # Rate loses its column format (datasource and dependency copies) and every
+    # text-format rule on it, including the table-calc instance in the pane.
+    assert before["[Calculation_1001]"] == ["p0.0%", "p0.0%"]
+    assert "[Calculation_1001]" not in after
+    assert "[federated.0sample].[usr:Calculation_1001:qk]" not in after
+    assert "[federated.0sample].[pcto:usr:Calculation_1001:qk:2]" not in after
+    # Count is untouched.
+    assert after["[Calculation_1002]"] == ["n#,##0", "n#,##0"]
+    assert after["[federated.0sample].[usr:Calculation_1002:qk]"] == ["n#,##0"]
+    # A non-number format on the dropped measure survives.
+    assert "attr='width' field='[federated.0sample].[usr:Calculation_1001:qk]'" in out
+    # Line endings stay CRLF, three whole lines go, nothing else moves.
+    assert out.count("\n") == out.count("\r\n")
+    assert src.count("\r\n") - out.count("\r\n") == 2
+    assert out.count("default-format=") == src.count("default-format=") - 2
+
+
+def test_drop_number_formats_by_column_name_and_unknown_measure():
+    out = drop_number_formats(_twb(), ["Calculation_1002"])
+    assert "[Calculation_1002]" not in _formats(out)
+    assert _formats(out)["[Calculation_1001]"] == ["p0.0%", "p0.0%"]
+
+    with pytest.raises(ValueError, match="Rat"):
+        drop_number_formats(_twb(), ["Rat"])
+
+
+def test_displayed_decimals_cases():
+    assert displayed_decimals("p0.0%") == 3
+    assert displayed_decimals("p0%") == 2
+    assert displayed_decimals("n#,##0") == 0
+    assert displayed_decimals("0.00") == 2
+    assert displayed_decimals('n#,##0"%";-#,##0"%"') == 0
+    assert displayed_decimals('*+0.0"pp";-0.0"pp";0.0"pp"') == 1
+    assert displayed_decimals("0.0%") == 3
+    assert displayed_decimals(r"0.0\%") == 1
+    with pytest.raises(ValueError):
+        displayed_decimals("")
+
+
+def _comparison(**kw) -> Comparison:
+    base = dict(
+        id="rate-region",
+        measure="avg_daily_attendance",
+        workbook="wb-luid",
+        sheet="Rate by Region",
+        decimals=3,
+        dims=[ColumnPair("region", "regions_region_name")],
+    )
+    base.update(kw)
+    return Comparison(**base)
+
+
+def _rows(values: dict[str, float | None]) -> list[dict]:
+    return [{"region": k, "value": v} for k, v in values.items()]
+
+
+def test_prove_fails_on_one_mismatch():
+    exports = _rows({"North": "0.9123", "South": "0.8504", "East": "0.7001"})
+    probe = _rows({"North": 0.91249, "South": 0.85, "East": 0.7012})
+
+    proof = prove(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+
+    assert proof.cells == 3
+    assert len(proof.failures) == 1
+    assert "region=East" in proof.failures[0]
+    assert not proof.proven
+    assert proof.proven_at == NOW
+    assert proof.fingerprint == formula_fingerprint(_twb(), "Rate by Region")
+
+
+def test_prove_passes_when_all_cells_round_equal():
+    exports = _rows({"North": "0.9123", "South": "0.8504"})
+    probe = _rows({"North": 0.91249, "South": 0.85})
+
+    proof = prove(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+
+    assert proof.failures == []
+    assert proof.proven
+    assert proof.cells == 2
+
+
+def test_prove_one_sided_and_empty_exports_fail():
+    exports = _rows({"North": "0.9", "South": "0.8"})
+    probe = _rows({"North": 0.9, "West": 0.8})
+    proof = prove(_comparison(), exports, probe, twb_xml=_twb(), now=NOW)
+    assert proof.cells == 1
+    assert any("region=South" in f and "export only" in f for f in proof.failures)
+    assert any("region=West" in f and "probe only" in f for f in proof.failures)
+
+    empty = prove(_comparison(), [], [], twb_xml=_twb(), now=NOW)
+    assert not empty.proven and empty.cells == 0
+
+
+def test_prove_matches_numeric_dims_across_types_and_cut_keys():
+    comparison = _comparison(dims=[ColumnPair("academic_year", "dates_academic_year")])
+    exports = [
+        {"cut": "0", "academic_year": "2026", "value": "0.5"},
+        {"cut": "1", "academic_year": "2026", "value": "0.6"},
+    ]
+    probe = [
+        {"cut": "1", "academic_year": 2026, "value": 0.6},
+        {"cut": "0", "academic_year": 2026.0, "value": 0.5},
+    ]
+    proof = prove(comparison, exports, probe, twb_xml=_twb(), now=NOW)
+    assert proof.proven and proof.cells == 2
+
+
+def test_prove_refuses_formatted_values_and_missing_decimals():
+    with pytest.raises(ValueError, match="number format"):
+        prove(
+            _comparison(),
+            _rows({"North": "91.2%"}),
+            _rows({"North": 0.912}),
+            twb_xml=_twb(),
+        )
+    with pytest.raises(ValueError, match="decimals"):
+        prove(_comparison(decimals=None), [], [], twb_xml=_twb())
+
+
+def test_parameter_cuts_go_to_the_browser_list():
+    cuts = [{}, {"Region": "South"}, {"Basis": "Year end"}]
+    exportable, browser = split_cuts(cuts, _twb())
+    assert exportable == [{}, {"Region": "South"}]
+    assert browser == [{"Basis": "Year end"}]
+
+    proof = prove(
+        _comparison(cuts=cuts),
+        _rows({"North": "0.9"}),
+        _rows({"North": 0.9}),
+        twb_xml=_twb(),
+        now=NOW,
+    )
+    assert proof.browser == [{"Basis": "Year end"}]
+
+
+def test_fingerprint_follows_formulas_and_filters_not_formats():
+    base = formula_fingerprint(_twb(), "Rate by Region")
+    assert (
+        formula_fingerprint(drop_number_formats(_twb(), ["Rate"]), "Rate by Region")
+        == base
+    )
+
+    changed = _twb().replace("COUNTD([row_key])", "COUNT([row_key])")
+    assert formula_fingerprint(changed, "Rate by Region") != base
+
+    refiltered = _twb().replace("&quot;North&quot;' user", "&quot;South&quot;' user")
+    assert formula_fingerprint(refiltered, "Rate by Region") != base
+
+    with pytest.raises(ValueError, match="Missing"):
+        formula_fingerprint(_twb(), "Missing")
+
+
+# --- Tableau, against a fake server -----------------------------------------
+
+
+class FakeQuery(list):
+    pass
+
+
+class FakeServer:
+    """The tableauserverclient surface `Tableau` uses, recording every call."""
+
+    def __init__(self, twb: str, jobs=None, projects=None, connections=None):
+        self.twb = twb
+        self.jobs_seq = list(jobs or [[]])
+        self.calls: list[tuple] = []
+        self.published: list[tuple] = []
+        self.csv = b"\xef\xbb\xbfRegion,Rate\r\nNorth,0.9123\r\nSouth,0.85\r\n"
+        self._projects = (
+            projects
+            if projects is not None
+            else [SimpleNamespace(id="proj-temp", name="TEMP-CB")]
+        )
+        self._connections = connections or []
+
+        server = self
+        source_wb = SimpleNamespace(
+            id="wb-luid",
+            name="Sample Dashboard",
+            updated_at=T0,
+            project_id="proj-prod",
+        )
+
+        class Workbooks:
+            def get_by_id(self, luid):
+                server.calls.append(("get_by_id", luid))
+                return (
+                    source_wb
+                    if luid == "wb-luid"
+                    else SimpleNamespace(
+                        id=luid, name="ZZ-VALIDATE Sample Dashboard", views=[]
+                    )
+                )
+
+            def download(self, luid, filepath=None, include_extract=True):
+                server.calls.append(("download", luid, include_extract))
+                path = Path(f"{filepath}.twbx")
+                with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+                    z.writestr("Sample Dashboard.twb", server.twb.encode("utf-8"))
+                    z.writestr("Data/Extracts/sample.hyper", b"HYPER")
+                return str(path)
+
+            def populate_connections(self, wb):
+                wb.connections = server._connections
+
+            def populate_views(self, wb):
+                wb.views = [
+                    SimpleNamespace(id="view-1", name="Rate by Region"),
+                    SimpleNamespace(id="view-2", name="Other"),
+                ]
+
+            def publish(self, item, file, mode):
+                with zipfile.ZipFile(file) as z:
+                    contents = {n: z.read(n) for n in z.namelist()}
+                server.published.append((item, contents, mode))
+                return SimpleNamespace(
+                    id="copy-luid", project_id=item.project_id, name=item.name
+                )
+
+        class Projects:
+            def filter(self, **kw):
+                server.calls.append(("projects.filter", kw))
+                return FakeQuery(
+                    p for p in server._projects if p.name == kw.get("name")
+                )
+
+        class Jobs:
+            def filter(self, **kw):
+                server.calls.append(("jobs.filter", kw))
+                seq = server.jobs_seq
+                return FakeQuery(seq.pop(0) if len(seq) > 1 else seq[0])
+
+        class Views:
+            def populate_csv(self, view, opts):
+                server.calls.append(
+                    ("populate_csv", view.name, list(opts.view_filters))
+                )
+                view.csv = iter([server.csv[:10], server.csv[10:]])
+
+        self.workbooks = Workbooks()
+        self.projects = Projects()
+        self.jobs = Jobs()
+        self.views = Views()
+
+
+def _job(title, started, status="Success", job_type="refresh_extracts"):
+    return SimpleNamespace(
+        title=title, started_at=started, status=status, type=job_type
+    )
+
+
+def test_refresh_started_takes_latest_of_workbook_and_published_source():
+    jobs = [
+        _job("Sample Dashboard", T0),
+        _job("Sample Rows", T0 + timedelta(hours=1)),
+        _job("Unrelated", T0 + timedelta(hours=5)),
+        _job("Sample Rows", T0 + timedelta(hours=3), status="Failed"),
+        _job("Sample Dashboard", T0 + timedelta(hours=4), job_type="publish_workbook"),
+    ]
+    conns = [
+        SimpleNamespace(connection_type="sqlproxy", datasource_name="Sample Rows"),
+        SimpleNamespace(connection_type="bigquery", datasource_name="Embedded"),
+    ]
+    tab = Tableau(FakeServer(_twb(), jobs=[jobs], connections=conns))
+    assert tab.refresh_started("wb-luid") == T0 + timedelta(hours=1)
+
+    with pytest.raises(LookupError, match="no completed extract refresh"):
+        Tableau(FakeServer(_twb(), jobs=[[]])).refresh_started("wb-luid")
+
+
+def test_download_twb_reads_the_packaged_workbook_without_extract():
+    server = FakeServer(_twb(crlf=True))
+    text = Tableau(server).download_twb("wb-luid")
+    assert text == _twb(crlf=True)
+    assert ("download", "wb-luid", False) in server.calls
+    assert Tableau(server).workbook_updated("wb-luid") == T0
+
+
+def test_publish_copy_goes_only_to_temp_cb_with_prefix():
+    server = FakeServer(_twb(crlf=True))
+    copy = Tableau(server).publish_copy(
+        "wb-luid", lambda xml: drop_number_formats(xml, ["Rate"])
+    )
+
+    assert copy == "copy-luid"
+    item, contents, mode = server.published[0]
+    assert item.project_id == "proj-temp"
+    assert item.name == "ZZ-VALIDATE Sample Dashboard"
+    assert mode == "Overwrite"
+    assert ("download", "wb-luid", True) in server.calls
+    packed = contents["Sample Dashboard.twb"].decode("utf-8")
+    assert packed == drop_number_formats(_twb(crlf=True), ["Rate"])
+    assert contents["Data/Extracts/sample.hyper"] == b"HYPER"
+
+
+def test_publish_copy_refuses_without_a_single_temp_cb_project():
+    for projects in ([], [SimpleNamespace(id="a", name="TEMP-CB")] * 2):
+        server = FakeServer(_twb(), projects=projects)
+        with pytest.raises(RuntimeError, match="TEMP-CB"):
+            Tableau(server).publish_copy("wb-luid", lambda xml: xml)
+        assert server.published == []
+
+
+def test_publish_copy_refuses_an_edit_that_flattens_crlf():
+    server = FakeServer(_twb(crlf=True))
+    with pytest.raises(ValueError, match="line ending"):
+        Tableau(server).publish_copy("wb-luid", lambda xml: xml.replace("\r\n", "\n"))
+    assert server.published == []
+
+
+def test_export_applies_view_filters_and_parses_csv():
+    server = FakeServer(_twb())
+    rows = Tableau(server).export(
+        "copy-luid", "Rate by Region", {"Region": ["North", "So,uth"], "Year": 2026}
+    )
+    assert rows == [
+        {"Region": "North", "Rate": "0.9123"},
+        {"Region": "South", "Rate": "0.85"},
+    ]
+    assert (
+        "populate_csv",
+        "Rate by Region",
+        [("Region", "North,So\\,uth"), ("Year", "2026")],
+    ) in server.calls
+
+    with pytest.raises(LookupError, match="Missing"):
+        Tableau(server).export("copy-luid", "Missing", {})
+
+
+def test_refresh_moved_triggers_retry():
+    t1, t2 = T0, T0 + timedelta(hours=1)
+    jobs = [
+        [_job("Sample Dashboard", t1)],  # before, attempt 1
+        [_job("Sample Dashboard", t2)],  # after, attempt 1: moved
+        [_job("Sample Dashboard", t2)],  # before, attempt 2
+        [_job("Sample Dashboard", t2)],  # after, attempt 2: stable
+    ]
+    server = FakeServer(_twb(), jobs=jobs)
+    snap = Tableau(server).capture(
+        "wb-luid", "Rate by Region", [{}, {"Region": "South"}], lambda xml: xml
+    )
+
+    assert snap.refresh_started == t2
+    assert snap.copy_luid == "copy-luid"
+    assert len(snap.exports) == 2
+    assert len(server.published) == 2
+    assert sum(1 for c in server.calls if c[0] == "populate_csv") == 4
+
+
+def test_refresh_moving_twice_raises():
+    jobs = [[_job("Sample Dashboard", T0 + timedelta(hours=h))] for h in range(4)]
+    server = FakeServer(_twb(), jobs=jobs)
+    with pytest.raises(RefreshMovedError):
+        Tableau(server).capture("wb-luid", "Rate by Region", [{}], lambda xml: xml)
+    assert len(server.published) == 2
+
+
+def test_sign_in_from_env_names_missing_vars_without_values(monkeypatch):
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+    from cube_validation.tableau import sign_in_from_env
+
+    for name in (
+        "TABLEAU_SERVER_ADDRESS",
+        "TABLEAU_SITE_ID",
+        "TABLEAU_TOKEN_NAME",
+        "TABLEAU_PERSONAL_ACCESS_TOKEN",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("TABLEAU_SITE_ID", "site-value")
+
+    with pytest.raises(RuntimeError) as err:
+        sign_in_from_env()
+    msg = str(err.value)
+    assert "TABLEAU_PERSONAL_ACCESS_TOKEN" in msg and "TABLEAU_SITE_ID" not in msg
+    assert "site-value" not in msg
+
+
+def test_csv_bom_is_stripped():
+    server = FakeServer(_twb())
+    server.csv = b"\xef\xbb\xbfA\r\n1\r\n"
+    assert Tableau(server).export("copy-luid", "Rate by Region", {}) == [{"A": "1"}]
