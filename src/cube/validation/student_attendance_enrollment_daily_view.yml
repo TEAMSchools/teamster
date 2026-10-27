@@ -42,6 +42,7 @@ comparisons:
     confirmed: true
     workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
     sheet: Y1 ADA - Region
+    sheet_field: Avg. Attendance Metric
     dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
     probe: avg(is_present)
     decimals: 3
@@ -67,18 +68,41 @@ comparisons:
     proof:
       fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
       cells: 45
-      proven_at: "2026-10-27T18:54:39.317359+00:00"
-      workbook_updated_at: "2026-10-27T10:24:57+00:00"
-      probe_fingerprint: b8656a821108bd2efa0bb6b624582d4d8e003d16ca17c5fbb818843c6372ee95
+      proven_at: "2026-10-27T20:28:46.064615+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: 28af4c06c3dd84e8cf5de3b573ac16b1f75ddf04c84d5116b8d15d3aaf007c32
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
       totals_skipped: 29
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - Region [Filter]
+        - School
+        - School Level
+        - Schoolid
+        - Term
+        - is_self_contained
+        - ms_attended
+      restricting_filters:
+        - Iep Status
+        - Region [Filter]
+        - School Level
+        - is_self_contained
   - id: ada-y1-es
     measure: avg_daily_attendance
     confirmed: true
     workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
     sheet: Y1 ADA - ES
+    sheet_field: Avg. Attendance Metric
     dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
     probe: avg(is_present)
     decimals: 3
@@ -121,6 +145,7 @@ comparisons:
     confirmed: true
     workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
     sheet: Y1 ADA - MS
+    sheet_field: Avg. Attendance Metric
     dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
     probe: avg(is_present)
     decimals: 3
@@ -151,18 +176,36 @@ comparisons:
     proof:
       fingerprint: c0a4a97faefd141d3c8ee03593e23706cbbd71dfc2a95e25ce32437140c71a3c
       cells: 40
-      proven_at: "2026-10-27T18:56:13.810276+00:00"
-      workbook_updated_at: "2026-10-27T10:24:57+00:00"
-      probe_fingerprint: ce4e229d48c616054836b8b4e117760025b6dd9f7ca9b6030cf6b12b43aa4103
+      proven_at: "2026-10-27T20:30:08.747901+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: 245763dfbafcd75642395ab21e2dcc00561501d3d63cfb899d4b07aa0238d478
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
       totals_skipped: 23
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - School Level - OOD FIlter Set
+        - Schoolid
+        - Term
+        - ms_attended
+      restricting_filters:
+        - Iep Status
+        - School Level - OOD FIlter Set
   - id: students-y1-region
     measure: count_students
     confirmed: true
     workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
     sheet: Y1 ADA - Region
+    sheet_field: Distinct count of Student Number
     dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
     probe: count(distinct student_number)
     decimals: 0
@@ -187,13 +230,35 @@ comparisons:
     proof:
       fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
       cells: 45
-      proven_at: "2026-10-27T18:56:59.388126+00:00"
-      workbook_updated_at: "2026-10-27T10:24:57+00:00"
-      probe_fingerprint: fddd89e45e534c6f43ee04a7ae9a2261d9459c0e221693badeae15fa28160a08
+      proven_at: "2026-10-27T20:30:51.211956+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: 27a8e807bf279af39995eab75af4167f66d59798e5c57e1517f8a298d2710d58
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
       totals_skipped: 29
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - Region [Filter]
+        - School
+        - School Level
+        - Schoolid
+        - Term
+        - is_self_contained
+        - ms_attended
+      restricting_filters:
+        - Iep Status
+        - Region [Filter]
+        - School Level
+        - is_self_contained
   - id: ontime-grade-rollup
     <<: *enrolled
     measure: pct_ontime
