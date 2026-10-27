@@ -10,6 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import tableauserverclient as TSC
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
 from cube_validation import cli, pipeline, tableau
@@ -212,7 +213,13 @@ class FakeTableau:
         return self.twb
 
     def workbook_updated(self, luid):
+        if getattr(self, "fail_next", None):
+            error, self.fail_next = self.fail_next, None
+            raise error
         return self.updated
+
+    def reconnect(self):
+        self.reconnects = getattr(self, "reconnects", 0) + 1
 
     def capture(self, workbook_luid, sheet, cuts, xml_edit):
         self.captures = getattr(self, "captures", 0) + 1
@@ -1376,3 +1383,76 @@ def test_prove_headers_prints_the_export_without_probing(fakes, tmp_path, capsys
     assert "ada-region cut {}: Region, Measure Names, Measure Values" in out
     assert "Measure Names: # Present, # Tardy" in out
     assert fakes.bq.ran == [] and path.read_text() == before
+
+
+# --- Tableau sessions ------------------------------------------------------------
+
+TWIN = UNPROVEN.replace(
+    "identities:",
+    UNPROVEN.split("comparisons:\n", 1)[1]
+    .split("identities:", 1)[0]
+    .replace("id: ada-region", "id: ada-twin")
+    + "identities:",
+)
+TWO = ["--comparison", "ada-region", "--comparison", "ada-twin"]
+
+
+def test_prove_signs_in_again_after_a_401(fakes, tmp_path, capsys):
+    fakes.tbl.fail_next = TSC.ServerResponseError("401002", "Unauthorized Access", "")
+    path = _file(tmp_path, TWIN)
+
+    assert cli.main(["prove", str(path), *TWO]) == 0, capsys.readouterr().err
+
+    assert fakes.tbl.reconnects == 1
+    assert all(c.proof is not None for c in load_view_config(path).comparisons)
+    assert "signing in again" in capsys.readouterr().err
+
+
+def test_prove_refuses_one_comparison_on_another_tableau_error(fakes, tmp_path, capsys):
+    fakes.tbl.fail_next = TSC.ServerResponseError("403004", "Forbidden", "")
+    path = _file(tmp_path, TWIN)
+
+    assert cli.main(["prove", str(path), *TWO]) == 1
+
+    assert "ada-region: Tableau answered 403004 Forbidden" in capsys.readouterr().err
+    proofs = [c.proof for c in load_view_config(path).comparisons]
+    assert proofs[0] is None and proofs[1] is not None
+
+
+class _Server:
+    def __init__(self, fail_sign_out=False):
+        self.fail_sign_out = fail_sign_out
+        self.signed_out = 0
+        self.auth = self
+
+    def sign_out(self):
+        self.signed_out += 1
+        if self.fail_sign_out:
+            raise TSC.ServerResponseError("401002", "Unauthorized Access", "")
+
+
+def _real_session(monkeypatch, servers):
+    for name in tableau.ENV_VARS:
+        monkeypatch.setenv(name, "x")
+    monkeypatch.setattr(tableau, "sign_in_from_env", lambda: servers.pop(0))
+
+
+def test_a_failed_sign_out_does_not_hide_the_first_error(monkeypatch, capsys):
+    _real_session(monkeypatch, [_Server(fail_sign_out=True)])
+
+    with pytest.raises(ValueError, match="the first error"):
+        with REAL_TABLEAU_SESSION():
+            raise ValueError("the first error")
+
+    assert "sign-out failed" in capsys.readouterr().err
+
+
+def test_reconnect_signs_in_again_and_signs_the_old_session_out(monkeypatch):
+    first, second = _Server(fail_sign_out=True), _Server()
+    _real_session(monkeypatch, [first, second])
+
+    with REAL_TABLEAU_SESSION() as tbl:
+        tbl.reconnect()
+        assert tbl._server is second
+
+    assert first.signed_out == 1 and second.signed_out == 1

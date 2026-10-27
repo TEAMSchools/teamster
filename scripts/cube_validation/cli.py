@@ -72,10 +72,12 @@ def tableau_session() -> Iterator[tableau.Tableau]:
         raise pipeline.Refusal(
             f"Tableau refused the sign-in: {exc.code} {exc.summary}"
         ) from exc
+    tbl = tableau.Tableau(server, sign_in=tableau.sign_in_from_env)
     try:
-        yield tableau.Tableau(server)
+        yield tbl
     finally:
-        server.auth.sign_out()
+        if problem := tbl.sign_out():
+            print(f"warning: Tableau sign-out failed: {problem}", file=sys.stderr)
 
 
 def utcnow() -> datetime:
@@ -228,36 +230,71 @@ def _dispatch(args: argparse.Namespace) -> int:
         with tableau_session() as tbl:
             pipeline.prove_check(cfg, tbl=tbl)
         return 0
-    if args.headers:
-        captures: dict = {}
-        with tableau_session() as tbl:
-            for comparison_id in args.comparison:
-                pipeline.prove_headers(
-                    cfg, args.view, comparison_id, tbl=tbl, captures=captures
-                )
-        return 0
-    wh = make_warehouse()
-    refused = 0
-    captures = {}
+    captures: dict = {}
     with tableau_session() as tbl:
-        for comparison_id in args.comparison:
-            try:
-                pipeline.prove(
+        if args.headers:
+            refused = _each(
+                args.comparison,
+                tbl,
+                lambda cid: pipeline.prove_headers(
+                    cfg, args.view, cid, tbl=tbl, captures=captures
+                ),
+            )
+        else:
+            wh = make_warehouse()
+            refused = _each(
+                args.comparison,
+                tbl,
+                lambda cid: pipeline.prove(
                     cfg,
                     args.view,
-                    comparison_id,
+                    cid,
                     wh=wh,
                     tbl=tbl,
                     now=utcnow(),
                     max_usd=args.max_usd,
                     captures=captures,
                     failures_dir=cache_root() / cfg.view,
+                ),
+            )
+    return 1 if refused else 0
+
+
+def _each(ids: list[str], tbl: tableau.Tableau, step) -> int:
+    """Run `step` per comparison id and count the refusals.
+
+    One comparison's refusal or Tableau error does not stop the others. A 401
+    (Tableau ended the session) signs in again and retries that id once.
+    """
+    refused = 0
+    for cid in ids:
+        for attempt in (1, 2):
+            try:
+                step(cid)
+            except TSC.ServerResponseError as exc:
+                if attempt == 1 and str(exc.code).startswith("401"):
+                    print(
+                        f"Tableau ended the session ({exc.code}) during {cid}; "
+                        "signing in again",
+                        file=sys.stderr,
+                    )
+                    try:
+                        tbl.reconnect()
+                    except TSC.ServerResponseError as again:
+                        raise pipeline.Refusal(
+                            f"Tableau refused the sign-in: {again.code} {again.summary}"
+                        ) from again
+                    continue
+                print(
+                    f"refused: {cid}: Tableau answered {exc.code} {exc.summary}",
+                    file=sys.stderr,
                 )
+                refused += 1
             except REFUSALS as exc:
-                # One comparison's refusal does not stop the others.
                 print(f"refused: {exc}", file=sys.stderr)
                 refused += 1
-    return 1 if refused else 0
+            break
+    return refused
 
 
 def main(argv: list[str]) -> int:

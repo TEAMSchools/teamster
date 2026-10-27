@@ -585,11 +585,38 @@ class Tableau:
         server: A signed-in `tableauserverclient.Server` (see
             `sign_in_from_env`), or a fake with the same attributes.
         now: Returns the current time; defaults to UTC now.
+        sign_in: Returns a newly signed-in server, for `reconnect`.
     """
 
-    def __init__(self, server: Any, now: Callable[[], datetime] | None = None) -> None:
+    def __init__(
+        self,
+        server: Any,
+        now: Callable[[], datetime] | None = None,
+        sign_in: Callable[[], Any] | None = None,
+    ) -> None:
         self._server = server
         self._now = now or (lambda: datetime.now(timezone.utc))
+        self._sign_in = sign_in
+
+    def sign_out(self) -> str | None:
+        """Sign out; return why it failed instead of raising, so a failure here
+        never hides the error that ended the session.
+        """
+        try:
+            self._server.auth.sign_out()
+        except (TSC.ServerResponseError, OSError) as exc:
+            return f"{getattr(exc, 'code', type(exc).__name__)} {getattr(exc, 'summary', exc)}"
+        return None
+
+    def reconnect(self) -> None:
+        """Sign in again, after Tableau ended this session (a 401).
+
+        Another sign-in with the same token can end it mid-run.
+        """
+        if self._sign_in is None:
+            raise RuntimeError("this session cannot sign in again")
+        self.sign_out()
+        self._server = self._sign_in()
 
     def download_twb(self, luid: str) -> str:
         """Return a workbook's XML, downloaded without its extract."""
