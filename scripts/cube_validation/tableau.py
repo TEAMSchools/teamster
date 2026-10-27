@@ -46,6 +46,7 @@ ENV_VARS = (
 )
 REFRESH_JOB_TYPES = ("refresh_extracts", "increment_extracts")
 JOB_LOOKBACK = timedelta(days=8)
+MAX_JOB_LOOKUPS = 200
 
 # `<column\b` would also match `<column-instance`; the hyphen is a word boundary.
 _COLUMN_TAG = re.compile(r"<column(?=[\s/>])[^>]*>")
@@ -577,11 +578,11 @@ class Tableau:
     ) -> datetime:
         """Return the start of the latest successful extract refresh.
 
-        Looks at refreshes of the workbook itself and of each published data
-        source it connects to, and takes the latest start. The job list
-        carries names only, so candidates are narrowed by title, newest first,
-        and each is confirmed by id with `jobs.get_by_id`: a same-named
-        workbook or data source in another project never counts.
+        Looks at refreshes of the workbook itself (an embedded extract) and of
+        each published data source it connects to. The job list names no
+        workbook or data source (its title is empty on this server), so each
+        successful refresh job since `since` is looked up with
+        `jobs.get_by_id`, newest first, until one belongs to the workbook.
 
         Args:
             workbook_luid: The production workbook.
@@ -590,42 +591,52 @@ class Tableau:
                 a rebuilt view needs anyway.
 
         Raises:
-            LookupError: No confirmed successful refresh since `since`, as for
-                a workbook on a live connection.
+            LookupError: No successful refresh of the workbook since `since`
+                (as for a workbook on a live connection), or none among the
+                newest `MAX_JOB_LOOKUPS` jobs.
         """
         since = since or self._now() - JOB_LOOKBACK
         wb = self._server.workbooks.get_by_id(workbook_luid)
         self._server.workbooks.populate_connections(wb)
-        published = [c for c in wb.connections if c.connection_type == "sqlproxy"]
-        titles = {wb.name} | {c.datasource_name for c in published if c.datasource_name}
-        source_ids = {c.datasource_id for c in published if c.datasource_id}
+        source_ids = {
+            c.datasource_id
+            for c in wb.connections
+            if c.connection_type == "sqlproxy" and c.datasource_id
+        }
 
+        # The server parses only this form; str(datetime) is rejected.
+        bound = since.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         candidates = sorted(
             (
                 job
                 for job in self._server.jobs.filter(
                     status="Success",
                     job_type__in=list(REFRESH_JOB_TYPES),
-                    started_at__gte=since,
+                    started_at__gte=bound,
                 )
-                if job.title in titles
-                and job.status == "Success"
+                if job.status == "Success"
                 and job.type in REFRESH_JOB_TYPES
                 and job.started_at is not None
             ),
             key=lambda job: job.started_at,
             reverse=True,
         )
-        for job in candidates:
+        for job in candidates[:MAX_JOB_LOOKUPS]:
             detail = self._server.jobs.get_by_id(job.id)
             if (
                 detail.workbook_id == workbook_luid
                 or detail.datasource_id in source_ids
             ):
                 return job.started_at
+        if len(candidates) > MAX_JOB_LOOKUPS:
+            raise LookupError(
+                f"no refresh of workbook {wb.name!r} among the newest "
+                f"{MAX_JOB_LOOKUPS} refresh jobs since {bound}; the lookup cap "
+                "was hit"
+            )
         raise LookupError(
             f"no completed extract refresh for workbook {wb.name!r} or its "
-            f"published data sources since {since.isoformat()}"
+            f"published data sources since {bound}"
         )
 
     def publish_copy(self, workbook_luid: str, xml_edit: Callable[[str], str]) -> str:

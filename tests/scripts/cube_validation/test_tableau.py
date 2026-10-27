@@ -221,6 +221,7 @@ class FakeServer:
         self.twb = twb
         self.jobs_seq = list(jobs or [[]])
         self.job_details = {j.id: j for batch in self.jobs_seq for j in batch}
+        self.job_error: Exception | None = None
         self.calls: list[tuple] = []
         self.published: list[tuple] = []
         self.csv = b"\xef\xbb\xbfRegion,Rate\r\nNorth,0.9123\r\nSouth,0.85\r\n"
@@ -287,14 +288,22 @@ class FakeServer:
                 server.calls.append(("jobs.filter", kw))
                 seq = server.jobs_seq
                 batch = seq.pop(0) if len(seq) > 1 else seq[0]
-                since = kw["started_at__gte"]
+                # The live server parses only the ISO form with a Z.
+                since = datetime.strptime(
+                    kw["started_at__gte"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
                 return FakeQuery(j for j in batch if j.started_at >= since)
 
             def get_by_id(self, job_id):
                 server.calls.append(("jobs.get_by_id", job_id))
+                if server.job_error is not None:
+                    raise server.job_error
                 job = server.job_details[job_id]
                 return SimpleNamespace(
-                    id=job.id, workbook_id=job.wb, datasource_id=job.ds
+                    id=job.id,
+                    workbook_id=job.wb,
+                    datasource_id=job.ds,
+                    started_at=job.started_at,
                 )
 
         class Views:
@@ -314,17 +323,22 @@ _JOB_IDS = iter(range(10**6))
 
 
 def _job(
-    title,
+    label,
     started,
     status="Success",
     job_type="refresh_extracts",
     wb="wb-luid",
     ds=None,
 ):
-    """A job-list item; `wb` and `ds` are what `jobs.get_by_id` reports."""
+    """A job-list item as the live server returns it: no title or subtitle.
+
+    `label` only names the item for a reader. `wb` and `ds` are what
+    `jobs.get_by_id` reports; an embedded extract sets `wb` only.
+    """
     return SimpleNamespace(
         id=f"job-{next(_JOB_IDS)}",
-        title=title,
+        title=None,
+        subtitle=None,
         started_at=started,
         status=status,
         type=job_type,
@@ -363,11 +377,12 @@ def test_refresh_started_takes_latest_of_workbook_and_published_source():
         _tab(FakeServer(_twb(), jobs=[[]])).refresh_started("wb-luid")
 
 
-def test_refresh_started_ignores_same_named_items_elsewhere():
+def test_refresh_started_ignores_other_workbooks_and_sources():
     later = T0 + timedelta(hours=6)
     jobs = [
         _job("Sample Dashboard", T0),
-        # Same names, other projects: a workbook and a published data source.
+        # Later refreshes of another workbook and another published source,
+        # same names or not: only the ids tell them apart.
         _job("Sample Dashboard", later, wb="other-wb"),
         _job("Sample Rows", later, wb=None, ds="other-ds"),
     ]
@@ -384,9 +399,44 @@ def test_refresh_job_query_is_bounded_to_the_lookback():
     with pytest.raises(LookupError, match="since"):
         _tab(server).refresh_started("wb-luid")
     kw = next(c[1] for c in server.calls if c[0] == "jobs.filter")
-    assert kw["started_at__gte"] == NOW - timedelta(days=8)
-    assert kw["started_at__gte"].tzinfo is not None
+    assert kw["started_at__gte"] == "2026-10-19T15:00:00Z"
+    assert kw["job_type__in"] == ["refresh_extracts", "increment_extracts"]
+    assert kw["status"] == "Success"
     assert not any(c[0] == "jobs.get_by_id" for c in server.calls)
+
+
+def test_refresh_bound_is_utc_whatever_the_clock_zone():
+    eastern = timezone(timedelta(hours=-4))
+    server = FakeServer(_twb(), jobs=[[_job("Sample Dashboard", T0)]])
+    tab = Tableau(server, now=lambda: NOW.astimezone(eastern))
+    assert tab.refresh_started("wb-luid") == T0
+    kw = next(c[1] for c in server.calls if c[0] == "jobs.filter")
+    assert kw["started_at__gte"] == "2026-10-19T15:00:00Z"
+
+
+def test_refresh_lookup_error_propagates():
+    server = FakeServer(_twb(), jobs=[[_job("Sample Dashboard", T0)]])
+    server.job_error = RuntimeError("400031")
+    with pytest.raises(RuntimeError, match="400031"):
+        _tab(server).refresh_started("wb-luid")
+
+
+def test_refresh_lookups_stop_at_the_cap():
+    others = [
+        _job("Other", T0 + timedelta(minutes=m), wb="other-wb") for m in range(1, 202)
+    ]
+    target = _job("Sample Dashboard", T0)
+    server = FakeServer(_twb(), jobs=[[target, *others]])
+    with pytest.raises(LookupError, match="Sample Dashboard.*cap"):
+        _tab(server).refresh_started("wb-luid")
+    lookups = [c[1] for c in server.calls if c[0] == "jobs.get_by_id"]
+    assert len(lookups) == 200
+    assert target.id not in lookups
+
+    # Within the cap, the target is found after the newer jobs of others.
+    server = FakeServer(_twb(), jobs=[[target, *others[:199]]])
+    assert _tab(server).refresh_started("wb-luid") == T0
+    assert sum(1 for c in server.calls if c[0] == "jobs.get_by_id") == 200
 
 
 def test_download_twb_reads_the_packaged_workbook_without_extract():
