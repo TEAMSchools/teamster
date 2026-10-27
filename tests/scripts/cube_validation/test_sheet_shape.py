@@ -299,3 +299,45 @@ def _cfg():
     from cube_validation.config import ViewConfig
 
     return ViewConfig(view="v", fact="kipptaf_marts.fct_f", comparisons=[])
+
+
+def _cell(cut, key, dims, dashboard, cube, verdict):
+    return pipeline.Cell("c", cut, key, dashboard, cube, verdict, dims)
+
+
+def test_candidate_causes_name_patterns_clusters_and_definitions():
+    comparison = Comparison(
+        id="c",
+        measure="count_tardy_days",
+        probe="sum(is_tardy)",
+        dims=[
+            ColumnPair(dashboard="student_number", cube="lea_student_identifier"),
+            ColumnPair(dashboard="grade_level", cube="grade_level"),
+        ],
+        rows=RowSpec(
+            grain=[
+                ColumnPair(dashboard="student_number", cube="lea_student_identifier")
+            ],
+            values=[],
+        ),
+        definitions={"dashboard": "codes ET, T", "cube": "codes T%"},
+    )
+    miami = '{"Region": "Miami"}'
+    cells = [
+        _cell(miami, f"s{i}", (("lea_student_identifier", f"s{i}"), ("grade_level", "9")), 0.0, None, "dashboard_only")
+        for i in range(3)
+    ] + [
+        _cell("{}", "s9", (("lea_student_identifier", "s9"), ("grade_level", "5")), 4.0, 5.0, "differs"),
+    ]  # fmt: skip
+    causes = pipeline.candidate_causes(comparison, cells, 0, "sum(`t`.is_tardy)")
+    assert "3 cells: Cube is blank where the dashboard shows 0" in causes
+    assert "1 cell: 1 display unit apart at 0 decimals" in causes
+    assert f"3 of 4 in cut {miami}" in causes
+    assert "3 of 4 have grade_level = 9" in causes
+    assert (
+        "Cube computes `count_tardy_days` as sum(`t`.is_tardy); the probe is sum(is_tardy)"
+        in causes
+    )
+    assert "Recorded definitions: dashboard codes ET, T; Cube codes T%" in causes
+    # A grain dim never shows: its values are students.
+    assert not any("lea_student_identifier" in c or "s9" in c for c in causes)

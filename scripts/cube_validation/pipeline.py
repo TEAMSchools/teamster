@@ -32,7 +32,7 @@ from . import discover as finder
 from . import report, tableau
 from .bq import Warehouse
 from .checks import CheckResult, Finding
-from .compare import Gap, Group
+from .compare import CellDiff, Gap, Group
 from .config import ColumnPair, Comparison, Decision, ViewConfig, write_proof
 from .cube_client import (
     Compiled,
@@ -370,6 +370,8 @@ class Cell:
     dashboard: float | None
     cube: float | None
     verdict: str
+    # The cell's dims by Cube name, for candidate causes; never printed whole.
+    dims: tuple[tuple[str, str], ...] = ()
 
 
 def _by_key(rows: Iterable[dict], key, value, where: str) -> dict:
@@ -441,9 +443,109 @@ def _cells(
                 dash.get(key),
                 cube.get(key),
                 verdict,
+                tuple((d.cube, v) for d, v in zip(comparison.dims, key, strict=True)),
             )
         )
     return cells
+
+
+DIFFERING = ("differs", "cube_only", "dashboard_only")
+
+
+def candidate_causes(
+    comparison: Comparison, cells: list[Cell], decimals: int, cube_expr: str
+) -> list[str]:
+    """What the differing cells suggest, for the analyst to check, not a verdict.
+
+    Patterns (blank against 0, 1 display unit apart), where the cells cluster
+    (a cut, a dim value), and both definitions side by side. A dim that is part
+    of the row grain never shows, so no student's value does.
+    """
+    n = len(cells)
+    patterns: Counter = Counter()
+    unit = Decimal(1).scaleb(-decimals)
+    for c in cells:
+        if c.cube is None:
+            patterns[
+                "Cube is blank where the dashboard shows 0"
+                if c.dashboard == 0
+                else "Cube is blank where the dashboard shows a value"
+            ] += 1
+        elif c.dashboard is None:
+            patterns[
+                "Cube shows 0 where the dashboard is blank"
+                if c.cube == 0
+                else "Cube shows a value where the dashboard is blank"
+            ] += 1
+        elif (
+            abs(
+                compare._half_up(c.dashboard, decimals)
+                - compare._half_up(c.cube, decimals)
+            )
+            == unit
+        ):
+            patterns[f"1 display unit apart at {decimals} decimals"] += 1
+        else:
+            patterns["values differ beyond rounding"] += 1
+    out = [
+        f"{k} {'cell' if k == 1 else 'cells'}: {pattern}"
+        for pattern, k in patterns.most_common()
+    ]
+    cuts = Counter(c.cut for c in cells)
+    top_cut, k = cuts.most_common(1)[0]
+    if 2 * k >= n and (len(cuts) > 1 or top_cut != cut_label({})):
+        out.append(f"{k} of {n} in cut {top_cut}")
+    for dim in group_dims(comparison):
+        values = Counter(dict(c.dims).get(dim.cube) for c in cells)
+        value, k = values.most_common(1)[0]
+        if value is not None and 2 * k >= n:
+            out.append(f"{k} of {n} have {dim.cube} = {value}")
+    probe = comparison.probe or " ".join((comparison.probe_sql or "").split())
+    out.append(
+        f"Cube computes `{comparison.measure}` as {cube_expr}; the probe is {probe}"
+    )
+    if comparison.definitions:
+        out.append(
+            f"Recorded definitions: dashboard {comparison.definitions['dashboard']}; "
+            f"Cube {comparison.definitions['cube']}"
+        )
+    return out
+
+
+def _cell_diffs(
+    cfg: ViewConfig, comparisons: list[Comparison], sides: "_Sides", cube: Cube
+) -> list[CellDiff]:
+    """Each comparison's differing cells, with candidate causes."""
+    out = []
+    for comparison in comparisons:
+        differing = [
+            c for c in sides.cells
+            if c.comparison == comparison.id and c.verdict in DIFFERING
+        ]  # fmt: skip
+        if not differing:
+            continue
+        member = _member(cfg.view, comparison.measure)
+        expr = _measure_expression(
+            cube.compiled({"measures": [member]}).sql, cfg.view, comparison.measure
+        )
+        causes = candidate_causes(comparison, differing, comparison.decimals or 0, expr)
+        if comparison.rows is not None:
+            groups = [g for g in sides.groups if g.comparison_id == comparison.id]
+            causes.append(
+                f"{len(groups)} row groups on this comparison (see Triage) may "
+                "explain part of it"
+                if groups
+                else "every row matches on the grain and values, so the 2 "
+                "definitions or their filters differ"
+            )
+        out.append(
+            CellDiff(
+                comparison.id,
+                dict(Counter(c.verdict for c in differing)),
+                tuple(causes),
+            )
+        )
+    return out
 
 
 # --- run ---------------------------------------------------------------------
@@ -709,6 +811,7 @@ def _measures(
     other: dict[str, list[CheckResult]],
     open_groups: list[Group],
     open_gaps: list[Gap],
+    open_cells: list[CellDiff],
 ) -> list[MeasureResult]:
     """The verdict reads cells only; open groups and gaps are counted beside it."""
     results: dict[str, list[CheckResult]] = {}
@@ -733,6 +836,7 @@ def _measures(
         for g in open_gaps
         for measure in {measure_of.get(c) for c in g.comparisons}
     )
+    open_cell_counts = Counter(measure_of.get(d.comparison_id) for d in open_cells)
     return [
         MeasureResult(
             measure,
@@ -741,6 +845,7 @@ def _measures(
             dict(counts.get(measure, {})),
             groups.get(measure, 0),
             gaps.get(measure, 0),
+            open_cell_counts.get(measure, 0),
         )
         for measure, found in results.items()
     ]
@@ -923,9 +1028,14 @@ def run(
         cost = wh.spent
 
     gaps, gaps_unknown = _gaps(comparisons)
+    cell_diffs = _cell_diffs(cfg, comparisons, sides, cube)
     try:
         applied = decisions.apply(
-            cfg.decisions, sides.groups, sides.fingerprints, gaps=gaps
+            cfg.decisions,
+            sides.groups,
+            sides.fingerprints,
+            gaps=gaps,
+            cell_diffs=cell_diffs,
         )
     except ValueError as exc:
         raise Refusal(str(exc)) from exc
@@ -935,7 +1045,12 @@ def run(
         view=cfg.view,
         moment=build,
         measures=_measures(
-            comparisons, sides.cells, other, applied.open, applied.open_gaps
+            comparisons,
+            sides.cells,
+            other,
+            applied.open,
+            applied.open_gaps,
+            applied.open_cells,
         ),
         applied=applied,
         findings=findings,
@@ -996,6 +1111,10 @@ def _gap(data: dict) -> Gap:
     )
 
 
+def _cell_diff(data: dict) -> CellDiff:
+    return CellDiff(**{**data, "causes": tuple(data["causes"])})
+
+
 def _run_from_json(data: dict) -> RunResult:
     moment = data["moment"]
     applied = data["applied"]
@@ -1016,6 +1135,11 @@ def _run_from_json(data: dict) -> RunResult:
                 (Decision(**d), list(v)) for d, v in applied.get("partly_stale", [])
             ],
             open_gaps=[_gap(g) for g in applied.get("open_gaps", [])],
+            open_cells=[_cell_diff(d) for d in applied.get("open_cells", [])],
+            quiet_cells=[
+                (Decision(**d), _cell_diff(c))
+                for d, c in applied.get("quiet_cells", [])
+            ],
             quiet_gaps=[
                 (Decision(**d), _gap(g)) for d, g in applied.get("quiet_gaps", [])
             ],

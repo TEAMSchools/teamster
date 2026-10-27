@@ -12,7 +12,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from .compare import Gap, Group
+from .compare import CellDiff, Gap, Group
 from .config import Decision
 
 
@@ -26,6 +26,8 @@ class Applied:
     partly_stale: list[tuple[Decision, list[str]]] = field(default_factory=list)
     open_gaps: list[Gap] = field(default_factory=list)
     quiet_gaps: list[tuple[Decision, Gap]] = field(default_factory=list)
+    open_cells: list[CellDiff] = field(default_factory=list)
+    quiet_cells: list[tuple[Decision, CellDiff]] = field(default_factory=list)
 
 
 _OPEN = re.compile(r"(?i:rb|br|r|b)?('''|\"\"\"|'|\"|`)")
@@ -138,6 +140,7 @@ def apply(
     groups: list[Group],
     fingerprints: dict[str, dict[str, str]],
     gaps: list[Gap] | tuple[Gap, ...] = (),
+    cell_diffs: list[CellDiff] | tuple[CellDiff, ...] = (),
 ) -> Applied:
     """Sort groups and decisions by what the recorded decisions still cover.
 
@@ -149,6 +152,8 @@ def apply(
         gaps: Sheet fields with no Cube member. A decision naming one by kind
             and field quiets it; it carries no fingerprints, because a re-prove
             rewrites the list it matches.
+        cell_diffs: Each comparison's differing cells. A `cells` decision
+            quiets its comparison's while both fingerprints hold.
 
     Returns:
         Groups still open or quieted, decisions to reconfirm because the SQL
@@ -162,6 +167,7 @@ def apply(
     applied = Applied()
     claimed: dict[int, Decision] = {}
     gap_claims: dict[tuple[str, str], Decision] = {}
+    cell_claims: dict[str, Decision] = {}
 
     for decision in decisions:
         if (named := _gap_of(decision)) is not None:
@@ -185,6 +191,23 @@ def apply(
             for side in ("cube", "dashboard")
         ):
             applied.reconfirm.append(decision)
+            continue
+
+        if decision.cells:
+            diff = next(
+                (d for d in cell_diffs if d.comparison_id == decision.comparison), None
+            )
+            if diff is None:
+                applied.no_longer_needed.append(decision)
+                continue
+            if decision.comparison in cell_claims:
+                raise ValueError(
+                    f"decisions {cell_claims[decision.comparison].id!r} and "
+                    f"{decision.id!r} both claim the cells of "
+                    f"{decision.comparison!r}"
+                )
+            cell_claims[decision.comparison] = decision
+            applied.quiet_cells.append((decision, diff))
             continue
 
         column = decision.group.get("column")
@@ -219,4 +242,5 @@ def apply(
 
     applied.open = [g for i, g in enumerate(groups) if i not in claimed]
     applied.open_gaps = [g for g in gaps if (g.kind, g.field) not in gap_claims]
+    applied.open_cells = [d for d in cell_diffs if d.comparison_id not in cell_claims]
     return applied

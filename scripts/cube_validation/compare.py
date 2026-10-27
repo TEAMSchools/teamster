@@ -54,6 +54,19 @@ class Gap:
     restricting: bool = False
 
 
+@dataclass(frozen=True)
+class CellDiff:
+    """A comparison's cells that differ, with candidate causes to check.
+
+    `counts` maps each differing verdict to its cells; `causes` are read from
+    the cells, the row groups and the two definitions, never from a student.
+    """
+
+    comparison_id: str
+    counts: dict[str, int]
+    causes: tuple[str, ...] = ()
+
+
 def _numbered(rows_sql: str, grain: list[str], values: list[str]) -> str:
     """Wrap a row source, numbering duplicates on the grain so the join cannot fan out."""
     order = ", ".join(values or grain)

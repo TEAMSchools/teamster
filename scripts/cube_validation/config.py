@@ -131,6 +131,8 @@ class Decision:
     # of `group`, and covers the whole view, so it has no `comparison`.
     missing_cut: str = ""
     missing_filter: str = ""
+    # Covers the comparison's cell differences instead of a row group.
+    cells: bool = False
 
 
 @dataclass(frozen=True)
@@ -403,11 +405,13 @@ def _decision(
         reader.fail("task", f"must be an https:// link or #<issue>; got {task!r}")
     missing_cut = reader.get("missing_cut", str, default="")
     missing_filter = reader.get("missing_filter", str, default="")
-    named = [
-        k for k in ("group", "missing_cut", "missing_filter") if reader.data.get(k)
-    ]
+    keys = ("group", "missing_cut", "missing_filter", "cells")
+    named = [k for k in keys if reader.data.get(k)]
     if len(named) > 1:
-        reader.fail(named[1], "set only one of group, missing_cut and missing_filter")
+        reader.fail(
+            named[1], "set only one of group, missing_cut, missing_filter and cells"
+        )
+    cells = reader.get("cells", bool, default=False)
     if missing_cut or missing_filter:
         # A sheet field Cube lacks is missing from the view, not one comparison.
         for key in ("comparison", "fingerprints"):
@@ -430,6 +434,7 @@ def _decision(
         fingerprints=reader.get("fingerprints", dict, default={}),
         missing_cut=missing_cut,
         missing_filter=missing_filter,
+        cells=bool(cells),
     )
 
 

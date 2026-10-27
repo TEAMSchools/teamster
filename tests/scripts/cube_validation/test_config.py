@@ -592,3 +592,24 @@ def test_definitions_need_both_sides(tmp_path):
 def test_domain_owner_task_can_wait_for_the_review_issue(tmp_path):
     text = EXAMPLE.replace("call: deliberate", "call: domain_owner")
     assert load_view_config(_write(tmp_path, text)).decisions[0].task == ""
+
+
+CELLS_DECISION = """\
+  - id: tardy-cells
+    comparison: ada-y1-region
+    cells: true
+    call: domain_owner
+    reason: the owner picks the tardy codes
+    fingerprints: { cube: abc, dashboard: def }
+"""
+
+
+def test_cells_decision_loads(tmp_path):
+    d = load_view_config(_write(tmp_path, EXAMPLE + CELLS_DECISION)).decisions[1]
+    assert d.cells is True and d.comparison == "ada-y1-region" and d.group == {}
+
+
+def test_cells_decision_takes_no_group(tmp_path):
+    text = EXAMPLE + CELLS_DECISION + "    group: { column: region, values: [x] }\n"
+    with pytest.raises(ConfigError, match="only one of group"):
+        load_view_config(_write(tmp_path, text))

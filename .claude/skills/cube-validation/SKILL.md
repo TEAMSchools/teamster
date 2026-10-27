@@ -140,7 +140,13 @@ cause, do not retry around it.
    calls, then record it (step 9). A missing cut or filter is a sheet field Cube
    has no member for: Cube cannot make that cut, so the owner decides whether
    the measure needs it. Map a field Cube does have under `filters:` instead of
-   recording a decision.
+   recording a decision. "Cell differences" lists each comparison whose cells
+   differ, with candidate causes (patterns, where they cluster, both
+   definitions): they are leads to check, not findings. Rows and cells a
+   `dashboard_filters` entry drops read "dashboard filtered", not Cube-only;
+   they do not fail the measure, and the filter is triaged as a missing filter.
+   Row groups never split by a student-level dim, so a decision never names a
+   student.
    - `deliberate`: the difference is intended. Say what the Cube member counts
      in its `description:`; reasoning stays in the decision.
    - `fix_dashboard`: the workbook or its view is wrong. Task: the domain's
@@ -162,7 +168,10 @@ cause, do not retry around it.
    its group only while both fingerprints hold; do not copy fingerprints from
    another run. A missing cut or filter takes `missing_cut: <caption>` or
    `missing_filter: <caption>` in place of `group`, with no `comparison` and no
-   `fingerprints`: it covers the field across the view.
+   `fingerprints`: it covers the field across the view. A comparison's cell
+   differences take `cells: true` in place of `group`, with its `comparison` and
+   `fingerprints`. Rows a dashboard-only filter drops take
+   `group: { column: dashboard_filter, values: [<its column>] }`.
 10. `uv run python -m scripts.cube_validation review <files> --domain <domain>`
     prints the issue body. Show the draft to the analyst. Post it with
     `mcp__github__issue_write` only after approval, using the repo's issue

@@ -1495,3 +1495,30 @@ def test_run_probes_again_without_dashboard_filters_only_when_set(fakes, tmp_pat
     assert cli.main(["run", str(_file(tmp_path, text))]) == 0
     assert len(probes()) == 2 * plain
     assert sum("enroll_status IN (0)" not in s for s in probes()) == plain
+
+
+def test_run_opens_and_quiets_cell_differences(fakes, tmp_path, capsys):
+    fakes.bq.cells = [{"regions_region_name": "Newark", "value": 0.95}]
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    out = capsys.readouterr().out
+    section = out.split("## Cell differences", 1)[1].split("## ", 1)[0]
+    assert "ada-region: 2 differ" in section
+    assert "Cube computes `avg_daily_attendance` as" in section
+
+    fp = _saved_fingerprints(tmp_path)
+    text = (
+        YML
+        + f"""\
+decisions:
+  - id: ada-cells
+    comparison: ada-region
+    cells: true
+    call: deliberate
+    reason: known definition difference
+    fingerprints: {{ cube: {fp["cube"]}, dashboard: {fp["dashboard"]} }}
+"""
+    )
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+    out = capsys.readouterr().out
+    assert "`ada-cells` (ada-region cells, deliberate)" in out
+    assert "cell differences to triage" not in out

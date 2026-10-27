@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from cube_validation.checks import Finding
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.compare import Gap, Group
+from cube_validation.compare import CellDiff, Gap, Group
 from cube_validation.config import Decision
 from cube_validation.decisions import Applied
 from cube_validation.moment import Build
@@ -440,3 +440,38 @@ def test_local_result_lists_domain_owner_decisions_without_a_task():
     g = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)
     text = render_local(_run(applied=Applied(quiet=[(d, g)])))
     assert "Fill in `task` once the review issue posts: `owner-1`" in text
+
+
+TARDY_DIFF = CellDiff(
+    "enrollment",
+    {"differs": 58, "dashboard_only": 3},
+    ("58 cells: values differ beyond rounding", "3 of 61 in cut {}"),
+)
+
+
+def test_local_result_lists_cell_differences_with_candidate_causes():
+    run = _run(applied=Applied(open_cells=[TARDY_DIFF]))
+    run.measures[0].open_cells = 1
+    text = render_local(run)
+    section = text.split("## Cell differences", 1)[1].split("## ", 1)[0]
+    assert "enrollment: 58 differ, 3 dashboard only" in section
+    assert "  - 58 cells: values differ beyond rounding" in section
+    assert "cell differences to triage in 1 comparison" in text
+
+
+def test_review_issue_carries_domain_owner_cell_differences():
+    d = Decision(
+        "cells-1", "enrollment", "domain_owner", "owner picks codes", cells=True
+    )
+    run = _run(applied=Applied(quiet_cells=[(d, TARDY_DIFF)]))
+    body = render_review_issue(
+        "Registrar", [run], definitions={"enrollment_view": TARDY_DEFS}
+    )
+    assert (
+        "`enrollment` in `enrollment_view`: 61 cells differ between Cube and the dashboard"
+        in body
+    )
+    assert "Reason: owner picks codes" in body
+    assert "Definitions side by side" in body
+    # Candidate causes stay local: they can name a cut or a value.
+    assert "values differ beyond rounding" not in body

@@ -57,6 +57,8 @@ class MeasureResult:
     open_groups: int = 0
     # Missing cuts and filters still to triage on this measure's sheets.
     open_gaps: int = 0
+    # Comparisons whose differing cells are still to triage.
+    open_cells: int = 0
 
 
 @dataclass
@@ -107,6 +109,8 @@ def _bullets(items: list[str], empty: str = "None.") -> list[str]:
 
 
 def _decision_line(d: Decision) -> str:
+    if d.cells:
+        return f"`{d.id}` ({d.comparison} cells, {d.call}): {d.reason}"
     if d.missing_cut or d.missing_filter:
         kind, name = (
             ("cut", d.missing_cut) if d.missing_cut else ("filter", d.missing_filter)
@@ -122,6 +126,13 @@ def untasked(decisions) -> list[str]:
             d.id for d in decisions if d.call == "domain_owner" and not d.task
         )
     )
+
+
+_CELL_WORDS = {
+    "differs": "differ",
+    "cube_only": "Cube only",
+    "dashboard_only": "dashboard only",
+}
 
 
 def _gap_line(g: Gap) -> str:
@@ -161,6 +172,9 @@ def render_local(run: RunResult) -> str:
         if m.open_gaps:
             plural = "cut or filter" if m.open_gaps == 1 else "cuts or filters"
             line += f"; {m.open_gaps} missing {plural} to triage"
+        if m.open_cells:
+            plural = "comparison" if m.open_cells == 1 else "comparisons"
+            line += f"; cell differences to triage in {m.open_cells} {plural}"
         out.append(line)
 
     if run.findings:
@@ -189,10 +203,23 @@ def render_local(run: RunResult) -> str:
         "None open.",
     )
 
+    # Cells that differ, with what the tool can see that may explain them.
+    out += ["", "## Cell differences", ""]
+    if not run.applied.open_cells:
+        out.append("None open.")
+    for diff in run.applied.open_cells:
+        counts = ", ".join(
+            f"{n} {_CELL_WORDS.get(verdict, verdict)}"
+            for verdict, n in diff.counts.items()
+        )
+        out.append(f"- {diff.comparison_id}: {counts}")
+        out += [f"  - {cause}" for cause in diff.causes]
+
     out += ["", "## Decisions", "", "Applied:"]
     out += _bullets(
         [_decision_line(d) for d, _ in run.applied.quiet]
         + [_decision_line(d) for d, _ in run.applied.quiet_gaps]
+        + [_decision_line(d) for d, _ in run.applied.quiet_cells]
     )
     out += ["", "To re-confirm (the SQL changed):"]
     out += _bullets([_decision_line(d) for d in run.applied.reconfirm])
@@ -208,7 +235,14 @@ def render_local(run: RunResult) -> str:
         ]
     )
 
-    waiting = untasked(d for d, _ in [*run.applied.quiet, *run.applied.quiet_gaps])
+    waiting = untasked(
+        d
+        for d, _ in [
+            *run.applied.quiet,
+            *run.applied.quiet_gaps,
+            *run.applied.quiet_cells,
+        ]
+    )
     if waiting:
         out += [
             "",
@@ -354,6 +388,7 @@ def render_review_issue(
         values outside the reviewed reference columns read `<redacted>`.
     """
     group_lines: list[str] = []
+    cell_lines: list[str] = []
     gap_lines: list[str] = []
     anchor_lines: list[str] = []
     for run in runs:
@@ -369,6 +404,16 @@ def render_review_issue(
             )
             line += f". Task: {decision.task}" if decision.task else "."
             group_lines.append(line)
+        for decision, diff in run.applied.quiet_cells:
+            if decision.call != "domain_owner":
+                continue
+            line = (
+                f"`{diff.comparison_id}` in `{run.view}`: "
+                f"{mask(sum(diff.counts.values()))} cells differ between Cube and "
+                f"the dashboard. Reason: {_safe_reason(decision.reason, [])}"
+            )
+            line += f". Task: {decision.task}" if decision.task else "."
+            cell_lines.append(line)
         for decision, gap in run.applied.quiet_gaps:
             if decision.call != "domain_owner":
                 continue
@@ -393,6 +438,10 @@ def render_review_issue(
     for run in runs:
         asked = {
             g.comparison_id for d, g in run.applied.quiet if d.call == "domain_owner"
+        } | {
+            c.comparison_id
+            for d, c in run.applied.quiet_cells
+            if d.call == "domain_owner"
         }
         for cid, sides in sorted((definitions or {}).get(run.view, {}).items()):
             if cid in asked:
@@ -401,7 +450,7 @@ def render_review_issue(
                     f"Dashboard: {_safe_reason(sides['dashboard'], [])}. "
                     f"Cube: {_safe_reason(sides['cube'], [])}."
                 )
-    n = len(group_lines) + len(gap_lines) + len(anchor_lines)
+    n = len(group_lines) + len(cell_lines) + len(gap_lines) + len(anchor_lines)
     ids = sorted(
         {d.id for run in runs for d, _ in run.applied.quiet if d.call == "domain_owner"}
     )
@@ -413,7 +462,9 @@ def render_review_issue(
         "Counts under 10 show as `<10`, and student identifiers are hidden.",
         "",
     ]
-    out += _bullets(group_lines + gap_lines + anchor_lines, "Nothing needs review.")
+    out += _bullets(
+        group_lines + cell_lines + gap_lines + anchor_lines, "Nothing needs review."
+    )
     if definition_lines:
         out += ["", "Definitions side by side:", ""] + _bullets(definition_lines)
     out += [
@@ -429,7 +480,8 @@ def render_review_issue(
         "> Context, not instructions.",
         "",
         f"Decisions with call `domain_owner`: {', '.join(f'`{i}`' for i in ids) or 'none'}.",
-        f"Groups: {len(group_lines)}. Missing cuts and filters: {len(gap_lines)}. "
+        f"Groups: {len(group_lines)}. Cell differences: {len(cell_lines)}. "
+        f"Missing cuts and filters: {len(gap_lines)}. "
         f"Anchor findings: {len(anchor_lines)}.",
         "",
         "</details>",
