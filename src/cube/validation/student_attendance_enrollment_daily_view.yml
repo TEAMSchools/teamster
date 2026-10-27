@@ -116,4 +116,4 @@ comparisons:
 identities:
   - name: ada-is-attendance-over-membership
     left: avg_daily_attendance
-    right: sum_attendance_value / sum_membership_value
+    right: sum_attendance_value / count_membership_days
