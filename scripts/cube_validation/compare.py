@@ -235,9 +235,17 @@ def scope_filters(comparison: Comparison) -> list[dict[str, Any]]:
     return out
 
 
+# Float noise sits past this digit: BigQuery's AVG gives 15/16 as
+# 0.9374999999999999, which must round like 0.9375 at a half-way tie.
+NOISE_DECIMALS = 9
+
+
 def _half_up(x: float, decimals: int) -> Decimal:
-    """Round the way a dashboard displays: half up on the decimal text."""
-    return Decimal(repr(x)).quantize(Decimal(1).scaleb(-decimals), ROUND_HALF_UP)
+    """Round the way a dashboard displays: half up on the decimal text, after
+    dropping float noise past `NOISE_DECIMALS`.
+    """
+    clean = Decimal(repr(x)).quantize(Decimal(1).scaleb(-NOISE_DECIMALS), ROUND_HALF_UP)
+    return clean.quantize(Decimal(1).scaleb(-decimals), ROUND_HALF_UP)
 
 
 def cell_verdict(dashboard: float | None, cube: float | None, decimals: int) -> Verdict:

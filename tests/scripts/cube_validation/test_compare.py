@@ -247,3 +247,9 @@ def test_scope_filter_comparison_operators_use_cube_names():
         {"member": "v.membership_value", "operator": "gt", "values": ["0"]},
         {"member": "v.attendance_code", "operator": "notEquals", "values": ["TD"]},
     ]
+
+
+def test_cell_verdict_ignores_float_noise_at_a_half_way_tie():
+    # BigQuery AVG gives 15/16 as 0.9374999999999999; the sheet shows 0.938.
+    assert cell_verdict(0.9375, 0.9374999999999999, decimals=3) == "pass"
+    assert cell_verdict(0.9375, 0.9374, decimals=3) == "differs"
