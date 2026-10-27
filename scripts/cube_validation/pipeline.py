@@ -1166,31 +1166,32 @@ def long_to_wide(rows: list[dict[str, str]], field: str | None) -> list[dict[str
     """Keep one field of a long export as its own column.
 
     A sheet with `Measure Names` on a shelf exports one row per field, naming
-    it in `Measure Names` and holding it in `Measure Values`. A wide export
-    comes back as is.
+    it in `Measure Names` and holding it in `Measure Values`. `field` names
+    one of those fields, or a column beside them (a measure on another shelf),
+    which repeats on every field's row of a mark, so each mark is kept once. A
+    wide export comes back as is.
 
     Raises:
-        Refusal: The export is long and `field` is unset or names no field in
-            it; the message lists the fields it has.
+        Refusal: The export is long and `field` is unset or names neither a
+            field nor a column in it; the message lists both.
     """
     if not rows or MEASURE_NAMES not in rows[0]:
         return rows
-    names = ", ".join(sorted({r[MEASURE_NAMES] for r in rows}))
+    names = sorted({r[MEASURE_NAMES] for r in rows})
+    others = [h for h in rows[0] if h not in (MEASURE_NAMES, MEASURE_VALUES)]
+    choices = f"its fields are {', '.join(names)}; its columns are {', '.join(others)}"
     if not field:
-        raise Refusal(
-            f"the export has one row per field; set sheet_field to one of {names}"
-        )
-    kept = [
-        {
-            **{k: v for k, v in r.items() if k not in (MEASURE_NAMES, MEASURE_VALUES)},
-            field: r[MEASURE_VALUES],
-        }
-        for r in rows
-        if r[MEASURE_NAMES] == field
-    ]
-    if not kept:
-        raise Refusal(f"sheet_field {field!r} is not in the export; it has {names}")
-    return kept
+        raise Refusal(f"the export has one row per field; set sheet_field ({choices})")
+    if field in names:
+        return [
+            {**{k: r[k] for k in others}, field: r[MEASURE_VALUES]}
+            for r in rows
+            if r[MEASURE_NAMES] == field
+        ]
+    if field in others:
+        marks = dict.fromkeys(tuple((k, r[k]) for k in others) for r in rows)
+        return [dict(mark) for mark in marks]
+    raise Refusal(f"sheet_field {field!r} is not in the export; {choices}")
 
 
 @dataclasses.dataclass(frozen=True)

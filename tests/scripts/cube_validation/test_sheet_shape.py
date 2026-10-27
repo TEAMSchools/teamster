@@ -199,3 +199,38 @@ def test_sheet_gaps_keep_a_dashboard_only_filter_as_missing():
     entry = {"dashboard": "enroll_status", "operator": "equals", "values": [0]}
     gaps = pipeline.sheet_gaps(TWB, _comparison(dashboard_filters=[entry]))
     assert "Enroll Status" in gaps.filters
+
+
+SIDE = [
+    {"Region": "Newark", "Team": "A", "Membershipvalue": "5", "Measure Names": "# Tardy", "Measure Values": "3"},
+    {"Region": "Newark", "Team": "A", "Membershipvalue": "5", "Measure Names": "# Present", "Measure Values": "90"},
+    {"Region": "Newark", "Team": "B", "Membershipvalue": "4", "Measure Names": "# Tardy", "Measure Values": "2"},
+    {"Region": "Newark", "Team": "B", "Membershipvalue": "4", "Measure Names": "# Present", "Measure Values": "80"},
+]  # fmt: skip
+
+
+def test_long_export_reads_a_column_beside_measure_names_once_per_mark():
+    # The column repeats on every Measure Names row of a mark; keeping them all
+    # would count it once per field.
+    assert pipeline.long_to_wide(SIDE, "Membershipvalue") == [
+        {"Region": "Newark", "Team": "A", "Membershipvalue": "5"},
+        {"Region": "Newark", "Team": "B", "Membershipvalue": "4"},
+    ]
+
+
+def test_a_column_beside_measure_names_sums_split_rows_once():
+    rows = pipeline.long_to_wide(SIDE, "Membershipvalue")
+    cells, _, summed = pipeline._export_cells(
+        _comparison(sheet_field="Membershipvalue", split_rows="sum"),
+        rows,
+        {"Region": "region"},
+        "Membershipvalue",
+        [],
+        [],
+    )
+    assert cells == [{"region": "Newark", "value": "9"}] and summed == 1
+
+
+def test_unknown_sheet_field_lists_names_and_columns():
+    with pytest.raises(pipeline.Refusal, match=r"# Present, # Tardy.*Membershipvalue"):
+        pipeline.long_to_wide(SIDE, "Nope")
