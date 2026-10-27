@@ -186,10 +186,14 @@ def _shown_value(g: Group) -> str:
     return _clean(g.value)
 
 
-def _safe_reason(reason: str, values: list[str]) -> str:
-    """Keep a decision's reason but strip digit runs and the group's values."""
+def _safe_reason(reason: str, values: list) -> str:
+    """Keep a decision's reason but strip digit runs and the group's values.
+
+    `values` may hold YAML numbers from a decision's `group.values`.
+    """
     text = _clean(reason)
-    for value in sorted({v for v in values if v}, key=len, reverse=True):
+    texts = {str(v) for v in values if v is not None and str(v)}
+    for value in sorted(texts, key=len, reverse=True):
         text = text.replace(_clean(value), "<redacted>")
     text = _SEPARATED_DIGITS.sub(
         lambda m: (

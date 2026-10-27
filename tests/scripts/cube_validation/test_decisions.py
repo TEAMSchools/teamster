@@ -84,6 +84,19 @@ def test_matching_decision_quiets_group():
     assert applied.no_longer_needed == []
 
 
+def test_unquoted_yaml_number_matches_its_group():
+    # YAML reads `values: [9]` as an int; a group's value is always text.
+    d = _decision(values=(9, 9.5, None), column="grade_level")
+    groups = [
+        _group("9", column="grade_level"),
+        _group("9.5", column="grade_level"),
+        _group("", column="grade_level"),
+    ]
+    applied = apply([d], groups, {"enrollment": FP})
+    assert [g for _, g in applied.quiet] == groups
+    assert applied.open == [] and applied.no_longer_needed == []
+
+
 def test_changed_sql_asks_to_reconfirm():
     d, g = _decision(), _group()
     for changed in ({"cube": "x", "dashboard": "d1"}, {"cube": "c1", "dashboard": "x"}):

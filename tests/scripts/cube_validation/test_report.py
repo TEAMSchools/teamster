@@ -203,6 +203,16 @@ def test_reason_is_sanitized():
     assert "Reason: Student <redacted> moved to <redacted>." in body
 
 
+def test_reason_with_unquoted_numeric_values():
+    g = Group("enrollment", "grade_level", "9", "value_differs", 40, 12)
+    d = Decision(
+        "dx", "enrollment", "domain_owner", "Grade 9 is split",
+        {"column": "grade_level", "values": [9]},
+    )  # fmt: skip
+    body = render_review_issue("Registrar", [_run(applied=Applied(quiet=[(d, g)]))])
+    assert "Reason: Grade <redacted> is split" in body
+
+
 def test_separated_ids_in_reason_redacted():
     g = Group("enrollment", "region", "Newark", "value_differs", 40, 12)
     for raw in ("12-345", "1234 5678", "12,345,678", "12 345", "2026-10-22"):

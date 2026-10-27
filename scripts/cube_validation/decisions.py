@@ -94,6 +94,11 @@ def sql_fingerprint(sql: str) -> str:
     return hashlib.sha256(_normalize(sql).encode()).hexdigest()
 
 
+def _text(value: object) -> str:
+    """A decision value as group text: `None` reads as empty, as NULL does."""
+    return "" if value is None else str(value)
+
+
 def apply(
     decisions: list[Decision],
     groups: list[Group],
@@ -129,7 +134,8 @@ def apply(
             continue
 
         column = decision.group.get("column")
-        values = decision.group.get("values") or []
+        # A group's value is text; YAML reads an unquoted `9` as an int.
+        values = {_text(v) for v in decision.group.get("values") or []}
         matched = [
             i
             for i, g in enumerate(groups)
