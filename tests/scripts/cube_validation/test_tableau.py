@@ -60,9 +60,15 @@ def test_drop_number_formats_removes_only_named_measures():
     assert after["[federated.0sample].[usr:Calculation_1002:qk]"] == ["n#,##0"]
     # A non-number format on the dropped measure survives.
     assert "attr='width' field='[federated.0sample].[usr:Calculation_1001:qk]'" in out
-    # Line endings stay CRLF, three whole lines go, nothing else moves.
+    # Line endings stay CRLF. 2 format lines go, and the pane's mark rule,
+    # emptied by the edit, goes with its 2 lines; its <style> stays.
     assert out.count("\n") == out.count("\r\n")
-    assert src.count("\r\n") - out.count("\r\n") == 2
+    assert src.count("\r\n") - out.count("\r\n") == 4
+    root = ET.fromstring(out)
+    rules = [r.get("element") for r in root.iter("style-rule")]
+    assert rules == ["cell"]
+    assert all(len(r) for r in root.iter("style-rule"))
+    assert root.find(".//pane/style") is not None
     assert out.count("default-format=") == src.count("default-format=") - 2
 
 
@@ -214,6 +220,7 @@ class FakeServer:
     def __init__(self, twb: str, jobs=None, projects=None, connections=None):
         self.twb = twb
         self.jobs_seq = list(jobs or [[]])
+        self.job_details = {j.id: j for batch in self.jobs_seq for j in batch}
         self.calls: list[tuple] = []
         self.published: list[tuple] = []
         self.csv = b"\xef\xbb\xbfRegion,Rate\r\nNorth,0.9123\r\nSouth,0.85\r\n"
@@ -279,7 +286,16 @@ class FakeServer:
             def filter(self, **kw):
                 server.calls.append(("jobs.filter", kw))
                 seq = server.jobs_seq
-                return FakeQuery(seq.pop(0) if len(seq) > 1 else seq[0])
+                batch = seq.pop(0) if len(seq) > 1 else seq[0]
+                since = kw["started_at__gte"]
+                return FakeQuery(j for j in batch if j.started_at >= since)
+
+            def get_by_id(self, job_id):
+                server.calls.append(("jobs.get_by_id", job_id))
+                job = server.job_details[job_id]
+                return SimpleNamespace(
+                    id=job.id, workbook_id=job.wb, datasource_id=job.ds
+                )
 
         class Views:
             def populate_csv(self, view, opts):
@@ -294,29 +310,83 @@ class FakeServer:
         self.views = Views()
 
 
-def _job(title, started, status="Success", job_type="refresh_extracts"):
+_JOB_IDS = iter(range(10**6))
+
+
+def _job(
+    title,
+    started,
+    status="Success",
+    job_type="refresh_extracts",
+    wb="wb-luid",
+    ds=None,
+):
+    """A job-list item; `wb` and `ds` are what `jobs.get_by_id` reports."""
     return SimpleNamespace(
-        title=title, started_at=started, status=status, type=job_type
+        id=f"job-{next(_JOB_IDS)}",
+        title=title,
+        started_at=started,
+        status=status,
+        type=job_type,
+        wb=wb,
+        ds=ds,
     )
+
+
+def _tab(server):
+    return Tableau(server, now=lambda: NOW)
+
+
+SQLPROXY = SimpleNamespace(
+    connection_type="sqlproxy", datasource_name="Sample Rows", datasource_id="ds-luid"
+)
 
 
 def test_refresh_started_takes_latest_of_workbook_and_published_source():
     jobs = [
         _job("Sample Dashboard", T0),
-        _job("Sample Rows", T0 + timedelta(hours=1)),
-        _job("Unrelated", T0 + timedelta(hours=5)),
-        _job("Sample Rows", T0 + timedelta(hours=3), status="Failed"),
+        _job("Sample Rows", T0 + timedelta(hours=1), wb=None, ds="ds-luid"),
+        _job("Unrelated", T0 + timedelta(hours=5), wb="other"),
+        _job("Sample Rows", T0 + timedelta(hours=3), status="Failed", ds="ds-luid"),
         _job("Sample Dashboard", T0 + timedelta(hours=4), job_type="publish_workbook"),
     ]
     conns = [
-        SimpleNamespace(connection_type="sqlproxy", datasource_name="Sample Rows"),
-        SimpleNamespace(connection_type="bigquery", datasource_name="Embedded"),
+        SQLPROXY,
+        SimpleNamespace(
+            connection_type="bigquery", datasource_name="Embedded", datasource_id="e"
+        ),
     ]
-    tab = Tableau(FakeServer(_twb(), jobs=[jobs], connections=conns))
+    tab = _tab(FakeServer(_twb(), jobs=[jobs], connections=conns))
     assert tab.refresh_started("wb-luid") == T0 + timedelta(hours=1)
 
     with pytest.raises(LookupError, match="no completed extract refresh"):
-        Tableau(FakeServer(_twb(), jobs=[[]])).refresh_started("wb-luid")
+        _tab(FakeServer(_twb(), jobs=[[]])).refresh_started("wb-luid")
+
+
+def test_refresh_started_ignores_same_named_items_elsewhere():
+    later = T0 + timedelta(hours=6)
+    jobs = [
+        _job("Sample Dashboard", T0),
+        # Same names, other projects: a workbook and a published data source.
+        _job("Sample Dashboard", later, wb="other-wb"),
+        _job("Sample Rows", later, wb=None, ds="other-ds"),
+    ]
+    server = FakeServer(_twb(), jobs=[jobs], connections=[SQLPROXY])
+    assert _tab(server).refresh_started("wb-luid") == T0
+    # Newest first, stopping at the first confirmed job.
+    looked_up = [c[1] for c in server.calls if c[0] == "jobs.get_by_id"]
+    assert looked_up == [jobs[1].id, jobs[2].id, jobs[0].id]
+
+
+def test_refresh_job_query_is_bounded_to_the_lookback():
+    old = _job("Sample Dashboard", NOW - timedelta(days=9))
+    server = FakeServer(_twb(), jobs=[[old]])
+    with pytest.raises(LookupError, match="since"):
+        _tab(server).refresh_started("wb-luid")
+    kw = next(c[1] for c in server.calls if c[0] == "jobs.filter")
+    assert kw["started_at__gte"] == NOW - timedelta(days=8)
+    assert kw["started_at__gte"].tzinfo is not None
+    assert not any(c[0] == "jobs.get_by_id" for c in server.calls)
 
 
 def test_download_twb_reads_the_packaged_workbook_without_extract():
@@ -387,7 +457,7 @@ def test_refresh_moved_triggers_retry():
         [_job("Sample Dashboard", t2)],  # after, attempt 2: stable
     ]
     server = FakeServer(_twb(), jobs=jobs)
-    snap = Tableau(server).capture(
+    snap = _tab(server).capture(
         "wb-luid", "Rate by Region", [{}, {"Region": "South"}], lambda xml: xml
     )
 
@@ -402,7 +472,22 @@ def test_refresh_moving_twice_raises():
     jobs = [[_job("Sample Dashboard", T0 + timedelta(hours=h))] for h in range(4)]
     server = FakeServer(_twb(), jobs=jobs)
     with pytest.raises(RefreshMovedError):
-        Tableau(server).capture("wb-luid", "Rate by Region", [{}], lambda xml: xml)
+        _tab(server).capture("wb-luid", "Rate by Region", [{}], lambda xml: xml)
+    assert len(server.published) == 2
+
+
+def test_later_unrelated_refresh_does_not_hide_a_real_one():
+    t1, t2 = T0, T0 + timedelta(hours=1)
+    unrelated = _job("Sample Dashboard", T0 + timedelta(hours=5), wb="other-wb")
+    jobs = [
+        [unrelated, _job("Sample Dashboard", t1)],  # before, attempt 1
+        [unrelated, _job("Sample Dashboard", t2)],  # after, attempt 1: moved
+        [unrelated, _job("Sample Dashboard", t2)],  # before, attempt 2
+        [unrelated, _job("Sample Dashboard", t2)],  # after, attempt 2: stable
+    ]
+    server = FakeServer(_twb(), jobs=jobs)
+    snap = _tab(server).capture("wb-luid", "Rate by Region", [{}], lambda xml: xml)
+    assert snap.refresh_started == t2
     assert len(server.published) == 2
 
 

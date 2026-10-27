@@ -25,7 +25,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -45,12 +45,17 @@ ENV_VARS = (
     "TABLEAU_PERSONAL_ACCESS_TOKEN",
 )
 REFRESH_JOB_TYPES = ("refresh_extracts", "increment_extracts")
+JOB_LOOKBACK = timedelta(days=8)
 
 # `<column\b` would also match `<column-instance`; the hyphen is a word boundary.
 _COLUMN_TAG = re.compile(r"<column(?=[\s/>])[^>]*>")
 _WORKSHEET = re.compile(r"<worksheet(?=[\s>]).*?</worksheet>", re.DOTALL)
 # A format element with its own line: the line break before it goes with it.
 _FORMAT_LINE = re.compile(r"(?:\r?\n[ \t]*)?<format(?=[\s/>])[^>]*/>")
+_STYLE_RULE = re.compile(
+    r"(?P<lead>(?:\r?\n[ \t]*)?)(?P<rule><style-rule(?=[\s>])[^>]*(?<!/)>.*?</style-rule>)",
+    re.DOTALL,
+)
 _ATTR = re.compile(r"""([\w:.-]+)=(?:'([^']*)'|"([^"]*)")""")
 _DEFAULT_FORMAT = re.compile(r"""\s+default-format=(?:'[^']*'|"[^"]*")""")
 _THOUSANDS = re.compile(r"[-+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?")
@@ -171,15 +176,34 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
         dropped_rules += 1
         return ""
 
-    out = _WORKSHEET.sub(lambda ws: _FORMAT_LINE.sub(format_line, ws.group(0)), out)
+    def style_rule(m: re.Match) -> str:
+        new = _FORMAT_LINE.sub(format_line, m.group("rule"))
+        inner = re.sub(r"\A<[^>]*>|</style-rule>\Z", "", new)
+        # A rule this edit emptied goes, with its line: no reference shows an
+        # empty <style-rule> in a working workbook.
+        if new != m.group("rule") and not inner.strip():
+            return ""
+        return m.group("lead") + new
+
+    out = _WORKSHEET.sub(lambda ws: _STYLE_RULE.sub(style_rule, ws.group(0)), out)
 
     if (dropped_defaults, dropped_rules) != (want_defaults, want_rules):
         raise ValueError(
             f"dropped {dropped_defaults} column formats and {dropped_rules} "
             f"text-format rules; the workbook holds {want_defaults} and {want_rules}"
         )
-    ET.fromstring(out)
+    if _empty_rules(ET.fromstring(out)) > _empty_rules(root):
+        raise ValueError("the edit left an empty style-rule")
     return out
+
+
+def _empty_rules(root: ET.Element) -> int:
+    return sum(
+        1
+        for ws in root.iter("worksheet")
+        for rule in ws.iter("style-rule")
+        if len(rule) == 0
+    )
 
 
 def displayed_decimals(format_string: str) -> int:
@@ -524,10 +548,12 @@ class Tableau:
     Args:
         server: A signed-in `tableauserverclient.Server` (see
             `sign_in_from_env`), or a fake with the same attributes.
+        now: Returns the current time; defaults to UTC now.
     """
 
-    def __init__(self, server: Any) -> None:
+    def __init__(self, server: Any, now: Callable[[], datetime] | None = None) -> None:
         self._server = server
+        self._now = now or (lambda: datetime.now(timezone.utc))
 
     def download_twb(self, luid: str) -> str:
         """Return a workbook's XML, downloaded without its extract."""
@@ -546,41 +572,61 @@ class Tableau:
         """Return when a workbook was last published."""
         return self._server.workbooks.get_by_id(luid).updated_at
 
-    def refresh_started(self, workbook_luid: str) -> datetime:
+    def refresh_started(
+        self, workbook_luid: str, since: datetime | None = None
+    ) -> datetime:
         """Return the start of the latest successful extract refresh.
 
         Looks at refreshes of the workbook itself and of each published data
-        source it connects to, and takes the latest start. Background jobs
-        carry names, not ids, so a job is matched on its title.
+        source it connects to, and takes the latest start. The job list
+        carries names only, so candidates are narrowed by title, newest first,
+        and each is confirmed by id with `jobs.get_by_id`: a same-named
+        workbook or data source in another project never counts.
+
+        Args:
+            workbook_luid: The production workbook.
+            since: Only jobs started at or after this count; defaults to
+                `JOB_LOOKBACK` ago, which covers the 7-day time-travel window
+                a rebuilt view needs anyway.
 
         Raises:
-            LookupError: No successful refresh is on record, as for a workbook
-                on a live connection.
+            LookupError: No confirmed successful refresh since `since`, as for
+                a workbook on a live connection.
         """
+        since = since or self._now() - JOB_LOOKBACK
         wb = self._server.workbooks.get_by_id(workbook_luid)
         self._server.workbooks.populate_connections(wb)
-        titles = {wb.name} | {
-            c.datasource_name
-            for c in wb.connections
-            if c.connection_type == "sqlproxy" and c.datasource_name
-        }
-        jobs = self._server.jobs.filter(
-            status="Success", job_type__in=list(REFRESH_JOB_TYPES)
+        published = [c for c in wb.connections if c.connection_type == "sqlproxy"]
+        titles = {wb.name} | {c.datasource_name for c in published if c.datasource_name}
+        source_ids = {c.datasource_id for c in published if c.datasource_id}
+
+        candidates = sorted(
+            (
+                job
+                for job in self._server.jobs.filter(
+                    status="Success",
+                    job_type__in=list(REFRESH_JOB_TYPES),
+                    started_at__gte=since,
+                )
+                if job.title in titles
+                and job.status == "Success"
+                and job.type in REFRESH_JOB_TYPES
+                and job.started_at is not None
+            ),
+            key=lambda job: job.started_at,
+            reverse=True,
         )
-        starts = [
-            job.started_at
-            for job in jobs
-            if job.title in titles
-            and job.status == "Success"
-            and job.type in REFRESH_JOB_TYPES
-            and job.started_at is not None
-        ]
-        if not starts:
-            raise LookupError(
-                f"no completed extract refresh for workbook {wb.name!r} or its "
-                "published data sources"
-            )
-        return max(starts)
+        for job in candidates:
+            detail = self._server.jobs.get_by_id(job.id)
+            if (
+                detail.workbook_id == workbook_luid
+                or detail.datasource_id in source_ids
+            ):
+                return job.started_at
+        raise LookupError(
+            f"no completed extract refresh for workbook {wb.name!r} or its "
+            f"published data sources since {since.isoformat()}"
+        )
 
     def publish_copy(self, workbook_luid: str, xml_edit: Callable[[str], str]) -> str:
         """Publish an edited copy of a workbook to `TEMP-CB`.
