@@ -241,7 +241,11 @@ date. It has offline tests. The user can override any date; the override is
 recorded in the note column and later rows that follow it shift with it.
 
 Output: the dated work plan written into Template 2 of the charter doc, and the
-charter's milestone table updated with the exact dates.
+charter's milestone table updated with the exact dates. The script's input rows
+(workstream, name, duration, `after`, override notes) go into the doc too, as a
+"Schedule inputs" table after the plan, so a later re-run can start from them
+instead of reverse-engineering dependencies from the dated table. See the
+project-update follow-up.
 
 ### Phase 4: Asana project
 
@@ -267,7 +271,8 @@ Precondition: the work plan is approved.
    `#NNNN | title`, the TEAMster convention, so it can be multi-homed into
    TEAMster later without renaming.
 5. Set the project's Domain field from the charter's stakeholder group and
-   Active to `Active`.
+   Active to `Active`. Write the charter doc link into the project description,
+   so the project is the one place a later session starts from.
 
 Before step 4 the skill shows the full task list and asks for a yes. After the
 yes it restates the consent in plain text in the same turn before calling
@@ -350,12 +355,62 @@ ids.
 - Status update drafting (Template 5) from the Asana project's state, and
   lessons learned (Template 6) at close. Natural phases 5 and 6; add after two
   projects have gone through intake.
-- Project-specific skills for large projects, shared through the repo and
-  retired at close. Needs its own brainstorm. The open question is what such a
-  skill carries that the charter doc, the Asana project and the existing domain
-  skills do not. The Claude/Cube project's own evidence is that team members
-  need procedure, not status.
 - If a second team starts chartering through this skill, revisit approach B.
+
+### Follow-up: project-update
+
+The ask: after the charter ships, any team member brings new material (a
+follow-up meeting, an email thread, a Slack thread, a stakeholder mockup) and
+the project's charter, work plan and Asana project get updated from it, with
+recommendations on dates and scope. The first idea was one spun-off skill per
+large project, shared through the repo and retired at close. Sketch below, with
+the pushback, so the direction can be judged now; the design is its own
+brainstorm after this skill has run on one real project.
+
+What the update needs, split by kind:
+
+- Procedure: read the new material, diff it against the charter (scope, MOCHA,
+  milestones, risks, decisions), propose edits, apply approved edits to the doc
+  and Asana, re-run the date script when a date moves so followers shift, and
+  flag the Part IV failure modes as they appear (a new ask that is scope creep
+  goes to the parking lot or a charter revision, never silently into a section;
+  an owner change updates MOCHA and task assignees together). This is the same
+  for every project.
+- Project context: the charter doc, the work plan and its schedule inputs, the
+  Asana project, the regions in scope, the decision log. This differs per
+  project and is already written down in Drive and Asana by phases 2 to 4. The
+  Asana project description holds the charter link; the charter holds the rest.
+
+Pushback: a per-project skill would carry only the second kind, and a skill is
+the wrong container for it. It would be one PR to create and one to retire per
+project, a body that is the same boilerplate every time, and a trigger that
+collides with every other open project's ("update the plan" matches all of
+them). The one thing a per-project skill could carry that nothing else does is
+project-specific procedure, like the Claude/Cube verification subtasks. That
+case exists but is rare, is hand-written, and is what the repo's domain skills
+already are; it does not fall out of a charter.
+
+Proposed shape: one generic `project-update` skill, a sibling of this one,
+sharing `references/` and the date script. Trigger: new material about a named
+project, "update the charter", "the stakeholder wants to add", "this date
+slipped", "what does this change". Flow: find the Asana project by name, follow
+its description to the charter, read the new material with the phase 1 source
+tools, produce a change brief (what the material adds or contradicts, one line
+per proposed edit, each marked doc, plan or Asana, with the Part IV flag where
+one applies), then apply the approved lines. Every team member runs it on their
+own Drive and Asana credentials, so no per-project setup; what a member needs to
+join a project is the project's name. Retiring a project is the Asana archive
+and nothing in the repo.
+
+What this changes in the current build: phase 3 writes the schedule inputs into
+the work plan doc, and phase 4 writes the charter link into the Asana project
+description. Both are in the phases above. Everything else waits.
+
+Open until the brainstorm: whether the charter's RAPID log is enough of a
+decision record for the diff, or the skill needs a dated change log in the doc;
+how many edits per run before the skill should instead propose a charter
+revision and a re-sign; whether Template 5 status updates belong in the same
+skill, since the change brief is most of one.
 
 ## Out of scope
 
