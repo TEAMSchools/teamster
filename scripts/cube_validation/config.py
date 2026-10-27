@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -247,22 +248,49 @@ def _identity(reader: _Reader) -> Identity:
     )
 
 
-def _decision_values(group: _Reader) -> None:
-    """Refuse a group value YAML rewrote: `9.50` reads as 9.5, `no` as False.
+def _child_node(node: yaml.Node | None, key: str | int) -> yaml.Node | None:
+    """One key of a mapping node or one item of a sequence node, else None."""
+    if isinstance(node, yaml.MappingNode) and isinstance(key, str):
+        return next((v for k, v in node.value if k.value == key), None)
+    if isinstance(node, yaml.SequenceNode) and isinstance(key, int):
+        return node.value[key] if key < len(node.value) else None
+    return None
 
-    A group's value is compared as text, so a rewritten value never matches.
-    An int round-trips (`9` is `"9"`) and is kept.
+
+def _value_texts(root: yaml.Node | None, i: int) -> list[str | None]:
+    """The source text of each `decisions[i].group.values` scalar, as written."""
+    node = root
+    for key in ("decisions", i, "group", "values"):
+        node = _child_node(node, key)
+    if not isinstance(node, yaml.SequenceNode):
+        return []
+    return [v.value if isinstance(v, yaml.ScalarNode) else None for v in node.value]
+
+
+def _decision_values(group: _Reader, texts: list[str | None]) -> None:
+    """Refuse a group value YAML rewrote: `9.50` reads as 9.5, `010` as 8.
+
+    A group's value is compared as text, so a rewritten value never matches,
+    or matches another group. Only quoted text, null and an int written in
+    plain decimal (`9` is `"9"`) pass; `texts` is each value's source text.
     """
     for i, value in enumerate(group.get("values", list, default=[])):
-        if isinstance(value, (bool, float)):
+        text = texts[i] if i < len(texts) else None
+        rewritten = isinstance(value, (bool, float, date)) or (
+            isinstance(value, int) and text != str(value)
+        )
+        if rewritten:
             group.fail(
                 f"values[{i}]",
-                f"YAML read this as {type(value).__name__} {value!r}; quote it "
-                "exactly as the triage line shows it",
+                f"YAML read {text if text is not None else value!r} as "
+                f"{type(value).__name__} {value!r}; quote it exactly as the "
+                "triage line shows it",
             )
 
 
-def _decision(reader: _Reader, comparison_ids: set[str]) -> Decision:
+def _decision(
+    reader: _Reader, comparison_ids: set[str], texts: list[str | None]
+) -> Decision:
     call = reader.get("call", str, required=True)
     if call not in CALLS:
         reader.fail("call", f"must be one of {', '.join(CALLS)}; got {call!r}")
@@ -273,7 +301,7 @@ def _decision(reader: _Reader, comparison_ids: set[str]) -> Decision:
     if comparison not in comparison_ids:
         reader.fail("comparison", f"{comparison!r} is not a comparison id")
     group = reader.get("group", dict, default={})
-    _decision_values(reader.child("group", group))
+    _decision_values(reader.child("group", group), texts)
     return Decision(
         id=reader.get("id", str, required=True),
         comparison=comparison,
@@ -305,7 +333,11 @@ def load_view_config(path: Path) -> ViewConfig:
             "not src/cube/model, which Cube loads as data model"
         )
     try:
-        data = yaml.safe_load(path.read_text())
+        text = path.read_text()
+        data = yaml.safe_load(text)
+        # The node tree keeps each scalar's source text, which a decision's
+        # values are checked against.
+        tree = yaml.compose(text, Loader=yaml.SafeLoader)
     except yaml.YAMLError as exc:
         raise ConfigError(f"{path}: not valid YAML: {exc}") from exc
 
@@ -335,7 +367,10 @@ def load_view_config(path: Path) -> ViewConfig:
         comparisons=comparisons,
         anchors=anchors,
         identities=[_identity(r) for r in _list_of(root, "identities")],
-        decisions=[_decision(r, set(ids)) for r in _list_of(root, "decisions")],
+        decisions=[
+            _decision(r, set(ids), _value_texts(tree, i))
+            for i, r in enumerate(_list_of(root, "decisions"))
+        ],
     )
 
 

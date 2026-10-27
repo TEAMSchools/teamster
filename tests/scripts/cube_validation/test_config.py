@@ -116,7 +116,10 @@ def test_fix_calls_need_a_task(tmp_path):
         load_view_config(path)
 
 
-@pytest.mark.parametrize("value", ["9.50", "true", "no"])
+@pytest.mark.parametrize(
+    "value",
+    ["9.50", "true", "no", "010", "12:30", "1_000", "+9", "2026-10-01T12:00:00Z"],
+)
 def test_decision_value_yaml_would_rewrite_is_refused(tmp_path, value):
     path = _write(tmp_path, EXAMPLE.replace('values: ["9"]', f"values: [{value}]"))
 
@@ -128,6 +131,15 @@ def test_decision_values_keep_ints_and_quoted_text(tmp_path):
     path = _write(tmp_path, EXAMPLE.replace('values: ["9"]', 'values: [9, "9.50"]'))
 
     assert load_view_config(path).decisions[0].group["values"] == [9, "9.50"]
+
+
+def test_decision_values_keep_quoted_rewritable_text(tmp_path):
+    values = '["9", "010", "12:30", "2026-10-01", 0, -3, null]'
+    path = _write(tmp_path, EXAMPLE.replace('values: ["9"]', f"values: {values}"))
+
+    assert load_view_config(path).decisions[0].group["values"] == [
+        "9", "010", "12:30", "2026-10-01", 0, -3, None,
+    ]  # fmt: skip
 
 
 SCOPE = (
