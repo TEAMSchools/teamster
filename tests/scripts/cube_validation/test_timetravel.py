@@ -25,7 +25,7 @@ class FakeCatalog:
 
 
 def test_cube_table_gets_alias_before_clause():
-    sql = (FIXTURES / "cube_compiled.sql").read_text()
+    sql = (FIXTURES / "cube_compiled.sql.txt").read_text()
     names = [
         "fct_student_attendance_enrollment_daily",
         "dim_student_enrollments",
@@ -147,3 +147,88 @@ def test_timestamp_is_normalized_to_utc():
 def test_naive_datetime_is_refused():
     with pytest.raises(ValueError, match="naive"):
         pin_clock("current_timestamp()", datetime(2026, 10, 22, 19, 0, 0))
+
+
+PINNED = "timestamp '2026-10-22 19:00:00+00:00'"
+
+
+def test_pin_clock_bare_forms():
+    assert pin_clock("current_date", TS) == f"date({PINNED})"
+    assert pin_clock("CURRENT_TIMESTAMP", TS) == PINNED
+    assert pin_clock("current_datetime", TS) == f"datetime({PINNED})"
+    assert pin_clock("current_time", TS) == f"time({PINNED})"
+    assert pin_clock("current_time('UTC')", TS) == f"time({PINNED}, 'UTC')"
+
+
+def test_pin_clock_nested_paren_zone():
+    assert (
+        pin_clock("current_date(concat('a','b'))", TS)
+        == f"date({PINNED}, concat('a','b'))"
+    )
+    assert pin_clock("current_date(lower('X')) > d", TS) == (
+        f"date({PINNED}, lower('X')) > d"
+    )
+
+
+def test_pin_clock_unbalanced_is_refused():
+    with pytest.raises(ValueError, match="unbalanced"):
+        pin_clock("current_date(lower('X')", TS)
+
+
+def test_clock_inside_inlined_view_is_pinned():
+    catalog = FakeCatalog(
+        {
+            "ds.v": TableInfo(
+                "VIEW",
+                "select current_date as d, current_timestamp() as t "
+                "from `teamster-332318`.`ds`.`base` as b",
+            ),
+            "ds.base": TableInfo("TABLE", None),
+        }
+    )
+
+    result = as_of("select * from ds.v as `v`", TS, catalog)
+
+    assert "current_" not in result.sql.lower()
+    assert f"date({PINNED}) as d" in result.sql
+    assert f"{PINNED} as t" in result.sql
+
+
+def test_dbt_ref_after_join_and_unaliased_ref():
+    catalog = FakeCatalog(
+        {"ds.a": TableInfo("TABLE", None), "ds.b": TableInfo("TABLE", None)}
+    )
+    sql = "select 1 from `teamster-332318`.`ds`.`a` join `teamster-332318`.`ds`.`b` as b on true"
+
+    result = as_of(sql, TS, catalog)
+
+    assert f"`teamster-332318.ds.a` {CLAUSE} join" in result.sql
+    assert f"`teamster-332318.ds.b` as b {CLAUSE} on" in result.sql
+    assert result.tables == frozenset({"ds.a", "ds.b"})
+
+
+def test_comma_joined_from_list_is_refused():
+    catalog = FakeCatalog(
+        {"d.t": TableInfo("TABLE", None), "d.u": TableInfo("TABLE", None)}
+    )
+
+    with pytest.raises(ValueError, match="comma"):
+        as_of("select 1 from d.t as `x`, d.u as `y`", TS, catalog)
+
+
+def test_unaliased_cube_style_ref_is_refused():
+    catalog = FakeCatalog({"d.t": TableInfo("TABLE", None)})
+
+    with pytest.raises(ValueError, match="not recognized"):
+        as_of("select 1 from d.t x", TS, catalog)
+
+    with pytest.raises(ValueError, match="not recognized"):
+        as_of("select 1 from a join d.t on true", TS, catalog)
+
+
+def test_extract_from_is_not_a_table_ref():
+    catalog = FakeCatalog({})
+
+    result = as_of("select extract(year from s.d) from unnest([1]) as x", TS, catalog)
+
+    assert result.tables == frozenset()

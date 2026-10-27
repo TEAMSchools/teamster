@@ -32,8 +32,16 @@ _CUBE_REF = re.compile(
 _REF = re.compile(f"{_DBT_REF.pattern}|{_CUBE_REF.pattern}", re.IGNORECASE)
 
 _CLOCK = re.compile(
-    r"\bcurrent_(?P<kind>date|datetime|timestamp)\s*\(\s*(?P<tz>[^()]*?)\s*\)",
-    re.IGNORECASE,
+    r"\bcurrent_(?P<kind>date|datetime|timestamp|time)\b", re.IGNORECASE
+)
+# A FROM or JOIN followed by a dotted name, whether or not a pattern above
+# understands it; any such name no pattern covers is refused, not skipped.
+_REF_CANDIDATE = re.compile(
+    r"\b(?:FROM|JOIN)\s+(?P<tok>[`\w-]+(?:\.[`\w-]+)+)", re.IGNORECASE
+)
+# `extract(day from d.col)` and `is distinct from d.col` are not table refs.
+_NOT_A_TABLE = re.compile(
+    r"(?:extract\s*\(\s*\w+|distinct|trim\s*\([^()]*?'[^()]*?')\s+$", re.IGNORECASE
 )
 
 
@@ -78,19 +86,60 @@ def pin_clock(sql: str, ts: datetime) -> str:
         ValueError: `ts` is naive.
     """
     literal = _utc_literal(ts)
+    out: list[str] = []
+    pos = 0
 
-    def replace(match: re.Match[str]) -> str:
+    while match := _CLOCK.search(sql, pos):
         kind = match["kind"].lower()
-        tz = match["tz"]
+        end = match.end()
+        tz = ""
+        j = end
+
+        while j < len(sql) and sql[j].isspace():
+            j += 1
+
+        if j < len(sql) and sql[j] == "(":
+            close = _closing_paren(sql, j)
+            tz = pin_clock(sql[j + 1 : close].strip(), ts)
+            end = close + 1
 
         if kind == "timestamp":
-            return f"timestamp '{literal}'"
+            new = f"timestamp '{literal}'"
+        else:
+            new = f"{kind}(timestamp '{literal}'" + (f", {tz}" if tz else "") + ")"
 
-        args = f"timestamp '{literal}'" + (f", {tz}" if tz else "")
+        out.append(sql[pos : match.start()])
+        out.append(new)
+        pos = end
 
-        return f"{'date' if kind == 'date' else 'datetime'}({args})"
+    out.append(sql[pos:])
 
-    return _CLOCK.sub(replace, sql)
+    return "".join(out)
+
+
+def _closing_paren(sql: str, open_at: int) -> int:
+    """Return the index of the `)` that closes the `(` at `open_at`."""
+    depth = 0
+    quote = ""
+
+    for i in range(open_at, len(sql)):
+        ch = sql[i]
+
+        if quote:
+            quote = "" if ch == quote else quote
+        elif ch in "'\"":
+            quote = ch
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+
+            if depth == 0:
+                return i
+
+    raise ValueError(
+        f"unbalanced parenthesis in SQL near: {sql[open_at : open_at + 40]!r}"
+    )
 
 
 def as_of(sql: str, ts: datetime, catalog: Catalog) -> AsOf:
@@ -116,6 +165,8 @@ def as_of(sql: str, ts: datetime, catalog: Catalog) -> AsOf:
     def rewrite(text: str, depth: int) -> str:
         if depth > MAX_VIEW_DEPTH:
             raise ValueError(f"view depth exceeds {MAX_VIEW_DEPTH}")
+
+        _refuse_unmatched(text)
 
         def replace(match: re.Match[str]) -> str:
             if match["d_ds"]:
@@ -151,8 +202,13 @@ def as_of(sql: str, ts: datetime, catalog: Catalog) -> AsOf:
 
         return _REF.sub(replace, text)
 
+    rewritten = rewrite(pin_clock(sql, ts), 0)
+
+    if left := _CLOCK.search(rewritten):
+        raise ValueError(f"unpinned clock function left in SQL: {left[0]!r}")
+
     return AsOf(
-        sql=rewrite(pin_clock(sql, ts), 0),
+        sql=rewritten,
         tables=frozenset(tables),
         live=frozenset(live),
     )
@@ -161,3 +217,26 @@ def as_of(sql: str, ts: datetime, catalog: Catalog) -> AsOf:
 def _as(alias: str) -> str:
     """Return a view's alias clause with a single leading space."""
     return " " + alias.strip()
+
+
+def _refuse_unmatched(text: str) -> None:
+    """Raise if `text` reads a table the rewrite patterns would silently skip."""
+    covered = [m.span() for m in _REF.finditer(text)]
+
+    for cand in _REF_CANDIDATE.finditer(text):
+        start = cand.start("tok")
+
+        if any(a <= start < b for a, b in covered):
+            continue
+
+        if _NOT_A_TABLE.search(text[: cand.start()]):
+            continue
+
+        raise ValueError(f"table reference not recognized: {cand['tok']!r}")
+
+    for _, end in covered:
+        if text[end:].lstrip().startswith(","):
+            raise ValueError(
+                "comma-joined FROM list is not supported; "
+                f"near: {text[max(end - 30, 0) : end + 30]!r}"
+            )
