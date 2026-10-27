@@ -10,6 +10,7 @@ inside BigQuery through `compare.reconcile_sql`.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import re
 
@@ -30,7 +31,7 @@ from . import discover as finder
 from . import report, tableau
 from .bq import Warehouse
 from .checks import CheckResult, Finding
-from .compare import Group
+from .compare import Gap, Group
 from .config import ColumnPair, Comparison, Decision, ViewConfig, write_proof
 from .cube_client import (
     Compiled,
@@ -380,7 +381,15 @@ def probe_fingerprint(cfg: ViewConfig, comparison: Comparison) -> str:
     It covers the probe text, dims, defaults and dashboard view; `run` refuses
     a proof whose probe has changed since.
     """
-    return decisions.sql_fingerprint(probe_sql(cfg, comparison, {}))
+    base = decisions.sql_fingerprint(probe_sql(cfg, comparison, {}))
+    # How the export is read is part of what a proof covers. Unset keys add
+    # nothing, so a proof written before them keeps its fingerprint.
+    extras = [f"sheet_field={comparison.sheet_field}"] if comparison.sheet_field else []
+    if comparison.split_rows != "refuse":
+        extras.append(f"split_rows={comparison.split_rows}")
+    if not extras:
+        return base
+    return hashlib.sha256("\n".join([base, *extras]).encode()).hexdigest()
 
 
 def _as_of(sql: str, ts: datetime, wh: Warehouse) -> AsOf:
@@ -612,8 +621,9 @@ def _measures(
     cells: list[Cell],
     other: dict[str, list[CheckResult]],
     open_groups: list[Group],
+    open_gaps: list[Gap],
 ) -> list[MeasureResult]:
-    """The verdict reads cells only; open row groups are counted beside it."""
+    """The verdict reads cells only; open groups and gaps are counted beside it."""
     results: dict[str, list[CheckResult]] = {}
     counts: dict[str, Counter] = {}
     measure_of = {c.id: c.measure for c in comparisons}
@@ -627,6 +637,11 @@ def _measures(
     for measure, found in other.items():
         results.setdefault(measure, []).extend(found)
     groups = Counter(measure_of.get(g.comparison_id) for g in open_groups)
+    gaps = Counter(
+        measure
+        for g in open_gaps
+        for measure in {measure_of.get(c) for c in g.comparisons}
+    )
     return [
         MeasureResult(
             measure,
@@ -634,6 +649,7 @@ def _measures(
             checks.verdict(found),
             dict(counts.get(measure, {})),
             groups.get(measure, 0),
+            gaps.get(measure, 0),
         )
         for measure, found in results.items()
     ]
@@ -701,6 +717,42 @@ def _unproven_totals(comparisons: list[Comparison]) -> list[str]:
         elif skipped > 0:
             out.append(f"{comparison.id}: totals not proven: {skipped} rows")
     return out
+
+
+def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
+    """Missing cuts and filters across the proofs, one per kind and field.
+
+    Also lists each comparison whose proof predates them.
+    """
+    found: dict[tuple[str, str], dict[str, Any]] = {}
+    unknown = []
+    for comparison in comparisons:
+        proof = comparison.proof
+        if proof is None or proof.missing_cuts is None or proof.missing_filters is None:
+            unknown.append(
+                f"{comparison.id}: missing cuts and filters unknown (the proof "
+                "predates them); re-prove"
+            )
+            continue
+        restricting = set(proof.restricting_filters or [])
+        for kind, names in (
+            ("cut", proof.missing_cuts),
+            ("filter", proof.missing_filters),
+        ):
+            for name in names:
+                entry = found.setdefault(
+                    (kind, name),
+                    {"sheets": [], "comparisons": [], "restricting": False},
+                )
+                if comparison.sheet and comparison.sheet not in entry["sheets"]:
+                    entry["sheets"].append(comparison.sheet)
+                entry["comparisons"].append(comparison.id)
+                entry["restricting"] |= kind == "filter" and name in restricting
+    gaps = [
+        Gap(kind, name, tuple(e["sheets"]), tuple(e["comparisons"]), e["restricting"])
+        for (kind, name), e in sorted(found.items())
+    ]
+    return gaps, unknown
 
 
 def run(
@@ -779,8 +831,11 @@ def run(
         findings, other = _anchors_and_identities(cfg, cube, wh, comparisons)
         cost = wh.spent
 
+    gaps, gaps_unknown = _gaps(comparisons)
     try:
-        applied = decisions.apply(cfg.decisions, sides.groups, sides.fingerprints)
+        applied = decisions.apply(
+            cfg.decisions, sides.groups, sides.fingerprints, gaps=gaps
+        )
     except ValueError as exc:
         raise Refusal(str(exc)) from exc
 
@@ -788,7 +843,9 @@ def run(
     result = RunResult(
         view=cfg.view,
         moment=build,
-        measures=_measures(comparisons, sides.cells, other, applied.open),
+        measures=_measures(
+            comparisons, sides.cells, other, applied.open, applied.open_gaps
+        ),
         applied=applied,
         findings=findings,
         live_sources=sorted(sides.live),
@@ -807,6 +864,7 @@ def run(
         clauses={k: v for k, v in clauses.items() if v},
         fingerprints=sides.fingerprints,
         decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
+        gaps_unknown=gaps_unknown,
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells, findings)
     print(text)
@@ -829,6 +887,16 @@ def _group(data: dict) -> Group:
     return Group(**{**data, "dims": tuple(tuple(d) for d in data["dims"])})
 
 
+def _gap(data: dict) -> Gap:
+    return Gap(
+        **{
+            **data,
+            "sheets": tuple(data["sheets"]),
+            "comparisons": tuple(data["comparisons"]),
+        }
+    )
+
+
 def _run_from_json(data: dict) -> RunResult:
     moment = data["moment"]
     applied = data["applied"]
@@ -848,6 +916,10 @@ def _run_from_json(data: dict) -> RunResult:
             partly_stale=[
                 (Decision(**d), list(v)) for d, v in applied.get("partly_stale", [])
             ],
+            open_gaps=[_gap(g) for g in applied.get("open_gaps", [])],
+            quiet_gaps=[
+                (Decision(**d), _gap(g)) for d, g in applied.get("quiet_gaps", [])
+            ],
         ),
         findings=[Finding(**f) for f in data["findings"]],
         live_sources=data["live_sources"],
@@ -860,6 +932,7 @@ def _run_from_json(data: dict) -> RunResult:
         clauses=data["clauses"],
         fingerprints=data.get("fingerprints", {}),
         decisions_fingerprint=data.get("decisions_fingerprint", ""),
+        gaps_unknown=data.get("gaps_unknown", []),
     )
 
 
@@ -1014,7 +1087,6 @@ def _export_columns(
     comparison: Comparison,
     headers: list[str],
     columns: list[ET.Element],
-    value_column: str | None,
 ) -> tuple[dict[str, str], str]:
     """Map export headers to dashboard dim names, and pick the value header."""
     lower = {h.lower(): h for h in headers}
@@ -1039,19 +1111,152 @@ def _export_columns(
             )
         mapping[found[0]] = dim.dashboard
     rest = [h for h in headers if h not in mapping]
-    if value_column:
-        if value_column not in rest:
+    field = comparison.sheet_field
+    if field:
+        if field not in rest:
             raise Refusal(
-                f"--value-column {value_column!r} is not an export column; "
-                f"choose from {', '.join(rest)}"
+                f"sheet_field {field!r} is not an export column; "
+                f"the export has {', '.join(rest)}"
             )
-        return mapping, value_column
+        return mapping, field
     if len(rest) != 1:
         raise Refusal(
             f"the export has {len(rest)} columns besides the dims "
-            f"({', '.join(rest)}); name the one to compare with --value-column"
+            f"({', '.join(rest)}); name the one to compare with sheet_field"
         )
     return mapping, rest[0]
+
+
+MEASURE_NAMES, MEASURE_VALUES = "Measure Names", "Measure Values"
+
+
+def long_to_wide(rows: list[dict[str, str]], field: str | None) -> list[dict[str, str]]:
+    """Keep one field of a long export as its own column.
+
+    A sheet with `Measure Names` on a shelf exports one row per field, naming
+    it in `Measure Names` and holding it in `Measure Values`. A wide export
+    comes back as is.
+
+    Raises:
+        Refusal: The export is long and `field` is unset or names no field in
+            it; the message lists the fields it has.
+    """
+    if not rows or MEASURE_NAMES not in rows[0]:
+        return rows
+    names = ", ".join(sorted({r[MEASURE_NAMES] for r in rows}))
+    if not field:
+        raise Refusal(
+            f"the export has one row per field; set sheet_field to one of {names}"
+        )
+    kept = [
+        {
+            **{k: v for k, v in r.items() if k not in (MEASURE_NAMES, MEASURE_VALUES)},
+            field: r[MEASURE_VALUES],
+        }
+        for r in rows
+        if r[MEASURE_NAMES] == field
+    ]
+    if not kept:
+        raise Refusal(f"sheet_field {field!r} is not in the export; it has {names}")
+    return kept
+
+
+@dataclasses.dataclass(frozen=True)
+class SheetGaps:
+    """Sheet fields with no Cube member, by caption. Values are never read."""
+
+    cuts: list[str]
+    filters: list[str]
+    restricting: list[str]
+
+
+# A shelf or filter field: `[derivation:name:type]`, with an optional `:N`.
+# Measure Names, user filters and action filters have no derivation, so they
+# never match.
+_FIELD_REF = re.compile(r"\[(?P<deriv>[a-z]*):(?P<name>[^\]]+?):[a-z]+(?::\d+)?\]")
+# Derivations that aggregate a field; such a field is a value, not a cut.
+_AGGREGATES = {
+    "sum", "avg", "cnt", "ctd", "cntd", "min", "max", "attr", "med", "usr",
+    "std", "stp", "var", "vrp", "pcto", "pctd", "kurt", "skew", "collect",
+}  # fmt: skip
+# A field built on the viewer's identity is a permission, not a cut.
+_USER_FUNCTION = re.compile(
+    r"\b(USERNAME|FULLNAME|USERDOMAIN|ISMEMBEROF|ISUSERNAME|ISFULLNAME|"
+    r"USERATTRIBUTE|USERATTRIBUTEINCLUDES)\s*\(",
+    re.IGNORECASE,
+)
+_USER_NS = "{http://www.tableausoftware.com/xml/user}"
+
+
+def _restricts(filter_el: ET.Element) -> bool:
+    """True when a filter narrows the sheet now, rather than showing all."""
+    if filter_el.get("class") == "quantitative":
+        return any(c.tag in ("min", "max") for c in filter_el)
+    top = filter_el.find("groupfilter")
+    if top is None:
+        return False
+    return not (
+        top.get("function") == "level-members"
+        and top.get(f"{_USER_NS}ui-enumeration") == "all"
+    )
+
+
+def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
+    """Name the sheet's cuts and filters that have no Cube member.
+
+    A field counts as having one when the comparison maps it anywhere: a dim,
+    a filter, or a row grain or value. Aggregated fields, `Measure Names`,
+    user filters and fields built on the viewer's identity are skipped.
+    """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    root = ET.fromstring(twb_xml)
+    ws = next(
+        (w for w in root.iter("worksheet") if w.get("name") == comparison.sheet), None
+    )
+    if ws is None:
+        raise Refusal(f"the workbook has no worksheet {comparison.sheet!r}")
+    pairs = [*comparison.dims, *comparison.filters.values()]
+    if comparison.rows:
+        pairs += [*comparison.rows.grain, *comparison.rows.values]
+    mapped = {p.dashboard for p in pairs}
+    mapped_captions = set(comparison.filters)
+    caption: dict[str, str] = {}
+    personal: set[str] = set()
+    for col in ws.iter("column"):
+        name = _bare(col.get("name") or "")
+        caption.setdefault(name, col.get("caption") or name)
+        calc = col.find("calculation")
+        if calc is not None and _USER_FUNCTION.search(calc.get("formula") or ""):
+            personal.add(name)
+
+    def field_of(ref: str) -> str | None:
+        m = _FIELD_REF.search(ref)
+        if m is None or m["deriv"] in _AGGREGATES:
+            return None
+        name = m["name"]
+        if name in mapped or name in personal or caption.get(name) in mapped_captions:
+            return None
+        return name
+
+    shelves = " ".join(
+        [el.text or "" for el in ws.iter() if el.tag in ("rows", "cols")]
+        + [el.get("column") or "" for enc in ws.iter("encodings") for el in enc]
+    )
+    cuts = {f for ref in _FIELD_REF.finditer(shelves) if (f := field_of(ref[0]))}
+    filters: set[str] = set()
+    restricting: set[str] = set()
+    for filter_el in ws.iter("filter"):
+        name = field_of(filter_el.get("column") or "")
+        if name is None or name in cuts:
+            continue
+        filters.add(name)
+        if _restricts(filter_el):
+            restricting.add(name)
+
+    def captions(names: set[str]) -> list[str]:
+        return sorted({caption.get(n, n) for n in names})
+
+    return SheetGaps(captions(cuts), captions(filters), captions(restricting))
 
 
 TOTAL_LABEL = "All"
@@ -1081,13 +1286,15 @@ def _export_cells(
     value: str,
     columns: list[ET.Element],
     probe_rows: list[dict],
-) -> tuple[list[dict], int]:
-    """Turn export rows into probe-shaped cells, and count the total rows.
+) -> tuple[list[dict], int, int]:
+    """Turn export rows into probe-shaped cells; count total and summed rows.
 
     An export shows a dim's alias (grade 0 as `K`), so each value goes back
     through the sheet's aliases. A sheet with totals exports them as rows whose
     dim reads `All`; those are dropped, unless the probe has a real `All`
-    member for that dim.
+    member for that dim. With `split_rows: sum`, rows that share every mapped
+    dim (split by a sheet field Cube lacks) are added into one cell; blanks are
+    skipped, and a cell of blanks stays blank.
     """
     aliases = {d.dashboard: _alias_keys(columns, d.dashboard) for d in comparison.dims}
     real_all = {
@@ -1104,7 +1311,29 @@ def _export_cells(
             continue
         dims = {d: aliases[d].get(v, v) for d, v in dims.items()}
         cells.append({**dims, "value": r[value]})
-    return cells, totals
+    if comparison.split_rows != "sum":
+        return cells, totals, 0
+    merged: dict[tuple, dict] = {}
+    sums: dict[tuple, Decimal | None] = {}
+    for cell in cells:
+        key = tuple(cell[d.dashboard] for d in comparison.dims)
+        merged.setdefault(key, cell)
+        text = str(cell["value"]).strip()
+        if not text:
+            sums.setdefault(key, None)
+            continue
+        try:
+            number = Decimal(text)
+        except InvalidOperation as exc:
+            raise Refusal(f"cannot add export value {text!r}") from exc
+        sums[key] = (sums.get(key) or Decimal(0)) + number
+    out = []
+    for k, cell in merged.items():
+        total = sums[k]
+        out.append(
+            {**cell, "value": "" if total is None else format(total.normalize(), "f")}
+        )
+    return out, totals, len(cells) - len(out)
 
 
 def prove(
@@ -1116,11 +1345,15 @@ def prove(
     tbl: tableau.Tableau,
     now: datetime,
     max_usd: float,
-    value_column: str | None,
+    captures: dict[tuple, tableau.Snapshot] | None = None,
+    failures_dir: Path | None = None,
 ) -> tableau.Proof:
     """Prove a comparison's probe against the sheet and write `proof:`.
 
-    Failures and browser cuts print to the terminal only.
+    Failures and browser cuts print to the terminal only: a count per reason
+    and a few samples, with the full list in `failures_dir` when given.
+    `captures` keeps each sheet's export across calls, so comparisons on one
+    sheet and cuts share a capture.
 
     Raises:
         Refusal: The comparison is unknown or incomplete, an exportable cut
@@ -1141,17 +1374,21 @@ def prove(
     if not exportable:
         raise Refusal(f"comparison {comparison.id!r} has no cut a REST export can take")
 
-    try:
-        snap = tbl.capture(
-            workbook,
-            sheet,
-            exportable,
-            lambda x: tableau.expose_sheet(
-                tableau.drop_number_formats(x, measures), sheet
-            ),
-        )
-    except (LookupError, tableau.RefreshMovedError) as exc:
-        raise Refusal(f"cannot export {sheet!r}: {exc}") from exc
+    captures = {} if captures is None else captures
+    key = (workbook, sheet, tuple(cut_label(cut) for cut in exportable))
+    if key not in captures:
+        try:
+            captures[key] = tbl.capture(
+                workbook,
+                sheet,
+                exportable,
+                lambda x: tableau.expose_sheet(
+                    tableau.drop_number_formats(x, measures), sheet
+                ),
+            )
+        except (LookupError, tableau.RefreshMovedError) as exc:
+            raise Refusal(f"cannot export {sheet!r}: {exc}") from exc
+    snap = captures[key]
     if snap.refresh_started < now - PROOF_WINDOW:
         raise Refusal(
             f"the extract refreshed at {snap.refresh_started}, outside the 7 days "
@@ -1170,14 +1407,15 @@ def prove(
             if not rows or not probe_rows:
                 side = "export" if not rows else "probe"
                 raise Refusal(f"cut {label}: the {side} has no rows")
-            mapping, value = _export_columns(
-                comparison, list(rows[0]), columns, value_column
-            )
-            cells, totals = _export_cells(
+            rows = long_to_wide(rows, comparison.sheet_field)
+            mapping, value = _export_columns(comparison, list(rows[0]), columns)
+            cells, totals, summed = _export_cells(
                 comparison, rows, mapping, value, columns, probe_rows
             )
             if totals:
                 print(f"cut {label}: skipped {totals} total rows ({TOTAL_LABEL})")
+            if summed:
+                print(f"cut {label}: summed {summed} split export rows into others")
             totals_skipped += totals
             exports += [{**c, "cut": label} for c in cells]
             probes += [
@@ -1197,9 +1435,13 @@ def prove(
         print(f"Prove in the browser: {cut_label(cut)}")
     if not proof.proven:
         print(f"Proof failed for {comparison.id} ({proof.cells} cells matched):")
-        for failure in proof.failures:
-            print(f"  {failure}")
+        _print_failures(comparison.id, proof.failures, failures_dir)
         raise Refusal(f"comparison {comparison.id!r} is not proven; nothing written")
+
+    gaps = sheet_gaps(twb, comparison)
+    for kind, names in (("cuts", gaps.cuts), ("filters", gaps.filters)):
+        if names:
+            print(f"Sheet {kind} with no Cube member: {', '.join(names)}")
 
     write_proof(
         path,
@@ -1214,10 +1456,43 @@ def prove(
             "cuts": [cut_label(cut) for cut in exportable],
             # `run` lists these rows as totals no proof covered.
             "totals_skipped": totals_skipped,
+            # `run` lists these as missing cuts and filters to triage.
+            "missing_cuts": gaps.cuts,
+            "missing_filters": gaps.filters,
+            "restricting_filters": gaps.restricting,
         },
     )
     print(f"Proved {comparison.id}: {proof.cells} cells; wrote proof to {path}.")
     return proof
+
+
+FAILURE_SAMPLES = 5
+
+
+def _failure_reason(failure: str) -> str:
+    if " decimals (" in failure:
+        return "value differs at the displayed decimals"
+    return failure.rsplit(": ", 1)[-1]
+
+
+def _print_failures(
+    comparison_id: str, failures: list[str], failures_dir: Path | None
+) -> None:
+    """Print a count per reason and a few samples; save the full list locally.
+
+    A failure line can name a student, so the full list stays in the local
+    cache, never in anything posted.
+    """
+    for reason, n in Counter(map(_failure_reason, failures)).most_common():
+        print(f"  {n} x {reason}")
+    print(f"  First {min(FAILURE_SAMPLES, len(failures))} of {len(failures)}:")
+    for failure in failures[:FAILURE_SAMPLES]:
+        print(f"    {failure}")
+    if failures_dir is not None:
+        failures_dir.mkdir(parents=True, exist_ok=True)
+        path = failures_dir / f"prove-failures-{comparison_id}.txt"
+        path.write_text("\n".join(failures) + "\n")
+        print(f"  Full list: {path}")
 
 
 def prove_check(cfg: ViewConfig, *, tbl: tableau.Tableau) -> list[str]:

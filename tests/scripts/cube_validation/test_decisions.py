@@ -1,5 +1,7 @@
 import pytest
-from cube_validation.compare import Group
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.compare import Gap, Group
 from cube_validation.config import Decision
 from cube_validation.decisions import apply, sql_fingerprint
 
@@ -204,3 +206,33 @@ def test_decision_on_a_column_the_rows_lack_is_no_longer_needed():
         [_decision(column="school")], [_row("Newark", "2")], {"enrollment": FP}
     )
     assert applied.no_longer_needed and len(applied.open) == 1
+
+
+TEAM = Gap("cut", "Team", ("Roster",), ("tardy-roster",))
+TERM = Gap("filter", "Term", ("Roster",), ("tardy-roster",))
+
+
+def _gap_decision(id="g1", cut="Team", flt=""):
+    return Decision(
+        id=id, comparison="", call="fix_cube", reason="no member", task="#1",
+        missing_cut=cut, missing_filter=flt,
+    )  # fmt: skip
+
+
+def test_gap_decision_quiets_its_gap_without_fingerprints():
+    applied = apply([_gap_decision()], [], {}, gaps=[TEAM, TERM])
+    assert applied.quiet_gaps == [(_gap_decision(), TEAM)]
+    assert applied.open_gaps == [TERM] and applied.reconfirm == []
+
+
+def test_gap_decision_matches_kind_and_field():
+    # A cut decision does not quiet a filter of the same name.
+    term_cut = _gap_decision(cut="Term")
+    applied = apply([term_cut], [], {}, gaps=[TERM])
+    assert applied.open_gaps == [TERM]
+    assert applied.no_longer_needed == [term_cut]
+
+
+def test_two_decisions_on_one_gap_raise():
+    with pytest.raises(ValueError, match="missing cut 'Team'"):
+        apply([_gap_decision(), _gap_decision(id="g2")], [], {}, gaps=[TEAM])

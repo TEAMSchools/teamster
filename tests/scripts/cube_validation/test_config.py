@@ -368,3 +368,83 @@ def test_scope_cube_that_is_not_plain_is_refused(tmp_path):
     text = EXAMPLE.replace("scope: []", "scope: [{ cube: 'x; y', values: [a] }]", 1)
     with pytest.raises(ConfigError, match="plain identifier"):
         load_view_config(_write(tmp_path, text))
+
+
+# --- sheet shape and missing cuts ---------------------------------------------
+
+SHAPE = "    probe: avg(is_present)\n"
+GAP_DECISION = """\
+  - id: no-team
+    missing_cut: Team
+    call: deliberate
+    reason: Team is a homeroom label
+"""
+
+
+def test_sheet_field_and_split_rows_load(tmp_path):
+    text = EXAMPLE.replace(
+        SHAPE, SHAPE + '    sheet_field: "# Tardy"\n    split_rows: sum\n'
+    )
+    first = load_view_config(_write(tmp_path, text)).comparisons[0]
+    assert first.sheet_field == "# Tardy" and first.split_rows == "sum"
+
+
+def test_split_rows_defaults_to_refuse(tmp_path):
+    first = load_view_config(_write(tmp_path, EXAMPLE)).comparisons[0]
+    assert first.sheet_field is None and first.split_rows == "refuse"
+
+
+def test_split_rows_takes_only_known_modes(tmp_path):
+    text = EXAMPLE.replace(SHAPE, SHAPE + "    split_rows: average\n")
+    with pytest.raises(ConfigError, match=r"split_rows.*refuse, sum"):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_proof_reads_missing_cuts_and_filters(tmp_path):
+    proof = """\
+    proof:
+      fingerprint: f
+      cells: 3
+      proven_at: '2026-10-27T00:00:00+00:00'
+      missing_cuts: [Team]
+      missing_filters: [Enroll Status, Term]
+      restricting_filters: [Enroll Status]
+"""
+    text = EXAMPLE.replace("    proof: null\n", proof)
+    p = load_view_config(_write(tmp_path, text)).comparisons[0].proof
+    assert p.missing_cuts == ["Team"]
+    assert p.missing_filters == ["Enroll Status", "Term"]
+    assert p.restricting_filters == ["Enroll Status"]
+
+
+def test_old_proof_reads_missing_lists_as_unknown(tmp_path):
+    text = EXAMPLE.replace(
+        "    proof: null\n", "    proof:\n      fingerprint: f\n      cells: 1\n"
+    )
+    p = load_view_config(_write(tmp_path, text)).comparisons[0].proof
+    assert p.missing_cuts is None and p.missing_filters is None
+
+
+def test_gap_decision_loads_without_comparison_or_fingerprints(tmp_path):
+    cfg = load_view_config(_write(tmp_path, EXAMPLE + GAP_DECISION))
+    d = cfg.decisions[1]
+    assert (d.missing_cut, d.missing_filter, d.comparison) == ("Team", "", "")
+
+
+@pytest.mark.parametrize(
+    "extra, match",
+    [
+        ("    missing_filter: Term\n", "only one of group, missing_cut"),
+        ("    group: { column: region, values: [x] }\n", "only one of group"),
+        ("    comparison: ada-y1-region\n", "belongs to the view"),
+    ],
+)
+def test_gap_decision_shape_is_checked(tmp_path, extra, match):
+    with pytest.raises(ConfigError, match=match):
+        load_view_config(_write(tmp_path, EXAMPLE + GAP_DECISION + extra))
+
+
+def test_group_decision_still_needs_comparison(tmp_path):
+    text = EXAMPLE.replace("    comparison: ada-y1-region\n    group:", "    group:")
+    with pytest.raises(ConfigError, match=r"decisions\[0\]\.comparison"):
+        load_view_config(_write(tmp_path, text))

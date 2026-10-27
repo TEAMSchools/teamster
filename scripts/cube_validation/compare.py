@@ -38,6 +38,21 @@ class Group:
         return dict(self.dims).get(column)
 
 
+@dataclass(frozen=True)
+class Gap:
+    """A sheet field with no Cube member, across the view's proven sheets.
+
+    `kind` is `cut` (on a shelf) or `filter`. `restricting` marks a filter set
+    to chosen values rather than All on at least one sheet.
+    """
+
+    kind: str
+    field: str
+    sheets: tuple[str, ...]
+    comparisons: tuple[str, ...]
+    restricting: bool = False
+
+
 def _numbered(rows_sql: str, grain: list[str], values: list[str]) -> str:
     """Wrap a row source, numbering duplicates on the grain so the join cannot fan out."""
     order = ", ".join(values or grain)

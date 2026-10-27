@@ -58,6 +58,7 @@ comparisons:
     sheet: Rate by Region
     dashboard_view: kipptaf_tableau.rpt_d
     probe: avg(is_present)
+    sheet_field: Rate
     decimals: 3
     dims:
       - { dashboard: region, cube: regions_region_name }
@@ -214,6 +215,7 @@ class FakeTableau:
         return self.updated
 
     def capture(self, workbook_luid, sheet, cuts, xml_edit):
+        self.captures = getattr(self, "captures", 0) + 1
         self.edited = xml_edit(self.twb)
         exports = self.exports or [
             [{"Region": "Newark", "Rate": "0.9123", "Count": "12"}] for _ in cuts
@@ -869,7 +871,7 @@ def test_check_api_refuses_when_a_table_rebuilt(fakes, tmp_path, capsys):
 
 def test_prove_writes_the_proof(fakes, tmp_path, capsys):
     path = _file(tmp_path, YML.replace(PROOF, "    proof: null\n"))
-    argv = ["prove", str(path), "--comparison", "ada-region", "--value-column", "Rate"]
+    argv = ["prove", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
 
@@ -898,7 +900,7 @@ def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsy
         "<window class='worksheet' hidden='true' name='Rate by Region'>",
     )
     path = _file(tmp_path, YML.replace(PROOF, "    proof: null\n"))
-    argv = ["prove", str(path), "--comparison", "ada-region", "--value-column", "Rate"]
+    argv = ["prove", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
 
@@ -921,7 +923,7 @@ def test_prove_reads_aliases_back_and_skips_total_rows(fakes, tmp_path, capsys):
         for _ in range(2)
     ]
     path = _file(tmp_path, YML.replace(PROOF, "    proof: null\n"))
-    argv = ["prove", str(path), "--comparison", "ada-region", "--value-column", "Rate"]
+    argv = ["prove", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
 
@@ -954,7 +956,7 @@ def test_export_cells_reads_an_unquoted_numeric_alias_key_back():
     ]
     probe = [{"grade_level": 0, "value": 0.94}, {"grade_level": 1, "value": 0.95}]
 
-    cells, totals = pipeline._export_cells(
+    cells, totals, _ = pipeline._export_cells(
         comparison, rows, {"Grade Level": "grade_level"}, "Rate", columns, probe
     )
 
@@ -969,7 +971,7 @@ def test_prove_keeps_a_real_all_member(fakes, tmp_path, capsys):
     fakes.bq.probe = [{"region": "All", "value": 0.9001}]
     fakes.tbl.exports = [[{"Region": "All", "Rate": "0.9001"}] for _ in range(2)]
     path = _file(tmp_path, YML.replace(PROOF, "    proof: null\n"))
-    argv = ["prove", str(path), "--comparison", "ada-region", "--value-column", "Rate"]
+    argv = ["prove", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 0, capsys.readouterr().err
 
@@ -977,19 +979,19 @@ def test_prove_keeps_a_real_all_member(fakes, tmp_path, capsys):
 
 
 def test_prove_asks_which_column_holds_the_value(fakes, tmp_path, capsys):
-    argv = ["prove", str(_file(tmp_path)), "--comparison", "ada-region"]
+    path = _file(tmp_path, YML.replace("    sheet_field: Rate\n", ""))
+    argv = ["prove", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 1
 
     err = capsys.readouterr().err
-    assert "Rate" in err and "Count" in err and "--value-column" in err
+    assert "Rate" in err and "Count" in err and "sheet_field" in err
 
 
 def test_prove_refuses_a_cut_with_no_rows(fakes, tmp_path, capsys):
     fakes.tbl.exports = [[{"Region": "Newark", "Rate": "0.9123", "Count": "1"}], []]
     argv = [
         "prove", str(_file(tmp_path)), "--comparison", "ada-region",
-        "--value-column", "Rate",
     ]  # fmt: skip
 
     assert cli.main(argv) == 1
@@ -999,7 +1001,7 @@ def test_prove_refuses_a_cut_with_no_rows(fakes, tmp_path, capsys):
 def test_prove_does_not_write_a_failed_proof(fakes, tmp_path, capsys):
     path = _file(tmp_path, YML.replace(PROOF, "    proof: null\n"))
     fakes.bq.probe = [{"region": "Newark", "value": 0.5}]
-    argv = ["prove", str(path), "--comparison", "ada-region", "--value-column", "Rate"]
+    argv = ["prove", str(path), "--comparison", "ada-region"]
 
     assert cli.main(argv) == 1
 
@@ -1073,3 +1075,222 @@ def test_two_rows_on_one_cell_refuse():
         pipeline.Refusal, match="c .*dashboard: 2 rows share the cell 0"
     ):
         pipeline._cells(comparison, {}, dash, cube, 3)
+
+
+# --- prove: sheet shape --------------------------------------------------------
+
+UNPROVEN = YML.replace(PROOF, "    proof: null\n")
+TEAM_SHELF = (
+    "<rows>([federated.0sample].[none:region:nk] / "
+    "[federated.0sample].[none:team:nk])</rows>"
+)
+
+
+def _with_team(twb):
+    """Add a Team cut on the rows shelf and a Term filter left at All."""
+    twb = twb.replace("<rows>[federated.0sample].[none:region:nk]</rows>", TEAM_SHELF)
+    return twb.replace(
+        "          <aggregation value='true' />",
+        "          <column caption='Team' name='[team]' role='dimension' />\n"
+        "          <column caption='Term' name='[term]' role='dimension' />\n"
+        "          <filter class='categorical' column='[federated.0sample].[none:term:nk]'>"
+        "<groupfilter function='level-members' level='[none:term:nk]' "
+        "user:ui-enumeration='all' /></filter>\n"
+        "          <aggregation value='true' />",
+    )
+
+
+def test_prove_records_missing_cuts_and_filters(fakes, tmp_path, capsys):
+    fakes.tbl.twb = _with_team(fakes.tbl.twb)
+    path = _file(tmp_path, UNPROVEN)
+
+    assert cli.main(["prove", str(path), "--comparison", "ada-region"]) == 0
+
+    proof = load_view_config(path).comparisons[0].proof
+    assert proof.missing_cuts == ["Team"]
+    assert proof.missing_filters == ["Term"]
+    assert proof.restricting_filters == []
+    assert "Sheet cuts with no Cube member: Team" in capsys.readouterr().out
+
+
+def test_prove_sums_split_rows_of_a_long_export(fakes, tmp_path, capsys):
+    fakes.bq.probe = [{"region": "Newark", "value": 0.9}]
+    fakes.tbl.exports = [
+        [
+            {"Region": "Newark", "Team": "A", "Measure Names": "Rate", "Measure Values": "0.5"},
+            {"Region": "Newark", "Team": "A", "Measure Names": "Count", "Measure Values": "9"},
+            {"Region": "Newark", "Team": "B", "Measure Names": "Rate", "Measure Values": "0.4"},
+        ]
+        for _ in range(2)
+    ]  # fmt: skip
+    text = UNPROVEN.replace(
+        "    sheet_field: Rate\n", "    sheet_field: Rate\n    split_rows: sum\n"
+    )
+    path = _file(tmp_path, text)
+
+    assert cli.main(["prove", str(path), "--comparison", "ada-region"]) == 0, (
+        capsys.readouterr().err
+    )
+
+    assert load_view_config(path).comparisons[0].proof.cells == 2
+    assert "summed 1 split export rows" in capsys.readouterr().out
+
+
+def test_prove_refuses_split_rows_unless_asked(fakes, tmp_path, capsys):
+    fakes.bq.probe = [{"region": "Newark", "value": 0.9}]
+    fakes.tbl.exports = [
+        [
+            {"Region": "Newark", "Rate": "0.5", "Count": "1"},
+            {"Region": "Newark", "Rate": "0.4", "Count": "1"},
+        ]
+        for _ in range(2)
+    ]
+    path = _file(tmp_path, UNPROVEN)
+
+    assert cli.main(["prove", str(path), "--comparison", "ada-region"]) == 1
+
+    out = capsys.readouterr().out
+    assert "2 x more than 1 export row" in out
+    saved = tmp_path / "cache" / "v" / "prove-failures-ada-region.txt"
+    assert saved.read_text().count("more than 1 export row") == 2
+
+
+def test_prove_failure_output_is_summarized(fakes, tmp_path, capsys):
+    fakes.bq.probe = [{"region": f"R{i}", "value": 0.5} for i in range(20)]
+    fakes.tbl.exports = [
+        [{"Region": f"R{i}", "Rate": "0.9", "Count": "1"} for i in range(20)]
+        for _ in range(2)
+    ]
+    path = _file(tmp_path, UNPROVEN)
+
+    assert cli.main(["prove", str(path), "--comparison", "ada-region"]) == 1
+
+    out = capsys.readouterr().out
+    assert "40 x value differs at the displayed decimals" in out
+    assert "First 5 of 40:" in out
+    assert out.count(": export ") == 5
+
+
+def test_prove_several_comparisons_share_one_capture(fakes, tmp_path, capsys):
+    block = UNPROVEN.split("comparisons:\n", 1)[1].split("identities:", 1)[0]
+    text = UNPROVEN.replace(
+        "identities:", block.replace("id: ada-region", "id: ada-twin") + "identities:"
+    )
+    path = _file(tmp_path, text)
+    argv = [
+        "prove",
+        str(path),
+        "--comparison",
+        "ada-region",
+        "--comparison",
+        "ada-twin",
+    ]
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    assert fakes.tbl.captures == 1
+    assert all(c.proof is not None for c in load_view_config(path).comparisons)
+
+
+def test_prove_keeps_going_after_one_refusal(fakes, tmp_path, capsys):
+    argv = ["prove", str(_file(tmp_path, UNPROVEN)), "--comparison", "nope",
+            "--comparison", "ada-region"]  # fmt: skip
+
+    assert cli.main(argv) == 1
+
+    assert "nope" in capsys.readouterr().err
+    assert load_view_config(tmp_path / "v.yml").comparisons[0].proof is not None
+
+
+def test_probe_fingerprint_covers_how_the_export_is_read(tmp_path):
+    def fp(text):
+        cfg = load_view_config(_file(tmp_path, text))
+        return pipeline.probe_fingerprint(cfg, cfg.comparisons[0])
+
+    plain = YML.replace("    sheet_field: Rate\n", "")
+    base = pipeline.decisions.sql_fingerprint(
+        pipeline.probe_sql(
+            load_view_config(_file(tmp_path, plain)),
+            load_view_config(_file(tmp_path, plain)).comparisons[0],
+            {},
+        )
+    )
+    # Unset keys leave an older proof's fingerprint alone.
+    assert fp(plain) == base
+    assert fp(YML) != base
+    summed = YML.replace(
+        "    sheet_field: Rate\n", "    sheet_field: Rate\n    split_rows: sum\n"
+    )
+    assert fp(summed) not in (base, fp(YML))
+
+
+# --- run: missing cuts and filters ----------------------------------------------
+
+GAP_PROOF = (
+    PROOF
+    + """\
+      missing_cuts: [Team]
+      missing_filters: [Enroll Status]
+      restricting_filters: [Enroll Status]
+"""
+)
+
+
+def test_run_lists_missing_cuts_from_the_proof(fakes, tmp_path, capsys):
+    path = _file(tmp_path, YML.replace(PROOF, GAP_PROOF))
+
+    assert cli.main(["run", str(path)]) == 0, capsys.readouterr().err
+
+    out = capsys.readouterr().out
+    assert "`Team` (cut) on Rate by Region: Cube has no member; ada-region" in out
+    assert "(filter, set to chosen values, not All)" in out
+    assert "2 missing cuts or filters to triage" in out
+
+
+def test_run_says_when_a_proof_predates_missing_cuts(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    assert "ada-region: missing cuts and filters unknown" in capsys.readouterr().out
+
+
+def test_gap_decision_quiets_a_missing_cut(fakes, tmp_path, capsys):
+    text = (
+        YML.replace(PROOF, GAP_PROOF)
+        + """\
+decisions:
+  - id: no-team
+    missing_cut: Team
+    call: deliberate
+    reason: homeroom label only
+"""
+    )
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    out = capsys.readouterr().out
+    assert "1 missing cut or filter to triage" in out
+    assert "`no-team` (missing cut `Team`, deliberate)" in out
+
+
+def test_review_carries_a_domain_owner_missing_cut(fakes, tmp_path, capsys):
+    text = (
+        YML.replace(PROOF, GAP_PROOF)
+        + """\
+decisions:
+  - id: team-cut
+    missing_cut: Team
+    call: domain_owner
+    reason: the owner decides whether ADA needs a team cut
+    task: "#6150"
+"""
+    )
+    path = _file(tmp_path, text)
+    assert cli.main(["run", str(path)]) == 0
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+    out = capsys.readouterr().out
+    assert (
+        "`Team` on `Rate by Region` in `v`: a sheet cut Cube has no member for" in out
+    )
+    assert "Missing cuts and filters: 1." in out

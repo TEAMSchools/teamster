@@ -40,14 +40,32 @@ only the MAIN checkout's devcontainer template holds the Cube secret. So
 `tests/test_zz_cube_validation.py` in `/workspaces/teamster`, never a worktree
 copy:
 
-1. Set `CUBE_REST_URL` in the environment: the Cube Cloud REST base ending
-   `/cubejs-api/v1`. Never commit it.
-2. In the test, load the package by absolute path as top-level `cube_validation`
-   (`importlib.util.spec_from_file_location` with `submodule_search_locations`,
-   register in `sys.modules` before `exec_module`), from the checkout or
-   worktree under test, then call `cube_validation.cli.main([...])` and assert
-   the return is 0.
-3. Run `uv run pytest tests/test_zz_cube_validation.py -s --tb=short`, then
+1. Write the runner, filling in the worktree path, the URL (the Cube Cloud REST
+   base ending `/cubejs-api/v1`; never commit it) and the arguments:
+
+   ```python
+   import importlib.util
+   import sys
+
+   PKG = "<worktree>/scripts/cube_validation"
+
+
+   def test_cube_validation(monkeypatch):
+       monkeypatch.setenv("CUBE_REST_URL", "<url>")
+       spec = importlib.util.spec_from_file_location(
+           "cube_validation", f"{PKG}/__init__.py", submodule_search_locations=[PKG]
+       )
+       assert spec and spec.loader
+       module = importlib.util.module_from_spec(spec)
+       sys.modules["cube_validation"] = module
+       spec.loader.exec_module(module)
+       from cube_validation import cli
+
+       assert cli.main(["prove", "<worktree>/src/cube/validation/<view>.yml",
+                        "--comparison", "<id>"]) == 0
+   ```
+
+2. Run `uv run pytest tests/test_zz_cube_validation.py -s --tb=short`, then
    delete the file.
 
 `review` needs no credentials: run it from any checkout with
@@ -65,13 +83,26 @@ cause, do not retry around it.
 3. Write the comparison into the view file with `confirmed: true` and
    `proof: null`. Required: `workbook`, `sheet`, `dashboard_view`, `probe` (or
    `probe_sql`, never both), `decimals`, `dims`, `filters`, `defaults`, `cuts`,
-   `rows` grain and values. Use the exact keys in `config.py`.
+   `rows` grain and values. Use the exact keys in `config.py`. Two optional keys
+   say how to read the export:
+   - `sheet_field`: the field to compare, by its exported caption. In a long
+     export (`Measure Names` / `Measure Values` columns) it is a `Measure Names`
+     value; otherwise a column header. Required when the export has more than
+     one value column.
+   - `split_rows: sum`: adds export rows that share every mapped dim, for a
+     sheet split by a field Cube lacks (a homeroom, a teacher). Use it only for
+     a field that adds up (a sum or a count), never an average or a rate.
 4. `prove <file> --comparison <id>` exports the sheet from a `TEMP-CB` copy and
-   writes `proof` when the probe reproduces every cell at `decimals`. A failed
-   proof (cells mismatch) means the probe or the mapping is wrong: check the
-   probe, then the dims, cuts, filters and `--value-column`; never loosen
-   `decimals`. A "cannot export" or "7 days" refusal is not a failed proof:
-   retry after the refresh. The proof records the cuts its export covered.
+   writes `proof` when the probe reproduces every cell at `decimals`. Repeat
+   `--comparison` to prove several at once: comparisons on one sheet share one
+   export, and one refusal does not stop the rest. A failed proof (cells
+   mismatch) means the probe or the mapping is wrong: check the probe, then the
+   dims, cuts, filters, `sheet_field` and `split_rows`; never loosen `decimals`.
+   It prints a count per reason and 5 samples; the full list is in the local
+   cache. A "cannot export" or "7 days" refusal is not a failed proof: retry
+   after the refresh. The proof records the cuts its export covered, and the
+   sheet's cuts and filters with no Cube member (by caption; filter values are
+   never read).
 5. `check-api <file>` once per view, before the first `run`. A disagreement
    means Cube's API and its compiled SQL differ, so `run` results are not
    trustworthy until it is explained.
@@ -81,7 +112,11 @@ cause, do not retry around it.
 7. `run <file>` (add `--moment <ISO time>` for a build within the last 7 days).
    It prices queries first and stops over `--max-usd`. A proof with no recorded
    cuts is listed under "Cuts to prove in the browser" for a re-prove.
-8. Triage every open group into one of 4 calls, then record it (step 9):
+8. Triage every open group, and every missing cut and filter, into one of 4
+   calls, then record it (step 9). A missing cut or filter is a sheet field Cube
+   has no member for: Cube cannot make that cut, so the owner decides whether
+   the measure needs it. Map a field Cube does have under `filters:` instead of
+   recording a decision.
    - `deliberate`: the difference is intended. Say what the Cube member counts
      in its `description:`; reasoning stays in the decision.
    - `fix_dashboard`: the workbook or its view is wrong. Task: the domain's
@@ -100,6 +135,9 @@ cause, do not retry around it.
    values exactly as the triage line shows them. YAML rewrites an unquoted
    `9.50`, `010` or `no`, so the loader refuses one. A decision covers its group
    only while both fingerprints hold; do not copy fingerprints from another run.
+   A missing cut or filter takes `missing_cut: <caption>` or
+   `missing_filter: <caption>` in place of `group`, with no `comparison` and no
+   `fingerprints`: it covers the field across the view.
 10. `uv run python -m scripts.cube_validation review <files> --domain <domain>`
     prints the issue body. Show the draft to the analyst. Post it with
     `mcp__github__issue_write` only after approval, using the repo's issue
@@ -112,7 +150,10 @@ cause, do not retry around it.
   the difference in triage, and it is never reported as validated. Neither is
   "consistent only".
 - "validated" covers cells. A measure line that adds "open row groups to triage"
-  is not done until those groups are triaged.
+  or "missing cuts or filters to triage" is not done until they are triaged.
+- `scope` filters Cube's measure query, not only its rows: a scoped comparison
+  checks a narrower number than an unscoped Cube query returns. Say so when
+  reporting a scoped measure.
 - A cut no proof's export covered (a parameter cut, or one added since the
   proof) is evaluated by the proven probe and listed under "Cuts to prove in the
   browser".

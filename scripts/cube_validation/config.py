@@ -20,6 +20,9 @@ CALLS = ("deliberate", "fix_dashboard", "fix_cube", "domain_owner")
 CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "domain_owner")
 _TASK = re.compile(r"https://\S+|#\d+")
 SCOPE_OPERATORS = ("equals", "set")
+# How `prove` treats export rows that share every mapped dim: `refuse` fails
+# the proof; `sum` adds them, which is right only for a field that adds up.
+SPLIT_ROWS = ("refuse", "sum")
 
 # Every config value the SQL builders interpolate must pass one of these, so a
 # validation file cannot carry SQL text into a query.
@@ -55,6 +58,12 @@ class Proof:
     # Total rows the export showed and the proof skipped; None when the proof
     # predates the count.
     totals_skipped: int | None = None
+    # Sheet fields with no Cube member, by caption: cuts on the sheet's shelves,
+    # filters, and the filters that narrow the sheet now. None when the proof
+    # predates them.
+    missing_cuts: list[str] | None = None
+    missing_filters: list[str] | None = None
+    restricting_filters: list[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -75,6 +84,10 @@ class Comparison:
     scope: list[dict[str, Any]] = field(default_factory=list)
     rows: RowSpec | None = None
     proof: Proof | None = None
+    # The sheet field to compare, by its exported caption: a column header, or
+    # a `Measure Names` value in a long export.
+    sheet_field: str | None = None
+    split_rows: str = "refuse"
 
 
 @dataclass(frozen=True)
@@ -103,6 +116,10 @@ class Decision:
     group: dict[str, Any] = field(default_factory=dict)
     task: str = ""
     fingerprints: dict[str, str] = field(default_factory=dict)
+    # A decision on a sheet field Cube has no member for names it here instead
+    # of `group`, and covers the whole view, so it has no `comparison`.
+    missing_cut: str = ""
+    missing_filter: str = ""
 
 
 @dataclass(frozen=True)
@@ -218,6 +235,15 @@ def _comparison(reader: _Reader) -> Comparison:
             workbook_updated_at=str(proof_reader.data.get("workbook_updated_at", "")),
             probe_fingerprint=str(proof_reader.data.get("probe_fingerprint", "")),
             totals_skipped=totals_skipped,
+            missing_cuts=_captions(proof_reader, "missing_cuts"),
+            missing_filters=_captions(proof_reader, "missing_filters"),
+            restricting_filters=_captions(proof_reader, "restricting_filters"),
+        )
+
+    split_rows = reader.get("split_rows", str, default="refuse")
+    if split_rows not in SPLIT_ROWS:
+        reader.fail(
+            "split_rows", f"must be one of {', '.join(SPLIT_ROWS)}; got {split_rows!r}"
         )
 
     return Comparison(
@@ -237,7 +263,14 @@ def _comparison(reader: _Reader) -> Comparison:
         scope=[_scope_entry(r) for r in _list_of(reader, "scope")],
         rows=rows,
         proof=proof,
+        sheet_field=reader.get("sheet_field", str),
+        split_rows=split_rows,
     )
+
+
+def _captions(reader: _Reader, key: str) -> list[str] | None:
+    values = reader.get(key, list)
+    return None if values is None else [str(v) for v in values]
 
 
 def _scope_entry(reader: _Reader) -> dict[str, Any]:
@@ -328,11 +361,25 @@ def _decision(
     # link, never free text that could name a person.
     if task and not _TASK.fullmatch(task):
         reader.fail("task", f"must be an https:// link or #<issue>; got {task!r}")
-    comparison = reader.get("comparison", str, required=True)
-    if comparison not in comparison_ids:
-        reader.fail("comparison", f"{comparison!r} is not a comparison id")
-    group = reader.get("group", dict, default={})
-    _decision_values(reader.child("group", group), texts)
+    missing_cut = reader.get("missing_cut", str, default="")
+    missing_filter = reader.get("missing_filter", str, default="")
+    named = [
+        k for k in ("group", "missing_cut", "missing_filter") if reader.data.get(k)
+    ]
+    if len(named) > 1:
+        reader.fail(named[1], "set only one of group, missing_cut and missing_filter")
+    if missing_cut or missing_filter:
+        # A sheet field Cube lacks is missing from the view, not one comparison.
+        for key in ("comparison", "fingerprints"):
+            if key in reader.data:
+                reader.fail(key, "a missing cut or filter belongs to the view; drop it")
+        comparison, group = "", {}
+    else:
+        comparison = reader.get("comparison", str, required=True)
+        if comparison not in comparison_ids:
+            reader.fail("comparison", f"{comparison!r} is not a comparison id")
+        group = reader.get("group", dict, default={})
+        _decision_values(reader.child("group", group), texts)
     return Decision(
         id=reader.get("id", str, required=True),
         comparison=comparison,
@@ -341,6 +388,8 @@ def _decision(
         group=group,
         task=task,
         fingerprints=reader.get("fingerprints", dict, default={}),
+        missing_cut=missing_cut,
+        missing_filter=missing_filter,
     )
 
 
@@ -415,7 +464,8 @@ def write_proof(path: Path, comparison_id: str, proof: dict[str, Any]) -> None:
         comparison_id: The `id` of the comparison to update.
         proof: The new proof (`fingerprint`, `cells`, `proven_at`,
             `workbook_updated_at`, `probe_fingerprint`, `cuts`,
-            `totals_skipped`).
+            `totals_skipped`, `missing_cuts`, `missing_filters`,
+            `restricting_filters`).
 
     Raises:
         ConfigError: No comparison has that id.

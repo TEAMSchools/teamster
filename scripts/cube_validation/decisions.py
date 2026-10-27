@@ -12,7 +12,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from .compare import Group
+from .compare import Gap, Group
 from .config import Decision
 
 
@@ -24,6 +24,8 @@ class Applied:
     no_longer_needed: list[Decision] = field(default_factory=list)
     # A decision some of whose values match no group, with those values.
     partly_stale: list[tuple[Decision, list[str]]] = field(default_factory=list)
+    open_gaps: list[Gap] = field(default_factory=list)
+    quiet_gaps: list[tuple[Decision, Gap]] = field(default_factory=list)
 
 
 _OPEN = re.compile(r"(?i:rb|br|r|b)?('''|\"\"\"|'|\"|`)")
@@ -120,10 +122,19 @@ def _text(value: object) -> str:
     return "" if value is None else str(value)
 
 
+def _gap_of(decision: Decision) -> tuple[str, str] | None:
+    if decision.missing_cut:
+        return "cut", decision.missing_cut
+    if decision.missing_filter:
+        return "filter", decision.missing_filter
+    return None
+
+
 def apply(
     decisions: list[Decision],
     groups: list[Group],
     fingerprints: dict[str, dict[str, str]],
+    gaps: list[Gap] | tuple[Gap, ...] = (),
 ) -> Applied:
     """Sort groups and decisions by what the recorded decisions still cover.
 
@@ -132,6 +143,9 @@ def apply(
         groups: The groups of differences this run found.
         fingerprints: Current SQL fingerprints per comparison id, as
             `{"cube": ..., "dashboard": ...}`.
+        gaps: Sheet fields with no Cube member. A decision naming one by kind
+            and field quiets it; it carries no fingerprints, because a re-prove
+            rewrites the list it matches.
 
     Returns:
         Groups still open or quieted, decisions to reconfirm because the SQL
@@ -144,8 +158,22 @@ def apply(
     """
     applied = Applied()
     claimed: dict[int, Decision] = {}
+    gap_claims: dict[tuple[str, str], Decision] = {}
 
     for decision in decisions:
+        if (named := _gap_of(decision)) is not None:
+            gap = next((g for g in gaps if (g.kind, g.field) == named), None)
+            if gap is None:
+                applied.no_longer_needed.append(decision)
+                continue
+            if named in gap_claims:
+                raise ValueError(
+                    f"decisions {gap_claims[named].id!r} and {decision.id!r} both "
+                    f"claim missing {named[0]} {named[1]!r}"
+                )
+            gap_claims[named] = decision
+            applied.quiet_gaps.append((decision, gap))
+            continue
         current = fingerprints.get(decision.comparison) or {}
         if any(
             not decision.fingerprints.get(side)
@@ -187,4 +215,5 @@ def apply(
             applied.partly_stale.append((decision, missing))
 
     applied.open = [g for i, g in enumerate(groups) if i not in claimed]
+    applied.open_gaps = [g for g in gaps if (g.kind, g.field) not in gap_claims]
     return applied

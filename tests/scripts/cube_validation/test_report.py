@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 
 from cube_validation.checks import Finding
-from cube_validation.compare import Group
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.compare import Gap, Group
 from cube_validation.config import Decision
 from cube_validation.decisions import Applied
 from cube_validation.moment import Build
@@ -337,3 +339,61 @@ def test_local_result_says_anchors_read_current_data():
     assert caveat not in render_local(_run(findings=[]))
     findings = [Finding("anchor", "rate", "d", 7.0, 8.0, False)]
     assert caveat in render_local(_run(findings=findings))
+
+
+GAP_TEAM = Gap("cut", "Team", ("Roster",), ("tardy-roster", "absent-roster"))
+GAP_ENROLL = Gap("filter", "Enroll Status", ("Roster",), ("tardy-roster",), True)
+
+
+def _gap_decision(call="domain_owner"):
+    return Decision(
+        id="g1", comparison="", call=call, reason="owner decides the cut",
+        task="#6150", missing_cut="Team",
+    )  # fmt: skip
+
+
+def test_local_result_lists_missing_cuts_and_filters():
+    run = _run(applied=Applied(open_gaps=[GAP_TEAM, GAP_ENROLL]))
+    run.gaps_unknown = ["ada: missing cuts and filters unknown; re-prove"]
+    text = render_local(run)
+    section = text.split("## Missing cuts and filters", 1)[1].split("## ", 1)[0]
+    assert (
+        "`Team` (cut) on Roster: Cube has no member; tardy-roster, absent-roster"
+        in section
+    )
+    assert (
+        "`Enroll Status` (filter, set to chosen values, not All) on Roster" in section
+    )
+    assert "ada: missing cuts and filters unknown; re-prove" in section
+
+
+def test_measure_line_counts_open_missing_cuts():
+    run = _run()
+    run.measures[0].open_gaps = 2
+    assert "2 missing cuts or filters to triage" in render_local(run)
+
+
+def test_gap_decision_line_names_the_field():
+    run = _run(applied=Applied(quiet_gaps=[(_gap_decision("deliberate"), GAP_TEAM)]))
+    assert "`g1` (missing cut `Team`, deliberate)" in render_local(run)
+
+
+def test_review_issue_carries_domain_owner_missing_cuts():
+    run = _run(applied=Applied(quiet_gaps=[(_gap_decision(), GAP_TEAM)]))
+    body = render_review_issue("Registrar", [run])
+    assert (
+        "`Team` on `Roster` in `enrollment_view`: a sheet cut Cube has no member "
+        "for. Reason: owner decides the cut. Task: #6150" in body
+    )
+    assert "Missing cuts and filters: 1." in body
+
+
+def test_review_issue_leaves_out_other_missing_cut_calls():
+    run = _run(applied=Applied(quiet_gaps=[(_gap_decision("fix_cube"), GAP_TEAM)]))
+    assert "`Team`" not in render_review_issue("Registrar", [run])
+
+
+def test_scoped_run_says_scope_narrows_the_measure():
+    note = "Scope filters Cube's measure query, not only its rows"
+    assert note not in render_local(_run(scopes=[]))
+    assert note in render_local(_run(scopes=["c: membership_value in 1"]))

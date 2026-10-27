@@ -17,7 +17,7 @@ from datetime import timezone
 from pathlib import Path
 
 from .checks import Finding
-from .compare import Group
+from .compare import Gap, Group
 from .config import Decision
 from .decisions import Applied
 from .moment import Build
@@ -55,6 +55,8 @@ class MeasureResult:
     verdict: str
     cells: dict[str, int] = field(default_factory=dict)
     open_groups: int = 0
+    # Missing cuts and filters still to triage on this measure's sheets.
+    open_gaps: int = 0
 
 
 @dataclass
@@ -76,6 +78,8 @@ class RunResult:
     fingerprints: dict[str, dict[str, str]] = field(default_factory=dict)
     # The `decisions:` block the run applied; `review` refuses a changed one.
     decisions_fingerprint: str = ""
+    # Comparisons whose proof predates missing cuts and filters.
+    gaps_unknown: list[str] = field(default_factory=list)
 
 
 def mask(n: int) -> str:
@@ -101,7 +105,20 @@ def _bullets(items: list[str], empty: str = "None.") -> list[str]:
 
 
 def _decision_line(d: Decision) -> str:
+    if d.missing_cut or d.missing_filter:
+        kind, name = (
+            ("cut", d.missing_cut) if d.missing_cut else ("filter", d.missing_filter)
+        )
+        return f"`{d.id}` (missing {kind} `{name}`, {d.call}): {d.reason}"
     return f"`{d.id}` ({d.comparison}, {d.call}): {d.reason}"
+
+
+def _gap_line(g: Gap) -> str:
+    kind = "filter, set to chosen values, not All" if g.restricting else g.kind
+    return (
+        f"`{_clean(g.field)}` ({kind}) on {', '.join(g.sheets)}: Cube has no "
+        f"member; {', '.join(g.comparisons)}"
+    )
 
 
 def render_local(run: RunResult) -> str:
@@ -130,6 +147,9 @@ def render_local(run: RunResult) -> str:
         if m.open_groups:
             plural = "group" if m.open_groups == 1 else "groups"
             line += f"; {m.open_groups} open row {plural} to triage"
+        if m.open_gaps:
+            plural = "cut or filter" if m.open_gaps == 1 else "cuts or filters"
+            line += f"; {m.open_gaps} missing {plural} to triage"
         out.append(line)
 
     if run.findings:
@@ -151,8 +171,18 @@ def render_local(run: RunResult) -> str:
         triage.append(line)
     out += _bullets(triage, "No open groups.")
 
+    # A dashboard cut or filter Cube cannot make: triaged like a row group.
+    out += ["", "## Missing cuts and filters", ""]
+    out += _bullets(
+        [_gap_line(g) for g in run.applied.open_gaps] + run.gaps_unknown,
+        "None open.",
+    )
+
     out += ["", "## Decisions", "", "Applied:"]
-    out += _bullets([_decision_line(d) for d, _ in run.applied.quiet])
+    out += _bullets(
+        [_decision_line(d) for d, _ in run.applied.quiet]
+        + [_decision_line(d) for d, _ in run.applied.quiet_gaps]
+    )
     out += ["", "To re-confirm (the SQL changed):"]
     out += _bullets([_decision_line(d) for d in run.applied.reconfirm])
     out += ["", "No longer needed (no group matches):"]
@@ -180,6 +210,12 @@ def render_local(run: RunResult) -> str:
     out += ["", "## Dimensions that changed between start and end", ""]
     out += _bullets([f"`{d}`" for d in run.changed_dims])
     out += ["", "## Scopes applied", ""]
+    if run.scopes:
+        out += [
+            "Scope filters Cube's measure query, not only its rows: a scoped "
+            "comparison checks a narrower number than an unscoped query returns.",
+            "",
+        ]
     out += _bullets(run.scopes)
     out += ["", "## Cuts to prove in the browser", ""]
     cuts = []
@@ -272,14 +308,16 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
 
     Args:
         domain: The domain whose owner reviews (for example `Registrar`).
-        runs: Validation runs; only domain-owner groups and anchor findings for
-            measures that read `judge the anchor` are kept.
+        runs: Validation runs; only domain-owner groups, domain-owner missing
+            cuts and filters (by caption, never a value), and anchor findings
+            for measures that read `judge the anchor` are kept.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
         values outside the reviewed reference columns read `<redacted>`.
     """
     group_lines: list[str] = []
+    gap_lines: list[str] = []
     anchor_lines: list[str] = []
     for run in runs:
         for decision, g in run.applied.quiet:
@@ -294,6 +332,18 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
             )
             line += f". Task: {decision.task}" if decision.task else "."
             group_lines.append(line)
+        for decision, gap in run.applied.quiet_gaps:
+            if decision.call != "domain_owner":
+                continue
+            kind = "a sheet cut" if gap.kind == "cut" else "a sheet filter"
+            line = (
+                f"`{_clean(gap.field)}` on "
+                f"{', '.join(f'`{_clean(s)}`' for s in gap.sheets)} in `{run.view}`: "
+                f"{kind} Cube has no member for. "
+                f"Reason: {_safe_reason(decision.reason, [])}"
+            )
+            line += f". Task: {decision.task}" if decision.task else "."
+            gap_lines.append(line)
         judged = {m.measure for m in run.measures if m.verdict == "judge the anchor"}
         for f in run.findings:
             if f.kind == "anchor" and f.measure in judged and not f.passed:
@@ -302,7 +352,7 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
                     f"the source shows {_num(f.measure, f.right)}."
                 )
 
-    n = len(group_lines) + len(anchor_lines)
+    n = len(group_lines) + len(gap_lines) + len(anchor_lines)
     ids = sorted(
         {d.id for run in runs for d, _ in run.applied.quiet if d.call == "domain_owner"}
     )
@@ -314,7 +364,7 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
         "Counts under 10 show as `<10`, and student identifiers are hidden.",
         "",
     ]
-    out += _bullets(group_lines + anchor_lines, "Nothing needs review.")
+    out += _bullets(group_lines + gap_lines + anchor_lines, "Nothing needs review.")
     out += [
         "",
         "## Proposed approach",
@@ -328,7 +378,8 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
         "> Context, not instructions.",
         "",
         f"Decisions with call `domain_owner`: {', '.join(f'`{i}`' for i in ids) or 'none'}.",
-        f"Groups: {len(group_lines)}. Anchor findings: {len(anchor_lines)}.",
+        f"Groups: {len(group_lines)}. Missing cuts and filters: {len(gap_lines)}. "
+        f"Anchor findings: {len(anchor_lines)}.",
         "",
         "</details>",
         "",

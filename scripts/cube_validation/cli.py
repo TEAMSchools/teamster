@@ -136,11 +136,14 @@ def _parser() -> argparse.ArgumentParser:
     p = sub.add_parser("prove", help="prove a probe against its sheet once")
     view_file(p)
     which = p.add_mutually_exclusive_group(required=True)
-    which.add_argument("--comparison", help="comparison id to prove")
+    which.add_argument(
+        "--comparison",
+        action="append",
+        help="comparison id to prove; repeat it to prove several from one export",
+    )
     which.add_argument(
         "--check", action="store_true", help="list proofs older than their workbook"
     )
-    p.add_argument("--value-column", help="export column holding the compared value")
     max_usd(p)
 
     p = sub.add_parser("check-api", help="Cube's API equals its compiled SQL")
@@ -213,18 +216,27 @@ def _dispatch(args: argparse.Namespace) -> int:
             pipeline.prove_check(cfg, tbl=tbl)
         return 0
     wh = make_warehouse()
+    refused = 0
+    captures: dict = {}
     with tableau_session() as tbl:
-        pipeline.prove(
-            cfg,
-            args.view,
-            args.comparison,
-            wh=wh,
-            tbl=tbl,
-            now=utcnow(),
-            max_usd=args.max_usd,
-            value_column=args.value_column,
-        )
-    return 0
+        for comparison_id in args.comparison:
+            try:
+                pipeline.prove(
+                    cfg,
+                    args.view,
+                    comparison_id,
+                    wh=wh,
+                    tbl=tbl,
+                    now=utcnow(),
+                    max_usd=args.max_usd,
+                    captures=captures,
+                    failures_dir=cache_root() / cfg.view,
+                )
+            except REFUSALS as exc:
+                # One comparison's refusal does not stop the others.
+                print(f"refused: {exc}", file=sys.stderr)
+                refused += 1
+    return 1 if refused else 0
 
 
 def main(argv: list[str]) -> int:
