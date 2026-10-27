@@ -13,6 +13,7 @@ import dataclasses
 import hashlib
 import json
 import re
+import sys
 
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
@@ -1004,7 +1005,14 @@ def review(configs: list[ViewConfig], domain: str, cache_root: Path) -> str:
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs
     }
-    return report.render_review_issue(domain, runs, definitions)
+    body = report.render_review_issue(domain, runs, definitions)
+    if waiting := report.untasked(d for cfg in configs for d in cfg.decisions):
+        # stderr, so the reminder never lands in the issue body.
+        print(
+            'After posting, fill in `task: "#<issue>"` on: ' + ", ".join(waiting),
+            file=sys.stderr,
+        )
+    return body
 
 
 # --- check-api ---------------------------------------------------------------

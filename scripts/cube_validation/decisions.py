@@ -103,7 +103,8 @@ def sql_fingerprint(sql: str) -> str:
 def decisions_fingerprint(decisions: list[Decision]) -> str:
     """Hash a validation file's `decisions:` block as it was parsed.
 
-    Comments and layout do not change it; any key or value does.
+    Comments and layout do not change it; any key or value does, except
+    `task`, which is filled in after the review issue posts.
 
     Args:
         decisions: The file's decisions, in file order.
@@ -112,7 +113,9 @@ def decisions_fingerprint(decisions: list[Decision]) -> str:
         The sha256 hex digest of the decisions as sorted-key JSON.
     """
     text = json.dumps(
-        [dataclasses.asdict(d) for d in decisions], sort_keys=True, default=str
+        [{**dataclasses.asdict(d), "task": None} for d in decisions],
+        sort_keys=True,
+        default=str,
     )
     return hashlib.sha256(text.encode()).hexdigest()
 

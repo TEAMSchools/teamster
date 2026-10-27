@@ -587,3 +587,8 @@ def test_definitions_need_both_sides(tmp_path):
     text = EXAMPLE.replace(SCOPE_LINE, SCOPE_LINE + one)
     with pytest.raises(ConfigError, match=r"definitions\.cube"):
         load_view_config(_write(tmp_path, text))
+
+
+def test_domain_owner_task_can_wait_for_the_review_issue(tmp_path):
+    text = EXAMPLE.replace("call: deliberate", "call: domain_owner")
+    assert load_view_config(_write(tmp_path, text)).decisions[0].task == ""

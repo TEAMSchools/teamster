@@ -236,3 +236,15 @@ def test_gap_decision_matches_kind_and_field():
 def test_two_decisions_on_one_gap_raise():
     with pytest.raises(ValueError, match="missing cut 'Team'"):
         apply([_gap_decision(), _gap_decision(id="g2")], [], {}, gaps=[TEAM])
+
+
+def test_filling_in_a_task_keeps_the_decisions_fingerprint():
+    from cube_validation.decisions import decisions_fingerprint
+
+    before = Decision("d", "c", "domain_owner", "r", {"column": "x", "values": ["1"]})
+    after = Decision(
+        "d", "c", "domain_owner", "r", {"column": "x", "values": ["1"]}, task="#6200"
+    )
+    assert decisions_fingerprint([before]) == decisions_fingerprint([after])
+    changed = Decision("d", "c", "deliberate", "r", {"column": "x", "values": ["1"]})
+    assert decisions_fingerprint([before]) != decisions_fingerprint([changed])

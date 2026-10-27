@@ -115,6 +115,15 @@ def _decision_line(d: Decision) -> str:
     return f"`{d.id}` ({d.comparison}, {d.call}): {d.reason}"
 
 
+def untasked(decisions) -> list[str]:
+    """Ids of domain-owner decisions whose task (the review issue) is unset."""
+    return list(
+        dict.fromkeys(
+            d.id for d in decisions if d.call == "domain_owner" and not d.task
+        )
+    )
+
+
 def _gap_line(g: Gap) -> str:
     kind = "filter, set to chosen values, not All" if g.restricting else g.kind
     return (
@@ -199,6 +208,14 @@ def render_local(run: RunResult) -> str:
         ]
     )
 
+    waiting = untasked(d for d, _ in [*run.applied.quiet, *run.applied.quiet_gaps])
+    if waiting:
+        out += [
+            "",
+            "Fill in `task` once the review issue posts: "
+            + ", ".join(f"`{i}`" for i in waiting),
+        ]
+
     out += ["", "Fingerprints a new decision records (`fingerprints:`):"]
     out += _bullets(
         [
@@ -228,12 +245,14 @@ def render_local(run: RunResult) -> str:
         ]
     out += _bullets(run.scopes)
     out += ["", "## Cuts to prove in the browser", ""]
-    cuts = []
-    for cut in run.browser_cuts:
-        cuts.append(cut)
-    for comparison, proven_at in sorted(run.proofs.items()):
-        cuts.append(f"{comparison}: last proven {proven_at}")
-    out += _bullets(cuts)
+    out += _bullets(run.browser_cuts)
+    out += ["", "## Proofs", ""]
+    out += _bullets(
+        [
+            f"{comparison}: last proven {at}"
+            for comparison, at in sorted(run.proofs.items())
+        ]
+    )
     out += ["", "## Totals not proven", ""]
     out += _bullets(run.totals)
     out += [

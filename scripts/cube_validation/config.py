@@ -17,7 +17,9 @@ from typing import Any, NoReturn
 import yaml
 
 CALLS = ("deliberate", "fix_dashboard", "fix_cube", "domain_owner")
-CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "domain_owner")
+# A domain-owner decision's task is the review issue, which `review` drafts
+# from the decisions, so its task is filled in after the issue posts.
+CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube")
 _TASK = re.compile(r"https://\S+|#\d+")
 # Filter operators for `scope` (Cube side) and `dashboard_filters` (dashboard
 # side). The comparisons take exactly 1 number; `set` means not null.

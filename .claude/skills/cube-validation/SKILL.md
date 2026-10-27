@@ -150,22 +150,24 @@ cause, do not retry around it.
    - `domain_owner`: the owner decides what is right. Task: the review issue
      from step 10. Anchor differences are judged here too.
 9. Add a `decisions:` entry with `id` (unique), `comparison`, `group`, `call`,
-   `reason`, `task` (required for all but `deliberate`) and the `fingerprints`
-   `{cube, dashboard}` that `run` printed for that comparison. `reason` goes to
-   GitHub in the review issue: never name a student or staff member in it.
-   `task` is an `https://` link or `#<issue>`; the loader refuses other text.
-   `group` is a mapping: `column` is the Cube member name the triage line shows
-   (such as `regions_region_name`), and `values` are compared as text: quote
-   values exactly as the triage line shows them. YAML rewrites an unquoted
-   `9.50`, `010` or `no`, so the loader refuses one. A decision covers its group
-   only while both fingerprints hold; do not copy fingerprints from another run.
-   A missing cut or filter takes `missing_cut: <caption>` or
+   `reason`, `task` (required for `fix_dashboard` and `fix_cube`; for
+   `domain_owner`, leave it empty until step 10 posts the issue) and the
+   `fingerprints` `{cube, dashboard}` that `run` printed for that comparison.
+   `reason` goes to GitHub in the review issue: never name a student or staff
+   member in it. `task` is an `https://` link or `#<issue>`; the loader refuses
+   other text. `group` is a mapping: `column` is the Cube member name the triage
+   line shows (such as `regions_region_name`), and `values` are compared as
+   text: quote values exactly as the triage line shows them. YAML rewrites an
+   unquoted `9.50`, `010` or `no`, so the loader refuses one. A decision covers
+   its group only while both fingerprints hold; do not copy fingerprints from
+   another run. A missing cut or filter takes `missing_cut: <caption>` or
    `missing_filter: <caption>` in place of `group`, with no `comparison` and no
    `fingerprints`: it covers the field across the view.
 10. `uv run python -m scripts.cube_validation review <files> --domain <domain>`
     prints the issue body. Show the draft to the analyst. Post it with
     `mcp__github__issue_write` only after approval, using the repo's issue
-    template.
+    template. Then write `task: "#<issue>"` into each decision `review` lists on
+    stderr. Filling in a task needs no new `run`.
 
 ## Results
 

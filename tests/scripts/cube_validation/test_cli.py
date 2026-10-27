@@ -1456,3 +1456,25 @@ def test_reconnect_signs_in_again_and_signs_the_old_session_out(monkeypatch):
         assert tbl._server is second
 
     assert first.signed_out == 1 and second.signed_out == 1
+
+
+def test_review_says_which_tasks_to_fill_in(fakes, tmp_path, capsys):
+    text = (
+        YML.replace(PROOF, GAP_PROOF)
+        + """\
+decisions:
+  - id: team-cut
+    missing_cut: Team
+    call: domain_owner
+    reason: the owner decides whether ADA needs a team cut
+"""
+    )
+    path = _file(tmp_path, text)
+    assert cli.main(["run", str(path)]) == 0
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+    captured = capsys.readouterr()
+    assert "team-cut" in captured.err and "fill in" in captured.err
+    assert "fill in" not in captured.out

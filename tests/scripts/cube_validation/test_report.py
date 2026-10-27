@@ -422,3 +422,21 @@ def test_review_issue_skips_definitions_with_no_owner_question():
         "Registrar", [run], definitions={"enrollment_view": TARDY_DEFS}
     )
     assert "Definitions side by side" not in body
+
+
+def test_proof_dates_sit_apart_from_browser_cuts():
+    text = render_local(_run(browser_cuts=[], proofs={"ada": "2026-10-27T19:00"}))
+    cuts = text.split("## Cuts to prove in the browser", 1)[1].split("## ", 1)[0]
+    assert "ada" not in cuts and "None." in cuts
+    proofs = text.split("## Proofs", 1)[1].split("## ", 1)[0]
+    assert "ada: last proven 2026-10-27T19:00" in proofs
+
+
+def test_local_result_lists_domain_owner_decisions_without_a_task():
+    d = Decision(
+        "owner-1", "enrollment", "domain_owner", "owner decides",
+        {"column": "region", "values": ["Newark"]},
+    )  # fmt: skip
+    g = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)
+    text = render_local(_run(applied=Applied(quiet=[(d, g)])))
+    assert "Fill in `task` once the review issue posts: `owner-1`" in text
