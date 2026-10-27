@@ -178,7 +178,14 @@ def render_local(run: RunResult) -> str:
     out += _bullets(cuts)
     out += ["", "## Totals not proven", ""]
     out += _bullets(run.totals)
-    out += ["", "## Cost", "", f"${run.cost_usd:.2f}", ""]
+    out += [
+        "",
+        "## Cost",
+        "",
+        f"${run.cost_usd:.2f}: BigQuery dry-run estimates for the direct queries "
+        "and the Cube loads.",
+        "",
+    ]
     return "\n".join(out)
 
 

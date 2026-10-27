@@ -520,17 +520,30 @@ def _identity_cuts(cfg: ViewConfig, comparisons: list[Comparison]) -> list[dict]
     return list(cuts.values()) or [{}]
 
 
-def _load_value(cube: Cube, query: dict, member: str) -> float | None:
-    rows = cube.load(query)
+def _priced_load(cube: Cube, wh: Warehouse, query: dict) -> list[dict]:
+    """`Cube.load`, after a dry run of the SQL Cube compiles for the same query.
+
+    Cube runs that SQL in BigQuery, so call this inside `wh.budget`: the price
+    counts toward the cap before the load runs, and toward `wh.spent`.
+    """
+    wh.price(bind(cube.compiled(query)))
+    return cube.load(query)
+
+
+def _load_value(cube: Cube, wh: Warehouse, query: dict, member: str) -> float | None:
+    rows = _priced_load(cube, wh, query)
     if not rows or rows[0].get(member) is None:
         return None
     return float(rows[0][member])
 
 
 def _anchors_and_identities(
-    cfg: ViewConfig, cube: Cube, comparisons: list[Comparison]
+    cfg: ViewConfig, cube: Cube, wh: Warehouse, comparisons: list[Comparison]
 ) -> tuple[list[Finding], dict[str, list[CheckResult]]]:
-    """Run anchors and identities through `Cube.load` on current data."""
+    """Run anchors and identities through `Cube.load` on current data.
+
+    Each load is priced first, so call this inside `wh.budget`.
+    """
     findings: list[Finding] = []
     results: dict[str, list[CheckResult]] = {}
 
@@ -538,6 +551,7 @@ def _anchors_and_identities(
         # load_view_config requires time_dimension whenever anchors are set.
         value = _load_value(
             cube,
+            wh,
             checks.anchor_query(anchor, cfg.view, cfg.time_dimension or ""),
             _member(cfg.view, anchor.measure),
         )
@@ -549,7 +563,7 @@ def _anchors_and_identities(
     for identity in cfg.identities:
         for cut in _identity_cuts(cfg, comparisons):
             query = checks.identity_query(identity, cut, cfg.view)
-            rows = cube.load(query)
+            rows = _priced_load(cube, wh, query)
             row = rows[0] if rows else {}
             # One row holds both sides; `right` reads only the names it uses.
             values = {
@@ -736,9 +750,9 @@ def run(
             )
         dims = sorted(sides.cube_tables - {cfg.fact})
         changed = changed_between(wh, dims, build.start, build.end)
+        findings, other = _anchors_and_identities(cfg, cube, wh, comparisons)
         cost = wh.spent
 
-    findings, other = _anchors_and_identities(cfg, cube, comparisons)
     try:
         applied = decisions.apply(cfg.decisions, sides.groups, sides.fingerprints)
     except ValueError as exc:
@@ -897,6 +911,8 @@ def check_api(
             bound = _cube_sql(cfg, cube, query, schools)
             tables |= _as_of(bound, first, wh).tables
             dims = [d.cube for d in comparison.dims] if with_dims else []
+            # The load runs this SQL in BigQuery, so it is priced like the rest.
+            wh.price(bound)
             api = {
                 tuple(_key(r.get(_member(cfg.view, d))) for d in dims): _number(
                     r.get(_member(cfg.view, comparison.measure))

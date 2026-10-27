@@ -351,6 +351,32 @@ def test_run_max_usd_sets_the_cap(fakes, tmp_path):
     assert cli.main(["run", str(_file(tmp_path)), "--max-usd", "50"]) == 0
 
 
+def _identity_sql(sql):
+    """Cube's compiled SQL for an identity load: no other query reads both sums."""
+    return "`v__sum_attendance_value`" in sql
+
+
+def test_run_prices_a_cube_load_before_it_runs(fakes, tmp_path, capsys):
+    fakes.bq.cost = lambda sql: 10.0 if _identity_sql(sql) else 0.0
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 1
+
+    assert "5.00" in capsys.readouterr().err
+    assert fakes.cube.loads == []
+
+
+def test_run_cost_includes_cube_loads(fakes, tmp_path, capsys):
+    fakes.bq.cost = lambda sql: 1.0 if _identity_sql(sql) else 0.0
+
+    assert cli.main(["run", str(_file(tmp_path)), "--max-usd", "50"]) == 0
+
+    # 2 identity cuts, 1 load each.
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    assert json.loads(saved.read_text())["cost_usd"] == pytest.approx(2.0)
+    cost = _section(capsys.readouterr().out, "## Cost", "##")
+    assert "$2.00" in cost and "Cube loads" in cost and "dry-run" in cost
+
+
 def test_run_names_dimensions_that_changed(fakes, tmp_path, capsys):
     fakes.bq.changed = ("dim_locations",)
 
@@ -378,8 +404,10 @@ def test_run_sends_and_names_set_scopes(fakes, tmp_path, capsys):
         {"member": "v.membership_value", "operator": "equals", "values": ["1"]},
         {"member": "v.attendance_value", "operator": "set"},
     ]
-    assert fakes.cube.compiled_queries
-    for query in fakes.cube.compiled_queries:
+    # Identity loads are compiled only to price them; scopes are a comparison's.
+    compared = [q for q in fakes.cube.compiled_queries if q not in fakes.cube.loads]
+    assert compared
+    for query in compared:
         assert all(f in query["filters"] for f in wanted)
     section = capsys.readouterr().out.split("## Scopes applied")[1].split("##")[0]
     assert "ada-region: v.membership_value in 1" in section
@@ -790,6 +818,21 @@ def test_check_api_agrees_on_three_cuts(fakes, tmp_path, capsys):
     assert len(sql_runs) == 3
     assert not any("FOR SYSTEM_TIME" in s for s in sql_runs)
     assert "3 of 3" in capsys.readouterr().out
+
+
+def test_check_api_prices_the_api_side_before_it_loads(fakes, tmp_path, capsys):
+    # Only Cube's bound SQL itself: the SQL side wraps it, the rebuild check
+    # fingerprints the tables.
+    fakes.bq.cost = lambda sql: (
+        10.0
+        if "fct_f" in sql and "FROM (\n" not in sql and "farm_fingerprint" not in sql
+        else 0.0
+    )
+
+    assert cli.main(["check-api", str(_file(tmp_path))]) == 1
+
+    assert "5.00" in capsys.readouterr().err
+    assert fakes.cube.loads == []
 
 
 def test_check_api_refuses_disagreement(fakes, tmp_path, capsys):
