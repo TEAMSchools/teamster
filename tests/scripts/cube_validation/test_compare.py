@@ -70,10 +70,13 @@ def test_reconcile_sql_values_compare_null_safe_and_type_tolerant():
     sql = _sql()
 
     assert (
-        "SAFE_CAST(d.is_present AS FLOAT64) = SAFE_CAST(c.attendance_value AS FLOAT64)"
+        "SAFE_CAST(CAST(d.is_present AS STRING) AS FLOAT64) = "
+        "SAFE_CAST(CAST(c.attendance_value AS STRING) AS FLOAT64)" in sql
+    )
+    assert (
+        "LOWER(CAST(d.is_present AS STRING)) = LOWER(CAST(c.attendance_value AS STRING))"
         in sql
     )
-    assert "CAST(d.is_present AS STRING) = CAST(c.attendance_value AS STRING)" in sql
     assert "d.is_present IS NULL AND c.attendance_value IS NULL" in sql
 
 
@@ -170,3 +173,19 @@ def test_scope_filter_from_comparison():
         {"member": "v.grade_level", "operator": "equals", "values": ["5", "6"]}
     ]
     assert scope_filters(Comparison(id="c", measure="m")) == []
+
+
+def test_cell_verdict_rounds_half_up_at_display_boundaries():
+    assert cell_verdict(0.9325, 0.933, decimals=3) == "pass"
+    assert cell_verdict(0.9335, 0.934, decimals=3) == "pass"
+    assert cell_verdict(0.0005, 0.001, decimals=3) == "pass"
+    assert cell_verdict(0.9325, 0.932, decimals=3) == "differs"
+
+
+def test_reconcile_sql_grain_keys_join_across_numeric_types():
+    sql = _sql()
+    join = sql.split("FULL OUTER JOIN", 1)[1].split("-- outer")[0]
+
+    key_c = "COALESCE(CAST(SAFE_CAST(CAST(c.lea_student_identifier AS STRING) AS FLOAT64) AS STRING), CAST(c.lea_student_identifier AS STRING))"
+    key_d = "COALESCE(CAST(SAFE_CAST(CAST(d.student_number AS STRING) AS FLOAT64) AS STRING), CAST(d.student_number AS STRING))"
+    assert f"{key_c} = {key_d}" in join

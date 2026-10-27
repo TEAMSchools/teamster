@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Literal
 
 from .config import ColumnPair, Comparison, RowSpec
@@ -42,14 +43,21 @@ def _numbered(rows_sql: str, grain: list[str], values: list[str]) -> str:
 
 def _pair_matches(d: str, c: str) -> str:
     """Null-safe, type-tolerant equality of one dashboard/cube value pair."""
-    number_d = f"SAFE_CAST({d} AS FLOAT64)"
-    number_c = f"SAFE_CAST({c} AS FLOAT64)"
+    # Cast through STRING: SAFE_CAST(BOOL AS FLOAT64) fails at compile time.
+    number_d = f"SAFE_CAST(CAST({d} AS STRING) AS FLOAT64)"
+    number_c = f"SAFE_CAST(CAST({c} AS STRING) AS FLOAT64)"
     return (
         f"COALESCE(({d} IS NULL AND {c} IS NULL) "
         f"OR {number_d} = {number_c} "
         f"OR (({number_d} IS NULL OR {number_c} IS NULL) "
-        f"AND CAST({d} AS STRING) = CAST({c} AS STRING)), FALSE)"
+        f"AND LOWER(CAST({d} AS STRING)) = LOWER(CAST({c} AS STRING))), FALSE)"
     )
+
+
+def _key(col: str) -> str:
+    """Join key that treats 1, 1.0 and '1' alike; non-numbers compare as text."""
+    text = f"CAST({col} AS STRING)"
+    return f"COALESCE(CAST(SAFE_CAST({text} AS FLOAT64) AS STRING), {text})"
 
 
 def reconcile_sql(
@@ -62,8 +70,10 @@ def reconcile_sql(
 
     Rows are joined on the grain plus a per-grain duplicate number. The cube
     source names its columns by each pair's `cube` name and the dashboard
-    source by its `dashboard` name. Grain values are compared as strings, so a
-    NULL grain value never matches.
+    source by its `dashboard` name. Numeric grain keys join across types (1,
+    1.0 and '1'); anything else joins as text, and a NULL grain value never
+    matches. Temporal grains are not normalized: callers must emit date grains
+    as DATE on both sides.
 
     Args:
         cube_rows_sql: SELECT returning the grain, value and group-by columns
@@ -82,8 +92,7 @@ def reconcile_sql(
     dash_grain = [p.dashboard for p in rows.grain]
 
     on = [f"c.{_RN} = d.{_RN}"] + [
-        f"CAST(c.{p.cube} AS STRING) = CAST(d.{p.dashboard} AS STRING)"
-        for p in rows.grain
+        f"{_key(f'c.{p.cube}')} = {_key(f'd.{p.dashboard}')}" for p in rows.grain
     ]
     same = [_pair_matches(f"d.{p.dashboard}", f"c.{p.cube}") for p in rows.values]
     all_same = " AND ".join(same) or "TRUE"
@@ -178,6 +187,11 @@ def scope_filters(comparison: Comparison) -> list[dict[str, Any]]:
     ]
 
 
+def _half_up(x: float, decimals: int) -> Decimal:
+    """Round the way a dashboard displays: half up on the decimal text."""
+    return Decimal(repr(x)).quantize(Decimal(1).scaleb(-decimals), ROUND_HALF_UP)
+
+
 def cell_verdict(dashboard: float | None, cube: float | None, decimals: int) -> Verdict:
     """Compare two cells as the dashboard displays them.
 
@@ -198,7 +212,11 @@ def cell_verdict(dashboard: float | None, cube: float | None, decimals: int) -> 
         return "dashboard_only"
     if dashboard is None:
         return "cube_only"
-    return "pass" if round(dashboard, decimals) == round(cube, decimals) else "differs"
+    return (
+        "pass"
+        if _half_up(dashboard, decimals) == _half_up(cube, decimals)
+        else "differs"
+    )
 
 
 _TOKEN = re.compile(
