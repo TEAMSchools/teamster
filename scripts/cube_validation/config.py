@@ -18,6 +18,7 @@ import yaml
 
 CALLS = ("deliberate", "fix_dashboard", "fix_cube", "domain_owner")
 CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "domain_owner")
+_TASK = re.compile(r"https://\S+|#\d+")
 SCOPE_OPERATORS = ("equals", "set")
 
 # Every config value the SQL builders interpolate must pass one of these, so a
@@ -323,6 +324,10 @@ def _decision(
     task = reader.get("task", str, default="")
     if call in CALLS_NEEDING_TASK and not task.strip():
         reader.fail("task", f"is required when call is {call}")
+    # The review issue posts `task` to GitHub as written, so it may only be a
+    # link, never free text that could name a person.
+    if task and not _TASK.fullmatch(task):
+        reader.fail("task", f"must be an https:// link or #<issue>; got {task!r}")
     comparison = reader.get("comparison", str, required=True)
     if comparison not in comparison_ids:
         reader.fail("comparison", f"{comparison!r} is not a comparison id")

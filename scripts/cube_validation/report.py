@@ -3,7 +3,10 @@
 The local result stays on the analyst's machine and shows every value. The
 review issue goes to GitHub, which is permanent: it carries only the groups a
 domain owner must judge, masks every count under 10, and prints a group's
-value only for a reviewed reference column. Pure apart from `save_local`.
+value only for a reviewed reference column. A decision's `reason` is free text:
+the group's values and long digit runs are stripped, but a name is not caught,
+so the analyst approves the draft before it posts. Pure apart from
+`save_local`.
 """
 
 from __future__ import annotations

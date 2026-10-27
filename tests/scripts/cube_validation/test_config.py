@@ -117,6 +117,25 @@ def test_fix_calls_need_a_task(tmp_path):
 
 
 @pytest.mark.parametrize(
+    "task", ["Ask Ms. Smith", "see #12", "http://x.example/1", "#12 and more"]
+)
+def test_decision_task_must_be_a_link(tmp_path, task):
+    text = EXAMPLE.replace("call: deliberate", "call: fix_cube")
+    path = _write(tmp_path, text.replace('task: ""', f'task: "{task}"'))
+
+    with pytest.raises(ConfigError, match=r"decisions\[0\]\.task.*https://"):
+        load_view_config(path)
+
+
+@pytest.mark.parametrize("task", ["https://app.asana.com/0/1/2", "#6150"])
+def test_decision_task_takes_a_link_or_issue_number(tmp_path, task):
+    text = EXAMPLE.replace("call: deliberate", "call: fix_cube")
+    path = _write(tmp_path, text.replace('task: ""', f'task: "{task}"'))
+
+    assert load_view_config(path).decisions[0].task == task
+
+
+@pytest.mark.parametrize(
     "value",
     ["9.50", "true", "no", "010", "12:30", "1_000", "+9", "2026-10-01T12:00:00Z"],
 )
