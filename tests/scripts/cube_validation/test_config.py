@@ -173,13 +173,24 @@ def test_anchors_need_a_time_dimension(tmp_path):
         load_view_config(_write(tmp_path, text))
 
 
-def test_time_dimension_is_optional_without_anchors(tmp_path):
+def test_rows_need_a_time_dimension(tmp_path):
     text = EXAMPLE.replace("time_dimension: attendance_date\n", "")
     text = text.split("anchors:")[0] + "identities:" + text.split("identities:")[1]
+
+    with pytest.raises(ConfigError, match="time_dimension.*rows"):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_time_dimension_is_optional_without_anchors_or_rows(tmp_path):
+    text = EXAMPLE.replace("time_dimension: attendance_date\n", "")
+    text = text.split("anchors:")[0] + "identities:" + text.split("identities:")[1]
+    head, tail = text.split("    rows:\n", 1)
+    text = head + "    proof: null" + tail.split("    proof: null", 1)[1]
 
     cfg = load_view_config(_write(tmp_path, text))
 
     assert cfg.time_dimension is None and cfg.anchors == []
+    assert cfg.comparisons[0].rows is None
 
 
 def test_proof_keeps_workbook_updated_at(tmp_path):
@@ -192,6 +203,7 @@ def test_proof_keeps_workbook_updated_at(tmp_path):
             "cells": 3,
             "proven_at": "2026-10-27T10:00:00+00:00",
             "workbook_updated_at": "2026-10-20T09:00:00+00:00",
+            "probe_fingerprint": "p00",
         },
     )
 
@@ -199,3 +211,4 @@ def test_proof_keeps_workbook_updated_at(tmp_path):
 
     assert proof is not None
     assert proof.workbook_updated_at == "2026-10-20T09:00:00+00:00"
+    assert proof.probe_fingerprint == "p00"

@@ -41,7 +41,7 @@ from .cube_client import (
 from .decisions import Applied
 from .moment import WINDOW, Build, changed_between, fact_builds, pick_moment
 from .report import MeasureResult, RunResult
-from .timetravel import PROJECT, as_of
+from .timetravel import PROJECT, AsOf, as_of, utc_literal
 
 API_DECIMALS = checks.DECIMALS
 CHECK_API_CUTS = 3
@@ -348,23 +348,26 @@ def _require(comparison: Comparison, *keys: str) -> None:
         raise Refusal(f"comparison {comparison.id!r} has no {', '.join(missing)}")
 
 
-def comparison_fingerprints(
-    cfg: ViewConfig, comparison: Comparison, cube: Cube
-) -> dict[str, str]:
-    """Fingerprint a comparison's definitions on both sides.
+def probe_fingerprint(cfg: ViewConfig, comparison: Comparison) -> str:
+    """Fingerprint the probe a proof covers: the default cut's probe SQL.
 
-    The Cube side is the bound SQL of the default cut's cells; the dashboard
-    side is the default cut's probe plus the row-level SQL. Both are taken
-    before time travel, so the moment never changes them.
+    It covers the probe text, dims, defaults and dashboard view; `run` refuses
+    a proof whose probe has changed since.
     """
-    compiled = cube.compiled(cell_query(cfg.view, comparison, {}))
-    dashboard = probe_sql(cfg, comparison, {})
-    if comparison.rows is not None:
-        dashboard += "\n" + dashboard_rows_sql(cfg, comparison)
-    return {
-        "cube": decisions.sql_fingerprint(bind(compiled)),
-        "dashboard": decisions.sql_fingerprint(dashboard),
-    }
+    return decisions.sql_fingerprint(probe_sql(cfg, comparison, {}))
+
+
+def _as_of(sql: str, ts: datetime, wh: Warehouse) -> AsOf:
+    """`as_of`, with its fail-closed refusals (an unknown table, a deep view)."""
+    try:
+        return as_of(sql, ts, wh)
+    except ValueError as exc:
+        raise Refusal(f"cannot read the SQL as of {utc_literal(ts)}: {exc}") from exc
+
+
+def _masked(at: AsOf, ts: datetime) -> str:
+    """The expanded SQL with the moment taken out, so only definitions remain."""
+    return at.sql.replace(utc_literal(ts), "<moment>")
 
 
 @dataclasses.dataclass
@@ -377,6 +380,7 @@ class _Sides:
     groups: list[Group] = dataclasses.field(default_factory=list)
     clauses: dict[str, list[str]] = dataclasses.field(default_factory=dict)
     sql: dict[str, tuple[str, str]] = dataclasses.field(default_factory=dict)
+    fingerprints: dict[str, dict[str, str]] = dataclasses.field(default_factory=dict)
 
 
 def _cube_sql(
@@ -403,13 +407,31 @@ def _compare_one(
     schools: set[str],
     sides: _Sides,
 ) -> None:
+    """Compare one comparison's cells and rows, and fingerprint both sides.
+
+    The fingerprints hash the SQL each side runs, expanded through every view
+    as of the moment and with the moment masked: a view or member edit asks
+    its decisions to be re-confirmed, a new moment does not.
+    """
     dates = _date_cubes(cfg)
     dims = [d.cube for d in comparison.dims]
+    compiled: dict[str, str] = {}
+    expanded: dict[tuple[str, datetime], AsOf] = {}
+
+    def cube_sql(query: dict, rows: bool = False) -> str:
+        key = json.dumps(query, sort_keys=True)
+        if key not in compiled:
+            compiled[key] = _cube_sql(cfg, cube, query, schools, rows=rows)
+        return compiled[key]
+
+    def at(sql: str, ts: datetime) -> AsOf:
+        if (sql, ts) not in expanded:
+            expanded[(sql, ts)] = _as_of(sql, ts, wh)
+        return expanded[(sql, ts)]
 
     for cut in _cuts(comparison):
-        cube_sql = _cube_sql(cfg, cube, cell_query(cfg.view, comparison, cut), schools)
-        cube_at = as_of(cube_sql, build.end, wh)
-        dash_at = as_of(probe_sql(cfg, comparison, cut), build.start, wh)
+        cube_at = at(cube_sql(cell_query(cfg.view, comparison, cut)), build.end)
+        dash_at = at(probe_sql(cfg, comparison, cut), build.start)
         sides.cube_tables |= cube_at.tables
         sides.live |= cube_at.live | dash_at.live
         cube_rows = wh.rows(
@@ -420,25 +442,36 @@ def _compare_one(
             comparison, cut, dash_rows, cube_rows, comparison.decimals or 0
         )
 
-    if comparison.rows is None:
-        return
-
-    cube_sql = _cube_sql(cfg, cube, row_query(cfg.view, comparison), schools, rows=True)
-    cube_at = as_of(cube_sql, build.end, wh)
-    dash_at = as_of(dashboard_rows_sql(cfg, comparison), build.start, wh)
-    sides.cube_tables |= cube_at.tables
-    sides.live |= cube_at.live | dash_at.live
-    columns = _unique(p.cube for p in _row_pairs(comparison))
-    result = wh.rows(
-        compare.reconcile_sql(
-            wrap_cube(cube_at.sql, cfg.view, columns, dates, None),
-            dash_at.sql,
-            comparison.rows,
-            comparison.dims,
+    cube_parts = [
+        _masked(
+            at(cube_sql(cell_query(cfg.view, comparison, {})), build.end), build.end
         )
-    )
-    sides.groups += compare.groups_from(comparison.id, result)
-    sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
+    ]
+    dash_parts = [_masked(at(probe_sql(cfg, comparison, {}), build.start), build.start)]
+
+    if comparison.rows is not None:
+        cube_at = at(cube_sql(row_query(cfg.view, comparison), rows=True), build.end)
+        dash_at = at(dashboard_rows_sql(cfg, comparison), build.start)
+        sides.cube_tables |= cube_at.tables
+        sides.live |= cube_at.live | dash_at.live
+        cube_parts.append(_masked(cube_at, build.end))
+        dash_parts.append(_masked(dash_at, build.start))
+        columns = _unique(p.cube for p in _row_pairs(comparison))
+        result = wh.rows(
+            compare.reconcile_sql(
+                wrap_cube(cube_at.sql, cfg.view, columns, dates, None),
+                dash_at.sql,
+                comparison.rows,
+                comparison.dims,
+            )
+        )
+        sides.groups += compare.groups_from(comparison.id, result)
+        sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
+
+    sides.fingerprints[comparison.id] = {
+        "cube": decisions.sql_fingerprint("\n".join(cube_parts)),
+        "dashboard": decisions.sql_fingerprint("\n".join(dash_parts)),
+    }
 
 
 def _clauses(comparison: Comparison, groups: list[Group], sides: _Sides) -> list[str]:
@@ -576,7 +609,8 @@ def run(
     """Validate one view at one fact build and print the result.
 
     Raises:
-        Refusal: A confirmed comparison has no proof or lacks a key it needs.
+        Refusal: A confirmed comparison has no proof, its probe changed
+            since the proof, or it lacks a key it needs.
         CostCapError: The priced queries passed `max_usd`.
         MomentError: No usable build in the 7-day window.
         CubeRefusal: Cube's SQL would not match a raw rebuild.
@@ -594,6 +628,17 @@ def run(
         )
     for comparison in comparisons:
         _require(comparison, "dashboard_view", "decimals")
+    changed_probes = [
+        c.id
+        for c in comparisons
+        if c.proof and c.proof.probe_fingerprint != probe_fingerprint(cfg, c)
+    ]
+    if changed_probes:
+        raise Refusal(
+            f"comparison {', '.join(map(repr, changed_probes))}: the probe is not "
+            "the one its proof covers; run `prove` again"
+        )
+    for comparison in comparisons:
         if comparison.proof:
             print(f"Proof for {comparison.id}: proven {comparison.proof.proven_at}.")
 
@@ -602,9 +647,6 @@ def run(
         build = pick_moment(builds, now, requested, cfg.fact)
         schools = network_schools(wh)
         sides = _Sides()
-        fingerprints = {
-            c.id: comparison_fingerprints(cfg, c, cube) for c in comparisons
-        }
         for comparison in comparisons:
             _compare_one(
                 cfg,
@@ -621,7 +663,7 @@ def run(
 
     findings, other = _anchors_and_identities(cfg, cube, comparisons)
     try:
-        applied = decisions.apply(cfg.decisions, sides.groups, fingerprints)
+        applied = decisions.apply(cfg.decisions, sides.groups, sides.fingerprints)
     except ValueError as exc:
         raise Refusal(str(exc)) from exc
 
@@ -642,6 +684,7 @@ def run(
         cost_usd=cost,
         proofs={c.id: c.proof.proven_at for c in comparisons if c.proof},
         clauses={k: v for k, v in clauses.items() if v},
+        fingerprints=sides.fingerprints,
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells, findings)
     print(text)
@@ -684,6 +727,7 @@ def _run_from_json(data: dict) -> RunResult:
         proofs=data["proofs"],
         browser_cuts=data["browser_cuts"],
         clauses=data["clauses"],
+        fingerprints=data.get("fingerprints", {}),
     )
 
 
@@ -752,7 +796,7 @@ def check_api(
         for comparison, cut, with_dims in picks:
             query = cell_query(cfg.view, comparison, cut, with_dims)
             bound = _cube_sql(cfg, cube, query, schools)
-            tables |= as_of(bound, first, wh).tables
+            tables |= _as_of(bound, first, wh).tables
             dims = [d.cube for d in comparison.dims] if with_dims else []
             api = {
                 tuple(_key(r.get(_member(cfg.view, d))) for d in dims): _number(
@@ -888,12 +932,15 @@ def prove(
     if not exportable:
         raise Refusal(f"comparison {comparison.id!r} has no cut a REST export can take")
 
-    snap = tbl.capture(
-        workbook,
-        sheet,
-        exportable,
-        lambda x: tableau.drop_number_formats(x, measures),
-    )
+    try:
+        snap = tbl.capture(
+            workbook,
+            sheet,
+            exportable,
+            lambda x: tableau.drop_number_formats(x, measures),
+        )
+    except (LookupError, tableau.RefreshMovedError) as exc:
+        raise Refusal(f"cannot export {sheet!r}: {exc}") from exc
     if snap.refresh_started < now - PROOF_WINDOW:
         raise Refusal(
             f"the extract refreshed at {snap.refresh_started}, outside the 7 days "
@@ -906,7 +953,7 @@ def prove(
         for cut, rows in zip(exportable, snap.exports, strict=True):
             label = cut_label(cut)
             probe_rows = wh.rows(
-                as_of(probe_sql(cfg, comparison, cut), snap.refresh_started, wh).sql
+                _as_of(probe_sql(cfg, comparison, cut), snap.refresh_started, wh).sql
             )
             if not rows or not probe_rows:
                 side = "export" if not rows else "probe"
@@ -931,7 +978,10 @@ def prove(
                 for r in probe_rows
             ]
 
-    proof = tableau.prove(comparison, exports, probes, twb_xml=twb, now=now)
+    try:
+        proof = tableau.prove(comparison, exports, probes, twb_xml=twb, now=now)
+    except ValueError as exc:
+        raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
     for cut in browser:
         print(f"Prove in the browser: {cut_label(cut)}")
     if not proof.proven:
@@ -948,6 +998,7 @@ def prove(
             "cells": proof.cells,
             "proven_at": proof.proven_at.isoformat(),
             "workbook_updated_at": tbl.workbook_updated(workbook).isoformat(),
+            "probe_fingerprint": probe_fingerprint(cfg, comparison),
         },
     )
     print(f"Proved {comparison.id}: {proof.cells} cells; wrote proof to {path}.")

@@ -51,6 +51,7 @@ class RunResult:
     proofs: dict[str, str] = field(default_factory=dict)
     browser_cuts: list[str] = field(default_factory=list)
     clauses: dict[str, list[str]] = field(default_factory=dict)
+    fingerprints: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
 def mask(n: int) -> str:
@@ -119,6 +120,14 @@ def render_local(run: RunResult) -> str:
     out += _bullets([_decision_line(d) for d in run.applied.reconfirm])
     out += ["", "No longer needed (no group matches):"]
     out += _bullets([_decision_line(d) for d in run.applied.no_longer_needed])
+
+    out += ["", "Fingerprints a new decision records (`fingerprints:`):"]
+    out += _bullets(
+        [
+            f"{cid}: {{ cube: {fp.get('cube', '')}, dashboard: {fp.get('dashboard', '')} }}"
+            for cid, fp in sorted(run.fingerprints.items())
+        ]
+    )
 
     out += ["", "## Sources read live", ""]
     out += _bullets([f"`{s}`" for s in run.live_sources])

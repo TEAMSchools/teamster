@@ -41,6 +41,7 @@ class Proof:
     cells: Any
     proven_at: str
     workbook_updated_at: str = ""
+    probe_fingerprint: str = ""
 
 
 @dataclass(frozen=True)
@@ -179,6 +180,7 @@ def _comparison(reader: _Reader) -> Comparison:
             cells=proof_reader.data.get("cells"),
             proven_at=str(proof_reader.data.get("proven_at", "")),
             workbook_updated_at=str(proof_reader.data.get("workbook_updated_at", "")),
+            probe_fingerprint=str(proof_reader.data.get("probe_fingerprint", "")),
         )
 
     return Comparison(
@@ -276,8 +278,12 @@ def load_view_config(path: Path) -> ViewConfig:
 
     anchors = [_anchor(r) for r in _list_of(root, "anchors")]
     time_dimension = root.get("time_dimension", str)
-    if anchors and not time_dimension:
-        root.fail("time_dimension", "is required when anchors are set")
+    # Row comparisons cast the time dimension to DATE on both sides; without
+    # it a date grain joins TIMESTAMP text to DATE text and nothing matches.
+    if not time_dimension and (anchors or any(c.rows for c in comparisons)):
+        root.fail(
+            "time_dimension", "is required when anchors or comparison rows are set"
+        )
 
     return ViewConfig(
         view=root.get("view", str, required=True),
@@ -300,7 +306,7 @@ def write_proof(path: Path, comparison_id: str, proof: dict[str, Any]) -> None:
         path: The validation file.
         comparison_id: The `id` of the comparison to update.
         proof: The new proof (`fingerprint`, `cells`, `proven_at`,
-            `workbook_updated_at`).
+            `workbook_updated_at`, `probe_fingerprint`).
 
     Raises:
         ConfigError: No comparison has that id.

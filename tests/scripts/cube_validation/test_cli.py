@@ -1,5 +1,6 @@
 import contextlib
 import hashlib
+import json
 import re
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -9,7 +10,7 @@ from types import SimpleNamespace
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, pipeline
+from cube_validation import cli, pipeline, tableau
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.bq import Warehouse
@@ -27,6 +28,7 @@ from cube_validation.tableau import Snapshot, formula_fingerprint
 from cube_validation.timetravel import utc_literal
 
 FIXTURES = Path(__file__).parent / "fixtures"
+REAL_TABLEAU_SESSION = cli.tableau_session
 START = datetime(2026, 10, 22, 20, 30, tzinfo=timezone.utc)
 END = START + timedelta(minutes=14)
 NOW = END + timedelta(days=1)
@@ -38,6 +40,7 @@ PROOF = """\
       cells: 2
       proven_at: '2026-10-26T12:00:00+00:00'
       workbook_updated_at: '2026-10-20T09:00:00+00:00'
+      probe_fingerprint: PROBE_FP
 """
 
 YML = (
@@ -102,8 +105,17 @@ class FakeBigQuery:
         self.ran: list[str] = []
         self.probe = probe or [{"region": "Newark", "value": 0.9123}]
         self.cells = cells
+        self.views: dict[str, str] = {}
+        self.build = (START, END)
 
     def get_table(self, ref):
+        name = ref.rsplit(".", 1)[-1]
+        if name in self.views:
+            return SimpleNamespace(
+                table_type="VIEW",
+                view_query=self.views[name],
+                modified=START - timedelta(days=2),
+            )
         return SimpleNamespace(table_type="TABLE", view_query=None, modified=START)
 
     def query(self, sql, job_config=None):
@@ -116,7 +128,8 @@ class FakeBigQuery:
 
     def answer(self, sql):
         if "JOBS_BY_PROJECT" in sql:
-            return [{"job_id": "job-1", "start_time": START, "end_time": END}]
+            start, end = self.build
+            return [{"job_id": "job-1", "start_time": start, "end_time": end}]
         if "SELECT abbreviation" in sql:
             return [{"abbreviation": "A"}, {"abbreviation": "B"}]
         if "farm_fingerprint" in sql:
@@ -142,13 +155,14 @@ class FakeCube:
         self.compiled_queries: list[dict] = []
         self.loads: list[dict] = []
         self._load = load or (lambda q: [_load_row(q, 0.91234)])
+        self.exprs: dict[str, str] = {}
 
     def compiled(self, query):
         self.compiled_queries.append(query)
         dims = [m.split(".", 1)[1] for m in query.get("dimensions", [])]
         measures = [m.split(".", 1)[1] for m in query.get("measures", [])]
         select = ", ".join(
-            [f"`t`.{d} `v__{d}`" for d in dims]
+            [f"{self.exprs.get(d, f'`t`.{d}')} `v__{d}`" for d in dims]
             + [
                 f"sum(`t`.is_present) / count(`t`.membership_value) `v__{m}`"
                 for m in measures
@@ -238,8 +252,13 @@ def fakes(monkeypatch, tmp_path):
 
 
 def _file(tmp_path, text=YML):
+    """Write a validation file, filling in the probe's real fingerprint."""
     path = tmp_path / "v.yml"
     path.write_text(text)
+    if "PROBE_FP" in text:
+        cfg = load_view_config(path)
+        fp = pipeline.probe_fingerprint(cfg, cfg.comparisons[0])
+        path.write_text(text.replace("PROBE_FP", fp))
     return path
 
 
@@ -388,9 +407,12 @@ def test_run_refuses_a_moment_outside_the_window(fakes, tmp_path, capsys):
     assert "2026-10-01" in capsys.readouterr().err
 
 
-def _with_decision(cube, tmp_path, call="domain_owner"):
-    cfg = load_view_config(_file(tmp_path))
-    fp = pipeline.comparison_fingerprints(cfg, cfg.comparisons[0], cube)
+def _saved_fingerprints(tmp_path):
+    saved = sorted((tmp_path / "cache" / "v").glob("*/run.json"))
+    return json.loads(saved[-1].read_text())["fingerprints"]["ada-region"]
+
+
+def _with_decision(fp, tmp_path, call="domain_owner", text=YML):
     decision = f"""\
 decisions:
   - id: miami-scope
@@ -401,25 +423,123 @@ decisions:
     task: https://github.com/example/issues/1
     fingerprints: {{ cube: {fp["cube"]}, dashboard: {fp["dashboard"]} }}
 """
-    return _file(tmp_path, YML + decision)
+    return _file(tmp_path, text + decision)
+
+
+def _section(out, start, end):
+    return out.split(start)[1].split(end)[0]
+
+
+def test_run_shows_the_fingerprints_a_decision_records(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    out = capsys.readouterr().out
+    fp = _saved_fingerprints(tmp_path)
+    assert len(fp["cube"]) == len(fp["dashboard"]) == 64
+    shown = _section(out, "Fingerprints a new decision records", "##")
+    assert (
+        f"ada-region: {{ cube: {fp['cube']}, dashboard: {fp['dashboard']} }}" in shown
+    )
 
 
 def test_decision_fingerprints_ignore_the_moment(fakes, tmp_path, capsys):
-    path = _with_decision(FakeCube(), tmp_path, call="deliberate")
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="deliberate")
+    fakes.bq.build = (START + timedelta(hours=3), END + timedelta(hours=3))
+    capsys.readouterr()
 
     assert cli.main(["run", str(path)]) == 0
 
     out = capsys.readouterr().out
-    applied = out.split("Applied:")[1].split("To re-confirm")[0]
-    assert "miami-scope" in applied
+    assert "miami-scope" in _section(out, "Applied:", "To re-confirm")
     assert "No open groups." in out
+
+
+def test_dashboard_view_edit_asks_to_reconfirm(fakes, tmp_path, capsys):
+    body = "select * from `teamster-332318`.`kipptaf_int`.`int_d` where keep"
+    fakes.bq.views = {"rpt_d": body}
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="deliberate")
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+    assert "miami-scope" in _section(
+        capsys.readouterr().out, "Applied:", "To re-confirm"
+    )
+
+    fakes.bq.views = {"rpt_d": body.replace("where keep", "where keep and not dropped")}
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "miami-scope" in _section(out, "To re-confirm", "No longer needed")
+    assert "`regions_region_name` = `Miami`" in _section(out, "## Triage", "##")
+
+
+def test_cube_row_dimension_edit_asks_to_reconfirm(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="deliberate")
+    # attendance_value is read by the row query only, never by the cells.
+    fakes.cube.exprs["attendance_value"] = "coalesce(`t`.attendance_value, 0)"
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "miami-scope" in _section(out, "To re-confirm", "No longer needed")
+
+
+def test_run_refuses_a_probe_changed_since_its_proof(fakes, tmp_path, capsys):
+    path = _file(tmp_path)
+    path.write_text(path.read_text().replace("avg(is_present)", "sum(is_present)"))
+
+    assert cli.main(["run", str(path)]) == 1
+
+    err = capsys.readouterr().err
+    assert "ada-region" in err and "prove" in err
+    assert fakes.bq.ran == []
+
+
+def test_run_refuses_sql_it_cannot_time_travel(fakes, tmp_path, capsys):
+    text = YML.replace(
+        "    probe: avg(is_present)\n",
+        "    probe_sql: SELECT region, avg(x) AS value FROM ({rows}) AS r "
+        "JOIN kipptaf_x.lookup USING (region) WHERE {where} GROUP BY 1\n",
+    )
+
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 1
+    assert "kipptaf_x.lookup" in capsys.readouterr().err
+
+
+def test_unexpected_error_is_not_reported_as_a_refusal(fakes, tmp_path, monkeypatch):
+    def broken(*args, **kwargs):
+        raise KeyError("bug")
+
+    monkeypatch.setattr(pipeline, "run", broken)
+
+    with pytest.raises(KeyError):
+        cli.main(["run", str(_file(tmp_path))])
+
+
+def test_missing_validation_file_is_refused(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(tmp_path / "nope.yml")]) == 1
+    assert "nope.yml" in capsys.readouterr().err
+
+
+def test_tableau_sign_in_names_the_missing_variables(monkeypatch):
+    for name in tableau.ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+
+    with pytest.raises(pipeline.Refusal, match="TABLEAU_SERVER_ADDRESS"):
+        with REAL_TABLEAU_SESSION():
+            pass
 
 
 # --- review ------------------------------------------------------------------
 
 
 def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
-    path = _with_decision(FakeCube(), tmp_path)
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["run", str(path)]) == 0
     capsys.readouterr()
 
@@ -486,6 +606,10 @@ def test_prove_writes_the_proof(fakes, tmp_path, capsys):
     assert proof.fingerprint == formula_fingerprint(fakes.tbl.twb, "Rate by Region")
     assert proof.cells == 2
     assert proof.workbook_updated_at.startswith("2026-10-20")
+    cfg = load_view_config(path)
+    assert proof.probe_fingerprint == pipeline.probe_fingerprint(
+        cfg, cfg.comparisons[0]
+    )
     probes = [s for s in fakes.bq.ran if "AS value" in s and "rpt_d" in s]
     assert {_literal_after(s, "rpt_d") for s in probes} == {
         utc_literal(fakes.tbl.refresh)

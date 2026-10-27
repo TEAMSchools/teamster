@@ -12,7 +12,6 @@ import argparse
 import contextlib
 import os
 import sys
-import zipfile
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,7 +31,8 @@ URL_VAR = "CUBE_REST_URL"
 SECRET_VAR = "CUBE_API_SECRET"
 EMAIL_VAR = "CUBE_VALIDATION_EMAIL"
 
-# Errors that mean "stopped on purpose or by a check"; anything else is a bug.
+# Errors that mean "stopped on purpose or by a check". Anything else is a bug
+# and keeps its traceback; no message here carries a secret.
 REFUSALS = (
     pipeline.Refusal,
     ConfigError,
@@ -42,11 +42,6 @@ REFUSALS = (
     CubeRefusal,
     CubeError,
     tableau.RefreshMovedError,
-    LookupError,
-    TSC.ServerResponseError,
-    zipfile.BadZipFile,
-    ValueError,
-    RuntimeError,
 )
 
 
@@ -61,8 +56,21 @@ def make_cube(base_url: str, secret: str, email: str) -> Cube:
 
 @contextlib.contextmanager
 def tableau_session() -> Iterator[tableau.Tableau]:
-    """Sign in with the PAT in the environment and sign out afterwards."""
-    server = tableau.sign_in_from_env()
+    """Sign in with the PAT in the environment and sign out afterwards.
+
+    Raises:
+        pipeline.Refusal: A sign-in variable is unset, or Tableau refused the
+            token. The message names variables, never their values.
+    """
+    missing = [name for name in tableau.ENV_VARS if not os.environ.get(name)]
+    if missing:
+        raise pipeline.Refusal(f"set {', '.join(missing)} to sign in to Tableau")
+    try:
+        server = tableau.sign_in_from_env()
+    except TSC.ServerResponseError as exc:
+        raise pipeline.Refusal(
+            f"Tableau refused the sign-in: {exc.code} {exc.summary}"
+        ) from exc
     try:
         yield tableau.Tableau(server)
     finally:
@@ -151,13 +159,19 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _load(path: Path) -> ViewConfig:
+    if not path.is_file():
+        raise pipeline.Refusal(f"{path}: no such validation file")
+    return load_view_config(path)
+
+
 def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "review":
-        configs = [load_view_config(v) for v in args.views]
+        configs = [_load(v) for v in args.views]
         print(pipeline.review(configs, args.domain, cache_root()))
         return 0
 
-    cfg: ViewConfig = load_view_config(args.view)
+    cfg = _load(args.view)
 
     if args.command == "run":
         cube = _cube(args)
