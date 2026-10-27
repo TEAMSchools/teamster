@@ -186,7 +186,11 @@ Steps:
    proposal rather than something heard or found is marked `[proposed]` so the
    user can clear them on review. Names in MOCHA and RAPID are resolved against
    the staff roster for title only, following the intake reference's rule: name
-   and title, never contact details.
+   and title, never contact details. The RAPID log gets one standing row,
+   "changes after signing": which roles may approve a date, owner or scope edit
+   to the plan without the Manager (default: Owner for dates, Manager for scope
+   and MOCHA, any member for their own Asana tasks). The Manager sets it here,
+   and the project-assistant follow-up reads it before applying any edit.
 4. Fill Template 3 (risk log) and Template 4 (stakeholder engagement plan).
    Templates 5 and 6 stay blank: they are filled during and after the project.
 5. Run the draft against Part IV of the handbook. Each failure mode becomes one
@@ -434,11 +438,14 @@ What this changes in the current build: phase 3 writes the schedule inputs into
 the work plan doc, and phase 4 writes the charter link into the Asana project
 description. Both are in the phases above. Everything else waits.
 
-Open until the brainstorm: who may approve what (a Helper applying a date change
-to the shared plan versus the Manager); whether the charter's RAPID log is
-enough of a decision record or the doc needs a dated change log; how many edits
-before the skill proposes a charter revision and a re-sign; whether the
-scheduled digest is worth a scheduled-agent PII review.
+Who may approve what is not open: the charter's "changes after signing" row
+(phase 2) sets it per project, and the assistant refuses an edit the invoker may
+not approve and drafts it for the role that may.
+
+Open until the brainstorm: whether the charter's RAPID log is enough of a
+decision record or the doc needs a dated change log; how many edits before the
+skill proposes a charter revision and a re-sign; whether the scheduled digest is
+worth a scheduled-agent PII review.
 
 ## Out of scope
 
