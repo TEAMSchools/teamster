@@ -150,7 +150,9 @@ def render_local(run: RunResult) -> str:
     out += ["", "Partly no longer needed (some values match no group):"]
     out += _bullets(
         [
-            f"{_decision_line(d)}; partly no longer needed: {', '.join(values)}"
+            # An empty or NULL value would otherwise print as a blank.
+            f"{_decision_line(d)}; partly no longer needed: "
+            + ", ".join(v or "(empty)" for v in values)
             for d, values in run.applied.partly_stale
         ]
     )

@@ -116,6 +116,14 @@ def test_local_result_names_partly_stale_values():
     ) in section
 
 
+def test_partly_stale_empty_value_reads_as_empty():
+    applied = Applied(partly_stale=[(_decision(id="d6"), ["", "Miami"])])
+
+    text = render_local(_run(applied=applied))
+
+    assert "partly no longer needed: (empty), Miami" in text
+
+
 def test_local_result_lists_live_sources_and_changed_dims():
     text = render_local(_run())
     assert "kipptaf_extracts.rpt_enrollment" in text
