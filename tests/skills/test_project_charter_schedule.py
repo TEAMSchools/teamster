@@ -100,6 +100,40 @@ def test_unparseable_date_names_row():
         )
 
 
+def test_blank_month_continues_previous_row():
+    out = sd.parse_breaks(
+        rows(
+            ("November", "6", "Yes", "No", "No", "Yes"),
+            ("", "25-27", "Yes", "Yes", "No", "Yes"),
+        ),
+        2026,
+        ["Newark"],
+    )
+    assert out[1].start == date(2026, 11, 25)
+
+
+def test_end_month_in_parens():
+    [c] = sd.parse_breaks(
+        rows(("March", "29-2 (Apr)", "Yes", "Yes", "No", "No")), 2026, ["Newark"]
+    )
+    assert (c.start, c.end) == (date(2027, 3, 29), date(2027, 4, 2))
+
+
+def test_short_row_missing_region_column():
+    row = {
+        "Month": "May",
+        "Date": "31",
+        "Day": "",
+        "Holiday/Event": "x",
+        "Newark": "Yes",
+        "Camden": "Yes",
+        "Miami": "Yes",
+        "Paterson": None,
+    }
+    [c] = sd.parse_breaks([row], 2026, sd.REGIONS)
+    assert c.start == date(2027, 5, 31)
+
+
 # blocked_weeks / closed_days
 
 
@@ -131,3 +165,139 @@ def test_thanksgiving_week_blocked_without_a_row():
 def test_closed_days_skip_weekends():
     c = sd.Closure(date(2026, 12, 18), date(2026, 12, 21), "x")  # Fri-Mon
     assert sd.closed_days([c]) == frozenset({date(2026, 12, 18), date(2026, 12, 21)})
+
+
+# place / CLI
+
+END = date(2027, 6, 18)
+
+
+@pytest.fixture
+def closures():
+    # Wed-Fri 2027-02-17..19 for every region: blocks the week of 2/15
+    return [sd.Closure(date(2027, 2, 17), date(2027, 2, 19), "mid-winter")]
+
+
+def test_one_week_row_lands_first_friday(closures):
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1)], date(2027, 1, 11), closures, END
+    )
+    assert (p.due, p.rule, p.note) == (date(2027, 1, 15), "friday", "")
+
+
+def test_start_midweek_counts_that_week(closures):
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1)], date(2027, 1, 13), closures, END
+    )
+    assert p.due == date(2027, 1, 15)
+
+
+def test_start_on_weekend_counts_next_week(closures):
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1)], date(2027, 1, 16), closures, END
+    )
+    assert p.due == date(2027, 1, 22)
+
+
+def test_blocked_week_is_skipped(closures):
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 2)], date(2027, 2, 8), closures, END
+    )
+    assert p.due == date(2027, 2, 26)  # week of 2/15 skipped
+
+
+def test_closed_friday_moves_to_thursday():
+    c = [sd.Closure(date(2027, 1, 15), date(2027, 1, 15), "x")]
+    [p] = sd.place([sd.PlanRow("a", "m1", "milestone", 1)], date(2027, 1, 11), c, END)
+    assert (p.due, p.rule) == (date(2027, 1, 14), "closed friday -> thursday")
+
+
+def test_after_starts_monday_after_predecessor(closures):
+    out = sd.place(
+        [
+            sd.PlanRow("a", "m1", "milestone", 1),
+            sd.PlanRow("b", "t1", "task", 1, after="m1"),
+        ],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert out[1].due == date(2027, 1, 22)
+
+
+def test_parallel_workstreams_start_together(closures):
+    out = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1), sd.PlanRow("b", "m2", "milestone", 1)],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert out[0].due == out[1].due
+
+
+def test_override_shifts_follower_past_blocked_week(closures):
+    out = sd.place(
+        [
+            sd.PlanRow("a", "m1", "milestone", 1, override=date(2027, 2, 12)),
+            sd.PlanRow("a", "t1", "task", 1, after="m1"),
+        ],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert (out[0].note, out[1].due) == ("override", date(2027, 2, 26))
+
+
+def test_past_calendar_is_unverified(closures):
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1)], date(2027, 6, 21), closures, END
+    )
+    assert p.note == "unverified: calendar not published"
+
+
+def test_unknown_after_raises(closures):
+    with pytest.raises(ValueError, match="m1"):
+        sd.place(
+            [
+                sd.PlanRow("a", "m1", "milestone", 1),
+                sd.PlanRow("a", "t1", "task", 1, after="nope"),
+            ],
+            date(2027, 1, 11),
+            closures,
+            END,
+        )
+
+
+def test_cli_prints_table_and_end_warning(tmp_path, capsys):
+    breaks = tmp_path / "breaks.csv"
+    breaks.write_text(
+        "Month,Date,Day,Holiday/Event,Newark,Camden,Miami,Paterson\n"
+        "February,17 - 19,Wed,Mid-winter,Yes,Yes,Yes,Yes\n"
+    )
+    plan = tmp_path / "plan.csv"
+    plan.write_text(
+        "workstream,name,kind,duration_weeks,after,override\n"
+        "a,m1,milestone,1,,\n"
+        "a,long,task,30,m1,\n"
+    )
+    rc = sd.main(
+        [
+            "--breaks",
+            str(breaks),
+            "--school-year",
+            "2026",
+            "--regions",
+            "Newark,Camden",
+            "--start",
+            "2027-01-11",
+            "--plan",
+            str(plan),
+            "--end",
+            "2027-06-18",
+        ]
+    )
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "| due |" in out
+    assert "| m1 |" in out and "| long |" in out
+    assert "after 2027-06-18" in out
