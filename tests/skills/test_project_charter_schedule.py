@@ -98,3 +98,36 @@ def test_unparseable_date_names_row():
         sd.parse_breaks(
             rows(("November", "TBD", "Yes", "No", "No", "No")), 2026, ["Newark"]
         )
+
+
+# blocked_weeks / closed_days
+
+
+def test_thanksgiving_2026():
+    assert sd.thanksgiving(2026) == date(2026, 11, 26)
+
+
+def test_three_day_closure_blocks_week():
+    c = sd.Closure(date(2026, 12, 23), date(2026, 12, 25), "x")  # Wed-Fri
+    assert date(2026, 12, 21) in sd.blocked_weeks([c], [2026])
+
+
+def test_two_day_closure_does_not_block():
+    c = sd.Closure(date(2026, 12, 24), date(2026, 12, 25), "x")
+    assert sd.blocked_weeks([c], [2026]) == frozenset({date(2026, 11, 23)})
+
+
+def test_straddling_closure_blocks_neither_week():
+    c = sd.Closure(date(2027, 2, 11), date(2027, 2, 15), "x")  # Thu-Mon
+    assert sd.blocked_weeks([c], [2026]) == frozenset({date(2026, 11, 23)})
+
+
+def test_thanksgiving_week_blocked_without_a_row():
+    assert sd.blocked_weeks([], [2026, 2027]) == frozenset(
+        {date(2026, 11, 23), date(2027, 11, 22)}
+    )
+
+
+def test_closed_days_skip_weekends():
+    c = sd.Closure(date(2026, 12, 18), date(2026, 12, 21), "x")  # Fri-Mon
+    assert sd.closed_days([c]) == frozenset({date(2026, 12, 18), date(2026, 12, 21)})

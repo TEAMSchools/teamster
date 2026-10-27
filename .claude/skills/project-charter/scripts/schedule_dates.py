@@ -92,3 +92,41 @@ def parse_breaks(
             raise ValueError(f"breaks row {label}: {exc}") from None
         closures.append(Closure(start, end, row.get("Holiday/Event", "")))
     return closures
+
+
+def thanksgiving(year: int) -> date:
+    """Fourth Thursday of November."""
+    first = date(year, 11, 1)
+    offset = (calendar.THURSDAY - first.weekday()) % 7
+    return first.replace(day=1 + offset + 21)
+
+
+def _weekdays(closure: Closure) -> list[date]:
+    days = []
+    d = closure.start
+    while d <= closure.end:
+        if d.weekday() < 5:
+            days.append(d)
+        d = d.fromordinal(d.toordinal() + 1)
+    return days
+
+
+def _monday(d: date) -> date:
+    return d.fromordinal(d.toordinal() - d.weekday())
+
+
+def closed_days(closures: Iterable[Closure]) -> frozenset[date]:
+    """Every weekday inside any closure."""
+    return frozenset(d for c in closures for d in _weekdays(c))
+
+
+def blocked_weeks(closures: Iterable[Closure], years: Iterable[int]) -> frozenset[date]:
+    """Mondays of blocked weeks: 3+ weekdays closed by one closure, plus
+    Thanksgiving week of every year given. Two closures do not add up."""
+    blocked = {_monday(thanksgiving(y)) for y in years}
+    for c in closures:
+        per_week: dict[date, int] = {}
+        for d in _weekdays(c):
+            per_week[_monday(d)] = per_week.get(_monday(d), 0) + 1
+        blocked.update(week for week, n in per_week.items() if n >= 3)
+    return frozenset(blocked)
