@@ -1,50 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
-    actual_quarters as (
-        select
-            c._dbt_source_project,
-            c.academic_year,
-            c.region,
-            c.schoolid,
-            c.term as `quarter`,
-            c.first_day_school_year,
-            c.last_day_school_year,
-            t.term_start_date as quarter_start_date,
-            t.term_end_date as quarter_end_date,
-
-            t.semester,
-            t.is_current_term as is_current_quarter,
-
-            greatest(
-                t.term_start_date, c.first_day_school_year
-            ) as quarter_start_date_alt,
-            least(t.term_end_date, c.last_day_school_year) as quarter_end_date_alt,
-
-            sum(c.date_count) over (
-                partition by
-                    c._dbt_source_project, c.academic_year, c.region, c.schoolid, c.term
-            ) as days_in_quarter,
-
-        from {{ ref("int_students__calendar_week") }} as c
-        inner join
-            {{ ref("int_students__terms") }} as t
-            on c.academic_year = t.academic_year
-            and c.schoolid = t.schoolid
-            and c._dbt_source_project = t._dbt_source_project
-            and c.term = t.term
-            and t.term is not null
-    ),
-
-    quarters as (
-        {{
-            dbt_utils.deduplicate(
-                relation="actual_quarters",
-                partition_by="_dbt_source_project, academic_year, schoolid, `quarter`",
-                order_by="quarter_start_date",
-            )
-        }}
-    ),
-
     section_quarters as (
         select
             s._dbt_source_project,
@@ -67,16 +21,16 @@ with
             s.school_level,
             s.school_level_alt,
 
-            t.`quarter`,
+            t.term as `quarter`,
             t.semester,
-            t.quarter_start_date,
-            t.quarter_end_date,
-            t.quarter_start_date_alt,
-            t.quarter_end_date_alt,
-            t.is_current_quarter,
+            t.term_start_date as quarter_start_date,
+            t.term_end_date as quarter_end_date,
+            t.term_start_date_clamped as quarter_start_date_alt,
+            t.term_end_date_clamped as quarter_end_date_alt,
+            t.is_current_term as is_current_quarter,
             t.first_day_school_year,
             t.last_day_school_year,
-            t.days_in_quarter,
+            t.days_in_term as days_in_quarter,
 
             {{ extract_region("s") }} as region,
 
@@ -98,13 +52,13 @@ with
             on s.courses_dcid = cx.coursesdcid
             and s._dbt_source_project = cx._dbt_source_project
         inner join
-            quarters as t
+            {{ ref("int_students__terms") }} as t
             on s.sections_schoolid = t.schoolid
             and s.terms_academic_year = t.academic_year
             and s._dbt_source_project = t._dbt_source_project
-            and s.terms_firstday <= t.quarter_end_date
-            and s.terms_lastday >= t.quarter_start_date
-        where s.sections_no_of_students != 0
+            and s.terms_firstday <= t.term_end_date
+            and s.terms_lastday >= t.term_start_date
+        where s.sections_no_of_students != 0 and t.days_in_term is not null
     )
 
 select
