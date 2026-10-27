@@ -9,6 +9,7 @@ import pytest
 from cube_validation.cube_client import (
     Compiled,
     Cube,
+    CubeError,
     CubeRefusal,
     bind,
     drop_limit,
@@ -153,3 +154,78 @@ def test_network_schools_reads_abbreviations():
             ]
 
     assert network_schools(Wh()) == {"A", "B"}
+
+
+VF = f"kipptaf_marts.{FACT}"
+BASE = f"SELECT 1 FROM `kipptaf_marts`.`{FACT}` WHERE "
+
+
+def _refuse(sql, params, match):
+    with pytest.raises(CubeRefusal, match=match):
+        refuse_unless_safe(Compiled(sql, params, []), view_fact=VF, network_schools=ALL)
+
+
+def test_single_school_equals_is_refused():
+    _refuse(BASE + "abbreviation = ?", ["A"], "1 of 3")
+
+
+def test_unnest_short_list_is_refused():
+    _refuse(BASE + "abbreviation IN UNNEST(?)", [["A", "B"]], "2 of 3")
+
+
+def test_unnest_full_list_passes():
+    refuse_unless_safe(
+        Compiled(BASE + "abbreviation IN UNNEST(?)", [["A", "B", "C"]], []),
+        view_fact=VF,
+        network_schools=ALL,
+    )
+
+
+def test_no_school_filter_is_refused():
+    _refuse(BASE + "grade_level = ?", [5], "No school filter")
+
+
+def test_default_deny_is_refused():
+    _refuse(
+        BASE + "(1 = 0) AND abbreviation IN (?, ?, ?)", ["A", "B", "C"], "default-deny"
+    )
+
+
+def test_extra_school_is_refused():
+    _refuse(BASE + "abbreviation IN (?, ?, ?, ?)", ["A", "B", "C", "D"], "4 of 3")
+
+
+def test_fewer_params_is_an_error():
+    with pytest.raises(CubeError, match="2 placeholders but 1"):
+        bind(Compiled("a = ? AND b = ?", [1], []))
+
+
+def test_extra_params_is_an_error():
+    with pytest.raises(CubeError, match="1 placeholders but 2"):
+        bind(Compiled("a = ?", [1, 2], []))
+
+
+def test_question_mark_in_string_literal_is_text():
+    assert bind(Compiled("a = 'why?' AND b = ?", [7], [])) == "a = 'why?' AND b = 7"
+
+
+def test_list_param_is_array_literal():
+    assert (
+        bind(Compiled("x IN UNNEST(?)", [["A", "O'B"]], []))
+        == "x IN UNNEST(['A', 'O\\'B'])"
+    )
+
+
+def test_newline_is_escaped():
+    assert bind(Compiled("x = ?", ["a\nb\tc\r"], [])) == "x = 'a\\nb\\tc\\r'"
+
+
+def test_none_and_bool():
+    assert bind(Compiled("? ? ?", [None, True, False], [])) == "NULL TRUE FALSE"
+
+
+def test_unsupported_type_is_an_error():
+    import datetime
+
+    with pytest.raises(CubeError, match="date"):
+        bind(Compiled("x = ?", [datetime.date(2026, 1, 1)], []))

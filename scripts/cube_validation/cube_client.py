@@ -19,8 +19,18 @@ from typing import Any, Protocol
 
 TIMEOUT_SECONDS = 60
 _FACT = re.compile(r"kipptaf_marts`?\.`?(fct_\w+)", re.IGNORECASE)
-_SCHOOLS_IN = re.compile(r"abbreviation`?\s+IN\s*\(([^)]*)\)", re.IGNORECASE)
-_LITERAL = re.compile(r"'((?:\\.|[^'\\])*)'")
+_STR = r"'(?:\\.|[^'\\])*'"
+_STRING = re.compile(_STR)
+_LIST = rf"{_STR}(?:\s*,\s*{_STR})*"
+_SCHOOLS = re.compile(
+    r"abbreviation`?\s*(?:"
+    rf"IN\s*UNNEST\s*\(\s*\[\s*(?:{_LIST})?\s*\]\s*\)"
+    rf"|IN\s*\(\s*{_LIST}\s*\)"
+    rf"|=\s*{_STR}"
+    r")",
+    re.IGNORECASE,
+)
+_DENY = re.compile(r"\b1\s*=\s*0\b")
 _LIMIT = re.compile(r"\s+LIMIT\s+\d+\s*;?\s*\Z", re.IGNORECASE)
 
 
@@ -147,27 +157,66 @@ class Cube:
         return out["data"]
 
 
-def _literal(value: Any) -> str:
-    if isinstance(value, bool):
-        return "TRUE" if value else "FALSE"
+_ESCAPES = {"\\": "\\\\", "'": "\\'", "\n": "\\n", "\r": "\\r", "\t": "\\t"}
 
+
+def _literal(value: Any) -> str:
     if value is None:
         return "NULL"
+
+    if isinstance(value, bool):
+        return "TRUE" if value else "FALSE"
 
     if isinstance(value, (int, float)):
         return str(value)
 
-    return "'" + str(value).replace("\\", "\\\\").replace("'", "\\'") + "'"
+    if isinstance(value, str):
+        return "'" + "".join(_ESCAPES.get(c, c) for c in value) + "'"
+
+    if isinstance(value, (list, tuple)):
+        return "[" + ", ".join(_literal(v) for v in value) + "]"
+
+    raise CubeError(f"Unsupported parameter type {type(value).__name__}")
+
+
+def _split(sql: str) -> list[tuple[bool, str]]:
+    """Split `sql` into (is_string_literal, text) pieces."""
+    out: list[tuple[bool, str]] = []
+    pos = 0
+
+    for m in _STRING.finditer(sql):
+        out.append((False, sql[pos : m.start()]))
+        out.append((True, m.group()))
+        pos = m.end()
+
+    out.append((False, sql[pos:]))
+
+    return out
 
 
 def bind(compiled: Compiled) -> str:
-    """Inline each `?` with its parameter as a BigQuery literal."""
+    """Inline each `?` with its parameter as a BigQuery literal.
+
+    A `?` inside a quoted string literal is text, not a placeholder.
+
+    Raises:
+        CubeError: placeholder and parameter counts differ, or a parameter has
+            no BigQuery literal form.
+    """
+    pieces = _split(compiled.sql)
+    holes = sum(t.count("?") for lit, t in pieces if not lit)
+
+    if holes != len(compiled.params):
+        raise CubeError(
+            f"SQL has {holes} placeholders but {len(compiled.params)} parameters"
+        )
+
     params = iter(compiled.params)
 
-    def sub(_: re.Match) -> str:
-        return _literal(next(params))
-
-    return re.sub(r"\?", sub, compiled.sql)
+    return "".join(
+        t if lit else re.sub(r"\?", lambda _: _literal(next(params)), t)
+        for lit, t in pieces
+    )
 
 
 def drop_limit(sql: str) -> str:
@@ -175,14 +224,17 @@ def drop_limit(sql: str) -> str:
     return _LIMIT.sub("", sql)
 
 
-def _school_list(bound: str) -> set[str]:
-    found: set[str] = set()
+def _unquote(literal: str) -> str:
+    return re.sub(r"\\(.)", r"\1", literal[1:-1])
 
-    for m in _SCHOOLS_IN.finditer(bound):
-        found.update(
-            s.replace("\\'", "'").replace("\\\\", "\\")
-            for s in _LITERAL.findall(m.group(1))
-        )
+
+def _school_list(bound: str) -> set[str] | None:
+    """Return every abbreviation the school filters name, or None if absent."""
+    found: set[str] | None = None
+
+    for m in _SCHOOLS.finditer(bound):
+        found = found or set()
+        found.update(_unquote(s) for s in _STRING.findall(m.group(0)))
 
     return found
 
@@ -194,8 +246,8 @@ def refuse_unless_safe(
 
     Raises:
         CubeRefusal: a pre-aggregation answered it, it reads a fact other than
-            `view_fact`, or its school filter is a strict subset of
-            `network_schools`.
+            `view_fact`, or its school filter is missing, a
+            default-deny, or not exactly `network_schools`.
     """
     if compiled.pre_aggregations:
         raise CubeRefusal(
@@ -209,9 +261,21 @@ def refuse_unless_safe(
     if others:
         raise CubeRefusal(f"SQL reads facts other than {view_fact}: {sorted(others)}")
 
-    schools = _school_list(bind(compiled))
+    bound = bind(compiled)
+    code = "".join(t for lit, t in _split(bound) if not lit)
 
-    if schools and schools < network_schools:
+    if _DENY.search(code):
+        raise CubeRefusal("SQL carries a `1 = 0` default-deny predicate.")
+
+    schools = _school_list(bound)
+
+    if schools is None:
+        raise CubeRefusal(
+            "No school filter found in the SQL, so the viewer's scope cannot be "
+            "confirmed as the whole network."
+        )
+
+    if schools != network_schools:
         raise CubeRefusal(
             f"School filter covers {len(schools)} of {len(network_schools)} "
             "network schools; the viewer is not network scope."
