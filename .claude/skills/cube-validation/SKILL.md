@@ -1,9 +1,8 @@
 ---
 name: cube-validation
 description:
-  "Use when asked to validate Cube, check whether Cube matches the dashboard,
-  add a Cube measure from a dashboard, or when working in `src/cube/validation/`
-  or `scripts/cube_validation/`."
+  "Use when asked to validate Cube, check whether Cube matches the dashboard, or
+  when working in `src/cube/validation/` or `scripts/cube_validation/`."
 ---
 
 # cube-validation
@@ -72,14 +71,17 @@ cause, do not retry around it.
    proof (cells mismatch) means the probe or the mapping is wrong: check the
    probe, then the dims, cuts, filters and `--value-column`; never loosen
    `decimals`. A "cannot export" or "7 days" refusal is not a failed proof:
-   retry after the refresh. After a workbook edit, `prove <file> --check` lists
-   stale proofs; re-prove those.
+   retry after the refresh. The proof records the cuts its export covered.
 5. `check-api <file>` once per view, before the first `run`. A disagreement
    means Cube's API and its compiled SQL differ, so `run` results are not
    trustworthy until it is explained.
-6. `run <file>` (add `--moment <ISO time>` for an older build). It prices
-   queries first and stops over `--max-usd`.
-7. Triage every open group into one of 4 calls, then record it (step 8):
+6. `prove <file> --check` before every `run`. `run` never reads the workbook, so
+   only this catches a dashboard owner's edit; re-prove each proof it lists.
+   `run` warns when a proof is more than 7 days old.
+7. `run <file>` (add `--moment <ISO time>` for a build within the last 7 days).
+   It prices queries first and stops over `--max-usd`. A proof with no recorded
+   cuts is listed under "Cuts to prove in the browser" for a re-prove.
+8. Triage every open group into one of 4 calls, then record it (step 9):
    - `deliberate`: the difference is intended. Say what the Cube member counts
      in its `description:`; reasoning stays in the decision.
    - `fix_dashboard`: the workbook or its view is wrong. Task: the domain's
@@ -87,21 +89,29 @@ cause, do not retry around it.
    - `fix_cube`: the Cube model is wrong. Task: the domain's GitHub Cube-fix
      issue.
    - `domain_owner`: the owner decides what is right. Task: the review issue
-     from step 9. Anchor differences are judged here too.
-8. Add a `decisions:` entry with `id` (unique), `comparison`, `group` (a mapping
-   with `column` and `values`), `call`, `reason`, `task` (required for all but
-   `deliberate`) and the `fingerprints` `{cube, dashboard}` that `run` printed
-   for that comparison. A decision covers its group only while both fingerprints
-   hold; do not copy fingerprints from another run.
-9. `uv run python -m scripts.cube_validation review <files> --domain <domain>`
-   prints the issue body. Show the draft to the analyst. Post it with
-   `mcp__github__issue_write` only after approval, using the repo's issue
-   template.
+     from step 10. Anchor differences are judged here too.
+9. Add a `decisions:` entry with `id` (unique), `comparison`, `group`, `call`,
+   `reason`, `task` (required for all but `deliberate`) and the `fingerprints`
+   `{cube, dashboard}` that `run` printed for that comparison. `group` is a
+   mapping: `column` is the Cube member name the triage line shows (such as
+   `regions_region_name`), and `values` are compared as text, so `9` and `"9"`
+   match the same group. A decision covers its group only while both
+   fingerprints hold; do not copy fingerprints from another run.
+10. `uv run python -m scripts.cube_validation review <files> --domain <domain>`
+    prints the issue body. Show the draft to the analyst. Post it with
+    `mcp__github__issue_write` only after approval, using the repo's issue
+    template.
 
 ## Results
 
-- "Matches a dashboard" and "anchored to a source" can be reported as validated;
-  "consistent only" cannot.
-- A cut nobody exported is evaluated by the proven probe and labeled as such.
+- Only "matches a dashboard" with every cell passing reads "validated". An
+  "anchored to a source" measure reads "judge the anchor": the analyst judges
+  the difference in triage, and it is never reported as validated. Neither is
+  "consistent only".
+- "validated" covers cells. A measure line that adds "open row groups to triage"
+  is not done until those groups are triaged.
+- A cut no proof's export covered (a parameter cut, or one added since the
+  proof) is evaluated by the proven probe and listed under "Cuts to prove in the
+  browser".
 - Sources read as they are now (Google Sheets externals) are named in the
   result; carry that caveat into the review issue.
