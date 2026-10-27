@@ -27,9 +27,9 @@ loads only `src/cube/model/`, so these files never reach the semantic layer.
 - Nothing committed names a person or holds an email. Pass `--email` (a
   network-grant address) or set `CUBE_VALIDATION_EMAIL`.
 - Tableau writes go only to the `TEMP-CB` project.
-- Source anchors are entered by hand (value, source, date, filters). Judge each
-  difference in triage; there is no threshold, and an exact match is not
-  expected.
+- Source anchors are entered by hand under `anchors:` with `measure`, `value`,
+  `source`, `as_of`, `date_range` and `filters`. Judge each difference in
+  triage; there is no threshold, and an exact match is not expected.
 - A measure whose strongest check is "consistent only" is never reported as
   validated.
 
@@ -51,10 +51,10 @@ copy:
 3. Run `uv run pytest tests/test_zz_cube_validation.py -s --tb=short`, then
    delete the file.
 
-`review` needs neither secret, and BigQuery uses ADC, so both run with
-`uv run python -m scripts.cube_validation` from the checkout that holds the
-files. Exit 0 is done, 1 is a refusal (stderr says why), 2 is a usage error. A
-refusal is an answer: fix its cause, do not retry around it.
+`review` needs no credentials: run it from any checkout with
+`uv run python -m scripts.cube_validation review ...`. Exit 0 is done, 1 is a
+refusal (stderr says why), 2 is a usage error. A refusal is an answer: fix its
+cause, do not retry around it.
 
 ## Runbook
 
@@ -69,8 +69,11 @@ refusal is an answer: fix its cause, do not retry around it.
    `rows` grain and values. Use the exact keys in `config.py`.
 4. `prove <file> --comparison <id>` exports the sheet from a `TEMP-CB` copy and
    writes `proof` when the probe reproduces every cell at `decimals`. A failed
-   proof means the probe is wrong: fix the probe, never the tolerance. After a
-   workbook edit, `prove <file> --check` lists stale proofs; re-prove those.
+   proof (cells mismatch) means the probe or the mapping is wrong: check the
+   probe, then the dims, cuts, filters and `--value-column`; never loosen
+   `decimals`. A "cannot export" or "7 days" refusal is not a failed proof:
+   retry after the refresh. After a workbook edit, `prove <file> --check` lists
+   stale proofs; re-prove those.
 5. `check-api <file>` once per view, before the first `run`. A disagreement
    means Cube's API and its compiled SQL differ, so `run` results are not
    trustworthy until it is explained.
@@ -85,11 +88,11 @@ refusal is an answer: fix its cause, do not retry around it.
      issue.
    - `domain_owner`: the owner decides what is right. Task: the review issue
      from step 9. Anchor differences are judged here too.
-8. Add a `decisions:` entry with `comparison`, `group`, `call`, `reason`, `task`
-   (required for all but `deliberate`) and the `fingerprints`
-   `{cube, dashboard}` that `run` printed for that comparison. A decision covers
-   its group only while both fingerprints hold; do not copy fingerprints from
-   another run.
+8. Add a `decisions:` entry with `id` (unique), `comparison`, `group` (a mapping
+   with `column` and `values`), `call`, `reason`, `task` (required for all but
+   `deliberate`) and the `fingerprints` `{cube, dashboard}` that `run` printed
+   for that comparison. A decision covers its group only while both fingerprints
+   hold; do not copy fingerprints from another run.
 9. `uv run python -m scripts.cube_validation review <files> --domain <domain>`
    prints the issue body. Show the draft to the analyst. Post it with
    `mcp__github__issue_write` only after approval, using the repo's issue
