@@ -44,9 +44,9 @@ class Warehouse:
         self._cap: float | None = None
         self._spent = 0.0
 
-    def table(self, ds: str, name: str) -> TableInfo:
-        """Return the kind of `ds.name` and, for a view, its current SQL."""
-        t = self._client.get_table(f"{PROJECT}.{ds}.{name}")
+    def table(self, dataset: str, name: str) -> TableInfo:
+        """Return the kind of `dataset.name` and, for a view, its current SQL."""
+        t = self._client.get_table(f"{PROJECT}.{dataset}.{name}")
 
         if t.table_type == "VIEW":
             return TableInfo("VIEW", t.view_query)
@@ -56,14 +56,14 @@ class Warehouse:
 
         return TableInfo("TABLE", None)
 
-    def view_sql_as_of(self, ds: str, name: str, ts: datetime) -> str:
-        """Return the SQL body of view `ds.name` as it stood at `ts`.
+    def view_sql_as_of(self, dataset: str, name: str, ts: datetime) -> str:
+        """Return the SQL body of view `dataset.name` as it stood at `ts`.
 
         Raises:
             ViewHistoryError: the view changed after `ts` and no earlier
                 successful `CREATE_VIEW` job is on record.
         """
-        t = self._client.get_table(f"{PROJECT}.{ds}.{name}")
+        t = self._client.get_table(f"{PROJECT}.{dataset}.{name}")
 
         if t.modified <= ts:
             return t.view_query.strip().rstrip(";").rstrip()
@@ -73,7 +73,7 @@ class Warehouse:
             f"FROM `{PROJECT}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
             "WHERE statement_type = 'CREATE_VIEW' AND state = 'DONE' "
             "AND error_result IS NULL "
-            f"AND destination_table.dataset_id = '{ds}' "
+            f"AND destination_table.dataset_id = '{dataset}' "
             f"AND destination_table.table_id = '{name}' "
             f"AND start_time < TIMESTAMP '{utc_literal(ts)}' "
             f"AND creation_time < TIMESTAMP '{utc_literal(ts)}' "
@@ -84,7 +84,7 @@ class Warehouse:
 
         if not rows:
             raise ViewHistoryError(
-                f"no CREATE_VIEW job for {ds}.{name} before {utc_literal(ts)}"
+                f"no CREATE_VIEW job for {dataset}.{name} before {utc_literal(ts)}"
             )
 
         return _view_body(rows[0]["query"])
@@ -106,6 +106,11 @@ class Warehouse:
             )
 
         return usd
+
+    @property
+    def spent(self) -> float:
+        """USD priced since the latest `budget` opened."""
+        return self._spent
 
     def rows(self, sql: str) -> list[dict]:
         """Run `sql` and return its rows; priced first when a budget is open."""

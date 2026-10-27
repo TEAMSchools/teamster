@@ -40,6 +40,7 @@ class Proof:
     fingerprint: str
     cells: Any
     proven_at: str
+    workbook_updated_at: str = ""
 
 
 @dataclass(frozen=True)
@@ -96,6 +97,7 @@ class ViewConfig:
     fact: str
     comparisons: list[Comparison]
     email: str | None = None
+    time_dimension: str | None = None
     anchors: list[Anchor] = field(default_factory=list)
     identities: list[Identity] = field(default_factory=list)
     decisions: list[Decision] = field(default_factory=list)
@@ -176,6 +178,7 @@ def _comparison(reader: _Reader) -> Comparison:
             fingerprint=proof_reader.get("fingerprint", str, required=True),
             cells=proof_reader.data.get("cells"),
             proven_at=str(proof_reader.data.get("proven_at", "")),
+            workbook_updated_at=str(proof_reader.data.get("workbook_updated_at", "")),
         )
 
     return Comparison(
@@ -271,12 +274,18 @@ def load_view_config(path: Path) -> ViewConfig:
         if ids.count(cid) > 1:
             root.fail(f"comparisons[{i}].id", f"duplicate comparison id {cid!r}")
 
+    anchors = [_anchor(r) for r in _list_of(root, "anchors")]
+    time_dimension = root.get("time_dimension", str)
+    if anchors and not time_dimension:
+        root.fail("time_dimension", "is required when anchors are set")
+
     return ViewConfig(
         view=root.get("view", str, required=True),
         fact=root.get("fact", str, required=True),
         email=root.get("email", str),
+        time_dimension=time_dimension,
         comparisons=comparisons,
-        anchors=[_anchor(r) for r in _list_of(root, "anchors")],
+        anchors=anchors,
         identities=[_identity(r) for r in _list_of(root, "identities")],
         decisions=[_decision(r, set(ids)) for r in _list_of(root, "decisions")],
     )
@@ -290,7 +299,8 @@ def write_proof(path: Path, comparison_id: str, proof: dict[str, Any]) -> None:
     Args:
         path: The validation file.
         comparison_id: The `id` of the comparison to update.
-        proof: The new proof (`fingerprint`, `cells`, `proven_at`).
+        proof: The new proof (`fingerprint`, `cells`, `proven_at`,
+            `workbook_updated_at`).
 
     Raises:
         ConfigError: No comparison has that id.
