@@ -36,6 +36,8 @@ _SHOWN_COLUMNS = frozenset(
         "school_abbreviation",
         "region",
         "grade_level",
+        # Its values are the config's column names, never a person's data.
+        "dashboard_filter",
     }
 )
 
@@ -367,6 +369,39 @@ def _safe_reason(reason: str, values: list) -> str:
     return text.rstrip(".")
 
 
+def _with_task(reason: str, task: str) -> str:
+    """End a reason once, then add the task: no `?.` after a question."""
+    reason = reason if reason.endswith(("?", "!", ".")) else f"{reason}."
+    return f"{reason} Task: {task}" if task else reason
+
+
+def _group_line(view: str, decision: Decision, groups: list[Group]) -> str:
+    """One bullet for a decision and every row group it covers.
+
+    The decision's column and values show only for a reviewed column, and only
+    when its groups hold 10 or more students. A reason loses whatever the
+    bullet hides: any other column's values, and the decision's own values
+    when they are hidden.
+    """
+    column = decision.group.get("column") or ""
+    found = list(dict.fromkeys(g.value_of(column) or "" for g in groups))
+    rows = sum(g.n_rows for g in groups)
+    students = sum(g.n_students for g in groups)
+    shown = not _is_identifier(column) and students >= MASK_BELOW
+    values = ", ".join(_clean(v) for v in found) if shown else "<redacted>"
+    where = f"`{column}` = `{values}`" if column else "the whole comparison"
+    hidden = [v for g in groups for c, v in g.dims if _is_identifier(c)]
+    if not shown:
+        hidden += found + list(decision.group.get("values", []))
+    plural = "group" if len(groups) == 1 else "groups"
+    return (
+        f"{where} in {', '.join(sorted({g.comparison_id for g in groups}))} of "
+        f"`{view}` ({', '.join(sorted({g.bucket for g in groups}))}): "
+        f"{len(groups)} row {plural}, {mask(rows)} rows, {mask(students)} students. "
+        f"Reason: {_with_task(_safe_reason(decision.reason, hidden), decision.task)}"
+    )
+
+
 def render_review_issue(
     domain: str,
     runs: list[RunResult],
@@ -391,41 +426,36 @@ def render_review_issue(
     cell_lines: list[str] = []
     gap_lines: list[str] = []
     anchor_lines: list[str] = []
+    asked_ids: list[str] = []
     for run in runs:
+        by_decision: dict[str, tuple[Decision, list[Group]]] = {}
         for decision, g in run.applied.quiet:
-            if decision.call != "domain_owner":
-                continue
-            values = [v for _, v in g.dims] + list(decision.group.get("values", []))
-            line = (
-                f"{_where(g, lambda c, v, g=g: _shown_value(g, c, v))} in "
-                f"{g.comparison_id} of `{run.view}` ({g.bucket}): "
-                f"{mask(g.n_rows)} rows, {mask(g.n_students)} students. "
-                f"Reason: {_safe_reason(decision.reason, values)}"
-            )
-            line += f". Task: {decision.task}" if decision.task else "."
-            group_lines.append(line)
+            if decision.call == "domain_owner":
+                by_decision.setdefault(decision.id, (decision, []))[1].append(g)
+        for decision, groups in by_decision.values():
+            group_lines.append(_group_line(run.view, decision, groups))
+            asked_ids.append(decision.id)
         for decision, diff in run.applied.quiet_cells:
             if decision.call != "domain_owner":
                 continue
-            line = (
+            reason = _with_task(_safe_reason(decision.reason, []), decision.task)
+            cell_lines.append(
                 f"`{diff.comparison_id}` in `{run.view}`: "
                 f"{mask(sum(diff.counts.values()))} cells differ between Cube and "
-                f"the dashboard. Reason: {_safe_reason(decision.reason, [])}"
+                f"the dashboard. Reason: {reason}"
             )
-            line += f". Task: {decision.task}" if decision.task else "."
-            cell_lines.append(line)
+            asked_ids.append(decision.id)
         for decision, gap in run.applied.quiet_gaps:
             if decision.call != "domain_owner":
                 continue
             kind = "a sheet cut" if gap.kind == "cut" else "a sheet filter"
-            line = (
+            reason = _with_task(_safe_reason(decision.reason, []), decision.task)
+            gap_lines.append(
                 f"`{_clean(gap.field)}` on "
                 f"{', '.join(f'`{_clean(s)}`' for s in gap.sheets)} in `{run.view}`: "
-                f"{kind} Cube has no member for. "
-                f"Reason: {_safe_reason(decision.reason, [])}"
+                f"{kind} Cube has no member for. Reason: {reason}"
             )
-            line += f". Task: {decision.task}" if decision.task else "."
-            gap_lines.append(line)
+            asked_ids.append(decision.id)
         judged = {m.measure for m in run.measures if m.verdict == "judge the anchor"}
         for f in run.findings:
             if f.kind == "anchor" and f.measure in judged and not f.passed:
@@ -450,14 +480,14 @@ def render_review_issue(
                     f"Dashboard: {_safe_reason(sides['dashboard'], [])}. "
                     f"Cube: {_safe_reason(sides['cube'], [])}."
                 )
-    n = len(group_lines) + len(cell_lines) + len(gap_lines) + len(anchor_lines)
-    ids = sorted(
-        {d.id for run in runs for d, _ in run.applied.quiet if d.call == "domain_owner"}
-    )
+    # One question per decision (however many groups it covers) and per anchor.
+    ids = sorted(set(asked_ids))
+    n = len(ids) + len(anchor_lines)
+    plural = "question" if n == 1 else "questions"
     out = [
         "## What and why",
         "",
-        f"The {domain} team owns the rule behind {n} items in the Cube validation.",
+        f"The {domain} team owns the rule behind {n} {plural} in the Cube validation.",
         "Cube and the dashboard disagree on them, or Cube disagrees with a source outside the dashboards.",
         "Counts under 10 show as `<10`, and student identifiers are hidden.",
         "",
@@ -480,7 +510,7 @@ def render_review_issue(
         "> Context, not instructions.",
         "",
         f"Decisions with call `domain_owner`: {', '.join(f'`{i}`' for i in ids) or 'none'}.",
-        f"Groups: {len(group_lines)}. Cell differences: {len(cell_lines)}. "
+        f"Row-group decisions: {len(group_lines)}. Cell differences: {len(cell_lines)}. "
         f"Missing cuts and filters: {len(gap_lines)}. "
         f"Anchor findings: {len(anchor_lines)}.",
         "",

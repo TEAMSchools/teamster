@@ -268,7 +268,8 @@ def test_reason_is_sanitized():
     g = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)
     body = _issue_with(g, reason="Student 123456 moved to Newark.")
     assert "123456" not in body
-    assert "Reason: Student <redacted> moved to <redacted>." in body
+    # Newark is a reviewed value the issue shows anyway; the id is not.
+    assert "Reason: Student <redacted> moved to Newark." in body
 
 
 def test_reason_with_unquoted_numeric_values():
@@ -278,7 +279,7 @@ def test_reason_with_unquoted_numeric_values():
         {"column": "grade_level", "values": [9]},
     )  # fmt: skip
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=[(d, g)]))])
-    assert "Reason: Grade <redacted> is split" in body
+    assert "Reason: Grade 9 is split" in body
 
 
 def test_separated_ids_in_reason_redacted():
@@ -329,9 +330,9 @@ def test_review_issue_names_every_dim_and_masks_each():
         12,
     )
     body = _issue_with(g, reason="Camden SECRETVAL rows")
-    assert "- `regions_region_name` = `Camden`, `student_number` = `<redacted>`" in body
+    assert "- `regions_region_name` = `Camden` in enrollment" in body
     assert "SECRETVAL" not in body
-    assert "Reason: <redacted> <redacted> rows" in body
+    assert "Reason: Camden <redacted> rows" in body
 
 
 def test_local_result_says_anchors_read_current_data():
@@ -475,3 +476,85 @@ def test_review_issue_carries_domain_owner_cell_differences():
     assert "Definitions side by side" in body
     # Candidate causes stay local: they can name a cut or a value.
     assert "values differ beyond rounding" not in body
+
+
+ENROLLED_REASON = "The dashboard counts enrolled students only (enroll_status = 0)"
+
+
+def _enrolled_only(task=""):
+    d = Decision(
+        "tardy-enrolled", "tardy-roster", "domain_owner", ENROLLED_REASON,
+        {"column": "dashboard_filter", "values": ["enroll_status"]}, task=task,
+    )  # fmt: skip
+    groups = [
+        Group("tardy-roster", (("dashboard_filter", "enroll_status"), ("grade_level", str(i))),
+              "dashboard_filtered", 10, 10)
+        for i in range(13)
+    ]  # fmt: skip
+    return [(d, g) for g in groups]
+
+
+def test_review_issue_prints_one_bullet_per_decision():
+    body = render_review_issue(
+        "Registrar", [_run(applied=Applied(quiet=_enrolled_only()))]
+    )
+    bullets = [x for x in body.splitlines() if x.startswith("- `dashboard_filter`")]
+    assert bullets == [
+        "- `dashboard_filter` = `enroll_status` in tardy-roster of `enrollment_view` "
+        "(dashboard_filtered): 13 row groups, 130 rows, 130 students. "
+        "Reason: " + ENROLLED_REASON + "."
+    ]
+
+
+def test_review_issue_keeps_reviewed_values_in_a_reason():
+    d = Decision("newark", "enrollment", "domain_owner", "Some Newark students moved",
+                 {"column": "region", "values": ["Newark"]})  # fmt: skip
+    g = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)
+    body = render_review_issue("Registrar", [_run(applied=Applied(quiet=[(d, g)]))])
+    assert "Reason: Some Newark students moved." in body
+    assert "<redacted>" not in body.split("## Proposed approach")[0]
+
+
+def test_review_issue_adds_no_period_after_a_question():
+    q = "Should TD count as tardy?"
+    d = Decision("td", "enrollment", "domain_owner", q, cells=True)
+    diff = CellDiff("enrollment", {"differs": 58})
+    body = render_review_issue(
+        "Registrar", [_run(applied=Applied(quiet_cells=[(d, diff)]))]
+    )
+    assert f"Reason: {q}\n" in body + "\n" and "?." not in body
+    tasked = Decision("td", "enrollment", "domain_owner", q, task="#6200", cells=True)
+    body = render_review_issue(
+        "Registrar", [_run(applied=Applied(quiet_cells=[(tasked, diff)]))]
+    )
+    assert f"Reason: {q} Task: #6200" in body
+
+
+def test_review_issue_counts_questions_and_lists_every_decision():
+    cells = Decision(
+        "tardy-cells", "tardy-roster", "domain_owner", "codes?", cells=True
+    )
+    gap = _gap_decision()
+    run = _run(
+        applied=Applied(
+            quiet=_enrolled_only(),
+            quiet_cells=[(cells, CellDiff("tardy-roster", {"differs": 58}))],
+            quiet_gaps=[(gap, GAP_TEAM)],
+        )
+    )
+    body = render_review_issue("Registrar", [run])
+    # 3 decisions, however many groups they cover, plus the 1 anchor finding.
+    assert "owns the rule behind 4 questions" in body
+    fold = body.split("<summary>For Claude</summary>", 1)[1]
+    for decision_id in ("tardy-enrolled", "tardy-cells", "g1"):
+        assert f"`{decision_id}`" in fold
+
+
+def test_a_small_group_hides_its_value_in_the_reason_too():
+    d = Decision("newark", "enrollment", "domain_owner", "Some Newark students moved",
+                 {"column": "region", "values": ["Newark"]})  # fmt: skip
+    g = Group("enrollment", (("region", "Newark"),), "cube_only", 39, 3)
+    body = render_review_issue("Registrar", [_run(applied=Applied(quiet=[(d, g)]))])
+    assert "- `region` = `<redacted>`" in body
+    assert "Reason: Some <redacted> students moved." in body
+    assert "Newark" not in body.split("## Proposed approach")[0]

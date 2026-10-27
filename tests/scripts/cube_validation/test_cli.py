@@ -763,7 +763,7 @@ def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
 
     out = capsys.readouterr().out
     assert out.startswith("## What and why")
-    assert "The Registrar team owns the rule behind 1 items" in out
+    assert "The Registrar team owns the rule behind 1 question" in out
     # A region name names no person, and the group has 10+ students.
     assert "`regions_region_name` = `Miami`" in out and "12 students" in out
 
