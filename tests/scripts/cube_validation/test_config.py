@@ -236,6 +236,7 @@ def test_proof_keeps_workbook_updated_at(tmp_path):
             "proven_at": "2026-10-27T10:00:00+00:00",
             "workbook_updated_at": "2026-10-20T09:00:00+00:00",
             "probe_fingerprint": "p00",
+            "cuts": ["{}", '{"Region": "Miami"}'],
         },
     )
 
@@ -244,3 +245,15 @@ def test_proof_keeps_workbook_updated_at(tmp_path):
     assert proof is not None
     assert proof.workbook_updated_at == "2026-10-20T09:00:00+00:00"
     assert proof.probe_fingerprint == "p00"
+    assert proof.cuts == ["{}", '{"Region": "Miami"}']
+
+
+def test_proof_without_cuts_reads_as_unknown(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    write_proof(
+        path, "ada-y1-region", {"fingerprint": "f", "cells": 1, "proven_at": "x"}
+    )
+
+    proof = load_view_config(path).comparisons[0].proof
+
+    assert proof is not None and proof.cuts is None

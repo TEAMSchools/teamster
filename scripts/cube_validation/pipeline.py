@@ -614,6 +614,39 @@ def _extra_sections(cells: list[Cell], findings: list[Finding]) -> str:
     return "\n".join(out) + "\n"
 
 
+def _proof_is_old(proven_at: str, now: datetime) -> bool:
+    """True when a proof is more than 7 days old, or its time is unreadable."""
+    try:
+        proven = datetime.fromisoformat(proven_at)
+    except ValueError:
+        return True
+    if proven.tzinfo is None:
+        proven = proven.replace(tzinfo=timezone.utc)
+    return now - proven > WINDOW
+
+
+def _browser_cuts(comparisons: list[Comparison]) -> list[str]:
+    """Cuts no proof's REST export covered: parameter cuts, and cuts added since.
+
+    A proof written before proofs recorded their cuts cannot say which it
+    covered, so the comparison is listed for a re-prove.
+    """
+    out = []
+    for comparison in comparisons:
+        recorded = comparison.proof.cuts if comparison.proof else None
+        if recorded is None:
+            out.append(
+                f"{comparison.id}: cuts unknown (the proof records none); re-prove"
+            )
+            continue
+        out += [
+            f"{comparison.id}: {cut_label(cut)} (no export proved it)"
+            for cut in _cuts(comparison)
+            if cut_label(cut) not in recorded
+        ]
+    return out
+
+
 def run(
     cfg: ViewConfig,
     *,
@@ -659,6 +692,12 @@ def run(
     for comparison in comparisons:
         if comparison.proof:
             print(f"Proof for {comparison.id}: proven {comparison.proof.proven_at}.")
+            if _proof_is_old(comparison.proof.proven_at, now):
+                print(
+                    f"Warning: the proof for {comparison.id} is more than 7 days "
+                    "old. `run` never reads the workbook, so run `prove --check` "
+                    "to catch an edit since."
+                )
 
     with wh.budget(max_usd):
         builds = fact_builds(wh, cfg.fact, since=now - WINDOW)
@@ -703,6 +742,7 @@ def run(
         ],
         cost_usd=cost,
         proofs={c.id: c.proof.proven_at for c in comparisons if c.proof},
+        browser_cuts=_browser_cuts(comparisons),
         clauses={k: v for k, v in clauses.items() if v},
         fingerprints=sides.fingerprints,
     )
@@ -1072,6 +1112,8 @@ def prove(
             "proven_at": proof.proven_at.isoformat(),
             "workbook_updated_at": tbl.workbook_updated(workbook).isoformat(),
             "probe_fingerprint": probe_fingerprint(cfg, comparison),
+            # `run` lists every other cut as one to prove in the browser.
+            "cuts": [cut_label(cut) for cut in exportable],
         },
     )
     print(f"Proved {comparison.id}: {proof.cells} cells; wrote proof to {path}.")

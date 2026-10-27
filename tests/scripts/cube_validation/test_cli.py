@@ -404,6 +404,52 @@ def test_run_reports_cells_proofs_and_identity(fakes, tmp_path, capsys):
     assert list((tmp_path / "cache" / "v").glob("*/result.md"))
 
 
+def _browser_section(out):
+    return _section(out, "## Cuts to prove in the browser", "##")
+
+
+def test_run_lists_a_proof_without_cuts_for_a_re_prove(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    section = _browser_section(capsys.readouterr().out)
+    assert "ada-region: cuts unknown (the proof records none); re-prove" in section
+
+
+def test_run_lists_cuts_no_export_proved(fakes, tmp_path, capsys):
+    # The Miami cut sets a parameter, say, so the export proved only `{}`.
+    text = YML.replace(PROOF, PROOF + "      cuts: ['{}']\n")
+
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    section = _browser_section(capsys.readouterr().out)
+    assert 'ada-region: {"Region": "Miami"} (no export proved it)' in section
+    assert "ada-region: {} (" not in section and "cuts unknown" not in section
+
+
+def test_run_lists_no_cut_when_every_cut_was_exported(fakes, tmp_path, capsys):
+    text = YML.replace(PROOF, PROOF + """      cuts: ['{}', '{"Region": "Miami"}']\n""")
+
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    section = _browser_section(capsys.readouterr().out)
+    assert "(no export proved it)" not in section and "cuts unknown" not in section
+
+
+def test_run_warns_on_a_proof_older_than_7_days(fakes, tmp_path, capsys):
+    old = PROOF.replace("2026-10-26T12:00:00+00:00", "2026-10-10T12:00:00+00:00")
+
+    assert cli.main(["run", str(_file(tmp_path, YML.replace(PROOF, old)))]) == 0
+
+    out = capsys.readouterr().out
+    assert "Warning: the proof for ada-region is more than 7 days old" in out
+    assert "prove --check" in out
+
+
+def test_run_does_not_warn_on_a_recent_proof(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    assert "Warning: the proof" not in capsys.readouterr().out
+
+
 def test_run_reads_each_identity_cut_in_one_load(fakes, tmp_path, capsys):
     fakes.cube._load = lambda q: [_load_row(q, 0.5)]
 
@@ -683,6 +729,7 @@ def test_prove_writes_the_proof(fakes, tmp_path, capsys):
     assert proof is not None
     assert proof.fingerprint == formula_fingerprint(fakes.tbl.twb, "Rate by Region")
     assert proof.cells == 2
+    assert proof.cuts == ["{}", '{"Region": "Miami"}']
     assert proof.workbook_updated_at.startswith("2026-10-20")
     cfg = load_view_config(path)
     assert proof.probe_fingerprint == pipeline.probe_fingerprint(

@@ -43,6 +43,8 @@ class Proof:
     proven_at: str
     workbook_updated_at: str = ""
     probe_fingerprint: str = ""
+    # The cut labels the REST export proved; None when the proof predates them.
+    cuts: list[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -176,7 +178,9 @@ def _comparison(reader: _Reader) -> Comparison:
     proof = None
     if reader.data.get("proof") is not None:
         proof_reader = reader.child("proof", reader.data["proof"])
+        cuts = proof_reader.get("cuts", list)
         proof = Proof(
+            cuts=None if cuts is None else [str(c) for c in cuts],
             fingerprint=proof_reader.get("fingerprint", str, required=True),
             cells=proof_reader.data.get("cells"),
             proven_at=str(proof_reader.data.get("proven_at", "")),
@@ -323,7 +327,7 @@ def write_proof(path: Path, comparison_id: str, proof: dict[str, Any]) -> None:
         path: The validation file.
         comparison_id: The `id` of the comparison to update.
         proof: The new proof (`fingerprint`, `cells`, `proven_at`,
-            `workbook_updated_at`, `probe_fingerprint`).
+            `workbook_updated_at`, `probe_fingerprint`, `cuts`).
 
     Raises:
         ConfigError: No comparison has that id.
