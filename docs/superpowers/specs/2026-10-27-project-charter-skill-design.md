@@ -245,7 +245,7 @@ charter's milestone table updated with the exact dates. The script's input rows
 (workstream, name, duration, `after`, override notes) go into the doc too, as a
 "Schedule inputs" table after the plan, so a later re-run can start from them
 instead of reverse-engineering dependencies from the dated table. See the
-project-update follow-up.
+project-assistant follow-up.
 
 ### Phase 4: Asana project
 
@@ -357,60 +357,88 @@ ids.
   projects have gone through intake.
 - If a second team starts chartering through this skill, revisit approach B.
 
-### Follow-up: project-update
+### Follow-up: project-assistant
 
-The ask: after the charter ships, any team member brings new material (a
-follow-up meeting, an email thread, a Slack thread, a stakeholder mockup) and
-the project's charter, work plan and Asana project get updated from it, with
-recommendations on dates and scope. The first idea was one spun-off skill per
-large project, shared through the repo and retired at close. Sketch below, with
-the pushback, so the direction can be judged now; the design is its own
-brainstorm after this skill has run on one real project.
+The ask, in the user's frame: a junior PM for each chartered project. Any team
+member hands it new material (a follow-up meeting, an email thread, a Slack
+thread, a mockup) or asks it where the project stands, and it keeps the charter,
+work plan and Asana project current, notices what a PM would notice, and
+recommends. The first idea was one spun-off skill per large project, shared
+through the repo and retired at close. Sketch below, with the pushback, so the
+direction can be judged now; the design is its own brainstorm after this skill
+has run on one real project.
 
-What the update needs, split by kind:
+A junior PM's duties, as the skill would carry them:
 
-- Procedure: read the new material, diff it against the charter (scope, MOCHA,
-  milestones, risks, decisions), propose edits, apply approved edits to the doc
-  and Asana, re-run the date script when a date moves so followers shift, and
-  flag the Part IV failure modes as they appear (a new ask that is scope creep
-  goes to the parking lot or a charter revision, never silently into a section;
-  an owner change updates MOCHA and task assignees together). This is the same
-  for every project.
+- Take in new material and say what it changes: what it adds to or contradicts
+  in the charter (scope, MOCHA, milestones, risks, decisions), one proposed edit
+  per line, each marked doc, plan or Asana.
+- Keep the plan honest: when a date moves, re-run the date script so followers
+  shift; when an owner changes, update MOCHA and task assignees together; when a
+  task closes late, say what it pushes.
+- Run the Part IV checks every time it is invoked, not only when material
+  arrives: tasks overdue or unowned, milestones with nothing under them,
+  decisions pending past their date, a stakeholder who has not been told
+  something that affects them, scope that drifted in without a charter edit.
+  Each finding names the failure mode it matches.
+- Draft, never send: the project team meeting agenda (what closed since last
+  time, what is due before next time, the decisions pending and who owns them,
+  the findings below that need a person), the Template 5 status update, the
+  stakeholder-facing explanation of a slip, the question to put to an owner. The
+  human sends. The agenda is the most frequent of these and the one the checks
+  feed most directly, so it is the first draft type to build.
+- Recommend with a reason: a date change, a scope line to the parking lot or
+  into a charter revision, a risk to add, a re-sign when the edits pile up.
+
+What it must not do: edit the charter or plan without a yes from the invoking
+person, message any stakeholder, or decide. It reports to whoever invoked it.
+
+What this needs, split by kind:
+
+- Procedure: everything above. The same for every project.
 - Project context: the charter doc, the work plan and its schedule inputs, the
-  Asana project, the regions in scope, the decision log. This differs per
-  project and is already written down in Drive and Asana by phases 2 to 4. The
-  Asana project description holds the charter link; the charter holds the rest.
+  Asana project, the regions in scope, the decision log. Differs per project and
+  is already written down in Drive and Asana by phases 2 to 4. The Asana project
+  description holds the charter link; the charter holds the rest.
 
-Pushback: a per-project skill would carry only the second kind, and a skill is
-the wrong container for it. It would be one PR to create and one to retire per
+Pushback on the per-project skill: it would carry only the second kind, and a
+skill is the wrong container for it. One PR to create and one to retire per
 project, a body that is the same boilerplate every time, and a trigger that
-collides with every other open project's ("update the plan" matches all of
-them). The one thing a per-project skill could carry that nothing else does is
-project-specific procedure, like the Claude/Cube verification subtasks. That
+collides with every other open project's ("where are we on the plan" matches all
+of them). The one thing a per-project skill could carry that nothing else does
+is project-specific procedure, like the Claude/Cube verification subtasks. That
 case exists but is rare, is hand-written, and is what the repo's domain skills
 already are; it does not fall out of a charter.
 
-Proposed shape: one generic `project-update` skill, a sibling of this one,
+Pushback on the junior PM frame: a junior PM has a cadence; a skill acts only
+when invoked. Nobody invokes a check that is not on their mind, so the overdue
+and unowned findings surface only when someone brings material. The fix is not a
+scheduled agent that edits (it cannot take a yes), but a scheduled read-only
+digest, the Part IV checks across every Active Data team project posted to the
+data team Slack channel, with the edits left to a person who then invokes the
+skill. That is a third piece, and it can wait until the skill exists.
+
+Proposed shape: one generic `project-assistant` skill, a sibling of this one,
 sharing `references/` and the date script. Trigger: new material about a named
-project, "update the charter", "the stakeholder wants to add", "this date
-slipped", "what does this change". Flow: find the Asana project by name, follow
-its description to the charter, read the new material with the phase 1 source
-tools, produce a change brief (what the material adds or contradicts, one line
-per proposed edit, each marked doc, plan or Asana, with the Part IV flag where
-one applies), then apply the approved lines. Every team member runs it on their
-own Drive and Asana credentials, so no per-project setup; what a member needs to
-join a project is the project's name. Retiring a project is the Asana archive
-and nothing in the repo.
+project, "where are we on", "update the charter", "the stakeholder wants to
+add", "this date slipped", "draft the agenda", "draft the status update", "what
+does this change". Flow: find the Asana project by name, follow its description
+to the charter, read any new material with the phase 1 source tools, run the
+checks, produce a project brief (findings with their failure mode, proposed
+edits one per line, drafts), then apply the approved lines. Every team member
+runs it on their own Drive and Asana credentials, so no per-project setup; what
+a member needs to join a project is its name. Retiring a project is the Asana
+archive and nothing in the repo.
 
 What this changes in the current build: phase 3 writes the schedule inputs into
 the work plan doc, and phase 4 writes the charter link into the Asana project
 description. Both are in the phases above. Everything else waits.
 
-Open until the brainstorm: whether the charter's RAPID log is enough of a
-decision record for the diff, or the skill needs a dated change log in the doc;
-how many edits per run before the skill should instead propose a charter
-revision and a re-sign; whether Template 5 status updates belong in the same
-skill, since the change brief is most of one.
+Open until the brainstorm: who may approve what (a Helper applying a date change
+to the shared plan versus the Manager); whether the charter's RAPID log is
+enough of a decision record or the doc needs a dated change log; how many edits
+before the skill proposes a charter revision and a re-sign; whether the
+scheduled digest is worth a scheduled-agent PII review.
 
 ## Out of scope
 
