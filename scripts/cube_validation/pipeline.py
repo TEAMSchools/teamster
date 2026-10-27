@@ -898,6 +898,59 @@ def _export_columns(
     return mapping, rest[0]
 
 
+TOTAL_LABEL = "All"
+
+
+def _alias_keys(columns: list[ET.Element], dim: str) -> dict[str, str]:
+    """Map each alias a sheet displays for a dim back to the stored value.
+
+    A string key is stored quoted (`"Camden"`); the quotes are dropped.
+    """
+    out: dict[str, str] = {}
+    for col in columns:
+        if _bare(col.get("name") or "") != dim:
+            continue
+        for alias in col.iter("alias"):
+            key, shown = alias.get("key") or "", alias.get("value") or ""
+            if len(key) > 1 and key[0] == key[-1] == '"':
+                key = key[1:-1]
+            out[shown] = key
+    return out
+
+
+def _export_cells(
+    comparison: Comparison,
+    rows: list[dict[str, str]],
+    mapping: dict[str, str],
+    value: str,
+    columns: list[ET.Element],
+    probe_rows: list[dict],
+) -> tuple[list[dict], int]:
+    """Turn export rows into probe-shaped cells, and count the total rows.
+
+    An export shows a dim's alias (grade 0 as `K`), so each value goes back
+    through the sheet's aliases. A sheet with totals exports them as rows whose
+    dim reads `All`; those are dropped, unless the probe has a real `All`
+    member for that dim.
+    """
+    aliases = {d.dashboard: _alias_keys(columns, d.dashboard) for d in comparison.dims}
+    real_all = {
+        d.dashboard
+        for d in comparison.dims
+        if any(str(r[d.dashboard]) == TOTAL_LABEL for r in probe_rows)
+    }
+    cells: list[dict] = []
+    totals = 0
+    for r in rows:
+        dims = {d: r[h] for h, d in mapping.items()}
+        if any(v == TOTAL_LABEL and d not in real_all for d, v in dims.items()):
+            totals += 1
+            continue
+        dims = {d: aliases[d].get(v, v) for d, v in dims.items()}
+        cells.append({**dims, "value": r[value]})
+    return cells, totals
+
+
 def prove(
     cfg: ViewConfig,
     path: Path,
@@ -963,14 +1016,12 @@ def prove(
             mapping, value = _export_columns(
                 comparison, list(rows[0]), columns, value_column
             )
-            exports += [
-                {
-                    **{d: r[h] for h, d in mapping.items()},
-                    "value": r[value],
-                    "cut": label,
-                }
-                for r in rows
-            ]
+            cells, totals = _export_cells(
+                comparison, rows, mapping, value, columns, probe_rows
+            )
+            if totals:
+                print(f"cut {label}: skipped {totals} total rows ({TOTAL_LABEL})")
+            exports += [{**c, "cut": label} for c in cells]
             probes += [
                 {
                     **{d.dashboard: r[d.dashboard] for d in comparison.dims},

@@ -631,6 +631,41 @@ def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsy
     assert "hidden=" not in fakes.tbl.edited
 
 
+def test_prove_reads_aliases_back_and_skips_total_rows(fakes, tmp_path, capsys):
+    region = "<column caption='Region' datatype='string' name='[region]' role='dimension' type='nominal' />"
+    fakes.tbl.twb = fakes.tbl.twb.replace(
+        "            " + region,
+        "            "
+        + region.replace(" />", ">")
+        + "<aliases><alias key='&quot;Newark&quot;' value='NWK' /></aliases></column>",
+    )
+    fakes.tbl.exports = [
+        [
+            {"Region": "NWK", "Rate": "0.9123", "Count": "12"},
+            {"Region": "All", "Rate": "0.9001", "Count": "40"},
+        ]
+        for _ in range(2)
+    ]
+    path = _file(tmp_path, YML.replace(PROOF, "    proof: null\n"))
+    argv = ["prove", str(path), "--comparison", "ada-region", "--value-column", "Rate"]
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    assert load_view_config(path).comparisons[0].proof.cells == 2
+    assert "skipped 1 total rows (All)" in capsys.readouterr().out
+
+
+def test_prove_keeps_a_real_all_member(fakes, tmp_path, capsys):
+    fakes.bq.probe = [{"region": "All", "value": 0.9001}]
+    fakes.tbl.exports = [[{"Region": "All", "Rate": "0.9001"}] for _ in range(2)]
+    path = _file(tmp_path, YML.replace(PROOF, "    proof: null\n"))
+    argv = ["prove", str(path), "--comparison", "ada-region", "--value-column", "Rate"]
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    assert load_view_config(path).comparisons[0].proof.cells == 2
+
+
 def test_prove_asks_which_column_holds_the_value(fakes, tmp_path, capsys):
     argv = ["prove", str(_file(tmp_path)), "--comparison", "ada-region"]
 
