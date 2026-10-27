@@ -365,8 +365,10 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
 
 ## `select *` and UNION branches
 
-- No `select *` in the final `select` of `rpt_`/mart models (A9). Get the
-  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
+- No `select *` in the final `select` of `rpt_`, mart, or view models, union
+  wrappers excepted (A9). Staging and other table models may still end in a
+  star, so the `select *,` and `select * except` staging patterns below stand.
+  Get the authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
 
   ```sql
   select column_name
