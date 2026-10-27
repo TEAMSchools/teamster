@@ -133,8 +133,8 @@ def render_local(run: RunResult) -> str:
     triage = []
     for g in run.applied.open:
         line = (
-            f"`{g.column}` = `{g.value}` in {g.comparison_id} ({g.bucket}): "
-            f"{g.n_rows} rows, {g.n_students} students"
+            f"{_where(g, lambda _column, value: value)} in {g.comparison_id} "
+            f"({g.bucket}): {g.n_rows} rows, {g.n_students} students"
         )
         for clause in run.clauses.get(g.comparison_id, []):
             line += f"; clause: `{clause}`"
@@ -224,11 +224,18 @@ def _clean(text: str) -> str:
     return " ".join(text.replace("`", "").split())
 
 
-def _shown_value(g: Group) -> str:
-    """Show a group's value only for a reviewed column with 10+ students."""
-    if g.n_students < MASK_BELOW or _is_identifier(g.column):
+def _where(g: Group, show) -> str:
+    """Name a group by its columns; `show(column, value)` gives the text shown."""
+    if not g.dims:
+        return "the whole comparison"
+    return ", ".join(f"`{c}` = `{show(c, v)}`" for c, v in g.dims)
+
+
+def _shown_value(g: Group, column: str, value: str) -> str:
+    """Show a value only for a reviewed column of a group with 10+ students."""
+    if g.n_students < MASK_BELOW or _is_identifier(column):
         return "<redacted>"
-    return _clean(g.value)
+    return _clean(value)
 
 
 def _safe_reason(reason: str, values: list) -> str:
@@ -268,12 +275,12 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
         for decision, g in run.applied.quiet:
             if decision.call != "domain_owner":
                 continue
+            values = [v for _, v in g.dims] + list(decision.group.get("values", []))
             line = (
-                f"`{g.column}` = `{_shown_value(g)}` in "
+                f"{_where(g, lambda c, v, g=g: _shown_value(g, c, v))} in "
                 f"{g.comparison_id} of `{run.view}` ({g.bucket}): "
                 f"{mask(g.n_rows)} rows, {mask(g.n_students)} students. "
-                f"Reason: "
-                f"{_safe_reason(decision.reason, [g.value, *decision.group.get('values', [])])}"
+                f"Reason: {_safe_reason(decision.reason, values)}"
             )
             line += f". Task: {decision.task}" if decision.task else "."
             group_lines.append(line)

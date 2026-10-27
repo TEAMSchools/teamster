@@ -802,6 +802,21 @@ def test_review_refuses_a_run_saved_without_a_decisions_fingerprint(
     assert "decisions" in capsys.readouterr().err
 
 
+def test_review_refuses_a_run_saved_in_the_old_group_shape(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    data = json.loads(saved.read_text())
+    assert data["applied"]["open"]
+    for g in data["applied"]["open"]:
+        (column, value), *_ = g.pop("dims")
+        g.update(column=column, value=value)
+    saved.write_text(json.dumps(data))
+    capsys.readouterr()
+
+    assert cli.main(["review", str(_file(tmp_path)), "--domain", "Registrar"]) == 1
+    assert "older validator" in capsys.readouterr().err
+
+
 def test_review_refuses_a_view_never_run(fakes, tmp_path, capsys):
     assert cli.main(["review", str(_file(tmp_path)), "--domain", "Registrar"]) == 1
     assert "run" in capsys.readouterr().err

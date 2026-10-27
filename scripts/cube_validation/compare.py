@@ -23,12 +23,19 @@ Verdict = Literal["pass", "differs", "dashboard_only", "cube_only"]
 
 @dataclass(frozen=True)
 class Group:
+    """One non-match bucket of one result row, with every group-by column."""
+
     comparison_id: str
-    column: str
-    value: str
+    dims: tuple[tuple[str, str], ...]
     bucket: str
     n_rows: int
     n_students: int
+
+    def value_of(self, column: str) -> str | None:
+        """The group's value in `column`; `""` names a row with no group-by."""
+        if not self.dims:
+            return "" if not column else None
+        return dict(self.dims).get(column)
 
 
 def _numbered(rows_sql: str, grain: list[str], values: list[str]) -> str:
@@ -159,29 +166,26 @@ def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
             `n_students` and any group-by columns.
 
     Returns:
-        One `Group` per non-match bucket and group-by column; a row with no
-        group-by column has an empty `column` and `value`. A NULL value
+        One `Group` per non-match row, carrying all its group-by columns in
+        query order, so a row's students are counted once. A NULL value
         becomes an empty string.
     """
     reserved = {"bucket", "n_rows", "n_students"}
-    groups = []
-    for row in result_rows:
-        if row["bucket"] == "match":
-            continue
-        columns = [k for k in row if k not in reserved] or [""]
-        for column in columns:
-            value = row.get(column) if column else None
-            groups.append(
-                Group(
-                    comparison_id=comparison_id,
-                    column=column,
-                    value="" if value is None else str(value),
-                    bucket=row["bucket"],
-                    n_rows=int(row["n_rows"]),
-                    n_students=int(row["n_students"]),
-                )
-            )
-    return groups
+    return [
+        Group(
+            comparison_id=comparison_id,
+            dims=tuple(
+                (k, "" if v is None else str(v))
+                for k, v in row.items()
+                if k not in reserved
+            ),
+            bucket=row["bucket"],
+            n_rows=int(row["n_rows"]),
+            n_students=int(row["n_students"]),
+        )
+        for row in result_rows
+        if row["bucket"] != "match"
+    ]
 
 
 def scope_filters(comparison: Comparison) -> list[dict[str, Any]]:

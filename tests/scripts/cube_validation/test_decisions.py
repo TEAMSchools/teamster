@@ -7,7 +7,7 @@ FP = {"cube": "c1", "dashboard": "d1"}
 
 
 def _group(value="Newark", comparison_id="enrollment", column="region"):
-    return Group(comparison_id, column, value, "value_differs", 3, 3)
+    return Group(comparison_id, ((column, value),), "value_differs", 3, 3)
 
 
 def _decision(id="d1", values=("Newark",), fingerprints=None, column="region"):
@@ -172,3 +172,35 @@ def test_decision_missing_one_side_reconfirms():
     applied = apply([d], [g], {"enrollment": {"cube": "c1"}})
     assert applied.reconfirm == [d]
     assert applied.open == [g]
+
+
+def _row(region, grade, comparison_id="enrollment"):
+    return Group(
+        comparison_id,
+        (("region", region), ("grade_level", grade)),
+        "value_differs",
+        3,
+        3,
+    )
+
+
+def test_decision_on_one_column_quiets_whole_rows_of_a_two_dim_comparison():
+    groups = [_row("Newark", "2"), _row("Newark", "3"), _row("Camden", "2")]
+    applied = apply([_decision()], groups, {"enrollment": FP})
+    assert [g for _, g in applied.quiet] == groups[:2]
+    assert applied.open == [groups[2]]
+    assert applied.partly_stale == []
+
+
+def test_overlapping_decisions_on_two_dim_rows_raise():
+    groups = [_row("Newark", "2")]
+    grade = _decision(id="d2", column="grade_level", values=("2",))
+    with pytest.raises(ValueError, match="region='Newark', grade_level='2'"):
+        apply([_decision(), grade], groups, {"enrollment": FP})
+
+
+def test_decision_on_a_column_the_rows_lack_is_no_longer_needed():
+    applied = apply(
+        [_decision(column="school")], [_row("Newark", "2")], {"enrollment": FP}
+    )
+    assert applied.no_longer_needed and len(applied.open) == 1

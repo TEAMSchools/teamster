@@ -502,8 +502,9 @@ def _clauses(comparison: Comparison, groups: list[Group], sides: _Sides) -> list
     columns = _unique(
         name
         for g in groups
-        if g.comparison_id == comparison.id and g.column
-        for name in (g.column, by_cube.get(g.column, g.column))
+        if g.comparison_id == comparison.id
+        for column, _ in g.dims
+        for name in (column, by_cube.get(column, column))
     )
     if not columns:
         return []
@@ -804,6 +805,11 @@ def _json_default(value: Any) -> Any:
     raise TypeError(f"{type(value).__name__} is not JSON serializable")
 
 
+def _group(data: dict) -> Group:
+    """JSON stores `dims` as lists; a group compares by tuples."""
+    return Group(**{**data, "dims": tuple(tuple(d) for d in data["dims"])})
+
+
 def _run_from_json(data: dict) -> RunResult:
     moment = data["moment"]
     applied = data["applied"]
@@ -816,8 +822,8 @@ def _run_from_json(data: dict) -> RunResult:
         ),
         measures=[MeasureResult(**m) for m in data["measures"]],
         applied=Applied(
-            open=[Group(**g) for g in applied["open"]],
-            quiet=[(Decision(**d), Group(**g)) for d, g in applied["quiet"]],
+            open=[_group(g) for g in applied["open"]],
+            quiet=[(Decision(**d), _group(g)) for d, g in applied["quiet"]],
             reconfirm=[Decision(**d) for d in applied["reconfirm"]],
             no_longer_needed=[Decision(**d) for d in applied["no_longer_needed"]],
             partly_stale=[
@@ -848,8 +854,9 @@ def review(configs: list[ViewConfig], domain: str, cache_root: Path) -> str:
     Reads only the local cache; nothing is posted.
 
     Raises:
-        Refusal: A view has no saved run, or its decisions changed since the
-            run (a run saved before runs recorded them counts as changed).
+        Refusal: A view has no saved run, its saved run is in a shape this
+            validator cannot read, or its decisions changed since the run (a
+            run saved before runs recorded them counts as changed).
     """
     runs = []
     for cfg in configs:
@@ -858,7 +865,13 @@ def review(configs: list[ViewConfig], domain: str, cache_root: Path) -> str:
         )
         if not saved:
             raise Refusal(f"{cfg.view}: no saved run; `run` it first")
-        run_result = _run_from_json(json.loads(saved[-1].read_text()))
+        try:
+            run_result = _run_from_json(json.loads(saved[-1].read_text()))
+        except (KeyError, TypeError) as exc:
+            raise Refusal(
+                f"{cfg.view}: the saved run {saved[-1]} was written by an older "
+                "validator; `run` it again"
+            ) from exc
         if run_result.decisions_fingerprint != decisions.decisions_fingerprint(
             cfg.decisions
         ):

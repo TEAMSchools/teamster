@@ -112,15 +112,15 @@ def test_groups_from_drops_match_and_keeps_counts():
     ]
 
     assert groups_from("c1", rows) == [
-        Group("c1", "grade_level_cube", "5", "cube_only", 3, 2),
-        Group("c1", "grade_level_cube", "", "value_differs", 1, 1),
+        Group("c1", (("grade_level_cube", "5"),), "cube_only", 3, 2),
+        Group("c1", (("grade_level_cube", ""),), "value_differs", 1, 1),
     ]
 
 
 def test_groups_from_without_group_by_columns():
     rows = [{"bucket": "dashboard_only", "n_rows": 4, "n_students": 4}]
 
-    assert groups_from("c1", rows) == [Group("c1", "", "", "dashboard_only", 4, 4)]
+    assert groups_from("c1", rows) == [Group("c1", (), "dashboard_only", 4, 4)]
 
 
 def test_cell_verdict_at_displayed_decimals():
@@ -210,3 +210,24 @@ def test_reconcile_sql_grain_keys_join_across_numeric_types():
     key_c = "COALESCE(CAST(SAFE_CAST(CAST(c.lea_student_identifier AS STRING) AS FLOAT64) AS STRING), CAST(c.lea_student_identifier AS STRING))"
     key_d = "COALESCE(CAST(SAFE_CAST(CAST(d.student_number AS STRING) AS FLOAT64) AS STRING), CAST(d.student_number AS STRING))"
     assert f"{key_c} = {key_d}" in join
+
+
+def test_groups_from_keeps_one_group_per_two_dim_row():
+    rows = [
+        {
+            "bucket": "value_differs",
+            "regions_region_name": "Camden",
+            "grade_level": 2,
+            "n_rows": 7,
+            "n_students": 5,
+        }
+    ]
+    assert groups_from("c1", rows) == [
+        Group(
+            "c1",
+            (("regions_region_name", "Camden"), ("grade_level", "2")),
+            "value_differs",
+            7,
+            5,
+        )
+    ]

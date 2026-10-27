@@ -30,10 +30,10 @@ def _decision(call="domain_owner", id="d1", column="region", values=("Newark",))
 
 
 def _run(**overrides):
-    quiet_group = Group("enrollment", "region", "Newark", "value_differs", 40, 12)
-    id_group = Group("enrollment", "student_number", "123456", "cube_only", 2, 2)
-    other_group = Group("enrollment", "region", "Camden", "value_differs", 5, 5)
-    open_group = Group("enrollment", "grade_level", "9", "value_differs", 40, 38)
+    quiet_group = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)
+    id_group = Group("enrollment", (("student_number", "123456"),), "cube_only", 2, 2)
+    other_group = Group("enrollment", (("region", "Camden"),), "value_differs", 5, 5)
+    open_group = Group("enrollment", (("grade_level", "9"),), "value_differs", 40, 38)
     applied = Applied(
         open=[open_group],
         quiet=[
@@ -185,7 +185,7 @@ def _issue_with(group, reason="ok", findings=None, measures=None):
         "enrollment",
         "domain_owner",
         reason,
-        {"column": group.column, "values": [group.value]},
+        {"column": group.dims[0][0], "values": [group.dims[0][1]]},
     )
     run = _run(applied=Applied(quiet=[(d, group)]))
     if findings is not None:
@@ -196,7 +196,7 @@ def _issue_with(group, reason="ok", findings=None, measures=None):
 
 
 def test_review_issue_bullets_stay_on_one_line():
-    g = Group("enrollment", "region", "New\nark", "value_differs", 40, 12)
+    g = Group("enrollment", (("region", "New\nark"),), "value_differs", 40, 12)
     body = _issue_with(g, reason="line one\n  line two\n\nline three")
     bullets = [x for x in body.splitlines() if x.startswith("- ")]
     assert bullets and all(
@@ -236,7 +236,7 @@ def test_columns_off_the_reviewed_list_redacted():
         "school_name",
         "foo_name",
     ):
-        g = Group("enrollment", col, "SECRETVAL", "cube_only", 50, 50)
+        g = Group("enrollment", ((col, "SECRETVAL"),), "cube_only", 50, 50)
         assert "SECRETVAL" not in _issue_with(g), col
 
 
@@ -249,28 +249,28 @@ def test_reviewed_columns_shown_at_10_students():
         "region",
         "grade_level",
     ):
-        big = Group("enrollment", col, "Camden", "cube_only", 50, 10)
-        small = Group("enrollment", col, "Camden", "cube_only", 50, 9)
+        big = Group("enrollment", ((col, "Camden"),), "cube_only", 50, 10)
+        small = Group("enrollment", ((col, "Camden"),), "cube_only", 50, 9)
         assert f"`{col}` = `Camden`" in _issue_with(big), col
         assert f"`{col}` = `<redacted>`" in _issue_with(small), col
 
 
 def test_small_group_on_harmless_column_redacted():
-    small = Group("enrollment", "grade_level", "9", "cube_only", 50, 9)
-    big = Group("enrollment", "grade_level", "9", "cube_only", 50, 10)
+    small = Group("enrollment", (("grade_level", "9"),), "cube_only", 50, 9)
+    big = Group("enrollment", (("grade_level", "9"),), "cube_only", 50, 10)
     assert "`grade_level` = `<redacted>`" in _issue_with(small)
     assert "`grade_level` = `9`" in _issue_with(big)
 
 
 def test_reason_is_sanitized():
-    g = Group("enrollment", "region", "Newark", "value_differs", 40, 12)
+    g = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)
     body = _issue_with(g, reason="Student 123456 moved to Newark.")
     assert "123456" not in body
     assert "Reason: Student <redacted> moved to <redacted>." in body
 
 
 def test_reason_with_unquoted_numeric_values():
-    g = Group("enrollment", "grade_level", "9", "value_differs", 40, 12)
+    g = Group("enrollment", (("grade_level", "9"),), "value_differs", 40, 12)
     d = Decision(
         "dx", "enrollment", "domain_owner", "Grade 9 is split",
         {"column": "grade_level", "values": [9]},
@@ -280,7 +280,7 @@ def test_reason_with_unquoted_numeric_values():
 
 
 def test_separated_ids_in_reason_redacted():
-    g = Group("enrollment", "region", "Newark", "value_differs", 40, 12)
+    g = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)
     for raw in ("12-345", "1234 5678", "12,345,678", "12 345", "2026-10-22"):
         body = _issue_with(g, reason=f"Student {raw} moved.")
         assert raw not in body
@@ -301,7 +301,7 @@ def test_passing_anchor_not_listed_and_count_masking():
         Finding("anchor", "rate", "d", 7.0, 8.0, False),
         Finding("anchor", "fine", "d", 1.0, 1.0, True),
     ]
-    g = Group("enrollment", "region", "Newark", "value_differs", 40, 12)
+    g = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)
     body = _issue_with(g, findings=findings, measures=measures)
     assert (
         "`count_seats` in `enrollment_view`: Cube shows <10, the source shows <10."
@@ -316,3 +316,17 @@ def test_save_local_writes_under_moment(tmp_path):
     path = save_local(run, "hello", root=tmp_path)
     assert path == tmp_path / "enrollment_view" / "2026-10-27T060530Z" / "result.md"
     assert path.read_text() == "hello"
+
+
+def test_review_issue_names_every_dim_and_masks_each():
+    g = Group(
+        "enrollment",
+        (("regions_region_name", "Camden"), ("student_number", "SECRETVAL")),
+        "value_differs",
+        40,
+        12,
+    )
+    body = _issue_with(g, reason="Camden SECRETVAL rows")
+    assert "- `regions_region_name` = `Camden`, `student_number` = `<redacted>`" in body
+    assert "SECRETVAL" not in body
+    assert "Reason: <redacted> <redacted> rows" in body

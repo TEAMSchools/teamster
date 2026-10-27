@@ -161,26 +161,28 @@ def apply(
         values = list(
             dict.fromkeys(_text(v) for v in decision.group.get("values") or [])
         )
+        # A decision on one column covers every row with that value, whatever
+        # its other group-by columns hold.
         matched = [
             i
             for i, g in enumerate(groups)
             if g.comparison_id == decision.comparison
-            and g.column == column
-            and g.value in values
+            and g.value_of(column or "") in values
         ]
         if not matched:
             applied.no_longer_needed.append(decision)
             continue
         for i in matched:
             if i in claimed:
+                where = ", ".join(f"{k}={v!r}" for k, v in groups[i].dims)
                 raise ValueError(
                     f"decisions {claimed[i].id!r} and {decision.id!r} both "
-                    f"claim group {groups[i].column}={groups[i].value!r} "
+                    f"claim group {where or 'with no group-by'} "
                     f"in comparison {decision.comparison!r}"
                 )
             claimed[i] = decision
             applied.quiet.append((decision, groups[i]))
-        found = {groups[i].value for i in matched}
+        found = {groups[i].value_of(column or "") for i in matched}
         if missing := [v for v in values if v not in found]:
             applied.partly_stale.append((decision, missing))
 
