@@ -378,21 +378,35 @@ def _with_task(reason: str, task: str) -> str:
 def _group_line(view: str, decision: Decision, groups: list[Group]) -> str:
     """One bullet for a decision and every row group it covers.
 
-    The decision's column and values show only for a reviewed column, and only
-    when its groups hold 10 or more students. A reason loses whatever the
-    bullet hides: any other column's values, and the decision's own values
-    when they are hidden.
+    The decision's column shows each value only for a reviewed column, and only
+    when that value's groups hold 10 or more students. A reason loses whatever
+    the bullet hides: any other column's values, and each hidden value of the
+    decision's own. Other dims of a group never show in the bullet; a reason
+    is free text the analyst approves, so it must not name them for a small
+    group either.
     """
     column = decision.group.get("column") or ""
     found = list(dict.fromkeys(g.value_of(column) or "" for g in groups))
     rows = sum(g.n_rows for g in groups)
     students = sum(g.n_students for g in groups)
-    shown = not _is_identifier(column) and students >= MASK_BELOW
-    values = ", ".join(_clean(v) for v in found) if shown else "<redacted>"
+    # Each value needs 10 students of its own; a total never unmasks a small one.
+    per_value: dict[str, int] = {}
+    for g in groups:
+        value = g.value_of(column) or ""
+        per_value[value] = per_value.get(value, 0) + g.n_students
+    shown = (
+        set()
+        if _is_identifier(column)
+        else {v for v, n in per_value.items() if n >= MASK_BELOW}
+    )
+    values = ", ".join(
+        dict.fromkeys(_clean(v) if v in shown else "<redacted>" for v in found)
+    )
     where = f"`{column}` = `{values}`" if column else "the whole comparison"
     hidden = [v for g in groups for c, v in g.dims if _is_identifier(c)]
-    if not shown:
-        hidden += found + list(decision.group.get("values", []))
+    hidden += [
+        v for v in [*found, *decision.group.get("values", [])] if str(v) not in shown
+    ]
     plural = "group" if len(groups) == 1 else "groups"
     return (
         f"{where} in {', '.join(sorted({g.comparison_id for g in groups}))} of "

@@ -558,3 +558,16 @@ def test_a_small_group_hides_its_value_in_the_reason_too():
     assert "- `region` = `<redacted>`" in body
     assert "Reason: Some <redacted> students moved." in body
     assert "Newark" not in body.split("## Proposed approach")[0]
+
+
+def test_each_value_needs_10_students_of_its_own():
+    d = Decision("two", "enrollment", "domain_owner", "Newark and Camden moved",
+                 {"column": "region", "values": ["Newark", "Camden"]})  # fmt: skip
+    big = Group("enrollment", (("region", "Newark"),), "cube_only", 400, 40)
+    small = Group("enrollment", (("region", "Camden"),), "cube_only", 30, 3)
+    body = render_review_issue(
+        "Registrar", [_run(applied=Applied(quiet=[(d, big), (d, small)]))]
+    )
+    assert "- `region` = `Newark, <redacted>`" in body
+    assert "Reason: Newark and <redacted> moved." in body
+    assert "Camden" not in body.split("## Proposed approach")[0]
