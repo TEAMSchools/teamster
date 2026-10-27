@@ -648,6 +648,21 @@ def _browser_cuts(comparisons: list[Comparison]) -> list[str]:
     return out
 
 
+def _unproven_totals(comparisons: list[Comparison]) -> list[str]:
+    """Comparisons whose proof skipped the export's total rows, or cannot say."""
+    out = []
+    for comparison in comparisons:
+        skipped = comparison.proof.totals_skipped if comparison.proof else None
+        if skipped is None:
+            out.append(
+                f"{comparison.id}: totals not proven: unknown (the proof records "
+                "no count); re-prove"
+            )
+        elif skipped > 0:
+            out.append(f"{comparison.id}: totals not proven: {skipped} rows")
+    return out
+
+
 def run(
     cfg: ViewConfig,
     *,
@@ -700,6 +715,10 @@ def run(
                     "to catch an edit since."
                 )
 
+    totals = _unproven_totals(comparisons)
+    for line in totals:
+        print(f"{line}.")
+
     with wh.budget(max_usd):
         builds = fact_builds(wh, cfg.fact, since=now - WINDOW)
         build = pick_moment(builds, now, requested, cfg.fact)
@@ -744,6 +763,7 @@ def run(
         cost_usd=cost,
         proofs={c.id: c.proof.proven_at for c in comparisons if c.proof},
         browser_cuts=_browser_cuts(comparisons),
+        totals=totals,
         clauses={k: v for k, v in clauses.items() if v},
         fingerprints=sides.fingerprints,
         decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
@@ -791,6 +811,7 @@ def _run_from_json(data: dict) -> RunResult:
         cost_usd=data["cost_usd"],
         proofs=data["proofs"],
         browser_cuts=data["browser_cuts"],
+        totals=data.get("totals", []),
         clauses=data["clauses"],
         fingerprints=data.get("fingerprints", {}),
         decisions_fingerprint=data.get("decisions_fingerprint", ""),
@@ -1082,6 +1103,7 @@ def prove(
 
     exports: list[dict] = []
     probes: list[dict] = []
+    totals_skipped = 0
     with wh.budget(max_usd):
         for cut, rows in zip(exportable, snap.exports, strict=True):
             label = cut_label(cut)
@@ -1099,6 +1121,7 @@ def prove(
             )
             if totals:
                 print(f"cut {label}: skipped {totals} total rows ({TOTAL_LABEL})")
+            totals_skipped += totals
             exports += [{**c, "cut": label} for c in cells]
             probes += [
                 {
@@ -1132,6 +1155,8 @@ def prove(
             "probe_fingerprint": probe_fingerprint(cfg, comparison),
             # `run` lists every other cut as one to prove in the browser.
             "cuts": [cut_label(cut) for cut in exportable],
+            # `run` lists these rows as totals no proof covered.
+            "totals_skipped": totals_skipped,
         },
     )
     print(f"Proved {comparison.id}: {proof.cells} cells; wrote proof to {path}.")

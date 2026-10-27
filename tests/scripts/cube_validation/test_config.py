@@ -262,6 +262,19 @@ def test_proof_keeps_workbook_updated_at(tmp_path):
     assert proof.cuts == ["{}", '{"Region": "Miami"}']
 
 
+def test_proof_keeps_totals_skipped(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    write_proof(
+        path,
+        "ada-y1-region",
+        {"fingerprint": "f", "cells": 1, "proven_at": "x", "totals_skipped": 2},
+    )
+
+    proof = load_view_config(path).comparisons[0].proof
+
+    assert proof is not None and proof.totals_skipped == 2
+
+
 def test_proof_without_cuts_reads_as_unknown(tmp_path):
     path = _write(tmp_path, EXAMPLE)
     write_proof(
@@ -271,3 +284,4 @@ def test_proof_without_cuts_reads_as_unknown(tmp_path):
     proof = load_view_config(path).comparisons[0].proof
 
     assert proof is not None and proof.cuts is None
+    assert proof.totals_skipped is None

@@ -437,6 +437,38 @@ def test_run_lists_no_cut_when_every_cut_was_exported(fakes, tmp_path, capsys):
     assert "(no export proved it)" not in section and "cuts unknown" not in section
 
 
+def _totals_section(out):
+    return _section(out, "## Totals not proven", "##")
+
+
+def test_run_lists_totals_a_proof_skipped(fakes, tmp_path, capsys):
+    text = YML.replace(PROOF, PROOF + "      totals_skipped: 2\n")
+
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    out = capsys.readouterr().out
+    assert "ada-region: totals not proven: 2 rows" in _totals_section(out)
+    assert out.count("totals not proven: 2 rows") == 2  # printed, then listed
+
+
+def test_run_lists_no_totals_when_none_were_skipped(fakes, tmp_path, capsys):
+    text = YML.replace(PROOF, PROOF + "      totals_skipped: 0\n")
+
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    out = capsys.readouterr().out
+    assert "totals not proven" not in out
+    assert "None." in _totals_section(out)
+
+
+def test_run_reads_a_proof_without_a_totals_count_as_unknown(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    section = _totals_section(capsys.readouterr().out)
+    assert "ada-region: totals not proven: unknown" in section
+    assert "re-prove" in section
+
+
 def test_run_warns_on_a_proof_older_than_7_days(fakes, tmp_path, capsys):
     old = PROOF.replace("2026-10-26T12:00:00+00:00", "2026-10-10T12:00:00+00:00")
 
@@ -788,6 +820,7 @@ def test_prove_writes_the_proof(fakes, tmp_path, capsys):
     assert proof.fingerprint == formula_fingerprint(fakes.tbl.twb, "Rate by Region")
     assert proof.cells == 2
     assert proof.cuts == ["{}", '{"Region": "Miami"}']
+    assert proof.totals_skipped == 0
     assert proof.workbook_updated_at.startswith("2026-10-20")
     cfg = load_view_config(path)
     assert proof.probe_fingerprint == pipeline.probe_fingerprint(
@@ -834,7 +867,10 @@ def test_prove_reads_aliases_back_and_skips_total_rows(fakes, tmp_path, capsys):
 
     assert cli.main(argv) == 0, capsys.readouterr().err
 
-    assert load_view_config(path).comparisons[0].proof.cells == 2
+    proof = load_view_config(path).comparisons[0].proof
+    assert proof.cells == 2
+    # 1 total row in each of the 2 cuts.
+    assert proof.totals_skipped == 2
     assert "skipped 1 total rows (All)" in capsys.readouterr().out
 
 

@@ -67,6 +67,8 @@ class RunResult:
     cost_usd: float = 0.0
     proofs: dict[str, str] = field(default_factory=dict)
     browser_cuts: list[str] = field(default_factory=list)
+    # Total rows the proofs' exports showed but no proof compared.
+    totals: list[str] = field(default_factory=list)
     clauses: dict[str, list[str]] = field(default_factory=dict)
     fingerprints: dict[str, dict[str, str]] = field(default_factory=dict)
     # The `decisions:` block the run applied; `review` refuses a changed one.
@@ -174,6 +176,8 @@ def render_local(run: RunResult) -> str:
     for comparison, proven_at in sorted(run.proofs.items()):
         cuts.append(f"{comparison}: last proven {proven_at}")
     out += _bullets(cuts)
+    out += ["", "## Totals not proven", ""]
+    out += _bullets(run.totals)
     out += ["", "## Cost", "", f"${run.cost_usd:.2f}", ""]
     return "\n".join(out)
 
