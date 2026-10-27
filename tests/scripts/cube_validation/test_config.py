@@ -116,6 +116,38 @@ def test_fix_calls_need_a_task(tmp_path):
         load_view_config(path)
 
 
+SCOPE = (
+    "    scope:\n"
+    "      - { cube: membership_value, values: [1] }\n"
+    "      - { cube: attendance_value, operator: set }\n"
+)
+
+
+def test_scope_reads_equals_by_default_and_set(tmp_path):
+    cfg = load_view_config(_write(tmp_path, EXAMPLE.replace("    scope: []\n", SCOPE)))
+
+    assert cfg.comparisons[0].scope == [
+        {"cube": "membership_value", "operator": "equals", "values": [1]},
+        {"cube": "attendance_value", "operator": "set"},
+    ]
+
+
+@pytest.mark.parametrize(
+    ("entry", "key"),
+    [
+        ("{ cube: x, operator: gt, values: [1] }", "operator"),
+        ("{ cube: x, operator: set, values: [1] }", "values"),
+        ("{ cube: x }", "values"),
+        ("{ values: [1] }", "cube"),
+    ],
+)
+def test_scope_entry_is_refused(tmp_path, entry, key):
+    text = EXAMPLE.replace("    scope: []\n", f"    scope:\n      - {entry}\n")
+
+    with pytest.raises(ConfigError, match=rf"comparisons\[0\]\.scope\[0\]\.{key}"):
+        load_view_config(_write(tmp_path, text))
+
+
 def test_error_names_the_file(tmp_path):
     path = _write(tmp_path, "view: v\ncomparisons: []\n")
 

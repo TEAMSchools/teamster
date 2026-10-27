@@ -184,15 +184,23 @@ def scope_filters(comparison: Comparison) -> list[dict[str, Any]]:
 
     Args:
         comparison: A comparison whose `scope` entries are
-            `{cube: <member>, values: [...]}`.
+            `{cube: <member>, values: [...]}` (operator `equals`, the default)
+            or `{cube: <member>, operator: set}` (not null).
 
     Returns:
-        One `equals` filter per entry.
+        One filter per entry, values as the strings Cube takes.
     """
-    return [
-        {"member": entry["cube"], "operator": "equals", "values": entry["values"]}
-        for entry in comparison.scope
-    ]
+    out = []
+    for entry in comparison.scope:
+        operator = entry.get("operator", "equals")
+        f: dict[str, Any] = {"member": entry["cube"], "operator": operator}
+        if operator != "set":
+            f["values"] = [
+                str(v).lower() if isinstance(v, bool) else str(v)
+                for v in entry["values"]
+            ]
+        out.append(f)
+    return out
 
 
 def _half_up(x: float, decimals: int) -> Decimal:

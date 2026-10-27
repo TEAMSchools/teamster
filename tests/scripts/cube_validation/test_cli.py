@@ -360,6 +360,29 @@ def test_run_names_dimensions_that_changed(fakes, tmp_path, capsys):
     assert "fct_f" not in section
 
 
+def test_run_sends_and_names_set_scopes(fakes, tmp_path, capsys):
+    text = YML.replace(
+        "    cuts: [{}, { Region: Miami }]\n",
+        "    cuts: [{}, { Region: Miami }]\n"
+        "    scope:\n"
+        "      - { cube: membership_value, values: [1] }\n"
+        "      - { cube: attendance_value, operator: set }\n",
+    )
+
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    wanted = [
+        {"member": "v.membership_value", "operator": "equals", "values": ["1"]},
+        {"member": "v.attendance_value", "operator": "set"},
+    ]
+    assert fakes.cube.compiled_queries
+    for query in fakes.cube.compiled_queries:
+        assert all(f in query["filters"] for f in wanted)
+    section = capsys.readouterr().out.split("## Scopes applied")[1].split("##")[0]
+    assert "ada-region: v.membership_value in 1" in section
+    assert "ada-region: v.attendance_value is set" in section
+
+
 def test_run_never_signs_in_to_tableau(fakes, tmp_path):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     assert fakes.signed_in == 0

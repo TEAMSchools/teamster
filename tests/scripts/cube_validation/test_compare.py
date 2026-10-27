@@ -178,6 +178,24 @@ def test_scope_filter_from_comparison():
     assert scope_filters(Comparison(id="c", measure="m")) == []
 
 
+def test_scope_filter_set_has_no_values_and_values_are_strings():
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        scope=[
+            {"cube": "v.membership_value", "operator": "equals", "values": [1]},
+            {"cube": "v.attendance_value", "operator": "set"},
+            {"cube": "v.is_in_session_day", "values": [True]},
+        ],
+    )
+
+    assert scope_filters(comparison) == [
+        {"member": "v.membership_value", "operator": "equals", "values": ["1"]},
+        {"member": "v.attendance_value", "operator": "set"},
+        {"member": "v.is_in_session_day", "operator": "equals", "values": ["true"]},
+    ]
+
+
 def test_cell_verdict_rounds_half_up_at_display_boundaries():
     assert cell_verdict(0.9325, 0.933, decimals=3) == "pass"
     assert cell_verdict(0.9335, 0.934, decimals=3) == "pass"

@@ -691,7 +691,9 @@ def run(
         live_sources=sorted(sides.live),
         changed_dims=changed,
         scopes=[
-            f"{c.id}: {f['member']} in {', '.join(map(str, f['values']))}"
+            f"{c.id}: {f['member']} is set"
+            if f["operator"] == "set"
+            else f"{c.id}: {f['member']} in {', '.join(map(str, f['values']))}"
             for c in comparisons
             for f in _scope_cube_filters(cfg.view, c)
         ],

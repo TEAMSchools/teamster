@@ -17,6 +17,7 @@ import yaml
 
 CALLS = ("deliberate", "fix_dashboard", "fix_cube", "domain_owner")
 CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "domain_owner")
+SCOPE_OPERATORS = ("equals", "set")
 
 
 class ConfigError(Exception):
@@ -197,10 +198,26 @@ def _comparison(reader: _Reader) -> Comparison:
         filters=filters,
         defaults=reader.get("defaults", dict, default={}),
         cuts=reader.get("cuts", list, default=[]),
-        scope=reader.get("scope", list, default=[]),
+        scope=[_scope_entry(r) for r in _list_of(reader, "scope")],
         rows=rows,
         proof=proof,
     )
+
+
+def _scope_entry(reader: _Reader) -> dict[str, Any]:
+    """A Cube-only row filter: `equals` takes `values`; `set` (not null) none."""
+    cube = reader.get("cube", str, required=True)
+    operator = reader.get("operator", str, default="equals")
+    if operator not in SCOPE_OPERATORS:
+        reader.fail(
+            "operator", f"must be one of {', '.join(SCOPE_OPERATORS)}; got {operator!r}"
+        )
+    if operator == "set":
+        if reader.data.get("values") is not None:
+            reader.fail("values", "must be absent when operator is set")
+        return {"cube": cube, "operator": operator}
+    values = reader.get("values", list, required=True)
+    return {"cube": cube, "operator": operator, "values": values}
 
 
 def _anchor(reader: _Reader) -> Anchor:
