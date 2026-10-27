@@ -77,7 +77,7 @@ with
             cw.week_end_sunday,
             cw.school_week_start_date_lead,
             cw.week_number_academic_year,
-            cw.week_number_quarter,
+            cw.week_number_term as week_number_quarter,
 
             l.head_of_school_preferred_name_lastfirst as hos,
             l.school_leader_preferred_name_lastfirst as school_leader,
@@ -100,7 +100,7 @@ with
             {{ ref("int_students__calendar_week") }} as cw
             on t.yearid = cw.yearid
             and t.schoolid = cw.schoolid
-            and t.term = cw.quarter
+            and t.term = cw.term
             and t._dbt_source_project = cw._dbt_source_project
         left join
             {{ ref("int_people__leadership_crosswalk") }} as l

@@ -86,7 +86,7 @@ with
             co.week_start_monday,
             co.week_end_sunday,
             co.date_count as days_in_session,
-            co.quarter as term,
+            co.term,
             co.is_current_week_mon_sun as is_current_week,
 
             r.title,
@@ -447,7 +447,7 @@ select
     w.week_start_monday,
     w.week_end_sunday,
     w.date_count as days_in_session,
-    w.quarter as term,
+    w.term,
 
     o.rubric_name as title,
     m.microgoals as subject_area,
