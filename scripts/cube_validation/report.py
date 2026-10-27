@@ -22,9 +22,11 @@ from .moment import Build
 CACHE_ROOT = Path.home() / ".cache" / "cube-validation"
 MASK_BELOW = 10
 _IDENTIFIER_COLUMN = re.compile(
-    r"student|lea_|_number|identifier|name|email|dob|birth|ssid|leaid|smid|phone|address",
+    r"student|lea_|_number|identifier|name|email|dob|birth|ssid|leaid|smid|phone|address|_id$|^id$|^sid$|state_id|local_id",
     re.IGNORECASE,
 )
+
+_SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
 
 
 @dataclass
@@ -180,6 +182,12 @@ def _safe_reason(reason: str, values: list[str]) -> str:
     text = _clean(reason)
     for value in sorted({v for v in values if v}, key=len, reverse=True):
         text = text.replace(_clean(value), "<redacted>")
+    text = _SEPARATED_DIGITS.sub(
+        lambda m: (
+            "<redacted>" if sum(c.isdigit() for c in m.group()) >= 5 else m.group()
+        ),
+        text,
+    )
     text = re.sub(r"\d{5,}", "<redacted>", text)
     return text.rstrip(".")
 

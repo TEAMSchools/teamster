@@ -172,7 +172,19 @@ def test_review_issue_bullets_stay_on_one_line():
 
 
 def test_identifier_like_columns_redacted():
-    for col in ("last_name", "ssid", "leaid", "email", "dob", "student_number"):
+    for col in (
+        "last_name",
+        "ssid",
+        "leaid",
+        "email",
+        "dob",
+        "student_number",
+        "state_id",
+        "local_id",
+        "sid",
+        "id",
+        "region_id",
+    ):
         g = Group("enrollment", col, "SECRETVAL", "cube_only", 50, 50)
         assert "SECRETVAL" not in _issue_with(g)
 
@@ -189,6 +201,17 @@ def test_reason_is_sanitized():
     body = _issue_with(g, reason="Student 123456 moved to Newark.")
     assert "123456" not in body
     assert "Reason: Student <redacted> moved to <redacted>." in body
+
+
+def test_separated_ids_in_reason_redacted():
+    g = Group("enrollment", "region", "Newark", "value_differs", 40, 12)
+    for raw in ("12-345", "1234 5678", "12,345,678", "12 345", "2026-10-22"):
+        body = _issue_with(g, reason=f"Student {raw} moved.")
+        assert raw not in body
+        assert "Reason: Student <redacted> moved." in body
+    assert "Reason: Grade 9 of 12 moved." in _issue_with(
+        g, reason="Grade 9 of 12 moved"
+    )
 
 
 def test_passing_anchor_not_listed_and_count_masking():
