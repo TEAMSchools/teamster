@@ -400,6 +400,24 @@ def test_run_reports_cells_proofs_and_identity(fakes, tmp_path, capsys):
     assert list((tmp_path / "cache" / "v").glob("*/result.md"))
 
 
+def test_run_reads_each_identity_cut_in_one_load(fakes, tmp_path, capsys):
+    fakes.cube._load = lambda q: [_load_row(q, 0.5)]
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    # 2 cuts, 1 load each: both sides come from one result.
+    assert len(fakes.cube.loads) == 2
+    for query in fakes.cube.loads:
+        assert query["measures"] == [
+            "v.avg_daily_attendance",
+            "v.sum_attendance_value",
+            "v.sum_membership_value",
+        ]
+    out = capsys.readouterr().out
+    assert out.count("identity `ada-ratio`") == 2
+    assert "(passes)" in out and "(fails)" not in out
+
+
 def test_run_cells_that_differ_fail_the_dashboard_check(fakes, tmp_path, capsys):
     fakes.bq.probe = [{"region": "Newark", "value": 0.5}]
 

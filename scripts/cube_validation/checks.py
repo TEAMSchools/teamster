@@ -161,8 +161,11 @@ def _eval(node: ast.AST, values: dict[str, float]) -> float:
     raise ValueError(f"{type(node).__name__} is not allowed")
 
 
-def identity_queries(identity: Identity, cut: dict, view: str) -> tuple[dict, dict]:
-    """Build the two Cube queries that test an identity on one cut.
+def identity_query(identity: Identity, cut: dict, view: str) -> dict:
+    """Build the one Cube query that tests an identity on one cut.
+
+    Both sides come from the same query, so a fact rebuild cannot fall between
+    them and read as a failed identity.
 
     Args:
         identity: The identity; `right` is an arithmetic expression of measures.
@@ -170,19 +173,18 @@ def identity_queries(identity: Identity, cut: dict, view: str) -> tuple[dict, di
         view: The Cube view; every measure and member is qualified with it.
 
     Returns:
-        The left query and the right query.
+        A query whose measures are `left` then each measure `right` names.
 
     Raises:
         ValueError: `right` is not plain arithmetic over measure names, or
             names no measure.
     """
-    filters = [_equals(_member(view, name), value) for name, value in cut.items()]
-    left = {"measures": [_member(view, identity.left)], "filters": filters}
     names = _names(_parse(identity.right))
     if not names:
         raise ValueError(f"{identity.right!r} names no measure")
-    right = {"measures": [_member(view, n) for n in names], "filters": filters}
-    return left, right
+    filters = [_equals(_member(view, name), value) for name, value in cut.items()]
+    measures = dict.fromkeys(_member(view, n) for n in [identity.left, *names])
+    return {"measures": list(measures), "filters": filters}
 
 
 def identity_finding(

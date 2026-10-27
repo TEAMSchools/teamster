@@ -547,16 +547,15 @@ def _anchors_and_identities(
 
     for identity in cfg.identities:
         for cut in _identity_cuts(cfg, comparisons):
-            left_q, right_q = checks.identity_queries(identity, cut, cfg.view)
-            left = _load_value(cube, left_q, _member(cfg.view, identity.left))
-            right_rows = cube.load(right_q)
-            right_row = right_rows[0] if right_rows else {}
-            right = {
-                m.split(".", 1)[1]: _number(right_row.get(m))
-                for m in right_q["measures"]
+            query = checks.identity_query(identity, cut, cfg.view)
+            rows = cube.load(query)
+            row = rows[0] if rows else {}
+            # One row holds both sides; `right` reads only the names it uses.
+            values = {
+                m.split(".", 1)[1]: _number(row.get(m)) for m in query["measures"]
             }
             # trunk-ignore(pyright/reportArgumentType): identity_finding fails a None side
-            finding = checks.identity_finding(identity, left, right)
+            finding = checks.identity_finding(identity, values[identity.left], values)
             finding = dataclasses.replace(
                 finding, detail=f"{finding.detail} (cut {cut_label(cut)})"
             )

@@ -6,7 +6,7 @@ from cube_validation.checks import (
     anchor_finding,
     anchor_query,
     identity_finding,
-    identity_queries,
+    identity_query,
     strongest_check,
     verdict,
 )
@@ -52,32 +52,27 @@ def test_anchor_difference_is_always_triaged():
 IDENT = Identity(name="split", left="total", right="a + b")
 
 
-def test_identity_queries():
-    left, right = identity_queries(
-        IDENT, {"region": ["Newark", "Camden"], "year": 2025}, "v"
-    )
-    assert left["measures"] == ["v.total"]
-    assert sorted(right["measures"]) == ["v.a", "v.b"]
-    for q in (left, right):
-        region = {
-            "member": "v.region",
-            "operator": "equals",
-            "values": ["Newark", "Camden"],
-        }
-        year = {"member": "v.year", "operator": "equals", "values": ["2025"]}
-        assert region in q["filters"]
-        assert year in q["filters"]
+def test_identity_query_reads_both_sides_at_once():
+    q = identity_query(IDENT, {"region": ["Newark", "Camden"], "year": 2025}, "v")
+    assert q["measures"] == ["v.total", "v.a", "v.b"]
+    region = {
+        "member": "v.region",
+        "operator": "equals",
+        "values": ["Newark", "Camden"],
+    }
+    year = {"member": "v.year", "operator": "equals", "values": ["2025"]}
+    assert region in q["filters"]
+    assert year in q["filters"]
 
 
-def test_identity_queries_with_view():
-    left, _ = identity_queries(IDENT, {"year": 2025}, view="v")
-    assert left["measures"] == ["v.total"]
-    assert left["filters"][0]["member"] == "v.year"
+def test_identity_query_lists_a_measure_once():
+    q = identity_query(Identity(name="x", left="t", right="t * 1"), {}, "v")
+    assert q["measures"] == ["v.t"]
 
 
-def test_identity_queries_reject_expression_without_measures():
+def test_identity_query_rejects_expression_without_measures():
     with pytest.raises(ValueError):
-        identity_queries(Identity(name="x", left="t", right="1+2"), {}, "v")
+        identity_query(Identity(name="x", left="t", right="1+2"), {}, "v")
 
 
 def test_identity_non_finite_fails():
