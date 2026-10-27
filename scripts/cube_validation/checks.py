@@ -40,8 +40,8 @@ class CheckResult:
     passed: bool
 
 
-def _member(view: str | None, name: str) -> str:
-    return f"{view}.{name}" if view else name
+def _member(view: str, name: str) -> str:
+    return f"{view}.{name}"
 
 
 def _equals(member: str, value: Any) -> dict:
@@ -161,25 +161,26 @@ def _eval(node: ast.AST, values: dict[str, float]) -> float:
     raise ValueError(f"{type(node).__name__} is not allowed")
 
 
-def identity_queries(
-    identity: Identity, cut: dict, view: str | None = None
-) -> tuple[dict, dict]:
+def identity_queries(identity: Identity, cut: dict, view: str) -> tuple[dict, dict]:
     """Build the two Cube queries that test an identity on one cut.
 
     Args:
         identity: The identity; `right` is an arithmetic expression of measures.
         cut: Member short names mapped to a value or list of values.
-        view: When given, prefixes every measure and member with the view.
+        view: The Cube view; every measure and member is qualified with it.
 
     Returns:
         The left query and the right query.
 
     Raises:
-        ValueError: `right` is not plain arithmetic over measure names.
+        ValueError: `right` is not plain arithmetic over measure names, or
+            names no measure.
     """
     filters = [_equals(_member(view, name), value) for name, value in cut.items()]
     left = {"measures": [_member(view, identity.left)], "filters": filters}
     names = _names(_parse(identity.right))
+    if not names:
+        raise ValueError(f"{identity.right!r} names no measure")
     right = {"measures": [_member(view, n) for n in names], "filters": filters}
     return left, right
 
@@ -207,14 +208,22 @@ def identity_finding(
     if missing or left is None:
         what = ", ".join(missing) if missing else identity.left
         detail = f"{identity.name}: no value for {what}"
-        return Finding("identity", identity.name, detail, left or nan, nan, False)
+        left_value = nan if left is None else left
+        return Finding("identity", identity.name, detail, left_value, nan, False)
     try:
         right = float(_eval(tree, right_values))
     except ZeroDivisionError:
         detail = f"{identity.name}: division by zero in {identity.right}"
         return Finding("identity", identity.name, detail, left, nan, False)
 
-    passed = round(left, DECIMALS) == round(right, DECIMALS) and not math.isnan(right)
+    if not (math.isfinite(left) and math.isfinite(right)):
+        detail = (
+            f"{identity.name}: not a finite number "
+            f"({identity.left} = {left}; {identity.right} = {right})"
+        )
+        return Finding("identity", identity.name, detail, left, right, False)
+
+    passed = round(left, DECIMALS) == round(right, DECIMALS)
     detail = f"{identity.name}: {identity.left} = {left}; {identity.right} = {right}"
     return Finding("identity", identity.name, detail, left, right, passed)
 

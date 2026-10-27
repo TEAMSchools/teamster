@@ -54,17 +54,17 @@ IDENT = Identity(name="split", left="total", right="a + b")
 
 def test_identity_queries():
     left, right = identity_queries(
-        IDENT, {"region": ["Newark", "Camden"], "year": 2025}
+        IDENT, {"region": ["Newark", "Camden"], "year": 2025}, "v"
     )
-    assert left["measures"] == ["total"]
-    assert sorted(right["measures"]) == ["a", "b"]
+    assert left["measures"] == ["v.total"]
+    assert sorted(right["measures"]) == ["v.a", "v.b"]
     for q in (left, right):
         region = {
-            "member": "region",
+            "member": "v.region",
             "operator": "equals",
             "values": ["Newark", "Camden"],
         }
-        year = {"member": "year", "operator": "equals", "values": ["2025"]}
+        year = {"member": "v.year", "operator": "equals", "values": ["2025"]}
         assert region in q["filters"]
         assert year in q["filters"]
 
@@ -73,6 +73,26 @@ def test_identity_queries_with_view():
     left, _ = identity_queries(IDENT, {"year": 2025}, view="v")
     assert left["measures"] == ["v.total"]
     assert left["filters"][0]["member"] == "v.year"
+
+
+def test_identity_queries_reject_expression_without_measures():
+    with pytest.raises(ValueError):
+        identity_queries(Identity(name="x", left="t", right="1+2"), {}, "v")
+
+
+def test_identity_non_finite_fails():
+    i = Identity(name="x", left="t", right="a")
+    inf = float("inf")
+    f = identity_finding(i, inf, {"a": inf})
+    assert not f.passed
+    assert "finite" in f.detail
+    assert not identity_finding(i, 1.0, {"a": float("nan")}).passed
+
+
+def test_identity_zero_left_is_kept_when_right_missing():
+    i = Identity(name="x", left="t", right="a")
+    f = identity_finding(i, 0.0, {"a": None})  # type: ignore[dict-item]
+    assert f.left == 0.0
 
 
 def test_identity_passes_at_9_decimals():
