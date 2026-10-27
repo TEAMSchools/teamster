@@ -38,6 +38,9 @@ models:
           semesters, or the year term).
       - name: semester
         data_type: string
+        description:
+          Semester (S1 or S2) this week falls in. Null when the school year is
+          split into trimesters or not split at all.
       - name: school_week_start_date
         data_type: date
       - name: school_week_end_date

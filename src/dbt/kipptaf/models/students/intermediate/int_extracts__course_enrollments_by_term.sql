@@ -15,17 +15,10 @@ with
             t.semester,
             t.is_current_term as is_current_quarter,
 
-            if(
-                c.term = 'Q1' and t.term_start_date < c.first_day_school_year,
-                c.first_day_school_year,
-                t.term_start_date
+            greatest(
+                t.term_start_date, c.first_day_school_year
             ) as quarter_start_date_alt,
-
-            if(
-                c.term = 'Q4' and t.term_end_date > c.last_day_school_year,
-                c.last_day_school_year,
-                t.term_end_date
-            ) as quarter_end_date_alt,
+            least(t.term_end_date, c.last_day_school_year) as quarter_end_date_alt,
 
             sum(c.date_count) over (
                 partition by

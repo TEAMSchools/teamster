@@ -9,6 +9,7 @@ with
             lastday,
             portion,
 
+            -- staging semester assumes quarters; semester years use their own term
             case portion when 4 then semester when 2 then abbreviation end as semester,
 
             max(portion) over (partition by schoolid, yearid) as term_unit_portion,

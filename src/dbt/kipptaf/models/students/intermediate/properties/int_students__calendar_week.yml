@@ -64,7 +64,9 @@ models:
       - name: date_count
         description: Count of in-session calendar days within the week.
       - name: semester
-        description: Semester the week falls in.
+        description:
+          Semester (S1 or S2) the week falls in. Null for PowerSchool school
+          years split into trimesters or not split at all.
       - name: term
         description: >-
           Abbreviation of the reporting term the week falls in, using the finest
