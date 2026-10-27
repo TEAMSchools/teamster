@@ -132,12 +132,31 @@ def _column_predicate(column: str, value: Any) -> str:
     return parts[0] if len(parts) == 1 else "(" + " OR ".join(parts) + ")"
 
 
+_SQL_COMPARE = {"gt": ">", "gte": ">=", "lt": "<", "lte": "<="}
+# How a run result names each Cube scope operator.
+_SCOPE_WORDS = {"equals": "in", "notEquals": "not in", **_SQL_COMPARE}
+
+
+def _dashboard_filter_sql(entry: dict[str, Any]) -> str:
+    """One `dashboard_filters` entry as SQL; `not_equals` keeps nulls, as Cube's does."""
+    column, operator = entry["dashboard"], entry["operator"]
+    if operator == "set":
+        return f"{column} IS NOT NULL"
+    if operator in _SQL_COMPARE:
+        return f"{column} {_SQL_COMPARE[operator]} {_lit(entry['values'][0])}"
+    match = _column_predicate(column, entry["values"])
+    return match if operator == "equals" else f"({column} IS NULL OR NOT {match})"
+
+
 def dashboard_predicate(comparison: Comparison, cut: dict[str, Any]) -> str:
-    """Return the WHERE predicate a cut puts on the dashboard rows."""
+    """Return the WHERE predicate a cut puts on the dashboard rows.
+
+    It ends with the comparison's `dashboard_filters`, which Cube never sees.
+    """
     parts = [
         _column_predicate(comparison.filters[caption].dashboard, value)
         for caption, value in effective_filters(comparison, cut).items()
-    ]
+    ] + [_dashboard_filter_sql(e) for e in comparison.dashboard_filters]
     return " AND ".join(parts) or "TRUE"
 
 
@@ -853,9 +872,17 @@ def run(
         scopes=[
             f"{c.id}: {f['member']} is set"
             if f["operator"] == "set"
-            else f"{c.id}: {f['member']} in {', '.join(map(str, f['values']))}"
+            else (
+                f"{c.id}: {f['member']} {_SCOPE_WORDS[f['operator']]} "
+                f"{', '.join(map(str, f['values']))}"
+            )
             for c in comparisons
             for f in _scope_cube_filters(cfg.view, c)
+        ],
+        dashboard_filters=[
+            f"{c.id}: {_dashboard_filter_sql(e)}"
+            for c in comparisons
+            for e in c.dashboard_filters
         ],
         cost_usd=cost,
         proofs={c.id: c.proof.proven_at for c in comparisons if c.proof},
@@ -933,6 +960,7 @@ def _run_from_json(data: dict) -> RunResult:
         fingerprints=data.get("fingerprints", {}),
         decisions_fingerprint=data.get("decisions_fingerprint", ""),
         gaps_unknown=data.get("gaps_unknown", []),
+        dashboard_filters=data.get("dashboard_filters", []),
     )
 
 
@@ -972,7 +1000,11 @@ def review(configs: list[ViewConfig], domain: str, cache_root: Path) -> str:
                 f"{saved[-1]}; `run` it again"
             )
         runs.append(run_result)
-    return report.render_review_issue(domain, runs)
+    definitions = {
+        cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
+        for cfg in configs
+    }
+    return report.render_review_issue(domain, runs, definitions)
 
 
 # --- check-api ---------------------------------------------------------------

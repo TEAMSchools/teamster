@@ -80,6 +80,8 @@ class RunResult:
     decisions_fingerprint: str = ""
     # Comparisons whose proof predates missing cuts and filters.
     gaps_unknown: list[str] = field(default_factory=list)
+    # Each comparison's `dashboard_filters`, as the SQL the dashboard side ran.
+    dashboard_filters: list[str] = field(default_factory=list)
 
 
 def mask(n: int) -> str:
@@ -209,6 +211,14 @@ def render_local(run: RunResult) -> str:
     out += _bullets([f"`{s}`" for s in run.live_sources])
     out += ["", "## Dimensions that changed between start and end", ""]
     out += _bullets([f"`{d}`" for d in run.changed_dims])
+    out += ["", "## Dashboard-only filters", ""]
+    if run.dashboard_filters:
+        out += [
+            "Cube has no member for these, so rows they drop read as Cube-only.",
+            "",
+        ]
+    out += _bullets(run.dashboard_filters)
+
     out += ["", "## Scopes applied", ""]
     if run.scopes:
         out += [
@@ -303,7 +313,11 @@ def _safe_reason(reason: str, values: list) -> str:
     return text.rstrip(".")
 
 
-def render_review_issue(domain: str, runs: list[RunResult]) -> str:
+def render_review_issue(
+    domain: str,
+    runs: list[RunResult],
+    definitions: dict[str, dict[str, dict[str, str]]] | None = None,
+) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
     Args:
@@ -311,6 +325,9 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
         runs: Validation runs; only domain-owner groups, domain-owner missing
             cuts and filters (by caption, never a value), and anchor findings
             for measures that read `judge the anchor` are kept.
+        definitions: Per view, per comparison id, what each side counts
+            (`dashboard`, `cube`). Shown side by side for a comparison with a
+            domain-owner group, scrubbed like a reason.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -352,6 +369,18 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
                     f"the source shows {_num(f.measure, f.right)}."
                 )
 
+    definition_lines = []
+    for run in runs:
+        asked = {
+            g.comparison_id for d, g in run.applied.quiet if d.call == "domain_owner"
+        }
+        for cid, sides in sorted((definitions or {}).get(run.view, {}).items()):
+            if cid in asked:
+                definition_lines.append(
+                    f"`{cid}` in `{run.view}`. "
+                    f"Dashboard: {_safe_reason(sides['dashboard'], [])}. "
+                    f"Cube: {_safe_reason(sides['cube'], [])}."
+                )
     n = len(group_lines) + len(gap_lines) + len(anchor_lines)
     ids = sorted(
         {d.id for run in runs for d, _ in run.applied.quiet if d.call == "domain_owner"}
@@ -365,6 +394,8 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
         "",
     ]
     out += _bullets(group_lines + gap_lines + anchor_lines, "Nothing needs review.")
+    if definition_lines:
+        out += ["", "Definitions side by side:", ""] + _bullets(definition_lines)
     out += [
         "",
         "## Proposed approach",

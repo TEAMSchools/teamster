@@ -180,7 +180,7 @@ def test_scope_reads_equals_by_default_and_set(tmp_path):
 @pytest.mark.parametrize(
     ("entry", "key"),
     [
-        ("{ cube: x, operator: gt, values: [1] }", "operator"),
+        ("{ cube: x, operator: between, values: [1] }", "operator"),
         ("{ cube: x, operator: set, values: [1] }", "values"),
         ("{ cube: x }", "values"),
         ("{ values: [1] }", "cube"),
@@ -447,4 +447,143 @@ def test_gap_decision_shape_is_checked(tmp_path, extra, match):
 def test_group_decision_still_needs_comparison(tmp_path):
     text = EXAMPLE.replace("    comparison: ada-y1-region\n    group:", "    group:")
     with pytest.raises(ConfigError, match=r"decisions\[0\]\.comparison"):
+        load_view_config(_write(tmp_path, text))
+
+
+# --- scope operators and dashboard-only filters --------------------------------
+
+SCOPE_LINE = "    scope: []\n"
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [
+        "{ cube: membership_value, operator: gt, values: [0] }",
+        "{ cube: membership_value, operator: lte, values: [1.5] }",
+        "{ cube: attendance_code, operator: not_equals, values: [TD, SHI] }",
+    ],
+)
+def test_scope_takes_comparison_operators(tmp_path, entry):
+    text = EXAMPLE.replace(SCOPE_LINE, f"    scope:\n      - {entry}\n")
+    assert load_view_config(_write(tmp_path, text)).comparisons[0].scope
+
+
+@pytest.mark.parametrize(
+    "entry, match",
+    [
+        ("{ cube: m, operator: gt, values: [0, 1] }", "exactly 1 number"),
+        ("{ cube: m, operator: gt, values: [a] }", "exactly 1 number"),
+        ("{ cube: m, operator: between, values: [0] }", "equals, not_equals, gt"),
+    ],
+)
+def test_scope_operator_values_are_checked(tmp_path, entry, match):
+    text = EXAMPLE.replace(SCOPE_LINE, f"    scope:\n      - {entry}\n")
+    with pytest.raises(ConfigError, match=match):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_dashboard_filters_load(tmp_path):
+    text = EXAMPLE.replace(
+        SCOPE_LINE,
+        SCOPE_LINE
+        + "    dashboard_filters:\n      - { dashboard: enroll_status, values: [0] }\n",
+    )
+    first = load_view_config(_write(tmp_path, text)).comparisons[0]
+    assert first.dashboard_filters == [
+        {"dashboard": "enroll_status", "operator": "equals", "values": [0]}
+    ]
+
+
+def test_dashboard_filters_refuse_sql_in_the_column(tmp_path):
+    text = EXAMPLE.replace(
+        SCOPE_LINE,
+        SCOPE_LINE
+        + '    dashboard_filters:\n      - { dashboard: "x OR 1=1", values: [0] }\n',
+    )
+    with pytest.raises(ConfigError, match=r"dashboard_filters\[0\]\.dashboard"):
+        load_view_config(_write(tmp_path, text))
+
+
+# --- shared comparison blocks --------------------------------------------------
+
+SHARED = """\
+view: v
+fact: kipptaf_marts.fct_f
+time_dimension: attendance_date
+shared:
+  roster: &roster
+    confirmed: true
+    workbook: wb-1
+    sheet: Roster
+    dashboard_view: kipptaf_tableau.rpt_d
+    decimals: 0
+    split_rows: sum
+    dims:
+      - { dashboard: student_number, cube: lea_student_identifier }
+    filters:
+      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
+    defaults: { Academic Year: "2026" }
+    cuts: [{}]
+comparisons:
+  - id: tardy
+    <<: *roster
+    measure: count_tardy_days
+    sheet_field: "# Tardy"
+    probe: sum(is_tardy)
+    proof: null
+  - id: absent
+    <<: *roster
+    measure: count_absent_days
+    sheet_field: "# Absences"
+    probe: sum(is_absent)
+"""
+
+
+def test_shared_blocks_load_like_repeated_keys(tmp_path):
+    cfg = load_view_config(_write(tmp_path, SHARED))
+    tardy, absent = cfg.comparisons
+    assert (tardy.sheet, absent.sheet) == ("Roster", "Roster")
+    assert tardy.split_rows == absent.split_rows == "sum"
+    assert tardy.sheet_field == "# Tardy" and absent.sheet_field == "# Absences"
+    assert tardy.dims == absent.dims
+
+
+def test_write_proof_keeps_the_shared_block(tmp_path):
+    path = _write(tmp_path, SHARED)
+    write_proof(path, "absent", {"fingerprint": "f", "cells": 3})
+    text = path.read_text()
+    assert "roster: &roster" in text and text.count("<<: *roster") == 2
+    cfg = load_view_config(path)
+    assert cfg.comparisons[1].proof.cells == 3
+    assert cfg.comparisons[0].proof is None
+
+
+def test_shared_must_be_a_mapping(tmp_path):
+    text = SHARED.replace(
+        "shared:\n  roster: &roster\n", "shared: [x]\nignored: &roster\n"
+    )
+    with pytest.raises(ConfigError, match="shared"):
+        load_view_config(_write(tmp_path, text))
+
+
+DEFINITIONS = (
+    "    definitions:\n"
+    '      dashboard: "Tardy code group: ET, T, T10, TLE"\n'
+    "      cube: \"att_code LIKE 'T%'\"\n"
+)
+
+
+def test_definitions_load(tmp_path):
+    text = EXAMPLE.replace(SCOPE_LINE, SCOPE_LINE + DEFINITIONS)
+    first = load_view_config(_write(tmp_path, text)).comparisons[0]
+    assert first.definitions == {
+        "dashboard": "Tardy code group: ET, T, T10, TLE",
+        "cube": "att_code LIKE 'T%'",
+    }
+
+
+def test_definitions_need_both_sides(tmp_path):
+    one = "    definitions:\n      dashboard: x\n"
+    text = EXAMPLE.replace(SCOPE_LINE, SCOPE_LINE + one)
+    with pytest.raises(ConfigError, match=r"definitions\.cube"):
         load_view_config(_write(tmp_path, text))

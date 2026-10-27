@@ -83,8 +83,7 @@ cause, do not retry around it.
 3. Write the comparison into the view file with `confirmed: true` and
    `proof: null`. Required: `workbook`, `sheet`, `dashboard_view`, `probe` (or
    `probe_sql`, never both), `decimals`, `dims`, `filters`, `defaults`, `cuts`,
-   `rows` grain and values. Use the exact keys in `config.py`. Two optional keys
-   say how to read the export:
+   `rows` grain and values. Use the exact keys in `config.py`. Optional keys:
    - `sheet_field`: the field to compare, by its exported caption. In a long
      export (`Measure Names` / `Measure Values` columns) it is a `Measure Names`
      value; otherwise a column header. Required when the export has more than
@@ -92,6 +91,21 @@ cause, do not retry around it.
    - `split_rows: sum`: adds export rows that share every mapped dim, for a
      sheet split by a field Cube lacks (a homeroom, a teacher). Use it only for
      a field that adds up (a sum or a count), never an average or a rate.
+   - `dashboard_filters`: a sheet filter Cube has no member for, applied to the
+     dashboard side only (`{dashboard: enroll_status, values: [0]}`). The run
+     result names it, since rows it drops read as Cube-only. Use it instead of
+     writing the filter into `probe_sql`.
+   - `scope` and `dashboard_filters` take `equals` (the default), `not_equals`,
+     `gt`, `gte`, `lt` and `lte` (exactly 1 number), or `set` (not null).
+   - `definitions: {dashboard: ..., cube: ...}`: what each side counts, in a
+     sentence or a code list. The review issue shows both for a comparison with
+     a domain-owner question. It goes to GitHub: never name a person.
+
+   Comparisons that repeat a block (one sheet, several fields) take it from a
+   YAML anchor under a top-level `shared:` key: `<<: *roster`, then the keys
+   that differ. Identities take numbers as well as measures
+   (`right: 1 - pct_ontime`).
+
 4. `prove <file> --comparison <id>` exports the sheet from a `TEMP-CB` copy and
    writes `proof` when the probe reproduces every cell at `decimals`. Repeat
    `--comparison` to prove several at once: comparisons on one sheet share one

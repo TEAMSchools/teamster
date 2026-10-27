@@ -397,3 +397,28 @@ def test_scoped_run_says_scope_narrows_the_measure():
     note = "Scope filters Cube's measure query, not only its rows"
     assert note not in render_local(_run(scopes=[]))
     assert note in render_local(_run(scopes=["c: membership_value in 1"]))
+
+
+TARDY_DEFS = {
+    "enrollment": {"dashboard": "codes ET, T", "cube": "codes T% (student 123456)"}
+}
+
+
+def test_review_issue_shows_definitions_side_by_side():
+    run = _run()
+    body = render_review_issue(
+        "Registrar", [run], definitions={"enrollment_view": TARDY_DEFS}
+    )
+    section = body.split("Definitions side by side", 1)[1]
+    assert "`enrollment` in `enrollment_view`" in section
+    assert "Dashboard: codes ET, T" in section
+    assert "Cube: codes T% (student <redacted>)" in section
+    assert "123456" not in body
+
+
+def test_review_issue_skips_definitions_with_no_owner_question():
+    run = _run(applied=Applied())
+    body = render_review_issue(
+        "Registrar", [run], definitions={"enrollment_view": TARDY_DEFS}
+    )
+    assert "Definitions side by side" not in body

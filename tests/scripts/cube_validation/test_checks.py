@@ -146,3 +146,11 @@ def test_consistent_only_is_not_validated():
         verdict([CheckResult("dashboard", True), CheckResult("dashboard", False)])
         == "differs"
     )
+
+
+def test_identity_takes_number_constants():
+    pct_tardy = Identity(name="tardy", left="pct_tardy", right="1 - pct_ontime")
+    q = identity_query(pct_tardy, {}, "v")
+    assert q["measures"] == ["v.pct_tardy", "v.pct_ontime"]
+    assert identity_finding(pct_tardy, 0.25, {"pct_ontime": 0.75}).passed
+    assert not identity_finding(pct_tardy, 0.3, {"pct_ontime": 0.75}).passed

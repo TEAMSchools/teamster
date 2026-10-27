@@ -203,13 +203,18 @@ def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
     ]
 
 
+# Config operator names that Cube spells differently.
+_CUBE_OPERATORS = {"not_equals": "notEquals"}
+
+
 def scope_filters(comparison: Comparison) -> list[dict[str, Any]]:
     """Return the Cube filters for each `scope` entry of a comparison.
 
     Args:
         comparison: A comparison whose `scope` entries are
-            `{cube: <member>, values: [...]}` (operator `equals`, the default)
-            or `{cube: <member>, operator: set}` (not null).
+            `{cube: <member>, values: [...]}` (operator `equals`, the default),
+            another operator in `config.SCOPE_OPERATORS`, or
+            `{cube: <member>, operator: set}` (not null).
 
     Returns:
         One filter per entry, values as the strings Cube takes.
@@ -217,7 +222,10 @@ def scope_filters(comparison: Comparison) -> list[dict[str, Any]]:
     out = []
     for entry in comparison.scope:
         operator = entry.get("operator", "equals")
-        f: dict[str, Any] = {"member": entry["cube"], "operator": operator}
+        f: dict[str, Any] = {
+            "member": entry["cube"],
+            "operator": _CUBE_OPERATORS.get(operator, operator),
+        }
         if operator != "set":
             f["values"] = [
                 str(v).lower() if isinstance(v, bool) else str(v)

@@ -19,7 +19,10 @@ import yaml
 CALLS = ("deliberate", "fix_dashboard", "fix_cube", "domain_owner")
 CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "domain_owner")
 _TASK = re.compile(r"https://\S+|#\d+")
-SCOPE_OPERATORS = ("equals", "set")
+# Filter operators for `scope` (Cube side) and `dashboard_filters` (dashboard
+# side). The comparisons take exactly 1 number; `set` means not null.
+SCOPE_OPERATORS = ("equals", "not_equals", "gt", "gte", "lt", "lte", "set")
+COMPARE_OPERATORS = ("gt", "gte", "lt", "lte")
 # How `prove` treats export rows that share every mapped dim: `refuse` fails
 # the proof; `sum` adds them, which is right only for a field that adds up.
 SPLIT_ROWS = ("refuse", "sum")
@@ -88,6 +91,12 @@ class Comparison:
     # a `Measure Names` value in a long export.
     sheet_field: str | None = None
     split_rows: str = "refuse"
+    # Row filters on the dashboard side only, for a sheet filter Cube has no
+    # member for; each is `{dashboard: <column>, operator, values}`.
+    dashboard_filters: list[dict[str, Any]] = field(default_factory=list)
+    # What each side counts, in a sentence or code list, for a domain owner to
+    # compare in the review issue: `{dashboard: ..., cube: ...}`.
+    definitions: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -265,7 +274,21 @@ def _comparison(reader: _Reader) -> Comparison:
         proof=proof,
         sheet_field=reader.get("sheet_field", str),
         split_rows=split_rows,
+        dashboard_filters=[
+            _filter_entry(r, "dashboard") for r in _list_of(reader, "dashboard_filters")
+        ],
+        definitions=_definitions(reader),
     )
+
+
+def _definitions(reader: _Reader) -> dict[str, str]:
+    if reader.data.get("definitions") is None:
+        return {}
+    child = reader.child("definitions", reader.get("definitions", dict))
+    return {
+        side: child.get(side, str, required=True) or ""
+        for side in ("dashboard", "cube")
+    }
 
 
 def _captions(reader: _Reader, key: str) -> list[str] | None:
@@ -274,8 +297,17 @@ def _captions(reader: _Reader, key: str) -> list[str] | None:
 
 
 def _scope_entry(reader: _Reader) -> dict[str, Any]:
-    """A Cube-only row filter: `equals` takes `values`; `set` (not null) none."""
-    cube = _identifier(reader, "cube", required=True)
+    """A Cube-only row filter."""
+    return _filter_entry(reader, "cube")
+
+
+def _filter_entry(reader: _Reader, side: str) -> dict[str, Any]:
+    """A one-sided row filter on `side` (`cube` or `dashboard`).
+
+    `equals` and `not_equals` take `values`; `gt`, `gte`, `lt` and `lte` take
+    exactly 1 number; `set` (not null) takes none.
+    """
+    column = _identifier(reader, side, required=True)
     operator = reader.get("operator", str, default="equals")
     if operator not in SCOPE_OPERATORS:
         reader.fail(
@@ -284,9 +316,15 @@ def _scope_entry(reader: _Reader) -> dict[str, Any]:
     if operator == "set":
         if reader.data.get("values") is not None:
             reader.fail("values", "must be absent when operator is set")
-        return {"cube": cube, "operator": operator}
+        return {side: column, "operator": operator}
     values = reader.get("values", list, required=True)
-    return {"cube": cube, "operator": operator, "values": values}
+    if operator in COMPARE_OPERATORS and (
+        len(values) != 1
+        or isinstance(values[0], bool)
+        or not isinstance(values[0], (int, float))
+    ):
+        reader.fail("values", f"{operator} takes exactly 1 number; got {values!r}")
+    return {side: column, "operator": operator, "values": values}
 
 
 def _anchor(reader: _Reader) -> Anchor:
@@ -422,6 +460,9 @@ def load_view_config(path: Path) -> ViewConfig:
         raise ConfigError(f"{path}: not valid YAML: {exc}") from exc
 
     root = _Reader(path, "", data)
+    # `shared:` holds YAML anchors that comparisons merge with `<<: *name`; the
+    # loader reads the merged comparisons, never the block itself.
+    root.get("shared", dict, default={})
     comparisons = [_comparison(r) for r in _list_of(root, "comparisons")]
     if not comparisons:
         root.fail("comparisons", "needs at least one comparison")

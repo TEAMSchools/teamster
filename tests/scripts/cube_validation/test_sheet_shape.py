@@ -177,3 +177,25 @@ def test_split_rows_default_leaves_rows_for_the_proof_to_refuse():
     cells, _, summed = _cells("refuse")
     assert [c["region"] for c in cells] == ["Newark", "Newark", "Camden"]
     assert summed == 0
+
+
+@pytest.mark.parametrize(
+    "entry, sql",
+    [
+        ({"dashboard": "enroll_status", "operator": "equals", "values": [0]}, "enroll_status IN (0)"),
+        ({"dashboard": "att_code", "operator": "not_equals", "values": ["TD"]}, "(att_code IS NULL OR NOT CAST(att_code AS STRING) IN ('TD'))"),
+        ({"dashboard": "membershipvalue", "operator": "gt", "values": [0]}, "membershipvalue > 0"),
+        ({"dashboard": "attendancevalue", "operator": "set"}, "attendancevalue IS NOT NULL"),
+    ],
+)  # fmt: skip
+def test_dashboard_filters_join_every_cut_predicate(entry, sql):
+    comparison = _comparison(dashboard_filters=[entry])
+    assert pipeline.dashboard_predicate(comparison, {}).endswith(sql)
+    # They narrow the dashboard side only, so Cube's filters never see them.
+    assert pipeline._cut_cube_filters("v", comparison, {}) == []
+
+
+def test_sheet_gaps_keep_a_dashboard_only_filter_as_missing():
+    entry = {"dashboard": "enroll_status", "operator": "equals", "values": [0]}
+    gaps = pipeline.sheet_gaps(TWB, _comparison(dashboard_filters=[entry]))
+    assert "Enroll Status" in gaps.filters

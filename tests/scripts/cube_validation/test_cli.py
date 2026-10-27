@@ -1294,3 +1294,18 @@ decisions:
         "`Team` on `Rate by Region` in `v`: a sheet cut Cube has no member for" in out
     )
     assert "Missing cuts and filters: 1." in out
+
+
+def test_run_names_dashboard_only_filters(fakes, tmp_path, capsys):
+    text = YML.replace(
+        "    rows:\n",
+        "    dashboard_filters:\n      - { dashboard: enroll_status, values: [0] }\n    rows:\n",
+        1,
+    )
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    out = capsys.readouterr().out
+    section = out.split("## Dashboard-only filters", 1)[1].split("## ", 1)[0]
+    assert "ada-region: enroll_status IN (0)" in section
+    reconcile = _reconcile(fakes.bq)
+    assert "enroll_status IN (0)" in reconcile

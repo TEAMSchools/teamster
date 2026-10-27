@@ -231,3 +231,19 @@ def test_groups_from_keeps_one_group_per_two_dim_row():
             5,
         )
     ]
+
+
+def test_scope_filter_comparison_operators_use_cube_names():
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        scope=[
+            {"cube": "v.membership_value", "operator": "gt", "values": [0]},
+            {"cube": "v.attendance_code", "operator": "not_equals", "values": ["TD"]},
+        ],
+    )
+
+    assert scope_filters(comparison) == [
+        {"member": "v.membership_value", "operator": "gt", "values": ["0"]},
+        {"member": "v.attendance_code", "operator": "notEquals", "values": ["TD"]},
+    ]

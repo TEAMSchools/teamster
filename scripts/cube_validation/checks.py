@@ -168,7 +168,7 @@ def identity_query(identity: Identity, cut: dict, view: str) -> dict:
     them and read as a failed identity.
 
     Args:
-        identity: The identity; `right` is an arithmetic expression of measures.
+        identity: The identity; `right` is arithmetic over measures and numbers.
         cut: Member short names mapped to a value or list of values.
         view: The Cube view; every measure and member is qualified with it.
 
@@ -176,7 +176,7 @@ def identity_query(identity: Identity, cut: dict, view: str) -> dict:
         A query whose measures are `left` then each measure `right` names.
 
     Raises:
-        ValueError: `right` is not plain arithmetic over measure names, or
+        ValueError: `right` is not plain arithmetic over measure names and numbers, or
             names no measure.
     """
     names = _names(_parse(identity.right))
@@ -202,7 +202,7 @@ def identity_finding(
         value or a division by zero fails with the reason in `detail`.
 
     Raises:
-        ValueError: `right` is not plain arithmetic over measure names.
+        ValueError: `right` is not plain arithmetic over measure names and numbers.
     """
     tree = _parse(identity.right)
     nan = float("nan")
