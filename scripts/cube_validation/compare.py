@@ -41,11 +41,19 @@ def _numbered(rows_sql: str, grain: list[str], values: list[str]) -> str:
     )
 
 
+def _bool_text(col: str) -> str:
+    text = f"CAST({col} AS STRING)"
+    return (
+        f"CASE LOWER({text}) WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE {text} END"
+    )
+
+
 def _pair_matches(d: str, c: str) -> str:
     """Null-safe, type-tolerant equality of one dashboard/cube value pair."""
     # Cast through STRING: SAFE_CAST(BOOL AS FLOAT64) fails at compile time.
-    number_d = f"SAFE_CAST(CAST({d} AS STRING) AS FLOAT64)"
-    number_c = f"SAFE_CAST(CAST({c} AS STRING) AS FLOAT64)"
+    # TRUE and FALSE read as 1 and 0 so a BOOL matches a 0/1 column.
+    number_d = f"SAFE_CAST({_bool_text(d)} AS FLOAT64)"
+    number_c = f"SAFE_CAST({_bool_text(c)} AS FLOAT64)"
     return (
         f"COALESCE(({d} IS NULL AND {c} IS NULL) "
         f"OR {number_d} = {number_c} "

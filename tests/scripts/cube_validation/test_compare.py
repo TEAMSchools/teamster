@@ -70,8 +70,11 @@ def test_reconcile_sql_values_compare_null_safe_and_type_tolerant():
     sql = _sql()
 
     assert (
-        "SAFE_CAST(CAST(d.is_present AS STRING) AS FLOAT64) = "
-        "SAFE_CAST(CAST(c.attendance_value AS STRING) AS FLOAT64)" in sql
+        "SAFE_CAST(CASE LOWER(CAST(d.is_present AS STRING)) WHEN 'true' THEN '1' "
+        "WHEN 'false' THEN '0' ELSE CAST(d.is_present AS STRING) END AS FLOAT64) = "
+        "SAFE_CAST(CASE LOWER(CAST(c.attendance_value AS STRING)) WHEN 'true' THEN '1' "
+        "WHEN 'false' THEN '0' ELSE CAST(c.attendance_value AS STRING) END AS FLOAT64)"
+        in sql
     )
     assert (
         "LOWER(CAST(d.is_present AS STRING)) = LOWER(CAST(c.attendance_value AS STRING))"
