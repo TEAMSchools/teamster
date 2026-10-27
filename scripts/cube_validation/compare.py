@@ -35,6 +35,7 @@ def _numbered(rows_sql: str, grain: list[str], values: list[str]) -> str:
     """Wrap a row source, numbering duplicates on the grain so the join cannot fan out."""
     order = ", ".join(values or grain)
     return (
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
         f"SELECT s.*, TRUE AS {_IN}, "
         f"ROW_NUMBER() OVER (PARTITION BY {', '.join(grain)} ORDER BY {order}) "
         f"AS {_RN}\n  FROM (\n{rows_sql}\n  ) AS s"
@@ -131,15 +132,19 @@ def reconcile_sql(
     group_clause = ", ".join(["bucket", *group_names])
 
     return (
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
         "WITH c AS (\n  "
         + _numbered(cube_rows_sql, cube_grain, [p.cube for p in rows.values])
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
         + "\n),\nd AS (\n  "
         + _numbered(dashboard_rows_sql, dash_grain, [p.dashboard for p in rows.values])
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
         + "\n),\njoined AS (\n  SELECT\n    "
         + joined_select
         + "\n  FROM c\n  FULL OUTER JOIN d\n    ON "
         + "\n    AND ".join(on)
         + "\n)\n-- outer\n"
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
         + f"SELECT {outer_select}\nFROM joined\n"
         + f"GROUP BY {group_clause}\nORDER BY {group_clause}"
     )

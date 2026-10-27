@@ -90,6 +90,7 @@ class Warehouse:
         # before paying for the whole retention.
         for days in (VIEW_HISTORY_FIRST_DAYS, JOBS_RETENTION_DAYS):
             rows = self.rows(
+                # trunk-ignore(bandit/B608): dataset and view names come from validated config.py identifiers; values are literal-escaped
                 "SELECT query, start_time "
                 f"FROM `{PROJECT}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
                 "WHERE statement_type = 'CREATE_VIEW' AND state = 'DONE' "

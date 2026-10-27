@@ -20,6 +20,11 @@ CALLS = ("deliberate", "fix_dashboard", "fix_cube", "domain_owner")
 CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "domain_owner")
 SCOPE_OPERATORS = ("equals", "set")
 
+# Every config value the SQL builders interpolate must pass one of these, so a
+# validation file cannot carry SQL text into a query.
+_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+_TABLE_REF = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*")
+
 
 class ConfigError(Exception):
     """A validation file is malformed; the message names the file and key path."""
@@ -146,6 +151,24 @@ def _kind_name(kind: type | tuple) -> str:
     return " or ".join(k.__name__ for k in kinds)
 
 
+def _identifier(reader: _Reader, key: str, *, required=False) -> str | None:
+    """A string that is safe to interpolate into SQL as a column or member name."""
+    value = reader.get(key, str, required=required)
+    if value is not None and not _IDENTIFIER.fullmatch(value):
+        reader.fail(
+            key, f"must be a plain identifier ([A-Za-z_][A-Za-z0-9_]*); got {value!r}"
+        )
+    return value
+
+
+def _table_ref(reader: _Reader, key: str, *, required=False) -> str | None:
+    """A `dataset.table` string that is safe to interpolate into SQL."""
+    value = reader.get(key, str, required=required)
+    if value is not None and not _TABLE_REF.fullmatch(value):
+        reader.fail(key, f"must be dataset.table of plain identifiers; got {value!r}")
+    return value
+
+
 def _list_of(reader: _Reader, key: str) -> list[_Reader]:
     items = reader.get(key, list, default=[])
     return [reader.child(f"{key}[{i}]", item) for i, item in enumerate(items)]
@@ -153,8 +176,8 @@ def _list_of(reader: _Reader, key: str) -> list[_Reader]:
 
 def _pair(reader: _Reader) -> ColumnPair:
     return ColumnPair(
-        dashboard=reader.get("dashboard", str, required=True),
-        cube=reader.get("cube", str, required=True),
+        dashboard=_identifier(reader, "dashboard", required=True),
+        cube=_identifier(reader, "cube", required=True),
     )
 
 
@@ -198,11 +221,11 @@ def _comparison(reader: _Reader) -> Comparison:
 
     return Comparison(
         id=reader.get("id", str, required=True),
-        measure=reader.get("measure", str, required=True),
+        measure=_identifier(reader, "measure", required=True),
         confirmed=reader.get("confirmed", bool, default=False),
         workbook=reader.get("workbook", str),
         sheet=reader.get("sheet", str),
-        dashboard_view=reader.get("dashboard_view", str),
+        dashboard_view=_table_ref(reader, "dashboard_view"),
         probe=probe,
         probe_sql=probe_sql,
         decimals=reader.get("decimals", int),
@@ -218,7 +241,7 @@ def _comparison(reader: _Reader) -> Comparison:
 
 def _scope_entry(reader: _Reader) -> dict[str, Any]:
     """A Cube-only row filter: `equals` takes `values`; `set` (not null) none."""
-    cube = reader.get("cube", str, required=True)
+    cube = _identifier(reader, "cube", required=True)
     operator = reader.get("operator", str, default="equals")
     if operator not in SCOPE_OPERATORS:
         reader.fail(
@@ -354,7 +377,7 @@ def load_view_config(path: Path) -> ViewConfig:
             root.fail(f"comparisons[{i}].id", f"duplicate comparison id {cid!r}")
 
     anchors = [_anchor(r) for r in _list_of(root, "anchors")]
-    time_dimension = root.get("time_dimension", str)
+    time_dimension = _identifier(root, "time_dimension")
     # Row comparisons cast the time dimension to DATE on both sides; without
     # it a date grain joins TIMESTAMP text to DATE text and nothing matches.
     if not time_dimension and (anchors or any(c.rows for c in comparisons)):
@@ -363,8 +386,8 @@ def load_view_config(path: Path) -> ViewConfig:
         )
 
     return ViewConfig(
-        view=root.get("view", str, required=True),
-        fact=root.get("fact", str, required=True),
+        view=_identifier(root, "view", required=True),
+        fact=_table_ref(root, "fact", required=True),
         email=root.get("email", str),
         time_dimension=time_dimension,
         comparisons=comparisons,

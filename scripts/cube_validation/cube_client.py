@@ -82,6 +82,9 @@ def urlopen_json(
     method: str, url: str, headers: dict[str, str], body: dict | None = None
 ) -> Any:
     """Send one request and return the parsed JSON body."""
+    if urllib.parse.urlparse(url).scheme != "https":
+        raise CubeError(f"Cube URL must be https; got {url!r}")
+
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
 
@@ -89,6 +92,7 @@ def urlopen_json(
         req.add_header("Content-Type", "application/json")
 
     try:
+        # trunk-ignore(bandit/B310): scheme checked to be https above
         with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as e:
@@ -107,6 +111,9 @@ class Cube:
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.time,
     ) -> None:
+        if urllib.parse.urlparse(base_url).scheme != "https":
+            raise CubeError(f"Cube base URL must be https; got {base_url!r}")
+
         self._base = base_url.rstrip("/")
         self._secret = secret
         self._email = email

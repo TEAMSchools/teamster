@@ -18,6 +18,7 @@ from cube_validation.cube_client import (
     network_schools,
     refuse_unless_safe,
     sort_school_filters,
+    urlopen_json,
 )
 
 FACT = "fct_student_attendance_enrollment_daily"
@@ -288,3 +289,14 @@ def test_sort_school_filters_orders_every_form():
         "AND abbreviation IN UNNEST(['A', 'B']) AND abbreviation = 'Z' "
         "AND name IN ('Y', 'X')"
     )
+
+
+@pytest.mark.parametrize("url", ["http://c/api", "file:///etc/passwd", "ftp://c/api"])
+def test_base_url_that_is_not_https_is_refused(url):
+    with pytest.raises(CubeError, match="https"):
+        Cube(url, "s", "x@y")
+
+
+def test_request_to_a_non_https_url_is_refused_before_it_is_sent():
+    with pytest.raises(CubeError, match="https"):
+        urlopen_json("GET", "file:///etc/passwd", {})

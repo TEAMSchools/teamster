@@ -35,6 +35,7 @@ def fact_builds(wh: _Rows, fact: str, since: datetime) -> list[Build]:
     """
     ds, name = fact.split(".")
     rows = wh.rows(
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
         "SELECT job_id, start_time, end_time "
         f"FROM `{PROJECT}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
         f"WHERE creation_time >= TIMESTAMP '{utc_literal(since)}' "
@@ -95,6 +96,7 @@ def fingerprint(wh: _Rows, table: str, ts: datetime) -> int:
     """Return an order-independent hash of every row of `dataset.table` at `ts`."""
     ds, name = table.split(".")
     rows = wh.rows(
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
         "SELECT bit_xor(farm_fingerprint(to_json_string(t))) AS f "
         f"FROM `{PROJECT}`.`{ds}`.`{name}` AS t "
         f"FOR SYSTEM_TIME AS OF TIMESTAMP '{utc_literal(ts)}'"

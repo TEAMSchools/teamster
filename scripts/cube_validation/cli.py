@@ -28,6 +28,7 @@ EXPOSURES = (
     Path(__file__).resolve().parents[2] / "src/dbt/kipptaf/models/exposures/tableau.yml"
 )
 URL_VAR = "CUBE_REST_URL"
+# trunk-ignore(bandit/B105): environment variable name, not a value
 SECRET_VAR = "CUBE_API_SECRET"
 EMAIL_VAR = "CUBE_VALIDATION_EMAIL"
 

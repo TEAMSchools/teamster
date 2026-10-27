@@ -9,6 +9,8 @@ confirms each one.
 from __future__ import annotations
 
 import re
+
+# trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -128,6 +130,7 @@ def calculated_fields(twb_xml: str) -> list[Calc]:
     Returns:
         One `Calc` per distinct calculated field, ordered by caption.
     """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
 
     used_by: dict[str, set[str]] = {}

@@ -12,6 +12,8 @@ from __future__ import annotations
 import dataclasses
 import json
 import re
+
+# trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import Counter
@@ -218,6 +220,7 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
         f"DATE({name}) AS {name}" if is_date else name for name, is_date in seen.items()
     ]
     return (
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
         f"SELECT {', '.join(cols)} FROM {_dashboard_ref(comparison)} "
         f"WHERE {_any_cut_predicate(comparison)}"
     )
@@ -229,6 +232,7 @@ def probe_sql(cfg: ViewConfig, comparison: Comparison, cut: dict[str, Any]) -> s
     `probe` is an aggregate over the rows; `probe_sql` is a template whose
     `{rows}`, `{where}` and `{dims}` are filled here.
     """
+    # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
     rows = f"SELECT * FROM {_dashboard_ref(comparison)}"
     where = dashboard_predicate(comparison, cut)
     names = [d.dashboard for d in comparison.dims]
@@ -249,6 +253,7 @@ def probe_sql(cfg: ViewConfig, comparison: Comparison, cut: dict[str, Any]) -> s
         else ""
     )
     return (
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
         f"SELECT {', '.join([*select, f'{comparison.probe} AS value'])} "
         f"FROM ({rows}) WHERE {where}{group}"
     )
@@ -265,6 +270,7 @@ def wrap_cube(
     select = [_select(c, f"`{view}__{c}`", c in dates) for c in columns]
     if measure:
         select.append(f"`{view}__{measure}` AS value")
+    # trunk-ignore(bandit/B608): SQL text comes from Cube's compiled query; identifiers validated in config.py
     return f"SELECT {', '.join(select)} FROM (\n{sql}\n)"
 
 
@@ -954,6 +960,7 @@ def check_api(
 
 
 def _sheet_columns(twb_xml: str, sheet: str) -> list[ET.Element]:
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
     ws = next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
     if ws is None:

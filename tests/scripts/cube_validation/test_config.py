@@ -309,3 +309,43 @@ def test_proof_without_cuts_reads_as_unknown(tmp_path):
 
     assert proof is not None and proof.cuts is None
     assert proof.totals_skipped is None
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ("fact: kipptaf_marts.fct_student_attendance_enrollment_daily", "fact: a.b.c"),
+        (
+            "fact: kipptaf_marts.fct_student_attendance_enrollment_daily",
+            "fact: 'a;b.c'",
+        ),
+        ("time_dimension: attendance_date", "time_dimension: 'x) --'"),
+        ("view: student_attendance_enrollment_daily_view", "view: 'v`; DROP'"),
+        (
+            "measure: avg_daily_attendance\n    confirmed",
+            "measure: 'a b'\n    confirmed",
+        ),
+        (
+            "dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard",
+            "dashboard_view: 'x.y`; DROP TABLE t; --'",
+        ),
+        (
+            "dashboard: region, cube: regions_region_name }\n    filters",
+            "dashboard: 'r, 1', cube: x }\n    filters",
+        ),
+        ("dashboard: student_number", "dashboard: 'a b'"),
+        ("cube: attendance_value", "cube: 'a-b'"),
+        ("dashboard: academic_year", "dashboard: \"x' OR '1\""),
+        ("cube: dates_academic_year", "cube: 'd.y'"),
+    ],
+)
+def test_sql_identifier_that_is_not_plain_is_refused(tmp_path, old, new):
+    assert old in EXAMPLE
+    with pytest.raises(ConfigError):
+        load_view_config(_write(tmp_path, EXAMPLE.replace(old, new, 1)))
+
+
+def test_scope_cube_that_is_not_plain_is_refused(tmp_path):
+    text = EXAMPLE.replace("scope: []", "scope: [{ cube: 'x; y', values: [a] }]", 1)
+    with pytest.raises(ConfigError, match="plain identifier"):
+        load_view_config(_write(tmp_path, text))

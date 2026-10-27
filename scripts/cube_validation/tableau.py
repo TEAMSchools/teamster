@@ -21,6 +21,8 @@ import json
 import os
 import re
 import tempfile
+
+# trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
 import zipfile
 from collections.abc import Callable
@@ -141,6 +143,7 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
         ValueError: A measure names no column, or the edit removed a different
             number of formats than the parsed workbook holds.
     """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
     targets = _target_columns(root, measures)
 
@@ -195,6 +198,7 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
             f"dropped {dropped_defaults} column formats and {dropped_rules} "
             f"text-format rules; the workbook holds {want_defaults} and {want_rules}"
         )
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     if _empty_rules(ET.fromstring(out)) > _empty_rules(root):
         raise ValueError("the edit left an empty style-rule")
     return out
@@ -289,6 +293,7 @@ def formula_fingerprint(twb_xml: str, sheet: str) -> str:
     Raises:
         ValueError: The workbook has no worksheet of that name.
     """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
     ws = next(
         (w for w in root.iter("worksheet") if w.get("name") == sheet),
@@ -317,6 +322,7 @@ def formula_fingerprint(twb_xml: str, sheet: str) -> str:
 
 
 def _parameter_names(twb_xml: str) -> set[str]:
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
     names: set[str] = set()
     for ds in root.iter("datasource"):
@@ -540,7 +546,7 @@ def sign_in_from_env() -> TSC.Server:
 
 
 def _vf_value(value: Any) -> str:
-    """A view-filter value: a list is an OR-list, `,` and `\\` escaped."""
+    r"""A view-filter value: a list is an OR-list, `,` and `\\` escaped."""
     values = value if isinstance(value, (list, tuple)) else [value]
     return ",".join(str(v).replace("\\", "\\\\").replace(",", "\\,") for v in values)
 
@@ -809,6 +815,7 @@ def _edit(text: str, xml_edit: Callable[[str], str]) -> str:
     if _bare_lf(edited) and not _bare_lf(text):
         raise ValueError("the edit changed CRLF line endings to bare LF")
     try:
+        # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
         ET.fromstring(edited)
     except ET.ParseError as exc:
         raise ValueError(f"the edited workbook is not well-formed XML: {exc}") from exc
