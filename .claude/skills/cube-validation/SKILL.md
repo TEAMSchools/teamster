@@ -94,8 +94,9 @@ cause, do not retry around it.
    `reason`, `task` (required for all but `deliberate`) and the `fingerprints`
    `{cube, dashboard}` that `run` printed for that comparison. `group` is a
    mapping: `column` is the Cube member name the triage line shows (such as
-   `regions_region_name`), and `values` are compared as text, so `9` and `"9"`
-   match the same group. A decision covers its group only while both
+   `regions_region_name`), and `values` are compared as text: quote values
+   exactly as the triage line shows them. YAML rewrites an unquoted `9.50` or
+   `no`, so the loader refuses one. A decision covers its group only while both
    fingerprints hold; do not copy fingerprints from another run.
 10. `uv run python -m scripts.cube_validation review <files> --domain <domain>`
     prints the issue body. Show the draft to the analyst. Post it with

@@ -243,6 +243,21 @@ def _identity(reader: _Reader) -> Identity:
     )
 
 
+def _decision_values(group: _Reader) -> None:
+    """Refuse a group value YAML rewrote: `9.50` reads as 9.5, `no` as False.
+
+    A group's value is compared as text, so a rewritten value never matches.
+    An int round-trips (`9` is `"9"`) and is kept.
+    """
+    for i, value in enumerate(group.get("values", list, default=[])):
+        if isinstance(value, (bool, float)):
+            group.fail(
+                f"values[{i}]",
+                f"YAML read this as {type(value).__name__} {value!r}; quote it "
+                "exactly as the triage line shows it",
+            )
+
+
 def _decision(reader: _Reader, comparison_ids: set[str]) -> Decision:
     call = reader.get("call", str, required=True)
     if call not in CALLS:
@@ -253,12 +268,14 @@ def _decision(reader: _Reader, comparison_ids: set[str]) -> Decision:
     comparison = reader.get("comparison", str, required=True)
     if comparison not in comparison_ids:
         reader.fail("comparison", f"{comparison!r} is not a comparison id")
+    group = reader.get("group", dict, default={})
+    _decision_values(reader.child("group", group))
     return Decision(
         id=reader.get("id", str, required=True),
         comparison=comparison,
         call=call,
         reason=reader.get("reason", str, required=True),
-        group=reader.get("group", dict, default={}),
+        group=group,
         task=task,
         fingerprints=reader.get("fingerprints", dict, default={}),
     )
