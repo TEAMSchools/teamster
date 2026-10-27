@@ -22,23 +22,27 @@ from .moment import Build
 CACHE_ROOT = Path.home() / ".cache" / "cube-validation"
 MASK_BELOW = 10
 _IDENTIFIER_COLUMN = re.compile(
-    r"student|lea_|_number|identifier|email|dob|birth|ssid|leaid|smid|phone|address|_id$|^id$|^sid$|state_id|local_id"
-    r"|lastfirst|firstlast|(?:user|nick|sur)name|(?:^|_)name(?:_|$)",
+    r"student|lea_|_number|identifier|name|lastfirst|email|dob|birth|ssid|leaid|smid|phone|address|_id$|^id$|^sid$|state_id|local_id",
     re.IGNORECASE,
 )
-# A name column for a place or a unit of the school year names no person.
-_REFERENCE_NAME = re.compile(
-    r"(?:^|_)(?:region|location|school|campus|district|course|section|term)s?_name$",
-    re.IGNORECASE,
+# Reviewed columns whose values name no person. The list is exact so an
+# unknown column fails closed; a course or section name can single out a
+# small group, so none is listed.
+_SHOWN_COLUMNS = frozenset(
+    {
+        "regions_region_name",
+        "locations_location_name",
+        "locations_abbreviation",
+        "school_abbreviation",
+        "region",
+        "grade_level",
+    }
 )
 
 
 def _is_identifier(column: str) -> bool:
-    """True for a column whose values can name or identify a person."""
-    if _REFERENCE_NAME.search(column):
-        # The other patterns still apply: `student_school_name` stays hidden.
-        return bool(_IDENTIFIER_COLUMN.search(_REFERENCE_NAME.sub("", column)))
-    return bool(_IDENTIFIER_COLUMN.search(column))
+    """True unless the column is on the reviewed list or matches no pattern."""
+    return column not in _SHOWN_COLUMNS and bool(_IDENTIFIER_COLUMN.search(column))
 
 
 _SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")

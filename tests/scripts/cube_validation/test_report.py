@@ -192,18 +192,22 @@ def test_identifier_like_columns_redacted():
         "teacher_name",
         "username",
         "student_school_name",
+        "section_name",
+        "course_name",
+        "school_name_alt",
+        "school_name",
+        "foo_name",
     ):
         g = Group("enrollment", col, "SECRETVAL", "cube_only", 50, 50)
-        assert "SECRETVAL" not in _issue_with(g)
+        assert "SECRETVAL" not in _issue_with(g), col
 
 
-def test_place_name_columns_shown_at_10_students():
+def test_reviewed_columns_shown_at_10_students():
     for col in (
         "regions_region_name",
         "locations_abbreviation",
         "school_abbreviation",
         "locations_location_name",
-        "school_name",
     ):
         big = Group("enrollment", col, "Camden", "cube_only", 50, 10)
         small = Group("enrollment", col, "Camden", "cube_only", 50, 9)
