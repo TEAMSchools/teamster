@@ -287,6 +287,18 @@ def test_proof_keeps_totals_skipped(tmp_path):
     assert proof is not None and proof.totals_skipped == 2
 
 
+def test_negative_totals_skipped_is_refused(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    write_proof(
+        path,
+        "ada-y1-region",
+        {"fingerprint": "f", "cells": 1, "proven_at": "x", "totals_skipped": -1},
+    )
+
+    with pytest.raises(ConfigError, match=r"proof\.totals_skipped"):
+        load_view_config(path)
+
+
 def test_proof_without_cuts_reads_as_unknown(tmp_path):
     path = _write(tmp_path, EXAMPLE)
     write_proof(

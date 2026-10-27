@@ -183,6 +183,9 @@ def _comparison(reader: _Reader) -> Comparison:
     if reader.data.get("proof") is not None:
         proof_reader = reader.child("proof", reader.data["proof"])
         cuts = proof_reader.get("cuts", list)
+        totals_skipped = proof_reader.get("totals_skipped", int)
+        if totals_skipped is not None and totals_skipped < 0:
+            proof_reader.fail("totals_skipped", "must be 0 or more")
         proof = Proof(
             cuts=None if cuts is None else [str(c) for c in cuts],
             fingerprint=proof_reader.get("fingerprint", str, required=True),
@@ -190,7 +193,7 @@ def _comparison(reader: _Reader) -> Comparison:
             proven_at=str(proof_reader.data.get("proven_at", "")),
             workbook_updated_at=str(proof_reader.data.get("workbook_updated_at", "")),
             probe_fingerprint=str(proof_reader.data.get("probe_fingerprint", "")),
-            totals_skipped=proof_reader.get("totals_skipped", int),
+            totals_skipped=totals_skipped,
         )
 
     return Comparison(
