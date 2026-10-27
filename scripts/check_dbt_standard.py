@@ -428,7 +428,8 @@ def check_touched(
         layer = layer_of(node, project, domain_folders)
         found = []
         # A view fixes its columns at creation, so a star freezes them; a
-        # union_relations wrapper needs its star and recompiles on its own.
+        # union_relations wrapper needs its star and recompiles on its own. Same
+        # test as dagster_dbt_translator.py, which gives wrappers that condition.
         is_star_view = (
             node["config"].get("materialized") == "view"
             and "union_relations" not in code

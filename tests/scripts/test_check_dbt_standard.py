@@ -464,7 +464,7 @@ def test_a9_star_final_select_on_any_view() -> None:
     assert touched(node) == [("kipptaf.int_people__y", "A9", "error")]
 
 
-def test_a9_skips_union_relations_view_and_int_table() -> None:
+def test_a9_skips_union_relations_view() -> None:
     union = coded(
         "stg_x__y",
         "models/x/staging/b.sql",
@@ -472,9 +472,13 @@ def test_a9_skips_union_relations_view_and_int_table() -> None:
         "\n\nselect *,\nfrom union_relations\n",
     )
     union["config"]["materialized"] = "view"
+    assert touched(union) == []
+
+
+def test_a9_skips_star_on_int_table() -> None:
     table = coded("int_people__y", "models/people/b.sql", MART_STAR)
     table["config"]["materialized"] = "table"
-    assert touched(union, table) == []
+    assert touched(table) == []
 
 
 def test_a9_dropped_by_standard_exempt() -> None:
