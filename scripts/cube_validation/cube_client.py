@@ -97,6 +97,8 @@ def urlopen_json(
             return json.loads(resp.read())
     except urllib.error.HTTPError as e:
         raise CubeError(f"Cube {method} {e.code}: {e.read().decode()[:500]}") from None
+    except (urllib.error.URLError, TimeoutError) as e:
+        raise CubeError(f"Cube {method} did not answer: {e}") from None
 
 
 class Cube:
@@ -313,9 +315,8 @@ def refuse_unless_safe(
 def network_schools(wh: _Rows) -> set[str]:
     """Return every school abbreviation the `network` scope enumerates.
 
-    Mirrors `loadUniverses` in `src/cube/cube.js` (line 86) fed through the
-    `network` case of `computeAllowedAbbreviations` in `src/cube/access.js`
-    (lines 151-155).
+    Mirrors `loadUniverses` in `src/cube/cube.js` fed through the `network`
+    case of `computeAllowedAbbreviations` in `src/cube/access.js`.
     """
     rows = wh.rows("SELECT abbreviation FROM `kipptaf_marts.dim_locations`")
 

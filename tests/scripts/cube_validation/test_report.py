@@ -330,3 +330,10 @@ def test_review_issue_names_every_dim_and_masks_each():
     assert "- `regions_region_name` = `Camden`, `student_number` = `<redacted>`" in body
     assert "SECRETVAL" not in body
     assert "Reason: <redacted> <redacted> rows" in body
+
+
+def test_local_result_says_anchors_read_current_data():
+    caveat = "Anchors and identities read Cube's data as it is now"
+    assert caveat not in render_local(_run(findings=[]))
+    findings = [Finding("anchor", "rate", "d", 7.0, 8.0, False)]
+    assert caveat in render_local(_run(findings=findings))

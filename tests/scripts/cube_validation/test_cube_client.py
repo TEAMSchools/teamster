@@ -2,7 +2,9 @@ import base64
 import hashlib
 import hmac
 import json
+import urllib.error
 import urllib.parse
+import urllib.request
 
 import pytest
 
@@ -300,3 +302,15 @@ def test_base_url_that_is_not_https_is_refused(url):
 def test_request_to_a_non_https_url_is_refused_before_it_is_sent():
     with pytest.raises(CubeError, match="https"):
         urlopen_json("GET", "file:///etc/passwd", {})
+
+
+@pytest.mark.parametrize(
+    "error", [urllib.error.URLError("no route"), TimeoutError("timed out")]
+)
+def test_network_failure_is_a_cube_error(monkeypatch, error):
+    def fail(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(urllib.request, "urlopen", fail)
+    with pytest.raises(CubeError, match="did not answer"):
+        urlopen_json("GET", "https://cube.example/x", {})

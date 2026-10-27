@@ -132,6 +132,13 @@ def render_local(run: RunResult) -> str:
             line += f"; {m.open_groups} open row {plural} to triage"
         out.append(line)
 
+    if run.findings:
+        out += [
+            "",
+            "Anchors and identities read Cube's data as it is now, not at the "
+            "moment above.",
+        ]
+
     out += ["", "## Triage", ""]
     triage = []
     for g in run.applied.open:

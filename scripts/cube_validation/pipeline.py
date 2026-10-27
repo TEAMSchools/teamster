@@ -313,6 +313,20 @@ class Cell:
     verdict: str
 
 
+def _by_key(rows: Iterable[dict], key, value, where: str) -> dict:
+    """Index rows by cell key, refusing 2 rows that land on one cell."""
+    out: dict = {}
+    for r in rows:
+        k = key(r)
+        if k in out:
+            raise Refusal(
+                f"{where}: 2 rows share the cell {', '.join(k) or '(total)'}; "
+                "the dims do not pick out one cell"
+            )
+        out[k] = value(r)
+    return out
+
+
 def _cells(
     comparison: Comparison,
     cut: dict[str, Any],
@@ -320,14 +334,19 @@ def _cells(
     cube_rows: list[dict],
     decimals: int,
 ) -> list[Cell]:
-    dash = {
-        tuple(_key(r[d.dashboard]) for d in comparison.dims): _number(r["value"])
-        for r in dash_rows
-    }
-    cube = {
-        tuple(_key(r[d.cube]) for d in comparison.dims): _number(r["value"])
-        for r in cube_rows
-    }
+    where = f"{comparison.id} {cut_label(cut)}"
+    dash = _by_key(
+        dash_rows,
+        lambda r: tuple(_key(r[d.dashboard]) for d in comparison.dims),
+        lambda r: _number(r["value"]),
+        f"{where} dashboard",
+    )
+    cube = _by_key(
+        cube_rows,
+        lambda r: tuple(_key(r[d.cube]) for d in comparison.dims),
+        lambda r: _number(r["value"]),
+        f"{where} Cube",
+    )
     cells = []
     for key in sorted(dash.keys() | cube.keys()):
         label = ", ".join(
@@ -423,11 +442,11 @@ def _compare_one(
     """
     dates = _date_cubes(cfg)
     dims = [d.cube for d in comparison.dims]
-    compiled: dict[str, str] = {}
+    compiled: dict[tuple[str, bool], str] = {}
     expanded: dict[tuple[str, datetime], AsOf] = {}
 
     def cube_sql(query: dict, rows: bool = False) -> str:
-        key = json.dumps(query, sort_keys=True)
+        key = (json.dumps(query, sort_keys=True), rows)
         if key not in compiled:
             compiled[key] = _cube_sql(cfg, cube, query, schools, rows=rows)
         return compiled[key]
@@ -932,20 +951,22 @@ def check_api(
             dims = [d.cube for d in comparison.dims] if with_dims else []
             # The load runs this SQL in BigQuery, so it is priced like the rest.
             wh.price(bound)
-            api = {
-                tuple(_key(r.get(_member(cfg.view, d))) for d in dims): _number(
-                    r.get(_member(cfg.view, comparison.measure))
-                )
-                for r in cube.load(query)
-            }
-            sql = {
-                tuple(_key(r[d]) for d in dims): _number(r["value"])
-                for r in wh.rows(
-                    wrap_cube(bound, cfg.view, dims, set(), comparison.measure)
-                )
-            }
             label = f"{comparison.id} {cut_label(cut)}" + (
                 f" by {', '.join(dims)}" if dims else " total"
+            )
+            api = _by_key(
+                cube.load(query),
+                lambda r, dims=dims: tuple(
+                    _key(r.get(_member(cfg.view, d))) for d in dims
+                ),
+                lambda r, m=comparison.measure: _number(r.get(_member(cfg.view, m))),
+                f"{label} API",
+            )
+            sql = _by_key(
+                wh.rows(wrap_cube(bound, cfg.view, dims, set(), comparison.measure)),
+                lambda r, dims=dims: tuple(_key(r[d]) for d in dims),
+                lambda r: _number(r["value"]),
+                f"{label} SQL",
             )
             bad = [
                 f"{label} {k}: API {api.get(k)}, SQL {sql.get(k)}"

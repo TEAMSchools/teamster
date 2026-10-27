@@ -116,6 +116,8 @@ def test_fingerprint_queries_table_as_of():
         in wh.sql[0]
     )
     assert "bit_xor(farm_fingerprint(to_json_string(t)))" in wh.sql[0]
+    # XOR alone cancels a pair of identical rows; the count catches them.
+    assert "count(*)" in wh.sql[0]
 
 
 def test_changed_between_lists_differing_tables():

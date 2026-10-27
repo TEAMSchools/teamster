@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 from google.cloud import bigquery
 
-from .timetravel import PROJECT, TableInfo, utc_literal
+from .timetravel import PROJECT, TableInfo, closing_paren, utc_literal
 
 USD_PER_TIB = 6.25
 _TIB = 2**40
@@ -154,29 +154,12 @@ class Warehouse:
 
 
 def _close_paren(text: str, open_at: int) -> int:
-    depth, quote, i = 0, "", open_at
-
-    while i < len(text):
-        ch = text[i]
-
-        if quote:
-            if ch == "\\":
-                i += 1
-            elif ch == quote:
-                quote = ""
-        elif ch in "'\"`":
-            quote = ch
-        elif ch == "(":
-            depth += 1
-        elif ch == ")":
-            depth -= 1
-
-            if depth == 0:
-                return i
-
-        i += 1
-
-    raise ViewHistoryError("unbalanced parenthesis in CREATE VIEW statement")
+    try:
+        return closing_paren(text, open_at)
+    except ValueError as exc:
+        raise ViewHistoryError(
+            "unbalanced parenthesis in CREATE VIEW statement"
+        ) from exc
 
 
 def _view_body(ddl: str) -> str:

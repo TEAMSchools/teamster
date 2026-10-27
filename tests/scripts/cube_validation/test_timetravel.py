@@ -4,7 +4,13 @@ from pathlib import Path
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.timetravel import TableInfo, as_of, pin_clock, repin
+from cube_validation.timetravel import (
+    TableInfo,
+    as_of,
+    closing_paren,
+    pin_clock,
+    repin,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TS = datetime(2026, 10, 22, 19, 0, 0, tzinfo=timezone.utc)
@@ -257,3 +263,8 @@ def test_repin_moves_only_the_named_tables():
         "`teamster-332318.ds.b` as bb FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-22 19:00:12"
         in out
     )
+
+
+def test_closing_paren_skips_quotes_backticks_and_escapes():
+    sql = "f(a, ')', `x)`, 'it\\'s)', g(1)) tail"
+    assert sql[closing_paren(sql, 1) + 1 :] == " tail"

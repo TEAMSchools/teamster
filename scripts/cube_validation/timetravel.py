@@ -105,7 +105,7 @@ def pin_clock(sql: str, ts: datetime) -> str:
             j += 1
 
         if j < len(sql) and sql[j] == "(":
-            close = _closing_paren(sql, j)
+            close = closing_paren(sql, j)
             tz = pin_clock(sql[j + 1 : close].strip(), ts)
             end = close + 1
 
@@ -123,17 +123,22 @@ def pin_clock(sql: str, ts: datetime) -> str:
     return "".join(out)
 
 
-def _closing_paren(sql: str, open_at: int) -> int:
-    """Return the index of the `)` that closes the `(` at `open_at`."""
-    depth = 0
-    quote = ""
+def closing_paren(sql: str, open_at: int) -> int:
+    """Return the index of the `)` that closes the `(` at `open_at`.
 
-    for i in range(open_at, len(sql)):
+    Quoted text and backtick identifiers are skipped, with backslash escapes.
+    """
+    depth, quote, i = 0, "", open_at
+
+    while i < len(sql):
         ch = sql[i]
 
         if quote:
-            quote = "" if ch == quote else quote
-        elif ch in "'\"":
+            if ch == "\\":
+                i += 1
+            elif ch == quote:
+                quote = ""
+        elif ch in "'\"`":
             quote = ch
         elif ch == "(":
             depth += 1
@@ -142,6 +147,8 @@ def _closing_paren(sql: str, open_at: int) -> int:
 
             if depth == 0:
                 return i
+
+        i += 1
 
     raise ValueError(
         f"unbalanced parenthesis in SQL near: {sql[open_at : open_at + 40]!r}"

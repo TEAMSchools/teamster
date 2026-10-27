@@ -1058,3 +1058,18 @@ exposures:
 @pytest.mark.parametrize("argv", [[], ["run"], ["nope", "x.yml"], ["prove", "x.yml"]])
 def test_usage_errors_return_2(argv, fakes, capsys):
     assert cli.main(argv) == 2
+
+
+def test_two_rows_on_one_cell_refuse():
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        dims=[ColumnPair(dashboard="grade_level", cube="grade_level")],
+    )
+    dash = [{"grade_level": 0, "value": 0.94}, {"grade_level": "0.0", "value": 0.5}]
+    cube = [{"grade_level": 0, "value": 0.94}]
+
+    with pytest.raises(
+        pipeline.Refusal, match="c .*dashboard: 2 rows share the cell 0"
+    ):
+        pipeline._cells(comparison, {}, dash, cube, 3)
