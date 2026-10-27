@@ -100,7 +100,12 @@ average.
   measures to validate, and the tool finds every workbook that computes each
   one, not only the dashboard the analyst had in mind (`days_to_90_percent` has
   a comparison on a dashboard the first tool never looked at).
-- Source anchors are a full part of the design (below).
+- Source anchors are in the first plan. The analyst enters each figure by hand
+  and judges any difference in triage, with no automatic threshold (below).
+- Recorded decisions live beside the Cube models: 1 YAML file per Cube view in
+  `src/cube/validation/<view>.yml`.
+- The tool never posts to Slack. Results go to the terminal and local files, and
+  to GitHub only for the domain-owner review issue and CI.
 - Build fresh. Do not port the first tool's code. Re-measure each carried-over
   rule before relying on it.
 - Defaults accepted: Python in this repo run with `uv run`; a new package; a
@@ -206,7 +211,12 @@ it has.
    the warehouse: a source-system report (for example, PowerSchool's or Focus's
    own attendance report) or a figure already filed with the state (NJ SMART,
    Florida FTE, CRDC). Anchor the base counts of a family of measures; the
-   consistency checks carry that trust to measures derived from them.
+   consistency checks carry that trust to measures derived from them. The
+   analyst enters each figure by hand: the value, its source, its date, and the
+   filters it covers. Cube computes the same figure over the same date range. An
+   exact match is not expected, because the figure is frozen at its date and
+   Cube includes every later edit, so any difference goes to triage for the
+   analyst to judge. There is no automatic threshold.
 3. **Consistent only.** Cube's own measures agree with each other: for example,
    `avg_daily_attendance` equals `sum_attendance_value` divided by
    `sum_membership_value`, and present plus absent days add up to membership
@@ -240,14 +250,23 @@ comparisons before running anything:
   at the clause behind it: the filter in the view's SQL, or in Cube's member,
   that keeps or drops those rows. This is how a deliberate exclusion like the
   temporary assessment-type filter shows up.
-- Counts under 10 show as `<10`, so a result can go to `#data_team`. Row-level
-  output stays local.
+- The full result goes to the analyst's terminal and local files. Anything
+  posted to GitHub (the domain-owner review issue, CI comments) shows counts
+  under 10 as `<10`. Row-level output never leaves local files. The tool never
+  posts to Slack.
 
 ### Recorded decisions
 
 A recorded decision is the analyst's call on a group of disagreements. It
 records the measure, the group it covers, the call, the reason, and a
 fingerprint of the SQL on both sides at the time of the call.
+
+Decisions live in `src/cube/validation/<view>.yml`, 1 file per Cube view. A pull
+request that changes Cube already touches `src/cube/`, so CI finds its decisions
+in the same pull request, and the `analytics-engineers` team owns the folder.
+They stay out of the view YAML because Cube serves a member's `meta:` to every
+caller through `/v1/meta`. Before relying on the folder, confirm Cube Cloud
+loads only `src/cube/model/` and ignores YAML beside it.
 
 - A decision keeps its group quiet on later runs while both fingerprints hold.
 - If either side's SQL changes, the decision asks to be re-confirmed instead of
@@ -315,22 +334,13 @@ On a pull request that touches `src/dbt/` or `src/cube/`:
 Known catch: dbt Cloud CI builds from `zz_stg` copies that lag prod, so both
 sides in CI read the same copies.
 
-## Open question (draft status)
-
-This design is a draft until the analyst answers 1 question: are source anchors
-in the first plan, with the analyst entering each figure by hand (value, source,
-date, filters) and judging any difference in triage, with no automatic
-threshold? A filed or reported figure is frozen at a past date, outside the
-time-travel window, so an exact match is not expected. If anchors wait for a
-later plan, most of the 43 measures ship as "consistent only".
-
 ## Left to the builder
 
 - Package name and layout, command names, file formats beyond "YAML in the
   repo".
 - How the skill is structured and what it says.
-- Where recorded decisions and formula proofs live in the repo.
-- How source-anchor figures are entered and stored.
+- Where formula proofs live in the repo.
+- How source-anchor figures are stored.
 - How CI gets its credentials and the Cube compiled SQL.
 
 ## Calls I made (not discussed with the analyst)
