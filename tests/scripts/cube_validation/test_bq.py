@@ -66,7 +66,58 @@ def test_view_sql_uses_create_view_job_when_changed_after():
     sql = client.queries[0][0]
     assert "CREATE_VIEW" in sql
     assert "creation_time < TIMESTAMP '2026-10-22 19:00:00.000000+00:00'" in sql
-    assert "INTERVAL 180 DAY" in sql
+    assert "INTERVAL 3 DAY" in sql
+
+
+def test_view_history_looks_back_a_few_days_before_the_whole_retention():
+    table = FakeTable(modified=TS + timedelta(days=1))
+    client = FakeClient(table)
+    answers = iter([[], [{"query": "create view `p`.`ds`.`v` as select old"}]])
+    real = client.query
+
+    def query(sql, job_config=None):
+        job = real(sql, job_config)
+        if not (job_config and job_config.dry_run):
+            job._rows = next(answers)
+        return job
+
+    client.query = query
+    wh = Warehouse(client=client)
+
+    assert wh.view_sql_as_of("ds", "v", TS) == "select old"
+    sqls = [s for s, dry in client.queries if not dry]
+    assert "INTERVAL 3 DAY" in sqls[0]
+    assert "INTERVAL 180 DAY" in sqls[1]
+
+
+def test_view_history_is_read_once_per_view_and_moment():
+    table = FakeTable(modified=TS + timedelta(days=1))
+    client = FakeClient(table, rows=[{"query": "create view `p`.`ds`.`v` as select 1"}])
+    wh = Warehouse(client=client)
+
+    wh.view_sql_as_of("ds", "v", TS)
+    wh.view_sql_as_of("ds", "v", TS)
+
+    assert len(client.queries) == 1
+    wh.view_sql_as_of("ds", "v", TS + timedelta(seconds=1))
+    assert len(client.queries) == 2
+
+
+def test_view_history_serves_an_earlier_moment_after_the_job_started():
+    table = FakeTable(modified=TS + timedelta(days=1))
+    job = {
+        "query": "create view `p`.`ds`.`v` as select 1",
+        "start_time": TS - timedelta(days=4),
+    }
+    client = FakeClient(table, rows=[job])
+    wh = Warehouse(client=client)
+
+    wh.view_sql_as_of("ds", "v", TS)
+    assert wh.view_sql_as_of("ds", "v", TS - timedelta(seconds=12)) == "select 1"
+    assert len(client.queries) == 1
+    # Before the job started, it was not the view's definition.
+    wh.view_sql_as_of("ds", "v", TS - timedelta(days=5))
+    assert len(client.queries) > 1
 
 
 def test_view_sql_without_options():

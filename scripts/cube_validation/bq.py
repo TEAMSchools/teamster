@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from google.cloud import bigquery
 
@@ -17,6 +17,7 @@ from .timetravel import PROJECT, TableInfo, utc_literal
 USD_PER_TIB = 6.25
 _TIB = 2**40
 JOBS_RETENTION_DAYS = 180
+VIEW_HISTORY_FIRST_DAYS = 3
 _VIEW_HEAD = re.compile(
     r"create\s+(?:or\s+replace\s+)?(?:materialized\s+)?view\s+"
     r"(?:if\s+not\s+exists\s+)?[`\w.-]+",
@@ -43,6 +44,7 @@ class Warehouse:
         self._client = client or bigquery.Client(project=PROJECT)
         self._cap: float | None = None
         self._spent = 0.0
+        self._views: dict[tuple[str, str], list[tuple[datetime, datetime, str]]] = {}
 
     def table(self, dataset: str, name: str) -> TableInfo:
         """Return the kind of `dataset.name` and, for a view, its current SQL."""
@@ -63,31 +65,51 @@ class Warehouse:
             ViewHistoryError: the view changed after `ts` and no earlier
                 successful `CREATE_VIEW` job is on record.
         """
+        # A job found for moment `at` that started at `since` is also the
+        # latest job for any moment in (since, at]: a later one would have
+        # been found for `at`. A run reads its 2 moments seconds apart.
+        for since, at, body in self._views.get((dataset, name), []):
+            if since < ts <= at:
+                return body
+
         t = self._client.get_table(f"{PROJECT}.{dataset}.{name}")
 
         if t.modified <= ts:
             return t.view_query.strip().rstrip(";").rstrip()
 
-        rows = self.rows(
-            "SELECT query "
-            f"FROM `{PROJECT}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
-            "WHERE statement_type = 'CREATE_VIEW' AND state = 'DONE' "
-            "AND error_result IS NULL "
-            f"AND destination_table.dataset_id = '{dataset}' "
-            f"AND destination_table.table_id = '{name}' "
-            f"AND start_time < TIMESTAMP '{utc_literal(ts)}' "
-            f"AND creation_time < TIMESTAMP '{utc_literal(ts)}' "
-            f"AND creation_time >= TIMESTAMP_SUB(TIMESTAMP '{utc_literal(ts)}', "
-            f"INTERVAL {JOBS_RETENTION_DAYS} DAY) "
-            "ORDER BY start_time DESC LIMIT 1"
-        )
+        since, body = self._view_from_jobs(dataset, name, ts)
+        self._views.setdefault((dataset, name), []).append((since, ts, body))
+        return body
 
-        if not rows:
-            raise ViewHistoryError(
-                f"no CREATE_VIEW job for {dataset}.{name} before {utc_literal(ts)}"
+    def _view_from_jobs(
+        self, dataset: str, name: str, ts: datetime
+    ) -> tuple[datetime, str]:
+        """Return the start and body of the latest `CREATE_VIEW` job before `ts`."""
+        # The price of a JOBS_BY_PROJECT read grows with the days it spans, and
+        # dbt recreates most views on every build, so look back a few days
+        # before paying for the whole retention.
+        for days in (VIEW_HISTORY_FIRST_DAYS, JOBS_RETENTION_DAYS):
+            rows = self.rows(
+                "SELECT query, start_time "
+                f"FROM `{PROJECT}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
+                "WHERE statement_type = 'CREATE_VIEW' AND state = 'DONE' "
+                "AND error_result IS NULL "
+                f"AND destination_table.dataset_id = '{dataset}' "
+                f"AND destination_table.table_id = '{name}' "
+                f"AND start_time < TIMESTAMP '{utc_literal(ts)}' "
+                f"AND creation_time < TIMESTAMP '{utc_literal(ts)}' "
+                f"AND creation_time >= TIMESTAMP_SUB(TIMESTAMP '{utc_literal(ts)}', "
+                f"INTERVAL {days} DAY) "
+                "ORDER BY start_time DESC LIMIT 1"
             )
+            if rows:
+                # No start means no interval to reuse: only `ts` itself.
+                since = rows[0].get("start_time") or ts - timedelta.resolution
+                return since, _view_body(rows[0]["query"])
 
-        return _view_body(rows[0]["query"])
+        raise ViewHistoryError(
+            f"no CREATE_VIEW job for {dataset}.{name} before {utc_literal(ts)}"
+        )
 
     def price(self, sql: str) -> float:
         """Return the USD cost of `sql` from a dry run, without running it.
