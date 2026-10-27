@@ -15,6 +15,7 @@ from cube_validation.tableau import (
     Tableau,
     displayed_decimals,
     drop_number_formats,
+    expose_sheet,
     formula_fingerprint,
     prove,
     split_cuts,
@@ -79,6 +80,34 @@ def test_drop_number_formats_by_column_name_and_unknown_measure():
 
     with pytest.raises(ValueError, match="Rat"):
         drop_number_formats(_twb(), ["Rat"])
+
+
+def test_expose_sheet_unhides_only_that_worksheet_window():
+    src = _twb(crlf=True).replace(
+        "<window class='worksheet' name='Rate by Region'>",
+        "<window class='worksheet' hidden='true' name='Rate by Region'>\r\n"
+        "    </window>\r\n"
+        "    <window class='worksheet' hidden='true' name='Other'>",
+    )
+
+    out = expose_sheet(src, "Rate by Region")
+
+    assert "<window class='worksheet' name='Rate by Region'>" in out
+    assert "<window class='worksheet' hidden='true' name='Other'>" in out
+    assert out.count("\r\n") == src.count("\r\n")
+    # An already visible sheet, or a name with no window, is left as is.
+    assert expose_sheet(out, "Rate by Region") == out
+    assert expose_sheet(out, "Missing") == out
+
+
+def test_expose_sheet_refuses_a_duplicate_window():
+    src = _twb().replace(
+        "<window class='worksheet' name='Rate by Region'>",
+        "<window class='worksheet' name='Rate by Region'></window>"
+        "<window class='worksheet' hidden='true' name='Rate by Region'>",
+    )
+    with pytest.raises(ValueError, match="2 worksheet windows"):
+        expose_sheet(src, "Rate by Region")
 
 
 def test_displayed_decimals_cases():

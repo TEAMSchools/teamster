@@ -3,7 +3,7 @@
 Tableau is written to in one place only: a copy named `ZZ-VALIDATE <workbook>`
 in the `TEMP-CB` project, published with Overwrite. Nothing is deleted. The
 copy drops the compared measures' number formats so its CSV exports carry raw
-values, and `prove` compares those exports with the probe's values at the
+values, and unhides the compared sheet so it publishes as a view; `prove` compares those exports with the probe's values at the
 sheet's displayed decimals.
 
 XML edits are anchored text surgery, not an ElementTree round trip, so the
@@ -61,6 +61,8 @@ _ATTR = re.compile(r"""([\w:.-]+)=(?:'([^']*)'|"([^"]*)")""")
 _DEFAULT_FORMAT = re.compile(r"""\s+default-format=(?:'[^']*'|"[^"]*")""")
 _THOUSANDS = re.compile(r"[-+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?")
 _INSTANCE_SUFFIXES = {"nk", "ok", "qk"}
+_WINDOW_TAG = re.compile(r"<window(?=[\s/>])[^>]*>")
+_HIDDEN = re.compile(r"""\s+hidden=(?:'true'|"true")""")
 
 
 class RefreshMovedError(RuntimeError):
@@ -195,6 +197,33 @@ def drop_number_formats(twb_xml: str, measures: list[str]) -> str:
         )
     if _empty_rules(ET.fromstring(out)) > _empty_rules(root):
         raise ValueError("the edit left an empty style-rule")
+    return out
+
+
+def expose_sheet(twb_xml: str, sheet: str) -> str:
+    """Unhide a worksheet's window, so the sheet publishes as a view.
+
+    A worksheet shown only inside a dashboard carries `hidden='true'` on its
+    `<window>`, and the server publishes no view for it, so it cannot be
+    exported. Only that attribute of that window is removed.
+
+    Raises:
+        ValueError: More than 1 worksheet window has that name.
+    """
+    matched = 0
+
+    def window(m: re.Match) -> str:
+        nonlocal matched
+        tag = m.group(0)
+        attrs = _attrs(tag)
+        if attrs.get("class") != "worksheet" or attrs.get("name") != sheet:
+            return tag
+        matched += 1
+        return _HIDDEN.sub("", tag)
+
+    out = _WINDOW_TAG.sub(window, twb_xml)
+    if matched > 1:
+        raise ValueError(f"{matched} worksheet windows named {sheet!r}, expected 1")
     return out
 
 

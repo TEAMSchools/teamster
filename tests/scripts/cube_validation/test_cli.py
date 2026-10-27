@@ -618,6 +618,19 @@ def test_prove_writes_the_proof(fakes, tmp_path, capsys):
     assert "default-format" not in fakes.tbl.edited.split("<worksheets>")[1]
 
 
+def test_prove_unhides_a_dashboard_only_sheet_on_the_copy(fakes, tmp_path, capsys):
+    fakes.tbl.twb = fakes.tbl.twb.replace(
+        "<window class='worksheet' name='Rate by Region'>",
+        "<window class='worksheet' hidden='true' name='Rate by Region'>",
+    )
+    path = _file(tmp_path, YML.replace(PROOF, "    proof: null\n"))
+    argv = ["prove", str(path), "--comparison", "ada-region", "--value-column", "Rate"]
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    assert "hidden=" not in fakes.tbl.edited
+
+
 def test_prove_asks_which_column_holds_the_value(fakes, tmp_path, capsys):
     argv = ["prove", str(_file(tmp_path)), "--comparison", "ada-region"]
 

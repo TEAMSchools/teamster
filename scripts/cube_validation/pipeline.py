@@ -937,7 +937,9 @@ def prove(
             workbook,
             sheet,
             exportable,
-            lambda x: tableau.drop_number_formats(x, measures),
+            lambda x: tableau.expose_sheet(
+                tableau.drop_number_formats(x, measures), sheet
+            ),
         )
     except (LookupError, tableau.RefreshMovedError) as exc:
         raise Refusal(f"cannot export {sheet!r}: {exc}") from exc
