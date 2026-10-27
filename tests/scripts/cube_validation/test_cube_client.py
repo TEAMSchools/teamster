@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import json
+import urllib.parse
 
 import pytest
 
@@ -52,7 +53,7 @@ def test_header_has_no_bearer_and_load_posts_query():
     assert (method, url, body) == (
         "POST",
         "https://c/api/load",
-        {"query": {"measures": ["m"]}},
+        {"query": {"measures": ["m"], "timezone": "UTC"}},
     )
     assert not headers["Authorization"].lower().startswith("bearer")
     assert headers["Authorization"].count(".") == 2
@@ -84,6 +85,25 @@ def test_compiled_maps_sql_shape_and_polls():
     assert c == Compiled("SELECT ? FROM t", ["a"], [{"x": 1}])
     assert urls[0][0] == "GET" and urls[0][1].startswith("https://c/api/sql?query=")
     assert len(urls) == 2
+
+
+def test_queries_default_to_utc_and_keep_an_explicit_zone():
+    seen = []
+
+    def fetch(method, url, headers, body=None):
+        if method == "GET":
+            q = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)["query"][0]
+            seen.append(json.loads(q))
+            return {"sql": {"sql": ["SELECT 1", []]}}
+        seen.append(body["query"])
+        return {"data": []}
+
+    cube = Cube("https://c/api", "s", "x@y", fetch=fetch)
+    cube.compiled({"dimensions": ["v.d"]})
+    cube.load({"measures": ["v.m"], "timezone": "America/New_York"})
+
+    assert seen[0]["timezone"] == "UTC"
+    assert seen[1]["timezone"] == "America/New_York"
 
 
 def test_bind_escapes_quotes():

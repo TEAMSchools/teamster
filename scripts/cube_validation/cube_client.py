@@ -139,7 +139,7 @@ class Cube:
         Raises:
             CubeError: Cube could not compile the query.
         """
-        q = urllib.parse.quote(json.dumps(query))
+        q = urllib.parse.quote(json.dumps(_utc(query)))
         out = self._call("GET", f"/sql?query={q}")
         sql = out["sql"]
 
@@ -152,9 +152,18 @@ class Cube:
 
     def load(self, query: dict) -> list[dict]:
         """Run `query` and return its rows."""
-        out = self._call("POST", "/load", {"query": query})
+        out = self._call("POST", "/load", {"query": _utc(query)})
 
         return out["data"]
+
+
+def _utc(query: dict) -> dict:
+    """Default the query timezone to UTC, as `src/cube/mcp/server.py` does.
+
+    Mart dates are midnight UTC; the deployment's default zone would shift a
+    date dimension to the previous evening and its DATE to the previous day.
+    """
+    return query if query.get("timezone") else {**query, "timezone": "UTC"}
 
 
 _ESCAPES = {"\\": "\\\\", "'": "\\'", "\n": "\\n", "\r": "\\r", "\t": "\\t"}
