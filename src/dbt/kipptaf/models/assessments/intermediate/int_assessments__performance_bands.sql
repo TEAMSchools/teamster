@@ -79,6 +79,7 @@ with
             max(u.response_type_id) over w_merge as max_response_type_id,
             min(u.performance_band_set_id) over w_merge as min_band_set_id,
             max(u.performance_band_set_id) over w_merge as max_band_set_id,
+            countif(u.performance_band_set_id is null) over w_merge as n_null_band_sets,
             first_value(u.performance_band_set_id) over (
                 w_merge order by u.assessment_id, u.response_type_id
             ) as first_band_set_id,
@@ -110,10 +111,10 @@ select
 
     case
         -- one standard split across records on different band sets: no single
-        -- set can label the merged score
+        -- set can label the merged score (min/max skip nulls, so count them)
         when
             canonical_response_type_id != max_response_type_id
-            and min_band_set_id != max_band_set_id
+            and (min_band_set_id != max_band_set_id or n_null_band_sets > 0)
         then null
         when is_internal_assessment
         then first_band_set_id

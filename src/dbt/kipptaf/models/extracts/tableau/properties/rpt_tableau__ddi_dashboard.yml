@@ -29,8 +29,8 @@ models:
               - response_type_description
               - is_replacement
           config:
-            # TODO(#6164): walkthrough and assessment rows repeat in prod; flip to
-            # error once they are deduplicated at the source joins.
+            # TODO(#6167): duplicate academic goals rows repeat assessment rows;
+            # flip to error once the goals fan-out is fixed.
             severity: warn
     columns:
       - name: region
