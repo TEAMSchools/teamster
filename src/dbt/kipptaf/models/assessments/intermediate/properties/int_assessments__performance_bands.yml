@@ -5,9 +5,13 @@ models:
       (assessment_id × response_type × response_type_id). Unions overall
       assessment-level bands with per-standard and per-reporting-group bands so
       every response in `int_illuminate__agg_student_responses` has a single
-      authoritative `performance_band_set_id` to look up. Adds
-      `canonical_performance_band_set_id` so multipart members of a logical
-      internal assessment share the same band assignment per response_type.
+      authoritative `performance_band_set_id` to look up. Illuminate copies some
+      standards into more than one standards set, so an assessment can score one
+      standard (same code and description) through several `standard_id`s. Rows
+      that score the same response are grouped (per canonical assessment for
+      internal assessments, per assessment otherwise) and share one
+      `canonical_response_type_id` and one `canonical_performance_band_set_id`,
+      so the rollup scores them once.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -34,12 +38,22 @@ models:
           set from `int_assessments__assessments_members`; `standard` and
           `group` rows take the set from the Illuminate assessment-standards and
           assessment-reporting-groups staging models.
+      - name: canonical_response_type_id
+        data_type: int64
+        description: >-
+          The lowest `response_type_id` among rows that score the same response.
+          A standard groups by its code and description, a reporting group by
+          its id, and `overall` by assessment. Groups span the members of a
+          canonical assessment for internal assessments and stay within one
+          assessment otherwise. Equals `response_type_id` when the response has
+          one record.
       - name: canonical_performance_band_set_id
         data_type: int64
         description: >-
-          For internal assessments, the `performance_band_set_id` of the lowest
-          `assessment_id` that has a row for the same (canonical_assessment_id,
-          response_type, response_type_id). That is the canonical member's set
-          whenever the canonical member carries the response, which `overall`
-          always does. For external assessments, equals
-          `performance_band_set_id`.
+          Band set that labels the grouped response. Null when one standard is
+          split across records that carry different band sets, since no single
+          set fits the merged score. Otherwise, for internal assessments, the
+          set of the row with the lowest `assessment_id` and `response_type_id`
+          in the group, which is the canonical member's set whenever it carries
+          the response (`overall` always does). For external assessments, the
+          row's own `performance_band_set_id`.
