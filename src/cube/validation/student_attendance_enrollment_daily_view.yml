@@ -26,7 +26,12 @@ comparisons:
         - { dashboard: calendardate, cube: attendance_date }
       values:
         - { dashboard: is_present, cube: attendance_value }
-    proof: null
+    proof:
+      fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
+      cells: 45
+      proven_at: "2026-10-27T16:17:44.027595+00:00"
+      workbook_updated_at: "2026-10-27T10:24:57+00:00"
+      probe_fingerprint: b8656a821108bd2efa0bb6b624582d4d8e003d16ca17c5fbb818843c6372ee95
   - id: ada-y1-es
     measure: avg_daily_attendance
     confirmed: true
@@ -41,7 +46,12 @@ comparisons:
     filters:
       Academic Year: { dashboard: academic_year, cube: dates_academic_year }
       Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
+      Grade Level: { dashboard: grade_level, cube: grade_level }
+    defaults:
+      Academic Year: "2026"
+      Region: [Camden, Newark, Paterson]
+      # The sheet's own grade filter; it has no filter card.
+      Grade Level: [0, 1, 2, 3, 4]
     cuts: [{}, { Region: Miami }]
     rows:
       grain:
@@ -49,7 +59,12 @@ comparisons:
         - { dashboard: calendardate, cube: attendance_date }
       values:
         - { dashboard: is_present, cube: attendance_value }
-    proof: null
+    proof:
+      fingerprint: 79d4b006007bc63f46c3a249d3fa3a4a53d857e3b783d33866cea8c458f46c9a
+      cells: 50
+      proven_at: "2026-10-27T16:15:41.306915+00:00"
+      workbook_updated_at: "2026-10-27T10:24:57+00:00"
+      probe_fingerprint: 74083c690614a8004f84d73ac0fc257534996dfdfa98987af9edc3ed2690c5c0
   - id: ada-y1-ms
     measure: avg_daily_attendance
     confirmed: true
@@ -64,7 +79,12 @@ comparisons:
     filters:
       Academic Year: { dashboard: academic_year, cube: dates_academic_year }
       Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
+      Grade Level: { dashboard: grade_level, cube: grade_level }
+    defaults:
+      Academic Year: "2026"
+      Region: [Camden, Newark, Paterson]
+      # The sheet's own grade filter; it has no filter card.
+      Grade Level: [5, 6, 7, 8]
     cuts: [{}, { Region: Miami }]
     rows:
       grain:
@@ -72,7 +92,12 @@ comparisons:
         - { dashboard: calendardate, cube: attendance_date }
       values:
         - { dashboard: is_present, cube: attendance_value }
-    proof: null
+    proof:
+      fingerprint: c0a4a97faefd141d3c8ee03593e23706cbbd71dfc2a95e25ce32437140c71a3c
+      cells: 40
+      proven_at: "2026-10-27T16:16:46.682850+00:00"
+      workbook_updated_at: "2026-10-27T10:24:57+00:00"
+      probe_fingerprint: ce4e229d48c616054836b8b4e117760025b6dd9f7ca9b6030cf6b12b43aa4103
 identities:
   - name: ada-is-attendance-over-membership
     left: avg_daily_attendance
