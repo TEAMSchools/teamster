@@ -245,6 +245,20 @@ def _school_filters(bound: str) -> list[set[str]]:
     ]
 
 
+def sort_school_filters(sql: str) -> str:
+    """Sort the abbreviations inside each school filter of bound SQL.
+
+    The list comes from `dim_locations` with no order, so a fingerprint taken
+    over the raw SQL would move whenever the list's order did.
+    """
+
+    def ordered(m: re.Match) -> str:
+        literals = iter(sorted(_STRING.findall(m.group(0))))
+        return _STRING.sub(lambda _: next(literals), m.group(0))
+
+    return _SCHOOLS.sub(ordered, sql)
+
+
 def refuse_unless_safe(
     compiled: Compiled, *, view_fact: str, network_schools: set[str]
 ) -> None:

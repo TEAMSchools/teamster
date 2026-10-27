@@ -17,6 +17,7 @@ from cube_validation.cube_client import (
     mint_token,
     network_schools,
     refuse_unless_safe,
+    sort_school_filters,
 )
 
 FACT = "fct_student_attendance_enrollment_daily"
@@ -273,4 +274,17 @@ def test_two_filters_that_only_union_to_network_are_refused():
         BASE + "abbreviation IN (?, ?) AND abbreviation = ?",
         ["A", "B", "C"],
         "2 of 3",
+    )
+
+
+def test_sort_school_filters_orders_every_form():
+    sql = (
+        "WHERE `l`.abbreviation IN ('C', 'A', 'B') "
+        "AND abbreviation IN UNNEST(['B', 'A']) AND abbreviation = 'Z' "
+        "AND name IN ('Y', 'X')"
+    )
+    assert sort_school_filters(sql) == (
+        "WHERE `l`.abbreviation IN ('A', 'B', 'C') "
+        "AND abbreviation IN UNNEST(['A', 'B']) AND abbreviation = 'Z' "
+        "AND name IN ('Y', 'X')"
     )

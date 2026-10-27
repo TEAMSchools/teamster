@@ -37,6 +37,7 @@ from .cube_client import (
     drop_limit,
     network_schools,
     refuse_unless_safe,
+    sort_school_filters,
 )
 from .decisions import Applied
 from .moment import WINDOW, Build, changed_between, fact_builds, pick_moment
@@ -483,7 +484,7 @@ def _compare_one(
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
 
     sides.fingerprints[comparison.id] = {
-        "cube": decisions.sql_fingerprint("\n".join(cube_parts)),
+        "cube": decisions.sql_fingerprint(sort_school_filters("\n".join(cube_parts))),
         "dashboard": decisions.sql_fingerprint("\n".join(dash_parts)),
     }
 

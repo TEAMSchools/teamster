@@ -157,6 +157,7 @@ class FakeCube:
         self.loads: list[dict] = []
         self._load = load or (lambda q: [_load_row(q, 0.91234)])
         self.exprs: dict[str, str] = {}
+        self.schools = ["A", "B"]
 
     def compiled(self, query):
         self.compiled_queries.append(query)
@@ -177,7 +178,7 @@ class FakeCube:
             "WHERE (`locations`.abbreviation IN (?, ?))\n"
             "LIMIT 10000"
         )
-        return Compiled(sql, ["A", "B"], [])
+        return Compiled(sql, list(self.schools), [])
 
     def load(self, query):
         self.loads.append(query)
@@ -566,6 +567,19 @@ def test_dashboard_view_edit_asks_to_reconfirm(fakes, tmp_path, capsys):
     out = capsys.readouterr().out
     assert "miami-scope" in _section(out, "To re-confirm", "No longer needed")
     assert "`regions_region_name` = `Miami`" in _section(out, "## Triage", "##")
+
+
+def test_reordered_school_list_keeps_decisions(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path, call="deliberate")
+    # dim_locations has no order, so Cube may list the schools either way.
+    fakes.cube.schools = ["B", "A"]
+    capsys.readouterr()
+
+    assert cli.main(["run", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    assert "miami-scope" in _section(out, "Applied:", "To re-confirm")
 
 
 def test_cube_row_dimension_edit_asks_to_reconfirm(fakes, tmp_path, capsys):
