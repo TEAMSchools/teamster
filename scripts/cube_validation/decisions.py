@@ -1,0 +1,128 @@
+"""Apply recorded decisions to the differences a run finds.
+
+A decision quiets the groups it names only while the SQL on both sides is the
+SQL it was made against. Pure: no I/O.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import re
+from dataclasses import dataclass, field
+
+from .compare import Group
+from .config import Decision
+
+
+@dataclass
+class Applied:
+    open: list[Group] = field(default_factory=list)
+    quiet: list[tuple[Decision, Group]] = field(default_factory=list)
+    reconfirm: list[Decision] = field(default_factory=list)
+    no_longer_needed: list[Decision] = field(default_factory=list)
+
+
+def _normalize(sql: str) -> str:
+    """Drop comments, collapse whitespace, lower-case outside string literals."""
+    out: list[str] = []
+    i, n = 0, len(sql)
+    while i < n:
+        ch = sql[i]
+        if ch == "'":
+            j = i + 1
+            while j < n:
+                if sql[j] == "'":
+                    if j + 1 < n and sql[j + 1] == "'":
+                        j += 2
+                        continue
+                    break
+                j += 1
+            out.append(sql[i : j + 1])
+            i = j + 1
+        elif sql.startswith("--", i):
+            j = sql.find("\n", i)
+            i = n if j == -1 else j
+            out.append(" ")
+        elif sql.startswith("/*", i):
+            j = sql.find("*/", i + 2)
+            i = n if j == -1 else j + 2
+            out.append(" ")
+        else:
+            out.append(ch.lower())
+            i += 1
+    # Collapse whitespace outside literals only.
+    parts = re.split(r"('(?:[^']|'')*'?)", "".join(out))
+    return "".join(
+        p if p.startswith("'") else re.sub(r"\s+", " ", p) for p in parts
+    ).strip()
+
+
+def sql_fingerprint(sql: str) -> str:
+    """Hash SQL so cosmetic edits do not change it.
+
+    Args:
+        sql: A query.
+
+    Returns:
+        The sha256 hex digest of the query with comments removed, whitespace
+        collapsed, and everything outside single-quoted literals lower-cased.
+    """
+    return hashlib.sha256(_normalize(sql).encode()).hexdigest()
+
+
+def apply(
+    decisions: list[Decision],
+    groups: list[Group],
+    fingerprints: dict[str, dict[str, str]],
+) -> Applied:
+    """Sort groups and decisions by what the recorded decisions still cover.
+
+    Args:
+        decisions: The recorded decisions.
+        groups: The groups of differences this run found.
+        fingerprints: Current SQL fingerprints per comparison id, as
+            `{"cube": ..., "dashboard": ...}`.
+
+    Returns:
+        Groups still open or quieted, decisions to reconfirm because the SQL
+        changed (their groups stay open), and decisions matching no group.
+
+    Raises:
+        ValueError: Two decisions claim the same group.
+    """
+    applied = Applied()
+    claimed: dict[int, Decision] = {}
+
+    for decision in decisions:
+        current = fingerprints.get(decision.comparison, {})
+        if any(
+            decision.fingerprints.get(side) != current.get(side)
+            for side in ("cube", "dashboard")
+        ):
+            applied.reconfirm.append(decision)
+            continue
+
+        column = decision.group.get("column")
+        values = decision.group.get("values") or []
+        matched = [
+            i
+            for i, g in enumerate(groups)
+            if g.comparison_id == decision.comparison
+            and g.column == column
+            and g.value in values
+        ]
+        if not matched:
+            applied.no_longer_needed.append(decision)
+            continue
+        for i in matched:
+            if i in claimed:
+                raise ValueError(
+                    f"decisions {claimed[i].id!r} and {decision.id!r} both "
+                    f"claim group {groups[i].column}={groups[i].value!r} "
+                    f"in comparison {decision.comparison!r}"
+                )
+            claimed[i] = decision
+            applied.quiet.append((decision, groups[i]))
+
+    applied.open = [g for i, g in enumerate(groups) if i not in claimed]
+    return applied
