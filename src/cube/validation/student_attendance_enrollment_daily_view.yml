@@ -3,6 +3,39 @@
 view: student_attendance_enrollment_daily_view
 fact: kipptaf_marts.fct_student_attendance_enrollment_daily
 time_dimension: attendance_date
+shared:
+  # One row per student and code day, as rpt_tableau__attendance_dashboard
+  # keeps them.
+  grain: &grain
+    - { dashboard: student_number, cube: lea_student_identifier }
+    - { dashboard: calendardate, cube: attendance_date }
+  # The Grade Rollup and Roster sheets show currently enrolled students only
+  # (enroll_status = 0). Cube has no enroll-status member, so students who left
+  # read as Cube-only rows.
+  enrolled: &enrolled
+    confirmed: true
+    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
+    filters:
+      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
+      Region: { dashboard: region, cube: regions_region_name }
+    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
+    cuts: [{}, { Region: Miami }]
+    dashboard_filters:
+      - { dashboard: enroll_status, values: [0] }
+    scope:
+      - { cube: membership_value, values: [1] }
+      - { cube: attendance_value, operator: set }
+  # A student who changed homeroom or school exports one Roster row per Team,
+  # Teacher Name and Schoolid; every Roster field adds up, so those rows sum.
+  roster: &roster
+    <<: *enrolled
+    sheet: Student - Attendance Roster
+    decimals: 0
+    split_rows: sum
+    dims:
+      - { dashboard: student_number, cube: lea_student_identifier }
+      - { dashboard: grade_level, cube: grade_level }
 comparisons:
   - id: ada-y1-region
     measure: avg_daily_attendance
@@ -161,263 +194,113 @@ comparisons:
         - "{}"
         - '{"Region": "Miami"}'
       totals_skipped: 29
-  # The Grade Rollup and Roster sheets show currently enrolled students only
-  # (enroll_status = 0). Cube has no enroll-status member, so the filter sits in
-  # the dashboard probe and students who left show as Cube-only cells.
   - id: ontime-grade-rollup
+    <<: *enrolled
     measure: pct_ontime
-    confirmed: true
-    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
     sheet: Student - Grade Rollup
-    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
+    sheet_field: "% On-Time"
     # The workbook's Tardy code group, not is_tardy.
-    probe_sql: >-
-      SELECT {dims}, AVG(CASE WHEN is_present = 0 THEN NULL WHEN att_code IN
-      ('ET', 'T', 'T10', 'TLE') THEN 0 ELSE 1 END) AS value FROM ({rows}) WHERE
-      {where} AND enroll_status = 0 GROUP BY {dims}
+    probe: >-
+      AVG(CASE WHEN is_present = 0 THEN NULL WHEN att_code IN ('ET', 'T', 'T10',
+      'TLE') THEN 0 ELSE 1 END)
     decimals: 3
     dims:
       - { dashboard: grade_level, cube: grade_level }
-    filters:
-      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
-      Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
-    cuts: [{}, { Region: Miami }]
-    scope:
-      - { cube: membership_value, values: [1] }
-      - { cube: attendance_value, operator: set }
     rows:
-      grain:
-        - { dashboard: student_number, cube: lea_student_identifier }
-        - { dashboard: calendardate, cube: attendance_date }
+      grain: *grain
       values:
         - { dashboard: att_code, cube: attendance_code }
     proof: null
   - id: tardy-roster
+    <<: *roster
     measure: count_tardy_days
-    confirmed: true
-    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-    sheet: Student - Attendance Roster
-    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
-    # The workbook's Tardy code group, not is_tardy.
-    probe_sql: >-
-      SELECT {dims}, SUM(IF(att_code IN ('ET', 'T', 'T10', 'TLE'), 1, 0)) AS
-      value FROM ({rows}) WHERE {where} AND enroll_status = 0 GROUP BY {dims}
-    decimals: 0
-    dims:
-      - { dashboard: student_number, cube: lea_student_identifier }
-      - { dashboard: grade_level, cube: grade_level }
-    filters:
-      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
-      Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
-    cuts: [{}, { Region: Miami }]
-    scope:
-      - { cube: membership_value, values: [1] }
-      - { cube: attendance_value, operator: set }
+    sheet_field: "# Tardy"
+    probe: SUM(IF(att_code IN ('ET', 'T', 'T10', 'TLE'), 1, 0))
+    definitions:
+      dashboard: "Tardy code group: ET, T, T10, TLE"
+      cube: "is_tardy: every code starting with T (adds TD and TE, omits ET)"
     rows:
-      grain:
-        - { dashboard: student_number, cube: lea_student_identifier }
-        - { dashboard: calendardate, cube: attendance_date }
+      grain: *grain
       values:
         - { dashboard: att_code, cube: attendance_code }
     proof: null
   - id: absences-roster
+    <<: *roster
     measure: count_absent_days
-    confirmed: true
-    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-    sheet: Student - Attendance Roster
-    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
-    # The workbook's Absent code group, not is_absent.
-    probe_sql: >-
-      SELECT {dims}, SUM(IF(att_code IN ('A', 'A-E', 'AD', 'D', 'X'), 1, 0)) AS
-      value FROM ({rows}) WHERE {where} AND enroll_status = 0 GROUP BY {dims}
-    decimals: 0
-    dims:
-      - { dashboard: student_number, cube: lea_student_identifier }
-      - { dashboard: grade_level, cube: grade_level }
-    filters:
-      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
-      Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
-    cuts: [{}, { Region: Miami }]
-    scope:
-      - { cube: membership_value, values: [1] }
-      - { cube: attendance_value, operator: set }
+    sheet_field: "# Days Absent"
+    probe: SUM(IF(att_code IN ('A', 'A-E', 'AD', 'D', 'X'), 1, 0))
+    definitions:
+      dashboard: "Absent code group: A, A-E, AD, D, X"
+      cube: "is_absent: 1 - attendance value, so every code worth 0 attendance"
     rows:
-      grain:
-        - { dashboard: student_number, cube: lea_student_identifier }
-        - { dashboard: calendardate, cube: attendance_date }
+      grain: *grain
       values:
         - { dashboard: att_code, cube: attendance_code }
         - { dashboard: is_absent, cube: is_absent }
     proof: null
   - id: iss-roster
+    <<: *roster
     measure: count_iss_days
-    confirmed: true
-    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-    sheet: Student - Attendance Roster
-    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
-    probe_sql: >-
-      SELECT {dims}, SUM(IF(att_code IN ('ISS', 'S'), 1, 0)) AS value FROM
-      ({rows}) WHERE {where} AND enroll_status = 0 GROUP BY {dims}
-    decimals: 0
-    dims:
-      - { dashboard: student_number, cube: lea_student_identifier }
-      - { dashboard: grade_level, cube: grade_level }
-    filters:
-      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
-      Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
-    cuts: [{}, { Region: Miami }]
-    scope:
-      - { cube: membership_value, values: [1] }
-      - { cube: attendance_value, operator: set }
+    sheet_field: "# ISS"
+    probe: SUM(IF(att_code IN ('ISS', 'S'), 1, 0))
     rows:
-      grain:
-        - { dashboard: student_number, cube: lea_student_identifier }
-        - { dashboard: calendardate, cube: attendance_date }
+      grain: *grain
       values:
         - { dashboard: att_code, cube: attendance_code }
     proof: null
   - id: oss-roster
+    <<: *roster
     measure: count_oss_days
-    confirmed: true
-    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-    sheet: Student - Attendance Roster
-    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
-    probe_sql: >-
-      SELECT {dims}, SUM(IF(att_code IN ('OS', 'OSS', 'OSSP'), 1, 0)) AS value
-      FROM ({rows}) WHERE {where} AND enroll_status = 0 GROUP BY {dims}
-    decimals: 0
-    dims:
-      - { dashboard: student_number, cube: lea_student_identifier }
-      - { dashboard: grade_level, cube: grade_level }
-    filters:
-      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
-      Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
-    cuts: [{}, { Region: Miami }]
-    scope:
-      - { cube: membership_value, values: [1] }
-      - { cube: attendance_value, operator: set }
+    sheet_field: "# OSS"
+    probe: SUM(IF(att_code IN ('OS', 'OSS', 'OSSP'), 1, 0))
+    definitions:
+      dashboard: "OSS code group: OS, OSS, OSSP"
+      cube: "is_oss: OS, OSS, OSSP, SHI"
     rows:
-      grain:
-        - { dashboard: student_number, cube: lea_student_identifier }
-        - { dashboard: calendardate, cube: attendance_date }
+      grain: *grain
       values:
         - { dashboard: att_code, cube: attendance_code }
     proof: null
   - id: present-roster
+    <<: *roster
     measure: sum_attendance_value
-    confirmed: true
-    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-    sheet: Student - Attendance Roster
-    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
-    probe_sql: >-
-      SELECT {dims}, SUM(is_present) AS value FROM ({rows}) WHERE {where} AND
-      enroll_status = 0 GROUP BY {dims}
-    decimals: 0
-    dims:
-      - { dashboard: student_number, cube: lea_student_identifier }
-      - { dashboard: grade_level, cube: grade_level }
-    filters:
-      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
-      Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
-    cuts: [{}, { Region: Miami }]
-    scope:
-      - { cube: membership_value, values: [1] }
-      - { cube: attendance_value, operator: set }
+    sheet_field: "# Days Present"
+    probe: SUM(is_present)
     rows:
-      grain:
-        - { dashboard: student_number, cube: lea_student_identifier }
-        - { dashboard: calendardate, cube: attendance_date }
+      grain: *grain
       values:
         - { dashboard: is_present, cube: attendance_value }
     proof: null
+  # Membershipvalue is a column beside Measure Names, not a Measure Names
+  # value, and sheet_field cannot name it in a long export yet.
   - id: membership-roster
+    <<: *roster
     measure: count_membership_days
-    confirmed: true
-    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-    sheet: Student - Attendance Roster
-    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
-    probe_sql: >-
-      SELECT {dims}, SUM(membershipvalue) AS value FROM ({rows}) WHERE {where}
-      AND enroll_status = 0 GROUP BY {dims}
-    decimals: 0
-    dims:
-      - { dashboard: student_number, cube: lea_student_identifier }
-      - { dashboard: grade_level, cube: grade_level }
-    filters:
-      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
-      Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
-    cuts: [{}, { Region: Miami }]
-    scope:
-      - { cube: membership_value, values: [1] }
-      - { cube: attendance_value, operator: set }
+    sheet_field: Membershipvalue
+    probe: SUM(membershipvalue)
     rows:
-      grain:
-        - { dashboard: student_number, cube: lea_student_identifier }
-        - { dashboard: calendardate, cube: attendance_date }
+      grain: *grain
       values:
         - { dashboard: membershipvalue, cube: membership_value }
     proof: null
   - id: absent-weighted-roster
+    <<: *roster
     measure: count_absent_days_weighted
-    confirmed: true
-    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-    sheet: Student - Attendance Roster
-    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
-    probe_sql: >-
-      SELECT {dims}, SUM(is_absent) + SUM(is_tardy) / 3 AS value FROM ({rows})
-      WHERE {where} AND enroll_status = 0 GROUP BY {dims}
-    decimals: 0
-    dims:
-      - { dashboard: student_number, cube: lea_student_identifier }
-      - { dashboard: grade_level, cube: grade_level }
-    filters:
-      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
-      Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
-    cuts: [{}, { Region: Miami }]
-    scope:
-      - { cube: membership_value, values: [1] }
-      - { cube: attendance_value, operator: set }
+    sheet_field: "# Absent Weighted (HS)"
+    probe: SUM(is_absent) + SUM(is_tardy) / 3
     rows:
-      grain:
-        - { dashboard: student_number, cube: lea_student_identifier }
-        - { dashboard: calendardate, cube: attendance_date }
+      grain: *grain
       values:
         - { dashboard: is_absent, cube: is_absent }
         - { dashboard: is_tardy, cube: is_tardy }
     proof: null
   - id: days-to-90-roster
+    <<: *roster
     measure: days_to_90_percent
-    confirmed: true
-    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-    sheet: Student - Attendance Roster
-    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
-    probe_sql: >-
-      SELECT {dims}, (SUM(membershipvalue) * 0.105 - SUM(is_absent)) / -0.105 AS
-      value FROM ({rows}) WHERE {where} AND enroll_status = 0 GROUP BY {dims}
-    decimals: 0
-    dims:
-      - { dashboard: student_number, cube: lea_student_identifier }
-      - { dashboard: grade_level, cube: grade_level }
-    filters:
-      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
-      Region: { dashboard: region, cube: regions_region_name }
-    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
-    cuts: [{}, { Region: Miami }]
-    scope:
-      - { cube: membership_value, values: [1] }
-      - { cube: attendance_value, operator: set }
+    sheet_field: Days to 90%
+    probe: (SUM(membershipvalue) * 0.105 - SUM(is_absent)) / -0.105
     rows:
-      grain:
-        - { dashboard: student_number, cube: lea_student_identifier }
-        - { dashboard: calendardate, cube: attendance_date }
+      grain: *grain
       values:
         - { dashboard: membershipvalue, cube: membership_value }
         - { dashboard: is_absent, cube: is_absent }
