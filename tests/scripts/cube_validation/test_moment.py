@@ -74,6 +74,12 @@ def test_requested_before_any_build_is_refused():
         pick_moment([build(1)], NOW, NOW - timedelta(days=3))
 
 
+def test_requested_moment_older_than_the_window_names_it():
+    # The builds list holds only the window, so no build ends that early.
+    with pytest.raises(MomentError, match="in the last 7 days ended at or before"):
+        pick_moment([build(1)], NOW, NOW - timedelta(days=20), fact="f")
+
+
 def test_no_build_is_refused():
     with pytest.raises(
         MomentError, match="no successful build of f in the last 7 days"

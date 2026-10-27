@@ -74,7 +74,12 @@ def pick_moment(
         eligible = [b for b in builds if b.end <= requested]
 
         if not eligible:
-            raise MomentError(f"no build of {fact} ended at or before {requested}")
+            # `builds` holds only the 7-day window, so an older moment lands here.
+            raise MomentError(
+                f"no build of {fact} in the last 7 days ended at or before "
+                f"{requested}; time travel reaches back 7 days, so pick a newer "
+                "moment"
+            )
 
         chosen = max(eligible, key=lambda b: b.end)
 
