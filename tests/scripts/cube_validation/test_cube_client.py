@@ -229,3 +229,27 @@ def test_unsupported_type_is_an_error():
 
     with pytest.raises(CubeError, match="date"):
         bind(Compiled("x = ?", [datetime.date(2026, 1, 1)], []))
+
+
+@pytest.mark.parametrize("col", ["school_abbreviation", "region_abbreviation"])
+def test_prefixed_abbreviation_column_is_not_the_school_filter(col):
+    _refuse(BASE + f"{col} IN (?, ?, ?)", ["A", "B", "C"], "No school filter")
+
+
+@pytest.mark.parametrize(
+    "col", ["t.abbreviation", "`t`.`abbreviation`", "`abbreviation`"]
+)
+def test_qualified_and_quoted_school_filter_counts(col):
+    refuse_unless_safe(
+        Compiled(BASE + f"{col} IN (?, ?, ?)", ["A", "B", "C"], []),
+        view_fact=VF,
+        network_schools=ALL,
+    )
+
+
+def test_two_filters_that_only_union_to_network_are_refused():
+    _refuse(
+        BASE + "abbreviation IN (?, ?) AND abbreviation = ?",
+        ["A", "B", "C"],
+        "2 of 3",
+    )

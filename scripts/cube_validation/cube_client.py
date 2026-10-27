@@ -23,7 +23,7 @@ _STR = r"'(?:\\.|[^'\\])*'"
 _STRING = re.compile(_STR)
 _LIST = rf"{_STR}(?:\s*,\s*{_STR})*"
 _SCHOOLS = re.compile(
-    r"abbreviation`?\s*(?:"
+    r"(?<!\w)abbreviation`?\s*(?:"
     rf"IN\s*UNNEST\s*\(\s*\[\s*(?:{_LIST})?\s*\]\s*\)"
     rf"|IN\s*\(\s*{_LIST}\s*\)"
     rf"|=\s*{_STR}"
@@ -228,15 +228,12 @@ def _unquote(literal: str) -> str:
     return re.sub(r"\\(.)", r"\1", literal[1:-1])
 
 
-def _school_list(bound: str) -> set[str] | None:
-    """Return every abbreviation the school filters name, or None if absent."""
-    found: set[str] | None = None
-
-    for m in _SCHOOLS.finditer(bound):
-        found = found or set()
-        found.update(_unquote(s) for s in _STRING.findall(m.group(0)))
-
-    return found
+def _school_filters(bound: str) -> list[set[str]]:
+    """Return the abbreviation set of each school filter in the SQL."""
+    return [
+        {_unquote(s) for s in _STRING.findall(m.group(0))}
+        for m in _SCHOOLS.finditer(bound)
+    ]
 
 
 def refuse_unless_safe(
@@ -267,19 +264,20 @@ def refuse_unless_safe(
     if _DENY.search(code):
         raise CubeRefusal("SQL carries a `1 = 0` default-deny predicate.")
 
-    schools = _school_list(bound)
+    filters = _school_filters(bound)
 
-    if schools is None:
+    if not filters:
         raise CubeRefusal(
             "No school filter found in the SQL, so the viewer's scope cannot be "
             "confirmed as the whole network."
         )
 
-    if schools != network_schools:
-        raise CubeRefusal(
-            f"School filter covers {len(schools)} of {len(network_schools)} "
-            "network schools; the viewer is not network scope."
-        )
+    for schools in filters:
+        if schools != network_schools:
+            raise CubeRefusal(
+                f"School filter covers {len(schools)} of {len(network_schools)} "
+                "network schools; the viewer is not network scope."
+            )
 
 
 def network_schools(wh: _Rows) -> set[str]:
