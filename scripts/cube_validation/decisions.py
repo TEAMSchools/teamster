@@ -6,7 +6,9 @@ SQL it was made against. Pure: no I/O.
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
+import json
 import re
 from dataclasses import dataclass, field
 
@@ -94,6 +96,23 @@ def sql_fingerprint(sql: str) -> str:
         collapsed, and everything outside single-quoted literals lower-cased.
     """
     return hashlib.sha256(_normalize(sql).encode()).hexdigest()
+
+
+def decisions_fingerprint(decisions: list[Decision]) -> str:
+    """Hash a validation file's `decisions:` block as it was parsed.
+
+    Comments and layout do not change it; any key or value does.
+
+    Args:
+        decisions: The file's decisions, in file order.
+
+    Returns:
+        The sha256 hex digest of the decisions as sorted-key JSON.
+    """
+    text = json.dumps(
+        [dataclasses.asdict(d) for d in decisions], sort_keys=True, default=str
+    )
+    return hashlib.sha256(text.encode()).hexdigest()
 
 
 def _text(value: object) -> str:

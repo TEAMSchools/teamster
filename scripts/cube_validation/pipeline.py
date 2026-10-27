@@ -746,6 +746,7 @@ def run(
         browser_cuts=_browser_cuts(comparisons),
         clauses={k: v for k, v in clauses.items() if v},
         fingerprints=sides.fingerprints,
+        decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells, findings)
     print(text)
@@ -792,6 +793,7 @@ def _run_from_json(data: dict) -> RunResult:
         browser_cuts=data["browser_cuts"],
         clauses=data["clauses"],
         fingerprints=data.get("fingerprints", {}),
+        decisions_fingerprint=data.get("decisions_fingerprint", ""),
     )
 
 
@@ -801,17 +803,29 @@ def _run_from_json(data: dict) -> RunResult:
 def review(configs: list[ViewConfig], domain: str, cache_root: Path) -> str:
     """Return the review-issue body from each view's latest saved run.
 
+    The latest run is the `run.json` written last, whatever moment it read.
     Reads only the local cache; nothing is posted.
 
     Raises:
-        Refusal: A view has no saved run.
+        Refusal: A view has no saved run, or its decisions changed since the
+            run (a run saved before runs recorded them counts as changed).
     """
     runs = []
     for cfg in configs:
-        saved = sorted((cache_root / cfg.view).glob("*/run.json"))
+        saved = sorted(
+            (cache_root / cfg.view).glob("*/run.json"), key=lambda p: p.stat().st_mtime
+        )
         if not saved:
             raise Refusal(f"{cfg.view}: no saved run; `run` it first")
-        runs.append(_run_from_json(json.loads(saved[-1].read_text())))
+        run_result = _run_from_json(json.loads(saved[-1].read_text()))
+        if run_result.decisions_fingerprint != decisions.decisions_fingerprint(
+            cfg.decisions
+        ):
+            raise Refusal(
+                f"{cfg.view}: the decisions changed since the saved run "
+                f"{saved[-1]}; `run` it again"
+            )
+        runs.append(run_result)
     return report.render_review_issue(domain, runs)
 
 

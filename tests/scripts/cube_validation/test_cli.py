@@ -1,6 +1,7 @@
 import contextlib
 import hashlib
 import json
+import os
 import re
 import urllib.request
 import xml.etree.ElementTree
@@ -696,6 +697,49 @@ def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
     assert "The Registrar team owns the rule behind 1 items" in out
     # A region name names no person, and the group has 10+ students.
     assert "`regions_region_name` = `Miami`" in out and "12 students" in out
+
+
+def test_review_reads_the_run_written_last(fakes, tmp_path, capsys):
+    # The later build runs first, with no decision yet.
+    fakes.bq.build = (START + timedelta(hours=3), END + timedelta(hours=3))
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    fakes.bq.build = (START, END)
+    assert cli.main(["run", str(path)]) == 0
+    later, earlier = sorted((tmp_path / "cache" / "v").glob("*/run.json"), reverse=True)
+    os.utime(later, (1_000_000, 1_000_000))
+    os.utime(earlier, (2_000_000, 2_000_000))
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+    assert "`regions_region_name` = `Miami`" in capsys.readouterr().out
+
+
+def test_review_refuses_when_decisions_changed_since_the_run(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    path.write_text(path.read_text().replace("keeps Miami rows", "keeps Miami"))
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
+
+    err = capsys.readouterr().err
+    assert "v: " in err and "decisions" in err and "`run`" in err
+
+
+def test_review_refuses_a_run_saved_without_a_decisions_fingerprint(
+    fakes, tmp_path, capsys
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    data = json.loads(saved.read_text())
+    del data["decisions_fingerprint"]
+    saved.write_text(json.dumps(data))
+
+    assert cli.main(["review", str(_file(tmp_path)), "--domain", "Registrar"]) == 1
+    assert "decisions" in capsys.readouterr().err
 
 
 def test_review_refuses_a_view_never_run(fakes, tmp_path, capsys):

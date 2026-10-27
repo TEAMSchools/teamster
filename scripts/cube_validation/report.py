@@ -69,6 +69,8 @@ class RunResult:
     browser_cuts: list[str] = field(default_factory=list)
     clauses: dict[str, list[str]] = field(default_factory=dict)
     fingerprints: dict[str, dict[str, str]] = field(default_factory=dict)
+    # The `decisions:` block the run applied; `review` refuses a changed one.
+    decisions_fingerprint: str = ""
 
 
 def mask(n: int) -> str:
