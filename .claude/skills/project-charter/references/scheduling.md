@@ -18,7 +18,10 @@ blank `Month` continues the row above. A region cell is a closure only when it
 is `Yes` (case matters; surrounding spaces do not); `No`, `-` and blank are not.
 A row short of a region column is fine. A break split across rows (a two-day row
 plus a one-day row) still blocks its week: the script counts closed days per
-region across rows.
+region across rows. Closed days in different regions never add up, so a week
+where two regions together close four days still counts as a working week and
+its due date walks back to the first open day, Monday included; override it if
+the team is in fact out.
 
 ## Write the plan rows
 
@@ -64,9 +67,9 @@ re-run.
 When the user moves a date, put it in the `override` column and re-run; do not
 edit the output table by hand. The reason survives through the `Schedule inputs`
 table below, which carries the output's `rule` and `note` columns. An override
-on a closed day, in a blocked week, or on or before the row it follows is placed
-as given and its note says which; show that note to the user before writing the
-plan.
+on a weekend, a closed day, in a blocked week, before the project start, or on
+or before the row it follows is placed as given and its note says which; show
+that note to the user before writing the plan.
 
 ## Write back
 

@@ -458,5 +458,103 @@ def test_read_plan_rejects_pipes(tmp_path):
     plan.write_text(
         "workstream,name,kind,duration_weeks,after,override\na,m|1,milestone,1,,\n"
     )
-    with pytest.raises(ValueError, match="m|1"):
+    with pytest.raises(ValueError, match="not allowed"):
         sd.read_plan(plan)
+
+
+# second PR review
+
+
+def test_split_row_break_moves_due_date_past_the_week():
+    closures_ = sd.parse_breaks(
+        rows(
+            ("December", "23-24", "Yes", "Yes", "No", "Yes"),
+            ("", "25", "Yes", "Yes", "Yes", "Yes"),
+        ),
+        2026,
+        ["Newark"],
+    )
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1)],
+        date(2026, 12, 21),
+        closures_,
+        date(2027, 6, 18),
+    )
+    assert (p.due, p.rule) == (date(2027, 1, 1), "friday")  # week of 12/21 blocked
+
+
+def test_union_of_regions_closing_every_weekday_blocks():
+    rows_ = [
+        sd.Closure(date(2027, 3, 1), date(2027, 3, 2), "x", frozenset({"Newark"})),
+        sd.Closure(date(2027, 3, 3), date(2027, 3, 3), "y", frozenset({"Miami"})),
+        sd.Closure(date(2027, 3, 4), date(2027, 3, 5), "z", frozenset({"Camden"})),
+    ]
+    assert date(2027, 3, 1) in sd.blocked_weeks(rows_, [2026])
+
+
+def test_four_closed_days_across_regions_leave_a_monday_due_date():
+    rows_ = [
+        sd.Closure(
+            date(2027, 3, 2), date(2027, 3, 3), "x", frozenset({"Miami"})
+        ),  # Tue-Wed
+        sd.Closure(
+            date(2027, 3, 4), date(2027, 3, 5), "y", frozenset({"Newark"})
+        ),  # Thu-Fri
+    ]
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1)], date(2027, 3, 1), rows_, END
+    )
+    assert (p.due, p.rule) == (date(2027, 3, 1), "closed friday -> monday")
+
+
+def test_clean_override_note_is_exactly_override(closures):
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1, override=date(2027, 1, 15))],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert p.note == "override"
+
+
+def test_override_in_blocked_week_only_is_noted(closures):
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1, override=date(2027, 2, 16))],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert p.note == "override (blocked week)"
+
+
+def test_override_on_weekend_is_noted(closures):
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1, override=date(2027, 1, 16))],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert "weekend" in p.note
+
+
+def test_override_before_project_start_is_noted(closures):
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1, override=date(2027, 1, 8))],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert "before start" in p.note
+
+
+def test_override_equal_to_predecessor_says_on_or_before(closures):
+    out = sd.place(
+        [
+            sd.PlanRow("a", "m1", "milestone", 1),
+            sd.PlanRow("a", "t1", "task", 1, after="m1", override=date(2027, 1, 15)),
+        ],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert "on or before m1" in out[1].note

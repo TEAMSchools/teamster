@@ -27,9 +27,11 @@ carries the order and the values.
 4. Tasks, in two groups, each shown in full before the consent step below:
    - One task per milestone with `resource_subtype: milestone`, in its
      workstream's section, assignee from the work plan, due date from it.
-   - One task per work-plan task, in its section, assignee and due date from the
-     plan, `parent` set to its milestone task's gid. `update_tasks` sets
-     `parent`, so a second pass after creation always works; whether
+   - One task per work-plan task, created with the project and its section set,
+     not with `parent` alone: a subtask that only has a parent is not a member
+     of the project and the check below counts it short. Assignee and due date
+     from the plan, `parent` set to its milestone task's gid. `update_tasks`
+     sets `parent`, so a second pass after creation always works; whether
      `create_tasks` takes it directly is to verify at the first `TEST ·` run and
      record here. A task that is already a GitHub issue is named
      `#NNNN | title`, so it can later be multi-homed into TEAMster without

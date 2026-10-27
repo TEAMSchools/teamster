@@ -11,8 +11,9 @@ Rules, applied in this order:
 - Thanksgiving week is blocked whatever the breaks tab says.
 - A Friday that is a closed day for any in-scope region moves back to the
   nearest open day of its week.
-- An override is placed as given and noted when it falls on a closed day, in
-  a blocked week, or before the row it follows.
+- An override is placed as given and noted when it falls on a weekend, a
+  closed day, a blocked week, before the project start, or on or before the
+  row it follows.
 - A due date past the last closure in the breaks table is marked
   ``unverified: calendar not published``.
 
@@ -148,7 +149,7 @@ def blocked_weeks(closures: Iterable[Closure], years: Iterable[int]) -> frozense
     """Mondays of blocked weeks: a region with 3+ consecutive closed weekdays,
     counted across rows; a week with no open weekday in any region; and
     Thanksgiving week of every year given. A closure with no regions counts
-    for every region."""
+    as a region of its own."""
     blocked = {_monday(thanksgiving(y)) for y in years}
     per_region: dict[str, dict[date, set[int]]] = {}
     union: dict[date, set[int]] = {}
@@ -241,12 +242,16 @@ def place(
             if row.override is not None:
                 due, rule = row.override, "override"
                 warnings = []
+                if due.weekday() >= 5:
+                    warnings.append("weekend")
                 if due in closed:
                     warnings.append("closed day")
                 if _monday(due) in blocked:
                     warnings.append("blocked week")
+                if row.after is None and due < start:
+                    warnings.append("before start")
                 if row.after is not None and due <= placed[row.after].due:
-                    warnings.append(f"before {row.after}")
+                    warnings.append(f"on or before {row.after}")
                 note = "override" + (f" ({', '.join(warnings)})" if warnings else "")
             else:
                 due, rule = _place_one(row, row_start, blocked, closed)
