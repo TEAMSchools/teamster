@@ -28,11 +28,12 @@ carries the order and the values.
    - One task per milestone with `resource_subtype: milestone`, in its
      workstream's section, assignee from the work plan, due date from it.
    - One task per work-plan task, in its section, assignee and due date from the
-     plan, `parent` set to its milestone task's gid. To verify at the first
-     `TEST ·` run and record here: whether `create_tasks` takes `parent` or a
-     second `update_tasks` pass sets it. A task that is already a GitHub issue
-     is named `#NNNN | title`, so it can later be multi-homed into TEAMster
-     without renaming.
+     plan, `parent` set to its milestone task's gid. `update_tasks` sets
+     `parent`, so a second pass after creation always works; whether
+     `create_tasks` takes it directly is to verify at the first `TEST ·` run and
+     record here. A task that is already a GitHub issue is named
+     `#NNNN | title`, so it can later be multi-homed into TEAMster without
+     renaming.
    - `html_notes`: the charter doc link and the task's work-plan note, inside
      the allowed tags only (headings and lists; no paragraph or break tags).
 5. `update_project`: Domain from the charter's stakeholder group, Active to
@@ -44,12 +45,13 @@ carries the order and the values.
 Before step 4's first `create_tasks`: show the full task list (name, section,
 assignee, due date, parent) and ask for a yes. After the yes, restate the
 consent in plain text in the same turn as the call: "Creating these N tasks in
-<project> as listed above." The bulk-launch rule in the root CLAUDE.md reads
-only that sentence.
+<project> as listed above." The consent classifier (root CLAUDE.md, _Branches_)
+reads only that sentence, never the answer to a question.
 
 ## Check
 
-Count sections, milestone tasks and tasks in the created project with
-`get_project` (`include_sections`) and `get_tasks`, and compare with the work
-plan. The stop message carries the project link and the three counts against the
-plan's three.
+Count workstream sections (names starting `N ·` with N of 1 or more; the
+template's governance and parking-lot sections and any untitled default are not
+counted), milestone tasks and tasks in the created project with `get_project`
+(`include_sections`) and `get_tasks`, and compare with the work plan. The stop
+message carries the project link and the three counts against the plan's three.

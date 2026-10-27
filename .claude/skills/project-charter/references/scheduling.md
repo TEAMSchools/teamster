@@ -15,8 +15,10 @@ Write the breaks table only, from its header row down, to a scratchpad file
 named `breaks-<school year>.csv` with the headers unchanged. Forms the script
 accepts in `Date`: `11`, `25-27`, `23-27`, `Dec 21 - Jan 1`, `29-2 (Apr)`. A
 blank `Month` continues the row above. A region cell is a closure only when it
-is exactly `Yes`; `No`, `-` and blank are not. A row short of a region column is
-fine.
+is `Yes` (case matters; surrounding spaces do not); `No`, `-` and blank are not.
+A row short of a region column is fine. A break split across rows (a two-day row
+plus a one-day row) still blocks its week: the script counts closed days per
+region across rows.
 
 ## Write the plan rows
 
@@ -24,7 +26,8 @@ fine.
 `workstream,name,kind,duration_weeks,after,override`:
 
 - `workstream`: the charter's lane, in the charter's order.
-- `name`: unique across the file; it is what `after` points at.
+- `name`: unique across the file; it is what `after` points at. No `|` in a name
+  or workstream; the output is a markdown table.
 - `kind`: `milestone` or `task`.
 - `duration_weeks`: working weeks, whole numbers, at least 1.
 - `after`: the `name` this row follows, or blank to start at the project start.
@@ -60,7 +63,10 @@ re-run.
 
 When the user moves a date, put it in the `override` column and re-run; do not
 edit the output table by hand. The reason survives through the `Schedule inputs`
-table below, which carries the output's `rule` and `note` columns.
+table below, which carries the output's `rule` and `note` columns. An override
+on a closed day, in a blocked week, or on or before the row it follows is placed
+as given and its note says which; show that note to the user before writing the
+plan.
 
 ## Write back
 

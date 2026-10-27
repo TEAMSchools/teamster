@@ -3,11 +3,16 @@
 Rules, applied in this order:
 
 - Due dates are Fridays.
-- A week is blocked when any in-scope region has a closure of 3 or more
-  consecutive weekdays in it. Blocked weeks are skipped and do not count
-  toward a duration. A single closed day does not block its week.
+- A week is blocked when any in-scope region has 3 or more consecutive
+  closed weekdays in it, counted across every row of the breaks table, or
+  when no weekday is open in any in-scope region. Blocked weeks are skipped
+  and do not count toward a duration. A single closed day does not block its
+  week, and closed days in different regions do not add up.
 - Thanksgiving week is blocked whatever the breaks tab says.
-- A Friday that is a closed day for any in-scope region moves to Thursday.
+- A Friday that is a closed day for any in-scope region moves back to the
+  nearest open day of its week.
+- An override is placed as given and noted when it falls on a closed day, in
+  a blocked week, or before the row it follows.
 - A due date past the last closure in the breaks table is marked
   ``unverified: calendar not published``.
 
@@ -42,6 +47,7 @@ class Closure:
     start: date
     end: date  # inclusive
     name: str
+    regions: frozenset[str] = frozenset()  # in-scope regions closed; empty = all
 
 
 def _month_number(name: str) -> int:
@@ -71,7 +77,8 @@ def parse_breaks(
 ) -> list[Closure]:
     """Closures from the breaks tab for the regions in scope.
 
-    A row counts when any in-scope region column is exactly ``Yes``. July to
+    A row counts when any in-scope region column is ``Yes`` (surrounding
+    whitespace ignored, case not); those regions go on the closure. July to
     December take ``school_year_start``; January to June the year after. A
     ``Date`` of ``21 - 1`` whose end day is below its start crosses into the
     next month; a cell naming months (``Dec 21 - Jan 1``, ``29-2 (Apr)``) uses
@@ -81,7 +88,8 @@ def parse_breaks(
     current_month = ""
     for row in rows:
         current_month = (row.get("Month") or "").strip() or current_month
-        if not any(row.get(region) == "Yes" for region in regions):
+        closed_in = frozenset(r for r in regions if (row.get(r) or "").strip() == "Yes")
+        if not closed_in:
             continue
         label = f"Month={current_month!r} Date={row.get('Date')!r} Holiday/Event={row.get('Holiday/Event')}"
         try:
@@ -98,7 +106,7 @@ def parse_breaks(
                     end = date(_year_for(nxt, school_year_start), nxt, end.day)
         except (KeyError, ValueError) as exc:
             raise ValueError(f"breaks row {label}: {exc}") from None
-        closures.append(Closure(start, end, row.get("Holiday/Event", "")))
+        closures.append(Closure(start, end, row.get("Holiday/Event", ""), closed_in))
     return closures
 
 
@@ -128,15 +136,33 @@ def closed_days(closures: Iterable[Closure]) -> frozenset[date]:
     return frozenset(d for c in closures for d in _weekdays(c))
 
 
+def _longest_run(offsets: set[int]) -> int:
+    run = best = 0
+    for i in range(5):
+        run = run + 1 if i in offsets else 0
+        best = max(best, run)
+    return best
+
+
 def blocked_weeks(closures: Iterable[Closure], years: Iterable[int]) -> frozenset[date]:
-    """Mondays of blocked weeks: 3+ weekdays closed by one closure, plus
-    Thanksgiving week of every year given. Two closures do not add up."""
+    """Mondays of blocked weeks: a region with 3+ consecutive closed weekdays,
+    counted across rows; a week with no open weekday in any region; and
+    Thanksgiving week of every year given. A closure with no regions counts
+    for every region."""
     blocked = {_monday(thanksgiving(y)) for y in years}
+    per_region: dict[str, dict[date, set[int]]] = {}
+    union: dict[date, set[int]] = {}
     for c in closures:
-        per_week: dict[date, int] = {}
         for d in _weekdays(c):
-            per_week[_monday(d)] = per_week.get(_monday(d), 0) + 1
-        blocked.update(week for week, n in per_week.items() if n >= 3)
+            week, offset = _monday(d), d.weekday()
+            union.setdefault(week, set()).add(offset)
+            for region in c.regions or {"*"}:
+                per_region.setdefault(region, {}).setdefault(week, set()).add(offset)
+    for weeks in per_region.values():
+        blocked.update(
+            week for week, offsets in weeks.items() if _longest_run(offsets) >= 3
+        )
+    blocked.update(week for week, offsets in union.items() if len(offsets) == 5)
     return frozenset(blocked)
 
 
@@ -213,7 +239,15 @@ def place(
                 else _monday(placed[row.after].due) + timedelta(days=7)
             )
             if row.override is not None:
-                due, rule, note = row.override, "override", "override"
+                due, rule = row.override, "override"
+                warnings = []
+                if due in closed:
+                    warnings.append("closed day")
+                if _monday(due) in blocked:
+                    warnings.append("blocked week")
+                if row.after is not None and due <= placed[row.after].due:
+                    warnings.append(f"before {row.after}")
+                note = "override" + (f" ({', '.join(warnings)})" if warnings else "")
             else:
                 due, rule = _place_one(row, row_start, blocked, closed)
                 note = ""
@@ -243,6 +277,8 @@ def read_plan(path: Path) -> list[PlanRow]:
     with path.open(newline="") as fh:
         for r in csv.DictReader(fh):
             try:
+                if "|" in r["workstream"] + r["name"]:
+                    raise ValueError("'|' is not allowed in workstream or name")
                 out.append(
                     PlanRow(
                         workstream=r["workstream"],

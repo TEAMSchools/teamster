@@ -377,3 +377,86 @@ def test_cli_rejects_unknown_region(tmp_path, capsys):
     )
     assert rc == 2
     assert "newark" in capsys.readouterr().err
+
+
+# PR review (bot) fixes
+
+
+def test_split_rows_block_the_week():
+    rows_ = [
+        sd.Closure(
+            date(2026, 12, 23), date(2026, 12, 24), "break", frozenset({"Newark"})
+        ),
+        sd.Closure(
+            date(2026, 12, 25), date(2026, 12, 25), "holiday", frozenset({"Newark"})
+        ),
+    ]
+    assert date(2026, 12, 21) in sd.blocked_weeks(rows_, [2026])
+
+
+def test_single_day_rows_closing_a_whole_week_block_it():
+    rows_ = [
+        sd.Closure(
+            date(2027, 3, 1 + i), date(2027, 3, 1 + i), "x", frozenset({"Miami"})
+        )
+        for i in range(5)
+    ]
+    assert date(2027, 3, 1) in sd.blocked_weeks(rows_, [2026])
+
+
+def test_closed_days_in_different_regions_do_not_add_up():
+    rows_ = [
+        sd.Closure(
+            date(2027, 3, 1), date(2027, 3, 1), "x", frozenset({"Camden"})
+        ),  # Mon
+        sd.Closure(
+            date(2027, 3, 2), date(2027, 3, 3), "y", frozenset({"Miami"})
+        ),  # Tue-Wed
+    ]
+    assert date(2027, 3, 1) not in sd.blocked_weeks(rows_, [2026])
+
+
+def test_parse_breaks_keeps_in_scope_regions():
+    [c] = sd.parse_breaks(
+        rows(("November", "11", "Yes", "Yes", "No", "Yes")), 2026, ["Newark", "Miami"]
+    )
+    assert c.regions == frozenset({"Newark"})
+
+
+def test_region_yes_with_trailing_space_counts():
+    [c] = sd.parse_breaks(
+        rows(("November", "11", "Yes ", "No", "No", "No")), 2026, ["Newark"]
+    )
+    assert c.start == date(2026, 11, 11)
+
+
+def test_override_on_closed_day_is_noted(closures):
+    [p] = sd.place(
+        [sd.PlanRow("a", "m1", "milestone", 1, override=date(2027, 2, 18))],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert "closed day" in p.note and "blocked week" in p.note
+
+
+def test_override_before_predecessor_is_noted(closures):
+    out = sd.place(
+        [
+            sd.PlanRow("a", "m1", "milestone", 2),
+            sd.PlanRow("a", "t1", "task", 1, after="m1", override=date(2027, 1, 8)),
+        ],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert "before m1" in out[1].note
+
+
+def test_read_plan_rejects_pipes(tmp_path):
+    plan = tmp_path / "plan.csv"
+    plan.write_text(
+        "workstream,name,kind,duration_weeks,after,override\na,m|1,milestone,1,,\n"
+    )
+    with pytest.raises(ValueError, match="m|1"):
+        sd.read_plan(plan)
