@@ -2,8 +2,8 @@
 
 The local result stays on the analyst's machine and shows every value. The
 review issue goes to GitHub, which is permanent: it carries only the groups a
-domain owner must judge, masks every count under 10, and never prints a value
-from a student-identifier column. Pure apart from `save_local`.
+domain owner must judge, masks every count under 10, and prints a group's
+value only for a reviewed reference column. Pure apart from `save_local`.
 """
 
 from __future__ import annotations
@@ -21,13 +21,10 @@ from .moment import Build
 
 CACHE_ROOT = Path.home() / ".cache" / "cube-validation"
 MASK_BELOW = 10
-_IDENTIFIER_COLUMN = re.compile(
-    r"student|lea_|_number|identifier|name|lastfirst|email|dob|birth|ssid|leaid|smid|phone|address|_id$|^id$|^sid$|state_id|local_id",
-    re.IGNORECASE,
-)
-# Reviewed columns whose values name no person. The list is exact so an
-# unknown column fails closed; a course or section name can single out a
-# small group, so none is listed.
+# Reviewed columns whose values name no person; the review issue shows no
+# other column's values. A course or section name can single out a small
+# group, so none is listed.
+# Add a new reference column here only after it has been reviewed.
 _SHOWN_COLUMNS = frozenset(
     {
         "regions_region_name",
@@ -41,8 +38,8 @@ _SHOWN_COLUMNS = frozenset(
 
 
 def _is_identifier(column: str) -> bool:
-    """True unless the column is on the reviewed list or matches no pattern."""
-    return column not in _SHOWN_COLUMNS and bool(_IDENTIFIER_COLUMN.search(column))
+    """True for every column not on the reviewed list, so unknowns fail closed."""
+    return column not in _SHOWN_COLUMNS
 
 
 _SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
@@ -206,7 +203,7 @@ def _clean(text: str) -> str:
 
 
 def _shown_value(g: Group) -> str:
-    """Show a group's value only for a harmless column with 10+ students."""
+    """Show a group's value only for a reviewed column with 10+ students."""
     if g.n_students < MASK_BELOW or _is_identifier(g.column):
         return "<redacted>"
     return _clean(g.value)
@@ -241,7 +238,7 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
-        student-identifier values are replaced with `<redacted>`.
+        values outside the reviewed reference columns read `<redacted>`.
     """
     group_lines: list[str] = []
     anchor_lines: list[str] = []

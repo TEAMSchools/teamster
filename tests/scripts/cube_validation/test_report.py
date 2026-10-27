@@ -186,8 +186,11 @@ def test_review_issue_bullets_stay_on_one_line():
     assert "- `region` = `New ark`" in body
 
 
-def test_identifier_like_columns_redacted():
+def test_columns_off_the_reviewed_list_redacted():
     for col in (
+        "foo",
+        "firstlast",
+        "attendance_value",
         "last_name",
         "ssid",
         "leaid",
@@ -223,6 +226,8 @@ def test_reviewed_columns_shown_at_10_students():
         "locations_abbreviation",
         "school_abbreviation",
         "locations_location_name",
+        "region",
+        "grade_level",
     ):
         big = Group("enrollment", col, "Camden", "cube_only", 50, 10)
         small = Group("enrollment", col, "Camden", "cube_only", 50, 9)
