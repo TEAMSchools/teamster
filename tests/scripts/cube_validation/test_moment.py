@@ -47,6 +47,21 @@ def test_requested_moment_picks_build_ending_at_or_before():
     assert pick_moment(builds, NOW, builds[1].end).job_id == "b"
 
 
+def test_latest_build_outside_window_is_refused():
+    with pytest.raises(MomentError, match="7 days"):
+        pick_moment([build(7.5, "old")], NOW, None)
+
+
+def test_literal_keeps_microseconds_and_refuses_naive():
+    ts = datetime(2026, 10, 27, 12, 0, 0, 123456, tzinfo=timezone.utc)
+    wh = FakeWh([{"f": 1}])
+    fingerprint(wh, "ds.t", ts)
+    assert "12:00:00.123456+00:00" in wh.sql[0]
+
+    with pytest.raises(ValueError, match="naive"):
+        fingerprint(FakeWh([{"f": 1}]), "ds.t", datetime(2026, 10, 27, 12))
+
+
 def test_requested_moment_outside_window_is_refused():
     builds = [build(7.5, "old"), build(1, "new")]
 
@@ -90,7 +105,10 @@ def test_fingerprint_queries_table_as_of():
     wh = FakeWh([{"f": 42}])
 
     assert fingerprint(wh, "ds.t", NOW) == 42
-    assert "FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-27 12:00:00+00:00'" in wh.sql[0]
+    assert (
+        "AS t FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-27 12:00:00.000000+00:00'"
+        in wh.sql[0]
+    )
     assert "bit_xor(farm_fingerprint(to_json_string(t)))" in wh.sql[0]
 
 

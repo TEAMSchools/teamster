@@ -63,7 +63,10 @@ def test_view_sql_uses_create_view_job_when_changed_after():
     wh = Warehouse(client=client)
 
     assert wh.view_sql_as_of("ds", "v", TS) == "select old from t"
-    assert "CREATE_VIEW" in client.queries[0][0]
+    sql = client.queries[0][0]
+    assert "CREATE_VIEW" in sql
+    assert "creation_time < TIMESTAMP '2026-10-22 19:00:00.000000+00:00'" in sql
+    assert "INTERVAL 180 DAY" in sql
 
 
 def test_view_sql_without_options():

@@ -64,11 +64,16 @@ class Catalog(Protocol):
     def view_sql_as_of(self, dataset: str, name: str, ts: datetime) -> str: ...
 
 
-def _utc_literal(ts: datetime) -> str:
+def utc_literal(ts: datetime) -> str:
+    """Return `ts` as a UTC BigQuery timestamp literal body, microseconds kept.
+
+    Raises:
+        ValueError: `ts` is naive.
+    """
     if ts.tzinfo is None or ts.utcoffset() is None:
         raise ValueError("timestamp is naive; pass an aware datetime")
 
-    return ts.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S+00:00")
+    return ts.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
 
 
 def pin_clock(sql: str, ts: datetime) -> str:
@@ -85,7 +90,7 @@ def pin_clock(sql: str, ts: datetime) -> str:
     Raises:
         ValueError: `ts` is naive.
     """
-    literal = _utc_literal(ts)
+    literal = utc_literal(ts)
     out: list[str] = []
     pos = 0
 
@@ -158,7 +163,7 @@ def as_of(sql: str, ts: datetime, catalog: Catalog) -> AsOf:
     Raises:
         ValueError: `ts` is naive, or views nest deeper than 12 levels.
     """
-    literal = _utc_literal(ts)
+    literal = utc_literal(ts)
     tables: set[str] = set()
     live: set[str] = set()
 

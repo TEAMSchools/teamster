@@ -8,14 +8,15 @@ from __future__ import annotations
 import re
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime
 
 from google.cloud import bigquery
 
-from .timetravel import PROJECT, TableInfo
+from .timetravel import PROJECT, TableInfo, utc_literal
 
 USD_PER_TIB = 6.25
 _TIB = 2**40
+JOBS_RETENTION_DAYS = 180
 _VIEW_HEAD = re.compile(
     r"create\s+(?:or\s+replace\s+)?(?:materialized\s+)?view\s+"
     r"(?:if\s+not\s+exists\s+)?[`\w.-]+",
@@ -74,13 +75,16 @@ class Warehouse:
             "AND error_result IS NULL "
             f"AND destination_table.dataset_id = '{ds}' "
             f"AND destination_table.table_id = '{name}' "
-            f"AND start_time < TIMESTAMP '{_literal(ts)}' "
+            f"AND start_time < TIMESTAMP '{utc_literal(ts)}' "
+            f"AND creation_time < TIMESTAMP '{utc_literal(ts)}' "
+            f"AND creation_time >= TIMESTAMP_SUB(TIMESTAMP '{utc_literal(ts)}', "
+            f"INTERVAL {JOBS_RETENTION_DAYS} DAY) "
             "ORDER BY start_time DESC LIMIT 1"
         )
 
         if not rows:
             raise ViewHistoryError(
-                f"no CREATE_VIEW job for {ds}.{name} before {_literal(ts)}"
+                f"no CREATE_VIEW job for {ds}.{name} before {utc_literal(ts)}"
             )
 
         return _view_body(rows[0]["query"])
@@ -119,10 +123,6 @@ class Warehouse:
             yield
         finally:
             self._cap = None
-
-
-def _literal(ts: datetime) -> str:
-    return ts.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S+00:00")
 
 
 def _close_paren(text: str, open_at: int) -> int:

@@ -8,7 +8,7 @@ from cube_validation.timetravel import TableInfo, as_of, pin_clock
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TS = datetime(2026, 10, 22, 19, 0, 0, tzinfo=timezone.utc)
-CLAUSE = "FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-22 19:00:00+00:00'"
+CLAUSE = "FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-22 19:00:00.000000+00:00'"
 
 
 class FakeCatalog:
@@ -42,7 +42,7 @@ def test_cube_table_gets_alias_before_clause():
 
     assert "`teamster-332318.kipptaf_marts.dim_locations`" in result.sql
     assert (
-        "AS `locations` FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-22 20:44:04+00:00'"
+        "AS `locations` FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-22 20:44:04.000000+00:00'"
     ) in result.sql
     assert result.sql.count("FOR SYSTEM_TIME") == 5
     assert result.tables == frozenset(f"kipptaf_marts.{n}" for n in names)
@@ -85,7 +85,7 @@ def test_quoted_ref_is_left_alone():
         "`teamster-332318.kippmiami_focus.stg_focus__schools` as s " + CLAUSE
     ) in result.sql
     assert "current_date" not in result.sql
-    assert "date(timestamp '2026-10-22 19:00:00+00:00', 'America/New_York')" in (
+    assert "date(timestamp '2026-10-22 19:00:00.000000+00:00', 'America/New_York')" in (
         result.sql
     )
 
@@ -105,18 +105,19 @@ def test_external_table_is_read_live():
 def test_pin_clock_variants():
     assert (
         pin_clock("current_date('America/New_York')", TS)
-        == "date(timestamp '2026-10-22 19:00:00+00:00', 'America/New_York')"
+        == "date(timestamp '2026-10-22 19:00:00.000000+00:00', 'America/New_York')"
     )
     assert (
-        pin_clock("CURRENT_TIMESTAMP()", TS) == "timestamp '2026-10-22 19:00:00+00:00'"
+        pin_clock("CURRENT_TIMESTAMP()", TS)
+        == "timestamp '2026-10-22 19:00:00.000000+00:00'"
     )
     assert (
         pin_clock("Current_Datetime(\n    'UTC'\n)", TS)
-        == "datetime(timestamp '2026-10-22 19:00:00+00:00', 'UTC')"
+        == "datetime(timestamp '2026-10-22 19:00:00.000000+00:00', 'UTC')"
     )
     assert (
         pin_clock("current_date ()", TS)
-        == "date(timestamp '2026-10-22 19:00:00+00:00')"
+        == "date(timestamp '2026-10-22 19:00:00.000000+00:00')"
     )
 
 
@@ -141,7 +142,7 @@ def test_timestamp_is_normalized_to_utc():
         "from ds.t as `t`", datetime(2026, 10, 22, 15, 0, 0, tzinfo=eastern), catalog
     )
 
-    assert "TIMESTAMP '2026-10-22 19:00:00+00:00'" in result.sql
+    assert "TIMESTAMP '2026-10-22 19:00:00.000000+00:00'" in result.sql
 
 
 def test_naive_datetime_is_refused():
@@ -149,7 +150,7 @@ def test_naive_datetime_is_refused():
         pin_clock("current_timestamp()", datetime(2026, 10, 22, 19, 0, 0))
 
 
-PINNED = "timestamp '2026-10-22 19:00:00+00:00'"
+PINNED = "timestamp '2026-10-22 19:00:00.000000+00:00'"
 
 
 def test_pin_clock_bare_forms():
