@@ -20,10 +20,11 @@ comparisons:
       Region: { dashboard: region, cube: regions_region_name }
     defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
     cuts: [{}, { Region: Miami }]
-    # The dashboard's rows are school days; the fact also has a row for each
-    # break day an enrolled student carries. Applied to Cube only.
+    # Mirrors rpt_tableau__attendance_dashboard's row filter (membershipvalue
+    # = 1 and attendancevalue is not null). Applied to Cube only.
     scope:
-      - { cube: is_in_session_day, values: ["true"] }
+      - { cube: membership_value, values: [1] }
+      - { cube: attendance_value, operator: set }
     rows:
       grain:
         - { dashboard: student_number, cube: lea_student_identifier }
@@ -57,10 +58,11 @@ comparisons:
       # The sheet's own grade filter; it has no filter card.
       Grade Level: [0, 1, 2, 3, 4]
     cuts: [{}, { Region: Miami }]
-    # The dashboard's rows are school days; the fact also has a row for each
-    # break day an enrolled student carries. Applied to Cube only.
+    # Mirrors rpt_tableau__attendance_dashboard's row filter (membershipvalue
+    # = 1 and attendancevalue is not null). Applied to Cube only.
     scope:
-      - { cube: is_in_session_day, values: ["true"] }
+      - { cube: membership_value, values: [1] }
+      - { cube: attendance_value, operator: set }
     rows:
       grain:
         - { dashboard: student_number, cube: lea_student_identifier }
@@ -94,10 +96,11 @@ comparisons:
       # The sheet's own grade filter; it has no filter card.
       Grade Level: [5, 6, 7, 8]
     cuts: [{}, { Region: Miami }]
-    # The dashboard's rows are school days; the fact also has a row for each
-    # break day an enrolled student carries. Applied to Cube only.
+    # Mirrors rpt_tableau__attendance_dashboard's row filter (membershipvalue
+    # = 1 and attendancevalue is not null). Applied to Cube only.
     scope:
-      - { cube: is_in_session_day, values: ["true"] }
+      - { cube: membership_value, values: [1] }
+      - { cube: attendance_value, operator: set }
     rows:
       grain:
         - { dashboard: student_number, cube: lea_student_identifier }
