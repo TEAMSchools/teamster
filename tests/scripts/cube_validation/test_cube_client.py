@@ -95,6 +95,7 @@ def test_queries_default_to_utc_and_keep_an_explicit_zone():
             q = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)["query"][0]
             seen.append(json.loads(q))
             return {"sql": {"sql": ["SELECT 1", []]}}
+        assert body is not None
         seen.append(body["query"])
         return {"data": []}
 
