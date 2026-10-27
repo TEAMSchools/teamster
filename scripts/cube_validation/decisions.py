@@ -22,39 +22,63 @@ class Applied:
     no_longer_needed: list[Decision] = field(default_factory=list)
 
 
-def _normalize(sql: str) -> str:
-    """Drop comments, collapse whitespace, lower-case outside string literals."""
-    out: list[str] = []
-    i, n = 0, len(sql)
+_OPEN = re.compile(r"(?i:rb|br|r|b)?('''|\"\"\"|'|\"|`)")
+
+
+def _span_end(sql: str, start: int, quote: str, raw: bool) -> int:
+    """Return the index just past the quoted span whose body starts at `start`."""
+    i, n = start, len(sql)
     while i < n:
-        ch = sql[i]
-        if ch == "'":
-            j = i + 1
-            while j < n:
-                if sql[j] == "'":
-                    if j + 1 < n and sql[j + 1] == "'":
-                        j += 2
-                        continue
-                    break
-                j += 1
-            out.append(sql[i : j + 1])
-            i = j + 1
+        if sql[i] == "\\" and (quote == "`" or not raw):
+            i += 2
+        elif sql.startswith(quote, i):
+            return i + len(quote)
+        else:
+            i += 1
+    return n
+
+
+def _normalize(sql: str) -> str:
+    """Drop comments, collapse whitespace, lower-case outside quoted spans.
+
+    Quoted strings (single, double, triple, raw) and backtick identifiers are
+    kept byte-for-byte, with backslash escapes honored.
+    """
+    out: list[str] = []
+    gap = False
+    i, n = 0, len(sql)
+
+    def emit(text: str) -> None:
+        nonlocal gap
+        if gap and out:
+            out.append(" ")
+        gap = False
+        out.append(text)
+
+    while i < n:
+        prev_is_word = i > 0 and (sql[i - 1].isalnum() or sql[i - 1] == "_")
+        m = None if prev_is_word else _OPEN.match(sql, i)
+        if m:
+            quote = m.group(1)
+            prefix = m.group(0)[: -len(quote)]
+            end = _span_end(sql, m.end(), quote, "r" in prefix.lower())
+            emit(prefix.lower() + sql[m.end() - len(quote) : end])
+            i = end
         elif sql.startswith("--", i):
             j = sql.find("\n", i)
             i = n if j == -1 else j
-            out.append(" ")
+            gap = True
         elif sql.startswith("/*", i):
             j = sql.find("*/", i + 2)
             i = n if j == -1 else j + 2
-            out.append(" ")
-        else:
-            out.append(ch.lower())
+            gap = True
+        elif sql[i].isspace():
+            gap = True
             i += 1
-    # Collapse whitespace outside literals only.
-    parts = re.split(r"('(?:[^']|'')*'?)", "".join(out))
-    return "".join(
-        p if p.startswith("'") else re.sub(r"\s+", " ", p) for p in parts
-    ).strip()
+        else:
+            emit(sql[i].lower())
+            i += 1
+    return "".join(out)
 
 
 def sql_fingerprint(sql: str) -> str:
@@ -94,9 +118,11 @@ def apply(
     claimed: dict[int, Decision] = {}
 
     for decision in decisions:
-        current = fingerprints.get(decision.comparison, {})
+        current = fingerprints.get(decision.comparison) or {}
         if any(
-            decision.fingerprints.get(side) != current.get(side)
+            not decision.fingerprints.get(side)
+            or not current.get(side)
+            or decision.fingerprints[side] != current[side]
             for side in ("cube", "dashboard")
         ):
             applied.reconfirm.append(decision)

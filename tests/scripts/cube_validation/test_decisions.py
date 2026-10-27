@@ -28,9 +28,43 @@ def test_whitespace_and_comment_changes_keep_fingerprint():
 
 
 def test_comment_markers_inside_literals_are_kept():
-    a = "select '-- not a comment' as x"
-    b = "select 'different' as x"
+    assert sql_fingerprint("select '-- x' as a") != sql_fingerprint("select '' as a")
+    assert sql_fingerprint('select "-- x" as a') != sql_fingerprint('select "" as a')
+    assert sql_fingerprint("select '/* x */' as a") != sql_fingerprint("select '' as a")
+
+
+def test_backtick_case_change_changes_fingerprint():
+    assert sql_fingerprint("select 1 from `Proj.DS.T`") != sql_fingerprint(
+        "select 1 from `proj.ds.t`"
+    )
+
+
+def test_double_quoted_literal_case_change_changes_fingerprint():
+    assert sql_fingerprint('select "A" as x') != sql_fingerprint('select "a" as x')
+
+
+def test_escaped_quote_does_not_end_literal():
+    a = "select 'it\\'s -- A' as x from t"
+    b = "select 'it\\'s -- a' as x from t"
     assert sql_fingerprint(a) != sql_fingerprint(b)
+    # Text after the literal is still normalized.
+    assert sql_fingerprint(a) == sql_fingerprint(a.replace("from t", "FROM   T"))
+
+
+def test_whitespace_inside_literal_is_preserved():
+    assert sql_fingerprint("select 'a  b' as x") != sql_fingerprint("select 'a b' as x")
+
+
+def test_raw_and_triple_quoted_strings_are_protected():
+    assert sql_fingerprint("select r'A\\' as x") != sql_fingerprint(
+        "select r'a\\' as x"
+    )
+    assert sql_fingerprint("select '''A\nB''' as x") != sql_fingerprint(
+        "select '''a\nB''' as x"
+    )
+    assert sql_fingerprint('select """A  B""" as x') != sql_fingerprint(
+        'select """A B""" as x'
+    )
 
 
 def test_logic_change_changes_fingerprint():
@@ -81,3 +115,27 @@ def test_column_and_comparison_must_match():
     applied = apply([d], [_group()], {"enrollment": FP})
     assert applied.no_longer_needed == [d]
     assert len(applied.open) == 1
+
+
+def test_missing_current_fingerprint_reconfirms():
+    d, g = _decision(), _group()
+    applied = apply([d], [g], {})
+    assert applied.reconfirm == [d]
+    assert applied.open == [g]
+    assert applied.quiet == []
+
+
+def test_empty_stored_fingerprints_reconfirm():
+    d, g = _decision(fingerprints={}), _group()
+    applied = apply([d], [g], {})
+    assert applied.reconfirm == [d]
+    applied = apply([d], [g], {"enrollment": FP})
+    assert applied.reconfirm == [d]
+    assert applied.open == [g]
+
+
+def test_decision_missing_one_side_reconfirms():
+    d, g = _decision(fingerprints={"cube": "c1"}), _group()
+    applied = apply([d], [g], {"enrollment": {"cube": "c1"}})
+    assert applied.reconfirm == [d]
+    assert applied.open == [g]
