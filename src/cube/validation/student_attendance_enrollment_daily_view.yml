@@ -210,7 +210,26 @@ comparisons:
       grain: *grain
       values:
         - { dashboard: att_code, cube: attendance_code }
-    proof: null
+    proof:
+      fingerprint: 1f0bf42a77c8b8b6cf663e930582ac115d26618d2185e3c1af8de5bb9645b81d
+      cells: 23
+      proven_at: "2026-10-27T20:19:38.479402+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: 1cea72f6ffcfb9a0813336073a896f0365702e59ba0d4993abf29404ed5299de
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 2
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Iep Status
+        - Is Truant Current
+        - School
+        - Schoolid
+        - Term
+      restricting_filters:
+        - Enroll Status
   - id: tardy-roster
     <<: *roster
     measure: count_tardy_days
@@ -223,7 +242,34 @@ comparisons:
       grain: *grain
       values:
         - { dashboard: att_code, cube: attendance_code }
-    proof: null
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 11038
+      proven_at: "2026-10-27T20:20:22.822492+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: 9668d3e0503aa82187449d18b13d4974e26c342a685a0a46603514d6d412ed96
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 0
+      missing_cuts:
+        - Lastfirst
+        - Teacher Name
+        - Team
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
   - id: absences-roster
     <<: *roster
     measure: count_absent_days
@@ -237,7 +283,34 @@ comparisons:
       values:
         - { dashboard: att_code, cube: attendance_code }
         - { dashboard: is_absent, cube: is_absent }
-    proof: null
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 11038
+      proven_at: "2026-10-27T20:22:07.052397+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: 58259a69041974ec46c6a7c532940b94887b28b967e6e4758fba5c6d97b51ec5
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 0
+      missing_cuts:
+        - Lastfirst
+        - Teacher Name
+        - Team
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
   - id: iss-roster
     <<: *roster
     measure: count_iss_days
@@ -247,7 +320,34 @@ comparisons:
       grain: *grain
       values:
         - { dashboard: att_code, cube: attendance_code }
-    proof: null
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 11038
+      proven_at: "2026-10-27T20:23:06.082670+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: 37467abb0db2ef48db6bf2d8b1caef656bc0d9cba93d1292cde696a025420aff
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 0
+      missing_cuts:
+        - Lastfirst
+        - Teacher Name
+        - Team
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
   - id: oss-roster
     <<: *roster
     measure: count_oss_days
@@ -260,7 +360,34 @@ comparisons:
       grain: *grain
       values:
         - { dashboard: att_code, cube: attendance_code }
-    proof: null
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 11038
+      proven_at: "2026-10-27T20:23:24.321747+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: edd95448c255b479e94e1faab0d0212769bc2fc1d84decc1e41a0da2ff21c355
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 0
+      missing_cuts:
+        - Lastfirst
+        - Teacher Name
+        - Team
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
   - id: present-roster
     <<: *roster
     measure: sum_attendance_value
@@ -270,7 +397,34 @@ comparisons:
       grain: *grain
       values:
         - { dashboard: is_present, cube: attendance_value }
-    proof: null
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 11038
+      proven_at: "2026-10-27T20:23:41.926802+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: d58d8cffbf2ac05244a612bd570570b833ae264b06692918c4a2c18c3c497a26
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 0
+      missing_cuts:
+        - Lastfirst
+        - Teacher Name
+        - Team
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
   # Membershipvalue is a column beside Measure Names, not a Measure Names
   # value, and sheet_field cannot name it in a long export yet.
   - id: membership-roster
@@ -293,7 +447,34 @@ comparisons:
       values:
         - { dashboard: is_absent, cube: is_absent }
         - { dashboard: is_tardy, cube: is_tardy }
-    proof: null
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 11038
+      proven_at: "2026-10-27T20:24:08.222750+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: 059a17a608ad578ac6c0c9b6f4397b9696fd355b329034ab394fc238b70cc7e8
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 0
+      missing_cuts:
+        - Lastfirst
+        - Teacher Name
+        - Team
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
   - id: days-to-90-roster
     <<: *roster
     measure: days_to_90_percent
@@ -304,7 +485,34 @@ comparisons:
       values:
         - { dashboard: membershipvalue, cube: membership_value }
         - { dashboard: is_absent, cube: is_absent }
-    proof: null
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 11038
+      proven_at: "2026-10-27T20:24:24.803276+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: 4864eecd951208f2f2f677e11958050d894b628a73e608aa820149ad165e66c0
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 0
+      missing_cuts:
+        - Lastfirst
+        - Teacher Name
+        - Team
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
 identities:
   - name: ada-is-attendance-over-membership
     left: avg_daily_attendance
