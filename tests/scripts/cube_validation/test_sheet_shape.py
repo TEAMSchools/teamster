@@ -234,3 +234,68 @@ def test_a_column_beside_measure_names_sums_split_rows_once():
 def test_unknown_sheet_field_lists_names_and_columns():
     with pytest.raises(pipeline.Refusal, match=r"# Present, # Tardy.*Membershipvalue"):
         pipeline.long_to_wide(SIDE, "Nope")
+
+
+ENROLLED = {"dashboard": "enroll_status", "operator": "equals", "values": [0]}
+
+
+def _filtered():
+    return Comparison(
+        id="c",
+        measure="count_tardy_days",
+        sheet="Roster",
+        dashboard_view="kipptaf_tableau.rpt_d",
+        probe="sum(is_tardy)",
+        dashboard_filters=[ENROLLED],
+        dims=[
+            ColumnPair(dashboard="student_number", cube="lea_student_identifier"),
+            ColumnPair(dashboard="region", cube="regions_region_name"),
+        ],
+        rows=RowSpec(
+            grain=[
+                ColumnPair(dashboard="student_number", cube="lea_student_identifier")
+            ],
+            values=[],
+        ),
+    )
+
+
+def test_dashboard_rows_keep_filtered_rows_with_a_flag():
+    sql = pipeline.dashboard_rows_sql(_cfg(), _filtered())
+    assert "COALESCE(enroll_status IN (0), FALSE) AS __df0" in sql
+    assert "WHERE" in sql and "enroll_status IN (0)" not in sql.split("WHERE", 1)[1]
+
+
+def test_unfiltered_probe_drops_only_the_dashboard_filters():
+    comparison = _filtered()
+    assert "enroll_status IN (0)" in pipeline.probe_sql(_cfg(), comparison, {})
+    unfiltered = pipeline.probe_sql(_cfg(), comparison, {}, with_filters=False)
+    assert "enroll_status" not in unfiltered
+
+
+def test_row_groups_never_split_by_a_grain_dim():
+    assert pipeline.group_dims(_filtered()) == [
+        ColumnPair(dashboard="region", cube="regions_region_name")
+    ]
+
+
+def test_cells_the_dashboard_filter_drops_are_explained():
+    comparison = _comparison(dashboard_filters=[ENROLLED])
+    cube = [
+        {"regions_region_name": "Newark", "value": 5},
+        {"regions_region_name": "Camden", "value": 2},
+    ]
+    dash = [{"region": "Camden", "value": 2}]
+    unfiltered = [{"region": "Newark", "value": 5}, {"region": "Camden", "value": 2}]
+    cells = pipeline._cells(comparison, {}, dash, cube, 0, unfiltered)
+    assert sorted(c.verdict for c in cells) == ["dashboard_filtered", "pass"]
+    # Without the unfiltered probe the same cell reads as Cube-only.
+    assert "cube_only" in {
+        c.verdict for c in pipeline._cells(comparison, {}, dash, cube, 0)
+    }
+
+
+def _cfg():
+    from cube_validation.config import ViewConfig
+
+    return ViewConfig(view="v", fact="kipptaf_marts.fct_f", comparisons=[])

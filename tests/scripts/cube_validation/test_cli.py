@@ -1478,3 +1478,20 @@ decisions:
     captured = capsys.readouterr()
     assert "team-cut" in captured.err and "fill in" in captured.err
     assert "fill in" not in captured.out
+
+
+def test_run_probes_again_without_dashboard_filters_only_when_set(fakes, tmp_path):
+    def probes():
+        return [s for s in fakes.bq.ran if "AS value" in s and "rpt_d" in s]
+
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    plain = len(probes())
+    fakes.bq.ran.clear()
+    text = YML.replace(
+        "    rows:\n",
+        "    dashboard_filters:\n      - { dashboard: enroll_status, values: [0] }\n    rows:\n",
+        1,
+    )
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+    assert len(probes()) == 2 * plain
+    assert sum("enroll_status IN (0)" not in s for s in probes()) == plain

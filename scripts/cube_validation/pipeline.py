@@ -149,21 +149,28 @@ def _dashboard_filter_sql(entry: dict[str, Any]) -> str:
     return match if operator == "equals" else f"({column} IS NULL OR NOT {match})"
 
 
-def dashboard_predicate(comparison: Comparison, cut: dict[str, Any]) -> str:
+def dashboard_predicate(
+    comparison: Comparison, cut: dict[str, Any], with_filters: bool = True
+) -> str:
     """Return the WHERE predicate a cut puts on the dashboard rows.
 
-    It ends with the comparison's `dashboard_filters`, which Cube never sees.
+    It ends with the comparison's `dashboard_filters`, which Cube never sees,
+    unless `with_filters` is False.
     """
     parts = [
         _column_predicate(comparison.filters[caption].dashboard, value)
         for caption, value in effective_filters(comparison, cut).items()
-    ] + [_dashboard_filter_sql(e) for e in comparison.dashboard_filters]
+    ]
+    if with_filters:
+        parts += [_dashboard_filter_sql(e) for e in comparison.dashboard_filters]
     return " AND ".join(parts) or "TRUE"
 
 
-def _any_cut_predicate(comparison: Comparison) -> str:
+def _any_cut_predicate(comparison: Comparison, with_filters: bool = True) -> str:
     """OR of every cut, so a row-level reconcile counts each row once."""
-    preds = [dashboard_predicate(comparison, cut) for cut in _cuts(comparison)]
+    preds = [
+        dashboard_predicate(comparison, cut, with_filters) for cut in _cuts(comparison)
+    ]
     if "TRUE" in preds:
         return "TRUE"
     return preds[0] if len(preds) == 1 else " OR ".join(f"({p})" for p in preds)
@@ -232,30 +239,61 @@ def _select(name: str, source: str, is_date: bool) -> str:
 
 
 def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
-    """Return the dashboard's rows for the row-level reconcile, every cut."""
+    """Return the dashboard's rows for the row-level reconcile, every cut.
+
+    Rows a `dashboard_filters` entry drops stay in, with a flag per entry
+    (`__df0`, ...) that says whether it keeps the row, so the reconcile can
+    count them apart from rows Cube alone has.
+    """
     dates = _date_cubes(cfg)
     seen: dict[str, bool] = {}
     for p in _row_pairs(comparison):
         seen.setdefault(p.dashboard, p.cube in dates)
     cols = [
         f"DATE({name}) AS {name}" if is_date else name for name, is_date in seen.items()
+    ] + [
+        f"COALESCE({_dashboard_filter_sql(e)}, FALSE) AS {flag}"
+        for e, (flag, _) in zip(
+            comparison.dashboard_filters, _filter_flags(comparison), strict=True
+        )
     ]
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
         f"SELECT {', '.join(cols)} FROM {_dashboard_ref(comparison)} "
-        f"WHERE {_any_cut_predicate(comparison)}"
+        f"WHERE {_any_cut_predicate(comparison, with_filters=False)}"
     )
 
 
-def probe_sql(cfg: ViewConfig, comparison: Comparison, cut: dict[str, Any]) -> str:
+def _filter_flags(comparison: Comparison) -> list[tuple[str, str]]:
+    """Each dashboard-only filter's flag column and label (its column)."""
+    return [
+        (f"__df{i}", e["dashboard"]) for i, e in enumerate(comparison.dashboard_filters)
+    ]
+
+
+def group_dims(comparison: Comparison) -> list[ColumnPair]:
+    """The dims a row group splits by: never one that is part of the row grain,
+    so a group (and any decision on it) never carries a student's value.
+    """
+    grain = {p.cube for p in comparison.rows.grain} if comparison.rows else set()
+    return [d for d in comparison.dims if d.cube not in grain]
+
+
+def probe_sql(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    cut: dict[str, Any],
+    with_filters: bool = True,
+) -> str:
     """Return the probe over the dashboard rows under one cut, before time travel.
 
     `probe` is an aggregate over the rows; `probe_sql` is a template whose
-    `{rows}`, `{where}` and `{dims}` are filled here.
+    `{rows}`, `{where}` and `{dims}` are filled here. `with_filters` False
+    leaves out the `dashboard_filters`, to name the cells they drop.
     """
     # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
     rows = f"SELECT * FROM {_dashboard_ref(comparison)}"
-    where = dashboard_predicate(comparison, cut)
+    where = dashboard_predicate(comparison, cut, with_filters)
     names = [d.dashboard for d in comparison.dims]
     if comparison.probe_sql:
         return comparison.probe_sql.format(
@@ -354,7 +392,12 @@ def _cells(
     dash_rows: list[dict],
     cube_rows: list[dict],
     decimals: int,
+    unfiltered_rows: list[dict] | None = None,
 ) -> list[Cell]:
+    """Compare a cut's cells. A Cube-only cell that the probe without the
+    `dashboard_filters` reproduces reads `dashboard_filtered`: the sheet's
+    dashboard-only filter drops it, so it is explained, not a difference.
+    """
     where = f"{comparison.id} {cut_label(cut)}"
     dash = _by_key(
         dash_rows,
@@ -368,11 +411,28 @@ def _cells(
         lambda r: _number(r["value"]),
         f"{where} Cube",
     )
+    unfiltered = (
+        _by_key(
+            unfiltered_rows,
+            lambda r: tuple(_key(r[d.dashboard]) for d in comparison.dims),
+            lambda r: _number(r["value"]),
+            f"{where} dashboard without its dashboard-only filters",
+        )
+        if unfiltered_rows is not None
+        else {}
+    )
     cells = []
     for key in sorted(dash.keys() | cube.keys()):
         label = ", ".join(
             f"{d.cube}={v}" for d, v in zip(comparison.dims, key, strict=True)
         )
+        verdict = compare.cell_verdict(dash.get(key), cube.get(key), decimals)
+        if (
+            verdict == "cube_only"
+            and key in unfiltered
+            and compare.cell_verdict(unfiltered[key], cube[key], decimals) == "pass"
+        ):
+            verdict = "dashboard_filtered"
         cells.append(
             Cell(
                 comparison.id,
@@ -380,7 +440,7 @@ def _cells(
                 label or "(total)",
                 dash.get(key),
                 cube.get(key),
-                compare.cell_verdict(dash.get(key), cube.get(key), decimals),
+                verdict,
             )
         )
     return cells
@@ -494,8 +554,14 @@ def _compare_one(
             wrap_cube(cube_at.sql, cfg.view, dims, dates, comparison.measure)
         )
         dash_rows = wh.rows(dash_at.sql)
+        unfiltered = None
+        if comparison.dashboard_filters:
+            # The probe again without them, to name the cells they drop.
+            unfiltered = wh.rows(
+                at(probe_sql(cfg, comparison, cut, with_filters=False), build.start).sql
+            )
         sides.cells += _cells(
-            comparison, cut, dash_rows, cube_rows, comparison.decimals or 0
+            comparison, cut, dash_rows, cube_rows, comparison.decimals or 0, unfiltered
         )
 
     cube_parts = [
@@ -531,7 +597,8 @@ def _compare_one(
                 wrap_cube(cube_rows_sql, cfg.view, columns, dates, None),
                 dash_at.sql,
                 comparison.rows,
-                comparison.dims,
+                group_dims(comparison),
+                filters=_filter_flags(comparison),
             )
         )
         sides.groups += compare.groups_from(comparison.id, result)
@@ -649,7 +716,11 @@ def _measures(
     measure_of = {c.id: c.measure for c in comparisons}
     for comparison in comparisons:
         mine = [c for c in cells if c.comparison == comparison.id]
-        passed = bool(mine) and all(c.verdict == "pass" for c in mine)
+        # A cell only a dashboard-only filter drops is explained; it is counted
+        # beside the passes, and its filter is triaged as a missing filter.
+        passed = bool(mine) and all(
+            c.verdict in ("pass", "dashboard_filtered") for c in mine
+        )
         results.setdefault(comparison.measure, []).append(
             CheckResult("dashboard", passed)
         )

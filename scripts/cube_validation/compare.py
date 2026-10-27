@@ -8,6 +8,7 @@ The module is pure: it builds and reads strings and runs nothing.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Literal
@@ -96,6 +97,7 @@ def reconcile_sql(
     dashboard_rows_sql: str,
     rows: RowSpec,
     group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]] = (),
 ) -> str:
     """Build the query that classifies every row as match, differs or one-sided.
 
@@ -113,6 +115,10 @@ def reconcile_sql(
         rows: The grain and value column pairs.
         group_by: Columns to break counts out by; each is named by its `cube`
             name in the result and read from whichever side has the row.
+        filters: For each dashboard-only filter, the dashboard rows' boolean
+            column that says it keeps a row, and the label to name it by. A row
+            one drops that Cube has reads `dashboard_filtered`, with the label
+            in `__filter`; one Cube lacks too is a match.
 
     Returns:
         One query returning `bucket`, each group-by column, `n_rows` and
@@ -136,11 +142,27 @@ def reconcile_sql(
     group_names = [p.cube for p in group_by]
     first = rows.grain[0]
 
+    kept = " AND ".join(f"d.{flag}" for flag, _ in filters)
+    dropped = (
+        [f"WHEN c.{_IN} IS NULL AND d.{_IN} IS NOT NULL AND NOT ({kept}) THEN 'match' "]
+        if filters
+        else []
+    )
+    filtered = [f"WHEN NOT ({kept}) THEN 'dashboard_filtered' "] if filters else []
+    if filters:
+        which = " ".join(f"WHEN NOT d.{flag} THEN '{label}'" for flag, label in filters)
+        group_cols = [
+            f"CASE WHEN c.{_IN} IS NOT NULL AND d.{_IN} IS NOT NULL THEN "
+            f"CASE {which} END END AS __filter",
+            *group_cols,
+        ]
+        group_names = ["__filter", *group_names]
     joined_select = ",\n    ".join(
         [
-            f"CASE WHEN c.{_IN} IS NULL THEN 'dashboard_only' "
+            "CASE " + "".join(dropped) + f"WHEN c.{_IN} IS NULL THEN 'dashboard_only' "
             f"WHEN d.{_IN} IS NULL THEN 'cube_only' "
-            f"WHEN NOT ({all_same}) THEN 'value_differs' "
+            + "".join(filtered)
+            + f"WHEN NOT ({all_same}) THEN 'value_differs' "
             "ELSE 'match' END AS bucket",
             f"COALESCE(CAST(c.{first.cube} AS STRING), "
             f"CAST(d.{first.dashboard} AS STRING)) AS __student",
@@ -185,11 +207,17 @@ def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
         query order, so a row's students are counted once. A NULL value
         becomes an empty string.
     """
-    reserved = {"bucket", "n_rows", "n_students"}
+    reserved = {"bucket", "n_rows", "n_students", "__filter"}
     return [
         Group(
             comparison_id=comparison_id,
-            dims=tuple(
+            # The dashboard-only filter that dropped the rows, on its rows only.
+            dims=(
+                (("dashboard_filter", str(row["__filter"])),)
+                if row.get("__filter") is not None
+                else ()
+            )
+            + tuple(
                 (k, "" if v is None else str(v))
                 for k, v in row.items()
                 if k not in reserved

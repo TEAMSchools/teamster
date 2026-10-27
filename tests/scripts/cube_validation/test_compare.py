@@ -253,3 +253,36 @@ def test_cell_verdict_ignores_float_noise_at_a_half_way_tie():
     # BigQuery AVG gives 15/16 as 0.9374999999999999; the sheet shows 0.938.
     assert cell_verdict(0.9375, 0.9374999999999999, decimals=3) == "pass"
     assert cell_verdict(0.9375, 0.9374, decimals=3) == "differs"
+
+
+FILTERED_ROWS = RowSpec(
+    grain=[ColumnPair(dashboard="student_number", cube="lea_student_identifier")],
+    values=[ColumnPair(dashboard="att_code", cube="attendance_code")],
+)
+
+
+def test_reconcile_counts_rows_a_dashboard_only_filter_drops_apart():
+    sql = reconcile_sql(
+        "SELECT 1", "SELECT 2", FILTERED_ROWS, [], filters=[("__df0", "enroll_status")]
+    )
+    assert "THEN 'dashboard_filtered'" in sql
+    assert "WHEN NOT d.__df0 THEN 'enroll_status'" in sql
+    assert "AS __filter" in sql and "GROUP BY bucket, __filter" in sql
+
+
+def test_reconcile_without_filters_has_no_filter_column():
+    assert "__filter" not in reconcile_sql("SELECT 1", "SELECT 2", FILTERED_ROWS, [])
+
+
+def test_groups_from_names_the_dropping_filter_only_on_its_rows():
+    rows = [
+        {"bucket": "dashboard_filtered", "__filter": "enroll_status", "grade_level": 9,
+         "n_rows": 50, "n_students": 3},
+        {"bucket": "cube_only", "__filter": None, "grade_level": 9,
+         "n_rows": 2, "n_students": 1},
+    ]  # fmt: skip
+    assert groups_from("c1", rows) == [
+        Group("c1", (("dashboard_filter", "enroll_status"), ("grade_level", "9")),
+              "dashboard_filtered", 50, 3),
+        Group("c1", (("grade_level", "9"),), "cube_only", 2, 1),
+    ]  # fmt: skip

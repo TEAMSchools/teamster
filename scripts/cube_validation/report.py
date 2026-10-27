@@ -231,7 +231,8 @@ def render_local(run: RunResult) -> str:
     out += ["", "## Dashboard-only filters", ""]
     if run.dashboard_filters:
         out += [
-            "Cube has no member for these, so rows they drop read as Cube-only.",
+            "Cube has no member for these. Rows and cells they drop are counted "
+            "apart, as dropped by a dashboard-only filter, not as Cube-only.",
             "",
         ]
     out += _bullets(run.dashboard_filters)
