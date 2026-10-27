@@ -89,6 +89,21 @@ def test_consistent_only_measure_reads_not_validated():
     assert "misc" in text and "(consistent only)" not in text.split("misc")[1]
 
 
+def test_measure_line_names_open_row_groups():
+    measures = [
+        MeasureResult("enrolled", "matches a dashboard", "validated", {"pass": 135}, 2),
+        MeasureResult("left", "matches a dashboard", "validated", {"pass": 3}, 1),
+        MeasureResult("clean", "matches a dashboard", "validated", {"pass": 4}),
+    ]
+    text = render_local(_run(measures=measures))
+    assert (
+        "- `enrolled`: matches a dashboard; validated (pass 135); "
+        "2 open row groups to triage"
+    ) in text
+    assert "validated (pass 3); 1 open row group to triage" in text
+    assert "- `clean`: matches a dashboard; validated (pass 4)\n" in text
+
+
 def test_local_result_lists_live_sources_and_changed_dims():
     text = render_local(_run())
     assert "kipptaf_extracts.rpt_enrollment" in text

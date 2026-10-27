@@ -393,7 +393,11 @@ def test_run_reports_cells_proofs_and_identity(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
 
     out = capsys.readouterr().out
-    assert "`avg_daily_attendance`: matches a dashboard; validated" in out
+    # The Miami group is still open, so the measure line says so.
+    assert (
+        "`avg_daily_attendance`: matches a dashboard; validated (pass 2); "
+        "1 open row group to triage"
+    ) in out
     assert "ada-region: last proven 2026-10-26T12:00:00+00:00" in out
     assert "ada-ratio" in out
     assert "regions_region_name" in out and "Miami" in out
@@ -495,6 +499,7 @@ def test_decision_fingerprints_ignore_the_moment(fakes, tmp_path, capsys):
     out = capsys.readouterr().out
     assert "miami-scope" in _section(out, "Applied:", "To re-confirm")
     assert "No open groups." in out
+    assert "open row group" not in out
 
 
 def test_dashboard_view_edit_asks_to_reconfirm(fakes, tmp_path, capsys):

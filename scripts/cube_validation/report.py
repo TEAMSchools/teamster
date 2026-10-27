@@ -54,6 +54,7 @@ class MeasureResult:
     strongest: str
     verdict: str
     cells: dict[str, int] = field(default_factory=dict)
+    open_groups: int = 0
 
 
 @dataclass
@@ -119,7 +120,13 @@ def render_local(run: RunResult) -> str:
     for m in run.measures:
         cells = ", ".join(f"{k} {v}" for k, v in sorted(m.cells.items()))
         line = f"- `{m.measure}`: {m.strongest}; {_verdict_text(m)}"
-        out.append(f"{line} ({cells})" if cells else line)
+        line = f"{line} ({cells})" if cells else line
+        # The verdict reads cells only; row groups still open are named so
+        # "validated" never hides them.
+        if m.open_groups:
+            plural = "group" if m.open_groups == 1 else "groups"
+            line += f"; {m.open_groups} open row {plural} to triage"
+        out.append(line)
 
     out += ["", "## Triage", ""]
     triage = []

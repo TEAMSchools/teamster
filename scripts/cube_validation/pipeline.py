@@ -570,9 +570,12 @@ def _measures(
     comparisons: list[Comparison],
     cells: list[Cell],
     other: dict[str, list[CheckResult]],
+    open_groups: list[Group],
 ) -> list[MeasureResult]:
+    """The verdict reads cells only; open row groups are counted beside it."""
     results: dict[str, list[CheckResult]] = {}
     counts: dict[str, Counter] = {}
+    measure_of = {c.id: c.measure for c in comparisons}
     for comparison in comparisons:
         mine = [c for c in cells if c.comparison == comparison.id]
         passed = bool(mine) and all(c.verdict == "pass" for c in mine)
@@ -582,12 +585,14 @@ def _measures(
         counts.setdefault(comparison.measure, Counter()).update(c.verdict for c in mine)
     for measure, found in other.items():
         results.setdefault(measure, []).extend(found)
+    groups = Counter(measure_of.get(g.comparison_id) for g in open_groups)
     return [
         MeasureResult(
             measure,
             checks.strongest_check(measure, found),
             checks.verdict(found),
             dict(counts.get(measure, {})),
+            groups.get(measure, 0),
         )
         for measure, found in results.items()
     ]
@@ -684,7 +689,7 @@ def run(
     result = RunResult(
         view=cfg.view,
         moment=build,
-        measures=_measures(comparisons, sides.cells, other),
+        measures=_measures(comparisons, sides.cells, other, applied.open),
         applied=applied,
         findings=findings,
         live_sources=sorted(sides.live),
