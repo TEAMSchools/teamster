@@ -7,15 +7,15 @@ output back into the doc.
 ## Read the breaks tab
 
 One Sheets `get_values` call on the whole tab named in `ids.md`, range
-`'<tab>'!A1:H80`. Space it from any other Sheets call in the same minute; the
-per-minute read quota is small. The tab holds a federal-holidays list first and
-the breaks table below it, headed
-`Month,Date,Day,Holiday/Event,Newark,Camden,Miami,Paterson`. Write the breaks
-table only, from its header row down, to a scratchpad file named
-`breaks-<school year>.csv` with the headers unchanged. Forms the script accepts
-in `Date`: `11`, `25-27`, `23-27`, `Dec 21 - Jan 1`, `29-2 (Apr)`. A blank
-`Month` continues the row above. A region cell is a closure only when it is
-exactly `Yes`; `No`, `-` and blank are not. A row short of a region column is
+`'<tab>'!A:H` (whole columns, so a row added at the bottom is never missed).
+Space it from any other Sheets call in the same minute; the per-minute read
+quota is small. The tab holds a federal-holidays list first and the breaks table
+below it, headed `Month,Date,Day,Holiday/Event,Newark,Camden,Miami,Paterson`.
+Write the breaks table only, from its header row down, to a scratchpad file
+named `breaks-<school year>.csv` with the headers unchanged. Forms the script
+accepts in `Date`: `11`, `25-27`, `23-27`, `Dec 21 - Jan 1`, `29-2 (Apr)`. A
+blank `Month` continues the row above. A region cell is a closure only when it
+is exactly `Yes`; `No`, `-` and blank are not. A row short of a region column is
 fine.
 
 ## Write the plan rows
@@ -59,16 +59,20 @@ re-run.
 ## Override
 
 When the user moves a date, put it in the `override` column and re-run; do not
-edit the output table by hand. The output's `note` column, `override` included,
-goes into the work plan's note column so the reason survives.
+edit the output table by hand. The reason survives through the `Schedule inputs`
+table below, which carries the output's `rule` and `note` columns.
 
 ## Write back
 
 Three writes into the charter doc, in this order:
 
-1. Template 2, the work plan table: one row per output row, in output order,
-   with milestone or task, owner from the charter, due date, status blank.
-2. A table titled `Schedule inputs` straight after Template 2, holding the plan
-   CSV as columns, so a later re-run starts from the same rows and dependencies.
+1. Template 2, the work plan table, in the template's four columns: one row per
+   output row, in output order, with milestone or task, owner from the charter,
+   due date, status blank. Template 2 has no column for the rule or the note;
+   they live in the next table.
+2. A table titled `Schedule inputs` straight after Template 2: the plan CSV's
+   columns plus `due`, `rule` and `note` from the output, one row per plan row.
+   This is where the user sees which rule placed a date and which dates are
+   `unverified`, and where a later re-run starts from.
 3. Template 1's milestone table: replace each month-level target with the
    milestone's exact date.

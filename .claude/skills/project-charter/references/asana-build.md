@@ -13,19 +13,26 @@ carries the order and the values.
    `Parking lot and outside the core set`.
 2. One section per workstream, in the charter's order, named `1 · <workstream>`,
    `2 · <workstream>`, so they sort after governance and before the parking lot.
+   To verify at the first `TEST ·` run and record here: the Asana server lists
+   no section tool, so try `create_tasks` with a section name; if no call
+   creates a section, print the section names for the user to add by hand in
+   Asana and continue once they exist.
 3. Members: the MOCHA Manager, Owner and Helpers, plus the user. Consulted and
    Approver names are stakeholders; they get status updates, not membership of a
    private Data team project. Resolve each name with `search_objects`
    (`resource_type: user`, the name as typed); the workspace spans three email
    domains, so match on the name the result shows, and list every match in the
-   review message for the user to confirm. No email comes from the staff roster.
+   review message for the user to confirm. No email comes from the staff roster
+   query in `intake-brief.md`.
 4. Tasks, in two groups, each shown in full before the consent step below:
    - One task per milestone with `resource_subtype: milestone`, in its
      workstream's section, assignee from the work plan, due date from it.
    - One task per work-plan task, in its section, assignee and due date from the
-     plan, `parent` set to its milestone task's gid. A task that is already a
-     GitHub issue is named `#NNNN | title`, so it can later be multi-homed into
-     TEAMster without renaming.
+     plan, `parent` set to its milestone task's gid. To verify at the first
+     `TEST ·` run and record here: whether `create_tasks` takes `parent` or a
+     second `update_tasks` pass sets it. A task that is already a GitHub issue
+     is named `#NNNN | title`, so it can later be multi-homed into TEAMster
+     without renaming.
    - `html_notes`: the charter doc link and the task's work-plan note, inside
      the allowed tags only (headings and lists; no paragraph or break tags).
 5. `update_project`: Domain from the charter's stakeholder group, Active to

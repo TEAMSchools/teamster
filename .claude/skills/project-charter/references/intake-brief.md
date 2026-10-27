@@ -77,8 +77,13 @@ in chat, in this order:
    test applied (defined start and end, a deliverable, more than one person's
    work).
 
-Staff appear by name and title, from the staff roster when the material gives
-only a first name; never contact details. Nothing about a student or family.
+Staff appear by name and title. When the material gives only a first name,
+resolve it the way
+`.claude/skills/model-support/references/intake-and-inventory.md` does: BigQuery
+`execute_sql_readonly` on `kipptaf_people.int_people__staff_roster`, selecting
+only `formatted_name`, `job_title` and `home_department_name`; never the contact
+columns. The other references mean this query when they say "the staff roster".
+Nothing about a student or family.
 
 Offer once, in the stop message, to save the brief as a Google Doc in the
 project's Drive folder. Do not create one unasked; the user decides what the

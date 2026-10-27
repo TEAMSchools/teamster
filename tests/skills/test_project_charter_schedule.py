@@ -301,3 +301,79 @@ def test_cli_prints_table_and_end_warning(tmp_path, capsys):
     assert "| due |" in out
     assert "| m1 |" in out and "| long |" in out
     assert "after 2027-06-18" in out
+
+
+# review fixes
+
+
+def test_follower_of_thursday_due_row_starts_next_week():
+    c = [sd.Closure(date(2027, 1, 15), date(2027, 1, 15), "x")]  # closed Friday
+    out = sd.place(
+        [
+            sd.PlanRow("a", "m1", "milestone", 1),
+            sd.PlanRow("a", "t1", "task", 1, after="m1"),
+        ],
+        date(2027, 1, 11),
+        c,
+        END,
+    )
+    assert (out[0].due, out[1].due) == (date(2027, 1, 14), date(2027, 1, 22))
+
+
+def test_follower_of_midweek_override_starts_next_week(closures):
+    out = sd.place(
+        [
+            sd.PlanRow("a", "m1", "milestone", 1, override=date(2027, 1, 13)),
+            sd.PlanRow("a", "t1", "task", 1, after="m1"),
+        ],
+        date(2027, 1, 11),
+        closures,
+        END,
+    )
+    assert out[1].due == date(2027, 1, 22)
+
+
+def test_closed_thursday_and_friday_moves_to_wednesday():
+    c = [sd.Closure(date(2027, 1, 14), date(2027, 1, 15), "x")]  # Thu-Fri
+    [p] = sd.place([sd.PlanRow("a", "m1", "milestone", 1)], date(2027, 1, 11), c, END)
+    assert (p.due, p.rule) == (date(2027, 1, 13), "closed friday -> wednesday")
+
+
+def test_zero_duration_rejected():
+    with pytest.raises(ValueError, match="m1"):
+        sd.place([sd.PlanRow("a", "m1", "milestone", 0)], date(2027, 1, 11), [], END)
+
+
+def test_calendar_end_comes_from_every_region(tmp_path):
+    breaks = tmp_path / "breaks.csv"
+    breaks.write_text(
+        "Month,Date,Day,Holiday/Event,Newark,Camden,Miami,Paterson\n"
+        "November,27,Fri,x,Yes,Yes,Yes,Yes\n"
+        "June,18,Fri,Juneteenth,No,Yes,No,No\n"
+    )
+    assert sd.calendar_end(breaks, 2026) == date(2027, 6, 18)
+
+
+def test_cli_rejects_unknown_region(tmp_path, capsys):
+    breaks = tmp_path / "breaks.csv"
+    breaks.write_text("Month,Date,Day,Holiday/Event,Newark,Camden,Miami,Paterson\n")
+    plan = tmp_path / "plan.csv"
+    plan.write_text(
+        "workstream,name,kind,duration_weeks,after,override\na,m1,milestone,1,,\n"
+    )
+    rc = sd.main(
+        [
+            "--breaks",
+            str(breaks),
+            "--school-year",
+            "2026",
+            "--regions",
+            "newark",
+            "--start",
+            "2027-01-11",
+            "--plan",
+            str(plan),
+        ]
+    )
+    assert rc == 2
+    assert "newark" in capsys.readouterr().err

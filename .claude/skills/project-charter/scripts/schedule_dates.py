@@ -173,8 +173,11 @@ def _place_one(
                 break
         week += timedelta(days=7)
     friday = week + timedelta(days=4)
-    if friday in closed:
-        return friday - timedelta(days=1), "closed friday -> thursday"
+    due = friday
+    while due in closed and due > week:
+        due -= timedelta(days=1)
+    if due != friday:
+        return due, f"closed friday -> {calendar.day_name[due.weekday()].lower()}"
     return friday, "friday"
 
 
@@ -194,6 +197,9 @@ def place(
     names = [r.name for r in rows]
     if len(set(names)) != len(names):
         raise ValueError(f"duplicate row names in {names}")
+    short = [r.name for r in rows if r.duration_weeks < 1]
+    if short:
+        raise ValueError(f"duration_weeks must be at least 1: {short}")
     placed: dict[str, Placed] = {}
     pending = list(rows)
     while pending:
@@ -204,7 +210,7 @@ def place(
             row_start = (
                 start
                 if row.after is None
-                else placed[row.after].due + timedelta(days=1)
+                else _monday(placed[row.after].due) + timedelta(days=7)
             )
             if row.override is not None:
                 due, rule, note = row.override, "override", "override"
@@ -218,7 +224,12 @@ def place(
             progressed = True
         if not progressed:
             unknown = sorted(
-                {r.after for r in pending if r.after not in names or r.after == r.name}
+                {
+                    r.after
+                    for r in pending
+                    if r.after is not None
+                    and (r.after not in names or r.after == r.name)
+                }
             )
             raise ValueError(
                 f"rows {[r.name for r in pending]} wait on {unknown or 'a cycle'}; known rows: {names}"
@@ -231,23 +242,38 @@ def read_plan(path: Path) -> list[PlanRow]:
     out = []
     with path.open(newline="") as fh:
         for r in csv.DictReader(fh):
-            out.append(
-                PlanRow(
-                    workstream=r["workstream"],
-                    name=r["name"],
-                    kind=r["kind"],
-                    duration_weeks=int(r["duration_weeks"]),
-                    after=r.get("after") or None,
-                    override=date.fromisoformat(r["override"])
-                    if r.get("override")
-                    else None,
+            try:
+                out.append(
+                    PlanRow(
+                        workstream=r["workstream"],
+                        name=r["name"],
+                        kind=r["kind"],
+                        duration_weeks=int(r["duration_weeks"]),
+                        after=r.get("after") or None,
+                        override=date.fromisoformat(r["override"])
+                        if r.get("override")
+                        else None,
+                    )
                 )
-            )
+            except ValueError as exc:
+                raise ValueError(f"plan row {r.get('name')!r}: {exc}") from None
     return out
 
 
+def calendar_end(path: Path, school_year: int) -> date:
+    """The last closure date in the breaks table for any region, so the
+    unverified marker does not depend on the regions in scope."""
+    with path.open(newline="") as fh:
+        ends = [c.end for c in parse_breaks(csv.DictReader(fh), school_year, REGIONS)]
+    if not ends:
+        raise ValueError(
+            f"no closures in {path}; is it the breaks table with its header row?"
+        )
+    return max(ends)
+
+
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--breaks", type=Path, required=True, help="breaks tab as CSV")
     ap.add_argument(
         "--school-year", type=int, required=True, help="start year of the school year"
@@ -262,12 +288,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     a = ap.parse_args(argv)
     try:
+        regions = a.regions.split(",")
+        bad = [r for r in regions if r not in REGIONS]
+        if bad:
+            raise ValueError(f"unknown regions {bad}; use {', '.join(REGIONS)}")
         with a.breaks.open(newline="") as fh:
-            closures = parse_breaks(
-                csv.DictReader(fh), a.school_year, a.regions.split(",")
-            )
-        calendar_end = max(c.end for c in closures)
-        placed = place(read_plan(a.plan), a.start, closures, calendar_end)
+            closures = parse_breaks(csv.DictReader(fh), a.school_year, regions)
+        placed = place(
+            read_plan(a.plan), a.start, closures, calendar_end(a.breaks, a.school_year)
+        )
     except ValueError as exc:
         print(exc, file=sys.stderr)
         return 2
