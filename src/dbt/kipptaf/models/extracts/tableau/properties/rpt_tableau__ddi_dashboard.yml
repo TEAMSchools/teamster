@@ -20,7 +20,6 @@ models:
           arguments:
             combination_of_columns:
               - student_number
-              - student_name
               - region
               - week_start_monday
               - assessment_id
