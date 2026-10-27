@@ -292,6 +292,22 @@ data_tests:
           ref:
             name: stg_google_sheets__people__locations
 
+  - name: stg_google_sheets__assessments__academic_goals__sheet_duplicates
+    description: >-
+      Lists keys that appear on more than one row of the academic goals Google
+      Sheet (academic year, school, grade, state assessment code and subject).
+      The staging model keeps the row with the higher school goal, so reports
+      stay at one row per key, but that pick may not be the goal the school set.
+      To fix, the sheet owner deletes the extra row for each listed key.
+    config:
+      tags:
+        - google_sheet
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__assessments__academic_goals
+
   - name: test_sf_contact_note_duplicate
     description: >-
       Salesforce Contact Notes entered more than once for the same student, from
