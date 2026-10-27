@@ -65,8 +65,12 @@ models:
         description: Count of in-session calendar days within the week.
       - name: semester
         description: Semester the week falls in.
-      - name: quarter
-        description: Quarter (term abbreviation) the week falls in.
+      - name: term
+        description: >-
+          Abbreviation of the reporting term the week falls in, using the finest
+          term split the school defined for the year. PowerSchool years can use
+          quarters (Q1-Q4), trimesters (T1-T3), semesters (S1-S2), or the year
+          term; Focus years use quarter marking periods.
       - name: first_day_school_year
         description: Calendar Monday of the first school week of the year.
       - name: last_week_start_school_year
@@ -79,8 +83,8 @@ models:
           school_week_start_date of the following week within the academic year.
       - name: week_number_academic_year
         description: Sequential week number within the academic year.
-      - name: week_number_quarter
-        description: Sequential week number within the quarter.
+      - name: week_number_term
+        description: Sequential week number within the term.
       - name: is_current_week_mon_sun
         description: >-
           True if this is the current school week (Mon-Sun window), or the last

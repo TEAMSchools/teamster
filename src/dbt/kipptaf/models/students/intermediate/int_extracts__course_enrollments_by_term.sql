@@ -6,7 +6,7 @@ with
             c.academic_year,
             c.region,
             c.schoolid,
-            c.`quarter`,
+            c.term as `quarter`,
             c.first_day_school_year,
             c.last_day_school_year,
             t.term_start_date as quarter_start_date,
@@ -16,24 +16,20 @@ with
             t.is_current_term as is_current_quarter,
 
             if(
-                c.`quarter` = 'Q1' and t.term_start_date < c.first_day_school_year,
+                c.term = 'Q1' and t.term_start_date < c.first_day_school_year,
                 c.first_day_school_year,
                 t.term_start_date
             ) as quarter_start_date_alt,
 
             if(
-                c.`quarter` = 'Q4' and t.term_end_date > c.last_day_school_year,
+                c.term = 'Q4' and t.term_end_date > c.last_day_school_year,
                 c.last_day_school_year,
                 t.term_end_date
             ) as quarter_end_date_alt,
 
             sum(c.date_count) over (
                 partition by
-                    c._dbt_source_project,
-                    c.academic_year,
-                    c.region,
-                    c.schoolid,
-                    c.`quarter`
+                    c._dbt_source_project, c.academic_year, c.region, c.schoolid, c.term
             ) as days_in_quarter,
 
         from {{ ref("int_students__calendar_week") }} as c
@@ -42,7 +38,7 @@ with
             on c.academic_year = t.academic_year
             and c.schoolid = t.schoolid
             and c._dbt_source_project = t._dbt_source_project
-            and c.`quarter` = t.term
+            and c.term = t.term
             and t.term is not null
     ),
 
@@ -141,7 +137,7 @@ with
             on s.cc_academic_year = c.academic_year
             and s.cc_schoolid = c.schoolid
             and s._dbt_source_project = c._dbt_source_project
-            and s.`quarter` = c.`quarter`
+            and s.`quarter` = c.term
             and s.dateenrolled_alt <= c.school_week_end_date
             and s.dateleft_alt >= c.school_week_start_date
         group by
