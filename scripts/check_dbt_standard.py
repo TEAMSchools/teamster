@@ -410,7 +410,8 @@ def check_touched(
     domain_folders: set[str],
 ) -> list[Violation]:
     """A3/A4 on added intermediates; A5 on changed lines of domain int_, marts and
-    rpt_; A7/A9 on changed lines of marts and rpt_.
+    rpt_; A7 on changed lines of marts; A9 on changed lines of marts, rpt_, and
+    views other than union_relations wrappers.
 
     changed maps (package, package-relative path) to the line numbers the PR
     adds or changes; added holds the same keys for new files.
@@ -426,7 +427,13 @@ def check_touched(
         lines, code, key = changed[file_key], node.get("raw_code", ""), _key(node)
         layer = layer_of(node, project, domain_folders)
         found = []
-        if layer in ("mart", "rpt") and any(
+        # A view fixes its columns at creation, so a star freezes them; a
+        # union_relations wrapper needs its star and recompiles on its own.
+        is_star_view = (
+            node["config"].get("materialized") == "view"
+            and "union_relations" not in code
+        )
+        if (layer in ("mart", "rpt") or is_star_view) and any(
             _span(code, m.start(), m.end()) & lines for m in _STAR_SELECT.finditer(code)
         ):
             found.append(
