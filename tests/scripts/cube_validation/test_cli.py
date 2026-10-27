@@ -3,6 +3,7 @@ import hashlib
 import json
 import re
 import urllib.request
+import xml.etree.ElementTree
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -16,7 +17,7 @@ from cube_validation import cli, pipeline, tableau
 from cube_validation.bq import Warehouse
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.config import load_view_config
+from cube_validation.config import ColumnPair, Comparison, load_view_config
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.cube_client import Compiled
@@ -707,6 +708,39 @@ def test_prove_reads_aliases_back_and_skips_total_rows(fakes, tmp_path, capsys):
 
     assert load_view_config(path).comparisons[0].proof.cells == 2
     assert "skipped 1 total rows (All)" in capsys.readouterr().out
+
+
+def test_export_cells_reads_an_unquoted_numeric_alias_key_back():
+    # The live ES sheet shows grade 0 as K; an integer column's alias key is
+    # stored unquoted.
+    columns = [
+        xml.etree.ElementTree.fromstring(
+            "<column caption='Grade Level' datatype='integer' name='[grade_level]'"
+            " role='dimension' type='ordinal'>"
+            "<aliases><alias key='0' value='K' /></aliases></column>"
+        )
+    ]
+    comparison = Comparison(
+        id="c",
+        measure="m",
+        dims=[ColumnPair(dashboard="grade_level", cube="grade_level")],
+    )
+    rows = [
+        {"Grade Level": "K", "Rate": "0.94"},
+        {"Grade Level": "1", "Rate": "0.95"},
+        {"Grade Level": "All", "Rate": "0.945"},
+    ]
+    probe = [{"grade_level": 0, "value": 0.94}, {"grade_level": 1, "value": 0.95}]
+
+    cells, totals = pipeline._export_cells(
+        comparison, rows, {"Grade Level": "grade_level"}, "Rate", columns, probe
+    )
+
+    assert cells == [
+        {"grade_level": "0", "value": "0.94"},
+        {"grade_level": "1", "value": "0.95"},
+    ]
+    assert totals == 1
 
 
 def test_prove_keeps_a_real_all_member(fakes, tmp_path, capsys):
