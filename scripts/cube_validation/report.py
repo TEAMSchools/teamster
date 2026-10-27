@@ -143,6 +143,13 @@ def render_local(run: RunResult) -> str:
     out += _bullets([_decision_line(d) for d in run.applied.reconfirm])
     out += ["", "No longer needed (no group matches):"]
     out += _bullets([_decision_line(d) for d in run.applied.no_longer_needed])
+    out += ["", "Partly no longer needed (some values match no group):"]
+    out += _bullets(
+        [
+            f"{_decision_line(d)}; partly no longer needed: {', '.join(values)}"
+            for d, values in run.applied.partly_stale
+        ]
+    )
 
     out += ["", "Fingerprints a new decision records (`fingerprints:`):"]
     out += _bullets(

@@ -20,6 +20,8 @@ class Applied:
     quiet: list[tuple[Decision, Group]] = field(default_factory=list)
     reconfirm: list[Decision] = field(default_factory=list)
     no_longer_needed: list[Decision] = field(default_factory=list)
+    # A decision some of whose values match no group, with those values.
+    partly_stale: list[tuple[Decision, list[str]]] = field(default_factory=list)
 
 
 _OPEN = re.compile(r"(?i:rb|br|r|b)?('''|\"\"\"|'|\"|`)")
@@ -114,7 +116,9 @@ def apply(
 
     Returns:
         Groups still open or quieted, decisions to reconfirm because the SQL
-        changed (their groups stay open), and decisions matching no group.
+        changed (their groups stay open), decisions matching no group, and
+        decisions only some of whose values match a group, with the values
+        that match none. The values that do match stay quiet.
 
     Raises:
         ValueError: Two decisions claim the same group.
@@ -135,7 +139,9 @@ def apply(
 
         column = decision.group.get("column")
         # A group's value is text; YAML reads an unquoted `9` as an int.
-        values = {_text(v) for v in decision.group.get("values") or []}
+        values = list(
+            dict.fromkeys(_text(v) for v in decision.group.get("values") or [])
+        )
         matched = [
             i
             for i, g in enumerate(groups)
@@ -155,6 +161,9 @@ def apply(
                 )
             claimed[i] = decision
             applied.quiet.append((decision, groups[i]))
+        found = {groups[i].value for i in matched}
+        if missing := [v for v in values if v not in found]:
+            applied.partly_stale.append((decision, missing))
 
     applied.open = [g for i, g in enumerate(groups) if i not in claimed]
     return applied

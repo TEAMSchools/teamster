@@ -104,6 +104,18 @@ def test_measure_line_names_open_row_groups():
     assert "- `clean`: matches a dashboard; validated (pass 4)\n" in text
 
 
+def test_local_result_names_partly_stale_values():
+    applied = Applied(partly_stale=[(_decision(id="d6"), ["Camden", "Miami"])])
+
+    text = render_local(_run(applied=applied))
+
+    section = text.split("No longer needed")[1].split("Fingerprints")[0]
+    assert (
+        "`d6` (enrollment, domain_owner): Registrar owns the rule; "
+        "partly no longer needed: Camden, Miami"
+    ) in section
+
+
 def test_local_result_lists_live_sources_and_changed_dims():
     text = render_local(_run())
     assert "kipptaf_extracts.rpt_enrollment" in text

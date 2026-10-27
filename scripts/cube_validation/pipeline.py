@@ -779,6 +779,9 @@ def _run_from_json(data: dict) -> RunResult:
             quiet=[(Decision(**d), Group(**g)) for d, g in applied["quiet"]],
             reconfirm=[Decision(**d) for d in applied["reconfirm"]],
             no_longer_needed=[Decision(**d) for d in applied["no_longer_needed"]],
+            partly_stale=[
+                (Decision(**d), list(v)) for d, v in applied.get("partly_stale", [])
+            ],
         ),
         findings=[Finding(**f) for f in data["findings"]],
         live_sources=data["live_sources"],

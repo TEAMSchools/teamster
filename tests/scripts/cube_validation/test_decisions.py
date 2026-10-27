@@ -114,6 +114,26 @@ def test_missing_group_marks_no_longer_needed():
     assert len(applied.open) == 1
 
 
+def test_some_values_missing_marks_partly_stale():
+    d = _decision(values=("Newark", "Camden", "Miami"))
+    newark = _group("Newark")
+
+    applied = apply([d], [newark], {"enrollment": FP})
+
+    assert applied.quiet == [(d, newark)]
+    assert applied.partly_stale == [(d, ["Camden", "Miami"])]
+    assert applied.open == [] and applied.no_longer_needed == []
+
+
+def test_every_value_matching_is_not_partly_stale():
+    d = _decision(values=("Newark", "Camden"))
+
+    applied = apply([d], [_group("Newark"), _group("Camden")], {"enrollment": FP})
+
+    assert applied.partly_stale == []
+    assert len(applied.quiet) == 2
+
+
 def test_two_decisions_claiming_one_group_raise():
     with pytest.raises(ValueError, match="d1.*d2"):
         apply(
