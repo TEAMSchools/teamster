@@ -624,3 +624,370 @@ identities:
   - name: ada-is-attendance-over-membership
     left: avg_daily_attendance
     right: sum_attendance_value / count_membership_days
+# Every call is domain_owner: the analyst sends all definition and scope
+# questions to the owner together. task fills in once the review issue posts.
+decisions:
+  - id: enrolled-only-ontime-grade-rollup
+    comparison: ontime-grade-rollup
+    group:
+      column: dashboard_filter
+      values:
+        - enroll_status
+    call: domain_owner
+    reason:
+      "The Grade Rollup and Roster show currently enrolled students only
+      (enroll_status = 0). Cube counts every student enrolled on a day,
+      including students who have since left. Cube's enrollment_status member
+      ('Currently Enrolled') can reproduce the dashboard's population. Owner:
+      should Cube's default answer include students who left?"
+    fingerprints: &id001
+      cube: 9b783dc6e78fea16ae95d26a5823109f678476c08e9bcc13809ef20315522fc0
+      dashboard: e12658fd1b0a9c020169727622232e86d1d3bc2b528db917766db664e1d8e990
+  - id: enrolled-only-tardy-roster
+    comparison: tardy-roster
+    group:
+      column: dashboard_filter
+      values:
+        - enroll_status
+    call: domain_owner
+    reason:
+      "The Grade Rollup and Roster show currently enrolled students only
+      (enroll_status = 0). Cube counts every student enrolled on a day,
+      including students who have since left. Cube's enrollment_status member
+      ('Currently Enrolled') can reproduce the dashboard's population. Owner:
+      should Cube's default answer include students who left?"
+    fingerprints: &id002
+      cube: c12f91760fa240318864ede54ae1425472fc664d2f92ffb936c2e6bda0e46e14
+      dashboard: 3f1a96e349922b243722f3b76e9d8ffa28dc4e6a469991904969ccd51d249846
+  - id: enrolled-only-absences-roster
+    comparison: absences-roster
+    group:
+      column: dashboard_filter
+      values:
+        - enroll_status
+    call: domain_owner
+    reason:
+      "The Grade Rollup and Roster show currently enrolled students only
+      (enroll_status = 0). Cube counts every student enrolled on a day,
+      including students who have since left. Cube's enrollment_status member
+      ('Currently Enrolled') can reproduce the dashboard's population. Owner:
+      should Cube's default answer include students who left?"
+    fingerprints: &id003
+      cube: 4fefd46148164fd28b01fb88743871248ac1a4b8ae26e9094ddd40c8d6aec42b
+      dashboard: bfa81b351eb9f871640737e8ee71b8df9cd40b46c86a0328ec23febaa6908d6b
+  - id: enrolled-only-iss-roster
+    comparison: iss-roster
+    group:
+      column: dashboard_filter
+      values:
+        - enroll_status
+    call: domain_owner
+    reason:
+      "The Grade Rollup and Roster show currently enrolled students only
+      (enroll_status = 0). Cube counts every student enrolled on a day,
+      including students who have since left. Cube's enrollment_status member
+      ('Currently Enrolled') can reproduce the dashboard's population. Owner:
+      should Cube's default answer include students who left?"
+    fingerprints: &id004
+      cube: 05a279a8cb663f428e03a5f8fb1ae8a25895615ce7a48843647b85302cd16254
+      dashboard: 82089139912ac9d97a6b46bc4f53238f437c6a76476c3bc6e457ca47f4c6097f
+  - id: enrolled-only-oss-roster
+    comparison: oss-roster
+    group:
+      column: dashboard_filter
+      values:
+        - enroll_status
+    call: domain_owner
+    reason:
+      "The Grade Rollup and Roster show currently enrolled students only
+      (enroll_status = 0). Cube counts every student enrolled on a day,
+      including students who have since left. Cube's enrollment_status member
+      ('Currently Enrolled') can reproduce the dashboard's population. Owner:
+      should Cube's default answer include students who left?"
+    fingerprints: &id005
+      cube: e44b91d9e00ff93759ece369188e8ebfa6ba0fe6e00100aec66422341fe65a9a
+      dashboard: 6f8b560cb082bb787e4dfe3f5b38ad6a856f71889a48994f5944d67537c28dd5
+  - id: enrolled-only-present-roster
+    comparison: present-roster
+    group:
+      column: dashboard_filter
+      values:
+        - enroll_status
+    call: domain_owner
+    reason:
+      "The Grade Rollup and Roster show currently enrolled students only
+      (enroll_status = 0). Cube counts every student enrolled on a day,
+      including students who have since left. Cube's enrollment_status member
+      ('Currently Enrolled') can reproduce the dashboard's population. Owner:
+      should Cube's default answer include students who left?"
+    fingerprints:
+      cube: 42e4dbce03b91a8c495f42a8306c9c2f268cb6ef2a4d617d92e6717de3e8636e
+      dashboard: 163280f7a5be605d1e137a38c4d684b001e4898a574527c4734074fa79ab34e4
+  - id: enrolled-only-membership-roster
+    comparison: membership-roster
+    group:
+      column: dashboard_filter
+      values:
+        - enroll_status
+    call: domain_owner
+    reason:
+      "The Grade Rollup and Roster show currently enrolled students only
+      (enroll_status = 0). Cube counts every student enrolled on a day,
+      including students who have since left. Cube's enrollment_status member
+      ('Currently Enrolled') can reproduce the dashboard's population. Owner:
+      should Cube's default answer include students who left?"
+    fingerprints:
+      cube: 3a896bc17ece1e0a2201d2450b10578663cceba5d57af2fe74d548fc700c192a
+      dashboard: 6801dcd7b42561cdcec7b3effb018e23d68d5bbf321fd56e738340bb9ebda22b
+  - id: enrolled-only-absent-weighted-roster
+    comparison: absent-weighted-roster
+    group:
+      column: dashboard_filter
+      values:
+        - enroll_status
+    call: domain_owner
+    reason:
+      "The Grade Rollup and Roster show currently enrolled students only
+      (enroll_status = 0). Cube counts every student enrolled on a day,
+      including students who have since left. Cube's enrollment_status member
+      ('Currently Enrolled') can reproduce the dashboard's population. Owner:
+      should Cube's default answer include students who left?"
+    fingerprints: &id006
+      cube: 55d374bf2b79839da5b5f5bda355947b547edb059fb5b75f30d56150a8a17dab
+      dashboard: 9a1cc04481e96f8df7ccbdc529bdac6d06814dafa5a780d2668329a5d0426a12
+  - id: enrolled-only-days-to-90-roster
+    comparison: days-to-90-roster
+    group:
+      column: dashboard_filter
+      values:
+        - enroll_status
+    call: domain_owner
+    reason:
+      "The Grade Rollup and Roster show currently enrolled students only
+      (enroll_status = 0). Cube counts every student enrolled on a day,
+      including students who have since left. Cube's enrollment_status member
+      ('Currently Enrolled') can reproduce the dashboard's population. Owner:
+      should Cube's default answer include students who left?"
+    fingerprints:
+      cube: 46fcb8830f0bf480e1eeacc896ab5d09e279c8857858ad056fdaaf1ef0cbd041
+      dashboard: 033dcb78a11efb70cfc034c024161b1b6a133fab8dde22aeb8d4ea8d4ea4a8db
+  - id: students-no-attendance-newark
+    comparison: students-y1-region
+    group:
+      column: regions_region_name
+      values:
+        - Newark
+    call: domain_owner
+    reason:
+      "Some Newark students have membership days with no recorded attendance.
+      Cube's count_students (membership days only) counts them; the dashboard
+      keeps only rows with an attendance value. Owner: should a student with no
+      recorded attendance count?"
+    fingerprints:
+      cube: 944ce9db7b614f965d6d69a840556fc32cfdf57ba239be16120934786e7d8cc2
+      dashboard: 6f4279c80023a662974e25377bcfb37ac984081f235fa5965b3a723d12084fc8
+  - id: cells-ontime-grade-rollup
+    comparison: ontime-grade-rollup
+    cells: true
+    call: domain_owner
+    reason:
+      "Cube's pct_ontime is blank for every Miami grade, where the dashboard
+      shows 100%: Miami has no tardy flag (is_tardy is null on every Miami row
+      this year). Elsewhere 3 grades differ at the third decimal: the dashboard
+      counts the Tardy code group (ET, T, T10, TLE), Cube counts is_tardy (codes
+      starting with T). Owner: which tardy definition is right, and what should
+      Miami show?"
+    fingerprints: *id001
+  - id: cells-tardy-roster
+    comparison: tardy-roster
+    cells: true
+    call: domain_owner
+    reason:
+      "58 students differ by the tardy code list: the dashboard counts ET, T,
+      T10, TLE; Cube counts codes starting with T (adds TD and TE, omits ET). In
+      Miami, Cube is blank where the dashboard shows 0: Miami has no tardy flag
+      (is_tardy is null on every Miami row this year). Owner: which definition
+      is right, and should Miami tardies read 0 or blank?"
+    fingerprints: *id002
+  - id: cells-absences-roster
+    comparison: absences-roster
+    cells: true
+    call: domain_owner
+    reason:
+      "704 students differ: the dashboard counts the Absent code group (A, A-E,
+      AD, D, X); Cube counts every membership day worth 0 attendance (1 -
+      attendance value), which takes in other codes. Most differing cells are
+      Miami, whose codes the workbook's group does not list. 22 cells where Cube
+      has a value and the dashboard is blank are not yet explained. Owner: which
+      absence count is right?"
+    fingerprints: *id003
+  - id: cells-iss-roster
+    comparison: iss-roster
+    cells: true
+    call: domain_owner
+    reason:
+      "Every difference is Miami: Cube is blank where the dashboard shows 0,
+      because is_iss is null on Miami rows. Owner: should Miami ISS days read 0,
+      or should the Miami flag be filled in?"
+    fingerprints: *id004
+  - id: cells-oss-roster
+    comparison: oss-roster
+    cells: true
+    call: domain_owner
+    reason:
+      "5 students outside Miami differ: Cube's is_oss adds SHI to the
+      dashboard's OS, OSS, OSSP. In Miami, is_oss is null, so Cube is blank
+      where the dashboard shows 0, and misses the Miami students the dashboard
+      counts with OSS days. Owner: does SHI count as OSS, and should the Miami
+      flag be filled in?"
+    fingerprints: *id005
+  - id: cells-absent-weighted-roster
+    comparison: absent-weighted-roster
+    cells: true
+    call: domain_owner
+    reason:
+      "Every difference is Miami: the dashboard field (# Absent Weighted (HS))
+      is blank there because its formula adds is_tardy, which is null in Miami;
+      Cube treats a missing tardy as 0 and returns a value. Owner: should Miami
+      show weighted absences, and is the field meant for high school only?"
+    fingerprints: *id006
+  - id: missing-cut-lastfirst
+    missing_cut: Lastfirst
+    call: domain_owner
+    reason:
+      "The Roster lists students by name. The validator keys students by
+      lea_student_identifier, so a name cut adds nothing to check. Owner:
+      confirm Cube needs no name-based cut."
+  - id: missing-cut-teacher-name
+    missing_cut: Teacher Name
+    call: domain_owner
+    reason:
+      "The Roster splits a student's days by homeroom teacher; the validator
+      summed the split rows. Cube has the homeroom teacher's name
+      (staff_homeroom_teacher_full_name). Owner: must Cube answer per homeroom
+      teacher?"
+  - id: missing-cut-team
+    missing_cut: Team
+    call: domain_owner
+    reason:
+      "The Roster splits a student's days by team; Cube has no team member.
+      Owner: does Cube need a team cut?"
+  - id: missing-filter-c-504-status
+    missing_filter: C 504 Status
+    call: domain_owner
+    reason:
+      "The Y1 ADA sheets can filter by 504 status; Cube's view has no 504
+      member. Owner: should it?"
+  - id: missing-filter-enroll-status
+    missing_filter: Enroll Status
+    call: domain_owner
+    reason:
+      Cube has enrollment_status as text ('Currently Enrolled') where the
+      dashboard uses enroll_status = 0, so the validator cannot pair them. The
+      question is in the enroll_status decisions.
+  - id: missing-filter-ethnicity
+    missing_filter: Ethnicity
+    call: domain_owner
+    reason:
+      "Cube has race, with labels where the dashboard uses letter codes (A, B, H
+      and so on). Owner: are these the same field, and which coding should Cube
+      use?"
+  - id: missing-filter-filter-death-of-student
+    missing_filter: Filter - Death of Student
+    call: domain_owner
+    reason:
+      "The Roster excludes a specific student; Cube has no such exclusion. No
+      current number changes. Owner: should Cube exclude such records?"
+  - id: missing-filter-gender
+    missing_filter: Gender
+    call: domain_owner
+    reason:
+      Cube has gender_identity with the same values as the dashboard (F, M, X).
+      Mapping it as a filter needs a re-prove of the Y1 ADA comparisons.
+  - id: missing-filter-homeroom
+    missing_filter: Homeroom
+    call: domain_owner
+    reason:
+      "The Roster can filter by homeroom; Cube has the homeroom teacher's name
+      but no homeroom member. Owner: is the teacher's name enough?"
+  - id: missing-filter-iep-status
+    missing_filter: Iep Status
+    call: domain_owner
+    reason:
+      "Cube has is_iep (yes or no) where the dashboard has No IEP, SPED and SPED
+      SPEECH. Owner: does SPED SPEECH count as an IEP in Cube?"
+  - id: missing-filter-is-counselingservices
+    missing_filter: Is Counselingservices
+    call: domain_owner
+    reason:
+      "The dashboard can filter by counseling services; Cube has no member.
+      Owner: should it?"
+  - id: missing-filter-is-truant-current
+    missing_filter: Is Truant Current
+    call: domain_owner
+    reason:
+      "The Roster and Grade Rollup can filter current truants; truancy lives on
+      the periods view, not this daily view. Owner: is that split right?"
+  - id: missing-filter-lep-status
+    missing_filter: Lep Status
+    call: domain_owner
+    reason:
+      Cube has is_ell, a yes-or-no flag like the dashboard's lep_status. Mapping
+      it as a filter needs a re-prove of the Y1 ADA comparisons.
+  - id: missing-filter-nj-overall-student-tier
+    missing_filter: NJ Overall Student Tier
+    call: domain_owner
+    reason:
+      "The dashboard can filter by NJ overall student tier; Cube's daily view
+      has no tier member. Owner: should it?"
+  - id: missing-filter-region-filter
+    missing_filter: Region [Filter]
+    call: domain_owner
+    reason:
+      "A second region filter on Y1 ADA - Region; Cube has regions_region_name,
+      already paired with the Region filter. Owner: confirm this one adds
+      nothing."
+  - id: missing-filter-school
+    missing_filter: School
+    call: domain_owner
+    reason:
+      "The workbook has 2 fields captioned School (school and
+      school_abbreviation); Cube has locations_abbreviation and
+      locations_location_name. Owner: which school field the dashboard means."
+  - id: missing-filter-school-level
+    missing_filter: School Level
+    call: domain_owner
+    reason:
+      "The dashboard's school_level has ES, HS, MS and OD; Cube's
+      locations_grade_band has ES, HS, MS only. Owner: what is OD, and does Cube
+      need it?"
+  - id: missing-filter-school-level-ood-filter-set
+    missing_filter: School Level - OOD FIlter Set
+    call: domain_owner
+    reason:
+      "A set on Y1 ADA - MS built from school level, apparently for
+      out-of-district students; Cube has no such set. Owner: does Cube need it?"
+  - id: missing-filter-schoolid
+    missing_filter: Schoolid
+    call: domain_owner
+    reason:
+      "Cube identifies schools by abbreviation and name, not PowerSchool
+      schoolid. Owner: confirm that is enough."
+  - id: missing-filter-term
+    missing_filter: Term
+    call: domain_owner
+    reason:
+      Cube has terms_term_name, whose values include the dashboard's Q1 and Q2.
+      Mapping it as a filter needs a re-prove of every comparison.
+  - id: missing-filter-is-self-contained
+    missing_filter: is_self_contained
+    call: domain_owner
+    reason:
+      "The dashboard can limit to self-contained classrooms; Cube has no member.
+      Owner: should it?"
+  - id: missing-filter-ms-attended
+    missing_filter: ms_attended
+    call: domain_owner
+    reason:
+      "The dashboard can filter by middle school attended; Cube has no member.
+      Owner: should it?"
