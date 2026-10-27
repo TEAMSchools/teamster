@@ -15,8 +15,9 @@ models:
       bucket, such as grade 9 before its buckets are entered, stay Bucket 4.
 
 
-      Buckets 1 to 3 start in academic year 2025. Earlier years stored only
-      Bucket 2, so a pre-2025 bucket is not comparable with a current one.
+      Buckets 1 to 3 start in the 2025-26 school year (academic_year 2025).
+      Earlier years stored only Bucket 2, so a bucket before academic_year 2025
+      is not comparable with a current one.
 
 
       int_extracts__student_enrollments_subjects rebuilds nightly, so a student
@@ -42,9 +43,7 @@ models:
     columns:
       - name: student_number
         data_type: int64
-        description: >-
-          Canonical network student number. Unique across districts, so it needs
-          no region qualifier.
+        description: Canonical network student number.
       - name: academic_year
         data_type: int64
         description: Academic year, as its starting calendar year.
@@ -57,7 +56,8 @@ models:
         data_type: string
         description: >-
           The student's ELA bucket — Bucket 1, 2, 3 or 4, or No Bucket Assigned
-          for a senior with no stored bucket. Read from the Reading subject row.
+          for a senior with no stored bucket. Read from the upstream row whose
+          iready_subject is Reading, the upstream name for ELA.
       - name: nj_student_tier_math
         data_type: string
         description: >-

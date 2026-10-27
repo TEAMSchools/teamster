@@ -591,8 +591,8 @@ since that model's nightly rebuild reads null until the next one.
 The bucket is a fact about the student, not a score, so the join to it has no
 `test_type`: student number, academic year, and `_dbt_source_project` only. The
 other CARAT views don't carry buckets. They cover graduating classes back to
-2014, and buckets 1 to 3 only start in academic year 2025, so almost every
-student there would read Bucket 4.
+2014, and buckets 1 to 3 only start in school year 2025-26 (`academic_year`
+2025), so almost every student there would read Bucket 4.
 
 ### The KIPP Forward Google Sheets extracts
 
