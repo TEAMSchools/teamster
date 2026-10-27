@@ -1202,37 +1202,6 @@ class SheetGaps:
     restricting: list[str]
 
 
-# A shelf or filter field: `[derivation:name:type]`, with an optional `:N`.
-# Measure Names, user filters and action filters have no derivation, so they
-# never match.
-_FIELD_REF = re.compile(r"\[(?P<deriv>[a-z]*):(?P<name>[^\]]+?):[a-z]+(?::\d+)?\]")
-# Derivations that aggregate a field; such a field is a value, not a cut.
-_AGGREGATES = {
-    "sum", "avg", "cnt", "ctd", "cntd", "min", "max", "attr", "med", "usr",
-    "std", "stp", "var", "vrp", "pcto", "pctd", "kurt", "skew", "collect",
-}  # fmt: skip
-# A field built on the viewer's identity is a permission, not a cut.
-_USER_FUNCTION = re.compile(
-    r"\b(USERNAME|FULLNAME|USERDOMAIN|ISMEMBEROF|ISUSERNAME|ISFULLNAME|"
-    r"USERATTRIBUTE|USERATTRIBUTEINCLUDES)\s*\(",
-    re.IGNORECASE,
-)
-_USER_NS = "{http://www.tableausoftware.com/xml/user}"
-
-
-def _restricts(filter_el: ET.Element) -> bool:
-    """True when a filter narrows the sheet now, rather than showing all."""
-    if filter_el.get("class") == "quantitative":
-        return any(c.tag in ("min", "max") for c in filter_el)
-    top = filter_el.find("groupfilter")
-    if top is None:
-        return False
-    return not (
-        top.get("function") == "level-members"
-        and top.get(f"{_USER_NS}ui-enumeration") == "all"
-    )
-
-
 def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     """Name the sheet's cuts and filters that have no Cube member.
 
@@ -1241,10 +1210,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     user filters and fields built on the viewer's identity are skipped.
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
-    root = ET.fromstring(twb_xml)
-    ws = next(
-        (w for w in root.iter("worksheet") if w.get("name") == comparison.sheet), None
-    )
+    ws = finder.worksheet(ET.fromstring(twb_xml), comparison.sheet or "")
     if ws is None:
         raise Refusal(f"the workbook has no worksheet {comparison.sheet!r}")
     pairs = [*comparison.dims, *comparison.filters.values()]
@@ -1252,18 +1218,11 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
         pairs += [*comparison.rows.grain, *comparison.rows.values]
     mapped = {p.dashboard for p in pairs}
     mapped_captions = set(comparison.filters)
-    caption: dict[str, str] = {}
-    personal: set[str] = set()
-    for col in ws.iter("column"):
-        name = _bare(col.get("name") or "")
-        caption.setdefault(name, col.get("caption") or name)
-        calc = col.find("calculation")
-        if calc is not None and _USER_FUNCTION.search(calc.get("formula") or ""):
-            personal.add(name)
+    caption, personal = finder.sheet_fields(ws)
 
     def field_of(ref: str) -> str | None:
-        m = _FIELD_REF.search(ref)
-        if m is None or m["deriv"] in _AGGREGATES:
+        m = finder.FIELD_REF.search(ref)
+        if m is None or m["deriv"] in finder.AGGREGATES:
             return None
         name = m["name"]
         if name in mapped or name in personal or caption.get(name) in mapped_captions:
@@ -1274,7 +1233,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
         [el.text or "" for el in ws.iter() if el.tag in ("rows", "cols")]
         + [el.get("column") or "" for enc in ws.iter("encodings") for el in enc]
     )
-    cuts = {f for ref in _FIELD_REF.finditer(shelves) if (f := field_of(ref[0]))}
+    cuts = {f for ref in finder.FIELD_REF.finditer(shelves) if (f := field_of(ref[0]))}
     filters: set[str] = set()
     restricting: set[str] = set()
     for filter_el in ws.iter("filter"):
@@ -1282,7 +1241,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
         if name is None or name in cuts:
             continue
         filters.add(name)
-        if _restricts(filter_el):
+        if finder.restricts(filter_el):
             restricting.add(name)
 
     def captions(names: set[str]) -> list[str]:
@@ -1368,6 +1327,74 @@ def _export_cells(
     return out, totals, len(cells) - len(out)
 
 
+def _comparison_by_id(cfg: ViewConfig, path: Path, comparison_id: str) -> Comparison:
+    comparison = next((c for c in cfg.comparisons if c.id == comparison_id), None)
+    if comparison is None:
+        raise Refusal(f"{path}: no comparison {comparison_id!r}")
+    return comparison
+
+
+def _capture(
+    comparison: Comparison,
+    tbl: tableau.Tableau,
+    captures: dict[tuple, tableau.Snapshot] | None,
+) -> tuple[str, list[ET.Element], list[dict], list[dict], tableau.Snapshot]:
+    """Export a comparison's sheet once per (workbook, sheet, cuts).
+
+    Returns:
+        The workbook XML, the sheet's columns, the cuts a REST export takes,
+        the cuts only a browser can prove, and the snapshot.
+    """
+    _require(comparison, "workbook", "sheet")
+    workbook, sheet = comparison.workbook or "", comparison.sheet or ""
+    twb = tbl.download_twb(workbook)
+    columns = _sheet_columns(twb, sheet)
+    measures = [c.get("name") or "" for c in columns if c.get("role") == "measure"]
+    if not measures:
+        raise Refusal(f"sheet {sheet!r} lists no measure")
+    exportable, browser = tableau.split_cuts(_cuts(comparison), twb)
+    if not exportable:
+        raise Refusal(f"comparison {comparison.id!r} has no cut a REST export can take")
+    captures = {} if captures is None else captures
+    key = (workbook, sheet, tuple(cut_label(cut) for cut in exportable))
+    if key not in captures:
+        try:
+            captures[key] = tbl.capture(
+                workbook,
+                sheet,
+                exportable,
+                lambda x: tableau.expose_sheet(
+                    tableau.drop_number_formats(x, measures), sheet
+                ),
+            )
+        except (LookupError, tableau.RefreshMovedError) as exc:
+            raise Refusal(f"cannot export {sheet!r}: {exc}") from exc
+    return twb, columns, exportable, browser, captures[key]
+
+
+def prove_headers(
+    cfg: ViewConfig,
+    path: Path,
+    comparison_id: str,
+    *,
+    tbl: tableau.Tableau,
+    captures: dict[tuple, tableau.Snapshot] | None = None,
+) -> None:
+    """Print each exported cut's column headers, and the fields a long export
+    names, without probing or writing anything.
+    """
+    comparison = _comparison_by_id(cfg, path, comparison_id)
+    _, _, exportable, _, snap = _capture(comparison, tbl, captures)
+    for cut, rows in zip(exportable, snap.exports, strict=True):
+        headers = list(rows[0]) if rows else []
+        print(
+            f"{comparison.id} cut {cut_label(cut)}: {', '.join(headers) or 'no rows'}"
+        )
+        if MEASURE_NAMES in headers:
+            names = sorted({r[MEASURE_NAMES] for r in rows})
+            print(f"  {MEASURE_NAMES}: {', '.join(names)}")
+
+
 def prove(
     cfg: ViewConfig,
     path: Path,
@@ -1391,36 +1418,9 @@ def prove(
         Refusal: The comparison is unknown or incomplete, an exportable cut
             has no rows on a side, or the proof failed.
     """
-    comparison = next((c for c in cfg.comparisons if c.id == comparison_id), None)
-    if comparison is None:
-        raise Refusal(f"{path}: no comparison {comparison_id!r}")
+    comparison = _comparison_by_id(cfg, path, comparison_id)
     _require(comparison, "workbook", "sheet", "dashboard_view", "decimals")
-    workbook, sheet = comparison.workbook or "", comparison.sheet or ""
-
-    twb = tbl.download_twb(workbook)
-    columns = _sheet_columns(twb, sheet)
-    measures = [c.get("name") or "" for c in columns if c.get("role") == "measure"]
-    if not measures:
-        raise Refusal(f"sheet {sheet!r} lists no measure")
-    exportable, browser = tableau.split_cuts(_cuts(comparison), twb)
-    if not exportable:
-        raise Refusal(f"comparison {comparison.id!r} has no cut a REST export can take")
-
-    captures = {} if captures is None else captures
-    key = (workbook, sheet, tuple(cut_label(cut) for cut in exportable))
-    if key not in captures:
-        try:
-            captures[key] = tbl.capture(
-                workbook,
-                sheet,
-                exportable,
-                lambda x: tableau.expose_sheet(
-                    tableau.drop_number_formats(x, measures), sheet
-                ),
-            )
-        except (LookupError, tableau.RefreshMovedError) as exc:
-            raise Refusal(f"cannot export {sheet!r}: {exc}") from exc
-    snap = captures[key]
+    twb, columns, exportable, browser, snap = _capture(comparison, tbl, captures)
     if snap.refresh_started < now - PROOF_WINDOW:
         raise Refusal(
             f"the extract refreshed at {snap.refresh_started}, outside the 7 days "
@@ -1482,7 +1482,9 @@ def prove(
             "fingerprint": proof.fingerprint,
             "cells": proof.cells,
             "proven_at": proof.proven_at.isoformat(),
-            "workbook_updated_at": tbl.workbook_updated(workbook).isoformat(),
+            "workbook_updated_at": tbl.workbook_updated(
+                comparison.workbook or ""
+            ).isoformat(),
             "probe_fingerprint": probe_fingerprint(cfg, comparison),
             # `run` lists every other cut as one to prove in the browser.
             "cuts": [cut_label(cut) for cut in exportable],
@@ -1570,8 +1572,16 @@ def discover(
     tbl: tableau.Tableau,
     exposures_path: Path,
     only: list[str],
+    caption: str | None = None,
+    limit: int | None = finder.TOP_N,
 ) -> list[finder.Candidate]:
-    """Print each workbook's calculated fields ranked against a measure."""
+    """Print workbook fields ranked against a measure, then each listed sheet's
+    shape: shelves, export form, displayed decimals and filters.
+
+    Calculated fields and aggregated raw fields both rank; a formula that uses a
+    code group shows its codes. `caption` boosts the dashboard's name for the
+    measure; `limit` None prints every candidate.
+    """
     compiled = cube.compiled({"measures": [_member(cfg.view, measure)]})
     member_sql = _measure_expression(compiled.sql, cfg.view, measure)
 
@@ -1582,6 +1592,7 @@ def discover(
         )
 
     found: list[finder.Candidate] = []
+    twbs: dict[str, str] = {}
     for exposure in exposures:
         if only and exposure.name not in only:
             continue
@@ -1598,24 +1609,59 @@ def discover(
         ) as exc:
             print(f"Could not read {exposure.label}: {type(exc).__name__}: {exc}")
             continue
+        twbs[exposure.luid] = twb
         found += finder.rank(
             measure,
             member_sql,
-            finder.calculated_fields(twb),
+            finder.calculated_fields(twb) + finder.aggregated_fields(twb),
             workbook_luid=exposure.luid,
             workbook_label=exposure.label,
+            caption=caption,
+            limit=None,
         )
 
     found.sort(key=lambda c: (-c.score, c.workbook_label, c.caption))
+    found = found if limit is None else found[:limit]
     if not found:
         print(f"No candidates for {measure}.")
     for c in found:
-        formula = " ".join(c.formula.split())
+        formula = finder.explain_bins(
+            " ".join(c.formula.split()), finder.bins(twbs[c.workbook_luid])
+        )
         print(
             f"{c.score:.2f}  {c.workbook_label} ({c.workbook_luid})  "
             f"{c.caption!r} on {', '.join(c.worksheets) or 'no sheet'}: {formula}"
         )
+    _print_sheets(found, twbs)
     return found
+
+
+def _print_sheets(found: list[finder.Candidate], twbs: dict[str, str]) -> None:
+    sheets = list(
+        dict.fromkeys(
+            (c.workbook_luid, c.workbook_label, s) for c in found for s in c.worksheets
+        )
+    )
+    if not sheets:
+        return
+    print("\nSheets:")
+    for luid, label, sheet in sheets:
+        shape = finder.sheet_shape(twbs[luid], sheet)
+        print(
+            f"  {sheet} ({label}): rows {', '.join(shape.rows) or 'none'}; "
+            f"columns {', '.join(shape.cols) or 'none'}"
+        )
+        export = (
+            "long (set sheet_field to a Measure Names value)"
+            if shape.long_export
+            else "wide"
+        )
+        print(f"    export: {export}")
+        if shape.decimals:
+            shown = ", ".join(f"{k} {v}" for k, v in shape.decimals.items())
+            print(f"    decimals: {shown}")
+        for line in shape.filters:
+            print(f"    filter {line}")
 
 
 def utc(value: str) -> datetime:

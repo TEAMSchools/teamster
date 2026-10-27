@@ -1309,3 +1309,70 @@ def test_run_names_dashboard_only_filters(fakes, tmp_path, capsys):
     assert "ada-region: enroll_status IN (0)" in section
     reconcile = _reconcile(fakes.bq)
     assert "enroll_status IN (0)" in reconcile
+
+
+# --- discover and prove --headers -------------------------------------------------
+
+
+def _exposures(tmp_path, monkeypatch):
+    exposures = tmp_path / "tableau.yml"
+    exposures.write_text(
+        "exposures:\n  - name: attendance\n    label: Attendance Dashboard\n"
+        '    depends_on: [ref("rpt_d")]\n'
+        "    config: { meta: { dagster: { asset: { metadata: { id: wb-1 } } } } }\n"
+    )
+    monkeypatch.setattr(cli, "EXPOSURES", exposures)
+
+
+def test_discover_boosts_a_caption_and_describes_its_sheet(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    _exposures(tmp_path, monkeypatch)
+    fakes.tbl.twb = (FIXTURES / "roster.twb").read_text()
+    argv = ["discover", str(_file(tmp_path)), "--measure", "avg_daily_attendance",
+            "--caption", "# Tardy", "--all"]  # fmt: skip
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    out = capsys.readouterr().out
+    lines = [x for x in out.splitlines() if "Attendance Dashboard (wb-1)" in x]
+    assert "'# Tardy'" in lines[0]
+    assert "[Att Code (group): Tardy = T, ET; Absent = A]" in lines[0]
+    assert any("'SUM(Membership)'" in x for x in lines)
+    sheets = out.split("Sheets:", 1)[1]
+    assert "Roster (Attendance Dashboard): rows Region, Student Number" in sheets
+    assert "long (set sheet_field to a Measure Names value)" in sheets
+    assert "decimals: # Tardy 0, SUM(Membership) 3" in sheets
+    assert "Student Number: chosen values hidden" in sheets
+    assert "999999" not in out
+
+
+def test_discover_keeps_the_top_5_by_default(fakes, tmp_path, monkeypatch, capsys):
+    _exposures(tmp_path, monkeypatch)
+    fakes.tbl.twb = (FIXTURES / "roster.twb").read_text()
+    argv = ["discover", str(_file(tmp_path)), "--measure", "avg_daily_attendance",
+            "--limit", "1", "--caption", "# Tardy"]  # fmt: skip
+
+    assert cli.main(argv) == 0
+
+    out = capsys.readouterr().out
+    assert len([x for x in out.splitlines() if "(wb-1)" in x]) == 1
+
+
+def test_prove_headers_prints_the_export_without_probing(fakes, tmp_path, capsys):
+    fakes.tbl.exports = [
+        [{"Region": "Newark", "Measure Names": "# Tardy", "Measure Values": "3"},
+         {"Region": "Newark", "Measure Names": "# Present", "Measure Values": "90"}]
+        for _ in range(2)
+    ]  # fmt: skip
+    path = _file(tmp_path, UNPROVEN)
+    before = path.read_text()
+
+    assert (
+        cli.main(["prove", str(path), "--comparison", "ada-region", "--headers"]) == 0
+    )
+
+    out = capsys.readouterr().out
+    assert "ada-region cut {}: Region, Measure Names, Measure Values" in out
+    assert "Measure Names: # Present, # Tardy" in out
+    assert fakes.bq.ran == [] and path.read_text() == before

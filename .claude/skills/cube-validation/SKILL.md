@@ -77,9 +77,19 @@ cause, do not retry around it.
 
 1. List the measures. Ask the analyst which measures and which view; a file
    needs `time_dimension` whenever it has `rows` or anchors.
-2. `discover <file> --measure <name>` ranks workbook fields. Show the analyst
-   the candidates. A name-alike field can mean something else, so no comparison
-   is written until the analyst confirms it.
+2. `discover <file> --measure <name>` ranks workbook fields: calculated fields
+   and aggregated raw fields (`SUM(Membership)`). Pass
+   `--caption "<name the dashboard shows>"` to rank that field first, and
+   `--all` (or `--limit N`) to see past the top 5. A formula that uses a code
+   group prints its codes. Each listed sheet's shape follows: shelves, long or
+   wide export, displayed decimals, and filters. A filter on any field outside
+   the reference columns prints "chosen values hidden": decide with the analyst
+   whether the probe needs it, and never look up or copy its values. Show the
+   analyst the candidates. A name-alike field can mean something else, so no
+   comparison is written until the analyst confirms it.
+   `prove <file> --comparison <id> --headers` prints each cut's export headers
+   (and a long export's field names) without probing, to find `sheet_field`
+   before the first proof.
 3. Write the comparison into the view file with `confirmed: true` and
    `proof: null`. Required: `workbook`, `sheet`, `dashboard_view`, `probe` (or
    `probe_sql`, never both), `decimals`, `dims`, `filters`, `defaults`, `cuts`,

@@ -132,6 +132,12 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--exposure", action="append", default=[], help="limit to an exposure name"
     )
+    p.add_argument(
+        "--caption", help="the dashboard's name for the measure; ranks first"
+    )
+    shown = p.add_mutually_exclusive_group()
+    shown.add_argument("--limit", type=int, default=5, help="candidates to print")
+    shown.add_argument("--all", action="store_true", help="print every candidate")
 
     p = sub.add_parser("prove", help="prove a probe against its sheet once")
     view_file(p)
@@ -143,6 +149,11 @@ def _parser() -> argparse.ArgumentParser:
     )
     which.add_argument(
         "--check", action="store_true", help="list proofs older than their workbook"
+    )
+    p.add_argument(
+        "--headers",
+        action="store_true",
+        help="print each cut's export headers and stop; nothing is probed or written",
     )
     max_usd(p)
 
@@ -207,6 +218,8 @@ def _dispatch(args: argparse.Namespace) -> int:
                 tbl=tbl,
                 exposures_path=EXPOSURES,
                 only=args.exposure,
+                caption=args.caption,
+                limit=None if args.all else args.limit,
             )
         return 0
 
@@ -215,9 +228,17 @@ def _dispatch(args: argparse.Namespace) -> int:
         with tableau_session() as tbl:
             pipeline.prove_check(cfg, tbl=tbl)
         return 0
+    if args.headers:
+        captures: dict = {}
+        with tableau_session() as tbl:
+            for comparison_id in args.comparison:
+                pipeline.prove_headers(
+                    cfg, args.view, comparison_id, tbl=tbl, captures=captures
+                )
+        return 0
     wh = make_warehouse()
     refused = 0
-    captures: dict = {}
+    captures = {}
     with tableau_session() as tbl:
         for comparison_id in args.comparison:
             try:
