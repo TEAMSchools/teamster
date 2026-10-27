@@ -620,10 +620,92 @@ comparisons:
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
+  # Attendance Pts is shown only on Team Counts (on the Detail sheet it only
+  # sorts). The sheet splits by homeroom, which Cube lacks, so homeroom rows
+  # sum to one cell per term.
+  - id: points-team-counts
+    <<: *enrolled
+    confirmed: false
+    measure: attendance_points
+    sheet: Student - Team Counts
+    sheet_field: Attendance Pts
+    split_rows: sum
+    probe: >-
+      SUM(CASE WHEN att_code IN ('A', 'AD') THEN 1 WHEN att_code IN ('T', 'T10')
+      THEN 1 / 3 ELSE 0 END)
+    decimals: 2
+    dims:
+      - { dashboard: term, cube: terms_term_name }
+    rows:
+      grain: *grain
+      values:
+        - { dashboard: att_code, cube: attendance_code }
+    proof: null
+  # Board YOY: ADA by region for the current and prior academic year. Its
+  # "School Level - OOD FIlter Set" filter leaves out out-of-district students
+  # (school_level OD): Newark AY2026 reproduces only without them.
+  - id: ada-board-yoy
+    measure: avg_daily_attendance
+    confirmed: true
+    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+    sheet: Board YOY
+    sheet_field: Avg. Attendance Metric
+    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
+    probe: avg(is_present)
+    decimals: 3
+    dims:
+      - { dashboard: region, cube: regions_region_name }
+      - { dashboard: academic_year, cube: dates_academic_year }
+    filters:
+      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
+      Region: { dashboard: region, cube: regions_region_name }
+      Grade Level: { dashboard: grade_level, cube: grade_level }
+    defaults:
+      Academic Year: ["2025", "2026"]
+      Region: [Camden, Newark, Paterson]
+    cuts: [{}, { Region: Miami }]
+    dashboard_filters:
+      - { dashboard: school_level, operator: not_equals, values: [OD] }
+    scope:
+      - { cube: membership_value, values: [1] }
+      - { cube: attendance_value, operator: set }
+    rows:
+      grain: *grain
+      values:
+        - { dashboard: is_present, cube: attendance_value }
+    proof:
+      fingerprint: 36a08c1fe0afe77165db65f279d1ec8b552d16b06c085ff1934f75ec3fa95393
+      cells: 8
+      proven_at: "2026-10-27T23:25:12.930766+00:00"
+      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      probe_fingerprint: 3580ec2107756e117a8ca4c7c142e3e50b85e17f969f8c8a3781f4fa1598eac4
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 0
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Grouping
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - School
+        - School Level - OOD FIlter Set
+        - Term
+      restricting_filters:
+        - Iep Status
+        - School Level - OOD FIlter Set
 identities:
   - name: ada-is-attendance-over-membership
     left: avg_daily_attendance
     right: sum_attendance_value / count_membership_days
+  - name: tardy-is-one-minus-ontime
+    left: pct_tardy
+    right: 1 - pct_ontime
 # Every call is domain_owner: the analyst sends all definition and scope
 # questions to the owner together. task fills in once the review issue posts.
 decisions:
@@ -991,3 +1073,33 @@ decisions:
     reason:
       "The dashboard can filter by middle school attended; Cube has no member.
       Owner: should it?"
+  - id: out-of-district-ada-board-yoy
+    comparison: ada-board-yoy
+    group: { column: dashboard_filter, values: [school_level] }
+    call: domain_owner
+    reason:
+      "Board YOY leaves out out-of-district students (school level OD) through
+      its School Level - OOD filter set; Cube's ADA counts them. Owner: should
+      Cube's ADA include out-of-district students?"
+    fingerprints:
+      cube: e8f934d0d814e804cda85cbfa4146fb97e3cd6c0624edebec11a33bf6c8f2da4
+      dashboard: 91065d156d3e3db45df81667746d85727d9255ce54fa1e977b78e73868d89db3
+  - id: cells-ada-board-yoy
+    comparison: ada-board-yoy
+    cells: true
+    call: domain_owner
+    reason: >-
+      Newark's AY2026 ADA reads 1 unit lower in Cube at 3 decimals, because Cube
+      counts the out-of-district students Board YOY leaves out. Same question as
+      out-of-district-ada-board-yoy.
+    fingerprints:
+      cube: e8f934d0d814e804cda85cbfa4146fb97e3cd6c0624edebec11a33bf6c8f2da4
+      dashboard: 91065d156d3e3db45df81667746d85727d9255ce54fa1e977b78e73868d89db3
+  - id: missing-filter-grouping
+    missing_filter: Grouping
+    call: domain_owner
+    reason:
+      "Board YOY's Grouping filter switches the bars between school, region,
+      grade, school level, ethnicity, sex and IEP status through a parameter;
+      Cube offers each of those as its own dimension. Owner: confirm no single
+      Grouping member is needed."

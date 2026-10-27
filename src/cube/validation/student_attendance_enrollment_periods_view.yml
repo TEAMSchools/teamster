@@ -1,0 +1,73 @@
+# Cube never loads this folder (it reads src/cube/model/ only). Network-grant
+# email: pass --email or set CUBE_VALIDATION_EMAIL; never write it here.
+view: student_attendance_enrollment_periods_view
+fact: kipptaf_marts.fct_student_attendance_enrollment_periods
+shared:
+  # Chronic absence and truancy show only as values of the "Attendance Metric"
+  # parameter on the Y1 ADA sheets, so every cut sets it. No rows block: the
+  # dashboard's rows are student-days, Cube's are student-periods.
+  y1_region: &y1_region
+    confirmed: false
+    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+    sheet: Y1 ADA - Region
+    sheet_field: Avg. Attendance Metric
+    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
+    decimals: 3
+    dims:
+      - { dashboard: region, cube: regions_region_name }
+      - { dashboard: grade_level, cube: grade_level }
+    filters:
+      Academic Year: { dashboard: academic_year, cube: academic_year }
+      Region: { dashboard: region, cube: regions_region_name }
+    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
+    # Each year's period-end row, as of the student's last membership day.
+    scope:
+      - { cube: period_type, values: [year] }
+comparisons:
+  - id: chronic-y1-region
+    <<: *y1_region
+    measure: pct_chronically_absent
+    cuts:
+      - { Attendance Metric: Chronic Absenteeism }
+      - { Attendance Metric: Chronic Absenteeism, Region: Miami }
+    # The workbook's Is Chronic Absentee: running ADA on each student's last
+    # day in the cell at or below 0.9, students transferred out (enroll_status
+    # 2) in the current year left out. 2026 is the workbook's "Academic Year
+    # (Current)" parameter.
+    probe_sql: >-
+      SELECT {dims}, AVG(IF(academic_year = 2026 AND enroll_status = 2, NULL,
+      IF(ada_running <= 0.9, 1, 0))) AS value FROM (SELECT *, ROW_NUMBER() OVER
+      (PARTITION BY {dims}, student_number, academic_year ORDER BY calendardate
+      DESC) AS rn FROM ({rows}) WHERE {where}) WHERE rn = 1 GROUP BY {dims}
+    definitions:
+      dashboard: >-
+        Running ADA on the student's last day at or below 0.9 (a float average);
+        students who transferred out this year are left out
+      cube: >-
+        ada_tier Tier 3 or 4 at the year's period end (at or below 90.0% on
+        exact day counts); every student-school with recorded attendance
+    proof: null
+  - id: truant-y1-region
+    <<: *y1_region
+    measure: pct_truant
+    cuts:
+      - { Attendance Metric: Truant/On Track for Truancy }
+      - { Attendance Metric: Truant/On Track for Truancy, Region: Miami }
+    # The workbook's % Truant: a FIXED per-student value (is_truant on the
+    # latest date in the data, enrolled students only) that the sheet then
+    # averages over every student-day in the cell.
+    probe_sql: >-
+      SELECT {dims}, AVG(t.truant) AS value FROM ({rows}) AS r INNER JOIN
+      (SELECT student_number, academic_year, MAX(IF(calendardate = last_date AND
+      enroll_status = 0, CAST(is_truant AS INT64), NULL)) AS truant FROM (SELECT
+      *, MAX(calendardate) OVER () AS last_date FROM ({rows})) GROUP BY
+      student_number, academic_year) AS t USING (student_number, academic_year)
+      WHERE {where} GROUP BY {dims}
+    definitions:
+      dashboard: >-
+        is_truant on the latest date in the data, enrolled students only,
+        averaged over every student-day (students with more days weigh more)
+      cube: >-
+        is_truant at each student's year period end, as a share of students with
+        recorded attendance
+    proof: null
