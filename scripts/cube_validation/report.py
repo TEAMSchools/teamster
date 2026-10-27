@@ -22,9 +22,24 @@ from .moment import Build
 CACHE_ROOT = Path.home() / ".cache" / "cube-validation"
 MASK_BELOW = 10
 _IDENTIFIER_COLUMN = re.compile(
-    r"student|lea_|_number|identifier|name|email|dob|birth|ssid|leaid|smid|phone|address|_id$|^id$|^sid$|state_id|local_id",
+    r"student|lea_|_number|identifier|email|dob|birth|ssid|leaid|smid|phone|address|_id$|^id$|^sid$|state_id|local_id"
+    r"|lastfirst|firstlast|(?:user|nick|sur)name|(?:^|_)name(?:_|$)",
     re.IGNORECASE,
 )
+# A name column for a place or a unit of the school year names no person.
+_REFERENCE_NAME = re.compile(
+    r"(?:^|_)(?:region|location|school|campus|district|course|section|term)s?_name$",
+    re.IGNORECASE,
+)
+
+
+def _is_identifier(column: str) -> bool:
+    """True for a column whose values can name or identify a person."""
+    if _REFERENCE_NAME.search(column):
+        # The other patterns still apply: `student_school_name` stays hidden.
+        return bool(_IDENTIFIER_COLUMN.search(_REFERENCE_NAME.sub("", column)))
+    return bool(_IDENTIFIER_COLUMN.search(column))
+
 
 _SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
 
@@ -181,7 +196,7 @@ def _clean(text: str) -> str:
 
 def _shown_value(g: Group) -> str:
     """Show a group's value only for a harmless column with 10+ students."""
-    if g.n_students < MASK_BELOW or _IDENTIFIER_COLUMN.search(g.column):
+    if g.n_students < MASK_BELOW or _is_identifier(g.column):
         return "<redacted>"
     return _clean(g.value)
 
