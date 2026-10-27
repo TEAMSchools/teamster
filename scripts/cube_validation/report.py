@@ -14,13 +14,17 @@ from datetime import timezone
 from pathlib import Path
 
 from .checks import Finding
+from .compare import Group
 from .config import Decision
 from .decisions import Applied
 from .moment import Build
 
 CACHE_ROOT = Path.home() / ".cache" / "cube-validation"
 MASK_BELOW = 10
-_IDENTIFIER_COLUMN = re.compile(r"student|lea_|_number|identifier", re.IGNORECASE)
+_IDENTIFIER_COLUMN = re.compile(
+    r"student|lea_|_number|identifier|name|email|dob|birth|ssid|leaid|smid|phone|address",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -152,17 +156,32 @@ def save_local(run: RunResult, text: str, root: Path | None = None) -> Path:
     return path
 
 
-def _num(x: float) -> str:
-    """Mask a whole-number figure under 10, else print it."""
-    if float(x).is_integer():
+def _num(measure: str, x: float) -> str:
+    """Mask a count anchor (`count_` measures) under 10; show other figures."""
+    if measure.startswith("count_") and float(x).is_integer():
         return mask(int(x))
     return f"{x:g}"
 
 
-def _shown_value(column: str, value: str) -> str:
-    if _IDENTIFIER_COLUMN.search(column):
+def _clean(text: str) -> str:
+    """Collapse whitespace and drop backticks so a value stays on one line."""
+    return " ".join(text.replace("`", "").split())
+
+
+def _shown_value(g: Group) -> str:
+    """Show a group's value only for a harmless column with 10+ students."""
+    if g.n_students < MASK_BELOW or _IDENTIFIER_COLUMN.search(g.column):
         return "<redacted>"
-    return value
+    return _clean(g.value)
+
+
+def _safe_reason(reason: str, values: list[str]) -> str:
+    """Keep a decision's reason but strip digit runs and the group's values."""
+    text = _clean(reason)
+    for value in sorted({v for v in values if v}, key=len, reverse=True):
+        text = text.replace(_clean(value), "<redacted>")
+    text = re.sub(r"\d{5,}", "<redacted>", text)
+    return text.rstrip(".")
 
 
 def render_review_issue(domain: str, runs: list[RunResult]) -> str:
@@ -184,20 +203,20 @@ def render_review_issue(domain: str, runs: list[RunResult]) -> str:
             if decision.call != "domain_owner":
                 continue
             line = (
-                f"`{g.column}` = `{_shown_value(g.column, g.value)}` in "
+                f"`{g.column}` = `{_shown_value(g)}` in "
                 f"{g.comparison_id} of `{run.view}` ({g.bucket}): "
                 f"{mask(g.n_rows)} rows, {mask(g.n_students)} students. "
-                f"Reason: {decision.reason}"
+                f"Reason: "
+                f"{_safe_reason(decision.reason, [g.value, *decision.group.get('values', [])])}"
             )
-            if decision.task:
-                line += f" Task: {decision.task}"
+            line += f". Task: {decision.task}" if decision.task else "."
             group_lines.append(line)
         judged = {m.measure for m in run.measures if m.verdict == "judge the anchor"}
         for f in run.findings:
-            if f.kind == "anchor" and f.measure in judged:
+            if f.kind == "anchor" and f.measure in judged and not f.passed:
                 anchor_lines.append(
-                    f"`{f.measure}` in `{run.view}`: Cube shows {_num(f.left)}, "
-                    f"the source shows {_num(f.right)}."
+                    f"`{f.measure}` in `{run.view}`: Cube shows {_num(f.measure, f.left)}, "
+                    f"the source shows {_num(f.measure, f.right)}."
                 )
 
     n = len(group_lines) + len(anchor_lines)

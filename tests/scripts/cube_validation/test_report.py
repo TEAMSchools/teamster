@@ -30,7 +30,7 @@ def _decision(call="domain_owner", id="d1", column="region", values=("Newark",))
 
 
 def _run(**overrides):
-    quiet_group = Group("enrollment", "region", "Newark", "value_differs", 40, 3)
+    quiet_group = Group("enrollment", "region", "Newark", "value_differs", 40, 12)
     id_group = Group("enrollment", "student_number", "123456", "cube_only", 2, 2)
     other_group = Group("enrollment", "region", "Camden", "value_differs", 5, 5)
     open_group = Group("enrollment", "grade_level", "9", "value_differs", 40, 38)
@@ -125,9 +125,8 @@ def test_local_result_is_not_masked():
 
 def test_review_issue_has_no_raw_small_counts():
     body = render_review_issue("Registrar", [_run()])
-    assert "40 rows, <10 students" in body
+    assert "40 rows, 12 students" in body
     assert "<10 rows, <10 students" in body
-    assert "3 students" not in body
     assert "1234.5" in body
     assert "Camden" not in body  # deliberate group, not domain owner
 
@@ -145,10 +144,72 @@ def test_review_issue_structure_and_redaction():
     assert "withdrawn" not in body and "enrolled" not in body
 
 
-def test_review_issue_one_line_per_paragraph():
-    body = render_review_issue("Registrar", [_run()])
-    for line in body.splitlines():
-        assert len(line) < 400
+def _issue_with(group, reason="ok", findings=None, measures=None):
+    d = Decision(
+        "dx",
+        "enrollment",
+        "domain_owner",
+        reason,
+        {"column": group.column, "values": [group.value]},
+    )
+    run = _run(applied=Applied(quiet=[(d, group)]))
+    if findings is not None:
+        run.findings = findings
+    if measures is not None:
+        run.measures = measures
+    return render_review_issue("Registrar", [run])
+
+
+def test_review_issue_bullets_stay_on_one_line():
+    g = Group("enrollment", "region", "New\nark", "value_differs", 40, 12)
+    body = _issue_with(g, reason="line one\n  line two\n\nline three")
+    bullets = [x for x in body.splitlines() if x.startswith("- ")]
+    assert bullets and all(
+        "Reason: line one line two line three" in b for b in bullets[:1]
+    )
+    assert "line two" in body and "\n  line two" not in body
+    assert "- `region` = `New ark`" in body
+
+
+def test_identifier_like_columns_redacted():
+    for col in ("last_name", "ssid", "leaid", "email", "dob", "student_number"):
+        g = Group("enrollment", col, "SECRETVAL", "cube_only", 50, 50)
+        assert "SECRETVAL" not in _issue_with(g)
+
+
+def test_small_group_on_harmless_column_redacted():
+    small = Group("enrollment", "grade_level", "9", "cube_only", 50, 9)
+    big = Group("enrollment", "grade_level", "9", "cube_only", 50, 10)
+    assert "`grade_level` = `<redacted>`" in _issue_with(small)
+    assert "`grade_level` = `9`" in _issue_with(big)
+
+
+def test_reason_is_sanitized():
+    g = Group("enrollment", "region", "Newark", "value_differs", 40, 12)
+    body = _issue_with(g, reason="Student 123456 moved to Newark.")
+    assert "123456" not in body
+    assert "Reason: Student <redacted> moved to <redacted>." in body
+
+
+def test_passing_anchor_not_listed_and_count_masking():
+    measures = [
+        MeasureResult("count_seats", "anchored to a source", "judge the anchor"),
+        MeasureResult("rate", "anchored to a source", "judge the anchor"),
+        MeasureResult("fine", "anchored to a source", "judge the anchor"),
+    ]
+    findings = [
+        Finding("anchor", "count_seats", "d", 7.0, 8.0, False),
+        Finding("anchor", "rate", "d", 7.0, 8.0, False),
+        Finding("anchor", "fine", "d", 1.0, 1.0, True),
+    ]
+    g = Group("enrollment", "region", "Newark", "value_differs", 40, 12)
+    body = _issue_with(g, findings=findings, measures=measures)
+    assert (
+        "`count_seats` in `enrollment_view`: Cube shows <10, the source shows <10."
+        in body
+    )
+    assert "`rate` in `enrollment_view`: Cube shows 7, the source shows 8." in body
+    assert "`fine`" not in body
 
 
 def test_save_local_writes_under_moment(tmp_path):
