@@ -348,6 +348,10 @@ school students).
   the denominator is the tell. Section rows carry thresholds but no goals.
 - It follows the `current_academic_year` dbt variable, so it rolls over each
   July without a code change.
+- `nj_student_tier_ela` and `nj_student_tier_math` carry the student's buckets
+  this year, so the workbook can split any metric by bucket. They come from the
+  buckets model (see _Supporting models_). Seniors read `No Bucket Assigned`, so
+  a bucket filter on grade 12 leaves them in a group of their own.
 
 ### `_over_time`: attainment by graduating class
 
@@ -398,8 +402,8 @@ the hub, enrollments, and the Scaffold tab.
 
 **What it shows:** current students graduating this year or later: each expected
 administration's score and growth, lifetime official attempt counts per test,
-SAT highlights (superscore, best EBRW, best Math), and the student's
-college-readiness course section.
+SAT highlights (superscore, best EBRW, best Math), the student's ELA and Math
+buckets, and the student's college-readiness course section.
 
 **Grain:** one row per student per expected administration and score category,
 guarded by a uniqueness test.
@@ -414,6 +418,7 @@ guarded by a uniqueness test.
 - Attempt counts come from the participation roster, official only.
 - The course section comes from `int_students__ccr_schedule`, the student's
   college-and-career-readiness class.
+- The buckets come from the buckets model (see _Supporting models_).
 
 ### `_de`: dual enrollment
 
@@ -569,6 +574,26 @@ attempt fields, with the attempts goals attached. Its grain includes
 `test_type`, so a reader wanting official counts filters `test_type` as well as
 `rn_lifetime = 1`.
 
+### Buckets: `int_students__college_assessment_buckets_pivot`
+
+Each high school student's ELA and Math bucket for the year, one row per student
+per academic year. `_current`, `_roster`, and the long sheet read it. It takes
+`nj_student_tier` from `int_extracts__student_enrollments_subjects`, the same
+column the other dashboards use, and turns its Reading and Math rows into two
+columns.
+
+That model counts a student with no stored bucket as Bucket 4. Seniors are not
+assigned buckets, so a grade 12 student with no stored bucket reads
+`No Bucket Assigned` instead. Every other grade keeps the Bucket 4 default,
+including grade 9 while its buckets are still being entered. A student enrolled
+since that model's nightly rebuild reads null until the next one.
+
+The bucket is a fact about the student, not a score, so the join to it has no
+`test_type`: student number, academic year, and `_dbt_source_project` only. The
+other CARAT views don't carry buckets. They cover graduating classes back to
+2014, and buckets 1 to 3 only start in academic year 2025, so almost every
+student there would read Bucket 4.
+
 ### The KIPP Forward Google Sheets extracts
 
 `rpt_gsheets__college_assessments_long` and
@@ -577,7 +602,9 @@ Both keep practice separate from official.
 
 - **Long:** `administration_type` is `Official` or `Practice`. Its `test_type`
   column holds the test (`scope as test_type`), so filtering `test_type` for
-  official versus practice returns nothing.
+  official versus practice returns nothing. `ELA Bucket` and `Math Bucket` are
+  the last two columns, from the buckets model, placed there so the columns
+  before them keep their positions.
 - **Wide:** every score column without `practice` in its name is official.
   Practice has its own score columns and attempt counts. Adding an
   administration to the Expected Assessments tab means adding its practice

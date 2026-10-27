@@ -1,0 +1,189 @@
+models:
+  - name: int_students__college_assessment_buckets_pivot
+    description: >-
+      Each high school student's ELA and Math bucket for the year, one row per
+      student per academic year, for the CARAT dashboard and the KIPP Forward
+      college assessment sheet. Reads nj_student_tier from
+      int_extracts__student_enrollments_subjects on the student's rn_year = 1
+      enrollment and pivots its Reading and Math rows into two columns.
+
+
+      Keeps that model's rule that a student with no stored bucket is Bucket 4,
+      with one exception. Seniors are not assigned buckets, so a grade 12
+      student with no stored bucket reads No Bucket Assigned instead. A senior
+      who does have a stored bucket keeps it. Other grades without a stored
+      bucket, such as grade 9 before its buckets are entered, stay Bucket 4.
+
+
+      Buckets 1 to 3 start in academic year 2025. Earlier years stored only
+      Bucket 2, so a pre-2025 bucket is not comparable with a current one.
+
+
+      int_extracts__student_enrollments_subjects rebuilds nightly, so a student
+      enrolled since its last rebuild has no row here yet. Consumers left join,
+      and that student's buckets read null until the next rebuild.
+    config:
+      meta:
+        contains_pii: true
+        standard_exempt:
+          A4: >-
+            Shares its (academic_year, student_number) key with other
+            student-year models, but none of them holds bucket assignments, so
+            none is the place to extend; this is the one home for a student's
+            pivoted ELA and Math buckets.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description: >-
+          Canonical network student number. Unique across districts, so it needs
+          no region qualifier.
+      - name: academic_year
+        data_type: int64
+        description: Academic year, as its starting calendar year.
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          District code location the enrollment came from, carried through from
+          int_extracts__student_enrollments_subjects.
+      - name: nj_student_tier_ela
+        data_type: string
+        description: >-
+          The student's ELA bucket — Bucket 1, 2, 3 or 4, or No Bucket Assigned
+          for a senior with no stored bucket. Read from the Reading subject row.
+      - name: nj_student_tier_math
+        data_type: string
+        description: >-
+          The student's Math bucket — Bucket 1, 2, 3 or 4, or No Bucket Assigned
+          for a senior with no stored bucket.
+
+unit_tests:
+  - name: unit_int_students__college_assessment_buckets_pivot
+    description: >-
+      Pivots Reading and Math into two columns, reads No Bucket Assigned only
+      for a senior with no stored bucket, keeps a senior's stored bucket and a
+      grade 9 student's Bucket 4 default, and drops non-primary enrollments and
+      non-high-school rows.
+    model: int_students__college_assessment_buckets_pivot
+    given:
+      - input: ref("int_extracts__student_enrollments_subjects")
+        rows:
+          - student_number: 1
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            iready_subject: Reading
+            grade_level: 12
+            school_level: HS
+            rn_year: 1
+            bucket_store: null
+            nj_student_tier: Bucket 4
+          - student_number: 1
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            iready_subject: Math
+            grade_level: 12
+            school_level: HS
+            rn_year: 1
+            bucket_store: null
+            nj_student_tier: Bucket 4
+          - student_number: 2
+            academic_year: 2026
+            _dbt_source_project: kippcamden
+            iready_subject: Reading
+            grade_level: 12
+            school_level: HS
+            rn_year: 1
+            bucket_store: null
+            nj_student_tier: Bucket 4
+          - student_number: 2
+            academic_year: 2026
+            _dbt_source_project: kippcamden
+            iready_subject: Math
+            grade_level: 12
+            school_level: HS
+            rn_year: 1
+            bucket_store: powerschool
+            nj_student_tier: Bucket 2
+          - student_number: 3
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            iready_subject: Reading
+            grade_level: 9
+            school_level: HS
+            rn_year: 1
+            bucket_store: null
+            nj_student_tier: Bucket 4
+          - student_number: 3
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            iready_subject: Math
+            grade_level: 9
+            school_level: HS
+            rn_year: 1
+            bucket_store: null
+            nj_student_tier: Bucket 4
+          - student_number: 4
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            iready_subject: Reading
+            grade_level: 10
+            school_level: HS
+            rn_year: 1
+            bucket_store: powerschool
+            nj_student_tier: Bucket 1
+          - student_number: 4
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            iready_subject: Math
+            grade_level: 10
+            school_level: HS
+            rn_year: 1
+            bucket_store: powerschool
+            nj_student_tier: Bucket 3
+          - student_number: 4
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            iready_subject: Math
+            grade_level: 10
+            school_level: HS
+            rn_year: 2
+            bucket_store: powerschool
+            nj_student_tier: Bucket 1
+          - student_number: 5
+            academic_year: 2026
+            _dbt_source_project: kippnewark
+            iready_subject: Math
+            grade_level: 8
+            school_level: MS
+            rn_year: 1
+            bucket_store: powerschool
+            nj_student_tier: Bucket 1
+    expect:
+      rows:
+        - student_number: 1
+          academic_year: 2026
+          _dbt_source_project: kippnewark
+          nj_student_tier_ela: No Bucket Assigned
+          nj_student_tier_math: No Bucket Assigned
+        - student_number: 2
+          academic_year: 2026
+          _dbt_source_project: kippcamden
+          nj_student_tier_ela: No Bucket Assigned
+          nj_student_tier_math: Bucket 2
+        - student_number: 3
+          academic_year: 2026
+          _dbt_source_project: kippnewark
+          nj_student_tier_ela: Bucket 4
+          nj_student_tier_math: Bucket 4
+        - student_number: 4
+          academic_year: 2026
+          _dbt_source_project: kippnewark
+          nj_student_tier_ela: Bucket 1
+          nj_student_tier_math: Bucket 3
