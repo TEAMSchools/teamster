@@ -558,3 +558,34 @@ def test_override_equal_to_predecessor_says_on_or_before(closures):
         END,
     )
     assert "on or before m1" in out[1].note
+
+
+@pytest.mark.parametrize("missing", ["breaks", "plan"])
+def test_cli_reports_a_missing_input_file(tmp_path, capsys, missing):
+    breaks = tmp_path / "breaks.csv"
+    breaks.write_text(
+        "Month,Date,Day,Holiday/Event,Newark,Camden,Miami,Paterson\n"
+        "November,27,Fri,x,Yes,Yes,Yes,Yes\n"
+    )
+    plan = tmp_path / "plan.csv"
+    plan.write_text(
+        "workstream,name,kind,duration_weeks,after,override\na,m1,milestone,1,,\n"
+    )
+    paths = {"breaks": breaks, "plan": plan}
+    paths[missing] = tmp_path / f"missing-{missing}.csv"
+    rc = sd.main(
+        [
+            "--breaks",
+            str(paths["breaks"]),
+            "--school-year",
+            "2026",
+            "--regions",
+            "Newark",
+            "--start",
+            "2027-01-11",
+            "--plan",
+            str(paths["plan"]),
+        ]
+    )
+    assert rc == 2
+    assert f"missing-{missing}.csv" in capsys.readouterr().err

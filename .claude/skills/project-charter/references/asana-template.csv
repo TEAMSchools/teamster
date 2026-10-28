@@ -1,0 +1,10 @@
+Name,Section/Column,Type,Notes
+Charter signed,0 · Governance,Milestone,"Handbook Part II, Initiate. The charter in the project folder is signed by the Manager and the Approver. The project-charter skill sets the date from the plan."
+Kickoff,0 · Governance,Milestone,"Handbook Part II, Execute. Walk the project team through the goal, workstreams, milestones, owners and how the team communicates. The project-charter skill sets the date from the plan."
+Weekly project team meeting,0 · Governance,Task,"Handbook Part II, Execute. 30 to 45 minutes. Each person: done since last week, next week, blockers. Set this task to repeat weekly after import; the importer cannot."
+Status update to the Manager,0 · Governance,Task,"Handbook Part III, status updates. Green, amber or red and why; on track; at risk; decisions needed and from whom; next two weeks. Set to repeat every two weeks after import."
+Close and lessons learned,0 · Governance,Milestone,"Handbook Part II, Close. Confirm deliverables against the charter, run the 45 to 60 minute lessons-learned conversation, fill Template 6, archive the project. The project-charter skill sets the date from the plan."
+Name the owner after close,Handoff,Task,"Handbook Part II, Plan. Who runs the work once the project closes, and what they need: documentation, training, access. For a data product, that is a standing project made from the Data team's product template. Dated with the close milestone."
+Help article or training,Handoff,Task,"What the people who use the deliverable get before it is theirs. Dated with the close milestone."
+Comms to affected staff,Handoff,Task,"Handbook Part III, close the loop. What changes for them, from when, and who to contact. Dated with the close milestone."
+Scope asks go here,Parking lot and outside the core set,Task,"Placeholder so the section imports. Delete it after import. A request that is not in the charter's scope lands in this section with a note pointing at the charter's out-of-scope list; it is evaluated, not added."

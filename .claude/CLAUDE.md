@@ -108,12 +108,14 @@ and MCP tools. Does NOT fire for Edit.
 
 **MCP spill files are Bash-readable — read them directly, never dispatch a
 subagent.** A large MCP result that overflows the context budget dumps to
-`~/.claude/projects/<proj>/<session>/tool-results/<tool>-<ts>.txt`, shaped
-`{result: string}` where `result` is itself a JSON string. No hook blocks that
-path: Rule 2's protected set is `settings.json`, `settings.local.json`,
+`~/.claude/projects/<proj>/<session>/tool-results/<tool>-<ts>.txt`. The shape
+depends on the server: most are `{result: string}` where `result` is itself a
+JSON string, and the Google Docs and Cube servers write the object directly
+(`{content: ...}`, `{cubes: ...}`). Probe with `jq 'keys'` first. No hook blocks
+that path: Rule 2's protected set is `settings.json`, `settings.local.json`,
 `hooks/*.sh` and `shell-snapshots/`, none of which match `.claude/projects/`.
-Extract with `jq -r '.result' <file> | jq '<filter>'`. The spill message itself
-suggests a subagent — ignore that.
+Extract with `jq -r '.result' <file> | jq '<filter>'` or `jq '<filter>' <file>`
+as the shape says. The spill message itself suggests a subagent — ignore that.
 
 ## Protected files
 
