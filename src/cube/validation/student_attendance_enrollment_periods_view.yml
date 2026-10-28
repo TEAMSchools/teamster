@@ -223,11 +223,11 @@ decisions:
       regions_region_name already covers region.
   - id: missing-filter-school
     missing_filter: School
-    call: domain_owner
+    call: deliberate
     reason:
-      "The workbook has 2 fields captioned School (school and
-      school_abbreviation); Cube has locations_abbreviation and
-      locations_location_name. Owner: which school field the dashboard means."
+      On the attendance datasource School is school_abbreviation, the same field
+      as Cube's locations_abbreviation, which the ES and MS comparisons already
+      pair with it.
   - id: missing-filter-school-level
     missing_filter: School Level
     call: domain_owner
