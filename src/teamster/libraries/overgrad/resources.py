@@ -61,6 +61,63 @@ class OvergradResource(ConfigurableResource):
 
         return self._request(method="GET", url=url, **kwargs)
 
+    # defined before `list`, whose name shadows the builtin for later annotations
+    def list_by_cursor(self, path: str) -> list[dict]:
+        """Pull every record of a list endpoint that supports `updated_after`.
+
+        Overgrad sorts list results by `updated_at` ascending, so a record
+        edited mid-pull moves to the end and a page-number pull skips the
+        record that slides into an already-read page. Paging on the last
+        `updated_at` seen instead cannot skip: an edited record shows up again
+        later. The boundary is inclusive, so the result repeats records;
+        callers dedupe by `id`.
+        """
+        url = self._get_url(path)
+        cursor: str | None = None
+        page_number = 1
+
+        data = []
+        while True:
+            params: dict[str, int | str] = {
+                "limit": self.page_limit,
+                "page": page_number,
+            }
+
+            if cursor is not None:
+                params["updated_after"] = cursor
+
+            response_json: dict = self._request(
+                method="GET", url=url, params=params
+            ).json()
+
+            page = response_json.pop("data")
+            data.extend(page)
+
+            if cursor is None:
+                self._log.info(f"GET: {url} {response_json}")
+
+            if len(page) < self.page_limit:
+                break
+
+            # shortcut: a record with a null `updated_at` never matches
+            # `updated_after` and is not pulled; none exist today, and one
+            # ending a page fails the run here
+            next_cursor = check.not_none(page[-1]["updated_at"])
+
+            if next_cursor == cursor:
+                # shortcut: a full page sharing one timestamp steps by page
+                # number, so an edit inside that group mid-pull can still skip
+                # a record; add an `id` tiebreak if 100+ record bulk updates appear
+                page_number += 1
+            else:
+                cursor, page_number = next_cursor, 1
+
+            # Overgrad's API limits users to making 60 requests per minute and 1000
+            # requests per hour
+            time.sleep(1.5)
+
+        return data
+
     def list(self, path: str, *args: str, **kwargs) -> list[dict]:
         kwargs["params"] = {"limit": self.page_limit}
 
@@ -80,7 +137,8 @@ class OvergradResource(ConfigurableResource):
             if page == 1:
                 self._log.info(f"GET: {url} {response_json}")
 
-            if page == response_json["total_pages"]:
+            # `>=`: an empty result reports total_pages 0, which `==` never reaches
+            if page >= response_json["total_pages"]:
                 break
             else:
                 page += 1
