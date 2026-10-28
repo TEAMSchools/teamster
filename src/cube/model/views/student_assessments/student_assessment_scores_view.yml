@@ -61,6 +61,7 @@ views:
           - grade_level_tested
           - scope
           - is_internal_assessment
+          - assessment_family
 
       - join_path: student_assessment_scores.student_assessment_administrations
         includes:
@@ -212,6 +213,7 @@ views:
             - grade_level_tested
             - scope
             - is_internal_assessment
+            - assessment_family
             - administration_period
             - test_type
             - source_assessment_id

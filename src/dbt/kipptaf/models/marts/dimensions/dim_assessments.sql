@@ -17,6 +17,7 @@ with
             c.grade_level,
 
             'enrollment' as assessment_scope,
+            'internal' as assessment_family,
 
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
@@ -42,6 +43,7 @@ with
 
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
+            'state' as assessment_family,
 
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
@@ -65,6 +67,7 @@ with
 
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
+            'state' as assessment_family,
 
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
@@ -86,6 +89,7 @@ with
             'i-Ready Diagnostic' as title,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
+            'vendor_diagnostic' as assessment_family,
 
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
@@ -110,6 +114,7 @@ with
             'STAR' as title,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
+            'vendor_diagnostic' as assessment_family,
 
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
@@ -135,6 +140,7 @@ with
             'ELA' as scope,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
+            'vendor_diagnostic' as assessment_family,
 
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
@@ -166,6 +172,7 @@ with
             'college' as assessment_type,
             false as is_internal_assessment,
             'student' as assessment_scope,
+            'college' as assessment_family,
 
             'Official' as test_type,
         from {{ ref("int_assessments__college_assessment") }}
@@ -190,6 +197,7 @@ with
             'college' as assessment_type,
             false as is_internal_assessment,
             'student' as assessment_scope,
+            'college' as assessment_family,
 
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
@@ -216,6 +224,7 @@ with
             'AP' as scope,
             false as is_internal_assessment,
             'student' as assessment_scope,
+            'ap' as assessment_family,
 
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
@@ -227,8 +236,8 @@ with
     {%- set union_cols -%}
         assessment_type, source_assessment_id, title, subject_area, scope,
         module_code, module_type, grade_level, is_internal_assessment,
-        assessment_scope, combined_academic_subject, aligned_academic_subject,
-        credit_category, test_type
+        assessment_scope, assessment_family, combined_academic_subject,
+        aligned_academic_subject, credit_category, test_type
     {%- endset %}
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
@@ -289,6 +298,7 @@ select
     module_code,
     module_type,
     is_internal_assessment,
+    assessment_family,
     combined_academic_subject,
     aligned_academic_subject,
     credit_category,
