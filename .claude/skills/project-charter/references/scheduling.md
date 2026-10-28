@@ -12,16 +12,18 @@ Space it from any other Sheets call in the same minute; the per-minute read
 quota is small. The tab holds a federal-holidays list first and the breaks table
 below it, headed `Month,Date,Day,Holiday/Event,Newark,Camden,Miami,Paterson`.
 Write the breaks table only, from its header row down, to a scratchpad file
-named `breaks-<school year>.csv` with the headers unchanged. Forms the script
-accepts in `Date`: `11`, `25-27`, `23-27`, `Dec 21 - Jan 1`, `29-2 (Apr)`. A
-blank `Month` continues the row above. A region cell is a closure only when it
-is `Yes` (case matters; surrounding spaces do not); `No`, `-` and blank are not.
-A row short of a region column is fine. A break split across rows (a two-day row
-plus a one-day row) still blocks its week: the script counts closed days per
-region across rows. Closed days in different regions never add up, so a week
-where two regions together close four days still counts as a working week and
-its due date walks back to the first open day, Monday included; override it if
-the team is in fact out.
+named `breaks-<school year>.csv` with the headers unchanged. The scratchpad does
+not always survive between phases; if the file is gone at phase 3, export it
+again rather than rebuilding it from memory. Forms the script accepts in `Date`:
+`11`, `25-27`, `23-27`, `Dec 21 - Jan 1`, `29-2 (Apr)`. A blank `Month`
+continues the row above. A region cell is a closure only when it is `Yes` (case
+matters; surrounding spaces do not); `No`, `-` and blank are not. A row short of
+a region column is fine. A break split across rows (a two-day row plus a one-day
+row) still blocks its week: the script counts closed days per region across
+rows. Closed days in different regions never add up, so a week where two regions
+together close four days still counts as a working week and its due date walks
+back to the first open day, Monday included; override it if the team is in fact
+out.
 
 ## Write the plan rows
 
@@ -39,7 +41,12 @@ the team is in fact out.
 - `override`: an ISO date that replaces the computed one. Followers shift with
   it.
 
-The last row is the close milestone with the lessons-learned session.
+The governance and handoff rows are standard rows, in a `Governance` workstream:
+Charter signed (milestone, override to the signing date), Kickoff (milestone,
+first week), Name the owner after close, Help article or training, Comms to
+affected staff (tasks, `after` the last delivery milestone), and Close and
+lessons learned (milestone, last). Phase 4 dates the Asana template's standing
+tasks from these rows, so their names match the template's exactly.
 
 ## Run
 
@@ -77,8 +84,14 @@ Three writes into the charter doc, in this order:
 
 1. Template 2, the work plan table, in the template's four columns: one row per
    output row, in output order, with milestone or task, owner from the charter,
-   due date, status blank. Template 2 has no column for the rule or the note;
-   they live in the next table.
+   due date, status blank. The `Workstream N` and `MILESTONE N` rows are one
+   cell merged across the four columns, so their owner and date go inside the
+   label text, `MILESTONE 1: <name> (<owner>, <date>)`; an insert into one of
+   their hidden cells lands mid-label. Task rows have four real cells. The
+   template has two workstreams with three, three and two task rows; insert or
+   delete rows to fit before filling, from the bottom up, then read the doc
+   again for positions. Template 2 has no column for the rule or the note; they
+   live in the next table.
 2. A table titled `Schedule inputs` straight after Template 2: the plan CSV's
    columns plus `due`, `rule` and `note` from the output, one row per plan row.
    This is where the user sees which rule placed a date and which dates are

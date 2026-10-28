@@ -558,3 +558,26 @@ def test_override_equal_to_predecessor_says_on_or_before(closures):
         END,
     )
     assert "on or before m1" in out[1].note
+
+
+def test_cli_reports_a_missing_breaks_file(tmp_path, capsys):
+    plan = tmp_path / "plan.csv"
+    plan.write_text(
+        "workstream,name,kind,duration_weeks,after,override\na,m1,milestone,1,,\n"
+    )
+    rc = sd.main(
+        [
+            "--breaks",
+            str(tmp_path / "missing.csv"),
+            "--school-year",
+            "2026",
+            "--regions",
+            "Newark",
+            "--start",
+            "2027-01-11",
+            "--plan",
+            str(plan),
+        ]
+    )
+    assert rc == 2
+    assert "missing.csv" in capsys.readouterr().err
