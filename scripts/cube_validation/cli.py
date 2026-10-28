@@ -1,6 +1,6 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
-Commands: `discover`, `prove`, `check-api`, `run`, `review`. Exit codes: 0
+Commands: `discover`, `prove`, `check-api`, `run`, `review`, `members`. Exit codes: 0
 done, 1 refused (the message says why), 2 usage error. This module parses
 arguments and builds the clients; `pipeline.py` does the work. Tests replace
 `make_warehouse`, `make_cube`, `tableau_session`, `utcnow` and `cache_root`.
@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import dataclasses
+import json
 import os
 import sys
 from collections.abc import Iterator
@@ -18,7 +20,7 @@ from pathlib import Path
 
 import tableauserverclient as TSC
 
-from . import pipeline, report, tableau
+from . import builder, pipeline, report, tableau
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import ConfigError, ViewConfig, load_view_config
 from .cube_client import Cube, CubeError, CubeRefusal
@@ -188,6 +190,9 @@ def _parser() -> argparse.ArgumentParser:
     p = sub.add_parser("review", help="print the domain-owner review issue body")
     p.add_argument("views", type=Path, nargs="+", help="validation files")
     p.add_argument("--domain", required=True, help="domain whose owner reviews")
+
+    p = sub.add_parser("members", help="list Cube measures and the ones sharing SQL")
+    email(p)
     return parser
 
 
@@ -202,6 +207,9 @@ def _dispatch(args: argparse.Namespace) -> int:
         configs = [_load(v) for v in args.views]
         print(pipeline.review(configs, args.domain, cache_root()))
         return 0
+
+    if args.command == "members":
+        return _members(_cube(args))
 
     cfg = _load(args.view)
 
@@ -273,6 +281,20 @@ def _dispatch(args: argparse.Namespace) -> int:
                 ),
             )
     return 1 if refused else 0
+
+
+def _members(cube: Cube) -> int:
+    """Write `members.json` under the cache root; print measures sharing SQL."""
+    found = builder.members(cube)
+    path = cache_root() / "members.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps([dataclasses.asdict(m) for m in found], indent=2))
+    print(f"{len(found)} measures written to {path}")
+
+    for group in builder.same_sql(found):
+        print(f"same SQL: {', '.join(m.name for m in group)}")
+
+    return 0
 
 
 def _each(ids: list[str], tbl: tableau.Tableau, step) -> int:
