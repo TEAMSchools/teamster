@@ -83,3 +83,12 @@ def test_a_table_calculation_on_a_shelf_is_not_a_cut():
         "[federated.x].[none:student_number:ok] / [federated.x].[cum:ctd:student_number:qk])</rows>",
     )
     assert sheet_shape(twb, "Roster").rows == ["Region", "Student Number"]
+
+
+def test_a_level_members_filter_keeps_everything_whatever_its_ui_attribute():
+    # Region [Filter] on the periods sheets: every member, no ui-enumeration.
+    twb = TWB.replace(
+        "<groupfilter function='level-members' level='[none:region:nk]' user:ui-enumeration='all' />",
+        "<groupfilter function='level-members' level='[none:region:nk]' />",
+    )
+    assert "Region: All" in sheet_shape(twb, "Roster").filters

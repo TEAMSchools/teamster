@@ -63,7 +63,6 @@ USER_FUNCTION = re.compile(
     r"USERATTRIBUTE|USERATTRIBUTEINCLUDES)\s*\(",
     re.IGNORECASE,
 )
-USER_NS = "{http://www.tableausoftware.com/xml/user}"
 # Aggregations as a column-instance names them, and as its ref abbreviates them.
 _AGG_NAMES = {
     "Sum": "SUM", "Avg": "AVG", "Count": "COUNT", "CountD": "COUNTD",
@@ -288,10 +287,9 @@ def restricts(filter_el: ET.Element) -> bool:
     top = filter_el.find("groupfilter")
     if top is None:
         return False
-    return not (
-        top.get("function") == "level-members"
-        and top.get(f"{USER_NS}ui-enumeration") == "all"
-    )
+    # `level-members` is every member of the level, whatever `ui-enumeration`
+    # the filter card shows.
+    return top.get("function") != "level-members"
 
 
 @dataclass(frozen=True)
