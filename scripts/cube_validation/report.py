@@ -36,6 +36,8 @@ _SHOWN_COLUMNS = frozenset(
         "school_abbreviation",
         "region",
         "grade_level",
+        "academic_year",
+        "dates_academic_year",
         # Its values are the config's column names, never a person's data.
         "dashboard_filter",
     }
@@ -375,8 +377,24 @@ def _with_task(reason: str, task: str) -> str:
     return f"{reason} Task: {task}" if task else reason
 
 
-def _group_line(view: str, decision: Decision, groups: list[Group]) -> str:
-    """One bullet for a decision and every row group it covers.
+def _by_reason(pairs) -> list[tuple[list[Decision], list]]:
+    """Domain-owner decisions grouped by their reason and task, each with the
+    items they cover, in first-seen order: one shared reason, one question.
+    """
+    out: dict[tuple[str, str], tuple[list[Decision], list]] = {}
+    for decision, item in pairs:
+        if decision.call != "domain_owner":
+            continue
+        decisions, items = out.setdefault((decision.reason, decision.task), ([], []))
+        if decision not in decisions:
+            decisions.append(decision)
+        items.append(item)
+    return list(out.values())
+
+
+def _group_line(view: str, decisions: list[Decision], groups: list[Group]) -> str:
+    """One bullet for decisions that share a reason and every row group they
+    cover; counts are summed.
 
     The decision's column shows each value only for a reviewed column, and only
     when that value's groups hold 10 or more students. A reason loses whatever
@@ -385,7 +403,10 @@ def _group_line(view: str, decision: Decision, groups: list[Group]) -> str:
     is free text the analyst approves, so it must not name them for a small
     group either.
     """
-    column = decision.group.get("column") or ""
+    decision = decisions[0]
+    columns = {d.group.get("column") or "" for d in decisions}
+    # Decisions on different columns name none; their values stay hidden.
+    column = columns.pop() if len(columns) == 1 else ""
     found = list(dict.fromkeys(g.value_of(column) or "" for g in groups))
     rows = sum(g.n_rows for g in groups)
     students = sum(g.n_students for g in groups)
@@ -405,7 +426,9 @@ def _group_line(view: str, decision: Decision, groups: list[Group]) -> str:
     where = f"`{column}` = `{values}`" if column else "the whole comparison"
     hidden = [v for g in groups for c, v in g.dims if _is_identifier(c)]
     hidden += [
-        v for v in [*found, *decision.group.get("values", [])] if str(v) not in shown
+        v
+        for v in [*found, *(v for d in decisions for v in d.group.get("values", []))]
+        if str(v) not in shown
     ]
     plural = "group" if len(groups) == 1 else "groups"
     return (
@@ -442,34 +465,37 @@ def render_review_issue(
     anchor_lines: list[str] = []
     asked_ids: list[str] = []
     for run in runs:
-        by_decision: dict[str, tuple[Decision, list[Group]]] = {}
-        for decision, g in run.applied.quiet:
-            if decision.call == "domain_owner":
-                by_decision.setdefault(decision.id, (decision, []))[1].append(g)
-        for decision, groups in by_decision.values():
-            group_lines.append(_group_line(run.view, decision, groups))
-            asked_ids.append(decision.id)
-        for decision, diff in run.applied.quiet_cells:
-            if decision.call != "domain_owner":
-                continue
-            reason = _with_task(_safe_reason(decision.reason, []), decision.task)
+        # Decisions sharing a reason (and task) are one question: one bullet.
+        for decisions, groups in _by_reason(run.applied.quiet):
+            group_lines.append(_group_line(run.view, decisions, groups))
+            asked_ids += [d.id for d in decisions]
+        for decisions, diffs in _by_reason(run.applied.quiet_cells):
+            d = decisions[0]
+            reason = _with_task(_safe_reason(d.reason, []), d.task)
             cell_lines.append(
-                f"`{diff.comparison_id}` in `{run.view}`: "
-                f"{mask(sum(diff.counts.values()))} cells differ between Cube and "
-                f"the dashboard. Reason: {reason}"
+                f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in `{run.view}`: "
+                f"{mask(sum(n for c in diffs for n in c.counts.values()))} cells "
+                f"differ between Cube and the dashboard. Reason: {reason}"
             )
-            asked_ids.append(decision.id)
-        for decision, gap in run.applied.quiet_gaps:
-            if decision.call != "domain_owner":
-                continue
-            kind = "a sheet cut" if gap.kind == "cut" else "a sheet filter"
-            reason = _with_task(_safe_reason(decision.reason, []), decision.task)
+            asked_ids += [x.id for x in decisions]
+        for decisions, gaps in _by_reason(run.applied.quiet_gaps):
+            d = decisions[0]
+            kinds = {g.kind for g in gaps}
+            if len(gaps) == 1:
+                kind = "a sheet cut" if gaps[0].kind == "cut" else "a sheet filter"
+            else:
+                kind = {
+                    frozenset({"cut"}): "sheet cuts",
+                    frozenset({"filter"}): "sheet filters",
+                }.get(frozenset(kinds), "sheet cuts and filters")
+            sheets = list(dict.fromkeys(s for g in gaps for s in g.sheets))
+            reason = _with_task(_safe_reason(d.reason, []), d.task)
             gap_lines.append(
-                f"`{_clean(gap.field)}` on "
-                f"{', '.join(f'`{_clean(s)}`' for s in gap.sheets)} in `{run.view}`: "
+                f"{', '.join(f'`{_clean(g.field)}`' for g in gaps)} on "
+                f"{', '.join(f'`{_clean(s)}`' for s in sheets)} in `{run.view}`: "
                 f"{kind} Cube has no member for. Reason: {reason}"
             )
-            asked_ids.append(decision.id)
+            asked_ids += [x.id for x in decisions]
         judged = {m.measure for m in run.measures if m.verdict == "judge the anchor"}
         for f in run.findings:
             if f.kind == "anchor" and f.measure in judged and not f.passed:
@@ -494,9 +520,9 @@ def render_review_issue(
                     f"Dashboard: {_safe_reason(sides['dashboard'], [])}. "
                     f"Cube: {_safe_reason(sides['cube'], [])}."
                 )
-    # One question per decision (however many groups it covers) and per anchor.
+    # One question per bullet (decisions sharing a reason share one) and anchor.
     ids = sorted(set(asked_ids))
-    n = len(ids) + len(anchor_lines)
+    n = len(group_lines) + len(cell_lines) + len(gap_lines) + len(anchor_lines)
     plural = "question" if n == 1 else "questions"
     out = [
         "## What and why",

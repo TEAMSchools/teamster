@@ -1,3 +1,4 @@
+import dataclasses
 from datetime import datetime, timezone
 
 from cube_validation.checks import Finding
@@ -40,7 +41,14 @@ def _run(**overrides):
         open=[open_group],
         quiet=[
             (_decision(), quiet_group),
-            (_decision(id="d2", column="student_number", values=("123456",)), id_group),
+            # Its own reason, so it stays its own bullet.
+            (
+                dataclasses.replace(
+                    _decision(id="d2", column="student_number", values=("123456",)),
+                    reason="Ids differ",
+                ),
+                id_group,
+            ),
             (_decision(call="deliberate", id="d3"), other_group),
         ],
         reconfirm=[_decision(id="d4")],
@@ -571,3 +579,89 @@ def test_each_value_needs_10_students_of_its_own():
     assert "- `region` = `Newark, <redacted>`" in body
     assert "Reason: Newark and <redacted> moved." in body
     assert "Camden" not in body.split("## Proposed approach")[0]
+
+
+LEFT = "Owner: should Cube's default answer include students who left?"
+
+
+def _left(comparison, students=20):
+    d = Decision(
+        f"{comparison}-left", comparison, "domain_owner", LEFT,
+        {"column": "dashboard_filter", "values": ["enroll_status"]},
+    )  # fmt: skip
+    g = Group(comparison, (("dashboard_filter", "enroll_status"), ("grade_level", "9")),
+              "dashboard_filtered", students * 10, students)  # fmt: skip
+    return d, g
+
+
+def test_review_issue_merges_decisions_that_share_a_reason():
+    quiet = [_left("tardy-roster"), _left("absences-roster")]
+    body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
+    bullets = [x for x in body.splitlines() if LEFT in x]
+    assert bullets == [
+        "- `dashboard_filter` = `enroll_status` in absences-roster, tardy-roster of "
+        "`enrollment_view` (dashboard_filtered): 2 row groups, 400 rows, 40 students. "
+        "Reason: " + LEFT
+    ]
+    fold = body.split("<summary>For Claude</summary>", 1)[1]
+    assert "`tardy-roster-left`" in fold and "`absences-roster-left`" in fold
+
+
+def test_merged_values_still_need_10_students_each():
+    a = Decision(
+        "a", "c1", "domain_owner", "same", {"column": "region", "values": ["Newark"]}
+    )
+    b = Decision(
+        "b", "c2", "domain_owner", "same", {"column": "region", "values": ["Camden"]}
+    )
+    quiet = [
+        (a, Group("c1", (("region", "Newark"),), "cube_only", 400, 40)),
+        (b, Group("c2", (("region", "Camden"),), "cube_only", 30, 3)),
+    ]
+    body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
+    assert "- `region` = `Newark, <redacted>` in c1, c2" in body
+    assert "Camden" not in body.split("## Proposed approach")[0]
+
+
+def test_decisions_with_different_reasons_stay_apart():
+    a, g = _left("tardy-roster")
+    other = Decision("other", "absences-roster", "domain_owner", "A different question?",
+                     {"column": "dashboard_filter", "values": ["enroll_status"]})  # fmt: skip
+    quiet = [(a, g), (other, _left("absences-roster")[1])]
+    body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
+    assert sum(x.startswith("- `dashboard_filter`") for x in body.splitlines()) == 2
+
+
+def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
+    reason = "Cube has no student filters for these."
+    gaps = [
+        (Decision(f"g-{f}", "", "domain_owner", reason, missing_filter=f),
+         Gap("filter", f, ("Roster",), ("tardy-roster",)))
+        for f in ("Gender", "Ethnicity")
+    ]  # fmt: skip
+    cells = [
+        (Decision(f"c-{c}", c, "domain_owner", "Codes differ?", cells=True),
+         CellDiff(c, {"differs": 30}))
+        for c in ("tardy-roster", "oss-roster")
+    ]  # fmt: skip
+    run = _run(applied=Applied(quiet_gaps=gaps, quiet_cells=cells))
+    run.findings = []
+    body = render_review_issue("Registrar", [run])
+    assert (
+        "- `Gender`, `Ethnicity` on `Roster` in `enrollment_view`: sheet filters "
+        "Cube has no member for. Reason: " + reason
+    ) in body
+    assert (
+        "- `tardy-roster`, `oss-roster` in `enrollment_view`: 60 cells differ "
+        "between Cube and the dashboard. Reason: Codes differ?"
+    ) in body
+    assert "owns the rule behind 2 questions" in body
+
+
+def test_a_school_year_is_a_reviewed_value():
+    d = Decision("yoy", "board", "domain_owner", "Newark's AY2026 ADA reads lower",
+                 {"column": "regions_region_name", "values": ["Newark"]})  # fmt: skip
+    g = Group("board", (("regions_region_name", "Newark"), ("dates_academic_year", "2026")),
+              "value_differs", 400, 40)  # fmt: skip
+    body = render_review_issue("Registrar", [_run(applied=Applied(quiet=[(d, g)]))])
+    assert "Reason: Newark's AY2026 ADA reads lower." in body
