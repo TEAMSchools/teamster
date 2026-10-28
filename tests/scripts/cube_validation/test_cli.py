@@ -359,6 +359,19 @@ def test_fact_dataset_outside_allowed_names_is_refused(
     assert fakes.signed_in == 0
 
 
+def test_run_without_the_flag_uses_the_files_fact_as_written(fakes, tmp_path, capsys):
+    fakes.cube.dataset = "zz_other_kipptaf_marts"
+    path = _file(
+        tmp_path, YML.replace("kipptaf_marts.fct_f", "zz_other_kipptaf_marts.fct_f")
+    )
+
+    assert cli.main(["run", str(path)]) == 0
+
+    jobs = next(s for s in fakes.bq.ran if "JOBS_BY_PROJECT" in s)
+    assert "dataset_id = 'zz_other_kipptaf_marts'" in jobs
+    assert "Fact: zz_other_kipptaf_marts.fct_f" in capsys.readouterr().out
+
+
 def test_run_output_names_cube_host_and_fact(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
 
@@ -844,6 +857,7 @@ def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
         raise AssertionError("review must not call out")
 
     monkeypatch.setattr(urllib.request, "urlopen", no_network)
+    monkeypatch.setattr(urllib.request.OpenerDirector, "open", no_network)
     monkeypatch.setattr(cli, "make_cube", no_network)
     monkeypatch.setattr(cli, "make_warehouse", no_network)
     monkeypatch.setattr(cli, "tableau_session", no_network)

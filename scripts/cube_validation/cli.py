@@ -28,7 +28,6 @@ import tableauserverclient as TSC
 from . import builder, pipeline, report, tableau
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import (
-    DEFAULT_FACT_DATASET,
     ConfigError,
     ViewConfig,
     load_view_config,
@@ -180,9 +179,9 @@ def _parser() -> argparse.ArgumentParser:
     def fact_dataset(p: argparse.ArgumentParser) -> None:
         p.add_argument(
             "--fact-dataset",
-            default=DEFAULT_FACT_DATASET,
-            help="the fact's dataset: kipptaf_marts, or zz_<user>_kipptaf_marts "
-            "for your dbt dev build",
+            help="read the fact from this dataset instead of the validation "
+            "file's: kipptaf_marts, or zz_<user>_kipptaf_marts for your dbt dev "
+            "build",
         )
 
     p = sub.add_parser("prove", help="prove a probe against its sheet once")
@@ -260,9 +259,10 @@ def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "inventory":
         return _inventory(args.catalog, args.slug, args.review, args.asana)
 
-    cfg = with_fact_dataset(
-        _load(args.view), getattr(args, "fact_dataset", DEFAULT_FACT_DATASET)
-    )
+    cfg = _load(args.view)
+    # Without the flag the file's `fact:` is used exactly as written.
+    if getattr(args, "fact_dataset", None) is not None:
+        cfg = with_fact_dataset(cfg, args.fact_dataset)
 
     if args.command == "run":
         cube = _cube(args)

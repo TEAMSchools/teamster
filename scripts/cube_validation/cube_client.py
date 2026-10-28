@@ -18,10 +18,11 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 TIMEOUT_SECONDS = 60
-# A fact table in prod's marts dataset or an analyst's dev build of it.
-# `_FACT` yields table names; `_FACT_REF` yields (dataset, table), so a dev
-# build's `zz_<user>_kipptaf_marts` differs from prod's `kipptaf_marts`.
-_MARTS = r"(?<!\w)(?:zz_[a-z0-9]+_)?kipptaf_marts"
+# A fact table in any `<prefix>kipptaf_marts` dataset: prod's, an analyst's dev
+# build (`zz_<user>_kipptaf_marts`), or one named some other way. `_FACT` yields
+# table names; `_FACT_REF` yields (dataset, table), so each dataset is compared
+# exactly and a second fact cannot hide behind an unfamiliar prefix.
+_MARTS = r"\w*kipptaf_marts"
 _FACT = re.compile(rf"{_MARTS}`?\.`?(fct_\w+)", re.IGNORECASE)
 _FACT_REF = re.compile(rf"({_MARTS})`?\.`?(fct_\w+)", re.IGNORECASE)
 _LOOPBACK = {"localhost", "127.0.0.1"}
@@ -103,6 +104,20 @@ def _transport_allowed(url: str) -> bool:
     )
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Refuse every redirect.
+
+    Cube's REST API does not redirect, and following one would send the token to
+    a URL that never passed `_transport_allowed`.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise CubeError(f"Cube answered {code} with a redirect; not following it")
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
 def urlopen_json(
     method: str, url: str, headers: dict[str, str], body: dict | None = None
 ) -> Any:
@@ -117,8 +132,7 @@ def urlopen_json(
         req.add_header("Content-Type", "application/json")
 
     try:
-        # trunk-ignore(bandit/B310): scheme and host checked above
-        with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
+        with _OPENER.open(req, timeout=TIMEOUT_SECONDS) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as e:
         raise CubeError(f"Cube {method} {e.code}: {e.read().decode()[:500]}") from None

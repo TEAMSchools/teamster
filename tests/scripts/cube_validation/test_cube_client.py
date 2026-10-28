@@ -1,7 +1,9 @@
 import base64
 import hashlib
 import hmac
+import http.server
 import json
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -350,6 +352,66 @@ def test_dev_fact_is_refused_when_the_view_expects_prod():
         )
 
 
+def test_second_fact_in_an_underscored_dev_dataset_is_refused():
+    sql = (
+        "SELECT 1 FROM `zz_a_b_kipptaf_marts`.`fct_other` "
+        "JOIN `zz_a_b_kipptaf_marts`.`fct_a` USING (k) "
+        "WHERE abbreviation IN (?)"
+    )
+
+    with pytest.raises(CubeRefusal, match="fct_other"):
+        refuse_unless_safe(
+            Compiled(sql, ["A"], []),
+            view_fact="zz_a_b_kipptaf_marts.fct_a",
+            network_schools={"A"},
+        )
+
+
+def test_project_prefixed_prod_sql_passes():
+    sql = (
+        "SELECT 1 FROM `teamster-332318`.`kipptaf_marts`.`fct_a` "
+        "WHERE abbreviation IN (?)"
+    )
+
+    refuse_unless_safe(
+        Compiled(sql, ["A"], []),
+        view_fact="kipptaf_marts.fct_a",
+        network_schools={"A"},
+    )
+
+
+def test_a_redirect_is_refused_and_the_token_is_not_forwarded():
+    seen: list[tuple[str, str | None]] = []
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            seen.append((self.path, self.headers.get("Authorization")))
+            if self.path == "/start":
+                self.send_response(302)
+                self.send_header("Location", "/elsewhere")
+                self.end_headers()
+            else:
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"{}")
+
+        def log_message(self, format, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{server.server_port}/start"
+        with pytest.raises(CubeError, match="redirect"):
+            urlopen_json("GET", url, {"Authorization": "token"})
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    assert seen == [("/start", "token")]
+
+
 def test_request_to_a_non_https_url_is_refused_before_it_is_sent():
     with pytest.raises(CubeError, match="https"):
         urlopen_json("GET", "file:///etc/passwd", {})
@@ -362,7 +424,7 @@ def test_network_failure_is_a_cube_error(monkeypatch, error):
     def fail(*args, **kwargs):
         raise error
 
-    monkeypatch.setattr(urllib.request, "urlopen", fail)
+    monkeypatch.setattr(urllib.request.OpenerDirector, "open", fail)
     with pytest.raises(CubeError, match="did not answer"):
         urlopen_json("GET", "https://cube.example/x", {})
 
