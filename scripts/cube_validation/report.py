@@ -557,8 +557,9 @@ def question_reason(q: dict) -> str:
 
 
 def defined_comparisons(questions: list[dict], view: str) -> set[str]:
-    """The view's comparisons whose definitions the issue shows: those with a
-    domain-owner row group or cell difference.
+    """The view's comparisons whose definitions the issue shows.
+
+    Those are the comparisons with a domain-owner row group or cell difference.
     """
     return {
         cid
@@ -573,9 +574,9 @@ def definition_text(text: str) -> str:
     return _safe_reason(text, [])
 
 
-def _hand_check_lines(n: int, check: dict) -> list[str]:
+def _hand_check_lines(question_id: str, check: dict) -> list[str]:
     """One question's hand check: what to expect, then the pinned SQL folded."""
-    where = f"Question {n}, `{check['comparison']}` in `{check['view']}`"
+    where = f"{question_id}, `{check['comparison']}` in `{check['view']}`"
     if "none" in check:
         return [f"{where}: {check['none']}.", ""]
     dims = ", ".join(f"`{c}` = `{_clean(v)}`" for c, v in check["dims"])
@@ -662,15 +663,17 @@ def render_review_issue(
                     f"Dashboard: {definition_text(sides['dashboard'])}. "
                     f"Cube: {definition_text(sides['cube'])}."
                 )
+    # Numbered like the JSON's question ids, so a hand check names its bullet.
     question_lines = [
-        f"{'; '.join(q['parts'])}. Reason: {_with_task(question_reason(q), q['task'])}"
-        for q in asked
+        f"Q{n}. {'; '.join(q['parts'])}. "
+        f"Reason: {_with_task(question_reason(q), q['task'])}"
+        for n, q in enumerate(asked, start=1)
     ]
     check_lines = [
         line
-        for n, q in enumerate(questions or [], start=1)
+        for q in questions or []
         for check in q["hand_checks"]
-        for line in _hand_check_lines(n, check)
+        for line in _hand_check_lines(q["id"], check)
     ]
     # One question per bullet and per anchor finding.
     ids = sorted(set(asked_ids))

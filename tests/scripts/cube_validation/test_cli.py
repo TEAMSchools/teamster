@@ -927,6 +927,61 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
     assert '"stub"' not in out
 
 
+def _triage_item(evidence):
+    stub = {
+        "comparison": "ada-region",
+        "group": {"column": "regions_region_name", "values": ["Miami"]},
+    }
+    return {"id": "i", "kind": "group", "comparison": "ada-region", "label": "l",
+            "stub": stub, "suggestion": "owner", "evidence": [evidence],
+            "candidates": []}  # fmt: skip
+
+
+def test_review_reads_triage_from_an_older_moment(fakes, tmp_path, capsys):
+    # Triage ran on the earlier build; the decision's run lands on a later one.
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    (earlier,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    (earlier.parent / "triage.json").write_text(
+        json.dumps({"items": [_triage_item("from the earlier build")]})
+    )
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    fakes.bq.build = (START + timedelta(hours=3), END + timedelta(hours=3))
+    assert cli.main(["run", str(path)]) == 0
+    assert len(list((tmp_path / "cache" / "v").glob("*/run.json"))) == 2
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+    captured = capsys.readouterr()
+    block = captured.out.split("```json\n", 1)[1].split("\n```", 1)[0]
+    assert json.loads(block)[0]["evidence"] == ["from the earlier build"]
+    assert "no triage evidence" not in captured.err
+
+
+def test_review_names_questions_left_without_evidence(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+    assert "Q1: no triage evidence" in capsys.readouterr().err
+
+
+def test_review_refuses_an_unreadable_triage_file(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
+    (run_json.parent / "triage.json").write_text("{not json")
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
+
+    assert "v: triage.json is unreadable; re-run triage" in capsys.readouterr().err
+
+
 def test_review_reads_the_run_written_last(fakes, tmp_path, capsys):
     # The later build runs first, with no decision yet.
     fakes.bq.build = (START + timedelta(hours=3), END + timedelta(hours=3))

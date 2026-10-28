@@ -18,7 +18,6 @@ from .report import (
     MASK_BELOW,
     RunResult,
     _is_identifier,
-    _num,
     _questions,
     _safe_reason,
     defined_comparisons,
@@ -169,17 +168,27 @@ def _covers(d: Decision, stub: dict) -> bool:
     )
 
 
-def _check_json(view: str, check: HandCheck, measure: str) -> dict:
+def _shown_number(x: float | None) -> str | None:
+    """Mask a whole number under `MASK_BELOW`, whatever the measure is called.
+
+    A measure's name does not say whether it counts people, so any whole value
+    under 10 reads `<10`; a rate or other fraction prints as it is.
+    """
+    if x is None:
+        return None
+    if float(x).is_integer() and x < MASK_BELOW:
+        return "<10"
+    return f"{x:g}"
+
+
+def _check_json(view: str, check: HandCheck) -> dict:
     """A hand check as JSON, its two numbers masked like the issue's counts."""
-    out = asdict(check)
     return {
         "view": view,
-        **out,
+        **asdict(check),
         "dims": [list(pair) for pair in check.dims],
-        "dashboard": None
-        if check.dashboard is None
-        else _num(measure, check.dashboard),
-        "cube": None if check.cube is None else _num(measure, check.cube),
+        "dashboard": _shown_number(check.dashboard),
+        "cube": _shown_number(check.cube),
         "expires": check.expires.isoformat(),
     }
 
@@ -249,11 +258,8 @@ def questions_json(
         for view, cid, _ in q["comparisons"]:
             cfg = by_cfg.get(view)
             check = hand_check(by_run[view], cfg, cid, now) if cfg else None
-            cmp = (
-                next((c for c in cfg.comparisons if c.id == cid), None) if cfg else None
-            )
-            if check and cmp:
-                checks.append(_check_json(view, check, cmp.measure))
+            if check:
+                checks.append(_check_json(view, check))
             else:
                 checks.append({"view": view, "comparison": cid, "none": NO_EXAMPLE})
 

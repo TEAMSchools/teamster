@@ -216,7 +216,7 @@ def test_review_issue_bullets_stay_on_one_line():
         "Reason: line one line two line three" in b for b in bullets[:1]
     )
     assert "line two" in body and "\n  line two" not in body
-    assert "- `region` = `New ark`" in body
+    assert "- Q1. `region` = `New ark`" in body
 
 
 def test_columns_off_the_reviewed_list_redacted():
@@ -341,7 +341,7 @@ def test_review_issue_names_every_dim_and_masks_each():
         12,
     )
     body = _issue_with(g, reason="Camden SECRETVAL rows")
-    assert "- `regions_region_name` = `Camden` in enrollment" in body
+    assert "- Q1. `regions_region_name` = `Camden` in enrollment" in body
     assert "SECRETVAL" not in body
     assert "Reason: Camden <redacted> rows" in body
 
@@ -509,9 +509,9 @@ def test_review_issue_prints_one_bullet_per_decision():
     body = render_review_issue(
         "Registrar", [_run(applied=Applied(quiet=_enrolled_only()))]
     )
-    bullets = [x for x in body.splitlines() if x.startswith("- `dashboard_filter`")]
+    bullets = [x for x in body.splitlines() if x.startswith("- Q1. `dashboard_filter`")]
     assert bullets == [
-        "- `dashboard_filter` = `enroll_status` in tardy-roster of `enrollment_view` "
+        "- Q1. `dashboard_filter` = `enroll_status` in tardy-roster of `enrollment_view` "
         "(dashboard_filtered): 13 row groups, 130 rows, 130 students. "
         "Reason: " + ENROLLED_REASON + "."
     ]
@@ -566,7 +566,7 @@ def test_a_small_group_hides_its_value_in_the_reason_too():
                  {"column": "region", "values": ["Newark"]})  # fmt: skip
     g = Group("enrollment", (("region", "Newark"),), "cube_only", 39, 3)
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=[(d, g)]))])
-    assert "- `region` = `<redacted>`" in body
+    assert "- Q1. `region` = `<redacted>`" in body
     assert "Reason: Some <redacted> students moved." in body
     assert "Newark" not in body.split("## Proposed approach")[0]
 
@@ -579,7 +579,7 @@ def test_each_value_needs_10_students_of_its_own():
     body = render_review_issue(
         "Registrar", [_run(applied=Applied(quiet=[(d, big), (d, small)]))]
     )
-    assert "- `region` = `Newark, <redacted>`" in body
+    assert "- Q1. `region` = `Newark, <redacted>`" in body
     assert "Reason: Newark and <redacted> moved." in body
     assert "Camden" not in body.split("## Proposed approach")[0]
 
@@ -602,7 +602,7 @@ def test_review_issue_merges_decisions_that_share_a_reason():
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
     bullets = [x for x in body.splitlines() if LEFT in x]
     assert bullets == [
-        "- `dashboard_filter` = `enroll_status` in absences-roster, tardy-roster of "
+        "- Q1. `dashboard_filter` = `enroll_status` in absences-roster, tardy-roster of "
         "`enrollment_view` (dashboard_filtered): 2 row groups, 400 rows, "
         "up to 20 students per comparison. "
         "Reason: " + LEFT
@@ -623,7 +623,7 @@ def test_merged_values_still_need_10_students_each():
         (b, Group("c2", (("region", "Camden"),), "cube_only", 30, 3)),
     ]
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
-    assert "- `region` = `Newark, <redacted>` in c1, c2" in body
+    assert "- Q1. `region` = `Newark, <redacted>` in c1, c2" in body
     assert "Camden" not in body.split("## Proposed approach")[0]
 
 
@@ -633,7 +633,13 @@ def test_decisions_with_different_reasons_stay_apart():
                      {"column": "dashboard_filter", "values": ["enroll_status"]})  # fmt: skip
     quiet = [(a, g), (other, _left("absences-roster")[1])]
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
-    assert sum(x.startswith("- `dashboard_filter`") for x in body.splitlines()) == 2
+    assert (
+        sum(
+            re.match(r"- Q[12]\. `dashboard_filter`", x) is not None
+            for x in body.splitlines()
+        )
+        == 2
+    )
 
 
 def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
@@ -652,11 +658,11 @@ def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
     run.findings = []
     body = render_review_issue("Registrar", [run])
     assert (
-        "- `Gender`, `Ethnicity` on `Roster` in `enrollment_view`: sheet filters "
+        "- Q2. `Gender`, `Ethnicity` on `Roster` in `enrollment_view`: sheet filters "
         "Cube has no member for. Reason: " + reason
     ) in body
     assert (
-        "- `tardy-roster`, `oss-roster` in `enrollment_view`: 60 cells differ "
+        "- Q1. `tardy-roster`, `oss-roster` in `enrollment_view`: 60 cells differ "
         "between Cube and the dashboard. Reason: Codes differ?"
     ) in body
     assert "owns the rule behind 2 questions" in body
@@ -699,7 +705,7 @@ def test_one_reason_across_decision_kinds_is_one_bullet():
     body = render_review_issue("Registrar", [run])
     bullets = [x for x in body.splitlines() if OOD in x]
     assert bullets == [
-        "- `region` = `Newark` in board of `enrollment_view` (cube_only): 1 row group, "
+        "- Q1. `region` = `Newark` in board of `enrollment_view` (cube_only): 1 row group, "
         "400 rows, 40 students; `board` in `enrollment_view`: <10 cells differ "
         "between Cube and the dashboard. Reason: " + OOD + "."
     ]
@@ -722,7 +728,7 @@ def test_one_reason_across_files_is_one_bullet():
     )
     bullets = [x for x in body.splitlines() if reason in x]
     assert bullets == [
-        "- `Enroll Status` on `Roster` in `daily_view`: a sheet filter Cube has no "
+        "- Q1. `Enroll Status` on `Roster` in `daily_view`: a sheet filter Cube has no "
         "member for; `Enroll Status` on `Roster` in `periods_view`: a sheet filter "
         "Cube has no member for. Reason: " + reason + "."
     ]
@@ -783,3 +789,5 @@ def test_review_issue_ends_with_fenced_json_in_details():
         block = markdown[: markdown.index(sql)].rsplit("<details>", 1)[1]
         assert "</details>" not in block and "<summary>" in block
     assert markdown.count("<details>") == 2  # the hand check and For Claude
+    assert "\nQ1, `enrollment` in `enrollment_view`, cut `All`" in markdown
+    assert "- Q1. `region` = `Newark`" in markdown

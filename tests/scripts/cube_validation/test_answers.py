@@ -256,6 +256,7 @@ def test_questions_json_matches_markdown_questions_one_to_one():
     assert [q["id"] for q in questions] == ["Q1", "Q2"]
     assert len(bullets) == len(questions)
     for q, bullet in zip(questions, bullets):
+        assert bullet.startswith(f"- {q['id']}. ")
         assert all(count in bullet for count in q["counts"])
         assert f"Reason: {q['reason']}" in bullet
     assert questions[0]["decisions"] == ["d-newark", "d-camden"]
@@ -322,3 +323,29 @@ def test_question_without_example_cell_says_find_one_locally():
     assert questions[0]["evidence"] == []
     body = render_review_issue("Registrar", [run], DEFS, questions)
     assert "no group cell with 10+ students differs" in body.split("<details>")[0]
+
+
+def test_hand_check_values_under_10_are_masked_whatever_the_measure():
+    for measure in ("tardies", "student_count"):
+        cmp = Comparison(
+            id="enrollment",
+            measure=measure,
+            dims=[
+                ColumnPair("regions_region_name", "regions_region_name"),
+                ColumnPair("grade_level", "grade_level"),
+            ],
+        )
+        cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
+        run = _owner_run([_cell(dashboard=7.0, cube=12.0)])
+
+        questions = _questions(run, cfg)
+        check = questions[0]["hand_checks"][0]
+
+        assert (check["dashboard"], check["cube"]) == ("<10", "12"), measure
+        body = render_review_issue("Registrar", [run], DEFS, questions)
+        assert "the dashboard shows <10, Cube shows 12" in body
+
+    # A rate is no count: it prints as it is.
+    run = _owner_run([_cell(dashboard=7.5, cube=0.25)])
+    check = _questions(run)[0]["hand_checks"][0]
+    assert (check["dashboard"], check["cube"]) == ("7.5", "0.25")

@@ -1277,6 +1277,19 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
     return run_result, saved[-1]
 
 
+def _triage_file(run_json: Path, view_root: Path) -> Path | None:
+    """The `triage.json` beside the run, else the newest in any moment folder.
+
+    Triage runs before the analyst records decisions, and the re-run that
+    applies them often lands on a newer build, in a new moment folder.
+    """
+    beside = run_json.parent / "triage.json"
+    if beside.exists():
+        return beside
+    found = sorted(view_root.glob("*/triage.json"), key=lambda p: p.stat().st_mtime)
+    return found[-1] if found else None
+
+
 def review(
     configs: list[ViewConfig],
     domain: str,
@@ -1285,8 +1298,9 @@ def review(
 ) -> str:
     """Return the review-issue body from each view's latest saved run.
 
-    Reads only the local cache: each run and the `triage.json` beside it, when
-    there is one. Nothing is posted.
+    Reads only the local cache: each run and its triage (see `_triage_file`),
+    matching triage items to decisions by their stubs. Nothing is posted; a
+    question with no triage evidence is named on stderr.
 
     Args:
         configs: The views to review.
@@ -1296,15 +1310,20 @@ def review(
             runs; defaults to the clock.
 
     Raises:
-        Refusal: A view has no usable saved run (see `latest_run`).
+        Refusal: A view has no usable saved run (see `latest_run`), or its
+            triage file is not JSON.
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
-    triage = {
-        run.view: json.loads(path.read_text())
-        for run, run_json in saved
-        if (path := run_json.parent / "triage.json").exists()
-    }
+    triage = {}
+    for run, run_json in saved:
+        if found := _triage_file(run_json, cache_root / run.view):
+            try:
+                triage[run.view] = json.loads(found.read_text())
+            except json.JSONDecodeError as exc:
+                raise Refusal(
+                    f"{run.view}: triage.json is unreadable; re-run triage"
+                ) from exc
     definitions = {
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs
@@ -1313,6 +1332,13 @@ def review(
         runs, configs, definitions, triage, now or datetime.now(timezone.utc)
     )
     body = report.render_review_issue(domain, runs, definitions, questions)
+    for q in questions:
+        if not q["evidence"]:
+            # stderr, so the note never lands in the issue body.
+            print(
+                f"{q['id']}: no triage evidence; `triage` the view to add it",
+                file=sys.stderr,
+            )
     if waiting := report.untasked(d for cfg in configs for d in cfg.decisions):
         # stderr, so the reminder never lands in the issue body.
         print(
