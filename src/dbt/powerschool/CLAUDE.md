@@ -73,8 +73,9 @@ columns at once — dbt reports only the first.
 
 ## GPA Gotchas
 
-- **`storecode = 'Y1'` only**: Q1–Q4 records have `gpa_points = 0` by design —
-  only `storecode = 'Y1'` rows are used in GPA calculations.
+- **`storecode = 'Y1'` only**: Q1–Q4 records carry scale `gpa_points` too, but
+  only `storecode = 'Y1'` rows are used in GPA calculations. Filter on
+  `storecode`, never on `gpa_points != 0`.
 - **`districtentrydate` null placeholder**: PowerSchool stores null/missing
   dates as `1899-xx-xx`. Derive network tenure from `MIN(academic_year)` in
   storedgrades instead.
