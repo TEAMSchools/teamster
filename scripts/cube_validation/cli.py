@@ -1,6 +1,7 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
-Commands: `discover`, `prove`, `check-api`, `run`, `review`, `members`. Exit codes: 0
+Commands: `discover`, `prove`, `check-api`, `run`, `review`, `members`,
+`inventory-workbook`. Exit codes: 0
 done, 1 refused (the message says why), 2 usage error. This module parses
 arguments and builds the clients; `pipeline.py` does the work. Tests replace
 `make_warehouse`, `make_cube`, `tableau_session`, `utcnow` and `cache_root`.
@@ -14,6 +15,9 @@ import dataclasses
 import json
 import os
 import sys
+
+# trunk-ignore(bandit/B405): only ParseError is used; the workbook is parsed in builder
+import xml.etree.ElementTree as ET
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
@@ -193,6 +197,11 @@ def _parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("members", help="list Cube measures and the ones sharing SQL")
     email(p)
+
+    p = sub.add_parser(
+        "inventory-workbook", help="list the fields each worksheet of a .twb uses"
+    )
+    p.add_argument("twb", type=Path, help="a downloaded .twb file")
     return parser
 
 
@@ -210,6 +219,9 @@ def _dispatch(args: argparse.Namespace) -> int:
 
     if args.command == "members":
         return _members(_cube(args))
+
+    if args.command == "inventory-workbook":
+        return _inventory_workbook(args.twb)
 
     cfg = _load(args.view)
 
@@ -304,6 +316,18 @@ def _members(cube: Cube) -> int:
     for group in builder.same_sql(found):
         print(f"same SQL: {', '.join(m.name for m in group)}")
 
+    return 0
+
+
+def _inventory_workbook(path: Path) -> int:
+    """Print the fields a local `.twb` uses, as JSON."""
+    if not path.is_file():
+        raise pipeline.Refusal(f"{path}: no such workbook file")
+    try:
+        uses = builder.workbook_inventory(path.read_text(encoding="utf-8"))
+    except ET.ParseError as exc:
+        raise pipeline.Refusal(f"{path}: not a workbook ({exc})") from exc
+    print(json.dumps([dataclasses.asdict(u) for u in uses], indent=2))
     return 0
 
 

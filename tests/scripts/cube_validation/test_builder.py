@@ -180,3 +180,157 @@ def test_measure_expression_keeps_a_from_inside_a_function():
     assert pipeline._measure_expression(sql, "v", "m") == (
         "count(distinct EXTRACT(YEAR FROM `t`.d)) , TRIM(BOTH ' ' FROM 'a from b') x"
     )
+
+
+def _twb(sheets: str = "", columns: str = "", extra_sheet_cols: str = "") -> str:
+    return f"""<?xml version='1.0' encoding='utf-8' ?>
+<workbook>
+  <datasources>
+    <datasource name='ds'>
+      <column datatype='string' name='[tardy_code]' role='dimension'>
+        <calculation class='categorical-bin' column='[code]'>
+          <bin value='&quot;Tardy&quot;'><value>&quot;T&quot;</value>
+            <value>&quot;ET&quot;</value></bin>
+        </calculation>
+      </column>
+      {columns}
+    </datasource>
+  </datasources>
+  <worksheets>{sheets}</worksheets>
+</workbook>"""
+
+
+def _sheet(name: str, deps: str, rows: str = "", cols: str = "", body: str = "") -> str:
+    return f"""<worksheet name='{name}'><table><view>
+      <datasource-dependencies datasource='ds'>{deps}</datasource-dependencies>
+      {body}</view>
+      <rows>{rows}</rows><cols>{cols}</cols></table></worksheet>"""
+
+
+_CALC_COLUMNS = """
+  <column caption='Tardy Rate' name='[Calc_1]' role='measure'>
+    <calculation class='tableau' formula='SUM(IIF([tardy_code] = 1, 1, 0))' />
+  </column>
+  <column caption='Open Link' name='[Calc_2]' role='dimension'>
+    <calculation class='tableau' formula='"https://x.test/" + [school]' />
+  </column>
+  <column caption='Mine' name='[Calc_3]' role='dimension'>
+    <calculation class='tableau' formula='[owner] = USERNAME()' />
+  </column>
+  <column caption='Tardy Group' name='[Calc_4]' role='dimension'>
+    <calculation class='tableau' formula='IF [tardy_code] = "T" THEN 1 END' />
+  </column>
+  <column caption='Cap' name='[Parameter 1]' param-domain-type='any' role='measure'>
+    <calculation class='tableau' formula='5' />
+  </column>
+"""
+
+
+def _dep(name: str, deriv: str, abbr: str, role: str = "dimension", cap: str = ""):
+    caption = f" caption='{cap}'" if cap else ""
+    return (
+        f"<column{caption} name='[{name}]' role='{role}' />"
+        f"<column-instance column='[{name}]' derivation='{deriv}' "
+        f"name='[{abbr}:{name}:nk]' pivot='key' type='nominal' />"
+    )
+
+
+def _workbook() -> str:
+    one = _sheet(
+        "One",
+        _dep("Calc_1", "User", "usr", "measure", "Tardy Rate")
+        + _dep("school", "None", "none")
+        + _dep("Calc_2", "User", "usr", cap="Open Link")
+        + _dep("Parameter 1", "None", "none", "measure", "Cap")
+        + "<column name='[Parameter 1]' param-domain-type='any' role='measure' />",
+        rows="([ds].[none:school:nk] * [ds].[usr:Calc_2:nk])",
+        cols="[ds].[usr:Calc_1:nk]",
+        body="<filter class='categorical' column='[ds].[none:region:nk]'>"
+        "<groupfilter function='member' level='[none:region:nk]' member='&quot;A&quot;' />"
+        "</filter>",
+    )
+    two = _sheet(
+        "Two",
+        _dep("Calc_1", "User", "usr", "measure", "Tardy Rate")
+        + _dep("Calc_3", "User", "usr", cap="Mine")
+        + _dep("Calc_4", "User", "usr", cap="Tardy Group")
+        + _dep("school", "None", "none")
+        + _dep("membership", "Sum", "sum", "measure"),
+        rows="[ds].[usr:Calc_4:nk]",
+        cols="[ds].[usr:Calc_1:nk] [ds].[sum:membership:qk]",
+        body="<filter class='categorical' column='[ds].[none:school:nk]'>"
+        "<groupfilter function='level-members' level='[none:school:nk]' />"
+        "</filter>"
+        "<filter class='categorical' column='[ds].[usr:Calc_3:nk]'>"
+        "<groupfilter function='member' level='[usr:Calc_3:nk]' member='true' />"
+        "</filter>",
+    )
+    return _twb(one + two, _CALC_COLUMNS)
+
+
+def _by_name(uses) -> dict:
+    return {u.caption: u for u in uses}
+
+
+def test_inventory_lists_each_field_once_with_all_its_sheets():
+    uses = builder.workbook_inventory(_workbook())
+
+    assert len({u.caption for u in uses}) == len(uses)
+    by = _by_name(uses)
+    assert by["Tardy Rate"].role == "measure"
+    assert by["Tardy Rate"].sheets == ("One", "Two")
+    assert by["school"].role == "cut"
+    assert by["school"].sheets == ("One", "Two")
+    assert by["region"].role == "filter"
+    assert by["region"].sheets == ("One",)
+    assert by["SUM(membership)"].role == "measure"
+    assert by["SUM(membership)"].formula == "SUM([membership])"
+    assert by["Tardy Group"].role == "cut"
+
+
+def test_inventory_expands_code_groups_in_formulas():
+    by = _by_name(builder.workbook_inventory(_workbook()))
+
+    assert "[tardy_code: Tardy = T, ET]" in by["Tardy Rate"].formula
+    assert "[tardy_code: Tardy = T, ET]" in by["Tardy Group"].formula
+
+
+def test_inventory_marks_parameters_urls_and_identity_fields_presentation():
+    by = _by_name(builder.workbook_inventory(_workbook()))
+
+    assert by["Cap"].role == "parameter"
+    assert by["Cap"].presentation
+    assert by["Open Link"].presentation
+    assert by["Mine"].presentation
+    assert not by["Tardy Rate"].presentation
+    assert not by["school"].presentation
+
+
+def test_inventory_survives_odd_xml():
+    xml = _twb(
+        "<worksheet><table><view/></table></worksheet>"
+        "<worksheet name='Empty'/>"
+        + _sheet("Odd", "<column-instance derivation='Sum'/>", rows="[bad ref]")
+    )
+
+    assert builder.workbook_inventory(xml) == []
+
+
+def test_inventory_workbook_command_prints_json(tmp_path, capsys):
+    path = tmp_path / "w.twb"
+    path.write_text(_workbook(), encoding="utf-8")
+
+    assert cli.main(["inventory-workbook", str(path)]) == 0
+
+    printed = json.loads(capsys.readouterr().out)
+    assert {u["caption"] for u in printed} >= {"Tardy Rate", "school", "region"}
+    assert all(isinstance(u["sheets"], list) for u in printed)
+
+
+def test_inventory_workbook_command_refuses_a_missing_or_broken_file(tmp_path, capsys):
+    assert cli.main(["inventory-workbook", str(tmp_path / "none.twb")]) == 1
+    broken = tmp_path / "b.twb"
+    broken.write_text("<workbook", encoding="utf-8")
+
+    assert cli.main(["inventory-workbook", str(broken)]) == 1
+    assert "refused" in capsys.readouterr().err
