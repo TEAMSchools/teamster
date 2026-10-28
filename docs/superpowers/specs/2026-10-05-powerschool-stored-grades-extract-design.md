@@ -2,6 +2,10 @@
 
 Refs #5704
 
+> Revised 2026-10-28 after review on #5705. Where the original design below and
+> the _Revision 2026-10-28_ section disagree, the revision wins: it replaces the
+> sources, adds district wrappers, and changes the MS `Comment` handling.
+
 ## Goal
 
 Replace a personal saved BigQuery query with a version-controlled,
@@ -144,3 +148,137 @@ lineage.
 - Populating real credit hours in `PotentialCrHrs` / `EarnedCrHrs`.
 - Dropping the orphaned `kipptaf_powerschool.stg_powerschool__gradescaleitem` /
   `stg_powerschool__sections` views — separate cleanup follow-up.
+
+## Revision 2026-10-28
+
+Review on #5705 found that the original sources break the layer rules in
+`.claude/rules/dbt-architecture.md`, and asked for district wrappers. This
+section replaces _Sources_, _Filters_, the source column of _Output columns_,
+_Tests_, _Quarterly runbook_, and _Exposure_ above, and removes district
+wrappers from _Out of scope_.
+
+### Why the sources changed
+
+- A1: an `rpt_` may read only marts and domain `int_` models.
+  `base_powerschool__final_grades` and `int_powerschool__gradescaleitem_lookup`
+  are source-level, and `stg_powerschool__students` is staging.
+- A5: an `rpt_` may not dedupe, so the gradescale-name dedupe is gone.
+- A2: an `rpt_` reads a mart when one covers the entity. `fct_grades_term`
+  covers term grades (and #6084, which dropped late-enrolled students, is fixed
+  by #6085), but the mart chain has no PowerSchool `sectionid` or section
+  `termid`: `dim_course_sections.identifier` is the section number. The import
+  needs both, so the extract reads domain `int_` models until the marts carry
+  them. Tracked in #6174; when it lands, move the extract onto the marts.
+
+### kipptaf view sources
+
+| Model                              | Join                                                | Provides                                                                                                                                                                                                                                         |
+| ---------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `int_students__final_grades`       | driving model                                       | `student_number`, `schoolid`, `storecode`, `term_grade_points`, `term_percent_grade_adjusted`, `term_letter_grade_adjusted`, `potential_credit_hours`, `_dbt_source_project`; `comment_value` after upstream change 1                            |
+| `int_students__course_enrollments` | `inner join` on `cc_dcid` and `_dbt_source_project` | `cc_sectionid`, `cc_course_number`, `courses_course_name`, `courses_credittype`, `teacher_lastfirst`, `school_name`, `school_level`, `sections_termid`, `students_grade_level`, `is_homeroom`; `courses_gradescale_name` after upstream change 2 |
+
+Both models are unique on the join key (`cc_dcid` + `_dbt_source_project` for
+course enrollments; `cc_dcid` + `storecode` + `_dbt_source_project` for final
+grades), so the join cannot fan out. Focus (Miami) rows in
+`int_students__final_grades` carry a null adjusted percent and drop out at the
+first filter below.
+
+### Upstream changes (part of the build)
+
+1. `comment_value` on `int_students__final_grades`: the PowerSchool branch
+   selects it from `base_powerschool__final_grades`; the Focus branch pads it
+   with `cast(null as string)`. The model currently uses
+   `full union all corresponding`, which `.claude/rules/dbt-sql.md` bans;
+   convert it to an enumerated `union all` while editing it.
+2. `courses_gradescale_name` on the course data that feeds
+   `int_students__course_enrollments`: in the powerschool package's
+   `base_powerschool__sections`, `left join stg_powerschool__gradescaleitem` on
+   `id = courses_gradescaleid`. That joins the scale's own row
+   (`gradescaleid = -1`); `id` carries an error-level `unique` test, so it is
+   one-to-one and needs no dedupe. This is a package column add, so follow
+   _kipptaf source consumers of district columns_ in
+   `.claude/rules/dbt-models.md` (two PRs, or the single-PR staging pattern).
+
+### Filters (baked in)
+
+- `term_percent_grade_adjusted is not null`
+- `not is_homeroom` — replaces `course_number != 'HR'`. `is_homeroom` matches
+  `like 'HR%'`, which is broader; the parity check confirms no graded course
+  other than `HR` starts with `HR`.
+- `potential_credit_hours != 0` — unchanged, with its SQL comment.
+- `school_level in ('MS', 'HS')` — ES is excluded on purpose. Stored grades feed
+  MS/HS report cards and transcripts, and ES grades are not stored through this
+  import. Camden has ES rows that pass the other filters, so this filter is
+  load-bearing.
+
+### Output column changes
+
+| Column            | New source / logic                                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `grade_level`     | `students_grade_level`                                                                                                |
+| `credit_type`     | `courses_credittype`                                                                                                  |
+| `course_number`   | `cc_course_number`                                                                                                    |
+| `course_name`     | `courses_course_name`                                                                                                 |
+| `sectionid`       | `cc_sectionid`                                                                                                        |
+| `termid`          | `sections_termid`                                                                                                     |
+| `gradescale_name` | `courses_gradescale_name`                                                                                             |
+| `Comment`         | `comment_value` on HS rows, null on MS rows: `if(school_level = 'HS', comment_value, null)`. See _MS `Comment`_ below |
+
+All other columns keep the logic in _Output columns_ above. The contract YAML
+must spell `PotentialCrHrs`, `EarnedCrHrs`, and `Comment` in exactly that case.
+
+### MS `Comment`
+
+MS rows carry a null `Comment` instead of the MS run dropping the column, so MS
+and HS use one query. This depends on PowerSchool's stored grades import
+accepting a blank comment without rejecting the row or clearing an existing
+comment. Confirm with a test import before the first live MS run (see
+_Validation additions_). If a blank comment is not safe, the MS runbook goes
+back to `select * except (school_level, Comment)`.
+
+### District wrappers
+
+Each NJ project (`kippnewark`, `kippcamden`, `kipppaterson`) gets
+`models/extracts/powerschool/rpt_powerschool__stored_grades.sql`, following the
+`rpt_powerschool__autocomm_*` wrappers:
+
+- selects every kipptaf column except `code_location`, from
+  `source("kipptaf_extracts", "rpt_powerschool__stored_grades")`, filtered
+  `where code_location = '{{ project_name }}'`;
+- adds the table to that project's `kipptaf_extracts` source in
+  `models/extracts/sources.yml`;
+- properties file is contract columns only, with no tests or descriptions (those
+  stay on the kipptaf view);
+- lands in `<region>_extracts.rpt_powerschool__stored_grades`.
+
+### Exposures
+
+No exposure in kipptaf. Each NJ project adds one to
+`models/exposures/powerschool.yml`: name `powerschool_stored_grades`, label
+`PowerSchool Stored Grades Import`, type `application`, `owner.name: Data Team`,
+`depends_on: ref("rpt_powerschool__stored_grades")`, and
+`config.meta.dagster.kinds: [powerschool]`.
+
+### Tests
+
+Unchanged from _Tests_ above, on the kipptaf view only. The wrappers carry none.
+
+### Quarterly runbook (kipptaf model description)
+
+```sql
+select * except (school_level)
+from kippnewark_extracts.rpt_powerschool__stored_grades
+where storecode = 'Q1' and school_level = 'MS'
+```
+
+Swap the region dataset (`kippnewark_extracts`, `kippcamden_extracts`,
+`kipppaterson_extracts`), the storecode, and the school level per run. Download
+as CSV and import into that region's PowerSchool server.
+
+### Validation additions
+
+1. Parity (unchanged): compare against the saved query using the wrapper, with
+   `Comment` excluded on MS rows, since the saved query has none.
+2. Blank-comment test import: before the first live MS run, import a small MS
+   file with a blank `Comment` into one region's PowerSchool (a test server if
+   one is available). Confirm rows load and existing comments are untouched.
