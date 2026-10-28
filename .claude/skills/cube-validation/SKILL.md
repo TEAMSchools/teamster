@@ -138,8 +138,11 @@ cause, do not retry around it.
    only this catches a dashboard owner's edit; re-prove each proof it lists.
    `run` warns when a proof is more than 7 days old.
 7. `run <file>` (add `--moment <ISO time>` for a build within the last 7 days).
-   It prices queries first and stops over `--max-usd`. A proof with no recorded
-   cuts is listed under "Cuts to prove in the browser" for a re-prove.
+   It prices queries first and stops over `--max-usd`. Every run on this machine
+   also shares a daily cap, `--max-usd-per-day` (UTC day), and view versions
+   found in BigQuery's job history are cached in the local cache, so a repeat
+   run does not pay to look them up again. A proof with no recorded cuts is
+   listed under "Cuts to prove in the browser" for a re-prove.
 8. Triage every open group, and every missing cut and filter, into one of 4
    calls, then record it (step 9). A missing cut or filter is a sheet field Cube
    has no member for: Cube cannot make that cut, so the owner decides whether

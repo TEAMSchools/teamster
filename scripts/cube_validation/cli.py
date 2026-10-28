@@ -31,6 +31,8 @@ URL_VAR = "CUBE_REST_URL"
 # trunk-ignore(bandit/B105): environment variable name, not a value
 SECRET_VAR = "CUBE_API_SECRET"
 EMAIL_VAR = "CUBE_VALIDATION_EMAIL"
+# Every run on this machine shares 1 daily BigQuery cap (UTC day).
+DAILY_MAX_USD = 10.0
 
 # Errors that mean "stopped on purpose or by a check". Anything else is a bug
 # and keeps its traceback; no message here carries a secret.
@@ -49,6 +51,13 @@ REFUSALS = (
 def make_warehouse() -> Warehouse:
     """BigQuery through application default credentials."""
     return Warehouse()
+
+
+def _warehouse(args: argparse.Namespace) -> Warehouse:
+    """A warehouse that shares its view cache and daily spend with other runs."""
+    wh = make_warehouse()
+    wh.configure_local(cache_root(), args.max_usd_per_day)
+    return wh
 
 
 def make_cube(base_url: str, secret: str, email: str) -> Cube:
@@ -126,6 +135,12 @@ def _parser() -> argparse.ArgumentParser:
 
     def max_usd(p: argparse.ArgumentParser) -> None:
         p.add_argument("--max-usd", type=float, default=5.0, help="BigQuery cap")
+        p.add_argument(
+            "--max-usd-per-day",
+            type=float,
+            default=DAILY_MAX_USD,
+            help="BigQuery cap across every run today (UTC)",
+        )
 
     p = sub.add_parser("discover", help="rank workbook fields against a measure")
     view_file(p)
@@ -194,7 +209,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         cube = _cube(args)
         pipeline.run(
             cfg,
-            wh=make_warehouse(),
+            wh=_warehouse(args),
             cube=cube,
             now=utcnow(),
             requested=args.moment,
@@ -206,7 +221,7 @@ def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "check-api":
         cube = _cube(args)
         pipeline.check_api(
-            cfg, wh=make_warehouse(), cube=cube, clock=utcnow, max_usd=args.max_usd
+            cfg, wh=_warehouse(args), cube=cube, clock=utcnow, max_usd=args.max_usd
         )
         return 0
 
@@ -241,7 +256,7 @@ def _dispatch(args: argparse.Namespace) -> int:
                 ),
             )
         else:
-            wh = make_warehouse()
+            wh = _warehouse(args)
             refused = _each(
                 args.comparison,
                 tbl,

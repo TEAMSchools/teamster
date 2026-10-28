@@ -194,3 +194,96 @@ def test_view_sql_drops_trailing_semicolon():
     wh = Warehouse(client=FakeClient(table))
 
     assert wh.view_sql_as_of("ds", "v", TS) == "select 1"
+
+
+# --- spend controls: view cache on disk, daily cap, billed bytes --------------
+
+JOB = {
+    "query": "create view `p`.`ds`.`v` as select old",
+    "start_time": TS - timedelta(days=30),
+}
+
+
+def _changed_view_client(rows):
+    return FakeClient(
+        FakeTable(view_query="select new", modified=TS + timedelta(days=2)), rows=rows
+    )
+
+
+def _history_reads(client):
+    return [s for s, dry in client.queries if not dry and "JOBS_BY_PROJECT" in s]
+
+
+def test_a_found_view_version_is_reused_by_the_next_run(tmp_path):
+    first = _changed_view_client([JOB])
+    wh = Warehouse(client=first)
+    wh.configure_local(tmp_path, None)
+    assert wh.view_sql_as_of("ds", "v", TS) == "select old"
+
+    second = _changed_view_client([])
+    wh2 = Warehouse(client=second)
+    wh2.configure_local(tmp_path, None)
+    assert wh2.view_sql_as_of("ds", "v", TS - timedelta(days=1)) == "select old"
+    assert _history_reads(second) == []
+
+
+def test_a_later_moment_scans_only_the_days_after_the_cached_span(tmp_path):
+    wh = Warehouse(client=_changed_view_client([JOB]))
+    wh.configure_local(tmp_path, None)
+    wh.view_sql_as_of("ds", "v", TS)
+
+    later = _changed_view_client([])
+    wh2 = Warehouse(client=later)
+    wh2.configure_local(tmp_path, None)
+    assert wh2.view_sql_as_of("ds", "v", TS + timedelta(hours=6)) == "select old"
+    (sql,) = _history_reads(later)
+    assert "creation_time >= TIMESTAMP '2026-10-22 19:00:00.000000+00:00'" in sql
+    assert "INTERVAL" not in sql
+
+
+def test_a_newer_version_in_the_new_days_wins(tmp_path):
+    wh = Warehouse(client=_changed_view_client([JOB]))
+    wh.configure_local(tmp_path, None)
+    wh.view_sql_as_of("ds", "v", TS)
+
+    newer = {
+        "query": "create view `p`.`ds`.`v` as select newer",
+        "start_time": TS + timedelta(hours=1),
+    }
+    wh2 = Warehouse(client=_changed_view_client([newer]))
+    wh2.configure_local(tmp_path, None)
+    assert wh2.view_sql_as_of("ds", "v", TS + timedelta(hours=6)) == "select newer"
+
+
+def test_the_daily_cap_spans_runs_and_counts_no_refused_query(tmp_path):
+    half = int(0.6 / 6.25 * TIB)  # $0.60 a query
+    a = Warehouse(client=FakeClient(nbytes=half))
+    a.configure_local(tmp_path, 1.0)
+    a.price("select 1")
+
+    b = Warehouse(client=FakeClient(nbytes=half))
+    b.configure_local(tmp_path, 1.0)
+    with pytest.raises(CostCapError, match="today.*\\$1.00 daily cap"):
+        b.price("select 2")
+    small = Warehouse(client=FakeClient(nbytes=int(0.3 / 6.25 * TIB)))
+    small.configure_local(tmp_path, 1.0)
+    small.price("select 3")  # $0.60 + $0.30 fits: the refused $0.60 was not counted
+
+
+def test_billed_bytes_replace_the_estimate_after_a_query_runs(tmp_path):
+    client = FakeClient(rows=[{"x": 1}], nbytes=int(1.0 / 6.25 * TIB))
+    real = client.query
+
+    def query(sql, job_config=None):
+        job = real(sql, job_config)
+        if not (job_config and job_config.dry_run):
+            job.total_bytes_billed = int(0.25 / 6.25 * TIB)
+        return job
+
+    client.query = query
+    wh = Warehouse(client=client)
+    wh.configure_local(tmp_path, 10.0)
+    with wh.budget(5.0):
+        wh.rows("select 1")
+        assert wh.spent == pytest.approx(0.25, abs=0.001)
+    assert wh.spent_today() == pytest.approx(0.25, abs=0.001)

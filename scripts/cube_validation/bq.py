@@ -5,10 +5,14 @@ Only SELECTs and dry runs are issued. `Warehouse` is the catalog `as_of` needs.
 
 from __future__ import annotations
 
+import json
+import os
 import re
+import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from google.cloud import bigquery
 
@@ -30,7 +34,8 @@ _LEADING_COMMENTS = re.compile(r"\A\s*(?:/\*.*?\*/\s*)+", re.DOTALL)
 
 
 class CostCapError(RuntimeError):
-    """Summed dry-run prices passed the cap set by `Warehouse.budget`."""
+    """Summed prices passed the run's cap (`Warehouse.budget`) or the day's cap
+    (`Warehouse.configure_local`)."""
 
 
 class ViewHistoryError(RuntimeError):
@@ -45,6 +50,26 @@ class Warehouse:
         self._cap: float | None = None
         self._spent = 0.0
         self._views: dict[tuple[str, str], list[tuple[datetime, datetime, str]]] = {}
+        self._cache_dir: Path | None = None
+        self._daily_cap: float | None = None
+
+    def configure_local(self, cache_dir: Path, daily_cap: float | None) -> None:
+        """Keep view versions and each day's spend on disk, shared by every run.
+
+        A view version found once is never looked up again: the definition in
+        force over a past span cannot change. A query that would take the
+        day's priced total (UTC day) past `daily_cap` USD is refused before it
+        runs, whichever run asks.
+        """
+        self._cache_dir = Path(cache_dir)
+        self._daily_cap = daily_cap
+        for key, spans in _read_json(self._cache_dir / _VIEWS_FILE, {}).items():
+            dataset, name = key.split(".", 1)
+            known = self._views.setdefault((dataset, name), [])
+            known += [
+                (datetime.fromisoformat(a), datetime.fromisoformat(b), body)
+                for a, b, body in spans
+            ]
 
     def table(self, dataset: str, name: str) -> TableInfo:
         """Return the kind of `dataset.name` and, for a view, its current SQL."""
@@ -68,18 +93,65 @@ class Warehouse:
         # A job found for moment `at` that started at `since` is also the
         # latest job for any moment in (since, at]: a later one would have
         # been found for `at`. A run reads its 2 moments seconds apart.
-        for since, at, body in self._views.get((dataset, name), []):
+        spans = self._views.get((dataset, name), [])
+        for since, at, body in spans:
             if since < ts <= at:
                 return body
 
         t = self._client.get_table(f"{PROJECT}.{dataset}.{name}")
 
-        if t.modified <= ts:
-            return t.view_query.strip().rstrip(";").rstrip()
+        if t.modified is not None and t.modified <= ts:
+            return (t.view_query or "").strip().rstrip(";").rstrip()
 
-        since, body = self._view_from_jobs(dataset, name, ts)
-        self._views.setdefault((dataset, name), []).append((since, ts, body))
+        earlier = [span for span in spans if span[1] < ts]
+        if earlier:
+            # A known version held until `until`: only a job created since then
+            # can have replaced it, so scan just those days.
+            since, until, body = max(earlier, key=lambda span: span[1])
+            row = self._latest_create_view(
+                dataset, name, ts, f"creation_time >= TIMESTAMP '{utc_literal(until)}'"
+            )
+            if row:
+                since = row.get("start_time") or ts - timedelta.resolution
+                body = _view_body(row["query"])
+        else:
+            since, body = self._view_from_jobs(dataset, name, ts)
+        spans.append((since, ts, body))
+        self._views[(dataset, name)] = spans
+        self._save_views()
         return body
+
+    def _save_views(self) -> None:
+        if self._cache_dir is None:
+            return
+        _write_json(
+            self._cache_dir / _VIEWS_FILE,
+            {
+                f"{dataset}.{name}": [
+                    [a.isoformat(), b.isoformat(), body] for a, b, body in spans
+                ]
+                for (dataset, name), spans in self._views.items()
+            },
+        )
+
+    def _latest_create_view(
+        self, dataset: str, name: str, ts: datetime, window: str
+    ) -> dict | None:
+        """The latest successful `CREATE_VIEW` job before `ts` inside `window`."""
+        rows = self.rows(
+            # trunk-ignore(bandit/B608): dataset and view names come from validated config.py identifiers; values are literal-escaped
+            "SELECT query, start_time "
+            f"FROM `{PROJECT}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
+            "WHERE statement_type = 'CREATE_VIEW' AND state = 'DONE' "
+            "AND error_result IS NULL "
+            f"AND destination_table.dataset_id = '{dataset}' "
+            f"AND destination_table.table_id = '{name}' "
+            f"AND start_time < TIMESTAMP '{utc_literal(ts)}' "
+            f"AND creation_time < TIMESTAMP '{utc_literal(ts)}' "
+            f"AND {window} "
+            "ORDER BY start_time DESC LIMIT 1"
+        )
+        return rows[0] if rows else None
 
     def _view_from_jobs(
         self, dataset: str, name: str, ts: datetime
@@ -89,24 +161,17 @@ class Warehouse:
         # dbt recreates most views on every build, so look back a few days
         # before paying for the whole retention.
         for days in (VIEW_HISTORY_FIRST_DAYS, JOBS_RETENTION_DAYS):
-            rows = self.rows(
-                # trunk-ignore(bandit/B608): dataset and view names come from validated config.py identifiers; values are literal-escaped
-                "SELECT query, start_time "
-                f"FROM `{PROJECT}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
-                "WHERE statement_type = 'CREATE_VIEW' AND state = 'DONE' "
-                "AND error_result IS NULL "
-                f"AND destination_table.dataset_id = '{dataset}' "
-                f"AND destination_table.table_id = '{name}' "
-                f"AND start_time < TIMESTAMP '{utc_literal(ts)}' "
-                f"AND creation_time < TIMESTAMP '{utc_literal(ts)}' "
-                f"AND creation_time >= TIMESTAMP_SUB(TIMESTAMP '{utc_literal(ts)}', "
-                f"INTERVAL {days} DAY) "
-                "ORDER BY start_time DESC LIMIT 1"
+            row = self._latest_create_view(
+                dataset,
+                name,
+                ts,
+                f"creation_time >= TIMESTAMP_SUB(TIMESTAMP '{utc_literal(ts)}', "
+                f"INTERVAL {days} DAY)",
             )
-            if rows:
+            if row:
                 # No start means no interval to reuse: only `ts` itself.
-                since = rows[0].get("start_time") or ts - timedelta.resolution
-                return since, _view_body(rows[0]["query"])
+                since = row.get("start_time") or ts - timedelta.resolution
+                return since, _view_body(row["query"])
 
         raise ViewHistoryError(
             f"no CREATE_VIEW job for {dataset}.{name} before {utc_literal(ts)}"
@@ -121,6 +186,14 @@ class Warehouse:
         config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
         job = self._client.query(sql, job_config=config)
         usd = (job.total_bytes_processed or 0) / _TIB * USD_PER_TIB
+        if self._daily_cap is not None:
+            today = self.spent_today()
+            if today + usd > self._daily_cap:
+                raise CostCapError(
+                    f"today's validator spend is ${today:.2f}; this query "
+                    f"(${usd:.2f}) would pass the ${self._daily_cap:.2f} daily cap "
+                    "(UTC day). Wait for tomorrow or raise --max-usd-per-day."
+                )
         self._spent += usd
 
         if self._cap is not None and self._spent > self._cap:
@@ -128,7 +201,22 @@ class Warehouse:
                 f"spent ${self._spent:.2f}, over the ${self._cap:.2f} cap"
             )
 
+        self._record(usd)
         return usd
+
+    def spent_today(self) -> float:
+        """USD priced or billed today (UTC) by every run sharing this cache."""
+        if self._cache_dir is None:
+            return 0.0
+        return float(_read_json(self._cache_dir / _SPEND_FILE, {}).get(_today(), 0.0))
+
+    def _record(self, usd: float) -> None:
+        if self._cache_dir is None or not usd:
+            return
+        path = self._cache_dir / _SPEND_FILE
+        ledger = _read_json(path, {})
+        ledger[_today()] = ledger.get(_today(), 0.0) + usd
+        _write_json(path, ledger)
 
     @property
     def spent(self) -> float:
@@ -136,11 +224,23 @@ class Warehouse:
         return self._spent
 
     def rows(self, sql: str) -> list[dict]:
-        """Run `sql` and return its rows; priced first when a budget is open."""
-        if self._cap is not None:
-            self.price(sql)
+        """Run `sql` and return its rows.
 
-        return [dict(r.items()) for r in self._client.query(sql).result()]
+        It is priced first when a run or daily cap is set; once it runs, the
+        bytes BigQuery billed replace that estimate in both totals.
+        """
+        estimate = 0.0
+        if self._cap is not None or self._daily_cap is not None:
+            estimate = self.price(sql)
+
+        job = self._client.query(sql)
+        out = [dict(r.items()) for r in job.result()]
+        billed = getattr(job, "total_bytes_billed", None)
+        if isinstance(billed, int):
+            delta = billed / _TIB * USD_PER_TIB - estimate
+            self._spent += delta
+            self._record(delta)
+        return out
 
     @contextmanager
     def budget(self, max_usd: float) -> Iterator[None]:
@@ -151,6 +251,30 @@ class Warehouse:
             yield
         finally:
             self._cap = None
+
+
+_VIEWS_FILE = "view-history.json"
+_SPEND_FILE = "spend.json"
+
+
+def _today() -> str:
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def _read_json(path: Path, default):
+    try:
+        return json.loads(path.read_text())
+    except FileNotFoundError:
+        return default
+
+
+def _write_json(path: Path, data) -> None:
+    """Replace `path` whole, so a reader never sees half a file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
+    with os.fdopen(fd, "w") as f:
+        json.dump(data, f)
+    os.replace(tmp, path)
 
 
 def _close_paren(text: str, open_at: int) -> int:

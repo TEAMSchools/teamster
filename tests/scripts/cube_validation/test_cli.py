@@ -347,7 +347,7 @@ def test_run_refuses_comparison_without_proof(fakes, tmp_path, capsys):
 def test_run_prices_before_running(fakes, tmp_path, capsys):
     fakes.bq.cost = lambda sql: 10.0 if "-- outer" in sql else 0.001
 
-    assert cli.main(["run", str(_file(tmp_path))]) == 1
+    assert cli.main(["run", str(_file(tmp_path)), "--max-usd-per-day", "1000"]) == 1
 
     err = capsys.readouterr().err
     assert "$" in err and "5.00" in err
@@ -357,7 +357,19 @@ def test_run_prices_before_running(fakes, tmp_path, capsys):
 def test_run_max_usd_sets_the_cap(fakes, tmp_path):
     fakes.bq.cost = lambda sql: 10.0 if "-- outer" in sql else 0.001
 
-    assert cli.main(["run", str(_file(tmp_path)), "--max-usd", "50"]) == 0
+    assert (
+        cli.main(
+            [
+                "run",
+                str(_file(tmp_path)),
+                "--max-usd",
+                "50",
+                "--max-usd-per-day",
+                "1000",
+            ]
+        )
+        == 0
+    )
 
 
 def _identity_sql(sql):
@@ -1559,3 +1571,11 @@ def test_probe_fingerprint_covers_parameters(tmp_path):
         "    sheet_field: Rate\n    parameters: { Basis: Year end }\n",
     )
     assert fp(with_param) != fp(YML)
+
+
+def test_the_daily_cap_refuses_a_run_across_runs(fakes, tmp_path, capsys):
+    fakes.bq.cost = lambda sql: 4.0 if "fct_f" in sql else 0.0
+    assert cli.main(["run", str(_file(tmp_path)), "--max-usd", "50"]) == 1
+
+    err = capsys.readouterr().err
+    assert "daily cap" in err and "--max-usd-per-day" in err
