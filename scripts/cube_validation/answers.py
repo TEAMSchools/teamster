@@ -1,6 +1,6 @@
 """Pick the example cell an owner checks by hand and pin each side's SQL to it.
 
-The owner pastes these queries into the BigQuery console under his own access,
+The owner pastes these queries into the BigQuery console under their own access,
 and the texts go into a GitHub issue, so the example is never one person's row:
 every dimension is a reviewed column and at least `MASK_BELOW` students stand
 behind it. This module runs no queries; it selects and formats saved data.
@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
 
 from .config import ViewConfig
 from .cube_client import _literal
@@ -50,7 +51,6 @@ def example_cell(run: RunResult, comparison: str) -> dict | None:
         c
         for c in run.diff_cells
         if c["comparison"] == comparison
-        and c["dims"]
         and not any(_is_identifier(column) for column, _ in c["dims"])
         and c["n_students"] is not None
         and c["n_students"] >= MASK_BELOW
@@ -62,10 +62,34 @@ def example_cell(run: RunResult, comparison: str) -> dict | None:
     return min(ok, key=lambda c: (-abs(c["dashboard"] - c["cube"]), c["key"]))
 
 
+def _predicate(column: str, key: str) -> str:
+    """Match a column against the text `pipeline._key` made of its value.
+
+    `_key` writes NULL as '', numbers as plain decimals and booleans as
+    True/False, so a bare `column = '7'` fails on a number and `= ''` misses a
+    NULL. A date or text key compares as a string literal, which BigQuery
+    coerces against a DATE or TIMESTAMP column.
+    """
+    if key == "":
+        return f"{column} IS NULL"
+    if key.lower() in ("true", "false"):
+        return f"LOWER(CAST({column} AS STRING)) = {_literal(key.lower())}"
+    try:
+        number = Decimal(key)
+    except InvalidOperation:
+        number = None
+    if number is not None and number.is_finite():
+        return f"SAFE_CAST({column} AS NUMERIC) = {format(number.normalize(), 'f')}"
+    return f"{column} = {_literal(key)}"
+
+
 def _pinned(sql: str, pairs: list[tuple[str, str]]) -> str:
-    where = " AND ".join(f"{name} = {_literal(value)}" for name, value in pairs)
+    """Wrap `sql` to the cell; unchanged for a total cell with no dims."""
+    if not pairs:
+        return sql
+    where = " AND ".join(_predicate(name, value) for name, value in pairs)
     # trunk-ignore(bandit/B608): names come from validated config and values are literal-escaped
-    return f"SELECT * FROM ({sql}) WHERE {where}"
+    return f"SELECT * FROM (\n{sql}\n) WHERE {where}"
 
 
 def hand_check(
@@ -83,8 +107,8 @@ def hand_check(
         now: The current time, to decide whether the as-of SQL still runs.
 
     Returns:
-        None when there is no example cell, no saved SQL for its cut, or a dim
-        the comparison does not map.
+        None when there is no example cell, no saved SQL or `cell_sql_usd`
+        entry for its cut, or a dim the comparison does not map.
     """
     cell = example_cell(run, comparison)
     cmp = next((c for c in cfg.comparisons if c.id == comparison), None)

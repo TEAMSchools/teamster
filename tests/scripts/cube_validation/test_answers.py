@@ -84,9 +84,11 @@ def test_hand_check_sql_filters_to_the_example_cell():
     check = hand_check(_run([_cell()]), _cfg(), "enrollment", START)
 
     assert isinstance(check, HandCheck)
-    want = "WHERE regions_region_name = 'Newark' AND grade_level = '7'"
-    assert check.dashboard_sql == f"SELECT * FROM (SELECT 1 AS d) {want}"
-    assert check.cube_sql == f"SELECT * FROM (SELECT 2 AS c) {want}"
+    want = (
+        "WHERE regions_region_name = 'Newark' AND SAFE_CAST(grade_level AS NUMERIC) = 7"
+    )
+    assert check.dashboard_sql == f"SELECT * FROM (\nSELECT 1 AS d\n) {want}"
+    assert check.cube_sql == f"SELECT * FROM (\nSELECT 2 AS c\n) {want}"
     assert (check.dashboard, check.cube) == (10.0, 12.0)
     assert (check.dashboard_usd, check.cube_usd) == (0.01, 0.02)
 
@@ -94,9 +96,11 @@ def test_hand_check_sql_filters_to_the_example_cell():
 def test_hand_check_filters_the_dashboard_side_by_its_own_column_names():
     check = hand_check(_run([_cell()]), _cfg("Region"), "enrollment", START)
 
-    assert check.dashboard_sql.endswith("WHERE Region = 'Newark' AND grade_level = '7'")
+    assert check.dashboard_sql.endswith(
+        "WHERE Region = 'Newark' AND SAFE_CAST(grade_level AS NUMERIC) = 7"
+    )
     assert check.cube_sql.endswith(
-        "WHERE regions_region_name = 'Newark' AND grade_level = '7'"
+        "WHERE regions_region_name = 'Newark' AND SAFE_CAST(grade_level AS NUMERIC) = 7"
     )
 
 
@@ -109,3 +113,54 @@ def test_hand_checks_expire_after_7_days():
 
     assert before.expires == expires and not before.expired
     assert at.expired
+
+
+def _where(dims):
+    check = hand_check(_run([_cell(dims=dims)]), _cfg_for(dims), "enrollment", START)
+    return check.cube_sql.split(") WHERE ", 1)[1]
+
+
+def _cfg_for(dims):
+    cmp = Comparison(
+        id="enrollment",
+        measure="student_count",
+        dims=[ColumnPair(m, m) for m, _ in dims],
+    )
+    return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
+
+
+def test_typed_dims_get_predicates_valid_for_their_column_type():
+    # Keys are `pipeline._key` text: '7', 'True', '' and an ISO date.
+    assert _where([["regions_region_name", "1.50"]]) == (
+        "SAFE_CAST(regions_region_name AS NUMERIC) = 1.5"
+    )
+    assert _where([["regions_region_name", "True"]]) == (
+        "LOWER(CAST(regions_region_name AS STRING)) = 'true'"
+    )
+    assert _where([["regions_region_name", ""]]) == "regions_region_name IS NULL"
+    assert _where([["regions_region_name", "2026-01-05"]]) == (
+        "regions_region_name = '2026-01-05'"
+    )
+
+
+def test_a_total_cell_with_no_dims_is_an_example_and_keeps_the_sql():
+    run = _run([_cell(dims=[])])
+    cfg = ViewConfig(
+        view="enrollment",
+        fact="d.t",
+        comparisons=[Comparison(id="enrollment", measure="student_count")],
+    )
+
+    check = hand_check(run, cfg, "enrollment", START)
+
+    assert check.dashboard_sql == "SELECT 1 AS d"
+    assert check.cube_sql == "SELECT 2 AS c"
+
+
+def test_a_trailing_comment_cannot_swallow_the_closing_paren():
+    run = _run([_cell()])
+    run.cell_sql["enrollment"]["All"] = ["SELECT 1 -- note", "SELECT 2"]
+
+    check = hand_check(run, _cfg(), "enrollment", START)
+
+    assert "-- note\n) WHERE" in check.dashboard_sql
