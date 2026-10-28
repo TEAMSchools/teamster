@@ -799,6 +799,44 @@ def test_inventory_resolves_a_dashboard_measure_to_the_measure_not_a_dimension()
     assert row.member == "v.pct_proficient"
 
 
+def test_inventory_ignores_a_where_ref_to_a_dimension_for_a_measure_row():
+    found = [
+        _dimension("v.is_mastery", title="Is Mastery Int"),
+        _member("v.pct_proficient"),
+    ]
+    catalog = [_where_row("Is Mastery Int", "`student_scores.is_mastery`")]
+
+    (row,) = builder.inventory(catalog, [_use("AVG(Is Mastery Int)")], [], found)
+
+    assert row.member == ""
+    assert "catalog names dimension is_mastery; no matching measure" in (
+        row.disagreement
+    )
+
+
+def test_inventory_takes_the_measure_when_where_names_a_dimension_and_a_measure():
+    found = [_dimension("v.is_mastery"), _member("v.pct_proficient")]
+    catalog = [
+        _where_row("Is Mastery Int", "`student_scores.is_mastery`, `v.pct_proficient`")
+    ]
+
+    (row,) = builder.inventory(catalog, [_use("AVG(Is Mastery Int)")], [], found)
+
+    assert row.member == "v.pct_proficient"
+
+
+def test_inventory_ignores_a_where_ref_to_a_measure_for_a_dimension_row():
+    found = [_member("v.pct_proficient")]
+    catalog = [_where_row("Score", "`v.pct_proficient`", kind="dimension")]
+
+    (row,) = builder.inventory(catalog, [_use("Score", role="cut")], [], found)
+
+    assert row.member == ""
+    assert "catalog names measure pct_proficient; no matching dimension" in (
+        row.disagreement
+    )
+
+
 def test_inventory_resolves_a_where_name_to_a_cube_prefixed_view_member():
     found = [
         _dimension("other_view.region_name"),

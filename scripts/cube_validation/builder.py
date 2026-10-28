@@ -393,9 +393,10 @@ def _find_member(
     the first member named exactly so, else the first whose short name (after
     the last dot) is `member` or `<cube>_<member>`, since a viewer's `/meta`
     lists views, which name a member without its cube or prefix it. Then a
-    member whose short name is `bare`, then one titled `caption`; those are
-    limited to the field's `kind` when it has one. A view repeats its cube's
-    measures, so views are used only when no cube matches. Several members
+    member whose short name is `bare`, then one titled `caption`. All three
+    count only members of the field's `kind` when it has one, so a reference to
+    the source column's dimension does not stand in for a measure. A view
+    repeats its cube's measures, so views are used only when no cube matches. Several members
     with the same short name (one dimension on several views) count as the
     first of them.
     """
@@ -403,6 +404,12 @@ def _find_member(
     def short(m: Member) -> str:
         return m.name.rsplit(".", 1)[-1]
 
+    def of_kind(members: list[Member]) -> list[Member]:
+        if not kind:
+            return members
+        return [m for m in members if (m.kind == "dimension") == (kind == "dimension")]
+
+    found = of_kind(found)
     by_name = {m.name: m for m in found}
     for where in wheres:
         for ref in _MEMBER_REF.findall(where):
@@ -422,8 +429,6 @@ def _find_member(
             (hits[0].name, False) if len({short(m) for m in hits}) == 1 else ("", True)
         )
 
-    if kind:
-        found = [m for m in found if (m.kind == "dimension") == (kind == "dimension")]
     by_short = [m for m in found if short(m) == bare]
     by_title = [m for m in found if m.title.lower() == caption.lower() != ""]
     return pick(by_short) or pick(by_title) or ("", False)
@@ -525,6 +530,29 @@ def inventory(
             notes.append("not in catalog")
 
         statuses = _statuses([r["status"] for r in cat_rows])
+        if not member and not several and kind:
+            other = "measure" if kind == "dimension" else "dimension"
+            named = next(
+                (
+                    m
+                    for r in cat_rows
+                    for ref in _MEMBER_REF.findall(r["where"])
+                    for m in found
+                    if m.kind == other
+                    and m.name.rsplit(".", 1)[-1]
+                    in (
+                        ref.split(".", 1)[1],
+                        f"{ref.split('.', 1)[0]}_{ref.split('.', 1)[1]}",
+                    )
+                ),
+                None,
+            )
+            if named:
+                notes.append(
+                    f"catalog names {other} {named.name.rsplit('.', 1)[-1]}; "
+                    f"no matching {kind}"
+                )
+
         if several:
             notes.append(f"members named {bare or caption} on several cubes")
         elif statuses:
