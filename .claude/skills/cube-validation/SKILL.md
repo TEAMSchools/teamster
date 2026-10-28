@@ -162,11 +162,12 @@ cause, do not retry around it.
    cuts and filters) under one suggestion: `map_filters`, `filters_nothing`,
    `docs`, then `owner`, each with a masked label and its evidence. Sort every
    item into one of 5 piles (step 9 lists the calls):
-   - Map under `filters:`: a `same values: map it under filters:` verdict. Map
-     the field under the comparison's `filters:` instead of recording a
-     decision, then re-prove the comparisons it sits on, since the proof records
-     the missing field. `same field, different coding` is not a map: the codes
-     differ, and the item stays where triage put it.
+   - Map under `filters:`: a `same values: map it under filters:` verdict. Once
+     the analyst approves the batch, map the field under the comparison's
+     `filters:` instead of recording a decision, then re-prove the comparisons
+     it sits on, since the proof records the missing field.
+     `same field, different coding` is not a map: the codes differ, and the item
+     stays where triage put it.
    - Filters nothing: `deliberate`, quoting the evidence.
    - Close as deliberate: a `docs` item whose quoted description or `ai_context`
      explains the difference. Check the quote against the result first: a
