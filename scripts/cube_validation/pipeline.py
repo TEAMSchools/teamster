@@ -1428,7 +1428,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
 
     def field_of(ref: str) -> str | None:
         m = finder.FIELD_REF.search(ref)
-        if m is None or m["deriv"] in finder.AGGREGATES:
+        if m is None or finder.is_value(m):
             return None
         name = m["name"]
         if name in mapped or name in personal or caption.get(name) in mapped_captions:

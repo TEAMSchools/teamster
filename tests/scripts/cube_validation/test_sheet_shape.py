@@ -341,3 +341,11 @@ def test_candidate_causes_name_patterns_clusters_and_definitions():
     assert "Recorded definitions: dashboard codes ET, T; Cube codes T%" in causes
     # A grain dim never shows: its values are students.
     assert not any("lea_student_identifier" in c or "s9" in c for c in causes)
+
+
+def test_sheet_gaps_skip_a_table_calculation():
+    twb = TWB.replace(
+        "{DS}.[none:team:nk]))</rows>".replace("{DS}", DS),
+        "{DS}.[none:team:nk] / {DS}.[rank:sum:x:qk]))</rows>".replace("{DS}", DS),
+    )
+    assert pipeline.sheet_gaps(twb, _comparison()).cuts == ["Last First", "Team"]

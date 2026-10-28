@@ -274,6 +274,13 @@ def aggregated_fields(twb_xml: str) -> list[Calc]:
     )
 
 
+def is_value(m: re.Match) -> bool:
+    """True for a ref to a value, not a cut: an aggregate, or a table
+    calculation over one (`[cum:ctd:student_number:qk]` nests a derivation).
+    """
+    return m["deriv"] in AGGREGATES or ":" in m["name"]
+
+
 def restricts(filter_el: ET.Element) -> bool:
     """True when a filter is set to chosen values or a range, not All."""
     if filter_el.get("class") == "quantitative":
@@ -343,7 +350,7 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
         text = " ".join(el.text or "" for el in ws.iter(tag))
         out = []
         for m in FIELD_REF.finditer(text):
-            if m["deriv"] not in AGGREGATES:
+            if not is_value(m):
                 name = caption.get(m["name"], m["name"])
                 if name not in out:
                     out.append(name)
@@ -364,7 +371,7 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
     filters = []
     for filter_el in ws.iter("filter"):
         m = FIELD_REF.search(filter_el.get("column") or "")
-        if m is None or m["deriv"] in AGGREGATES or m["name"] in personal:
+        if m is None or is_value(m) or m["name"] in personal:
             continue
         name = caption.get(m["name"], m["name"])
         if not restricts(filter_el):

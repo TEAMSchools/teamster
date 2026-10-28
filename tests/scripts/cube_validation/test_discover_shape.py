@@ -75,3 +75,11 @@ def test_sheet_shape_skips_an_empty_number_format():
         "<format attr='text-format' field='[federated.x].[none:region:nk]' value='' />",
     )
     assert sheet_shape(twb, "Roster").decimals == {"# Tardy": 0, "SUM(Membership)": 3}
+
+
+def test_a_table_calculation_on_a_shelf_is_not_a_cut():
+    twb = TWB.replace(
+        "[federated.x].[none:student_number:ok])</rows>",
+        "[federated.x].[none:student_number:ok] / [federated.x].[cum:ctd:student_number:qk])</rows>",
+    )
+    assert sheet_shape(twb, "Roster").rows == ["Region", "Student Number"]
