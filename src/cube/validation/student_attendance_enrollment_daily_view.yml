@@ -19,6 +19,7 @@ shared:
     filters:
       Academic Year: { dashboard: academic_year, cube: dates_academic_year }
       Region: { dashboard: region, cube: regions_region_name }
+      Term: { dashboard: term, cube: terms_term_name }
     defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
     cuts: [{}, { Region: Miami }]
     dashboard_filters:
@@ -52,6 +53,9 @@ comparisons:
     filters:
       Academic Year: { dashboard: academic_year, cube: dates_academic_year }
       Region: { dashboard: region, cube: regions_region_name }
+      Gender: { dashboard: gender, cube: gender_identity }
+      Lep Status: { dashboard: lep_status, cube: is_ell }
+      Term: { dashboard: term, cube: terms_term_name }
     defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
     cuts: [{}, { Region: Miami }]
     # Mirrors rpt_tableau__attendance_dashboard's row filter (membershipvalue
@@ -112,6 +116,9 @@ comparisons:
     filters:
       Academic Year: { dashboard: academic_year, cube: dates_academic_year }
       Region: { dashboard: region, cube: regions_region_name }
+      Gender: { dashboard: gender, cube: gender_identity }
+      Lep Status: { dashboard: lep_status, cube: is_ell }
+      Term: { dashboard: term, cube: terms_term_name }
       Grade Level: { dashboard: grade_level, cube: grade_level }
     defaults:
       Academic Year: "2026"
@@ -170,6 +177,9 @@ comparisons:
     filters:
       Academic Year: { dashboard: academic_year, cube: dates_academic_year }
       Region: { dashboard: region, cube: regions_region_name }
+      Gender: { dashboard: gender, cube: gender_identity }
+      Lep Status: { dashboard: lep_status, cube: is_ell }
+      Term: { dashboard: term, cube: terms_term_name }
       Grade Level: { dashboard: grade_level, cube: grade_level }
     defaults:
       Academic Year: "2026"
@@ -230,6 +240,9 @@ comparisons:
     filters:
       Academic Year: { dashboard: academic_year, cube: dates_academic_year }
       Region: { dashboard: region, cube: regions_region_name }
+      Gender: { dashboard: gender, cube: gender_identity }
+      Lep Status: { dashboard: lep_status, cube: is_ell }
+      Term: { dashboard: term, cube: terms_term_name }
     defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
     cuts: [{}, { Region: Miami }]
     # Membership days only: no attendance-value scope, so a student enrolled on
@@ -659,6 +672,9 @@ comparisons:
     filters:
       Academic Year: { dashboard: academic_year, cube: dates_academic_year }
       Region: { dashboard: region, cube: regions_region_name }
+      Gender: { dashboard: gender, cube: gender_identity }
+      Lep Status: { dashboard: lep_status, cube: is_ell }
+      Term: { dashboard: term, cube: terms_term_name }
       Grade Level: { dashboard: grade_level, cube: grade_level }
     defaults:
       Academic Year: ["2025", "2026"]
@@ -943,23 +959,27 @@ decisions:
   - id: missing-cut-teacher-name
     missing_cut: Teacher Name
     call: domain_owner
-    reason:
-      "The Roster splits a student's days by homeroom teacher; the validator
-      summed the split rows. Cube has the homeroom teacher's name
-      (staff_homeroom_teacher_full_name). Owner: must Cube answer per homeroom
-      teacher?"
+    reason: >-
+      The Roster splits and filters students by homeroom (team, homeroom
+      teacher, homeroom number). Cube's views have the homeroom teacher's name
+      only, with no team or homeroom number. Owner: must Cube answer per
+      homeroom, and by which of these?
   - id: missing-cut-team
     missing_cut: Team
     call: domain_owner
-    reason:
-      "The Roster splits a student's days by team; Cube has no team member.
-      Owner: does Cube need a team cut?"
+    reason: >-
+      The Roster splits and filters students by homeroom (team, homeroom
+      teacher, homeroom number). Cube's views have the homeroom teacher's name
+      only, with no team or homeroom number. Owner: must Cube answer per
+      homeroom, and by which of these?
   - id: missing-filter-c-504-status
     missing_filter: C 504 Status
     call: domain_owner
-    reason:
-      "The Y1 ADA sheets can filter by 504 status; Cube's view has no 504
-      member. Owner: should it?"
+    reason: >-
+      The dashboard can filter by student fields Cube's attendance views do not
+      carry: 504 status, counseling services, NJ overall student tier,
+      self-contained classroom and middle school attended. Owner: which of these
+      should Cube carry?
   - id: missing-filter-enroll-status
     missing_filter: Enroll Status
     call: domain_owner
@@ -980,18 +1000,14 @@ decisions:
     reason:
       "The Roster excludes a specific student; Cube has no such exclusion. No
       current number changes. Owner: should Cube exclude such records?"
-  - id: missing-filter-gender
-    missing_filter: Gender
-    call: domain_owner
-    reason:
-      Cube has gender_identity with the same values as the dashboard (F, M, X).
-      Mapping it as a filter needs a re-prove of the Y1 ADA comparisons.
   - id: missing-filter-homeroom
     missing_filter: Homeroom
     call: domain_owner
-    reason:
-      "The Roster can filter by homeroom; Cube has the homeroom teacher's name
-      but no homeroom member. Owner: is the teacher's name enough?"
+    reason: >-
+      The Roster splits and filters students by homeroom (team, homeroom
+      teacher, homeroom number). Cube's views have the homeroom teacher's name
+      only, with no team or homeroom number. Owner: must Cube answer per
+      homeroom, and by which of these?
   - id: missing-filter-iep-status
     missing_filter: Iep Status
     call: domain_owner
@@ -1001,27 +1017,25 @@ decisions:
   - id: missing-filter-is-counselingservices
     missing_filter: Is Counselingservices
     call: domain_owner
-    reason:
-      "The dashboard can filter by counseling services; Cube has no member.
-      Owner: should it?"
+    reason: >-
+      The dashboard can filter by student fields Cube's attendance views do not
+      carry: 504 status, counseling services, NJ overall student tier,
+      self-contained classroom and middle school attended. Owner: which of these
+      should Cube carry?
   - id: missing-filter-is-truant-current
     missing_filter: Is Truant Current
     call: domain_owner
     reason:
       "The Roster and Grade Rollup can filter current truants; truancy lives on
       the periods view, not this daily view. Owner: is that split right?"
-  - id: missing-filter-lep-status
-    missing_filter: Lep Status
-    call: domain_owner
-    reason:
-      Cube has is_ell, a yes-or-no flag like the dashboard's lep_status. Mapping
-      it as a filter needs a re-prove of the Y1 ADA comparisons.
   - id: missing-filter-nj-overall-student-tier
     missing_filter: NJ Overall Student Tier
     call: domain_owner
-    reason:
-      "The dashboard can filter by NJ overall student tier; Cube's daily view
-      has no tier member. Owner: should it?"
+    reason: >-
+      The dashboard can filter by student fields Cube's attendance views do not
+      carry: 504 status, counseling services, NJ overall student tier,
+      self-contained classroom and middle school attended. Owner: which of these
+      should Cube carry?
   - id: missing-filter-region-filter
     missing_filter: Region [Filter]
     call: domain_owner
@@ -1055,32 +1069,31 @@ decisions:
     reason:
       "Cube identifies schools by abbreviation and name, not PowerSchool
       schoolid. Owner: confirm that is enough."
-  - id: missing-filter-term
-    missing_filter: Term
-    call: domain_owner
-    reason:
-      Cube has terms_term_name, whose values include the dashboard's Q1 and Q2.
-      Mapping it as a filter needs a re-prove of every comparison.
   - id: missing-filter-is-self-contained
     missing_filter: is_self_contained
     call: domain_owner
-    reason:
-      "The dashboard can limit to self-contained classrooms; Cube has no member.
-      Owner: should it?"
+    reason: >-
+      The dashboard can filter by student fields Cube's attendance views do not
+      carry: 504 status, counseling services, NJ overall student tier,
+      self-contained classroom and middle school attended. Owner: which of these
+      should Cube carry?
   - id: missing-filter-ms-attended
     missing_filter: ms_attended
     call: domain_owner
-    reason:
-      "The dashboard can filter by middle school attended; Cube has no member.
-      Owner: should it?"
+    reason: >-
+      The dashboard can filter by student fields Cube's attendance views do not
+      carry: 504 status, counseling services, NJ overall student tier,
+      self-contained classroom and middle school attended. Owner: which of these
+      should Cube carry?
   - id: out-of-district-ada-board-yoy
     comparison: ada-board-yoy
     group: { column: dashboard_filter, values: [school_level] }
     call: domain_owner
-    reason:
-      "Board YOY leaves out out-of-district students (school level OD) through
-      its School Level - OOD filter set; Cube's ADA counts them. Owner: should
-      Cube's ADA include out-of-district students?"
+    reason: >-
+      Board YOY leaves out out-of-district students (school level OD) through
+      its School Level - OOD filter set, and Cube's ADA counts them, so Newark's
+      AY2026 ADA reads 1 unit lower in Cube at 3 decimals. Owner: should Cube's
+      ADA include out-of-district students?
     fingerprints:
       cube: e8f934d0d814e804cda85cbfa4146fb97e3cd6c0624edebec11a33bf6c8f2da4
       dashboard: 91065d156d3e3db45df81667746d85727d9255ce54fa1e977b78e73868d89db3
@@ -1089,9 +1102,10 @@ decisions:
     cells: true
     call: domain_owner
     reason: >-
-      Newark's AY2026 ADA reads 1 unit lower in Cube at 3 decimals, because Cube
-      counts the out-of-district students Board YOY leaves out. Same question as
-      out-of-district-ada-board-yoy.
+      Board YOY leaves out out-of-district students (school level OD) through
+      its School Level - OOD filter set, and Cube's ADA counts them, so Newark's
+      AY2026 ADA reads 1 unit lower in Cube at 3 decimals. Owner: should Cube's
+      ADA include out-of-district students?
     fingerprints:
       cube: e8f934d0d814e804cda85cbfa4146fb97e3cd6c0624edebec11a33bf6c8f2da4
       dashboard: 91065d156d3e3db45df81667746d85727d9255ce54fa1e977b78e73868d89db3

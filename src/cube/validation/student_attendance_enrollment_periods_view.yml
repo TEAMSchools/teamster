@@ -19,6 +19,9 @@ shared:
     filters:
       Academic Year: { dashboard: academic_year, cube: academic_year }
       Region: { dashboard: region, cube: regions_region_name }
+      Gender: { dashboard: gender, cube: gender_identity }
+      Lep Status: { dashboard: lep_status, cube: is_ell }
+      Term: { dashboard: term, cube: terms_term_name }
     defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
     # Each year's period-end row, as of the student's last membership day.
     scope:
