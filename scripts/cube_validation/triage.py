@@ -2,19 +2,35 @@
 
 An open item is a row group, a comparison's cell differences, or a missing cut
 or filter. A suggestion never applies a call: the analyst reads it and decides.
-Item ids and labels carry no value the review issue would hide. Pure: no I/O.
+Item ids and labels carry no value the review issue would hide. `suggest` is
+pure; `value_check` and `run_triage` read the warehouse and Cube.
 """
 
 from __future__ import annotations
 
+import dataclasses
+import json
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 
+from . import pipeline
+from .bq import Warehouse
 from .compare import CellDiff, Gap, Group
 from .config import ViewConfig
-from .cube_client import MemberDoc
+from .cube_client import Cube, MemberDoc, member_docs
 from .discover import _tokens
-from .report import _CELL_WORDS, RunResult, _gap_line, _shown_value, _where, mask
+from .moment import Build
+from .report import (
+    _CELL_WORDS,
+    RunResult,
+    _gap_line,
+    _is_identifier,
+    _shown_value,
+    _where,
+    mask,
+)
 
 # The order the analyst's batch shows suggestions, the owner last.
 SUGGESTIONS = ("map_filters", "filters_nothing", "docs", "owner")
@@ -272,3 +288,196 @@ def suggest(
         out.append(Suggestion(item, call, evidence, candidates))
 
     return sorted(out, key=lambda s: SUGGESTIONS.index(s.suggestion))
+
+
+# --- value checks and the command --------------------------------------------
+
+# A column with more distinct values than this is a key, not a coding.
+REFERENCE_MAX_VALUES = 50
+_ID_SUFFIXES = ("_number", "_id", "_name", "_email")
+_SAME = "same values: map it under filters:"
+_CODING = "same field, different coding"
+_DIFFERENT = "different values"
+_NOT_COMPARED = "not compared: identifier column"
+_SQL_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+_TABLE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*")
+
+
+def pii_members(meta: dict, view: str) -> set[str]:
+    """Name `view`'s members Cube marks `contains_pii`, by bare name.
+
+    Names ending in `_number`, `_id`, `_name` or `_email` count as PII in
+    `value_check` whether or not Cube marks them.
+    """
+    out: set[str] = set()
+    for cube in meta.get("cubes", []):
+        if cube.get("name") != view:
+            continue
+        for field in ("measures", "dimensions", "segments"):
+            out |= {
+                m["name"].split(".", 1)[-1]
+                for m in cube.get(field) or []
+                if (m.get("meta") or {}).get("contains_pii") is True
+            }
+    return out
+
+
+def _abbreviates(short: set[str], long: set[str]) -> bool:
+    """True when each short value starts a different long value, ignoring case."""
+    if len(short) != len(long):
+        return False
+    left = sorted(v.lower() for v in short)
+    right = sorted(v.lower() for v in long)
+    return all(b.startswith(a) for a, b in zip(left, right))
+
+
+def _dashboard_view(cfg: ViewConfig, column: str) -> str:
+    """The dashboard table behind `column`: the comparison that names it, else the first."""
+    for c in cfg.comparisons:
+        if c.proof and column in (c.proof.missing_columns or {}).values():
+            return c.dashboard_view or ""
+    return next((c.dashboard_view for c in cfg.comparisons if c.dashboard_view), "")
+
+
+def value_check(
+    wh: Warehouse,
+    cube: Cube,
+    cfg: ViewConfig,
+    column: str,
+    member: str,
+    moment: Build,
+    pii: set[str],
+) -> str:
+    """Compare a dashboard column's distinct values with a Cube member's.
+
+    The dashboard side reads as of `moment.start`, the Cube side as Cube serves
+    it now. Both queries count against the run and daily caps, so call this
+    inside `wh.budget`. It runs no query for a `pii` member, and compares
+    nothing when either side has more than `REFERENCE_MAX_VALUES` values.
+
+    Args:
+        wh: The warehouse the dashboard side reads through.
+        cube: Cube, for the member's distinct values.
+        cfg: The view's config, for its name and dashboard table.
+        column: The dashboard datasource column behind the missing field.
+        member: The Cube member's bare name.
+        moment: The run's moment.
+        pii: Members whose values are never read.
+
+    Returns:
+        One of `same values: map it under filters:`,
+        `same field, different coding`, `different values`,
+        `not compared: identifier column`. The values print only for a member in
+        `report._SHOWN_COLUMNS`.
+    """
+    table = _dashboard_view(cfg, column)
+    if (
+        member in pii
+        or member.endswith(_ID_SUFFIXES)
+        or not _SQL_NAME.fullmatch(column)
+        or not _TABLE.fullmatch(table)
+    ):
+        return _NOT_COMPARED
+
+    sql = (
+        f"SELECT DISTINCT CAST({column} AS STRING) AS value FROM {table} "  # trunk-ignore(bandit/B608)
+        f"WHERE {column} IS NOT NULL LIMIT {REFERENCE_MAX_VALUES + 1}"
+    )
+    dash = {
+        str(r["value"]) for r in wh.rows(pipeline._as_of(sql, moment.start, wh).sql)
+    }
+    if len(dash) > REFERENCE_MAX_VALUES:
+        return _NOT_COMPARED
+
+    key = f"{cfg.view}.{member}"
+    rows = pipeline._priced_load(
+        cube, wh, {"dimensions": [key], "limit": REFERENCE_MAX_VALUES + 1}
+    )
+    theirs = {str(r[key]) for r in rows if r.get(key) is not None}
+    if len(theirs) > REFERENCE_MAX_VALUES:
+        return _NOT_COMPARED
+
+    if dash == theirs:
+        return _SAME
+    verdict = (
+        _CODING
+        if _abbreviates(dash, theirs) or _abbreviates(theirs, dash)
+        else _DIFFERENT
+    )
+    if not _is_identifier(member):
+        print(f"  {member}: dashboard {sorted(dash)} vs Cube {sorted(theirs)}")
+    return verdict
+
+
+def _missing_column(cfg: ViewConfig, caption: str) -> str:
+    """The datasource column behind a missing field, or empty when no proof names it."""
+    for c in cfg.comparisons:
+        if c.proof and caption in (c.proof.missing_columns or {}):
+            return (c.proof.missing_columns or {})[caption]
+    return ""
+
+
+def run_triage(
+    cfg: ViewConfig, *, wh: Warehouse, cube: Cube, max_usd: float, cache_root: Path
+) -> list[Suggestion]:
+    """Suggest a call for each open item of the view's latest run and print them.
+
+    Writes `triage.json` beside that run's `run.json`: it stays in the local
+    cache, and its stubs carry real values.
+
+    Raises:
+        pipeline.Refusal: The view has no usable saved run (see
+            `pipeline.latest_run`).
+    """
+    run, run_json = pipeline.latest_run(cfg, cache_root)
+    meta = cube.meta()
+    docs = member_docs(meta, cfg.view)
+    pii = pii_members(meta, cfg.view)
+
+    def values(caption: str, member: str) -> str:
+        column = _missing_column(cfg, caption)
+        if not column:
+            return ""
+        return value_check(wh, cube, cfg, column, member, run.moment, pii)
+
+    with wh.budget(max_usd):
+        found = suggest(cfg, run, docs, values)
+
+    out = run_json.parent / "triage.json"
+    out.write_text(
+        json.dumps(
+            {
+                "view": run.view,
+                "moment": {
+                    "start": run.moment.start.isoformat(),
+                    "end": run.moment.end.isoformat(),
+                    "job_id": run.moment.job_id,
+                },
+                "decisions_fingerprint": run.decisions_fingerprint,
+                "items": [
+                    {
+                        **dataclasses.asdict(s.item),
+                        "suggestion": s.suggestion,
+                        "evidence": list(s.evidence),
+                        "candidates": list(s.candidates),
+                    }
+                    for s in found
+                ],
+            },
+            indent=1,
+        )
+    )
+
+    for call in SUGGESTIONS:
+        group = [s for s in found if s.suggestion == call]
+        if not group:
+            continue
+        print(f"{call} ({len(group)})")
+        for s in group:
+            print(f"- {s.item.label}")
+            for line in s.evidence:
+                print(f"    {line}")
+            if s.candidates:
+                print(f"    candidates: {', '.join(s.candidates)}")
+    print(f"Saved {out}")
+    return found

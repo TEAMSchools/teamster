@@ -188,6 +188,9 @@ class FakeCube:
         self.loads.append(query)
         return self._load(query)
 
+    def meta(self):
+        return {"cubes": []}
+
 
 def _load_row(query, value):
     row = {
@@ -1671,3 +1674,52 @@ def test_the_daily_cap_refuses_a_run_across_runs(fakes, tmp_path, capsys):
 
     err = capsys.readouterr().err
     assert "daily cap" in err and "--max-usd-per-day" in err
+
+
+# --- triage ------------------------------------------------------------------
+
+
+def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, capsys):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    capsys.readouterr()
+
+    assert cli.main(["triage", str(path)]) == 0
+
+    out = capsys.readouterr().out
+    written = json.loads((saved.parent / "triage.json").read_text())
+    assert written["view"] == "v"
+    assert (
+        written["decisions_fingerprint"]
+        == json.loads(saved.read_text())["decisions_fingerprint"]
+    )
+    assert set(written["moment"]) == {"start", "end", "job_id"}
+    item = written["items"][0]
+    assert set(item) == {
+        "id", "kind", "comparison", "label", "stub",
+        "suggestion", "evidence", "candidates",
+    }  # fmt: skip
+    assert item["stub"]["group"]["values"] == ["Miami"]
+    assert "owner (" in out and item["label"] in out
+
+
+def test_triage_refuses_when_decisions_changed_since_run(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    capsys.readouterr()
+
+    assert cli.main(["triage", str(path)]) == 1
+
+    err = capsys.readouterr().err
+    assert "decisions" in err and "`run`" in err
+    assert not list((tmp_path / "cache" / "v").glob("*/triage.json"))
+
+
+def test_triage_takes_fact_dataset_and_refuses_a_bad_one(fakes, tmp_path, capsys):
+    code = cli.main(
+        ["triage", str(_file(tmp_path)), "--fact-dataset", "kipptaf_staging"]
+    )
+
+    assert code == 1
+    assert "fact dataset" in capsys.readouterr().err

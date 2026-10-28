@@ -1,4 +1,7 @@
 from datetime import datetime, timezone
+from types import SimpleNamespace
+
+from cube_validation import pipeline
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Gap, Group
@@ -7,7 +10,14 @@ from cube_validation.cube_client import MemberDoc
 from cube_validation.decisions import Applied
 from cube_validation.moment import Build
 from cube_validation.report import RunResult
-from cube_validation.triage import SUGGESTIONS, open_items, suggest
+from cube_validation.triage import (
+    REFERENCE_MAX_VALUES,
+    SUGGESTIONS,
+    open_items,
+    pii_members,
+    suggest,
+    value_check,
+)
 
 START = datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc)
 END = datetime(2026, 10, 27, 6, 5, tzinfo=timezone.utc)
@@ -299,3 +309,107 @@ def test_another_sheets_note_does_not_speak_for_the_gap():
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
 
     assert s.suggestion == "owner"
+
+
+# --- value_check -------------------------------------------------------------
+
+
+class _Wh:
+    def __init__(self, values):
+        self.values, self.ran = values, []
+
+    def rows(self, sql):
+        self.ran.append(sql)
+        return [{"value": v} for v in self.values]
+
+
+def _check(monkeypatch, dash, theirs, member="school_level", pii=frozenset()):
+    """Run `value_check` against fake warehouse and Cube value sets."""
+    wh = _Wh(dash)
+    loads = []
+
+    def load(cube, wh_, query):
+        loads.append(query)
+        return [{f"enrollment.{member}": v} for v in theirs]
+
+    monkeypatch.setattr(
+        pipeline, "_as_of", lambda sql, ts, wh_: SimpleNamespace(sql=sql)
+    )
+    monkeypatch.setattr(pipeline, "_priced_load", load)
+    cfg = _cfg(missing_columns={"School Level": "school_level"})
+    object.__setattr__(cfg.comparisons[0], "dashboard_view", "ds.rpt_d")
+    verdict = value_check(
+        wh, object(), cfg, "school_level", member, Build(START, END, "j"), set(pii)
+    )
+    return verdict, wh, loads
+
+
+def test_value_check_skips_identifier_and_high_cardinality_columns(monkeypatch, capsys):
+    verdict, wh, loads = _check(monkeypatch, ["1"], ["1"], member="student_number")
+    assert verdict == "not compared: identifier column"
+    assert wh.ran == [] and loads == []
+
+    verdict, wh, loads = _check(monkeypatch, ["1"], ["1"], member="x", pii={"x"})
+    assert verdict == "not compared: identifier column"
+    assert wh.ran == [] and loads == []
+
+    many = [f"v{i}" for i in range(REFERENCE_MAX_VALUES + 1)]
+    verdict, _, _ = _check(monkeypatch, many, many)
+    assert verdict == "not compared: identifier column"
+    verdict, _, _ = _check(monkeypatch, ["a"], many)
+    assert verdict == "not compared: identifier column"
+    assert "v0" not in capsys.readouterr().out
+
+
+def test_value_check_same_values_and_different_coding(monkeypatch, capsys):
+    verdict, wh, loads = _check(monkeypatch, ["A", "B"], ["B", "A"])
+    assert verdict == "same values: map it under filters:"
+    assert "FROM ds.rpt_d" in wh.ran[0]
+    assert loads[0]["dimensions"] == ["enrollment.school_level"]
+
+    verdict, _, _ = _check(monkeypatch, ["W", "B"], ["White", "Black"])
+    assert verdict == "same field, different coding"
+
+    verdict, _, _ = _check(monkeypatch, ["1", "2"], ["White", "Black"])
+    assert verdict == "different values"
+    # An unreviewed member's values never print.
+    assert "White" not in capsys.readouterr().out
+
+
+def test_value_check_prints_values_only_for_a_shown_column(monkeypatch, capsys):
+    verdict, _, _ = _check(monkeypatch, ["Sr"], ["Jr"], member="grade_level")
+    assert verdict == "different values"
+    assert "Sr" in capsys.readouterr().out
+
+
+def test_value_check_reads_the_dashboard_as_of_the_run_start(monkeypatch):
+    seen = []
+    monkeypatch.setattr(
+        pipeline,
+        "_as_of",
+        lambda sql, ts, wh: seen.append(ts) or SimpleNamespace(sql=sql),
+    )
+    monkeypatch.setattr(pipeline, "_priced_load", lambda c, w, q: [])
+    cfg = _cfg()
+    object.__setattr__(cfg.comparisons[0], "dashboard_view", "ds.rpt_d")
+    value_check(_Wh(["a"]), object(), cfg, "col", "m", Build(START, END, "j"), set())
+    assert seen == [START]
+
+
+def test_pii_members_reads_contains_pii_from_meta():
+    meta = {
+        "cubes": [
+            {
+                "name": "enrollment",
+                "dimensions": [
+                    {"name": "enrollment.ssn", "meta": {"contains_pii": True}},
+                    {"name": "enrollment.region", "meta": {}},
+                ],
+            },
+            {
+                "name": "other",
+                "dimensions": [{"name": "other.x", "meta": {"contains_pii": True}}],
+            },
+        ]
+    }
+    assert pii_members(meta, "enrollment") == {"ssn"}

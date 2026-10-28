@@ -1171,39 +1171,47 @@ def _run_from_json(data: dict) -> RunResult:
 # --- review ------------------------------------------------------------------
 
 
-def review(configs: list[ViewConfig], domain: str, cache_root: Path) -> str:
-    """Return the review-issue body from each view's latest saved run.
+def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
+    """Return the view's latest saved run and the `run.json` it came from.
 
     The latest run is the `run.json` written last, whatever moment it read.
-    Reads only the local cache; nothing is posted.
 
     Raises:
-        Refusal: A view has no saved run, its saved run is in a shape this
+        Refusal: The view has no saved run, its saved run is in a shape this
             validator cannot read, or its decisions changed since the run (a
             run saved before runs recorded them counts as changed).
     """
-    runs = []
-    for cfg in configs:
-        saved = sorted(
-            (cache_root / cfg.view).glob("*/run.json"), key=lambda p: p.stat().st_mtime
+    saved = sorted(
+        (cache_root / cfg.view).glob("*/run.json"), key=lambda p: p.stat().st_mtime
+    )
+    if not saved:
+        raise Refusal(f"{cfg.view}: no saved run; `run` it first")
+    try:
+        run_result = _run_from_json(json.loads(saved[-1].read_text()))
+    except (KeyError, TypeError) as exc:
+        raise Refusal(
+            f"{cfg.view}: the saved run {saved[-1]} was written by an older "
+            "validator; `run` it again"
+        ) from exc
+    if run_result.decisions_fingerprint != decisions.decisions_fingerprint(
+        cfg.decisions
+    ):
+        raise Refusal(
+            f"{cfg.view}: the decisions changed since the saved run "
+            f"{saved[-1]}; `run` it again"
         )
-        if not saved:
-            raise Refusal(f"{cfg.view}: no saved run; `run` it first")
-        try:
-            run_result = _run_from_json(json.loads(saved[-1].read_text()))
-        except (KeyError, TypeError) as exc:
-            raise Refusal(
-                f"{cfg.view}: the saved run {saved[-1]} was written by an older "
-                "validator; `run` it again"
-            ) from exc
-        if run_result.decisions_fingerprint != decisions.decisions_fingerprint(
-            cfg.decisions
-        ):
-            raise Refusal(
-                f"{cfg.view}: the decisions changed since the saved run "
-                f"{saved[-1]}; `run` it again"
-            )
-        runs.append(run_result)
+    return run_result, saved[-1]
+
+
+def review(configs: list[ViewConfig], domain: str, cache_root: Path) -> str:
+    """Return the review-issue body from each view's latest saved run.
+
+    Reads only the local cache; nothing is posted.
+
+    Raises:
+        Refusal: A view has no usable saved run (see `latest_run`).
+    """
+    runs = [latest_run(cfg, cache_root)[0] for cfg in configs]
     definitions = {
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs

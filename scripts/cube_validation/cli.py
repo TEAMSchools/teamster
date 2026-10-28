@@ -1,6 +1,6 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
-Commands: `discover`, `prove`, `check-api`, `run`, `review`, `members`,
+Commands: `discover`, `prove`, `check-api`, `run`, `triage`, `review`, `members`,
 `inventory-workbook`, `inventory`. Exit codes: 0
 done, 1 refused (the message says why), 2 usage error. This module parses
 arguments and builds the clients; `pipeline.py` does the work. Tests replace
@@ -25,7 +25,7 @@ from pathlib import Path
 
 import tableauserverclient as TSC
 
-from . import builder, pipeline, report, tableau
+from . import builder, pipeline, report, tableau, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import (
     ConfigError,
@@ -216,6 +216,12 @@ def _parser() -> argparse.ArgumentParser:
     email(p)
     max_usd(p)
 
+    p = sub.add_parser("triage", help="suggest a call for each open item of a run")
+    view_file(p)
+    fact_dataset(p)
+    email(p)
+    max_usd(p)
+
     p = sub.add_parser("review", help="print the domain-owner review issue body")
     p.add_argument("views", type=Path, nargs="+", help="validation files")
     p.add_argument("--domain", required=True, help="domain whose owner reviews")
@@ -275,6 +281,16 @@ def _dispatch(args: argparse.Namespace) -> int:
             max_usd=args.max_usd,
             cache_root=cache_root(),
             cube_host=_cube_host(),
+        )
+        return 0
+
+    if args.command == "triage":
+        triage.run_triage(
+            cfg,
+            wh=_warehouse(args),
+            cube=_cube(args),
+            max_usd=args.max_usd,
+            cache_root=cache_root(),
         )
         return 0
 
