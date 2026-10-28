@@ -376,28 +376,45 @@ def _statuses(texts: list[str]) -> set[str]:
 def _find_member(
     found: list[Member], wheres: list[str], bare: str, caption: str, kind: str
 ) -> tuple[str, bool]:
-    """The member for a field and whether several matched by name or title.
+    """The member for a field and whether different members matched by name or
+    title.
 
-    A backticked member in a catalog `where` cell wins, then a member whose
-    short name is `bare`, then one titled `caption`. Name and title matches
-    are limited to the field's `kind` when it has one. A view repeats its
-    cube's measures, so views are used only when no cube matches.
+    A backticked `cube.member` in a catalog `where` cell wins: it resolves to
+    the first member named exactly so, else the first whose short name (after
+    the last dot) is `member` or `<cube>_<member>`, since a viewer's `/meta`
+    lists views, which name a member without its cube or prefix it. Then a
+    member whose short name is `bare`, then one titled `caption`; those are
+    limited to the field's `kind` when it has one. A view repeats its cube's
+    measures, so views are used only when no cube matches. Several members
+    with the same short name (one dimension on several views) count as the
+    first of them.
     """
+
+    def short(m: Member) -> str:
+        return m.name.rsplit(".", 1)[-1]
+
     by_name = {m.name: m for m in found}
     for where in wheres:
         for ref in _MEMBER_REF.findall(where):
             if ref in by_name:
                 return ref, False
+            cube, member = ref.split(".", 1)
+            if hit := next(
+                (m for m in found if short(m) in (member, f"{cube}_{member}")), None
+            ):
+                return hit.name, False
 
     def pick(hits: list[Member]) -> tuple[str, bool] | None:
         hits = [m for m in hits if m.kind != "view"] or hits
         if not hits:
             return None
-        return (hits[0].name, False) if len(hits) == 1 else ("", True)
+        return (
+            (hits[0].name, False) if len({short(m) for m in hits}) == 1 else ("", True)
+        )
 
     if kind:
         found = [m for m in found if (m.kind == "dimension") == (kind == "dimension")]
-    by_short = [m for m in found if m.name.split(".", 1)[1] == bare]
+    by_short = [m for m in found if short(m) == bare]
     by_title = [m for m in found if m.title.lower() == caption.lower() != ""]
     return pick(by_short) or pick(by_title) or ("", False)
 

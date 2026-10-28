@@ -530,8 +530,8 @@ def test_inventory_matches_a_member_by_the_fields_bare_name():
     rows = {r.field: r for r in builder.inventory([], review, [], found)}
 
     assert rows["Rate"].member == "attendance.rate"
-    assert rows["Tier"].member == ""
-    assert "several" in rows["Tier"].disagreement
+    assert rows["Tier"].member == "attendance.nj_tier"
+    assert "several" not in rows["Tier"].disagreement
 
 
 def test_inventory_leaves_out_presentation_fields():
@@ -726,3 +726,55 @@ def test_inventory_notes_a_catalog_row_joining_several_fields():
         assert rows[caption].sources == ("catalog", "review")
         assert "catalog row matches several fields" in rows[caption].disagreement
     assert rows["Bucket"].sources == ("review",)
+
+
+def _where_row(field, where, kind="measure"):
+    return {"field": field, "kind": kind, "status": "cube-covered", "where": where}
+
+
+def test_inventory_resolves_a_cube_level_where_name_to_a_view_member():
+    found = [_member("student_assessment_scores_view.pct_proficient")]
+    catalog = [
+        _where_row("Pct Proficient", "`student_assessment_scores.pct_proficient`")
+    ]
+
+    (row,) = builder.inventory(catalog, [_use("Pct Proficient")], [], found)
+
+    assert row.member == "student_assessment_scores_view.pct_proficient"
+    assert row.disagreement == ""
+
+
+def test_inventory_resolves_a_where_name_to_a_cube_prefixed_view_member():
+    found = [
+        _dimension("other_view.region_name"),
+        _dimension("v.locations_location_name"),
+    ]
+    catalog = [_where_row("School", "`locations.location_name`", kind="dimension")]
+
+    (row,) = builder.inventory(catalog, [_use("School", role="cut")], [], found)
+
+    assert row.member == "v.locations_location_name"
+    assert row.disagreement == ""
+
+
+def test_inventory_counts_one_short_name_on_several_views_as_one_member():
+    found = [_dimension(f"{v}.grade_level") for v in ("a_view", "b_view", "c_view")]
+
+    (row,) = builder.inventory(
+        [], [_use("Grade", role="cut", name="grade_level")], [], found
+    )
+
+    assert row.member == "a_view.grade_level"
+    assert row.disagreement == "not in catalog"
+
+
+def test_inventory_notes_different_short_names_matching_one_title():
+    found = [
+        _dimension("v.school_name", title="School"),
+        _dimension("v.location_name", title="School"),
+    ]
+
+    (row,) = builder.inventory([], [_use("School", role="cut", name="x")], [], found)
+
+    assert row.member == ""
+    assert "several cubes" in row.disagreement
