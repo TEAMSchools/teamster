@@ -61,6 +61,49 @@ class OvergradResource(ConfigurableResource):
 
         return self._request(method="GET", url=url, **kwargs)
 
+    # defined before `list`, whose name shadows the builtin for later annotations
+    def list_by_cursor(self, path: str) -> list[dict]:
+        """Pull every record of a list endpoint that supports `updated_after`.
+
+        Overgrad sorts list results by `updated_at` ascending, so a record
+        edited mid-pull moves to the end and a page-number pull skips the
+        record that slides into an already-read page. Paging on the last
+        `updated_at` seen instead cannot skip: an edited record shows up again
+        later. The boundary is inclusive, so the result repeats records;
+        callers dedupe by `id`.
+        """
+        url = self._get_url(path)
+        params: dict = {"limit": self.page_limit, "page": 1}
+
+        data = []
+        while True:
+            response_json: dict = self._request(
+                method="GET", url=url, params=params
+            ).json()
+
+            page = response_json.pop("data")
+            data.extend(page)
+
+            if len(data) == len(page):
+                self._log.info(f"GET: {url} {response_json}")
+
+            if len(page) < self.page_limit:
+                break
+
+            cursor = page[-1]["updated_at"]
+
+            if cursor == params.get("updated_after"):
+                # a full page shares one timestamp: step through it by page
+                params["page"] += 1
+            else:
+                params = {"limit": self.page_limit, "page": 1, "updated_after": cursor}
+
+            # Overgrad's API limits users to making 60 requests per minute and 1000
+            # requests per hour
+            time.sleep(1.5)
+
+        return data
+
     def list(self, path: str, *args: str, **kwargs) -> list[dict]:
         kwargs["params"] = {
             **(kwargs.pop("params", None) or {}),

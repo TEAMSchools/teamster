@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from dagster import AssetExecutionContext, Output, asset
 
@@ -9,7 +9,7 @@ from teamster.core.asset_checks import (
 from teamster.libraries.overgrad.resources import OvergradResource
 
 # list endpoints that support the `updated_after` filter
-CATCH_UP_ENDPOINTS = {"students", "admissions", "followings"}
+CURSOR_ENDPOINTS = {"students", "admissions", "followings"}
 
 
 def _parse_updated_at(record: dict) -> datetime:
@@ -24,17 +24,17 @@ def _parse_updated_at(record: dict) -> datetime:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
-def merge_by_id(full: list[dict], catch_up: list[dict]) -> list[dict]:
-    """Merge two pulls of one endpoint into one record per `id`.
+def merge_by_id(records: list[dict]) -> list[dict]:
+    """Reduce a pull to one record per `id`.
 
-    Where an `id` repeats, within or across pulls, the copy with the later
-    `updated_at` wins; a missing `updated_at` loses to any dated copy. Records
-    without an `id` cannot be matched, so they pass through unmerged.
+    Where an `id` repeats, the copy with the later `updated_at` wins; a missing
+    `updated_at` loses to any dated copy. Records without an `id` cannot be
+    matched, so they pass through unmerged.
     """
-    merged: dict = {}
+    merged: dict[int, dict] = {}
     no_id: list[dict] = []
 
-    for record in [*full, *catch_up]:
+    for record in records:
         if record.get("id") is None:
             no_id.append(record)
             continue
@@ -77,26 +77,8 @@ def build_overgrad_asset(
             response_json = overgrad.get(name, context.partition_key).json()
 
             data = [response_json["data"]]
-        elif name in CATCH_UP_ENDPOINTS:
-            # pages have no stable order, so a record edited mid-pull can land
-            # twice or not at all; re-pull everything edited since the start.
-            # 1s absorbs clock difference with Overgrad, which reads times as UTC
-            start = datetime.now(UTC)
-
-            full = overgrad.list(path=name)
-
-            updated_after = (start - timedelta(seconds=1)).isoformat(
-                timespec="milliseconds"
-            )
-
-            # shortcut: an edit during the catch-up pull itself waits for the
-            # next run; add a second pass if that gap ever matters
-            catch_up = overgrad.list(
-                path=name,
-                params={"updated_after": updated_after.replace("+00:00", "Z")},
-            )
-
-            data = merge_by_id(full=full, catch_up=catch_up)
+        elif name in CURSOR_ENDPOINTS:
+            data = merge_by_id(overgrad.list_by_cursor(path=name))
         else:
             data = overgrad.list(path=name)
 

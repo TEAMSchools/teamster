@@ -64,3 +64,26 @@ newer `updated_at`, and a record only in the catch-up pull is added.
 ## Left to the builder
 
 Where the merge helper lives (resource or asset module) and its name.
+
+## Revision 2026-10-28: cursor paging replaces the catch-up pull
+
+Review on PR #6180 found that the catch-up pull does not fix the skip. A live
+check showed list results are sorted by `updated_at` ascending, are stable
+between pulls, and ignore sort parameters. So an edit to a record on a page the
+pull already read moves that record to the end. Every record after it shifts up
+one place, and the record at the next page boundary slides onto a page already
+read and is skipped. That skipped record was not edited, so `updated_after`
+never returns it. A delete mid-pull skips a record the same way.
+
+The design is now:
+
+- `students`, `admissions`, `followings` page with a cursor: each request sends
+  `updated_after` set to the last `updated_at` seen, at page 1, until a page
+  comes back short. Edits and deletes cannot shift records onto a page already
+  read. An edited record shows up again at the end.
+- When a full page shares one `updated_at`, the next request keeps the same
+  cursor and steps to the next page.
+- The boundary is inclusive, so the pull repeats records. `merge_by_id` reduces
+  them to one per `id`, newer `updated_at` winning.
+- The start-time math, the second pull, and the known limit above no longer
+  apply.

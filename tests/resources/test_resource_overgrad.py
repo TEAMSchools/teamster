@@ -109,6 +109,107 @@ def test_list_stops_on_empty_result(monkeypatch):
     assert pages == [1]
 
 
+def _ts(second: int) -> str:
+    return f"2026-10-28T10:00:{second:02d}.000Z"
+
+
+class _FakeApi:
+    """Serves records the way Overgrad does: sorted by `updated_at` ascending,
+    filtered by an inclusive `updated_after`, paged by `limit` and `page`."""
+
+    def __init__(self, records: list[dict], after_first_request=None):
+        self.records = records
+        self.after_first_request = after_first_request
+        self.calls: list[dict] = []
+
+    def request(self, params, **_):
+        self.calls.append(dict(params))
+
+        rows = sorted(
+            (
+                r
+                for r in self.records
+                if r["updated_at"] >= params.get("updated_after", "")
+            ),
+            key=lambda r: r["updated_at"],
+        )
+        start = (params["page"] - 1) * params["limit"]
+        data = [dict(r) for r in rows[start : start + params["limit"]]]
+
+        if len(self.calls) == 1 and self.after_first_request is not None:
+            self.after_first_request(self.records)
+
+        return SimpleNamespace(
+            raise_for_status=lambda: None,
+            json=lambda: {
+                "total_pages": -(-len(rows) // params["limit"]),
+                "data": data,
+            },
+        )
+
+
+def _cursor_resource(monkeypatch, api: _FakeApi) -> OvergradResource:
+    monkeypatch.setattr(overgrad_resources.time, "sleep", lambda _: None)
+
+    resource = OvergradResource(api_key="test", page_limit=2)
+    object.__setattr__(resource, "_log", MagicMock())
+    object.__setattr__(resource, "_session", api)
+
+    return resource
+
+
+def test_list_by_cursor_returns_every_record(monkeypatch):
+    api = _FakeApi([{"id": i, "updated_at": _ts(i)} for i in range(1, 6)])
+
+    data = _cursor_resource(monkeypatch, api).list_by_cursor(path="followings")
+
+    assert {r["id"] for r in data} == {1, 2, 3, 4, 5}
+    assert "updated_after" not in api.calls[0]
+    assert api.calls[1]["updated_after"] == _ts(2)
+
+
+def test_list_by_cursor_edit_mid_pull_skips_nothing(monkeypatch):
+    # page-number paging skips id 3 here: id 1 moves to the end, id 3 slides
+    # onto page 1, which was already read
+    def edit(records):
+        records[0]["updated_at"] = _ts(9)
+
+    api = _FakeApi([{"id": i, "updated_at": _ts(i)} for i in range(1, 7)], edit)
+
+    data = _cursor_resource(monkeypatch, api).list_by_cursor(path="followings")
+
+    assert {r["id"] for r in data} == {1, 2, 3, 4, 5, 6}
+    assert {"id": 1, "updated_at": _ts(9)} in data
+
+
+def test_list_by_cursor_delete_mid_pull_skips_nothing(monkeypatch):
+    def delete(records):
+        del records[0]
+
+    api = _FakeApi([{"id": i, "updated_at": _ts(i)} for i in range(1, 7)], delete)
+
+    data = _cursor_resource(monkeypatch, api).list_by_cursor(path="followings")
+
+    assert {r["id"] for r in data} >= {2, 3, 4, 5, 6}
+
+
+def test_list_by_cursor_full_page_of_one_timestamp(monkeypatch):
+    records = [{"id": i, "updated_at": _ts(1)} for i in range(1, 4)]
+    api = _FakeApi([*records, {"id": 4, "updated_at": _ts(2)}])
+
+    data = _cursor_resource(monkeypatch, api).list_by_cursor(path="followings")
+
+    assert {r["id"] for r in data} == {1, 2, 3, 4}
+    assert len(api.calls) < 10
+
+
+def test_list_by_cursor_empty(monkeypatch):
+    api = _FakeApi([])
+
+    assert _cursor_resource(monkeypatch, api).list_by_cursor(path="followings") == []
+    assert len(api.calls) == 1
+
+
 @pytest.mark.parametrize(
     "error", [RequestsConnectionError("Remote end closed"), ReadTimeout("timed out")]
 )
