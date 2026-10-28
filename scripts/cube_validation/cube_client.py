@@ -18,7 +18,13 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 TIMEOUT_SECONDS = 60
-_FACT = re.compile(r"kipptaf_marts`?\.`?(fct_\w+)", re.IGNORECASE)
+# A fact table in prod's marts dataset or an analyst's dev build of it.
+# `_FACT` yields table names; `_FACT_REF` yields (dataset, table), so a dev
+# build's `zz_<user>_kipptaf_marts` differs from prod's `kipptaf_marts`.
+_MARTS = r"(?<!\w)(?:zz_[a-z0-9]+_)?kipptaf_marts"
+_FACT = re.compile(rf"{_MARTS}`?\.`?(fct_\w+)", re.IGNORECASE)
+_FACT_REF = re.compile(rf"({_MARTS})`?\.`?(fct_\w+)", re.IGNORECASE)
+_LOOPBACK = {"localhost", "127.0.0.1"}
 _STR = r"'(?:\\.|[^'\\])*'"
 _STRING = re.compile(_STR)
 _LIST = rf"{_STR}(?:\s*,\s*{_STR})*"
@@ -78,12 +84,31 @@ def mint_token(secret: str, email: str, now: int, ttl: int = 300) -> str:
     return f"{header}.{payload}.{_b64(sig)}"
 
 
+def _transport_allowed(url: str) -> bool:
+    """True for https, or http to a loopback host with no userinfo.
+
+    `urlparse` reads the host after any `user@`, so `http://127.0.0.1@evil.com`
+    has hostname `evil.com` and a `username`, and `http://localhost.evil.com`
+    has hostname `localhost.evil.com`; neither is loopback.
+    """
+    parts = urllib.parse.urlparse(url)
+
+    if parts.scheme == "https":
+        return True
+
+    return (
+        parts.scheme == "http"
+        and parts.hostname in _LOOPBACK
+        and parts.username is None
+    )
+
+
 def urlopen_json(
     method: str, url: str, headers: dict[str, str], body: dict | None = None
 ) -> Any:
     """Send one request and return the parsed JSON body."""
-    if urllib.parse.urlparse(url).scheme != "https":
-        raise CubeError(f"Cube URL must be https; got {url!r}")
+    if not _transport_allowed(url):
+        raise CubeError(f"Cube URL must be https or loopback http; got {url!r}")
 
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
@@ -92,7 +117,7 @@ def urlopen_json(
         req.add_header("Content-Type", "application/json")
 
     try:
-        # trunk-ignore(bandit/B310): scheme checked to be https above
+        # trunk-ignore(bandit/B310): scheme and host checked above
         with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as e:
@@ -113,8 +138,10 @@ class Cube:
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.time,
     ) -> None:
-        if urllib.parse.urlparse(base_url).scheme != "https":
-            raise CubeError(f"Cube base URL must be https; got {base_url!r}")
+        if not _transport_allowed(base_url):
+            raise CubeError(
+                f"Cube base URL must be https or loopback http; got {base_url!r}"
+            )
 
         self._base = base_url.rstrip("/")
         self._secret = secret
@@ -324,8 +351,8 @@ def refuse_unless_safe(
             "rather than the fact the view reads."
         )
 
-    facts = {m.lower() for m in _FACT.findall(compiled.sql)}
-    others = facts - {view_fact.rsplit(".", 1)[-1].lower()}
+    facts = {f"{ds}.{name}".lower() for ds, name in _FACT_REF.findall(compiled.sql)}
+    others = facts - {view_fact.lower()}
 
     if others:
         raise CubeRefusal(f"SQL reads facts other than {view_fact}: {sorted(others)}")

@@ -300,6 +300,56 @@ def test_base_url_that_is_not_https_is_refused(url):
         Cube(url, "s", "x@y")
 
 
+def test_http_allowed_only_for_loopback_hosts():
+    Cube("http://localhost:4000/cubejs-api/v1", "s", "e@x")
+    Cube("http://127.0.0.1:4000/cubejs-api/v1", "s", "e@x")
+    for bad in (
+        "http://localhost.evil.com/x",
+        "http://127.0.0.1@evil.com/x",
+        "http://user@localhost/x",
+        "http://cube.example.com/x",
+    ):
+        with pytest.raises(CubeError):
+            Cube(bad, "s", "e@x")
+
+
+def test_request_to_a_lookalike_loopback_url_is_refused_before_it_is_sent():
+    with pytest.raises(CubeError, match="https"):
+        urlopen_json("GET", "http://127.0.0.1@evil.com/x", {})
+
+
+def test_dev_fact_dataset_passes_when_the_view_expects_it():
+    sql = "SELECT 1 FROM `zz_cbaldor_kipptaf_marts`.`fct_a` WHERE abbreviation IN (?)"
+
+    refuse_unless_safe(
+        Compiled(sql, ["A"], []),
+        view_fact="zz_cbaldor_kipptaf_marts.fct_a",
+        network_schools={"A"},
+    )
+
+
+def test_prod_fact_is_refused_when_the_view_expects_a_dev_build():
+    sql = "SELECT 1 FROM `kipptaf_marts`.`fct_a` WHERE abbreviation IN (?)"
+
+    with pytest.raises(CubeRefusal, match="other than"):
+        refuse_unless_safe(
+            Compiled(sql, ["A"], []),
+            view_fact="zz_cbaldor_kipptaf_marts.fct_a",
+            network_schools={"A"},
+        )
+
+
+def test_dev_fact_is_refused_when_the_view_expects_prod():
+    sql = "SELECT 1 FROM zz_cbaldor_kipptaf_marts.fct_a WHERE abbreviation IN (?)"
+
+    with pytest.raises(CubeRefusal, match="other than"):
+        refuse_unless_safe(
+            Compiled(sql, ["A"], []),
+            view_fact="kipptaf_marts.fct_a",
+            network_schools={"A"},
+        )
+
+
 def test_request_to_a_non_https_url_is_refused_before_it_is_sent():
     with pytest.raises(CubeError, match="https"):
         urlopen_json("GET", "file:///etc/passwd", {})

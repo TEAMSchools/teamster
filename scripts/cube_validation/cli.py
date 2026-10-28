@@ -15,6 +15,7 @@ import dataclasses
 import json
 import os
 import sys
+import urllib.parse
 
 # trunk-ignore(bandit/B405): only ParseError is used; the workbook is parsed in builder
 import xml.etree.ElementTree as ET
@@ -26,7 +27,13 @@ import tableauserverclient as TSC
 
 from . import builder, pipeline, report, tableau
 from .bq import CostCapError, ViewHistoryError, Warehouse
-from .config import ConfigError, ViewConfig, load_view_config
+from .config import (
+    DEFAULT_FACT_DATASET,
+    ConfigError,
+    ViewConfig,
+    load_view_config,
+    with_fact_dataset,
+)
 from .cube_client import Cube, CubeError, CubeRefusal
 from .moment import MomentError
 
@@ -119,6 +126,14 @@ def _cube(args: argparse.Namespace) -> Cube:
     return make_cube(url, secret, email)
 
 
+def _cube_host() -> str:
+    """The host and port of `CUBE_REST_URL`, without any userinfo."""
+    parts = urllib.parse.urlparse(os.environ.get(URL_VAR, ""))
+    host = parts.hostname or ""
+
+    return f"{host}:{parts.port}" if parts.port else host
+
+
 def _moment(value: str) -> datetime:
     try:
         return pipeline.utc(value)
@@ -162,8 +177,17 @@ def _parser() -> argparse.ArgumentParser:
     shown.add_argument("--limit", type=int, default=5, help="candidates to print")
     shown.add_argument("--all", action="store_true", help="print every candidate")
 
+    def fact_dataset(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--fact-dataset",
+            default=DEFAULT_FACT_DATASET,
+            help="the fact's dataset: kipptaf_marts, or zz_<user>_kipptaf_marts "
+            "for your dbt dev build",
+        )
+
     p = sub.add_parser("prove", help="prove a probe against its sheet once")
     view_file(p)
+    fact_dataset(p)
     which = p.add_mutually_exclusive_group(required=True)
     which.add_argument(
         "--comparison",
@@ -182,11 +206,13 @@ def _parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("check-api", help="Cube's API equals its compiled SQL")
     view_file(p)
+    fact_dataset(p)
     email(p)
     max_usd(p)
 
     p = sub.add_parser("run", help="validate a view at one fact build")
     view_file(p)
+    fact_dataset(p)
     p.add_argument("--moment", type=_moment, help="ISO time; the build ending by it")
     email(p)
     max_usd(p)
@@ -234,7 +260,9 @@ def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "inventory":
         return _inventory(args.catalog, args.slug, args.review, args.asana)
 
-    cfg = _load(args.view)
+    cfg = with_fact_dataset(
+        _load(args.view), getattr(args, "fact_dataset", DEFAULT_FACT_DATASET)
+    )
 
     if args.command == "run":
         cube = _cube(args)
@@ -246,6 +274,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             requested=args.moment,
             max_usd=args.max_usd,
             cache_root=cache_root(),
+            cube_host=_cube_host(),
         )
         return 0
 

@@ -161,6 +161,7 @@ class FakeCube:
         self._load = load or (lambda q: [_load_row(q, 0.91234)])
         self.exprs: dict[str, str] = {}
         self.schools = ["A", "B"]
+        self.dataset = "kipptaf_marts"
 
     def compiled(self, query):
         self.compiled_queries.append(query)
@@ -175,7 +176,7 @@ class FakeCube:
         )
         sql = (
             f"SELECT {select}\n"
-            "FROM  kipptaf_marts.fct_f  AS `t`\n"
+            f"FROM  {self.dataset}.fct_f  AS `t`\n"
             "LEFT JOIN  kipptaf_marts.dim_locations  AS `locations` "
             "ON `locations`.k = `t`.k\n"
             "WHERE (`locations`.abbreviation IN (?, ?))\n"
@@ -332,6 +333,80 @@ def test_run_cube_rows_are_ungrouped_and_unlimited(fakes, tmp_path):
     assert "LIMIT 10000" not in _reconcile(fakes.bq)
     # One reconcile covers both cuts, so a row is never counted twice.
     assert "or" in row_queries[0]["filters"][0]
+
+
+@pytest.mark.parametrize("command", ["run", "check-api", "prove"])
+@pytest.mark.parametrize(
+    "dataset",
+    [
+        "kipptaf_staging",
+        "kipptaf_marts; DROP",
+        "zz__kipptaf_marts",
+        "ZZ_a_kipptaf_marts",
+    ],
+)
+def test_fact_dataset_outside_allowed_names_is_refused(
+    fakes, tmp_path, capsys, command, dataset
+):
+    extra = ["--comparison", "ada-region"] if command == "prove" else []
+
+    code = cli.main([command, str(_file(tmp_path)), "--fact-dataset", dataset, *extra])
+
+    assert code == 1
+    assert "fact dataset" in capsys.readouterr().err
+    assert fakes.bq.ran == []
+    assert fakes.cube.compiled_queries == []
+    assert fakes.signed_in == 0
+
+
+def test_run_output_names_cube_host_and_fact(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    out = capsys.readouterr().out
+    assert "Cube: cube.test" in out
+    assert "Fact: kipptaf_marts.fct_f" in out
+
+
+def test_run_against_a_dev_build_searches_and_expects_that_dataset(
+    fakes, tmp_path, capsys
+):
+    fakes.cube.dataset = "zz_cbaldor_kipptaf_marts"
+
+    code = cli.main(
+        ["run", str(_file(tmp_path)), "--fact-dataset", "zz_cbaldor_kipptaf_marts"]
+    )
+
+    assert code == 0
+    jobs = next(s for s in fakes.bq.ran if "JOBS_BY_PROJECT" in s)
+    assert "dataset_id = 'zz_cbaldor_kipptaf_marts'" in jobs
+    assert "table_id = 'fct_f'" in jobs
+    assert "Fact: zz_cbaldor_kipptaf_marts.fct_f" in capsys.readouterr().out
+
+
+def test_run_refuses_a_cube_still_reading_prod_when_a_dev_build_is_named(
+    fakes, tmp_path, capsys
+):
+    code = cli.main(
+        ["run", str(_file(tmp_path)), "--fact-dataset", "zz_cbaldor_kipptaf_marts"]
+    )
+
+    assert code == 1
+    assert "other than zz_cbaldor_kipptaf_marts.fct_f" in capsys.readouterr().err
+
+
+def test_check_api_accepts_a_dev_dataset(fakes, tmp_path):
+    fakes.cube.dataset = "zz_cbaldor_kipptaf_marts"
+
+    code = cli.main(
+        [
+            "check-api",
+            str(_file(tmp_path)),
+            "--fact-dataset",
+            "zz_cbaldor_kipptaf_marts",
+        ]
+    )
+
+    assert code == 0
 
 
 def test_run_refuses_comparison_without_proof(fakes, tmp_path, capsys):

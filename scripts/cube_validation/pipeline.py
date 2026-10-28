@@ -962,8 +962,12 @@ def run(
     requested: datetime | None,
     max_usd: float,
     cache_root: Path,
+    cube_host: str = "",
 ) -> RunResult:
     """Validate one view at one fact build and print the result.
+
+    `cube_host` is printed with `cfg.fact` so the result says what it was
+    proven against.
 
     Raises:
         Refusal: A confirmed comparison has no proof, its probe changed
@@ -1046,6 +1050,8 @@ def run(
     result = RunResult(
         view=cfg.view,
         moment=build,
+        cube_host=cube_host,
+        fact=cfg.fact,
         measures=_measures(
             comparisons,
             sides.cells,

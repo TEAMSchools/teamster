@@ -9,7 +9,7 @@ these files never reach the semantic layer.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from pathlib import Path
 from typing import Any, NoReturn
@@ -33,6 +33,10 @@ SPLIT_ROWS = ("refuse", "sum")
 # validation file cannot carry SQL text into a query.
 _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _TABLE_REF = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*")
+
+# The marts dataset a fact is read from: prod's, or an analyst's dbt dev build.
+_FACT_DATASET = re.compile(r"kipptaf_marts|zz_[a-z0-9]+_kipptaf_marts")
+DEFAULT_FACT_DATASET = "kipptaf_marts"
 
 
 class ConfigError(Exception):
@@ -193,6 +197,23 @@ def _identifier(reader: _Reader, key: str, *, required=False) -> str | None:
             key, f"must be a plain identifier ([A-Za-z_][A-Za-z0-9_]*); got {value!r}"
         )
     return value
+
+
+def with_fact_dataset(cfg: ViewConfig, dataset: str) -> ViewConfig:
+    """Point `cfg.fact` at `dataset`, keeping its table.
+
+    Raises:
+        ConfigError: `dataset` is neither `kipptaf_marts` nor a dev build's
+            `zz_<user>_kipptaf_marts`. It reaches SQL, so nothing else passes.
+    """
+    if not _FACT_DATASET.fullmatch(dataset):
+        raise ConfigError(
+            f"fact dataset must be {DEFAULT_FACT_DATASET} or "
+            f"zz_<user>_{DEFAULT_FACT_DATASET} (lowercase letters and digits); "
+            f"got {dataset!r}"
+        )
+
+    return replace(cfg, fact=f"{dataset}.{cfg.fact.split('.', 1)[1]}")
 
 
 def _table_ref(reader: _Reader, key: str, *, required=False) -> str | None:

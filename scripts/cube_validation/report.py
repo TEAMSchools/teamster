@@ -88,6 +88,10 @@ class RunResult:
     gaps_unknown: list[str] = field(default_factory=list)
     # Each comparison's `dashboard_filters`, as the SQL the dashboard side ran.
     dashboard_filters: list[str] = field(default_factory=list)
+    # What the result was proven against: the Cube server's host and the
+    # `dataset.table` fact, so an analyst can say so in a PR description.
+    cube_host: str = ""
+    fact: str = ""
 
 
 def mask(n: int) -> str:
@@ -162,6 +166,7 @@ def render_local(run: RunResult) -> str:
         f"Moment: {run.moment.start:%Y-%m-%d %H:%M} to "
         f"{run.moment.end:%Y-%m-%d %H:%M} UTC, job `{run.moment.job_id}`."
     )
+    out += ["", f"Cube: {run.cube_host}", "", f"Fact: {run.fact}"]
 
     out += ["", "## Measures", ""]
     for m in run.measures:
