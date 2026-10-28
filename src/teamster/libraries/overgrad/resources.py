@@ -80,7 +80,8 @@ class OvergradResource(ConfigurableResource):
             if page == 1:
                 self._log.info(f"GET: {url} {response_json}")
 
-            if page == response_json["total_pages"]:
+            # `>=`: an empty result reports total_pages 0, which `==` never reaches
+            if page >= response_json["total_pages"]:
                 break
             else:
                 page += 1

@@ -71,6 +71,30 @@ def test_list_passes_params_through(monkeypatch):
     assert caller_params == {"updated_after": "2026-10-28T18:00:00.000Z"}
 
 
+def test_list_stops_on_empty_result(monkeypatch):
+    monkeypatch.setattr(overgrad_resources.time, "sleep", lambda _: None)
+
+    resource = OvergradResource(api_key="test")
+    object.__setattr__(resource, "_log", MagicMock())
+
+    pages = []
+
+    def fake_request(params, **_):
+        pages.append(params["page"])
+        if len(pages) > 1:
+            raise AssertionError("requested a page past an empty result")
+        # Overgrad reports total_pages 0, not 1, when nothing matches
+        return SimpleNamespace(
+            raise_for_status=lambda: None,
+            json=lambda: {"total_pages": 0, "current_page": 1, "data": []},
+        )
+
+    object.__setattr__(resource, "_session", SimpleNamespace(request=fake_request))
+
+    assert resource.list(path="followings") == []
+    assert pages == [1]
+
+
 @pytest.mark.parametrize(
     "error", [RequestsConnectionError("Remote end closed"), ReadTimeout("timed out")]
 )
