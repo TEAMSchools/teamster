@@ -226,8 +226,9 @@ class FakeTableau:
         return self.twb
 
     def workbook_updated(self, luid):
-        if getattr(self, "fail_next", None):
-            error, self.fail_next = self.fail_next, None
+        error = getattr(self, "fail_next", None)
+        if error:
+            self.fail_next = None
             raise error
         return self.updated
 
@@ -980,6 +981,57 @@ def test_review_refuses_an_unreadable_triage_file(fakes, tmp_path, capsys):
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
 
     assert "v: triage.json is unreadable; re-run triage" in capsys.readouterr().err
+
+
+def test_review_refuses_a_triage_file_that_is_not_an_object(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
+    (run_json.parent / "triage.json").write_text("[]")
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
+
+    assert "v: triage.json is unreadable; re-run triage" in capsys.readouterr().err
+
+
+def _review_json(path, capsys):
+    capsys.readouterr()
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+    out = capsys.readouterr().out
+    return json.loads(out.split("```json\n", 1)[1].split("\n```", 1)[0])
+
+
+def test_review_says_expired_by_the_command_lines_clock(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+
+    monkeypatch.setattr(cli, "utcnow", lambda: START + timedelta(days=1))
+    assert _review_json(path, capsys)[0]["expired"] is False
+    monkeypatch.setattr(cli, "utcnow", lambda: START + timedelta(days=8))
+    assert _review_json(path, capsys)[0]["expired"] is True
+
+
+def test_review_warns_when_the_body_nears_githubs_cap(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+    assert "65,536" not in capsys.readouterr().err
+
+    monkeypatch.setattr(pipeline.report, "render_review_issue", lambda *a: "x" * 60_001)
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+    captured = capsys.readouterr()
+    assert captured.out.startswith("x" * 60_001)
+    assert "60,001 characters" in captured.err and "65,536" in captured.err
 
 
 def test_review_reads_the_run_written_last(fakes, tmp_path, capsys):
@@ -1819,6 +1871,36 @@ def test_run_without_rows_leaves_n_students_none(fakes, tmp_path):
     assert all(c["n_students"] is None for c in saved["diff_cells"])
     assert not any("n_students" in s for s in fakes.bq.ran)
     assert set(saved["cell_sql"]["ada-region"]) == {"{}", '{"Region": "Miami"}'}
+
+
+STUDENT_GRAIN = (
+    "        - { dashboard: student_number, cube: lea_student_identifier }\n"
+)
+DATE_GRAIN = "        - { dashboard: calendardate, cube: attendance_date }\n"
+
+
+def test_run_counts_the_grains_student_column_wherever_it_sits(fakes, tmp_path):
+    fakes.bq.cells = [{"regions_region_name": "Miami", "value": 0.95}]
+    text = YML.replace(STUDENT_GRAIN + DATE_GRAIN, DATE_GRAIN + STUDENT_GRAIN)
+    assert text != YML
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    (count,) = [s for s in fakes.bq.ran if "AS n_students" in s and "-- outer" not in s]
+    assert "COUNT(DISTINCT student_number)" in count
+    assert "COUNT(DISTINCT calendardate)" not in count
+
+
+def test_run_without_a_student_grain_leaves_n_students_none(fakes, tmp_path):
+    fakes.bq.cells = [{"regions_region_name": "Miami", "value": 0.95}]
+    text = YML.replace(STUDENT_GRAIN, "")
+    assert text != YML
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    saved = _saved_run(tmp_path)
+    assert saved["diff_cells"]
+    assert all(c["n_students"] is None for c in saved["diff_cells"])
+    assert not any("COUNT(DISTINCT" in s and "-- outer" not in s
+                   for s in fakes.bq.ran if "AS n_students" in s)  # fmt: skip
 
 
 def test_run_saves_no_cell_that_passes(fakes, tmp_path):

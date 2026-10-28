@@ -298,6 +298,7 @@ def test_cells_the_dashboard_filter_drops_are_explained():
 
 
 def _cfg():
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
     from cube_validation.config import ViewConfig
 
     return ViewConfig(view="v", fact="kipptaf_marts.fct_f", comparisons=[])
@@ -416,6 +417,12 @@ def test_sheet_gaps_notes_copies_and_display_switches():
         "Show Rate": "display switch on Metric",
     }
     assert gaps.columns == {"Enroll Status": "enroll_status"}
+
+
+def test_an_apostrophe_in_a_comment_cannot_hide_a_field():
+    formula = "[Parameters].[A] = \"x\" // it's\nAND [grade]>1 // don't"
+
+    assert pipeline._parameter_only(formula) is None
 
 
 def test_sheet_gaps_note_nothing_when_a_parameter_mixes_with_a_field():

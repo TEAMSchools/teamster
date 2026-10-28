@@ -747,15 +747,26 @@ def _compare_one(
         )
         sides.groups += compare.groups_from(comparison.id, result)
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
-        cuts = _cuts(comparison)
-        count_sql = _students_sql(cfg, comparison, comparison.rows.grain[0].dashboard)
-        sides.students[comparison.id] = {
+        # Only a student column counts students; without one in the grain,
+        # every cell's `n_students` stays None, so none is an example cell.
+        student = next(
             (
-                cut_label(cuts[int(r["__cut"])]),
-                tuple(_key(r[d.dashboard]) for d in comparison.dims),
-            ): r["n_students"]
-            for r in wh.rows(at(count_sql, build.start).sql)
-        }
+                p.dashboard
+                for p in comparison.rows.grain
+                if "student" in p.dashboard.lower()
+            ),
+            None,
+        )
+        if student:
+            cuts = _cuts(comparison)
+            count_sql = _students_sql(cfg, comparison, student)
+            sides.students[comparison.id] = {
+                (
+                    cut_label(cuts[int(r["__cut"])]),
+                    tuple(_key(r[d.dashboard]) for d in comparison.dims),
+                ): r["n_students"]
+                for r in wh.rows(at(count_sql, build.start).sql)
+            }
 
     sides.fingerprints[comparison.id] = {
         "cube": decisions.sql_fingerprint(sort_school_filters("\n".join(cube_parts))),
@@ -1277,6 +1288,10 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
     return run_result, saved[-1]
 
 
+# GitHub caps an issue body at 65,536 characters; warn with room to spare.
+BODY_WARN_CHARS = 60_000
+
+
 def _triage_file(run_json: Path, view_root: Path) -> Path | None:
     """The `triage.json` beside the run, else the newest in any moment folder.
 
@@ -1300,7 +1315,8 @@ def review(
 
     Reads only the local cache: each run and its triage (see `_triage_file`),
     matching triage items to decisions by their stubs. Nothing is posted; a
-    question with no triage evidence is named on stderr.
+    question with no triage evidence, and a body near GitHub's cap, are named
+    on stderr.
 
     Args:
         configs: The views to review.
@@ -1311,19 +1327,23 @@ def review(
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
-            triage file is not JSON.
+            triage file is not a JSON object.
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
     triage = {}
     for run, run_json in saved:
         if found := _triage_file(run_json, cache_root / run.view):
+            unreadable = Refusal(
+                f"{run.view}: triage.json is unreadable; re-run triage"
+            )
             try:
-                triage[run.view] = json.loads(found.read_text())
+                loaded = json.loads(found.read_text())
             except json.JSONDecodeError as exc:
-                raise Refusal(
-                    f"{run.view}: triage.json is unreadable; re-run triage"
-                ) from exc
+                raise unreadable from exc
+            if not isinstance(loaded, dict):
+                raise unreadable
+            triage[run.view] = loaded
     definitions = {
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs
@@ -1332,6 +1352,13 @@ def review(
         runs, configs, definitions, triage, now or datetime.now(timezone.utc)
     )
     body = report.render_review_issue(domain, runs, definitions, questions)
+    if len(body) > BODY_WARN_CHARS:
+        # stderr, so the warning never lands in the issue body.
+        print(
+            f"warning: the body is {len(body):,} characters; GitHub refuses an "
+            "issue body over 65,536, so review fewer views at a time",
+            file=sys.stderr,
+        )
     for q in questions:
         if not q["evidence"]:
             # stderr, so the note never lands in the issue body.
@@ -1553,11 +1580,16 @@ _WHOLE_REF = re.compile(r"\[(?P<name>[^\]]+)\]")
 _PARAMETER_REF = re.compile(r"\[Parameters\]\.\[(?P<name>[^\]]+)\]")
 _STRING_LITERAL = re.compile(r"'[^']*'|\"[^\"]*\"")
 _FIELD_REF = re.compile(r"\[[^\]]+\]")
+_COMMENT = re.compile(r"//[^\n]*")
 
 
 def _parameter_only(formula: str) -> re.Match | None:
-    """The first parameter a formula reads, when it reads no other field."""
-    bare = _STRING_LITERAL.sub("", formula)
+    """The first parameter a formula reads, when it reads no other field.
+
+    Comments go before string literals, so an apostrophe in a comment cannot
+    pair with one on a later line and hide the field between them.
+    """
+    bare = _STRING_LITERAL.sub("", _COMMENT.sub("", formula))
     if _FIELD_REF.search(_PARAMETER_REF.sub("", bare)):
         return None
     return _PARAMETER_REF.search(bare)

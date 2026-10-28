@@ -279,7 +279,7 @@ def _load(path: Path) -> ViewConfig:
 def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "review":
         configs = [_load(v) for v in args.views]
-        print(pipeline.review(configs, args.domain, cache_root()))
+        print(pipeline.review(configs, args.domain, cache_root(), now=utcnow()))
         return 0
 
     if args.command == "record-answers":

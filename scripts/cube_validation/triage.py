@@ -18,7 +18,7 @@ from pathlib import Path
 from . import pipeline
 from .bq import Warehouse
 from .compare import CellDiff, Gap, Group
-from .config import ViewConfig
+from .config import Proof, ViewConfig
 from .cube_client import Cube, MemberDoc, member_docs
 from .discover import _tokens
 from .moment import Build
@@ -143,7 +143,8 @@ def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
     open_groups = run.applied.open
     ids = _group_ids(open_groups)
     out: list[tuple[Item, Group | Gap | CellDiff]] = [
-        (_group_item(g, i, open_groups), g) for g, i in zip(open_groups, ids)
+        (_group_item(g, i, open_groups), g)
+        for g, i in zip(open_groups, ids, strict=True)
     ]
     out += [(_gap_item(g), g) for g in run.applied.open_gaps]
     for diff in run.applied.open_cells:
@@ -238,8 +239,8 @@ def suggest(
             members = [by_id[c].measure for c in gap.comparisons if c in by_id]
             # Only the sheets the gap sits on speak for it; a proof that
             # predates `restricting_filters` leaves the answer unknown.
-            proofs = [
-                by_id[c].proof for c in gap.comparisons if c in by_id and by_id[c].proof
+            proofs: list[Proof] = [
+                p for c in gap.comparisons if c in by_id and (p := by_id[c].proof)
             ]
             notes = {k: v for p in proofs for k, v in (p.filter_notes or {}).items()}
             all_known = bool(proofs) and all(
