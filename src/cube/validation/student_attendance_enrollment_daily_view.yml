@@ -72,8 +72,8 @@ comparisons:
     proof:
       fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
       cells: 45
-      proven_at: "2026-10-27T20:28:46.064615+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      proven_at: "2026-10-28T13:59:49.206900+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 28af4c06c3dd84e8cf5de3b573ac16b1f75ddf04c84d5116b8d15d3aaf007c32
       cuts:
         - "{}"
@@ -84,16 +84,13 @@ comparisons:
         - C 504 Status
         - Enroll Status
         - Ethnicity
-        - Gender
         - Iep Status
         - Is Counselingservices
-        - Lep Status
         - NJ Overall Student Tier
         - Region [Filter]
         - School
         - School Level
         - Schoolid
-        - Term
         - is_self_contained
         - ms_attended
       restricting_filters:
@@ -140,8 +137,8 @@ comparisons:
     proof:
       fingerprint: 79d4b006007bc63f46c3a249d3fa3a4a53d857e3b783d33866cea8c458f46c9a
       cells: 50
-      proven_at: "2026-10-27T20:40:08.712111+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      proven_at: "2026-10-28T14:00:37.450985+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 30348b10ac3f0593ead06bec66157451e066ea4cb398edb33119692e1da5b0a7
       cuts:
         - "{}"
@@ -152,13 +149,10 @@ comparisons:
         - C 504 Status
         - Enroll Status
         - Ethnicity
-        - Gender
         - Iep Status
         - Is Counselingservices
-        - Lep Status
         - NJ Overall Student Tier
         - Schoolid
-        - Term
         - ms_attended
       restricting_filters:
         - Iep Status
@@ -201,8 +195,8 @@ comparisons:
     proof:
       fingerprint: c0a4a97faefd141d3c8ee03593e23706cbbd71dfc2a95e25ce32437140c71a3c
       cells: 40
-      proven_at: "2026-10-27T20:30:08.747901+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      proven_at: "2026-10-28T14:01:21.920276+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 245763dfbafcd75642395ab21e2dcc00561501d3d63cfb899d4b07aa0238d478
       cuts:
         - "{}"
@@ -213,14 +207,11 @@ comparisons:
         - C 504 Status
         - Enroll Status
         - Ethnicity
-        - Gender
         - Iep Status
         - Is Counselingservices
-        - Lep Status
         - NJ Overall Student Tier
         - School Level - OOD FIlter Set
         - Schoolid
-        - Term
         - ms_attended
       restricting_filters:
         - Iep Status
@@ -258,8 +249,8 @@ comparisons:
     proof:
       fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
       cells: 45
-      proven_at: "2026-10-27T20:30:51.211956+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      proven_at: "2026-10-28T14:02:06.181649+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 27a8e807bf279af39995eab75af4167f66d59798e5c57e1517f8a298d2710d58
       cuts:
         - "{}"
@@ -270,16 +261,13 @@ comparisons:
         - C 504 Status
         - Enroll Status
         - Ethnicity
-        - Gender
         - Iep Status
         - Is Counselingservices
-        - Lep Status
         - NJ Overall Student Tier
         - Region [Filter]
         - School
         - School Level
         - Schoolid
-        - Term
         - is_self_contained
         - ms_attended
       restricting_filters:
@@ -306,8 +294,8 @@ comparisons:
     proof:
       fingerprint: 1f0bf42a77c8b8b6cf663e930582ac115d26618d2185e3c1af8de5bb9645b81d
       cells: 23
-      proven_at: "2026-10-27T20:19:38.479402+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      proven_at: "2026-10-28T14:02:27.396986+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 1cea72f6ffcfb9a0813336073a896f0365702e59ba0d4993abf29404ed5299de
       cuts:
         - "{}"
@@ -320,7 +308,6 @@ comparisons:
         - Is Truant Current
         - School
         - Schoolid
-        - Term
       restricting_filters:
         - Enroll Status
   - id: tardy-roster
@@ -337,9 +324,9 @@ comparisons:
         - { dashboard: att_code, cube: attendance_code }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11038
-      proven_at: "2026-10-27T20:20:22.822492+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      cells: 11053
+      proven_at: "2026-10-28T14:03:20.559915+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 9668d3e0503aa82187449d18b13d4974e26c342a685a0a46603514d6d412ed96
       cuts:
         - "{}"
@@ -359,7 +346,6 @@ comparisons:
         - NJ Overall Student Tier
         - School
         - Schoolid
-        - Term
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
@@ -378,9 +364,9 @@ comparisons:
         - { dashboard: is_absent, cube: is_absent }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11038
-      proven_at: "2026-10-27T20:22:07.052397+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      cells: 11053
+      proven_at: "2026-10-28T14:04:28.687116+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 58259a69041974ec46c6a7c532940b94887b28b967e6e4758fba5c6d97b51ec5
       cuts:
         - "{}"
@@ -400,7 +386,6 @@ comparisons:
         - NJ Overall Student Tier
         - School
         - Schoolid
-        - Term
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
@@ -415,9 +400,9 @@ comparisons:
         - { dashboard: att_code, cube: attendance_code }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11038
-      proven_at: "2026-10-27T20:23:06.082670+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      cells: 11053
+      proven_at: "2026-10-28T14:04:51.293911+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 37467abb0db2ef48db6bf2d8b1caef656bc0d9cba93d1292cde696a025420aff
       cuts:
         - "{}"
@@ -437,7 +422,6 @@ comparisons:
         - NJ Overall Student Tier
         - School
         - Schoolid
-        - Term
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
@@ -455,9 +439,9 @@ comparisons:
         - { dashboard: att_code, cube: attendance_code }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11038
-      proven_at: "2026-10-27T20:23:24.321747+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      cells: 11053
+      proven_at: "2026-10-28T14:05:13.343025+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: edd95448c255b479e94e1faab0d0212769bc2fc1d84decc1e41a0da2ff21c355
       cuts:
         - "{}"
@@ -477,7 +461,6 @@ comparisons:
         - NJ Overall Student Tier
         - School
         - Schoolid
-        - Term
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
@@ -492,9 +475,9 @@ comparisons:
         - { dashboard: is_present, cube: attendance_value }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11038
-      proven_at: "2026-10-27T20:23:41.926802+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      cells: 11053
+      proven_at: "2026-10-28T14:06:27.606135+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: d58d8cffbf2ac05244a612bd570570b833ae264b06692918c4a2c18c3c497a26
       cuts:
         - "{}"
@@ -514,7 +497,6 @@ comparisons:
         - NJ Overall Student Tier
         - School
         - Schoolid
-        - Term
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
@@ -531,9 +513,9 @@ comparisons:
         - { dashboard: membershipvalue, cube: membership_value }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11038
-      proven_at: "2026-10-27T20:39:09.251884+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      cells: 11053
+      proven_at: "2026-10-28T14:07:30.100658+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 40c6f32e2148a65732e124fab40e7f1cc405eb14ea8c4e4c7e7304f8a3b43395
       cuts:
         - "{}"
@@ -553,7 +535,6 @@ comparisons:
         - NJ Overall Student Tier
         - School
         - Schoolid
-        - Term
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
@@ -569,9 +550,9 @@ comparisons:
         - { dashboard: is_tardy, cube: is_tardy }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11038
-      proven_at: "2026-10-27T20:24:08.222750+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      cells: 11053
+      proven_at: "2026-10-28T14:11:43.072064+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 059a17a608ad578ac6c0c9b6f4397b9696fd355b329034ab394fc238b70cc7e8
       cuts:
         - "{}"
@@ -591,7 +572,6 @@ comparisons:
         - NJ Overall Student Tier
         - School
         - Schoolid
-        - Term
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
@@ -607,9 +587,9 @@ comparisons:
         - { dashboard: is_absent, cube: is_absent }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11038
-      proven_at: "2026-10-27T20:24:24.803276+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      cells: 11053
+      proven_at: "2026-10-28T14:09:29.561524+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 4864eecd951208f2f2f677e11958050d894b628a73e608aa820149ad165e66c0
       cuts:
         - "{}"
@@ -629,7 +609,6 @@ comparisons:
         - NJ Overall Student Tier
         - School
         - Schoolid
-        - Term
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
@@ -692,8 +671,8 @@ comparisons:
     proof:
       fingerprint: 36a08c1fe0afe77165db65f279d1ec8b552d16b06c085ff1934f75ec3fa95393
       cells: 8
-      proven_at: "2026-10-27T23:25:12.930766+00:00"
-      workbook_updated_at: "2026-10-27T19:14:14+00:00"
+      proven_at: "2026-10-28T14:10:38.207447+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
       probe_fingerprint: 3580ec2107756e117a8ca4c7c142e3e50b85e17f969f8c8a3781f4fa1598eac4
       cuts:
         - "{}"
@@ -704,14 +683,11 @@ comparisons:
         - C 504 Status
         - Enroll Status
         - Ethnicity
-        - Gender
         - Grouping
         - Iep Status
         - Is Counselingservices
-        - Lep Status
         - School
         - School Level - OOD FIlter Set
-        - Term
       restricting_filters:
         - Iep Status
         - School Level - OOD FIlter Set
@@ -738,9 +714,9 @@ decisions:
       including students who have since left. Cube's enrollment_status member
       ('Currently Enrolled') can reproduce the dashboard's population. Owner:
       should Cube's default answer include students who left?"
-    fingerprints: &id001
+    fingerprints:
       cube: 9b783dc6e78fea16ae95d26a5823109f678476c08e9bcc13809ef20315522fc0
-      dashboard: e12658fd1b0a9c020169727622232e86d1d3bc2b528db917766db664e1d8e990
+      dashboard: 6433b09780b0879964cf1069e545c078b10d59702f7c5685232504ef4dacc411
   - id: enrolled-only-tardy-roster
     comparison: tardy-roster
     group:
@@ -754,9 +730,9 @@ decisions:
       including students who have since left. Cube's enrollment_status member
       ('Currently Enrolled') can reproduce the dashboard's population. Owner:
       should Cube's default answer include students who left?"
-    fingerprints: &id002
+    fingerprints:
       cube: c12f91760fa240318864ede54ae1425472fc664d2f92ffb936c2e6bda0e46e14
-      dashboard: 3f1a96e349922b243722f3b76e9d8ffa28dc4e6a469991904969ccd51d249846
+      dashboard: 7f1a13b7edfbbc2702c2fa8393c667c63699c45778a82b9b322e4145ade25e9d
   - id: enrolled-only-absences-roster
     comparison: absences-roster
     group:
@@ -770,9 +746,9 @@ decisions:
       including students who have since left. Cube's enrollment_status member
       ('Currently Enrolled') can reproduce the dashboard's population. Owner:
       should Cube's default answer include students who left?"
-    fingerprints: &id003
+    fingerprints:
       cube: 4fefd46148164fd28b01fb88743871248ac1a4b8ae26e9094ddd40c8d6aec42b
-      dashboard: bfa81b351eb9f871640737e8ee71b8df9cd40b46c86a0328ec23febaa6908d6b
+      dashboard: 87df907d2c5a159e5cafac72cf1e55ef87b292a42f80c6a164d6b482b08f9efa
   - id: enrolled-only-iss-roster
     comparison: iss-roster
     group:
@@ -786,9 +762,9 @@ decisions:
       including students who have since left. Cube's enrollment_status member
       ('Currently Enrolled') can reproduce the dashboard's population. Owner:
       should Cube's default answer include students who left?"
-    fingerprints: &id004
+    fingerprints:
       cube: 05a279a8cb663f428e03a5f8fb1ae8a25895615ce7a48843647b85302cd16254
-      dashboard: 82089139912ac9d97a6b46bc4f53238f437c6a76476c3bc6e457ca47f4c6097f
+      dashboard: 9214a20d894d582dd71d27eedcdbceca85ac5bb07e747a15c6aa5c3d465e7a25
   - id: enrolled-only-oss-roster
     comparison: oss-roster
     group:
@@ -802,9 +778,9 @@ decisions:
       including students who have since left. Cube's enrollment_status member
       ('Currently Enrolled') can reproduce the dashboard's population. Owner:
       should Cube's default answer include students who left?"
-    fingerprints: &id005
+    fingerprints:
       cube: e44b91d9e00ff93759ece369188e8ebfa6ba0fe6e00100aec66422341fe65a9a
-      dashboard: 6f8b560cb082bb787e4dfe3f5b38ad6a856f71889a48994f5944d67537c28dd5
+      dashboard: 4562a6a191eaea595f3dc5055c3e821b62f7a85d1f4cea5a038d06889e1e61b0
   - id: enrolled-only-present-roster
     comparison: present-roster
     group:
@@ -820,7 +796,7 @@ decisions:
       should Cube's default answer include students who left?"
     fingerprints:
       cube: 42e4dbce03b91a8c495f42a8306c9c2f268cb6ef2a4d617d92e6717de3e8636e
-      dashboard: 163280f7a5be605d1e137a38c4d684b001e4898a574527c4734074fa79ab34e4
+      dashboard: a5f0c8649d5948323a342453140550364007c9449d373bd613c330dfbce0c130
   - id: enrolled-only-membership-roster
     comparison: membership-roster
     group:
@@ -836,7 +812,7 @@ decisions:
       should Cube's default answer include students who left?"
     fingerprints:
       cube: 3a896bc17ece1e0a2201d2450b10578663cceba5d57af2fe74d548fc700c192a
-      dashboard: 6801dcd7b42561cdcec7b3effb018e23d68d5bbf321fd56e738340bb9ebda22b
+      dashboard: 225dd0049a0474679890951ad1bdf61b5680696816665e92f7888263c6ceb2e9
   - id: enrolled-only-absent-weighted-roster
     comparison: absent-weighted-roster
     group:
@@ -850,9 +826,9 @@ decisions:
       including students who have since left. Cube's enrollment_status member
       ('Currently Enrolled') can reproduce the dashboard's population. Owner:
       should Cube's default answer include students who left?"
-    fingerprints: &id006
+    fingerprints:
       cube: 55d374bf2b79839da5b5f5bda355947b547edb059fb5b75f30d56150a8a17dab
-      dashboard: 9a1cc04481e96f8df7ccbdc529bdac6d06814dafa5a780d2668329a5d0426a12
+      dashboard: 2887fc51c00befe6e3764f7f352cbb071b8be2d84bc4b41f4b29d794e7aefb3d
   - id: enrolled-only-days-to-90-roster
     comparison: days-to-90-roster
     group:
@@ -868,22 +844,23 @@ decisions:
       should Cube's default answer include students who left?"
     fingerprints:
       cube: 46fcb8830f0bf480e1eeacc896ab5d09e279c8857858ad056fdaaf1ef0cbd041
-      dashboard: 033dcb78a11efb70cfc034c024161b1b6a133fab8dde22aeb8d4ea8d4ea4a8db
-  - id: students-no-attendance-newark
+      dashboard: 854506303661a3c5f377629eb537e45abc5a9f908d35a30c828ed7100e52eaa6
+  - id: students-no-attendance
     comparison: students-y1-region
     group:
       column: regions_region_name
       values:
+        - Camden
         - Newark
     call: domain_owner
     reason:
-      "Some Newark students have membership days with no recorded attendance.
-      Cube's count_students (membership days only) counts them; the dashboard
-      keeps only rows with an attendance value. Owner: should a student with no
+      "Some students have membership days with no recorded attendance. Cube's
+      count_students (membership days only) counts them; the dashboard keeps
+      only rows with an attendance value. Owner: should a student with no
       recorded attendance count?"
     fingerprints:
       cube: 944ce9db7b614f965d6d69a840556fc32cfdf57ba239be16120934786e7d8cc2
-      dashboard: 6f4279c80023a662974e25377bcfb37ac984081f235fa5965b3a723d12084fc8
+      dashboard: f1e7cdd58f63fa415d3e46c2c218f9e2165db906c13fef0100f0b04ceb5ec630
   - id: cells-ontime-grade-rollup
     comparison: ontime-grade-rollup
     cells: true
@@ -895,7 +872,9 @@ decisions:
       counts the Tardy code group (ET, T, T10, TLE), Cube counts is_tardy (codes
       starting with T). Owner: which tardy definition is right, and what should
       Miami show?"
-    fingerprints: *id001
+    fingerprints:
+      cube: 9b783dc6e78fea16ae95d26a5823109f678476c08e9bcc13809ef20315522fc0
+      dashboard: 6433b09780b0879964cf1069e545c078b10d59702f7c5685232504ef4dacc411
   - id: cells-tardy-roster
     comparison: tardy-roster
     cells: true
@@ -906,7 +885,9 @@ decisions:
       Miami, Cube is blank where the dashboard shows 0: Miami has no tardy flag
       (is_tardy is null on every Miami row this year). Owner: which definition
       is right, and should Miami tardies read 0 or blank?"
-    fingerprints: *id002
+    fingerprints:
+      cube: c12f91760fa240318864ede54ae1425472fc664d2f92ffb936c2e6bda0e46e14
+      dashboard: 7f1a13b7edfbbc2702c2fa8393c667c63699c45778a82b9b322e4145ade25e9d
   - id: cells-absences-roster
     comparison: absences-roster
     cells: true
@@ -918,7 +899,9 @@ decisions:
       Miami, whose codes the workbook's group does not list. 22 cells where Cube
       has a value and the dashboard is blank are not yet explained. Owner: which
       absence count is right?"
-    fingerprints: *id003
+    fingerprints:
+      cube: 4fefd46148164fd28b01fb88743871248ac1a4b8ae26e9094ddd40c8d6aec42b
+      dashboard: 87df907d2c5a159e5cafac72cf1e55ef87b292a42f80c6a164d6b482b08f9efa
   - id: cells-iss-roster
     comparison: iss-roster
     cells: true
@@ -927,7 +910,9 @@ decisions:
       "Every difference is Miami: Cube is blank where the dashboard shows 0,
       because is_iss is null on Miami rows. Owner: should Miami ISS days read 0,
       or should the Miami flag be filled in?"
-    fingerprints: *id004
+    fingerprints:
+      cube: 05a279a8cb663f428e03a5f8fb1ae8a25895615ce7a48843647b85302cd16254
+      dashboard: 9214a20d894d582dd71d27eedcdbceca85ac5bb07e747a15c6aa5c3d465e7a25
   - id: cells-oss-roster
     comparison: oss-roster
     cells: true
@@ -938,7 +923,9 @@ decisions:
       where the dashboard shows 0, and misses the Miami students the dashboard
       counts with OSS days. Owner: does SHI count as OSS, and should the Miami
       flag be filled in?"
-    fingerprints: *id005
+    fingerprints:
+      cube: e44b91d9e00ff93759ece369188e8ebfa6ba0fe6e00100aec66422341fe65a9a
+      dashboard: 4562a6a191eaea595f3dc5055c3e821b62f7a85d1f4cea5a038d06889e1e61b0
   - id: cells-absent-weighted-roster
     comparison: absent-weighted-roster
     cells: true
@@ -948,7 +935,9 @@ decisions:
       is blank there because its formula adds is_tardy, which is null in Miami;
       Cube treats a missing tardy as 0 and returns a value. Owner: should Miami
       show weighted absences, and is the field meant for high school only?"
-    fingerprints: *id006
+    fingerprints:
+      cube: 55d374bf2b79839da5b5f5bda355947b547edb059fb5b75f30d56150a8a17dab
+      dashboard: 2887fc51c00befe6e3764f7f352cbb071b8be2d84bc4b41f4b29d794e7aefb3d
   - id: missing-cut-lastfirst
     missing_cut: Lastfirst
     call: domain_owner
@@ -959,27 +948,27 @@ decisions:
   - id: missing-cut-teacher-name
     missing_cut: Teacher Name
     call: domain_owner
-    reason: >-
-      The Roster splits and filters students by homeroom (team, homeroom
+    reason:
+      "The Roster splits and filters students by homeroom (team, homeroom
       teacher, homeroom number). Cube's views have the homeroom teacher's name
       only, with no team or homeroom number. Owner: must Cube answer per
-      homeroom, and by which of these?
+      homeroom, and by which of these?"
   - id: missing-cut-team
     missing_cut: Team
     call: domain_owner
-    reason: >-
-      The Roster splits and filters students by homeroom (team, homeroom
+    reason:
+      "The Roster splits and filters students by homeroom (team, homeroom
       teacher, homeroom number). Cube's views have the homeroom teacher's name
       only, with no team or homeroom number. Owner: must Cube answer per
-      homeroom, and by which of these?
+      homeroom, and by which of these?"
   - id: missing-filter-c-504-status
     missing_filter: C 504 Status
     call: domain_owner
-    reason: >-
-      The dashboard can filter by student fields Cube's attendance views do not
+    reason:
+      "The dashboard can filter by student fields Cube's attendance views do not
       carry: 504 status, counseling services, NJ overall student tier,
       self-contained classroom and middle school attended. Owner: which of these
-      should Cube carry?
+      should Cube carry?"
   - id: missing-filter-enroll-status
     missing_filter: Enroll Status
     call: domain_owner
@@ -1003,11 +992,11 @@ decisions:
   - id: missing-filter-homeroom
     missing_filter: Homeroom
     call: domain_owner
-    reason: >-
-      The Roster splits and filters students by homeroom (team, homeroom
+    reason:
+      "The Roster splits and filters students by homeroom (team, homeroom
       teacher, homeroom number). Cube's views have the homeroom teacher's name
       only, with no team or homeroom number. Owner: must Cube answer per
-      homeroom, and by which of these?
+      homeroom, and by which of these?"
   - id: missing-filter-iep-status
     missing_filter: Iep Status
     call: domain_owner
@@ -1017,11 +1006,11 @@ decisions:
   - id: missing-filter-is-counselingservices
     missing_filter: Is Counselingservices
     call: domain_owner
-    reason: >-
-      The dashboard can filter by student fields Cube's attendance views do not
+    reason:
+      "The dashboard can filter by student fields Cube's attendance views do not
       carry: 504 status, counseling services, NJ overall student tier,
       self-contained classroom and middle school attended. Owner: which of these
-      should Cube carry?
+      should Cube carry?"
   - id: missing-filter-is-truant-current
     missing_filter: Is Truant Current
     call: domain_owner
@@ -1031,11 +1020,11 @@ decisions:
   - id: missing-filter-nj-overall-student-tier
     missing_filter: NJ Overall Student Tier
     call: domain_owner
-    reason: >-
-      The dashboard can filter by student fields Cube's attendance views do not
+    reason:
+      "The dashboard can filter by student fields Cube's attendance views do not
       carry: 504 status, counseling services, NJ overall student tier,
       self-contained classroom and middle school attended. Owner: which of these
-      should Cube carry?
+      should Cube carry?"
   - id: missing-filter-region-filter
     missing_filter: Region [Filter]
     call: domain_owner
@@ -1072,43 +1061,46 @@ decisions:
   - id: missing-filter-is-self-contained
     missing_filter: is_self_contained
     call: domain_owner
-    reason: >-
-      The dashboard can filter by student fields Cube's attendance views do not
+    reason:
+      "The dashboard can filter by student fields Cube's attendance views do not
       carry: 504 status, counseling services, NJ overall student tier,
       self-contained classroom and middle school attended. Owner: which of these
-      should Cube carry?
+      should Cube carry?"
   - id: missing-filter-ms-attended
     missing_filter: ms_attended
     call: domain_owner
-    reason: >-
-      The dashboard can filter by student fields Cube's attendance views do not
+    reason:
+      "The dashboard can filter by student fields Cube's attendance views do not
       carry: 504 status, counseling services, NJ overall student tier,
       self-contained classroom and middle school attended. Owner: which of these
-      should Cube carry?
+      should Cube carry?"
   - id: out-of-district-ada-board-yoy
     comparison: ada-board-yoy
-    group: { column: dashboard_filter, values: [school_level] }
+    group:
+      column: dashboard_filter
+      values:
+        - school_level
     call: domain_owner
-    reason: >-
-      Board YOY leaves out out-of-district students (school level OD) through
+    reason:
+      "Board YOY leaves out out-of-district students (school level OD) through
       its School Level - OOD filter set, and Cube's ADA counts them, so Newark's
       AY2026 ADA reads 1 unit lower in Cube at 3 decimals. Owner: should Cube's
-      ADA include out-of-district students?
+      ADA include out-of-district students?"
     fingerprints:
       cube: e8f934d0d814e804cda85cbfa4146fb97e3cd6c0624edebec11a33bf6c8f2da4
-      dashboard: 91065d156d3e3db45df81667746d85727d9255ce54fa1e977b78e73868d89db3
+      dashboard: 89a24e57eb1a8098c4247f855c9a72e62fb92d870c18ea215f6a3f2011acd3e2
   - id: cells-ada-board-yoy
     comparison: ada-board-yoy
     cells: true
     call: domain_owner
-    reason: >-
-      Board YOY leaves out out-of-district students (school level OD) through
+    reason:
+      "Board YOY leaves out out-of-district students (school level OD) through
       its School Level - OOD filter set, and Cube's ADA counts them, so Newark's
       AY2026 ADA reads 1 unit lower in Cube at 3 decimals. Owner: should Cube's
-      ADA include out-of-district students?
+      ADA include out-of-district students?"
     fingerprints:
       cube: e8f934d0d814e804cda85cbfa4146fb97e3cd6c0624edebec11a33bf6c8f2da4
-      dashboard: 91065d156d3e3db45df81667746d85727d9255ce54fa1e977b78e73868d89db3
+      dashboard: 89a24e57eb1a8098c4247f855c9a72e62fb92d870c18ea215f6a3f2011acd3e2
   - id: missing-filter-grouping
     missing_filter: Grouping
     call: domain_owner
@@ -1117,3 +1109,15 @@ decisions:
       grade, school level, ethnicity, sex and IEP status through a parameter;
       Cube offers each of those as its own dimension. Owner: confirm no single
       Grouping member is needed."
+  - id: cells-students-y1-region
+    comparison: students-y1-region
+    cells: true
+    call: domain_owner
+    reason:
+      "Some students have membership days with no recorded attendance. Cube's
+      count_students (membership days only) counts them; the dashboard keeps
+      only rows with an attendance value. Owner: should a student with no
+      recorded attendance count?"
+    fingerprints:
+      cube: 944ce9db7b614f965d6d69a840556fc32cfdf57ba239be16120934786e7d8cc2
+      dashboard: f1e7cdd58f63fa415d3e46c2c218f9e2165db906c13fef0100f0b04ceb5ec630

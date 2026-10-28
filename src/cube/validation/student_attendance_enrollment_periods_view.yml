@@ -4,10 +4,11 @@ view: student_attendance_enrollment_periods_view
 fact: kipptaf_marts.fct_student_attendance_enrollment_periods
 shared:
   # Chronic absence and truancy show only as values of the "Attendance Metric"
-  # parameter on the Y1 ADA sheets, so every cut sets it. No rows block: the
-  # dashboard's rows are student-days, Cube's are student-periods.
+  # parameter on the Y1 ADA sheets, so each comparison sets it under
+  # parameters. No rows block: the dashboard's rows are student-days, Cube's
+  # are student-periods.
   y1_region: &y1_region
-    confirmed: false
+    confirmed: true
     workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
     sheet: Y1 ADA - Region
     sheet_field: Avg. Attendance Metric
@@ -23,6 +24,7 @@ shared:
       Lep Status: { dashboard: lep_status, cube: is_ell }
       Term: { dashboard: term, cube: terms_term_name }
     defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
+    cuts: [{}, { Region: Miami }]
     # Each year's period-end row, as of the student's last membership day.
     scope:
       - { cube: period_type, values: [year] }
@@ -30,9 +32,7 @@ comparisons:
   - id: chronic-y1-region
     <<: *y1_region
     measure: pct_chronically_absent
-    cuts:
-      - { Attendance Metric: Chronic Absenteeism }
-      - { Attendance Metric: Chronic Absenteeism, Region: Miami }
+    parameters: { Attendance Metric: Chronic Absenteeism }
     # The workbook's Is Chronic Absentee: running ADA on each student's last
     # day in the cell at or below 0.9, students transferred out (enroll_status
     # 2) in the current year left out. 2026 is the workbook's "Academic Year
@@ -49,13 +49,42 @@ comparisons:
       cube: >-
         ada_tier Tier 3 or 4 at the year's period end (at or below 90.0% on
         exact day counts); every student-school with recorded attendance
-    proof: null
+    proof:
+      fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
+      cells: 45
+      proven_at: "2026-10-28T13:57:05.946497+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      probe_fingerprint: eea90a028dd7db899ebada655888df104aed29c3c27045227feae977473d7a5e
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 29
+      parameters:
+        Attendance Metric: Chronic Absenteeism
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Calendardate
+        - Enroll Status
+        - Ethnicity
+        - Iep Status
+        - Is Counselingservices
+        - NJ Overall Student Tier
+        - Region [Filter]
+        - School
+        - School Level
+        - Schoolid
+        - is_self_contained
+        - ms_attended
+      restricting_filters:
+        - Iep Status
+        - Region [Filter]
+        - School Level
+        - is_self_contained
   - id: truant-y1-region
     <<: *y1_region
     measure: pct_truant
-    cuts:
-      - { Attendance Metric: Truant/On Track for Truancy }
-      - { Attendance Metric: Truant/On Track for Truancy, Region: Miami }
+    parameters: { Attendance Metric: Truant/On Track for Truancy }
     # The workbook's % Truant: a FIXED per-student value (is_truant on the
     # latest date in the data, enrolled students only) that the sheet then
     # averages over every student-day in the cell.
@@ -73,4 +102,161 @@ comparisons:
       cube: >-
         is_truant at each student's year period end, as a share of students with
         recorded attendance
-    proof: null
+    proof:
+      fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
+      cells: 45
+      proven_at: "2026-10-28T13:57:54.731478+00:00"
+      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      probe_fingerprint: 8f8f46da3f235f84ea37c494d8d44860520ed22752e2e9db17a5fa7ea29a7e70
+      cuts:
+        - "{}"
+        - '{"Region": "Miami"}'
+      totals_skipped: 29
+      parameters:
+        Attendance Metric: Truant/On Track for Truancy
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Calendardate
+        - Enroll Status
+        - Ethnicity
+        - Iep Status
+        - Is Counselingservices
+        - NJ Overall Student Tier
+        - Region [Filter]
+        - School
+        - School Level
+        - Schoolid
+        - is_self_contained
+        - ms_attended
+      restricting_filters:
+        - Iep Status
+        - Region [Filter]
+        - School Level
+        - is_self_contained
+# Every call is domain_owner, with the same reason as the daily view's
+# decision wherever the question is the same.
+decisions:
+  - id: cells-chronic-y1-region
+    comparison: chronic-y1-region
+    cells: true
+    call: domain_owner
+    reason:
+      "Cube's chronic absence rate is higher in 41 of 45 region-grade cells,
+      Miami by the most. The dashboard leaves out students who transferred out
+      this year and tests a running average against 0.9; Cube counts every
+      student-school with recorded attendance and sets the tier on exact day
+      counts. Owner: should students who transferred out count toward chronic
+      absence?"
+    fingerprints:
+      cube: e08025a9175eb8be381eca959290a9d9314f1e50c54858b55239150eba3d0ca2
+      dashboard: fc9add6f1cae89347619a4674639c0743ebe364d099539a84695a5434cf6e440
+  - id: cells-truant-y1-region
+    comparison: truant-y1-region
+    cells: true
+    call: domain_owner
+    reason:
+      "Truancy differs in 37 of 45 region-grade cells, Cube higher in 30. The
+      dashboard takes each enrolled student's truancy flag on the latest date in
+      the data and averages it over every student-day, so students with more
+      days weigh more; Cube takes the flag at each student's year end as a share
+      of students. Owner: should the truancy rate be a share of students or of
+      student-days, and as of which date?"
+    fingerprints:
+      cube: 62cacfa404be32790dfd1e4304b8cb0e575277b13130262f749dfe3b10e1320e
+      dashboard: 49c69d54ec805a6ebb5856984e909a724f0ed4c5f386690dce1ca1f6bb6f54b9
+  - id: missing-filter-c-504-status
+    missing_filter: C 504 Status
+    call: domain_owner
+    reason:
+      "The dashboard can filter by student fields Cube's attendance views do not
+      carry: 504 status, counseling services, NJ overall student tier,
+      self-contained classroom and middle school attended. Owner: which of these
+      should Cube carry?"
+  - id: missing-filter-calendardate
+    missing_filter: Calendardate
+    call: domain_owner
+    reason:
+      "The Y1 ADA sheets can be limited to a date range; Cube's periods view
+      answers as of each period's end, and a date range belongs on the daily
+      view's attendance_date. Owner: confirm the year-end figure is the one the
+      dashboard means."
+  - id: missing-filter-enroll-status
+    missing_filter: Enroll Status
+    call: domain_owner
+    reason:
+      Cube has enrollment_status as text ('Currently Enrolled') where the
+      dashboard uses enroll_status = 0, so the validator cannot pair them. The
+      question is in the enroll_status decisions.
+  - id: missing-filter-ethnicity
+    missing_filter: Ethnicity
+    call: domain_owner
+    reason:
+      "Cube has race, with labels where the dashboard uses letter codes (A, B, H
+      and so on). Owner: are these the same field, and which coding should Cube
+      use?"
+  - id: missing-filter-iep-status
+    missing_filter: Iep Status
+    call: domain_owner
+    reason:
+      "Cube has is_iep (yes or no) where the dashboard has No IEP, SPED and SPED
+      SPEECH. Owner: does SPED SPEECH count as an IEP in Cube?"
+  - id: missing-filter-is-counselingservices
+    missing_filter: Is Counselingservices
+    call: domain_owner
+    reason:
+      "The dashboard can filter by student fields Cube's attendance views do not
+      carry: 504 status, counseling services, NJ overall student tier,
+      self-contained classroom and middle school attended. Owner: which of these
+      should Cube carry?"
+  - id: missing-filter-nj-overall-student-tier
+    missing_filter: NJ Overall Student Tier
+    call: domain_owner
+    reason:
+      "The dashboard can filter by student fields Cube's attendance views do not
+      carry: 504 status, counseling services, NJ overall student tier,
+      self-contained classroom and middle school attended. Owner: which of these
+      should Cube carry?"
+  - id: missing-filter-region-filter
+    missing_filter: Region [Filter]
+    call: domain_owner
+    reason:
+      "A second region filter on Y1 ADA - Region; Cube has regions_region_name,
+      already paired with the Region filter. Owner: confirm this one adds
+      nothing."
+  - id: missing-filter-school
+    missing_filter: School
+    call: domain_owner
+    reason:
+      "The workbook has 2 fields captioned School (school and
+      school_abbreviation); Cube has locations_abbreviation and
+      locations_location_name. Owner: which school field the dashboard means."
+  - id: missing-filter-school-level
+    missing_filter: School Level
+    call: domain_owner
+    reason:
+      "The dashboard's school_level has ES, HS, MS and OD; Cube's
+      locations_grade_band has ES, HS, MS only. Owner: what is OD, and does Cube
+      need it?"
+  - id: missing-filter-schoolid
+    missing_filter: Schoolid
+    call: domain_owner
+    reason:
+      "Cube identifies schools by abbreviation and name, not PowerSchool
+      schoolid. Owner: confirm that is enough."
+  - id: missing-filter-is-self-contained
+    missing_filter: is_self_contained
+    call: domain_owner
+    reason:
+      "The dashboard can filter by student fields Cube's attendance views do not
+      carry: 504 status, counseling services, NJ overall student tier,
+      self-contained classroom and middle school attended. Owner: which of these
+      should Cube carry?"
+  - id: missing-filter-ms-attended
+    missing_filter: ms_attended
+    call: domain_owner
+    reason:
+      "The dashboard can filter by student fields Cube's attendance views do not
+      carry: 504 status, counseling services, NJ overall student tier,
+      self-contained classroom and middle school attended. Owner: which of these
+      should Cube carry?"
