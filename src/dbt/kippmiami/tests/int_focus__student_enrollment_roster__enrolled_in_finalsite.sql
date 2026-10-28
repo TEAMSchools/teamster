@@ -3,11 +3,11 @@ with
         select
             cast(ida.focus_student_id_prefixed as int64) as student_number,
 
-            string_agg(distinct c.status, ', ') as finalsite_statuses,
+            string_agg(distinct c.status, ', ' order by c.status) as finalsite_statuses,
 
             logical_or(c.status = 'enrolled') as is_enrolled_in_finalsite,
         from {{ ref("int_finalsite__contact_id_attributes") }} as ida
-        left join
+        inner join
             {{ ref("stg_finalsite__contacts") }} as c
             on ida.finalsite_enrollment_id = c.finalsite_enrollment_id
         where ida.focus_student_id_prefixed is not null

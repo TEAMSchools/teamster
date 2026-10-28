@@ -4,17 +4,19 @@ data_tests:
       A Miami student with an active current-year Focus enrollment whose
       Finalsite record is not enrolled, or who has no Finalsite record. The
       student email generator (stg_people__student_logins) and the Focus
-      demographics extract (rpt_focus__demographics) both mint only from
-      Finalsite records with status enrolled, so such a student gets no school
-      email and no demographics row, and nothing else reports it. Active means
-      the student's latest stint this year has not ended, is not a no-show
-      (start date equals exit date), and is not a pre-year withdrawal. Which
-      system is wrong differs per student, and a registrar decides. Either the
-      student withdrew and Focus never closed the enrollment (close it in
-      Focus), or the student enrolled and Finalsite never advanced the record
-      (set it to enrolled in Finalsite, and the email is created on the next
-      run). finalsite_statuses lists the student's current Finalsite statuses
-      and is null when no Finalsite record carries the Focus id.
+      demographics extract (rpt_focus__demographics) both read only Finalsite
+      records with status enrolled. A flagged student who has no login yet gets
+      no school email, and a flagged student new to Focus gets no demographics
+      import. A returning student keeps the email and Focus record already
+      created, but the two systems still disagree. Active means the student's
+      latest stint this year has not ended, is not a no-show (start date equals
+      exit date), and is not a pre-year withdrawal. Which system is wrong
+      differs per student, and a registrar decides. Either the student withdrew
+      and Focus never closed the enrollment (close it in Focus), or the student
+      enrolled and Finalsite never advanced the record (set it to enrolled in
+      Finalsite, and the email is created on the next run). finalsite_statuses
+      lists the student's current Finalsite statuses and is null when no
+      Finalsite record carries the Focus id.
     config:
       meta:
         dagster:
