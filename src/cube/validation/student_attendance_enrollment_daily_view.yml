@@ -866,12 +866,12 @@ decisions:
     cells: true
     call: domain_owner
     reason:
-      "Cube's pct_ontime is blank for every Miami grade, where the dashboard
-      shows 100%: Miami has no tardy flag (is_tardy is null on every Miami row
-      this year). Elsewhere 3 grades differ at the third decimal: the dashboard
-      counts the Tardy code group (ET, T, T10, TLE), Cube counts is_tardy (codes
-      starting with T). Owner: which tardy definition is right, and what should
-      Miami show?"
+      "Outside Miami, the dashboard counts the Tardy code group (ET, T, T10,
+      TLE) and Cube counts codes starting with T, which adds TD and TE (the
+      workbook files TE under Excused) and leaves out ET. That moves tardy days
+      for 58 students and the on-time rate in a few grades. Miami's blank tardy
+      and on-time values are #4927: null on purpose until Focus period tardies
+      are sourced. Owner: which codes count as tardy?"
     fingerprints:
       cube: 9b783dc6e78fea16ae95d26a5823109f678476c08e9bcc13809ef20315522fc0
       dashboard: 6433b09780b0879964cf1069e545c078b10d59702f7c5685232504ef4dacc411
@@ -880,11 +880,12 @@ decisions:
     cells: true
     call: domain_owner
     reason:
-      "58 students differ by the tardy code list: the dashboard counts ET, T,
-      T10, TLE; Cube counts codes starting with T (adds TD and TE, omits ET). In
-      Miami, Cube is blank where the dashboard shows 0: Miami has no tardy flag
-      (is_tardy is null on every Miami row this year). Owner: which definition
-      is right, and should Miami tardies read 0 or blank?"
+      "Outside Miami, the dashboard counts the Tardy code group (ET, T, T10,
+      TLE) and Cube counts codes starting with T, which adds TD and TE (the
+      workbook files TE under Excused) and leaves out ET. That moves tardy days
+      for 58 students and the on-time rate in a few grades. Miami's blank tardy
+      and on-time values are #4927: null on purpose until Focus period tardies
+      are sourced. Owner: which codes count as tardy?"
     fingerprints:
       cube: c12f91760fa240318864ede54ae1425472fc664d2f92ffb936c2e6bda0e46e14
       dashboard: 7f1a13b7edfbbc2702c2fa8393c667c63699c45778a82b9b322e4145ade25e9d
@@ -905,11 +906,11 @@ decisions:
   - id: cells-iss-roster
     comparison: iss-roster
     cells: true
-    call: domain_owner
+    call: deliberate
     reason:
-      "Every difference is Miami: Cube is blank where the dashboard shows 0,
-      because is_iss is null on Miami rows. Owner: should Miami ISS days read 0,
-      or should the Miami flag be filled in?"
+      Every difference is Miami, whose suspension flags are null on purpose
+      until they are sourced (#4927); count_iss_days documents that Miami
+      returns null, not zero. Outside Miami, Cube and the dashboard match.
     fingerprints:
       cube: 05a279a8cb663f428e03a5f8fb1ae8a25895615ce7a48843647b85302cd16254
       dashboard: 9214a20d894d582dd71d27eedcdbceca85ac5bb07e747a15c6aa5c3d465e7a25
@@ -918,23 +919,22 @@ decisions:
     cells: true
     call: domain_owner
     reason:
-      "5 students outside Miami differ: Cube's is_oss adds SHI to the
-      dashboard's OS, OSS, OSSP. In Miami, is_oss is null, so Cube is blank
-      where the dashboard shows 0, and misses the Miami students the dashboard
-      counts with OSS days. Owner: does SHI count as OSS, and should the Miami
-      flag be filled in?"
+      "Outside Miami, 5 students differ because Cube's is_oss adds SHI to the
+      dashboard's OS, OSS, OSSP. Miami's blank values are #4927: suspension
+      flags null on purpose until they are sourced. Owner: does SHI count as
+      out-of-school suspension?"
     fingerprints:
       cube: e44b91d9e00ff93759ece369188e8ebfa6ba0fe6e00100aec66422341fe65a9a
       dashboard: 4562a6a191eaea595f3dc5055c3e821b62f7a85d1f4cea5a038d06889e1e61b0
   - id: cells-absent-weighted-roster
     comparison: absent-weighted-roster
     cells: true
-    call: domain_owner
+    call: deliberate
     reason:
-      "Every difference is Miami: the dashboard field (# Absent Weighted (HS))
-      is blank there because its formula adds is_tardy, which is null in Miami;
-      Cube treats a missing tardy as 0 and returns a value. Owner: should Miami
-      show weighted absences, and is the field meant for high school only?"
+      Every difference is Miami, whose tardy flag is null on purpose until Focus
+      period tardies are sourced (#4927). Cube counts Miami absences alone, as
+      count_absent_days_weighted documents; the dashboard's formula adds the
+      null tardy flag and shows blank.
     fingerprints:
       cube: 55d374bf2b79839da5b5f5bda355947b547edb059fb5b75f30d56150a8a17dab
       dashboard: 2887fc51c00befe6e3764f7f352cbb071b8be2d84bc4b41f4b29d794e7aefb3d
