@@ -574,6 +574,33 @@ def definition_text(text: str) -> str:
     return _safe_reason(text, [])
 
 
+def _dashboard_location(check: dict) -> str:
+    """Where to read a hand check's dashboard number: its sheet and filters.
+
+    Filter values are shown like the cut, which already carries them.
+    """
+    sheet = check.get("sheet")
+    where = f"sheet `{_clean(sheet)}`" if sheet else ""
+    if sheet and check.get("workbook"):
+        where += f" in `{_clean(check['workbook'])}`"
+    filters = check.get("filters") or {}
+    settings = "; ".join(
+        f"`{_clean(caption)}` = "
+        + ", ".join(
+            f"`{_clean(str(v))}`"
+            for v in (value if isinstance(value, list) else [value])
+        )
+        for caption, value in filters.items()
+    )
+    if settings:
+        todo = f"set {settings}"
+    else:
+        todo = "leave its filters as they are" if where else ""
+    if not where and not todo:
+        return "On the dashboard: leave the sheet's filters as they are."
+    return f"On the dashboard: {', '.join(p for p in (where, todo) if p)}."
+
+
 def _hand_check_lines(question_id: str, check: dict) -> list[str]:
     """One question's hand check: what to expect, then the pinned SQL folded."""
     where = f"{question_id}, `{check['comparison']}` in `{check['view']}`"
@@ -594,6 +621,8 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
         line += f"The pinned SQL works until {check['expires']}."
     return [
         line,
+        "",
+        _dashboard_location(check),
         "",
         "<details>",
         f"<summary>BigQuery SQL for each side (dry run: dashboard "

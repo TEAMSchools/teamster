@@ -16,9 +16,10 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from typing import Any
 
 from .config import _TASK, CALLS, Decision, ViewConfig
 from .cube_client import _literal
@@ -55,6 +56,11 @@ class HandCheck:
     cube_usd: float
     expires: datetime
     expired: bool
+    # Where the owner reads the dashboard's number: the comparison's sheet, and
+    # every filter to set there (the defaults with the cut's own values).
+    workbook: str | None = None
+    sheet: str | None = None
+    filters: dict[str, Any] = field(default_factory=dict)
 
 
 def example_cell(run: RunResult, comparison: str) -> dict | None:
@@ -144,6 +150,11 @@ def hand_check(
     cube_pairs = [(member, value) for member, value in cell["dims"]]
     dash_pairs = [(names[member], value) for member, value in cell["dims"]]
     expires = run.moment.start + timedelta(days=TIME_TRAVEL_DAYS)
+    # The cut is `pipeline.cut_label` JSON; the round trip writes a YAML date
+    # default as the text the issue's JSON block can carry.
+    filters = json.loads(
+        json.dumps({**cmp.defaults, **json.loads(cell["cut"])}, default=str)
+    )
     return HandCheck(
         comparison=comparison,
         cut=cell["cut"],
@@ -156,6 +167,9 @@ def hand_check(
         cube_usd=usd[1],
         expires=expires,
         expired=now >= expires,
+        workbook=cmp.workbook,
+        sheet=cmp.sheet,
+        filters=filters,
     )
 
 
@@ -322,10 +336,17 @@ class Answer:
     task: str = ""
 
 
-_JSON_BLOCK = re.compile(r"^```json[ \t]*\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
-# Dates and school years (`2023-24`) are removed before the checks, so an
-# owner may cite them.
-_CITED_DATES = (re.compile(r"\d{4}-\d{2}-\d{2}"), re.compile(r"\b\d{4}-\d{2}\b"))
+# A fence may be indented, as under a list item.
+_JSON_BLOCK = re.compile(
+    r"^[ \t]*```json[ \t]*\n(.*?)^[ \t]*```[ \t]*$", re.MULTILINE | re.DOTALL
+)
+# Dates and school years (`2023-24`, `2023-2024`) are removed before the
+# checks, so an owner may cite them.
+_CITED_DATES = (
+    re.compile(r"\d{4}-\d{2}-\d{2}"),
+    re.compile(r"\b\d{4}-\d{4}\b"),
+    re.compile(r"\b\d{4}-\d{2}\b"),
+)
 # What a note cannot carry into a committed reason, as (what, pattern, the
 # fewest digits a match must hold). An ID or phone number refuses; a rate,
 # a grade list or a count of a few digits does not. A person's name cannot be

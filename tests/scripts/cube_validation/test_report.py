@@ -3,14 +3,25 @@ import json
 import re
 from datetime import datetime, timezone
 
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.answers import questions_json
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.checks import Finding
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Gap, Group
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, Decision, ViewConfig
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.decisions import Applied
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import (
     MeasureResult,
     RunResult,
@@ -750,7 +761,7 @@ def test_review_issue_ends_with_fenced_json_in_details():
         diff_cells=[
             {
                 "comparison": "enrollment",
-                "cut": "All",
+                "cut": "{}",
                 "key": "a",
                 "dims": [["regions_region_name", "Newark"]],
                 "dashboard": 40.0,
@@ -758,8 +769,8 @@ def test_review_issue_ends_with_fenced_json_in_details():
                 "n_students": 40,
             }
         ],
-        cell_sql={"enrollment": {"All": ["SELECT 'dash' AS d", "SELECT 'cube' AS c"]}},
-        cell_sql_usd={"enrollment": {"All": [0.01, 0.02]}},
+        cell_sql={"enrollment": {"{}": ["SELECT 'dash' AS d", "SELECT 'cube' AS c"]}},
+        cell_sql_usd={"enrollment": {"{}": [0.01, 0.02]}},
     )
     cfg = ViewConfig(
         view="enrollment_view",
@@ -789,5 +800,7 @@ def test_review_issue_ends_with_fenced_json_in_details():
         block = markdown[: markdown.index(sql)].rsplit("<details>", 1)[1]
         assert "</details>" not in block and "<summary>" in block
     assert markdown.count("<details>") == 2  # the hand check and For Claude
-    assert "\nQ1, `enrollment` in `enrollment_view`, cut `All`" in markdown
+    assert "\nQ1, `enrollment` in `enrollment_view`, cut `{}`" in markdown
+    # A comparison with no sheet or filters named leaves the sheet as it is.
+    assert "On the dashboard: leave the sheet's filters as they are." in markdown
     assert "- Q1. `region` = `Newark`" in markdown

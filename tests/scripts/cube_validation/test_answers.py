@@ -2,6 +2,8 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.answers import (
     Answer,
     AnswerError,
@@ -13,21 +15,33 @@ from cube_validation.answers import (
     parse_answers,
     questions_json,
 )
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Group
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, Decision, ViewConfig
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.decisions import Applied
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import RunResult, render_review_issue
 
 START = datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc)
 END = datetime(2026, 10, 27, 6, 5, tzinfo=timezone.utc)
 DIMS = [["regions_region_name", "Newark"], ["grade_level", "7"]]
+# A cut's label, as `pipeline.cut_label` writes it.
+CUT = '{"Grade": "7"}'
 
 
-def _cell(key="a", dashboard=10.0, cube=12.0, n=30, dims=DIMS):
+def _cell(key="a", dashboard=10.0, cube=12.0, n: int | None = 30, dims=DIMS):
     return {
         "comparison": "enrollment",
-        "cut": "All",
+        "cut": CUT,
         "key": key,
         "dims": dims,
         "dashboard": dashboard,
@@ -43,8 +57,8 @@ def _run(cells):
         measures=[],
         applied=Applied(),
         diff_cells=cells,
-        cell_sql={"enrollment": {"All": ["SELECT 1 AS d", "SELECT 2 AS c"]}},
-        cell_sql_usd={"enrollment": {"All": [0.01, 0.02]}},
+        cell_sql={"enrollment": {CUT: ["SELECT 1 AS d", "SELECT 2 AS c"]}},
+        cell_sql_usd={"enrollment": {CUT: [0.01, 0.02]}},
     )
 
 
@@ -56,6 +70,9 @@ def _cfg(dashboard_region="regions_region_name"):
             ColumnPair(dashboard_region, "regions_region_name"),
             ColumnPair("grade_level", "grade_level"),
         ],
+        workbook="Attendance",
+        sheet="Enrollment by Region",
+        defaults={"Academic Year": "2026", "Grade": ["6", "7", "8"]},
     )
     return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
 
@@ -104,6 +121,14 @@ def test_hand_check_sql_filters_to_the_example_cell():
     assert check.cube_sql == f"SELECT * FROM (\nSELECT 2 AS c\n) {want}"
     assert (check.dashboard, check.cube) == (10.0, 12.0)
     assert (check.dashboard_usd, check.cube_usd) == (0.01, 0.02)
+
+
+def test_hand_check_names_the_sheet_and_the_filters_to_set():
+    check = hand_check(_run([_cell()]), _cfg(), "enrollment", START)
+
+    assert (check.workbook, check.sheet) == ("Attendance", "Enrollment by Region")
+    # The cut's own values replace the defaults it names.
+    assert check.filters == {"Academic Year": "2026", "Grade": "7"}
 
 
 def test_hand_check_filters_the_dashboard_side_by_its_own_column_names():
@@ -172,7 +197,7 @@ def test_a_total_cell_with_no_dims_is_an_example_and_keeps_the_sql():
 
 def test_a_trailing_comment_cannot_swallow_the_closing_paren():
     run = _run([_cell()])
-    run.cell_sql["enrollment"]["All"] = ["SELECT 1 -- note", "SELECT 2"]
+    run.cell_sql["enrollment"][CUT] = ["SELECT 1 -- note", "SELECT 2"]
 
     check = hand_check(run, _cfg(), "enrollment", START)
 
@@ -261,7 +286,7 @@ def test_questions_json_matches_markdown_questions_one_to_one():
 
     assert [q["id"] for q in questions] == ["Q1", "Q2"]
     assert len(bullets) == len(questions)
-    for q, bullet in zip(questions, bullets):
+    for q, bullet in zip(questions, bullets, strict=True):
         assert bullet.startswith(f"- {q['id']}. ")
         assert all(count in bullet for count in q["counts"])
         assert f"Reason: {q['reason']}" in bullet
@@ -287,6 +312,15 @@ def test_questions_json_matches_markdown_questions_one_to_one():
     assert (check["dashboard"], check["cube"]) == ("10", "12")
     assert check["cube_sql"].endswith("SAFE_CAST(grade_level AS NUMERIC) = 7")
     assert (check["dashboard_usd"], check["cube_usd"]) == (0.01, 0.02)
+    assert (check["workbook"], check["sheet"]) == ("Attendance", "Enrollment by Region")
+    assert check["filters"] == {"Academic Year": "2026", "Grade": "7"}
+    markdown = body.split("<summary>Questions for Claude")[0]
+    location = (
+        "On the dashboard: sheet `Enrollment by Region` in `Attendance`, set "
+        "`Academic Year` = `2026`; `Grade` = `7`."
+    )
+    assert location in markdown
+    assert markdown.index(location) < markdown.index(check["dashboard_sql"])
 
 
 def test_questions_json_hides_what_the_markdown_hides():
@@ -466,6 +500,7 @@ def test_note_refusal_catches_emails_and_digit_runs(note):
         "",
         "grades 9, 10, 11",
         "since SY 2023-24",
+        "since SY 2023-2024",
         "Cube 93.25 vs 93.10",
         "rate 100.0%",
     ],
@@ -532,6 +567,15 @@ def test_approved_decisions_refuse_a_comparison_the_run_has_no_fingerprints_for(
 def test_parse_answers_reads_a_crlf_comment():
     body = _body([{"question": "Q1", "decisions": ["a"], "call": "deliberate",
                    "note": "n"}]).replace("\n", "\r\n")  # fmt: skip
+
+    assert parse_answers(body) == [Answer("Q1", ("a",), "deliberate", "n")]
+
+
+def test_parse_answers_reads_a_block_indented_under_a_list_item():
+    block = json.dumps(
+        [{"question": "Q1", "decisions": ["a"], "call": "deliberate", "note": "n"}]
+    )
+    body = f"- Q1: intended.\n\n  ```json\n  {block}\n  ```\n"
 
     assert parse_answers(body) == [Answer("Q1", ("a",), "deliberate", "n")]
 
