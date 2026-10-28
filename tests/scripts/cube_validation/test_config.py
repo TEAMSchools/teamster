@@ -613,3 +613,12 @@ def test_cells_decision_takes_no_group(tmp_path):
     text = EXAMPLE + CELLS_DECISION + "    group: { column: region, values: [x] }\n"
     with pytest.raises(ConfigError, match="only one of group"):
         load_view_config(_write(tmp_path, text))
+
+
+def test_parameters_load_as_text(tmp_path):
+    text = EXAMPLE.replace(
+        SCOPE_LINE,
+        SCOPE_LINE + "    parameters: { Attendance Metric: Chronic Absenteeism }\n",
+    )
+    first = load_view_config(_write(tmp_path, text)).comparisons[0]
+    assert first.parameters == {"Attendance Metric": "Chronic Absenteeism"}

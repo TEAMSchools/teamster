@@ -1,3 +1,4 @@
+import re
 import xml.etree.ElementTree as ET
 import zipfile
 from datetime import datetime, timedelta, timezone
@@ -594,3 +595,40 @@ def test_csv_bom_is_stripped():
     server = FakeServer(_twb())
     server.csv = b"\xef\xbb\xbfA\r\n1\r\n"
     assert Tableau(server).export("copy-luid", "Rate by Region", {}) == [{"A": "1"}]
+
+
+# --- parameters on the proof copy ----------------------------------------------
+
+PARAM_TWB = (Path(__file__).parent / "fixtures" / "sheet_formats.twb").read_text()
+
+
+def test_set_parameters_sets_the_current_value_and_formula():
+    from cube_validation.tableau import set_parameters
+
+    edited = set_parameters(PARAM_TWB, {"Basis": "Year end"})
+    column = re.search(r"<column[^>]*name='\[Parameter 1\]'[^>]*>", edited)[0]
+    assert "value='&quot;Year end&quot;'" in column
+    assert "formula='&quot;Year end&quot;'" in edited
+    assert edited.count("&quot;Today&quot;") == 1  # only the member list keeps it
+
+
+def test_set_parameters_refuses_a_value_off_the_list():
+    from cube_validation.tableau import set_parameters
+
+    with pytest.raises(ValueError, match="Today, Year end"):
+        set_parameters(PARAM_TWB, {"Basis": "Tomorrow"})
+    with pytest.raises(ValueError, match="no parameter 'Nope'.*Basis"):
+        set_parameters(PARAM_TWB, {"Nope": "x"})
+
+
+def test_sign_out_returns_a_sign_in_error_instead_of_raising():
+    from cube_validation.tableau import Tableau
+    from tableauserverclient.server.endpoint.exceptions import FailedSignInError
+
+    class Server:
+        class auth:  # noqa: N801
+            @staticmethod
+            def sign_out():
+                raise FailedSignInError("401002", "Unauthorized Access", "")
+
+    assert "401002" in (Tableau(Server()).sign_out() or "")

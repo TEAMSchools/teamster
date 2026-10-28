@@ -569,6 +569,8 @@ def probe_fingerprint(cfg: ViewConfig, comparison: Comparison) -> str:
     extras = [f"sheet_field={comparison.sheet_field}"] if comparison.sheet_field else []
     if comparison.split_rows != "refuse":
         extras.append(f"split_rows={comparison.split_rows}")
+    if comparison.parameters:
+        extras.append(f"parameters={json.dumps(comparison.parameters, sort_keys=True)}")
     if not extras:
         return base
     return hashlib.sha256("\n".join([base, *extras]).encode()).hexdigest()
@@ -1560,17 +1562,28 @@ def _capture(
     if not exportable:
         raise Refusal(f"comparison {comparison.id!r} has no cut a REST export can take")
     captures = {} if captures is None else captures
-    key = (workbook, sheet, tuple(cut_label(cut) for cut in exportable))
+    parameters = comparison.parameters
+    if parameters:
+        try:
+            tableau.set_parameters(twb, parameters)
+        except ValueError as exc:
+            raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
+
+    def edit(x: str) -> str:
+        x = tableau.expose_sheet(tableau.drop_number_formats(x, measures), sheet)
+        # A field shown only behind a parameter value exports once the copy
+        # carries that value.
+        return tableau.set_parameters(x, parameters) if parameters else x
+
+    key = (
+        workbook,
+        sheet,
+        tuple(cut_label(cut) for cut in exportable),
+        tuple(sorted(parameters.items())),
+    )
     if key not in captures:
         try:
-            captures[key] = tbl.capture(
-                workbook,
-                sheet,
-                exportable,
-                lambda x: tableau.expose_sheet(
-                    tableau.drop_number_formats(x, measures), sheet
-                ),
-            )
+            captures[key] = tbl.capture(workbook, sheet, exportable, edit)
         except (LookupError, tableau.RefreshMovedError) as exc:
             raise Refusal(f"cannot export {sheet!r}: {exc}") from exc
     return twb, columns, exportable, browser, captures[key]
@@ -1694,6 +1707,12 @@ def prove(
             "cuts": [cut_label(cut) for cut in exportable],
             # `run` lists these rows as totals no proof covered.
             "totals_skipped": totals_skipped,
+            # The parameter values the copy showed; the fingerprint covers them.
+            **(
+                {"parameters": dict(comparison.parameters)}
+                if comparison.parameters
+                else {}
+            ),
             # `run` lists these as missing cuts and filters to triage.
             "missing_cuts": gaps.cuts,
             "missing_filters": gaps.filters,

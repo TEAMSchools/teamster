@@ -321,6 +321,80 @@ def formula_fingerprint(twb_xml: str, sheet: str) -> str:
     return hashlib.sha256(json.dumps(sorted(parts)).encode("utf-8")).hexdigest()
 
 
+_PARAMETERS_DS = re.compile(
+    r"<datasource\b(?=[^>]*\bname='Parameters')[^>]*[^/]>.*?</datasource>", re.DOTALL
+)
+_COLUMN_BLOCK = re.compile(r"<column\b[^>]*?(?:/>|>.*?</column>)", re.DOTALL)
+
+
+def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
+    """Set workbook parameters' current values, so the sheet exports them.
+
+    The REST export cannot pass a parameter, so the proof copy carries it:
+    each parameter's `value` and its calculation's formula become the chosen
+    member's stored text. Only the matched column's 2 attributes change.
+
+    Args:
+        twb_xml: The workbook XML.
+        values: Parameter caption (or name) to the member to show.
+
+    Raises:
+        ValueError: A caption names no parameter, the parameter has no member
+            list, or the value is not one of its members.
+    """
+    block_match = _PARAMETERS_DS.search(twb_xml)
+    if block_match is None:
+        raise ValueError("the workbook has no parameters")
+    block = block_match.group(0)
+    for wanted_name, wanted in values.items():
+        found = None
+        names = []
+        for column in _COLUMN_BLOCK.finditer(block):
+            attrs = _attrs(column.group(0).split(">", 1)[0])
+            names.append(attrs.get("caption") or _bare(attrs.get("name", "")))
+            if wanted_name in (
+                attrs.get("caption"),
+                attrs.get("name"),
+                _bare(attrs.get("name", "")),
+            ):
+                found = column
+                break
+        if found is None:
+            raise ValueError(
+                f"no parameter {wanted_name!r}; the workbook has {', '.join(names)}"
+            )
+        text = found.group(0)
+        members = {
+            _unquote(html.unescape(m[1])): m[1]
+            for m in re.finditer(r"<member\b[^>]*?\bvalue='([^']*)'", text)
+        }
+        if not members:
+            raise ValueError(
+                f"parameter {wanted_name!r} has no member list to choose from"
+            )
+        if wanted not in members:
+            raise ValueError(
+                f"{wanted!r} is not a member of {wanted_name!r}: {', '.join(members)}"
+            )
+        raw = members[wanted]
+        start, rest = text.split(">", 1)
+        start = re.sub(
+            r"\bvalue='[^']*'", lambda _, raw=raw: f"value='{raw}'", start, count=1
+        )
+        rest = re.sub(
+            r"(<calculation\b[^>]*?\bformula=')[^']*(')",
+            lambda m, raw=raw: f"{m[1]}{raw}{m[2]}",
+            rest,
+            count=1,
+        )
+        block = block.replace(text, f"{start}>{rest}", 1)
+    return twb_xml[: block_match.start()] + block + twb_xml[block_match.end() :]
+
+
+def _unquote(text: str) -> str:
+    return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
+
+
 def _parameter_names(twb_xml: str) -> set[str]:
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
@@ -604,7 +678,9 @@ class Tableau:
         """
         try:
             self._server.auth.sign_out()
-        except (TSC.ServerResponseError, OSError) as exc:
+        # Any failure here is reported, not raised: a 401 surfaces as
+        # FailedSignInError, which is not a ServerResponseError.
+        except Exception as exc:  # noqa: BLE001
             return f"{getattr(exc, 'code', type(exc).__name__)} {getattr(exc, 'summary', exc)}"
         return None
 

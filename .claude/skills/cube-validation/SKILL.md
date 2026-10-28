@@ -107,6 +107,10 @@ cause, do not retry around it.
      writing the filter into `probe_sql`.
    - `scope` and `dashboard_filters` take `equals` (the default), `not_equals`,
      `gt`, `gte`, `lt` and `lte` (exactly 1 number), or `set` (not null).
+   - `parameters: {<caption>: <member>}`: a field the sheet shows only behind a
+     parameter value (Chronic Absenteeism under "Attendance Metric"). The proof
+     copy carries that value, so the REST export shows the field. Put the
+     parameter here, never in `cuts`: a cut takes only `filters:` captions.
    - `definitions: {dashboard: ..., cube: ...}`: what each side counts, in a
      sentence or a code list. The review issue shows both for a comparison with
      a domain-owner question. It goes to GitHub: never name a person.

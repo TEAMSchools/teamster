@@ -1522,3 +1522,40 @@ decisions:
     out = capsys.readouterr().out
     assert "`ada-cells` (ada-region cells, deliberate)" in out
     assert "cell differences to triage" not in out
+
+
+def test_prove_sets_a_parameter_on_the_copy(fakes, tmp_path, capsys):
+    text = UNPROVEN.replace(
+        "    sheet_field: Rate\n",
+        "    sheet_field: Rate\n    parameters: { Basis: Year end }\n",
+    )
+    path = _file(tmp_path, text)
+
+    assert cli.main(["prove", str(path), "--comparison", "ada-region"]) == 0, (
+        capsys.readouterr().err
+    )
+
+    assert "value='&quot;Year end&quot;'" in fakes.tbl.edited
+    assert load_view_config(path).comparisons[0].proof is not None
+
+
+def test_comparisons_with_different_parameters_capture_apart(fakes, tmp_path, capsys):
+    year_end = TWIN.replace(
+        "  - id: ada-twin\n", "  - id: ada-twin\n    parameters: { Basis: Year end }\n"
+    )
+    path = _file(tmp_path, year_end)
+
+    assert cli.main(["prove", str(path), *TWO]) == 0, capsys.readouterr().err
+    assert fakes.tbl.captures == 2
+
+
+def test_probe_fingerprint_covers_parameters(tmp_path):
+    def fp(text):
+        cfg = load_view_config(_file(tmp_path, text))
+        return pipeline.probe_fingerprint(cfg, cfg.comparisons[0])
+
+    with_param = YML.replace(
+        "    sheet_field: Rate\n",
+        "    sheet_field: Rate\n    parameters: { Basis: Year end }\n",
+    )
+    assert fp(with_param) != fp(YML)

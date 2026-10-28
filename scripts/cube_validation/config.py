@@ -99,6 +99,9 @@ class Comparison:
     # What each side counts, in a sentence or code list, for a domain owner to
     # compare in the review issue: `{dashboard: ..., cube: ...}`.
     definitions: dict[str, str] = field(default_factory=dict)
+    # Workbook parameters set on the proof copy, `{caption: member}`, for a
+    # field the sheet shows only behind a parameter value.
+    parameters: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -282,6 +285,10 @@ def _comparison(reader: _Reader) -> Comparison:
             _filter_entry(r, "dashboard") for r in _list_of(reader, "dashboard_filters")
         ],
         definitions=_definitions(reader),
+        parameters={
+            str(k): str(v)
+            for k, v in reader.get("parameters", dict, default={}).items()
+        },
     )
 
 
