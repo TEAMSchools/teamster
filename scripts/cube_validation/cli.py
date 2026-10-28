@@ -285,10 +285,20 @@ def _dispatch(args: argparse.Namespace) -> int:
 
 def _members(cube: Cube) -> int:
     """Write `members.json` under the cache root; print measures sharing SQL."""
-    found = builder.members(cube)
+    skipped: list[dict] = []
+    found = builder.members(cube, skipped)
+
+    for item in skipped:
+        print(f"skipped {item['name']}: {item['reason']}", file=sys.stderr)
+
     path = cache_root() / "members.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps([dataclasses.asdict(m) for m in found], indent=2))
+    path.write_text(
+        json.dumps(
+            {"members": [dataclasses.asdict(m) for m in found], "skipped": skipped},
+            indent=2,
+        )
+    )
     print(f"{len(found)} measures written to {path}")
 
     for group in builder.same_sql(found):

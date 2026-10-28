@@ -1,10 +1,10 @@
 import json
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import builder, cli
+from cube_validation import builder, cli, pipeline
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.cube_client import Compiled
+from cube_validation.cube_client import Compiled, CubeError
 
 
 class MetaCube:
@@ -23,6 +23,10 @@ class MetaCube:
         (member,) = query["measures"]
         cube, short = member.split(".", 1)
         fact, expr = self.exprs[member]
+
+        if expr is None:
+            raise CubeError(f"cannot compile {member}")
+
         sql = f"SELECT {expr} `{cube}__{short}`\nFROM kipptaf_marts.{fact} AS `t`"
         return Compiled(sql, [], [])
 
@@ -81,19 +85,45 @@ def test_members_compiles_every_measure_once():
     assert by_name["a.m1"].sql_fingerprint
 
 
-def test_same_sql_groups_equal_expressions_across_cubes():
+def test_same_sql_groups_equal_expressions_on_one_fact():
     cube = MetaCube(
         [_cube("a", ["m"]), _cube("b", ["m"]), _cube("c", ["m"])],
         {
             "a.m": ("fct_a", "sum(`t`.x)"),
-            "b.m": ("fct_b", "SUM(`t`.x)"),
-            "c.m": ("fct_c", "sum(`t`.y)"),
+            "b.m": ("fct_a", "SUM(`t`.x)"),
+            "c.m": ("fct_a", "sum(`t`.y)"),
         },
     )
 
     groups = builder.same_sql(builder.members(cube))
 
     assert [sorted(m.name for m in g) for g in groups] == [["a.m", "b.m"]]
+
+
+def test_same_sql_does_not_group_equal_expressions_on_different_facts():
+    cube = MetaCube(
+        [_cube("a", ["m"]), _cube("b", ["m"])],
+        {"a.m": ("fct_a", "sum(`t`.x)"), "b.m": ("fct_b", "sum(`t`.x)")},
+    )
+
+    assert builder.same_sql(builder.members(cube)) == []
+
+
+def test_members_skips_a_measure_that_fails_to_compile():
+    cube = MetaCube(
+        [_cube("a", ["good", "bad", "also_good"])],
+        {
+            "a.good": ("fct_a", "sum(`t`.x)"),
+            "a.bad": ("fct_a", None),
+            "a.also_good": ("fct_a", "count(`t`.x)"),
+        },
+    )
+    skipped: list[dict] = []
+
+    found = builder.members(cube, skipped)
+
+    assert [m.name for m in found] == ["a.good", "a.also_good"]
+    assert skipped == [{"name": "a.bad", "reason": "cannot compile a.bad"}]
 
 
 def test_same_sql_ignores_a_view_repeating_its_cube():
@@ -118,8 +148,12 @@ def test_same_name_finds_count_students_on_every_cube():
 
 def test_members_command_writes_json_and_prints_groups(monkeypatch, tmp_path, capsys):
     cube = MetaCube(
-        [_cube("a", ["m"]), _cube("b", ["m"])],
-        {"a.m": ("fct_a", "sum(`t`.x)"), "b.m": ("fct_b", "sum(`t`.x)")},
+        [_cube("a", ["m", "bad"]), _cube("b", ["m"])],
+        {
+            "a.m": ("fct_a", "sum(`t`.x)"),
+            "a.bad": ("fct_a", None),
+            "b.m": ("fct_a", "sum(`t`.x)"),
+        },
     )
     monkeypatch.setattr(cli, "make_cube", lambda url, secret, email: cube)
     monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
@@ -130,6 +164,19 @@ def test_members_command_writes_json_and_prints_groups(monkeypatch, tmp_path, ca
     assert cli.main(["members"]) == 0
 
     written = json.loads((tmp_path / "cache" / "members.json").read_text())
-    assert sorted(m["name"] for m in written) == ["a.m", "b.m"]
-    out = capsys.readouterr().out
-    assert "a.m" in out and "b.m" in out
+    assert sorted(m["name"] for m in written["members"]) == ["a.m", "b.m"]
+    assert written["skipped"] == [{"name": "a.bad", "reason": "cannot compile a.bad"}]
+    captured = capsys.readouterr()
+    assert "a.m" in captured.out and "b.m" in captured.out
+    assert "skipped a.bad: cannot compile a.bad" in captured.err
+
+
+def test_measure_expression_keeps_a_from_inside_a_function():
+    sql = (
+        "SELECT count(distinct EXTRACT(YEAR FROM `t`.d)) `v__m`, "
+        "TRIM(BOTH ' ' FROM 'a from b') x\nFROM kipptaf_marts.fct_a AS `t`"
+    )
+
+    assert pipeline._measure_expression(sql, "v", "m") == (
+        "count(distinct EXTRACT(YEAR FROM `t`.d)) , TRIM(BOTH ' ' FROM 'a from b') x"
+    )

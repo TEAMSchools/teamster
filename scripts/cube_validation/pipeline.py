@@ -1780,9 +1780,43 @@ def prove_check(cfg: ViewConfig, *, tbl: tableau.Tableau) -> list[str]:
 # --- discover ----------------------------------------------------------------
 
 
+def _outer_from(sql: str) -> int:
+    """Index of the first `FROM` outside parentheses and quoted text, or -1.
+
+    `EXTRACT(YEAR FROM x)` and `TRIM(BOTH ' ' FROM x)` hold a `FROM` of their
+    own that does not start the query's FROM clause.
+    """
+    depth = 0
+    quote = ""
+    i = 0
+
+    while i < len(sql):
+        ch = sql[i]
+
+        if quote:
+            if ch == "\\":
+                i += 1
+            elif ch == quote:
+                quote = ""
+        elif ch in "'\"`":
+            quote = ch
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif depth == 0 and re.match(r"FROM\b", sql[i:], re.IGNORECASE):
+            if i == 0 or not (sql[i - 1].isalnum() or sql[i - 1] == "_"):
+                return i
+
+        i += 1
+
+    return -1
+
+
 def _measure_expression(sql: str, view: str, measure: str) -> str:
     """The SELECT expression of a measure-only compiled query, alias dropped."""
-    head = re.split(r"\bFROM\b", sql, maxsplit=1, flags=re.IGNORECASE)[0]
+    end = _outer_from(sql)
+    head = sql if end < 0 else sql[:end]
     head = re.sub(r"^\s*SELECT\s+", "", head, flags=re.IGNORECASE)
     return head.replace(f"`{view}__{measure}`", "").strip()
 
