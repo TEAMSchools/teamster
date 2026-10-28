@@ -1,0 +1,22 @@
+select
+    student_number,
+    grade_level,
+    schoolid,
+    gpa_points,
+    percent,
+    grade,
+    storecode,
+    credit_type,
+    course_number,
+    course_name,
+    teacher_name,
+    sectionid,
+    `PotentialCrHrs`,
+    `EarnedCrHrs`,
+    gradescale_name,
+    schoolname,
+    termid,
+    `Comment`,
+    school_level,
+from {{ source("kipptaf_extracts", "rpt_powerschool__stored_grades") }}
+where code_location = '{{ project_name }}'
