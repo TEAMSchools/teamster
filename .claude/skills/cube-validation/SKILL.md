@@ -77,8 +77,8 @@ copy:
 2. Run `uv run pytest tests/test_zz_cube_validation.py -s --tb=short`, then
    delete the file.
 
-`review`, `add-decisions` and `record-answers` need no credentials: run them
-from the checkout that holds the validation files with
+`review`, `add-decisions`, `reapply` and `record-answers` need no credentials:
+run them from the checkout that holds the validation files with
 `uv run python -m scripts.cube_validation <command> ...`. Exit 0 is done, 1 is a
 refusal (stderr says why), 2 is a usage error. A refusal is an answer: fix its
 cause, do not retry around it.
@@ -152,7 +152,11 @@ cause, do not retry around it.
    also shares a daily cap, `--max-usd-per-day` (UTC day), and view versions
    found in BigQuery's job history are cached in the local cache, so a repeat
    run does not pay to look them up again. A proof with no recorded cuts is
-   listed under "Cuts to prove in the browser" for a re-prove.
+   listed under "Cuts to prove in the browser" for a re-prove. Prove every
+   comparison in the file before the first `run`, then run once: a `run`
+   re-queries every comparison, so proving them one at a time and running after
+   each multiplies the cost. Run again only for a new build, a changed Cube
+   model or dashboard, or new comparisons; decisions are re-applied offline.
    `--fact-dataset zz_<user>_kipptaf_marts` (on `prove`, `check-api`, `run` and
    `triage`) reads the fact from a dbt dev build instead of the file's `fact:`,
    to prove a mart change before it merges; give `triage` the same dataset as
@@ -218,8 +222,9 @@ cause, do not retry around it.
    and `task` empty for `deliberate` and `domain_owner`. Map items are not in
    it. Then `add-decisions <file> <approved.json>`: it takes each decision's key
    fields from the item's stub and its fingerprints from the latest run, and
-   writes the whole batch or nothing. Then `run` again: the decisions
-   fingerprint covers `reason`.
+   writes the whole batch or nothing, then re-applies every decision to the
+   saved run offline, so `review` reads it with no new `run`. After a hand edit
+   to `decisions:`, `reapply <file>` does the same.
 
    Before `review`, give the file a top-level `tasks:` block,
    `{cube_fix: <the domain's Cube-fix issue>, dashboard_fix: <its Asana dashboard-fix task>}`:
@@ -262,10 +267,12 @@ cause, do not retry around it.
     rewords it in a new comment. Run
     `record-answers <files> --comment <file> --author <login>` without `--yes`,
     show the analyst the printed changes, and on their confirmation run it again
-    with `--yes`. Then `run` again. A refusal refuses the whole comment: tell
-    the analyst why and ask the owner for a corrected comment; never edit the
-    saved body to make it pass. The validation issue closes when every question
-    has a decision and every fix has its issue, PR or Asana task.
+    with `--yes`. It re-applies the decisions to each file's saved run offline;
+    a file it prints as "not re-applied" needs `run`. A refusal refuses the
+    whole comment: tell the analyst why and ask the owner for a corrected
+    comment; never edit the saved body to make it pass. The validation issue
+    closes when every question has a decision and every fix has its issue, PR or
+    Asana task.
 
 ## Results
 

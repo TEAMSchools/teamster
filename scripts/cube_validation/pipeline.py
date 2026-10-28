@@ -867,6 +867,24 @@ def _anchors_and_identities(
     return findings, results
 
 
+def _open_counts(
+    comparisons: list[Comparison],
+    open_groups: list[Group],
+    open_gaps: list[Gap],
+    open_cells: list[CellDiff],
+) -> tuple[Counter, Counter, Counter]:
+    """Open groups, gaps and cell differences per measure."""
+    measure_of = {c.id: c.measure for c in comparisons}
+    groups = Counter(measure_of.get(g.comparison_id) for g in open_groups)
+    gaps = Counter(
+        measure
+        for g in open_gaps
+        for measure in {measure_of.get(c) for c in g.comparisons}
+    )
+    cells = Counter(measure_of.get(d.comparison_id) for d in open_cells)
+    return groups, gaps, cells
+
+
 def _measures(
     comparisons: list[Comparison],
     cells: list[Cell],
@@ -878,7 +896,6 @@ def _measures(
     """The verdict reads cells only; open groups and gaps are counted beside it."""
     results: dict[str, list[CheckResult]] = {}
     counts: dict[str, Counter] = {}
-    measure_of = {c.id: c.measure for c in comparisons}
     for comparison in comparisons:
         mine = [c for c in cells if c.comparison == comparison.id]
         # A cell only a dashboard-only filter drops is explained; it is counted
@@ -892,13 +909,9 @@ def _measures(
         counts.setdefault(comparison.measure, Counter()).update(c.verdict for c in mine)
     for measure, found in other.items():
         results.setdefault(measure, []).extend(found)
-    groups = Counter(measure_of.get(g.comparison_id) for g in open_groups)
-    gaps = Counter(
-        measure
-        for g in open_gaps
-        for measure in {measure_of.get(c) for c in g.comparisons}
+    groups, gaps, open_cell_counts = _open_counts(
+        comparisons, open_groups, open_gaps, open_cells
     )
-    open_cell_counts = Counter(measure_of.get(d.comparison_id) for d in open_cells)
     return [
         MeasureResult(
             measure,
@@ -1250,7 +1263,107 @@ def _run_from_json(data: dict) -> RunResult:
         diff_cells=data.get("diff_cells", []),
         cell_sql=data.get("cell_sql", {}),
         cell_sql_usd=data.get("cell_sql_usd", {}),
+        cube_host=data.get("cube_host", ""),
+        fact=data.get("fact", ""),
     )
+
+
+# What `reapply` rebuilds the run's full findings from; a run saved without
+# any of them predates re-applying.
+_REAPPLY_KEYS = (
+    "open",
+    "quiet",
+    "open_gaps",
+    "quiet_gaps",
+    "open_cells",
+    "quiet_cells",
+)
+
+
+def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
+    """The latest `run.json` as JSON, and its path.
+
+    The latest run is the `run.json` written last, whatever moment it read.
+    """
+    saved = sorted(
+        (cache_root / cfg.view).glob("*/run.json"), key=lambda p: p.stat().st_mtime
+    )
+    if not saved:
+        raise Refusal(f"{cfg.view}: no saved run; `run` it first")
+    return json.loads(saved[-1].read_text()), saved[-1]
+
+
+def _older(cfg: ViewConfig, run_json: Path) -> Refusal:
+    return Refusal(
+        f"{cfg.view}: the saved run {run_json} was written by an older "
+        "validator; `run` it again"
+    )
+
+
+def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
+    """Apply the file's decisions to the view's latest saved run, offline.
+
+    Recording a decision changes no data, so the saved run's groups, gaps,
+    cell differences and SQL fingerprints are re-sorted by the current
+    decisions as `run` would sort them; a decision whose fingerprints differ
+    from the run's still lands in `reconfirm`. Rewrites `run.json` and
+    `result.md` and runs no query. The verdict reads cells only, so it stays;
+    clauses stay as the run computed them.
+
+    Raises:
+        Refusal: The view has no saved run, the run predates what re-applying
+            needs, or two decisions claim the same item.
+    """
+    data, run_json = _saved_run(cfg, cache_root)
+    if "fingerprints" not in data or any(
+        k not in data.get("applied", {}) for k in _REAPPLY_KEYS
+    ):
+        raise _older(cfg, run_json)
+    try:
+        saved = _run_from_json(data)
+    except (KeyError, TypeError) as exc:
+        raise _older(cfg, run_json) from exc
+
+    was = saved.applied
+    try:
+        applied = decisions.apply(
+            cfg.decisions,
+            was.open + [g for _, g in was.quiet],
+            saved.fingerprints,
+            gaps=was.open_gaps + [g for _, g in was.quiet_gaps],
+            cell_diffs=was.open_cells + [d for _, d in was.quiet_cells],
+        )
+    except ValueError as exc:
+        raise Refusal(str(exc)) from exc
+
+    groups, gaps, cells = _open_counts(
+        cfg.comparisons, applied.open, applied.open_gaps, applied.open_cells
+    )
+    result = dataclasses.replace(
+        saved,
+        applied=applied,
+        measures=[
+            dataclasses.replace(
+                m,
+                open_groups=groups.get(m.measure, 0),
+                open_gaps=gaps.get(m.measure, 0),
+                open_cells=cells.get(m.measure, 0),
+            )
+            for m in saved.measures
+        ],
+        decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
+    )
+    # The cells and anchors sections need every cell the run held; decisions
+    # never change them, so the saved report's copy is kept.
+    old = run_json.with_name("result.md")
+    old_text = old.read_text() if old.exists() else ""
+    at = old_text.find("\n## Cells\n")
+    tail = old_text[at + 1 :] if at != -1 else ""
+    text = report.render_local(result) + ("\n" + tail if tail else "")
+    report.save_local(result, text, root=cache_root).with_name("run.json").write_text(
+        json.dumps(dataclasses.asdict(result), default=_json_default, indent=1)
+    )
+    return result
 
 
 # --- review ------------------------------------------------------------------
@@ -1266,26 +1379,19 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
             validator cannot read, or its decisions changed since the run (a
             run saved before runs recorded them counts as changed).
     """
-    saved = sorted(
-        (cache_root / cfg.view).glob("*/run.json"), key=lambda p: p.stat().st_mtime
-    )
-    if not saved:
-        raise Refusal(f"{cfg.view}: no saved run; `run` it first")
+    data, run_json = _saved_run(cfg, cache_root)
     try:
-        run_result = _run_from_json(json.loads(saved[-1].read_text()))
+        run_result = _run_from_json(data)
     except (KeyError, TypeError) as exc:
-        raise Refusal(
-            f"{cfg.view}: the saved run {saved[-1]} was written by an older "
-            "validator; `run` it again"
-        ) from exc
+        raise _older(cfg, run_json) from exc
     if run_result.decisions_fingerprint != decisions.decisions_fingerprint(
         cfg.decisions
     ):
         raise Refusal(
             f"{cfg.view}: the decisions changed since the saved run "
-            f"{saved[-1]}; `run` it again"
+            f"{run_json}; `reapply` it, or `run` it again"
         )
-    return run_result, saved[-1]
+    return run_result, run_json
 
 
 # GitHub caps an issue body at 65,536 characters; warn with room to spare.

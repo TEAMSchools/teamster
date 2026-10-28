@@ -1,7 +1,8 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
 Commands: `discover`, `prove`, `check-api`, `run`, `triage`, `add-decisions`,
-`review`, `record-answers`, `members`, `inventory-workbook`, `inventory`. Exit
+`reapply`, `review`, `record-answers`, `members`, `inventory-workbook`,
+`inventory`. Exit
 codes: 0 done, 1 refused (the message says why), 2 usage error. This module parses
 arguments and builds the clients; `pipeline.py` does the work. Tests replace
 `make_warehouse`, `make_cube`, `tableau_session`, `utcnow` and `cache_root`.
@@ -237,6 +238,11 @@ def _parser() -> argparse.ArgumentParser:
     )
 
     p = sub.add_parser(
+        "reapply", help="apply the file's decisions to the saved run, offline"
+    )
+    view_file(p)
+
+    p = sub.add_parser(
         "record-answers", help="write a domain owner's answers comment as decisions"
     )
     p.add_argument("views", type=Path, nargs="+", help="validation files")
@@ -326,6 +332,10 @@ def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "add-decisions":
         return _add_decisions(cfg, args.view, args.approved)
 
+    if args.command == "reapply":
+        _reapply(args.view)
+        return 0
+
     if args.command == "check-api":
         cube = _cube(args)
         pipeline.check_api(
@@ -384,9 +394,41 @@ def _dispatch(args: argparse.Namespace) -> int:
 
 
 RUN_AGAIN = (
-    "The decisions changed, and their fingerprint covers `reason`: `run` {} "
-    "again before `review`."
+    "Run `run` again only when the data, the Cube model or the dashboard "
+    "changed, or for new comparisons."
 )
+
+
+def _reapply(path: Path) -> None:
+    """Re-apply a file's decisions to its saved run and say what is open."""
+    run = pipeline.reapply(_load(path), cache_root())
+    counts = (
+        f"{len(run.applied.open)} open groups, {len(run.applied.open_gaps)} open "
+        f"gaps, {len(run.applied.open_cells)} open cell diffs"
+    )
+    if run.applied.reconfirm:
+        counts += f", {len(run.applied.reconfirm)} decisions to re-confirm"
+    print(
+        f"Re-applied decisions to the saved run of "
+        f"{run.moment.end:%Y-%m-%d %H:%M} UTC: {counts}"
+    )
+
+
+def _reapply_written(paths: list[Path]) -> None:
+    """Re-apply after a write; a view with no usable run says so and goes on.
+
+    The decisions are already written, so a missing or older saved run is not
+    a refusal here: the analyst runs `run` for that view instead.
+    """
+    refused = False
+    for path in paths:
+        try:
+            _reapply(path)
+        except pipeline.Refusal as exc:
+            print(f"{path}: not re-applied: {exc}")
+            refused = True
+    if not refused:
+        print(RUN_AGAIN)
 
 
 def _write_all(writes: list[tuple[Path, dict]]) -> None:
@@ -429,7 +471,7 @@ def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     _write_all([(path, d) for d in decisions])
     for d in decisions:
         print(f"{path}: wrote {d['id']} ({d['call']})")
-    print(RUN_AGAIN.format(path))
+    _reapply_written([path])
     return 0
 
 
@@ -484,7 +526,7 @@ def _record_answers(views: list[Path], comment: Path, author: str, yes: bool) ->
         return 0
     _write_all(writes)
     print(f"Wrote {len(writes)} decisions.")
-    print(RUN_AGAIN.format(" ".join(dict.fromkeys(c.path for c in changes))))
+    _reapply_written([Path(p) for p in dict.fromkeys(c.path for c in changes)])
     return 0
 
 

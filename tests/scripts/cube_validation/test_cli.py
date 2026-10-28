@@ -253,6 +253,12 @@ class Clock:
         return self.t
 
 
+@pytest.fixture(autouse=True)
+def _cache_in_tmp(monkeypatch, tmp_path):
+    """Keep every test off the analyst's own cache, `fakes` or not."""
+    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
+
+
 @pytest.fixture
 def fakes(monkeypatch, tmp_path):
     """Wire fakes into the command line and return them."""
@@ -2125,6 +2131,34 @@ def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
     assert "miami-scope" in _section(capsys.readouterr().out, "Applied:", "To re-")
 
 
+def test_add_decisions_re_applies_to_the_saved_run_offline(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    (run_json.parent / "triage.json").write_text(
+        json.dumps({"items": [_triage_item("e")]})
+    )
+    approved = _approved(
+        tmp_path,
+        [{"id": "miami-scope", "call": "deliberate", "reason": "r", "item": "i"}],
+    )
+    calls = _client_calls(fakes)
+    _no_clients(monkeypatch)
+    capsys.readouterr()
+
+    assert cli.main(["add-decisions", str(path), str(approved)]) == 0
+
+    out = capsys.readouterr().out
+    assert "Re-applied decisions to the saved run of" in out
+    assert "0 open groups" in out
+    applied = json.loads(run_json.read_text())["applied"]
+    assert [d["id"] for d, _ in applied["quiet"]] == ["miami-scope"]
+    assert _client_calls(fakes) == calls
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+
 def test_add_decisions_refuses_an_unknown_item_and_writes_nothing(
     fakes, tmp_path, capsys
 ):
@@ -2159,6 +2193,94 @@ def test_add_decisions_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     assert cli.main(["add-decisions", str(path), str(approved)]) == 1
 
     assert "triage" in capsys.readouterr().err
+
+
+# --- reapply ------------------------------------------------------------------
+
+
+def _client_calls(fakes):
+    return (
+        len(fakes.bq.ran),
+        len(fakes.cube.loads),
+        len(fakes.cube.compiled_queries),
+        fakes.signed_in,
+    )
+
+
+def _no_clients(monkeypatch):
+    """Fail any attempt to build a BigQuery, Cube or Tableau client."""
+
+    def refuse(*_args, **_kwargs):
+        raise AssertionError("re-applying decisions must not query")
+
+    monkeypatch.setattr(cli, "make_warehouse", refuse)
+    monkeypatch.setattr(cli, "make_cube", refuse)
+    monkeypatch.setattr(cli, "tableau_session", refuse)
+
+
+def test_reapply_quiets_a_newly_decided_group_and_review_accepts_it(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    before = _saved_run(tmp_path)
+    (measure,) = before["measures"]
+    assert measure["open_groups"] > 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    calls = _client_calls(fakes)
+    _no_clients(monkeypatch)
+    capsys.readouterr()
+
+    assert cli.main(["reapply", str(path)]) == 0
+
+    after = _saved_run(tmp_path)
+    assert [d["id"] for d, _ in after["applied"]["quiet"]] == ["miami-scope"]
+    assert after["applied"]["open"] == []
+    assert after["measures"][0]["open_groups"] == 0
+    assert after["measures"][0]["verdict"] == measure["verdict"]
+    assert after["cube_host"] == before["cube_host"]
+    assert after["decisions_fingerprint"] != before["decisions_fingerprint"]
+    out = capsys.readouterr().out
+    assert "Re-applied decisions to the saved run of" in out
+    assert "0 open groups" in out
+    (result_md,) = (tmp_path / "cache" / "v").glob("*/result.md")
+    text = result_md.read_text()
+    assert "miami-scope" in _section(text, "Applied:", "To re-confirm")
+    assert "## Cells" in text
+    assert _client_calls(fakes) == calls
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+
+def test_reapply_keeps_a_decision_whose_sql_changed_open(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    open_before = _saved_run(tmp_path)["applied"]["open"]
+    path = _with_decision({"cube": "stale", "dashboard": "stale"}, tmp_path)
+    _no_clients(monkeypatch)
+
+    assert cli.main(["reapply", str(path)]) == 0
+
+    applied = _saved_run(tmp_path)["applied"]
+    assert applied["quiet"] == []
+    assert [d["id"] for d in applied["reconfirm"]] == ["miami-scope"]
+    assert applied["open"] == open_before
+
+
+def test_reapply_refuses_a_view_never_run(fakes, tmp_path, capsys):
+    assert cli.main(["reapply", str(_file(tmp_path))]) == 1
+    assert "no saved run" in capsys.readouterr().err
+
+
+def test_reapply_refuses_a_run_saved_before_it_kept_cell_diffs(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    data = json.loads(saved.read_text())
+    del data["applied"]["quiet_cells"]
+    saved.write_text(json.dumps(data))
+
+    assert cli.main(["reapply", str(_file(tmp_path))]) == 1
+    assert "older validator" in capsys.readouterr().err
 
 
 OWNER_DECISIONS = """\
@@ -2409,6 +2531,25 @@ def test_record_answers_restores_every_file_when_a_later_write_fails(
         _record(files, comment, "--yes")
 
     assert [f.read_text() for f in files] == before
+
+
+def test_record_answers_re_applies_to_the_saved_run_offline(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _owner_file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    calls = _client_calls(fakes)
+    _no_clients(monkeypatch)
+    comment = _comment(
+        tmp_path, [_answer(["miami-scope"], "fix_cube", "the fact drops them")]
+    )
+    capsys.readouterr()
+
+    assert _record([path], comment, "--yes") == 0
+
+    assert "Re-applied decisions to the saved run of" in capsys.readouterr().out
+    assert _client_calls(fakes) == calls
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
 
 
 def test_record_answers_twice_adds_the_note_once(tmp_path, capsys):
