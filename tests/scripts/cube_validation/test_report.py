@@ -675,3 +675,53 @@ def test_merged_comparisons_never_add_up_to_unmask_a_value():
     line = next(x for x in body.splitlines() if LEFT in x)
     assert "`dashboard_filter` = `<redacted>`" in line
     assert "up to <10 students per comparison" in line
+
+
+OOD = "Board YOY leaves out out-of-district students"
+
+
+def test_one_reason_across_decision_kinds_is_one_bullet():
+    rows = Decision("ood-rows", "board", "domain_owner", OOD,
+                    {"column": "region", "values": ["Newark"]})  # fmt: skip
+    cells = Decision("ood-cells", "board", "domain_owner", OOD, cells=True)
+    run = _run(
+        applied=Applied(
+            quiet=[
+                (rows, Group("board", (("region", "Newark"),), "cube_only", 400, 40))
+            ],
+            quiet_cells=[(cells, CellDiff("board", {"differs": 3}))],
+        )
+    )
+    run.findings = []
+    body = render_review_issue("Registrar", [run])
+    bullets = [x for x in body.splitlines() if OOD in x]
+    assert bullets == [
+        "- `region` = `Newark` in board of `enrollment_view` (cube_only): 1 row group, "
+        "400 rows, 40 students; `board` in `enrollment_view`: <10 cells differ "
+        "between Cube and the dashboard. Reason: " + OOD + "."
+    ]
+    assert "owns the rule behind 1 question" in body
+
+
+def test_one_reason_across_files_is_one_bullet():
+    reason = "Cube has no enrollment status filter"
+
+    def run_for(view):
+        d = Decision(f"{view}-enroll", "", "domain_owner", reason,
+                     missing_filter="Enroll Status")  # fmt: skip
+        g = Gap("filter", "Enroll Status", ("Roster",), ("c",))
+        r = _run(view=view, applied=Applied(quiet_gaps=[(d, g)]))
+        r.findings = []
+        return r
+
+    body = render_review_issue(
+        "Registrar", [run_for("daily_view"), run_for("periods_view")]
+    )
+    bullets = [x for x in body.splitlines() if reason in x]
+    assert bullets == [
+        "- `Enroll Status` on `Roster` in `daily_view`: a sheet filter Cube has no "
+        "member for; `Enroll Status` on `Roster` in `periods_view`: a sheet filter "
+        "Cube has no member for. Reason: " + reason + "."
+    ]
+    fold = body.split("<summary>For Claude</summary>", 1)[1]
+    assert "`daily_view-enroll`" in fold and "`periods_view-enroll`" in fold
