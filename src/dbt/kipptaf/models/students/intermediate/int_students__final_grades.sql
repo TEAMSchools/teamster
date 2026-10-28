@@ -25,6 +25,7 @@ with
             fg.potential_credit_hours,
             fg.lastgradeupdate,
             fg.exclude_from_gpa,
+            fg.comment_value,
 
             fg.students_student_number as student_number,
         from {{ ref("base_powerschool__final_grades") }} as fg
@@ -87,6 +88,7 @@ with
             -- student_report_card_grades row, so there is no last-update stamp.
             cast(null as string) as citizenship,
             cast(null as date) as lastgradeupdate,
+            cast(null as string) as comment_value,
 
             safe_cast(g.credits as float64) as potential_credit_hours,
 
@@ -127,10 +129,62 @@ with
             and g.grade_type_token is distinct from 'E'
     )
 
-select *,
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    cc_dcid,
+    studentid,
+    yearid,
+    schoolid,
+    academic_year,
+    storecode,
+    termbin_start_date,
+    termbin_end_date,
+    term_percent_grade,
+    term_letter_grade,
+    term_percent_grade_adjusted,
+    term_letter_grade_adjusted,
+    citizenship,
+    y1_percent_grade,
+    y1_percent_grade_adjusted,
+    y1_letter_grade,
+    y1_letter_grade_adjusted,
+    term_grade_points,
+    y1_grade_points,
+    potential_credit_hours,
+    lastgradeupdate,
+    exclude_from_gpa,
+    student_number,
+    comment_value,
 from powerschool_conformed
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    cc_dcid,
+    studentid,
+    yearid,
+    schoolid,
+    academic_year,
+    storecode,
+    termbin_start_date,
+    termbin_end_date,
+    term_percent_grade,
+    term_letter_grade,
+    term_percent_grade_adjusted,
+    term_letter_grade_adjusted,
+    citizenship,
+    y1_percent_grade,
+    y1_percent_grade_adjusted,
+    y1_letter_grade,
+    y1_letter_grade_adjusted,
+    term_grade_points,
+    y1_grade_points,
+    potential_credit_hours,
+    lastgradeupdate,
+    exclude_from_gpa,
+    student_number,
+    comment_value,
 from focus_conformed
