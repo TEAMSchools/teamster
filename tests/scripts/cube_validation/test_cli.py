@@ -109,9 +109,12 @@ class FakeBigQuery:
         self.ran: list[str] = []
         self.probe = probe or [{"region": "Newark", "value": 0.9123}]
         self.cells = cells
+        # Per cut index: cut 0 is `{}`, cut 1 is `{Region: Miami}`.
         self.students = [
-            {"region": "Miami", "n_students": 12},
-            {"region": "Newark", "n_students": 40},
+            {"__cut": 0, "region": "Miami", "n_students": 12},
+            {"__cut": 0, "region": "Newark", "n_students": 40},
+            {"__cut": 1, "region": "Miami", "n_students": 3},
+            {"__cut": 1, "region": "Newark", "n_students": 5},
         ]
         self.views: dict[str, str] = {}
         self.build = (START, END)
@@ -298,6 +301,12 @@ def _reconcile(bq):
     return next(s for s in bq.ran if "-- outer" in s)
 
 
+def _count_branches(sql):
+    """The per-cut SELECTs of the student count, parentheses stripped."""
+    assert sql.startswith("(") and sql.endswith(")"), sql
+    return sql[1:-1].split(") UNION ALL (")
+
+
 # --- run ---------------------------------------------------------------------
 
 
@@ -329,11 +338,20 @@ def test_run_keeps_student_rows_in_bigquery(fakes, tmp_path, capsys):
 
     for sql in fakes.bq.ran:
         if "student_number" in sql or "lea_student_identifier" in sql:
-            # The reconcile, or the per-cell student count: counts, never rows.
-            assert ("-- outer" in sql and "COUNT(DISTINCT __student)" in sql) or (
-                sql.startswith("SELECT region, COUNT(DISTINCT student_number) ")
-                and sql.endswith(" GROUP BY region")
-            )
+            if "-- outer" in sql:
+                assert "COUNT(DISTINCT __student)" in sql
+                continue
+            # The per-cell student count: each cut's branch returns only the
+            # cut index, the dims and the count.
+            branches = _count_branches(sql)
+            assert len(branches) == 2
+            for i, branch in enumerate(branches):
+                assert re.fullmatch(
+                    rf"SELECT {i} AS __cut, region, COUNT\(DISTINCT student_number\) "
+                    r"AS n_students FROM \(SELECT \* FROM [^()]*\) WHERE .* GROUP BY 2",
+                    branch,
+                    re.DOTALL,
+                ), branch
     out = capsys.readouterr().out
     assert "student_number" not in out
 
@@ -1661,11 +1679,19 @@ def test_run_saves_differing_cells_and_their_pinned_sql(fakes, tmp_path):
         "cube": 0.95,
         "n_students": 12,
     }
-    assert len(saved["diff_cells"]) == 4  # Miami and Newark, under both cuts
-    assert [c["n_students"] for c in saved["diff_cells"][:2]] == [12, 40]
-    counts = [s for s in fakes.bq.ran if "AS n_students" in s and "-- outer" not in s]
-    assert len(counts) == 1
-    assert "COUNT(DISTINCT student_number)" in counts[0]
+    # Each cell carries its own cut's count, not one shared across cuts.
+    assert [(c["cut"], c["key"], c["n_students"]) for c in saved["diff_cells"]] == [
+        ("{}", "regions_region_name=Miami", 12),
+        ("{}", "regions_region_name=Newark", 40),
+        ('{"Region": "Miami"}', "regions_region_name=Miami", 3),
+        ('{"Region": "Miami"}', "regions_region_name=Newark", 5),
+    ]
+    (count,) = [s for s in fakes.bq.ran if "AS n_students" in s and "-- outer" not in s]
+    every, miami = _count_branches(count)
+    assert "FOR SYSTEM_TIME AS OF" in every
+    assert _literal_after(every, "rpt_d") == utc_literal(START)
+    assert "'Camden', 'Newark'" in every and "'Miami'" not in every
+    assert "'Miami'" in miami and "'Newark'" not in miami
 
     sql = saved["cell_sql"]["ada-region"]
     assert set(sql) == {"{}", '{"Region": "Miami"}'}
@@ -1675,6 +1701,18 @@ def test_run_saves_differing_cells_and_their_pinned_sql(fakes, tmp_path):
     assert dashboard in fakes.bq.ran and cube in fakes.bq.ran
     usd = saved["cell_sql_usd"]["ada-region"]
     assert set(usd) == set(sql) and all(len(v) == 2 for v in usd.values())
+
+
+def test_run_counts_a_cells_students_under_its_dashboard_filters(fakes, tmp_path):
+    text = YML.replace(
+        "    rows:\n",
+        "    dashboard_filters:\n      - { dashboard: enroll_status, values: [0] }\n    rows:\n",
+        1,
+    )
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    (count,) = [s for s in fakes.bq.ran if "AS n_students" in s and "-- outer" not in s]
+    assert all("enroll_status IN (0)" in b for b in _count_branches(count))
 
 
 def test_run_saves_each_sides_dry_run_price_outside_the_cap(fakes, tmp_path):

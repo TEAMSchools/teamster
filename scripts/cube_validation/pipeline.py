@@ -264,18 +264,30 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
     )
 
 
-def _students_sql(comparison: Comparison, student: str, rows_sql: str) -> str:
-    """Distinct `student` values (the first grain pair) per cell over `rows_sql`.
+def _students_sql(cfg: ViewConfig, comparison: Comparison, student: str) -> str:
+    """Return distinct `student` values per cell, one `UNION ALL` branch per cut.
 
-    `rows_sql` is `dashboard_rows_sql` as of the moment: it spans every cut
-    and keeps rows the `dashboard_filters` drop, so a cell's count can exceed
-    what one cut shows.
+    Each branch reads exactly the rows its cut's cells come from: the cut's
+    predicate with the `dashboard_filters`, grouped by the dims as
+    `probe_sql` groups them. `__cut` is the cut's index in `_cuts`.
     """
-    names = _unique(d.dashboard for d in comparison.dims)
+    # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
+    rows = f"SELECT * FROM {_dashboard_ref(comparison)}"
+    dates = _date_cubes(cfg)
+    dims = [
+        f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
+        for d in comparison.dims
+    ]
+    group = (
+        " GROUP BY " + ", ".join(str(i + 2) for i in range(len(dims))) if dims else ""
+    )
     count = f"COUNT(DISTINCT {student}) AS n_students"
-    group = f" GROUP BY {', '.join(names)}" if names else ""
-    # trunk-ignore(bandit/B608): identifiers are validated in config.py; rows_sql is built from them
-    return f"SELECT {', '.join([*names, count])} FROM ({rows_sql}){group}"
+    return " UNION ALL ".join(
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
+        f"(SELECT {', '.join([f'{i} AS __cut', *dims, count])} FROM ({rows}) "
+        f"WHERE {dashboard_predicate(comparison, cut)}{group})"
+        for i, cut in enumerate(_cuts(comparison))
+    )
 
 
 def _filter_flags(comparison: Comparison) -> list[tuple[str, str]]:
@@ -620,8 +632,8 @@ class _Sides:
     cell_sql_usd: dict[str, dict[str, list[float]]] = dataclasses.field(
         default_factory=dict
     )
-    # Per comparison with `rows`, distinct students by cell key.
-    students: dict[str, dict[tuple[str, ...], int]] = dataclasses.field(
+    # Per comparison with `rows`, distinct students by (cut label, cell key).
+    students: dict[str, dict[tuple[str, tuple[str, ...]], int]] = dataclasses.field(
         default_factory=dict
     )
 
@@ -735,10 +747,14 @@ def _compare_one(
         )
         sides.groups += compare.groups_from(comparison.id, result)
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
-        student = comparison.rows.grain[0].dashboard
+        cuts = _cuts(comparison)
+        count_sql = _students_sql(cfg, comparison, comparison.rows.grain[0].dashboard)
         sides.students[comparison.id] = {
-            tuple(_key(r[d.dashboard]) for d in comparison.dims): r["n_students"]
-            for r in wh.rows(_students_sql(comparison, student, dash_at.sql))
+            (
+                cut_label(cuts[int(r["__cut"])]),
+                tuple(_key(r[d.dashboard]) for d in comparison.dims),
+            ): r["n_students"]
+            for r in wh.rows(at(count_sql, build.start).sql)
         }
 
     sides.fingerprints[comparison.id] = {
@@ -1145,7 +1161,7 @@ def _diff_cells(sides: _Sides) -> list[dict]:
             "dashboard": c.dashboard,
             "cube": c.cube,
             "n_students": sides.students.get(c.comparison, {}).get(
-                tuple(v for _, v in c.dims)
+                (c.cut, tuple(v for _, v in c.dims))
             ),
         }
         for c in sides.cells
