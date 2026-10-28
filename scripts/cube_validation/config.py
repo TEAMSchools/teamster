@@ -16,10 +16,14 @@ from typing import Any, NoReturn
 
 import yaml
 
-CALLS = ("deliberate", "fix_dashboard", "fix_cube", "domain_owner")
+CALLS = ("deliberate", "fix_dashboard", "fix_cube", "fix_source", "domain_owner")
 # A domain-owner decision's task is the review issue, which `review` drafts
-# from the decisions, so its task is filled in after the issue posts.
-CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube")
+# from the decisions, so its task is filled in after the issue posts. A
+# `fix_source` task is the issue opened for the source data's owner.
+CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "fix_source")
+# The `tasks:` block names a domain's Cube-fix issue and dashboard-fix task,
+# which `record-answers` copies into a decision's `task`.
+TASK_KEYS = ("cube_fix", "dashboard_fix")
 _TASK = re.compile(r"https://\S+|#\d+")
 # Filter operators for `scope` (Cube side) and `dashboard_filters` (dashboard
 # side). The comparisons take exactly 1 number; `set` means not null.
@@ -157,6 +161,7 @@ class ViewConfig:
     anchors: list[Anchor] = field(default_factory=list)
     identities: list[Identity] = field(default_factory=list)
     decisions: list[Decision] = field(default_factory=list)
+    tasks: dict[str, str] = field(default_factory=dict)
 
 
 class _Reader:
@@ -478,6 +483,25 @@ def _decision(
     )
 
 
+def _tasks(root: _Reader) -> dict[str, str]:
+    """The `tasks:` block: only `TASK_KEYS`, each an https:// link or #<issue>."""
+    if root.data.get("tasks") is None:
+        return {}
+    reader = root.child("tasks", root.get("tasks", dict))
+    for key in reader.data:
+        if key not in TASK_KEYS:
+            reader.fail(str(key), f"must be one of {', '.join(TASK_KEYS)}")
+    tasks = {}
+    for key in TASK_KEYS:
+        value = reader.get(key, str)
+        if value is None:
+            continue
+        if not _TASK.fullmatch(value):
+            reader.fail(key, f"must be an https:// link or #<issue>; got {value!r}")
+        tasks[key] = value
+    return tasks
+
+
 def load_view_config(path: Path) -> ViewConfig:
     """Read and validate one validation file.
 
@@ -539,6 +563,7 @@ def load_view_config(path: Path) -> ViewConfig:
             _decision(r, set(ids), _value_texts(tree, i))
             for i, r in enumerate(_list_of(root, "decisions"))
         ],
+        tasks=_tasks(root),
     )
 
 

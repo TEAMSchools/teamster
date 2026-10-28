@@ -564,7 +564,7 @@ def render_review_issue(
         "",
         f"The {domain} team owns the rule behind {n} {plural} in the Cube validation.",
         "Cube and the dashboard disagree on them, or Cube disagrees with a source outside the dashboards.",
-        "Counts under 10 show as `<10`, and student identifiers are hidden.",
+        "Counts under 10 show as `<10`, and identifiers of students and staff are hidden.",
         "",
     ]
     out += _bullets(question_lines + anchor_lines, "Nothing needs review.")

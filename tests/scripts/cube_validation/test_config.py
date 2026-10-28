@@ -629,3 +629,48 @@ def test_parameters_load_as_text(tmp_path):
     )
     first = load_view_config(_write(tmp_path, text)).comparisons[0]
     assert first.parameters == {"Attendance Metric": "Chronic Absenteeism"}
+
+
+def test_fix_source_needs_a_task(tmp_path):
+    path = _write(tmp_path, EXAMPLE.replace("call: deliberate", "call: fix_source"))
+
+    with pytest.raises(ConfigError, match=r"decisions\[0\]\.task"):
+        load_view_config(path)
+
+
+def test_fix_source_takes_a_task(tmp_path):
+    text = EXAMPLE.replace("call: deliberate", "call: fix_source")
+    path = _write(tmp_path, text.replace('task: ""', 'task: "#6150"'))
+
+    assert load_view_config(path).decisions[0].call == "fix_source"
+
+
+def test_tasks_block_is_read(tmp_path):
+    text = EXAMPLE + (
+        "tasks:\n  cube_fix: '#6150'\n  dashboard_fix: https://app.asana.com/0/1/2\n"
+    )
+
+    cfg = load_view_config(_write(tmp_path, text))
+
+    assert cfg.tasks == {
+        "cube_fix": "#6150",
+        "dashboard_fix": "https://app.asana.com/0/1/2",
+    }
+
+
+def test_tasks_block_is_optional(tmp_path):
+    assert load_view_config(_write(tmp_path, EXAMPLE)).tasks == {}
+
+
+def test_tasks_block_accepts_only_known_keys(tmp_path):
+    path = _write(tmp_path, EXAMPLE + "tasks:\n  other_fix: '#6150'\n")
+
+    with pytest.raises(ConfigError, match=r"tasks\.other_fix"):
+        load_view_config(path)
+
+
+def test_tasks_block_values_must_be_links(tmp_path):
+    path = _write(tmp_path, EXAMPLE + "tasks:\n  cube_fix: see Asana\n")
+
+    with pytest.raises(ConfigError, match=r"tasks\.cube_fix.*https://"):
+        load_view_config(path)

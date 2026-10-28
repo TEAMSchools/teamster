@@ -725,3 +725,11 @@ def test_one_reason_across_files_is_one_bullet():
     ]
     fold = body.split("<summary>For Claude</summary>", 1)[1]
     assert "`daily_view-enroll`" in fold and "`periods_view-enroll`" in fold
+
+
+def test_review_footnote_names_students_and_staff():
+    body = render_review_issue("Registrar", [_run()])
+    assert (
+        "Counts under 10 show as `<10`, and identifiers of students and staff "
+        "are hidden." in body
+    )
