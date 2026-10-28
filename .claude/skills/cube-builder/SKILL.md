@@ -130,11 +130,11 @@ Build shallowest tier first, one PR type at a time. Each PR follows the root
 CLAUDE.md branch flow, is based on `origin/main`, and carries
 `Refs #<build issue>`.
 
-Comparisons, proofs and decisions go in `src/cube/validation/<view>.yml` on a
-separate validation branch, stacked on
-`cristinabaldor/feat/claude-cube-validation-and-build-skill` until #6160 merges,
-never in a builder PR. The runner's `PKG` is always the validator worktree's
-`scripts/cube_validation`.
+Comparisons, proofs and decisions go in `src/cube/validation/<view>.yml` on the
+dashboard's own validation branch, never in a builder PR. Base that branch on
+the branch that carries the validator: `origin/main` once the validator has
+merged, else the validator's branch. The runner's `PKG` is the
+`scripts/cube_validation` of that branch's checkout.
 
 | PR type         | What it changes                           | Reviewer           |
 | --------------- | ----------------------------------------- | ------------------ |
@@ -158,11 +158,12 @@ never in a builder PR. The runner's `PKG` is always the validator worktree's
 3. While the column exists only in the dev build, redirect the copy's
    `sql_table` to `zz_<user>_kipptaf_marts` (never the working tree) and pass
    `--fact-dataset zz_<user>_kipptaf_marts` to `check-api`, `prove` and `run`.
-4. After writing a new measure, copy `members.json` aside, then run `members`
-   against the local Cube. A `same SQL: <new>, <other>` line means the new
-   measure is `<other>` under another name: confirm in `members.json`, drop the
-   new one and reuse `<other>`. Restore the copy, or rerun `members` against
-   Cube Cloud, before any later `inventory`.
+4. After writing a new measure, copy `~/.cache/cube-validation/members.json`
+   aside, then run `members` against the local Cube. A
+   `same SQL: <new>, <other>` line means the new measure is `<other>` under
+   another name: confirm in `members.json`, drop the new one and reuse
+   `<other>`. Restore the copy, or rerun `members` against Cube Cloud, before
+   any later `inventory`.
 5. On the validation branch, add the comparison that proves the piece by the
    `cube-validation` runbook steps 2 and 3. A new dimension is proven by slicing
    an existing measure by it (the new dimension mapped under `dims`).

@@ -54,18 +54,17 @@ validation files or runs the validator, and neither does this session.
    3. Who differs: the filters on each side, and the rows and students only one
       side counts, by school or grade, from `counts` as given.
    4. What triage found (`evidence`) and why it is the owner's call.
-   5. The owner's checks, one per `hand_checks` entry. The dashboard: the
-      filters to set (`cut`), the cell to read (`dims`, or the total), and the
-      number to expect (`dashboard`) beside Cube's (`cube`). Name the sheet from
-      the comparison's `workbook` and `sheet` in
-      `src/cube/validation/<view>.yml` when the validation branch is reachable
-      (`mcp__github__get_file_contents`). Then each side's SQL (`dashboard_sql`,
-      `cube_sql`) in a fenced `sql` block to paste into the BigQuery console,
-      with its dry-run price (`dashboard_usd`, `cube_usd`): it is pinned to the
-      run's moment and returns only that cell. Tableau shows its last refresh,
-      so a small difference may not match there. An entry with `none` has no
-      group cell to show: offer to find an example under the owner's access, in
-      this chat.
+   5. The owner's checks, one per `hand_checks` entry. The dashboard: the sheet
+      (`sheet` in `workbook`), every filter to set there (`filters`), the cell
+      to read (`dims`, or the total), and the number to expect (`dashboard`)
+      beside Cube's (`cube`). `<10` on a rate or average is a whole value under
+      10, such as a rate of 0 or 1 (0% or 100%), masked by rule. Then each
+      side's SQL (`dashboard_sql`, `cube_sql`) in a fenced `sql` block to paste
+      into the BigQuery console, with its dry-run price (`dashboard_usd`,
+      `cube_usd`): it is pinned to the run's moment and returns only that cell.
+      Tableau shows its last refresh, so a small difference may not match there.
+      An entry with `none` has no group cell to show: offer to find an example
+      under the owner's access, in this chat.
    6. The choices, with what happens next, plus free text:
 
       | Choice                     | `call`          | What happens next                                 |
@@ -98,8 +97,7 @@ validation files or runs the validator, and neither does this session.
 
 On the owner's confirmation, post 1 comment with
 `mcp__github__add_issue_comment`: a readable summary, then exactly one fenced
-`json` block, and no other `json` block anywhere in the comment. Its fence lines
-start at the first column, with nothing before the backticks:
+`json` block, and no other `json` block anywhere in the comment:
 
 ```json
 [
