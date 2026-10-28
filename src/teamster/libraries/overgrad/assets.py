@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from dagster import AssetExecutionContext, Output, asset
 
 from teamster.core.asset_checks import (
@@ -5,6 +7,35 @@ from teamster.core.asset_checks import (
     check_avro_schema_valid,
 )
 from teamster.libraries.overgrad.resources import OvergradResource
+
+# list endpoints that support the `updated_after` filter
+CATCH_UP_ENDPOINTS = {"students", "admissions", "followings"}
+
+
+def _parse_updated_at(record: dict) -> datetime:
+    updated_at = record.get("updated_at")
+
+    if updated_at is None:
+        return datetime.min.replace(tzinfo=UTC)
+
+    return datetime.fromisoformat(updated_at)
+
+
+def merge_by_id(full: list[dict], catch_up: list[dict]) -> list[dict]:
+    """Merge two pulls of one endpoint into one record per `id`.
+
+    Where an `id` repeats, within or across pulls, the copy with the later
+    `updated_at` wins; a missing `updated_at` loses to any dated copy.
+    """
+    merged: dict = {}
+
+    for record in [*full, *catch_up]:
+        current = merged.get(record["id"])
+
+        if current is None or _parse_updated_at(record) > _parse_updated_at(current):
+            merged[record["id"]] = record
+
+    return list(merged.values())
 
 
 def build_overgrad_asset(
@@ -37,6 +68,26 @@ def build_overgrad_asset(
             response_json = overgrad.get(name, context.partition_key).json()
 
             data = [response_json["data"]]
+        elif name in CATCH_UP_ENDPOINTS:
+            # pages have no stable order, so a record edited mid-pull can land
+            # twice or not at all; re-pull everything edited since the start.
+            # 1s absorbs clock difference with Overgrad, which reads times as UTC
+            start = datetime.now(UTC)
+
+            full = overgrad.list(path=name)
+
+            updated_after = (start - timedelta(seconds=1)).isoformat(
+                timespec="milliseconds"
+            )
+
+            # shortcut: an edit during the catch-up pull itself waits for the
+            # next run; add a second pass if that gap ever matters
+            catch_up = overgrad.list(
+                path=name,
+                params={"updated_after": updated_after.replace("+00:00", "Z")},
+            )
+
+            data = merge_by_id(full=full, catch_up=catch_up)
         else:
             data = overgrad.list(path=name)
 
