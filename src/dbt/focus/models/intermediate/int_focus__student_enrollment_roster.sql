@@ -46,10 +46,6 @@ with
 
             coalesce(e.end_date, date(e.syear + 1, 6, 30)) as exitdate,
 
-            -- Focus custom field custom_9, catalog title "Second School", a
-            -- checkbox. Unchecked marks the primary or home-campus enrollment.
-            coalesce(e.second_school = 'Y', false) as is_second_school,
-
             case
                 g.short_name
                 when 'PK'
@@ -88,6 +84,9 @@ with
         -- school as well.
         left join
             {{ ref("int_focus__school_year_first_day") }} as fd on e.syear = fd.syear
+        -- custom_9 "Second School": not a stint; kept, it would trim the
+        -- primary stint like a transfer (#6094).
+        where e.second_school is null
     ),
 
     -- Focus permits two open stints for the same student, year, and start
@@ -97,33 +96,16 @@ with
     --
     -- Tie-break order, most to least decisive:
     --
-    -- 1. is_second_school asc -- keep the PRIMARY enrollment. Focus custom
-    -- field custom_9 ("Second School") marks the non-primary record, so
-    -- this is the only signal that says which of two concurrent
-    -- enrollments is the student's home campus. Measured 2026-08-26:
-    -- across Focus data back to AY2018 there is exactly ONE
-    -- same-start-date duplicate, it is two DIFFERENT schools, and without
-    -- this term the dedupe kept the SECOND school -- attributing the
-    -- student to a campus they do not attend and stranding the 4 course
-    -- enrollments scheduled at their real one (#5003). Corroborated: the
-    -- primary record carries an enrollment code and the period attendance;
-    -- the second-school record carries neither.
-    -- 2. (schoolid is null) asc -- demote an incomplete stub. Zero such rows
-    -- exist in Focus today; kept as a guard, since a stub is what
+    -- 1. (schoolid is null) asc -- demote an incomplete stub, which is what
     -- motivated this dedupe originally.
-    -- 3. enrollment_created_at desc -- most recently created wins. Focus
-    -- assigns ids in batches, and 20% of SY26 id pairs order differently
-    -- than creation time, so the id alone is not a recency proxy.
-    -- 4. student_enrollment_id desc -- breaks exact ties.
+    -- 2. enrollment_created_at desc -- most recently created wins. Focus
+    -- assigns ids in batches, so the id alone is not a recency proxy.
+    -- 3. student_enrollment_id desc -- breaks exact ties.
     --
-    -- A second-school enrollment is dropped rather than kept, so the course
-    -- enrollments scheduled at that school match no stint and carry a null
-    -- student_enrollment_key in dim_student_section_enrollments. That is the
-    -- correct outcome: they are courses taken at another campus, not a stint.
-    --
-    -- The tie-break depends on custom_9 being populated whenever two stints sit
-    -- at different schools. That premise is asserted upstream, where both rows
-    -- still exist: tests/stg_focus__student_enrollment__one_primary_per_stint.sql
+    -- Second-school rows are already filtered out above, so two stints at
+    -- different schools here mean custom_9 was left unchecked on both. That
+    -- premise is asserted upstream, where both rows still exist:
+    -- tests/stg_focus__student_enrollment__one_primary_per_stint.sql
     -- Same-school, same-start duplicates (the stub case) have no test; this
     -- dedupe absorbs them silently.
     deduplicate as (
@@ -132,7 +114,6 @@ with
                 relation="enrollment",
                 partition_by="student_number, academic_year, startdate",
                 order_by="""
-                    is_second_school asc,
                     (schoolid is null) asc,
                     enrollment_created_at desc,
                     student_enrollment_id desc

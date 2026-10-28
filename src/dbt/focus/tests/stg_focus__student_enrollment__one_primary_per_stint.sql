@@ -1,14 +1,14 @@
--- Guards the tie-break of the same-start-date dedupe in
--- int_focus__student_enrollment. When a student holds two enrollments sharing a
--- year and a start date, that dedupe keeps one, and it decides which by reading
--- the Focus "Second School" checkbox (custom_9). Exactly one of the rows must
--- leave it unchecked -- that row is the primary, home-campus enrollment.
+-- Guards the same-start-date dedupe in int_focus__student_enrollment_roster.
+-- When a student holds two enrollments sharing a year and a start date at
+-- different schools, the roster first drops the one marked with the Focus
+-- "Second School" checkbox (custom_9), so exactly one of the rows must leave it
+-- unchecked -- that row is the primary, home-campus enrollment.
 --
--- Both failure directions matter. Two unchecked rows leave the dedupe with no
--- signal, so it falls through to creation time and picks arbitrarily between two
--- schools. Zero unchecked rows mean every enrollment claims to be a second
--- school, and the primary one is missing. Either way the student gets attributed
--- to a campus by accident.
+-- Both failure directions matter. Two unchecked rows both survive the filter,
+-- so the dedupe falls through to creation time and picks arbitrarily between two
+-- schools. Zero unchecked rows mean the filter drops every enrollment and the
+-- student leaves the roster. Either way the student gets attributed to a campus
+-- by accident.
 --
 -- Asserted on the staging model, not on int_focus__student_enrollment, because
 -- the dedupe has already dropped one of the rows by then. A uniqueness test on

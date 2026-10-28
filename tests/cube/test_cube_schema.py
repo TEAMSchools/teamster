@@ -535,6 +535,10 @@ TWINS.update(
         ),
         ("locations", "grade_band"): ("dim_locations", "grade_band"),
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
+        ("student_attendance_enrollment_daily", "n_absent_days_rolling_90"): (
+            "fct_student_attendance_enrollment_daily",
+            "n_absent_days_rolling_90",
+        ),
     }
 )
 

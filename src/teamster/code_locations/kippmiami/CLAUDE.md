@@ -83,6 +83,10 @@ Constraints to preserve when touching any of these:
   `stg_finalsite__contacts` at 01:00 (Google Directory user sync) and 01:25
   (DeansList). It is independent of the dlt Focus 04:00 tier above. See #4715.
 
+A freshness alert on `stg_finalsite__contacts` (policy in `freshness.py`, shared
+with the other districts) usually means a missing `contacts` partition: backfill
+it in the Dagster UI and staging rebuilds on the next automation tick.
+
 `kippmiami__extracts__focus__asset_job_schedule` also has to be STARTED in the
 Dagster+ UI; its `defaultStatus` is STOPPED and it had never run in prod as of
 #4736.

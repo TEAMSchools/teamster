@@ -2,6 +2,12 @@
 
 Ask: which flag, region, school level, and quarter.
 
+If the ticket or Slack thread already carries a `gradebook-flag-triage` hand-off
+(teacher, section, category, dashboard row, what was checked), start from it
+rather than from the dashboard. If the triage answer was wrong, the fix is to
+that skill (ps-plugins, `skills/gradebook-flag-triage/`), not to dbt, unless the
+model itself is wrong.
+
 ## A student who left the section
 
 When a category reads _Invalid scores entered_ or _Under 90% graded_ and the

@@ -24,10 +24,7 @@ with
 
             if(illuminate_subject_area = 'Text Study', 'Reading', 'Math') as `subject`,
 
-            -- grade 3 FAST reads PM1 of the same year, not PM3 of the prior year
-            academic_year + if(
-                score_source = 'state_fl' and administration_period = 'PM1', 0, 1
-            ) as academic_year,
+            benchmark_academic_year as academic_year,
 
             case
                 when score_source = 'state_nj'

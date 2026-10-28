@@ -36,6 +36,48 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: contact_first_name
+        data_type: string
+        description:
+          Contact's first name — the related person's Finalsite `first_name` for
+          `contact_1` and `contact_2`, or `emrg_N_name_first_name` for an
+          emergency slot.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              name: int_finalsite__student_contacts__contact_first_name_not_null
+              description: >-
+                A Finalsite contact linked to a student has no first name.
+                Downstream, SIS and family-messaging feeds send the contact with
+                a blank name. For a parent slot, enter the first name on the
+                parent's contact record in Finalsite. For an emergency slot,
+                enter it in the emergency contact's name fields on the student's
+                record.
+              config:
+                severity: warn
+      - name: contact_last_name
+        data_type: string
+        description:
+          Contact's last name — the related person's Finalsite `last_name` for
+          `contact_1` and `contact_2`, or `emrg_N_name_last_name` for an
+          emergency slot.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              name: int_finalsite__student_contacts__contact_last_name_not_null
+              description: >-
+                A Finalsite contact linked to a student has no last name.
+                Downstream, SIS and family-messaging feeds send the contact with
+                a blank name. For a parent slot, enter the last name on the
+                parent's contact record in Finalsite. For an emergency slot,
+                enter it in the emergency contact's name fields on the student's
+                record.
+              config:
+                severity: warn
       - name: relationship
         data_type: string
         description:
@@ -79,24 +121,6 @@ models:
           Contact's name — the relationship's `rel_name` for `contact_1` and
           `contact_2`, or the concatenated first/last name from the matching
           `emrg_N_name_*` fields for an emergency slot.
-        config:
-          meta:
-            contains_pii: true
-      - name: contact_first_name
-        data_type: string
-        description:
-          Contact's first name — the related person's Finalsite `first_name` for
-          `contact_1` and `contact_2`, or `emrg_N_name_first_name` for an
-          emergency slot.
-        config:
-          meta:
-            contains_pii: true
-      - name: contact_last_name
-        data_type: string
-        description:
-          Contact's last name — the related person's Finalsite `last_name` for
-          `contact_1` and `contact_2`, or `emrg_N_name_last_name` for an
-          emergency slot.
         config:
           meta:
             contains_pii: true

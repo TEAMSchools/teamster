@@ -176,12 +176,8 @@ cubes:
     measures:
       - name: count_students
         description: >-
-          Distinct students with recorded attendance at any point in the period,
-          and the denominator for every rate here. No minimum-day floor applies
-          -- one measured day is enough -- but a student whose attendance was
-          never recorded is excluded, because a day nobody measured cannot
-          support a headcount or a rate. Population and denominator are
-          therefore the same number and cannot drift apart.
+          Distinct students enrolled at any point in the period, by entry and
+          exit dates, whether or not their attendance has been recorded.
 
           Counts distinct students, so a student who changed schools mid-period
           counts once at each school when grouped by school and once overall
@@ -191,12 +187,20 @@ cubes:
           This is a served-during-the-period count, a different question from
           enrolled on a given date — for that, pin the date on
           student_attendance_enrollment_daily_view.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
 
-          This is the denominator for every rate on this cube — chronic absence,
-          both ADA-tier shares, and truancy. No rate here applies a
-          minimum-membership-day floor, so show this count beside any of them
-          for an early period, where the rate is computed over students judged
-          on very few days.
+      - name: count_students_measured
+        description: >-
+          Distinct students in the period with at least 1 recorded attendance
+          day in the academic year so far, and the denominator for every rate
+          here: chronic absence, both ADA-tier shares, and truancy. A student
+          whose attendance was never recorded can never reach a rate's
+          numerator, so counting them would pull every rate down. No rate here
+          applies a minimum-membership-day floor, so show this count beside any
+          of them for an early period, where the rate is computed over students
+          judged on very few days.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
@@ -218,18 +222,20 @@ cubes:
 
       - name: pct_chronically_absent
         description: >-
-          Chronic absence rate. Denominator is count_students, every student in
-          the queried slice. No minimum-membership-day floor applies. Numerator
-          and denominator share the same population, so a student whose
-          attendance was never recorded is outside both and cannot pull the rate
-          down.
+          Chronic absence rate. Denominator is count_students_measured, every
+          student in the queried slice with recorded attendance. No
+          minimum-membership-day floor applies. Numerator and denominator share
+          the same population, so a student whose attendance was never recorded
+          is outside both and cannot pull the rate down.
 
           So an early period reports a rate over students judged on very few
           days: a student who misses one of their first four days sits at 75%
-          ADA and counts as chronically absent. Always display count_students
-          alongside this rate, and treat the first weeks of an academic year as
-          volatile rather than wrong.
-        sql: "1.0 * {count_chronically_absent} / NULLIF({count_students}, 0)"
+          ADA and counts as chronically absent. Always display
+          count_students_measured alongside this rate, and treat the first weeks
+          of an academic year as volatile rather than wrong.
+        sql:
+          "1.0 * {count_chronically_absent} / NULLIF({count_students_measured},
+          0)"
         type: number
         format: percent
         public: true
@@ -247,11 +253,12 @@ cubes:
           1 or Tier 2) as of period_end_date. Tier 2 is strictly above 90.0%;
           Tier 3 includes exactly 90.0%.
 
-          Denominator is count_students, every student in the queried slice. No
-          minimum-membership-day floor applies. Numerator and denominator share
-          the same population, so a student whose attendance was never recorded
-          is outside both and cannot pull the rate down.
-        sql: "1.0 * {_count_tier_1_2} / NULLIF({count_students}, 0)"
+          Denominator is count_students_measured, every student in the queried
+          slice with recorded attendance. No minimum-membership-day floor
+          applies. Numerator and denominator share the same population, so a
+          student whose attendance was never recorded is outside both and cannot
+          pull the rate down.
+        sql: "1.0 * {_count_tier_1_2} / NULLIF({count_students_measured}, 0)"
         type: number
         format: percent
         public: true
@@ -269,11 +276,12 @@ cubes:
           inclusive (Tier 3) as of period_end_date. Tier 2 is strictly above
           90.0%; Tier 3 includes exactly 90.0%.
 
-          Denominator is count_students, every student in the queried slice. No
-          minimum-membership-day floor applies. Numerator and denominator share
-          the same population, so a student whose attendance was never recorded
-          is outside both and cannot pull the rate down.
-        sql: "1.0 * {_count_tier_3} / NULLIF({count_students}, 0)"
+          Denominator is count_students_measured, every student in the queried
+          slice with recorded attendance. No minimum-membership-day floor
+          applies. Numerator and denominator share the same population, so a
+          student whose attendance was never recorded is outside both and cannot
+          pull the rate down.
+        sql: "1.0 * {_count_tier_3} / NULLIF({count_students_measured}, 0)"
         type: number
         format: percent
         public: true
@@ -292,7 +300,7 @@ cubes:
           implies at least 15 membership days. NJ's is not: its projection can
           fire in a student's first days, so early-period counts run high, most
           at week and month grain in the first weeks of an academic year. Show
-          count_students beside this measure for any early period.
+          count_students_measured beside this measure for any early period.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
@@ -302,17 +310,18 @@ cubes:
       - name: pct_truant
         description: >-
           Percentage of students meeting regional truancy criteria as of
-          period_end_date. Denominator is count_students, every student in the
-          queried slice. No minimum-membership-day floor applies. Numerator and
-          denominator share the same population, so a student whose attendance
-          was never recorded is outside both and cannot pull the rate down.
-          Truancy has no eligibility concept in either the Miami or the NJ rule.
+          period_end_date. Denominator is count_students_measured, every student
+          in the queried slice with recorded attendance. No
+          minimum-membership-day floor applies. Numerator and denominator share
+          the same population, so a student whose attendance was never recorded
+          is outside both and cannot pull the rate down. Truancy has no
+          eligibility concept in either the Miami or the NJ rule.
 
           Any minimum-membership-day condition would belong inside is_truant on
           the fact, which keeps this denominator correct through a later change
           to that definition. See count_truants for how the numerator behaves
           early in an academic year.
-        sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
+        sql: "1.0 * {count_truants} / NULLIF({count_students_measured}, 0)"
         type: number
         format: percent
         public: true

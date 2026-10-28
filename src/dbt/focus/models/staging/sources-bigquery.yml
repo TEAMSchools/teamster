@@ -842,3 +842,13 @@ sources:
                 - dlt
                 - focus
                 - apex_session_responses
+      # State Reporting
+      - name: florida_fast_report_students
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - florida_fast_report_students
