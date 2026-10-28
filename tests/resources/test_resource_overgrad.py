@@ -48,6 +48,29 @@ def test_list_logs_once_per_call(monkeypatch):
     log.info.assert_called_once()
 
 
+def test_list_passes_params_through(monkeypatch):
+    monkeypatch.setattr(overgrad_resources.time, "sleep", lambda _: None)
+
+    resource = OvergradResource(api_key="test")
+    object.__setattr__(resource, "_log", MagicMock())
+
+    seen = []
+
+    def fake_request(params, **_):
+        seen.append(dict(params))
+        return _FakeResponse(page=params["page"], total_pages=2)
+
+    object.__setattr__(resource, "_session", SimpleNamespace(request=fake_request))
+
+    caller_params = {"updated_after": "2026-10-28T18:00:00.000Z"}
+    resource.list(path="admissions", params=caller_params)
+
+    assert [p["updated_after"] for p in seen] == ["2026-10-28T18:00:00.000Z"] * 2
+    assert [p["page"] for p in seen] == [1, 2]
+    assert all(p["limit"] == resource.page_limit for p in seen)
+    assert caller_params == {"updated_after": "2026-10-28T18:00:00.000Z"}
+
+
 @pytest.mark.parametrize(
     "error", [RequestsConnectionError("Remote end closed"), ReadTimeout("timed out")]
 )

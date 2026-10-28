@@ -62,7 +62,7 @@ class OvergradResource(ConfigurableResource):
         return self._request(method="GET", url=url, **kwargs)
 
     def list(self, path: str, *args: str, **kwargs) -> list[dict]:
-        kwargs["params"] = {"limit": self.page_limit}
+        kwargs["params"] = {**kwargs.pop("params", {}), "limit": self.page_limit}
 
         url = self._get_url(path, *args)
 
