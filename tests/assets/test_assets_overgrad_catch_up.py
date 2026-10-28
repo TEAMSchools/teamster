@@ -48,6 +48,18 @@ def test_merge_empty_catch_up():
     assert merge_by_id(full, []) == full
 
 
+def test_merge_naive_updated_at_treated_as_utc():
+    merged = merge_by_id([_rec(1, "2026-10-28T10:00:00.000")], [_rec(1, T11)])
+
+    assert merged == [_rec(1, T11)]
+
+
+def test_merge_keeps_records_without_id():
+    no_id = {"updated_at": T10}
+
+    assert merge_by_id([no_id, _rec(1, T10)], [no_id]) == [_rec(1, T10), no_id, no_id]
+
+
 class _FakeOvergrad(OvergradResource):
     def list(self, path: str, *args: str, **kwargs) -> list[dict]:
         _calls.append(kwargs.get("params"))

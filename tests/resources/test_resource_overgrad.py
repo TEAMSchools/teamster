@@ -71,6 +71,20 @@ def test_list_passes_params_through(monkeypatch):
     assert caller_params == {"updated_after": "2026-10-28T18:00:00.000Z"}
 
 
+def test_list_accepts_params_none(monkeypatch):
+    monkeypatch.setattr(overgrad_resources.time, "sleep", lambda _: None)
+
+    resource = OvergradResource(api_key="test")
+    object.__setattr__(resource, "_log", MagicMock())
+
+    def fake_request(params, **_):
+        return _FakeResponse(page=params["page"], total_pages=1)
+
+    object.__setattr__(resource, "_session", SimpleNamespace(request=fake_request))
+
+    assert resource.list(path="admissions", params=None) == [{"id": 1}]
+
+
 def test_list_stops_on_empty_result(monkeypatch):
     monkeypatch.setattr(overgrad_resources.time, "sleep", lambda _: None)
 

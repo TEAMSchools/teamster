@@ -18,24 +18,33 @@ def _parse_updated_at(record: dict) -> datetime:
     if updated_at is None:
         return datetime.min.replace(tzinfo=UTC)
 
-    return datetime.fromisoformat(updated_at)
+    parsed = datetime.fromisoformat(updated_at)
+
+    # Overgrad sends UTC; read a timestamp without a marker as UTC too
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 def merge_by_id(full: list[dict], catch_up: list[dict]) -> list[dict]:
     """Merge two pulls of one endpoint into one record per `id`.
 
     Where an `id` repeats, within or across pulls, the copy with the later
-    `updated_at` wins; a missing `updated_at` loses to any dated copy.
+    `updated_at` wins; a missing `updated_at` loses to any dated copy. Records
+    without an `id` cannot be matched, so they pass through unmerged.
     """
     merged: dict = {}
+    no_id: list[dict] = []
 
     for record in [*full, *catch_up]:
+        if record.get("id") is None:
+            no_id.append(record)
+            continue
+
         current = merged.get(record["id"])
 
         if current is None or _parse_updated_at(record) > _parse_updated_at(current):
             merged[record["id"]] = record
 
-    return list(merged.values())
+    return [*merged.values(), *no_id]
 
 
 def build_overgrad_asset(
