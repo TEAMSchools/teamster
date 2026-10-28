@@ -41,12 +41,13 @@ out.
 - `override`: an ISO date that replaces the computed one. Followers shift with
   it.
 
-The governance and handoff rows are standard rows, in a `Governance` workstream:
-Charter signed (milestone, override to the signing date), Kickoff (milestone,
-first week), Name the owner after close, Help article or training, Comms to
-affected staff (tasks, `after` the last delivery milestone), and Close and
-lessons learned (milestone, last). Phase 4 dates the Asana template's standing
-tasks from these rows, so their names match the template's exactly.
+The governance and handoff rows are standard rows, in a `Governance` workstream
+that phase 4 maps onto the Asana template's standing tasks rather than a section
+of its own: Charter signed (milestone, override to the signing date), Kickoff
+(milestone, first week), Close and lessons learned (milestone, `after` the last
+delivery milestone), and Name the owner after close, Help article or training,
+Comms to affected staff (tasks, also `after` the last delivery milestone, so
+they share the close milestone's week). The names match the template's exactly.
 
 ## Run
 
