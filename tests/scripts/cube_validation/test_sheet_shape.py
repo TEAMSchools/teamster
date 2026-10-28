@@ -1,3 +1,5 @@
+import dataclasses
+
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
@@ -349,3 +351,68 @@ def test_sheet_gaps_skip_a_table_calculation():
         "{DS}.[none:team:nk] / {DS}.[rank:sum:x:qk]))</rows>".replace("{DS}", DS),
     )
     assert pipeline.sheet_gaps(twb, _comparison()).cuts == ["Last First", "Team"]
+
+
+NOTES_TWB = f"""<?xml version='1.0' encoding='utf-8' ?>
+<workbook xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource name='Parameters'>
+      <column caption='Metric' name='[Parameter 1]' role='measure' />
+    </datasource>
+    <datasource name='federated.x'>
+      <column caption='Grade Copy' name='[Calculation_2]'>
+        <calculation class='tableau' formula='[grade_level]' />
+      </column>
+      <column caption='Show Rate' name='[Calculation_3]'>
+        <calculation class='tableau' formula='IF [Parameters].[Parameter 1] = 1 THEN [rate] END' />
+      </column>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Roster'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.x'>
+            <column caption='Grade' name='[grade_level]' role='dimension' />
+            <column caption='Enroll Status' name='[enroll_status]' role='dimension' />
+            <column caption='Grade Copy' name='[Calculation_2]' role='dimension'>
+              <calculation class='tableau' formula='[grade_level]' />
+            </column>
+            <column caption='Show Rate' name='[Calculation_3]' role='dimension'>
+              <calculation class='tableau' formula='IF [Parameters].[Parameter 1] = 1 THEN [rate] END' />
+            </column>
+          </datasource-dependencies>
+          <filter class='categorical' column='{DS}.[none:Calculation_2:nk]'>
+            <groupfilter function='level-members' level='[none:Calculation_2:nk]' />
+          </filter>
+          <filter class='categorical' column='{DS}.[none:Calculation_3:nk]'>
+            <groupfilter function='level-members' level='[none:Calculation_3:nk]' />
+          </filter>
+          <filter class='categorical' column='{DS}.[none:enroll_status:nk]'>
+            <groupfilter function='level-members' level='[none:enroll_status:nk]' />
+          </filter>
+        </view>
+        <rows>{DS}.[none:grade_level:nk]</rows>
+      </table>
+    </worksheet>
+  </worksheets>
+</workbook>
+"""
+
+
+def test_sheet_gaps_notes_copies_and_display_switches():
+    base = _comparison()
+    comparison = dataclasses.replace(
+        base,
+        filters={
+            **base.filters,
+            "Grade": ColumnPair(dashboard="grade_level", cube="grade"),
+        },
+    )
+    gaps = pipeline.sheet_gaps(NOTES_TWB, comparison)
+    assert gaps.filters == ["Enroll Status", "Grade Copy", "Show Rate"]
+    assert gaps.notes == {
+        "Grade Copy": "copy of Grade",
+        "Show Rate": "display switch on Metric",
+    }
+    assert gaps.columns == {"Enroll Status": "enroll_status"}

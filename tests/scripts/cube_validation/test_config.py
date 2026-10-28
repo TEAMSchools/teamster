@@ -409,9 +409,15 @@ def test_proof_reads_missing_cuts_and_filters(tmp_path):
       missing_cuts: [Team]
       missing_filters: [Enroll Status, Term]
       restricting_filters: [Enroll Status]
+      filter_notes:
+        Grade Copy: copy of Grade
+      missing_columns:
+        Enroll Status: enroll_status
 """
     text = EXAMPLE.replace("    proof: null\n", proof)
     p = load_view_config(_write(tmp_path, text)).comparisons[0].proof
+    assert p.filter_notes == {"Grade Copy": "copy of Grade"}
+    assert p.missing_columns == {"Enroll Status": "enroll_status"}
     assert p.missing_cuts == ["Team"]
     assert p.missing_filters == ["Enroll Status", "Term"]
     assert p.restricting_filters == ["Enroll Status"]
@@ -423,6 +429,7 @@ def test_old_proof_reads_missing_lists_as_unknown(tmp_path):
     )
     p = load_view_config(_write(tmp_path, text)).comparisons[0].proof
     assert p.missing_cuts is None and p.missing_filters is None
+    assert p.filter_notes is None and p.missing_columns is None
 
 
 def test_gap_decision_loads_without_comparison_or_fingerprints(tmp_path):

@@ -1412,6 +1412,27 @@ class SheetGaps:
     cuts: list[str]
     filters: list[str]
     restricting: list[str]
+    # Caption to why the field needs no Cube member: `copy of <mapped caption>`
+    # or `display switch on <parameter caption>`.
+    notes: dict[str, str] = dataclasses.field(default_factory=dict)
+    # Caption to the datasource column, for a plain field (never a calculation).
+    columns: dict[str, str] = dataclasses.field(default_factory=dict)
+
+
+_WHOLE_REF = re.compile(r"\[(?P<name>[^\]]+)\]")
+_PARAMETER_REF = re.compile(r"\[Parameters\]\.\[(?P<name>[^\]]+)\]")
+
+
+def _parameter_captions(twb_xml: str) -> dict[str, str]:
+    """Map each parameter's bare name to its caption."""
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    root = ET.fromstring(twb_xml)
+    return {
+        (col.get("name") or "").strip("[]"): col.get("caption") or ""
+        for ds in root.iter("datasource")
+        if ds.get("name") == "Parameters"
+        for col in ds.findall("column")
+    }
 
 
 def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
@@ -1431,6 +1452,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     mapped = {p.dashboard for p in pairs}
     mapped_captions = set(comparison.filters)
     caption, personal = finder.sheet_fields(ws)
+    mapped_caption_of = {p.dashboard: c for c, p in comparison.filters.items()}
 
     def field_of(ref: str) -> str | None:
         m = finder.FIELD_REF.search(ref)
@@ -1459,7 +1481,27 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     def captions(names: set[str]) -> list[str]:
         return sorted({caption.get(n, n) for n in names})
 
-    return SheetGaps(captions(cuts), captions(filters), captions(restricting))
+    calcs = {c.name.strip("[]"): c.formula for c in finder.calculated_fields(twb_xml)}
+    parameters = _parameter_captions(twb_xml)
+    notes: dict[str, str] = {}
+    columns: dict[str, str] = {}
+    for name in cuts | filters:
+        formula = (calcs.get(name) or "").strip()
+        if name not in calcs:
+            columns[caption.get(name, name)] = name
+        elif (param := _PARAMETER_REF.search(formula)) is not None:
+            notes[caption.get(name, name)] = (
+                f"display switch on {parameters.get(param['name']) or param['name']}"
+            )
+        elif (whole := _WHOLE_REF.fullmatch(formula)) is not None:
+            ref = whole["name"]
+            if ref in mapped or caption.get(ref) in mapped_captions:
+                shown = mapped_caption_of.get(ref) or caption.get(ref, ref)
+                notes[caption.get(name, name)] = f"copy of {shown}"
+
+    return SheetGaps(
+        captions(cuts), captions(filters), captions(restricting), notes, columns
+    )
 
 
 TOTAL_LABEL = "All"
@@ -1723,6 +1765,10 @@ def prove(
             "missing_cuts": gaps.cuts,
             "missing_filters": gaps.filters,
             "restricting_filters": gaps.restricting,
+            # Triage reads these offline: a copy or display switch needs no
+            # member; a plain column can be value-checked.
+            "filter_notes": gaps.notes,
+            "missing_columns": gaps.columns,
         },
     )
     print(f"Proved {comparison.id}: {proof.cells} cells; wrote proof to {path}.")

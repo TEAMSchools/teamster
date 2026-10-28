@@ -73,6 +73,11 @@ class Proof:
     missing_cuts: list[str] | None = None
     missing_filters: list[str] | None = None
     restricting_filters: list[str] | None = None
+    # Why a missing field needs no Cube member, by caption: `copy of <mapped
+    # caption>` or `display switch on <parameter caption>`; and the datasource
+    # column behind a plain missing field. None when the proof predates them.
+    filter_notes: dict[str, str] | None = None
+    missing_columns: dict[str, str] | None = None
 
 
 @dataclass(frozen=True)
@@ -275,6 +280,8 @@ def _comparison(reader: _Reader) -> Comparison:
             missing_cuts=_captions(proof_reader, "missing_cuts"),
             missing_filters=_captions(proof_reader, "missing_filters"),
             restricting_filters=_captions(proof_reader, "restricting_filters"),
+            filter_notes=_caption_map(proof_reader, "filter_notes"),
+            missing_columns=_caption_map(proof_reader, "missing_columns"),
         )
 
     split_rows = reader.get("split_rows", str, default="refuse")
@@ -326,6 +333,11 @@ def _definitions(reader: _Reader) -> dict[str, str]:
 def _captions(reader: _Reader, key: str) -> list[str] | None:
     values = reader.get(key, list)
     return None if values is None else [str(v) for v in values]
+
+
+def _caption_map(reader: _Reader, key: str) -> dict[str, str] | None:
+    values = reader.get(key, dict)
+    return None if values is None else {str(k): str(v) for k, v in values.items()}
 
 
 def _scope_entry(reader: _Reader) -> dict[str, Any]:
