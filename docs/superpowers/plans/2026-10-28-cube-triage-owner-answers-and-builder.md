@@ -93,6 +93,38 @@ fakes in `tests/scripts/cube_validation/`.
 - Tests: one new file per new module (`test_triage.py`, `test_answers.py`,
   `test_builder.py`) plus additions to existing test files.
 
+## Execution order
+
+The analyst tests the builder on DDI Suite's student tier buckets on 2026-10-29
+at 1pm, so the builder goes first. Run the tasks in this order:
+
+1. Task 1, then Tasks 11, 12, 13, 10.
+2. Task 14 Step 3 (the `cube-builder` runbook) with its lint and its own commit
+   (`docs(cube): builder runbook`, `Refs #6157`).
+3. Tasks 2 to 9.
+4. Task 14 Steps 1, 2 and 4 to 5 (the other 2 runbooks).
+
+## Live checks
+
+The controller runs these after the named task's review passes, never the
+implementer. They run under a throwaway `tests/test_zz_*.py` in the main
+checkout (the pytest fixture loads the Cube secret), pointed at this worktree's
+package, and are deleted afterwards. A failure is a defect in that task.
+
+- Task 11: `members` against Cube Cloud. Expect every public measure listed with
+  compiled SQL, and 4 `count_students` from `same_name`. No BigQuery.
+- Task 12: `inventory-workbook` on
+  `/workspaces/teamster/.claude/scratch/ddi-twb/ddi_suite.twb`. Expect the
+  Student Tier field as a cut or filter on many sheets, and parameters marked
+  presentation.
+- Task 13: `inventory` on the `ddi_suite` section of
+  `docs/superpowers/plans/2026-10-02-cube-gap-catalog-assessments.md`, with Task
+  12's output as the review and an empty Asana list. Expect a Student Tier row
+  with no member.
+- Task 10, Task 4 and Task 8 need a DDI validation file and a local Cube server;
+  they run during or after the 2026-10-29 test, on the DDI branch's file, not in
+  this run.
+
 ---
 
 ## Part A: context-checked triage
