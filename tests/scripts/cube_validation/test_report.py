@@ -600,7 +600,8 @@ def test_review_issue_merges_decisions_that_share_a_reason():
     bullets = [x for x in body.splitlines() if LEFT in x]
     assert bullets == [
         "- `dashboard_filter` = `enroll_status` in absences-roster, tardy-roster of "
-        "`enrollment_view` (dashboard_filtered): 2 row groups, 400 rows, 40 students. "
+        "`enrollment_view` (dashboard_filtered): 2 row groups, 400 rows, "
+        "up to 20 students per comparison. "
         "Reason: " + LEFT
     ]
     fold = body.split("<summary>For Claude</summary>", 1)[1]
@@ -665,3 +666,12 @@ def test_a_school_year_is_a_reviewed_value():
               "value_differs", 400, 40)  # fmt: skip
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=[(d, g)]))])
     assert "Reason: Newark's AY2026 ADA reads lower." in body
+
+
+def test_merged_comparisons_never_add_up_to_unmask_a_value():
+    # 3 students in each of 4 comparisons are the same 3 students, not 12.
+    quiet = [_left(c, students=3) for c in ("a", "b", "c", "d")]
+    body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
+    line = next(x for x in body.splitlines() if LEFT in x)
+    assert "`dashboard_filter` = `<redacted>`" in line
+    assert "up to <10 students per comparison" in line

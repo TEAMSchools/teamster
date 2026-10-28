@@ -409,16 +409,23 @@ def _group_line(view: str, decisions: list[Decision], groups: list[Group]) -> st
     column = columns.pop() if len(columns) == 1 else ""
     found = list(dict.fromkeys(g.value_of(column) or "" for g in groups))
     rows = sum(g.n_rows for g in groups)
-    students = sum(g.n_students for g in groups)
-    # Each value needs 10 students of its own; a total never unmasks a small one.
-    per_value: dict[str, int] = {}
+    # Students are counted within one comparison only: the same students sit in
+    # every comparison on a sheet, so a sum across them counts them again.
+    per_comparison: dict[str, int] = {}
+    per_value: dict[tuple[str, str], int] = {}
     for g in groups:
         value = g.value_of(column) or ""
-        per_value[value] = per_value.get(value, 0) + g.n_students
+        per_comparison[g.comparison_id] = (
+            per_comparison.get(g.comparison_id, 0) + g.n_students
+        )
+        key = (g.comparison_id, value)
+        per_value[key] = per_value.get(key, 0) + g.n_students
+    students = max(per_comparison.values())
+    # A value shows only when one comparison alone has 10 of its students.
     shown = (
         set()
         if _is_identifier(column)
-        else {v for v, n in per_value.items() if n >= MASK_BELOW}
+        else {v for (_, v), n in per_value.items() if n >= MASK_BELOW}
     )
     values = ", ".join(
         dict.fromkeys(_clean(v) if v in shown else "<redacted>" for v in found)
@@ -431,10 +438,15 @@ def _group_line(view: str, decisions: list[Decision], groups: list[Group]) -> st
         if str(v) not in shown
     ]
     plural = "group" if len(groups) == 1 else "groups"
+    who = (
+        f"{mask(students)} students"
+        if len(per_comparison) == 1
+        else f"up to {mask(students)} students per comparison"
+    )
     return (
-        f"{where} in {', '.join(sorted({g.comparison_id for g in groups}))} of "
+        f"{where} in {', '.join(sorted(per_comparison))} of "
         f"`{view}` ({', '.join(sorted({g.bucket for g in groups}))}): "
-        f"{len(groups)} row {plural}, {mask(rows)} rows, {mask(students)} students. "
+        f"{len(groups)} row {plural}, {mask(rows)} rows, {who}. "
         f"Reason: {_with_task(_safe_reason(decision.reason, hidden), decision.task)}"
     )
 
