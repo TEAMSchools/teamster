@@ -76,8 +76,10 @@ def test_members_compiles_every_measure_once():
         "v.m1",
     ]
     by_name = {m.name: m for m in found}
-    assert by_name["a.m1"].kind == "cube"
-    assert by_name["v.m1"].kind == "view"
+    assert by_name["a.m1"].kind == "measure"
+    assert by_name["v.m1"].kind == "measure"
+    assert not by_name["a.m1"].view
+    assert by_name["v.m1"].view
     assert by_name["a.m1"].cube == "a"
     assert by_name["a.m1"].title == "M1"
     assert by_name["a.m1"].sql == "sum(`t`.x)"
@@ -455,7 +457,7 @@ def _member(name, title=""):
     return builder.Member(
         name=name,
         cube=cube,
-        kind="cube",
+        kind="measure",
         title=title,
         description="",
         sql="",
@@ -763,6 +765,38 @@ def test_inventory_resolves_a_cube_level_where_name_to_a_view_member():
 
     assert row.member == "student_assessment_scores_view.pct_proficient"
     assert row.disagreement == ""
+
+
+def test_members_gives_a_view_measure_the_kind_measure():
+    cube = MetaCube(
+        [_cube("v", ["pct_proficient"], kind="view")],
+        {"v.pct_proficient": ("fct_a", "avg(`t`.x)")},
+    )
+
+    (found,) = builder.members(cube)
+
+    assert found.kind == "measure"
+
+
+def test_inventory_resolves_a_dashboard_measure_to_the_measure_not_a_dimension():
+    cube = MetaCube(
+        [
+            _cube(
+                "v",
+                ["pct_proficient"],
+                kind="view",
+                dimensions=[{"name": "v.is_mastery", "title": "Is Mastery Int"}],
+            )
+        ],
+        {"v.pct_proficient": ("fct_a", "avg(`t`.x)")},
+    )
+    found = builder.members(cube)
+    use = _use("AVG(Is Mastery Int)", name="AVG(Is Mastery Int)")
+    catalog = [_where_row("Is Mastery Int", "`v.pct_proficient`")]
+
+    (row,) = builder.inventory(catalog, [use], [], found)
+
+    assert row.member == "v.pct_proficient"
 
 
 def test_inventory_resolves_a_where_name_to_a_cube_prefixed_view_member():

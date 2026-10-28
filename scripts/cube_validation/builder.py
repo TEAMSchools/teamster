@@ -23,9 +23,10 @@ from .pipeline import _measure_expression
 
 @dataclass(frozen=True)
 class Member:
-    """One measure or dimension. For a measure, `kind` is its cube's type; for a
-    dimension it is `dimension`. `sql` is a measure's compiled expression, `fact`
-    the `fct_*` table it reads ("" when none; both "" for a dimension)."""
+    """One measure or dimension; `kind` is `measure` or `dimension`. `view` is
+    True when the member belongs to a Cube view rather than a cube. `sql` is a
+    measure's compiled expression, `fact` the `fct_*` table it reads ("" when
+    none; both "" for a dimension)."""
 
     name: str
     cube: str
@@ -35,6 +36,7 @@ class Member:
     sql: str
     sql_fingerprint: str
     fact: str
+    view: bool = False
 
 
 def members(cube: Cube, skipped: list[dict] | None = None) -> list[Member]:
@@ -54,6 +56,7 @@ def members(cube: Cube, skipped: list[dict] | None = None) -> list[Member]:
                     name=dim["name"],
                     cube=entry["name"],
                     kind="dimension",
+                    view=entry.get("type") == "view",
                     title=dim.get("title", ""),
                     description=dim.get("description", ""),
                     sql="",
@@ -79,7 +82,8 @@ def members(cube: Cube, skipped: list[dict] | None = None) -> list[Member]:
                 Member(
                     name=name,
                     cube=entry["name"],
-                    kind=entry.get("type", "cube"),
+                    kind="measure",
+                    view=entry.get("type") == "view",
                     title=measure.get("title", ""),
                     description=measure.get("description", ""),
                     sql=sql,
@@ -411,7 +415,7 @@ def _find_member(
                 return hit.name, False
 
     def pick(hits: list[Member]) -> tuple[str, bool] | None:
-        hits = [m for m in hits if m.kind != "view"] or hits
+        hits = [m for m in hits if not m.view] or hits
         if not hits:
             return None
         return (
