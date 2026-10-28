@@ -16,6 +16,7 @@ import dataclasses
 import json
 import os
 import sys
+import tempfile
 import urllib.parse
 
 # trunk-ignore(bandit/B405): only ParseError is used; the workbook is parsed in builder
@@ -333,7 +334,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         return _add_decisions(cfg, args.view, args.approved)
 
     if args.command == "reapply":
-        _reapply(args.view)
+        _reapply(cfg)
         return 0
 
     if args.command == "check-api":
@@ -399,9 +400,9 @@ RUN_AGAIN = (
 )
 
 
-def _reapply(path: Path) -> None:
+def _reapply(cfg: ViewConfig) -> None:
     """Re-apply a file's decisions to its saved run and say what is open."""
-    run = pipeline.reapply(_load(path), cache_root())
+    run = pipeline.reapply(cfg, cache_root())
     counts = (
         f"{len(run.applied.open)} open groups, {len(run.applied.open_gaps)} open "
         f"gaps, {len(run.applied.open_cells)} open cell diffs"
@@ -423,9 +424,9 @@ def _reapply_written(paths: list[Path]) -> None:
     refused = False
     for path in paths:
         try:
-            _reapply(path)
+            _reapply(_load(path))
         except pipeline.Refusal as exc:
-            print(f"{path}: not re-applied: {exc}")
+            print(f"{path}: not re-applied: {exc}", file=sys.stderr)
             refused = True
     if not refused:
         print(RUN_AGAIN)
@@ -441,6 +442,28 @@ def _write_all(writes: list[tuple[Path, dict]]) -> None:
         for path, text in originals.items():
             replace_text(path, text)
         raise
+
+
+def _check_claims(writes: list[tuple[Path, dict]]) -> None:
+    """Refuse, before writing, a batch whose decisions would claim one item twice.
+
+    The writes are rehearsed on copies, so the check reads the decisions the
+    way the loader will read the real file.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        copies: dict[Path, Path] = {}
+        for i, path in enumerate(dict.fromkeys(p for p, _ in writes)):
+            copy = Path(tmp) / str(i) / path.name
+            copy.parent.mkdir()
+            copy.write_text(path.read_text())
+            copies[path] = copy
+        for path, decision in writes:
+            write_decision(copies[path], decision)
+        for path, copy in copies.items():
+            try:
+                pipeline.check_claims(load_view_config(copy), cache_root())
+            except pipeline.Refusal as exc:
+                raise pipeline.Refusal(f"{path}: {exc}; nothing written") from exc
 
 
 def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
@@ -468,7 +491,9 @@ def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
         raise pipeline.Refusal(
             f"{path}: decisions already has {', '.join(sorted(taken))}; pick new ids"
         )
-    _write_all([(path, d) for d in decisions])
+    writes = [(path, d) for d in decisions]
+    _check_claims(writes)
+    _write_all(writes)
     for d in decisions:
         print(f"{path}: wrote {d['id']} ({d['call']})")
     _reapply_written([path])

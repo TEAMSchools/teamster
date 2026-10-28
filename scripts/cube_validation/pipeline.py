@@ -1300,33 +1300,24 @@ def _older(cfg: ViewConfig, run_json: Path) -> Refusal:
     )
 
 
-def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
-    """Apply the file's decisions to the view's latest saved run, offline.
-
-    Recording a decision changes no data, so the saved run's groups, gaps,
-    cell differences and SQL fingerprints are re-sorted by the current
-    decisions as `run` would sort them; a decision whose fingerprints differ
-    from the run's still lands in `reconfirm`. Rewrites `run.json` and
-    `result.md` and runs no query. The verdict reads cells only, so it stays;
-    clauses stay as the run computed them.
-
-    Raises:
-        Refusal: The view has no saved run, the run predates what re-applying
-            needs, or two decisions claim the same item.
-    """
+def _reapplicable(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
+    """The latest saved run, refused when it lacks what re-applying reads."""
     data, run_json = _saved_run(cfg, cache_root)
     if "fingerprints" not in data or any(
         k not in data.get("applied", {}) for k in _REAPPLY_KEYS
     ):
         raise _older(cfg, run_json)
     try:
-        saved = _run_from_json(data)
+        return _run_from_json(data), run_json
     except (KeyError, TypeError) as exc:
         raise _older(cfg, run_json) from exc
 
+
+def _apply_saved(cfg: ViewConfig, saved: RunResult) -> Applied:
+    """Sort everything the saved run found by the file's decisions."""
     was = saved.applied
     try:
-        applied = decisions.apply(
+        return decisions.apply(
             cfg.decisions,
             was.open + [g for _, g in was.quiet],
             saved.fingerprints,
@@ -1335,6 +1326,42 @@ def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
         )
     except ValueError as exc:
         raise Refusal(str(exc)) from exc
+
+
+def check_claims(cfg: ViewConfig, cache_root: Path) -> None:
+    """Refuse decisions that would claim one item twice in the saved run.
+
+    Called before decisions are written, since a file whose decisions overlap
+    makes both `run` and `reapply` refuse. With no saved run this validator
+    can re-apply to, there is nothing to check against and nothing refuses.
+
+    Raises:
+        Refusal: Two decisions claim the same group, gap or cells.
+    """
+    try:
+        saved, _ = _reapplicable(cfg, cache_root)
+    except Refusal:
+        return
+    _apply_saved(cfg, saved)
+
+
+def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
+    """Apply the file's decisions to the view's latest saved run, offline.
+
+    Recording a decision changes no data, so the saved run's groups, gaps,
+    cell differences and SQL fingerprints are re-sorted by the current
+    decisions as `run` would sort them; a decision whose fingerprints differ
+    from the run's still lands in `reconfirm`. Rewrites `run.json` and
+    `result.md` and runs no query. The verdict reads cells only, so it stays.
+    Clauses stay as the run computed them, over the groups open then, so a
+    group a deleted decision reopens may show no clause until the next `run`.
+
+    Raises:
+        Refusal: The view has no saved run, the run predates what re-applying
+            needs, or two decisions claim the same item.
+    """
+    saved, run_json = _reapplicable(cfg, cache_root)
+    applied = _apply_saved(cfg, saved)
 
     groups, gaps, cells = _open_counts(
         cfg.comparisons, applied.open, applied.open_gaps, applied.open_cells

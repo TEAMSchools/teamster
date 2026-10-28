@@ -2159,6 +2159,81 @@ def test_add_decisions_re_applies_to_the_saved_run_offline(
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
 
 
+def _triaged_run(path, tmp_path):
+    """Run the file and give its run a triage listing the Miami group as `i`."""
+    assert cli.main(["run", str(path)]) == 0
+    saved = sorted(
+        (tmp_path / "cache" / "v").glob("*/run.json"), key=lambda p: p.stat().st_mtime
+    )
+    (saved[-1].parent / "triage.json").write_text(
+        json.dumps({"items": [_triage_item("e")]})
+    )
+
+
+def test_add_decisions_refuses_a_decision_overlapping_one_in_the_file(
+    fakes, tmp_path, capsys
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    _triaged_run(path, tmp_path)
+    approved = _approved(
+        tmp_path,
+        [{"id": "miami-again", "call": "deliberate", "reason": "r", "item": "i"}],
+    )
+    before = path.read_text()
+    capsys.readouterr()
+
+    assert cli.main(["add-decisions", str(path), str(approved)]) == 1
+
+    err = capsys.readouterr().err
+    assert "miami-scope" in err and "miami-again" in err and "nothing written" in err
+    assert path.read_text() == before
+
+
+def test_add_decisions_refuses_two_in_one_batch_claiming_one_group(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    _triaged_run(path, tmp_path)
+    approved = _approved(
+        tmp_path,
+        [
+            {"id": "one", "call": "deliberate", "reason": "r", "item": "i"},
+            {"id": "two", "call": "deliberate", "reason": "r", "item": "i"},
+        ],
+    )
+    before = path.read_text()
+    capsys.readouterr()
+
+    assert cli.main(["add-decisions", str(path), str(approved)]) == 1
+
+    assert "both claim" in capsys.readouterr().err
+    assert path.read_text() == before
+
+
+def test_add_decisions_without_a_usable_run_still_writes(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _file(tmp_path)
+    _triaged_run(path, tmp_path)
+    approved = _approved(
+        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": "i"}]
+    )
+    # A run saved before re-applying existed: add-decisions reads it, reapply
+    # cannot.
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    data = json.loads(saved.read_text())
+    del data["applied"]["quiet_cells"]
+    saved.write_text(json.dumps(data))
+    capsys.readouterr()
+
+    assert cli.main(["add-decisions", str(path), str(approved)]) == 0
+
+    out, err = capsys.readouterr()
+    assert [d.id for d in load_view_config(path).decisions] == ["a"]
+    assert "not re-applied" in err and "not re-applied" not in out
+
+
 def test_add_decisions_refuses_an_unknown_item_and_writes_nothing(
     fakes, tmp_path, capsys
 ):
@@ -2415,7 +2490,9 @@ def test_record_answers_maps_calls_to_tasks_block(tmp_path, capsys):
         "Cube has no team.",
     )
     assert by_id["settled"].reason == "A label only."
-    assert "`run`" in capsys.readouterr().out.rstrip().splitlines()[-1]
+    # No saved run: the decisions are written, and stderr says to `run`.
+    err = capsys.readouterr().err
+    assert "not re-applied" in err and "`run`" in err
 
 
 def test_record_answers_refuses_a_fix_call_with_no_tasks_entry(tmp_path, capsys):
