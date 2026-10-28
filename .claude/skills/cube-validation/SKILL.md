@@ -1,8 +1,10 @@
 ---
 name: cube-validation
 description:
-  "Use when asked to validate Cube, check whether Cube matches the dashboard, or
-  when working in `src/cube/validation/` or `scripts/cube_validation/`."
+  'Use when asked to validate Cube, check whether Cube matches the dashboard,
+  triage a validation run, pick up the answers on a validation issue ("pick up
+  the answers on #N"), or when working in `src/cube/validation/` or
+  `scripts/cube_validation/`.'
 ---
 
 # cube-validation
@@ -25,6 +27,13 @@ loads only `src/cube/model/`, so these files never reach the semantic layer.
   commit; GitHub text shows counts under 10 as `<10`.
 - Nothing committed names a person or holds an email. Pass `--email` (a
   network-grant address) or set `CUBE_VALIDATION_EMAIL`.
+- **Check every decision reason for a student's or staff member's name before
+  `add-decisions` or `record-answers` writes it.** Both refuse an email or an
+  ID-like number; neither can detect a name.
+- A triage item's `stub` holds the group's real values. It may reach the
+  analyst's chat, never GitHub.
+- Validation-file changes go in their own commits, apart from tool changes, with
+  each file staged by name.
 - Tableau writes go only to the `TEMP-CB` project.
 - Source anchors are entered by hand under `anchors:` with `measure`, `value`,
   `source`, `as_of`, `date_range` and `filters`. Judge each difference in
@@ -36,7 +45,7 @@ loads only `src/cube/model/`, so these files never reach the semantic layer.
 
 Tableau and `CUBE_API_SECRET` come only from the pytest secrets fixture, and
 only the MAIN checkout's devcontainer template holds the Cube secret. So
-`discover`, `prove`, `check-api` and `run` go through a throwaway
+`discover`, `prove`, `check-api`, `run` and `triage` go through a throwaway
 `tests/test_zz_cube_validation.py` in `/workspaces/teamster`, never a worktree
 copy:
 
@@ -68,8 +77,9 @@ copy:
 2. Run `uv run pytest tests/test_zz_cube_validation.py -s --tb=short`, then
    delete the file.
 
-`review` needs no credentials: run it from any checkout with
-`uv run python -m scripts.cube_validation review ...`. Exit 0 is done, 1 is a
+`review`, `add-decisions` and `record-answers` need no credentials: run them
+from the checkout that holds the validation files with
+`uv run python -m scripts.cube_validation <command> ...`. Exit 0 is done, 1 is a
 refusal (stderr says why), 2 is a usage error. A refusal is an answer: fix its
 cause, do not retry around it.
 
@@ -143,47 +153,118 @@ cause, do not retry around it.
    found in BigQuery's job history are cached in the local cache, so a repeat
    run does not pay to look them up again. A proof with no recorded cuts is
    listed under "Cuts to prove in the browser" for a re-prove.
-8. Triage every open group, and every missing cut and filter, into one of 4
-   calls, then record it (step 9). A missing cut or filter is a sheet field Cube
-   has no member for: Cube cannot make that cut, so the owner decides whether
-   the measure needs it. Map a field Cube does have under `filters:` instead of
-   recording a decision. "Cell differences" lists each comparison whose cells
-   differ, with candidate causes (patterns, where they cluster, both
-   definitions): they are leads to check, not findings. Rows and cells a
-   `dashboard_filters` entry drops read "dashboard filtered", not Cube-only;
-   they do not fail the measure, and the filter is triaged as a missing filter.
-   Row groups never split by a student-level dim, so a decision never names a
-   student.
+   `--fact-dataset zz_<user>_kipptaf_marts` (on `prove`, `check-api`, `run` and
+   `triage`) reads the fact from a dbt dev build instead of the file's `fact:`,
+   to prove a mart change before it merges; give `triage` the same dataset as
+   the `run` it reads.
+8. `triage <file>` reads the latest run and writes `triage.json` beside its
+   `run.json`. It prints every open item (row groups, cell differences, missing
+   cuts and filters) under one suggestion: `map_filters`, `filters_nothing`,
+   `docs`, then `owner`, each with a masked label and its evidence. Sort every
+   item into one of 5 piles (step 9 lists the calls):
+   - Map under `filters:`: a `same values: map it under filters:` verdict. Map
+     the field under the comparison's `filters:` instead of recording a
+     decision, then re-prove the comparisons it sits on, since the proof records
+     the missing field. `same field, different coding` is not a map: the codes
+     differ, and the item stays where triage put it.
+   - Filters nothing: `deliberate`, quoting the evidence.
+   - Close as deliberate: a `docs` item whose quoted description or `ai_context`
+     explains the difference. Check the quote against the result first: a
+     description that says a code counts while Cube returns blank for it is a
+     contradiction, not an answer. A contradiction goes to the owner (or a known
+     issue), named in the reason.
+   - Known issue: search open GitHub issues (`mcp__github__search_issues`, by
+     measure, member, region and school words) for a known gap that explains the
+     item. The call is the one that issue fixes (`fix_source` for source data,
+     `fix_cube` for the Cube model), with the issue as `task`.
+   - Owner: anything the evidence does not answer. It becomes a `domain_owner`
+     decision with an empty `task`, and only these reach `review`.
+
+   A missing cut or filter is a sheet field Cube has no member for: Cube cannot
+   make that cut, so the owner decides whether the measure needs it. "Cell
+   differences" lists candidate causes (patterns, where they cluster, both
+   definitions): leads to check, not findings. Rows a `dashboard_filters` entry
+   drops read "dashboard filtered", not Cube-only, and the filter is triaged as
+   a missing filter. `not compared: identifier column` means values were not
+   compared, for privacy; never compare them by hand. `also covers:` lists the
+   sibling groups the same decision would close: approve the item only if its
+   reason holds for each, else send it to the owner. Anchor differences are
+   judged here too.
+
+9. The calls:
    - `deliberate`: the difference is intended. Say what the Cube member counts
      in its `description:`; reasoning stays in the decision.
    - `fix_dashboard`: the workbook or its view is wrong. Task: the domain's
      Asana dashboard-fix task.
    - `fix_cube`: the Cube model is wrong. Task: the domain's GitHub Cube-fix
      issue.
-   - `domain_owner`: the owner decides what is right. Task: the review issue
-     from step 10. Anchor differences are judged here too.
-9. Add a `decisions:` entry with `id` (unique), `comparison`, `group`, `call`,
-   `reason`, `task` (required for `fix_dashboard` and `fix_cube`; for
-   `domain_owner`, leave it empty until step 10 posts the issue) and the
-   `fingerprints` `{cube, dashboard}` that `run` printed for that comparison.
-   `reason` goes to GitHub in the review issue: never name a student or staff
-   member in it. `task` is an `https://` link or `#<issue>`; the loader refuses
-   other text. `group` is a mapping: `column` is the Cube member name the triage
-   line shows (such as `regions_region_name`), and `values` are compared as
-   text: quote values exactly as the triage line shows them. YAML rewrites an
-   unquoted `9.50`, `010` or `no`, so the loader refuses one. A decision covers
-   its group only while both fingerprints hold; do not copy fingerprints from
-   another run. A missing cut or filter takes `missing_cut: <caption>` or
-   `missing_filter: <caption>` in place of `group`, with no `comparison` and no
-   `fingerprints`: it covers the field across the view. A comparison's cell
-   differences take `cells: true` in place of `group`, with its `comparison` and
-   `fingerprints`. Rows a dashboard-only filter drops take
-   `group: { column: dashboard_filter, values: [<its column>] }`.
-10. `uv run python -m scripts.cube_validation review <files> --domain <domain>`
-    prints the issue body. Show the draft to the analyst. Post it with
-    `mcp__github__issue_write` only after approval, using the repo's issue
-    template. Then write `task: "#<issue>"` into each decision `review` lists on
-    stderr. Filling in a task needs no new `run`.
+   - `fix_source`: the source data is wrong. Task: the GitHub issue for that
+     data's owner. The tool does not read GitHub: when that issue closes, `run`
+     again.
+   - `domain_owner`: the owner decides what is right. Task: the validation issue
+     from step 10, filled in after it is posted.
+
+   Draft a reason for every item, so the analyst edits rather than writes: a
+   close quotes the evidence or names the issue; an owner item says why the
+   evidence leaves it to the owner, which his session shows him. Show the
+   analyst one batch, numbered across piles in the order above, owner pile last;
+   each line has the masked label, the evidence, the call and the drafted
+   reason. On "approve all" or "approve all but 2 and 6", the excluded items go
+   where the analyst says (the owner pile unless told otherwise). Write the
+   approved items, owner pile included, to `approved.json` in the session
+   scratchpad: a JSON list of `{"id", "call", "reason", "task", "item"}`, where
+   `item` is the triage item id, `id` a new decision id not already in the file,
+   and `task` empty for `deliberate` and `domain_owner`. Map items are not in
+   it. Then `add-decisions <file> <approved.json>`: it takes each decision's key
+   fields from the item's stub and its fingerprints from the latest run, and
+   writes the whole batch or nothing. Then `run` again: the decisions
+   fingerprint covers `reason`.
+
+   Before `review`, give the file a top-level `tasks:` block,
+   `{cube_fix: <the domain's Cube-fix issue>, dashboard_fix: <its Asana dashboard-fix task>}`:
+   `record-answers` takes a `fix_cube` or `fix_dashboard` answer's task from it
+   and refuses the comment without it.
+
+   Edit a decision by hand only to change one. Its keys: `id` (unique),
+   `comparison`, `group`, `call`, `reason`, `task` (required for every `fix_`
+   call) and the `fingerprints` `{cube, dashboard}` from that comparison's run.
+   `task` is an `https://` link or `#<issue>`; the loader refuses other text.
+   `group` is a mapping: `column` is the Cube member name (such as
+   `regions_region_name`), and `values` are compared as text, quoted exactly.
+   YAML rewrites an unquoted `9.50`, `010` or `no`, so the loader refuses one. A
+   decision covers its group only while both fingerprints hold; do not copy
+   fingerprints from another run. A missing cut or filter takes
+   `missing_cut: <caption>` or `missing_filter: <caption>` in place of `group`,
+   with no `comparison` and no `fingerprints`: it covers the field across the
+   view. A comparison's cell differences take `cells: true` in place of `group`,
+   with its `comparison` and `fingerprints`. Rows a dashboard-only filter drops
+   take `group: { column: dashboard_filter, values: [<its column>] }`.
+
+10. `review <files> --domain <domain>` prints the validation issue's body: the
+    numbered questions, each with the owner's hand checks, and a closing JSON
+    block the owner's session reads. stderr names any question with no triage
+    evidence: `triage` that view and render again before posting. The footnote
+    promises that identifiers of students and staff are hidden, which holds only
+    if no reason or definition names a person: read them first. Show the draft
+    to the analyst, then post it with `mcp__github__issue_write`, titled
+    "Validate <dashboard> in Cube", using the repo's issue template. That issue
+    is the validation's hub. Then write `task: "#<issue>"` into each decision
+    stderr lists; filling in a task needs no new `run`. Tell the analyst the
+    owner answers in his own Claude Code session by saying "walk me through
+    issue #N" (the `cube-validation-answers` skill). When that session reports
+    the pinned SQL expired, `run` again, render `review` again, and update the
+    issue body.
+11. On "pick up the answers on #N", read only the comment the analyst names; if
+    they name none, ask which, never take the latest. Save its body to a file in
+    the session scratchpad and show the analyst its author's login. Check its
+    notes for a student's or staff member's name; if one is there, the owner
+    rewords it in a new comment. Run
+    `record-answers <files> --comment <file> --author <login>` without `--yes`,
+    show the analyst the printed changes, and on their confirmation run it again
+    with `--yes`. Then `run` again. A refusal refuses the whole comment: tell
+    the analyst why and ask the owner for a corrected comment; never edit the
+    saved body to make it pass. The validation issue closes when every question
+    has a decision and every fix has its issue, PR or Asana task.
 
 ## Results
 
