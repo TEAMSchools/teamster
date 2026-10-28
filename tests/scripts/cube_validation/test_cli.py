@@ -2293,3 +2293,53 @@ def test_record_answers_refuses_email_and_number_runs_in_notes(
         assert "Q1" in err and path.read_text() == before
     else:
         assert load_view_config(path).decisions[0].reason.endswith(note)
+
+
+def test_record_answers_restores_every_file_when_a_later_write_fails(
+    tmp_path, monkeypatch
+):
+    files = []
+    for folder, view, decisions in (
+        ("a", "v", OWNER_DECISIONS),
+        ("b", "w", OWNER_DECISIONS.replace("id: ", "id: w-")),
+    ):
+        (tmp_path / folder).mkdir()
+        text = YML.replace("view: v\n", f"view: {view}\n") + decisions + TASKS
+        files.append(_file(tmp_path / folder, text))
+    before = [f.read_text() for f in files]
+    real = cli.write_decision
+
+    def flaky(path, decision):
+        if path == files[1]:
+            raise OSError("disk full")
+        real(path, decision)
+
+    monkeypatch.setattr(cli, "write_decision", flaky)
+    comment = _comment(
+        tmp_path,
+        [
+            _answer(["miami-scope"], "fix_cube", "the fact drops them"),
+            _answer(["w-camden-scope"], "fix_cube", "same"),
+        ],
+    )
+
+    with pytest.raises(OSError):
+        _record(files, comment, "--yes")
+
+    assert [f.read_text() for f in files] == before
+
+
+def test_record_answers_twice_adds_the_note_once(tmp_path, capsys):
+    path = _owner_file(tmp_path)
+    comment = _comment(
+        tmp_path, [_answer(["paterson-scope"], "domain_owner", "need to talk")]
+    )
+
+    assert _record([path], comment, "--yes") == 0
+    assert _record([path], comment, "--yes") == 0
+
+    by_id = {d.id: d for d in load_view_config(path).decisions}
+    assert by_id["paterson-scope"].reason == (
+        "Paterson counts differ. Owner: need to talk"
+    )
+    assert "already recorded" in capsys.readouterr().out

@@ -32,6 +32,7 @@ from .config import (
     ConfigError,
     ViewConfig,
     load_view_config,
+    replace_text,
     with_fact_dataset,
     write_decision,
 )
@@ -394,9 +395,9 @@ def _write_all(writes: list[tuple[Path, dict]]) -> None:
     try:
         for path, decision in writes:
             write_decision(path, decision)
-    except ConfigError:
+    except BaseException:
         for path, text in originals.items():
-            path.write_text(text)
+            replace_text(path, text)
         raise
 
 
@@ -446,6 +447,17 @@ def _record_answers(views: list[Path], comment: Path, author: str, yes: bool) ->
     )
 
     print(f"Comment by {author}")
+    pending = []
+    for c in changes:
+        if (
+            c.call[0] == c.call[1]
+            and c.task[0] == c.task[1]
+            and c.reason[0] == c.reason[1]
+        ):
+            print(f"{c.path}: {c.decision}: already recorded")
+        else:
+            pending.append(c)
+    changes = pending
     for c in changes:
         where = f"{c.path}: {c.decision}"
         if c.call[0] != c.call[1]:
@@ -467,6 +479,9 @@ def _record_answers(views: list[Path], comment: Path, author: str, yes: bool) ->
         if c.task[1]:
             decision["task"] = c.task[1]
         writes.append((path, decision))
+    if not writes:
+        print("Nothing to write; every answer is already recorded.")
+        return 0
     _write_all(writes)
     print(f"Wrote {len(writes)} decisions.")
     print(RUN_AGAIN.format(" ".join(dict.fromkeys(c.path for c in changes))))

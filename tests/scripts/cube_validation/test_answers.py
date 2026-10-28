@@ -448,6 +448,10 @@ def test_parse_answers_refuses(body, match):
         "student 1234567 was missed",
         "call 555-123-4567",
         "ids 12 34 56",
+        "973-555-1234",
+        "(973) 555 1234",
+        "12 345",
+        "1234567",
     ],
 )
 def test_note_refusal_catches_emails_and_digit_runs(note):
@@ -455,7 +459,16 @@ def test_note_refusal_catches_emails_and_digit_runs(note):
 
 
 @pytest.mark.parametrize(
-    "note", ["checked on 2026-10-27, Cube is right", "grade 9 only", ""]
+    "note",
+    [
+        "checked on 2026-10-27, Cube is right",
+        "grade 9 only",
+        "",
+        "grades 9, 10, 11",
+        "since SY 2023-24",
+        "Cube 93.25 vs 93.10",
+        "rate 100.0%",
+    ],
 )
 def test_note_refusal_lets_dates_and_small_numbers_through(note):
     assert note_refusal(note) is None
@@ -514,3 +527,18 @@ def test_approved_decisions_refuse_a_comparison_the_run_has_no_fingerprints_for(
 
     with pytest.raises(AnswerError, match="fingerprints"):
         approved_decisions([entry], TRIAGE, {})
+
+
+def test_parse_answers_reads_a_crlf_comment():
+    body = _body([{"question": "Q1", "decisions": ["a"], "call": "deliberate",
+                   "note": "n"}]).replace("\n", "\r\n")  # fmt: skip
+
+    assert parse_answers(body) == [Answer("Q1", ("a",), "deliberate", "n")]
+
+
+def test_approved_decisions_refuse_a_reason_a_note_could_not_carry():
+    entry = {"id": "x", "call": "deliberate", "reason": "ask a@b.org",
+             "item": "cut:Team"}  # fmt: skip
+
+    with pytest.raises(AnswerError, match="email"):
+        approved_decisions([entry], TRIAGE, FPS)

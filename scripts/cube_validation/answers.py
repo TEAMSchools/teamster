@@ -323,21 +323,32 @@ class Answer:
 
 
 _JSON_BLOCK = re.compile(r"^```json[ \t]*\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
-_ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
-# What a note cannot carry into a committed reason. A date is removed first, so
-# an owner may cite one. A person's name cannot be told from other words by
-# code; both skills check for names before anything is posted or written.
+# Dates and school years (`2023-24`) are removed before the checks, so an
+# owner may cite them.
+_CITED_DATES = (re.compile(r"\d{4}-\d{2}-\d{2}"), re.compile(r"\b\d{4}-\d{2}\b"))
+# What a note cannot carry into a committed reason, as (what, pattern, the
+# fewest digits a match must hold). An ID or phone number refuses; a rate,
+# a grade list or a count of a few digits does not. A person's name cannot be
+# told from other words by code; both skills check for names before anything
+# is posted or written.
 NOTE_REFUSALS = (
-    ("an email address", re.compile(r"\S+@\S+\.\w+")),
-    ("a run of 5 or more digits", re.compile(r"\d{5,}")),
-    ("a run of 5 or more digits", _SEPARATED_DIGITS),
+    ("an email address", re.compile(r"\S+@\S+\.\w+"), 0),
+    ("a run of 5 or more digits", re.compile(r"\d{5,}"), 0),
+    ("a number of 7 or more digits", _SEPARATED_DIGITS, 7),
+    ("5 or more digits joined by spaces or dashes", re.compile(r"\d[\d\s-]*\d"), 5),
 )
 
 
 def note_refusal(note: str) -> str | None:
     """Name what `note` carries that `NOTE_REFUSALS` keeps out, else None."""
-    text = _ISO_DATE.sub("", note)
-    return next((what for what, pattern in NOTE_REFUSALS if pattern.search(text)), None)
+    text = note
+    for cited in _CITED_DATES:
+        text = cited.sub("", text)
+    for what, pattern, fewest in NOTE_REFUSALS:
+        for match in pattern.finditer(text):
+            if sum(ch.isdigit() for ch in match[0]) >= fewest:
+                return what
+    return None
 
 
 def _text(entry: dict, key: str, where: str, *, required: bool = True) -> str:
@@ -360,7 +371,8 @@ def parse_answers(body: str) -> list[Answer]:
             or a task is missing, misplaced, or not an https:// link or
             #<issue>.
     """
-    blocks = _JSON_BLOCK.findall(body)
+    # A comment body from GitHub often ends its lines with CRLF.
+    blocks = _JSON_BLOCK.findall(body.replace("\r\n", "\n"))
     if len(blocks) != 1:
         raise AnswerError(
             f"the comment needs exactly 1 fenced json block; it has {len(blocks)}"
@@ -428,7 +440,9 @@ def answer_changes(
 ) -> list[Change]:
     """Match each answer to its decisions and say what it changes.
 
-    The new reason is `<old reason> Owner: <note>`. The new task is the file's
+    The new reason is `<old reason> Owner: <note>`, unless the reason already
+    ends that way: recording the same comment twice adds the note once. The
+    new task is the file's
     `tasks.cube_fix` for `fix_cube`, `tasks.dashboard_fix` for
     `fix_dashboard`, the answer's own task for `fix_source`, and unchanged for
     the others. A free-text (`domain_owner`) answer keeps its call.
@@ -492,7 +506,10 @@ def answer_changes(
                 task = cfg.tasks[key]
             elif a.call == "fix_source":
                 task = a.task
-            reason = f"{d.reason.rstrip()} Owner: {a.note}" if a.note else d.reason
+            owner = f" Owner: {a.note}"
+            reason = d.reason
+            if a.note and not reason.endswith(owner):
+                reason = reason.rstrip() + owner
             out.append(
                 Change(
                     path=path,
@@ -526,9 +543,10 @@ def approved_decisions(
         fingerprints: The latest run's fingerprints per comparison id.
 
     Raises:
-        AnswerError: An entry is malformed, repeats an id, names an item the
-            triage does not list, or names a comparison the run has no
-            fingerprints for.
+        AnswerError: An entry is malformed, repeats an id, has a reason that
+            carries what `NOTE_REFUSALS` keeps out, names an item the triage
+            does not list, or names a comparison the run has no fingerprints
+            for.
     """
     stubs = {item.get("id"): item.get("stub") or {} for item in triage.get("items", [])}
     out = []
@@ -549,6 +567,9 @@ def approved_decisions(
         decision.update({k: stub[k] for k in _STUB_KEYS if k in stub})
         decision["call"] = _text(entry, "call", where)
         decision["reason"] = _text(entry, "reason", where)
+        # The reason is committed to git, like an owner's note.
+        if what := note_refusal(decision["reason"]):
+            raise AnswerError(f"{where}: the reason has {what}; reword it")
         if task := _text(entry, "task", where, required=False):
             decision["task"] = task
         if comparison := stub.get("comparison"):

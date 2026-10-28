@@ -8,7 +8,9 @@ these files never reach the semantic layer.
 
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 from dataclasses import dataclass, field, replace
 from datetime import date
 from pathlib import Path
@@ -645,32 +647,73 @@ def write_proof(path: Path, comparison_id: str, proof: dict[str, Any]) -> None:
     path.write_text("\n".join(lines) + "\n")
 
 
-def _decisions_block(lines: list[str]) -> tuple[int, int]:
+def replace_text(path: Path, text: str) -> None:
+    """Write `text` to `path` through a temp file in its folder and `os.replace`.
+
+    A failed write leaves the old file whole instead of a truncated one.
+    """
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def _decisions_block(path: Path, lines: list[str]) -> tuple[int, int]:
     """The `decisions:` line and the line after its block, adding the key if absent.
 
     The block ends at the next top-level key; a comment at column 0 does not
     end it, so the caller trims trailing comments before appending.
+
+    Raises:
+        ConfigError: `decisions:` holds a flow list, null or other value, which
+            a line edit cannot extend; appending a second key would make YAML
+            drop every decision in the first.
     """
     head = next(
-        (
-            i
-            for i, line in enumerate(lines)
-            if re.fullmatch(r"decisions:\s*(\[\])?\s*(#.*)?", line)
-        ),
-        None,
+        (i for i, line in enumerate(lines) if re.match(r"decisions\s*:", line)), None
     )
     if head is None:
         while lines and not lines[-1].strip():
             lines.pop()
         lines.append("decisions:")
         head = len(lines) - 1
-    elif "[]" in lines[head].split("#", 1)[0]:
-        lines[head] = "decisions:"
+    else:
+        value = re.sub(r"\s#.*$", "", lines[head].split(":", 1)[1]).strip()
+        if value == "[]":
+            lines[head] = "decisions:"
+        elif value:
+            raise ConfigError(
+                f"{path}: decisions: is written as {value!r}; rewrite it as a "
+                "block list (`- id: ...` items) or [] before adding decisions"
+            )
     end = next(
         (i for i in range(head + 1, len(lines)) if re.match(r"[^\s#-]", lines[i])),
         len(lines),
     )
     return head, end
+
+
+def _is_comment(line: str) -> bool:
+    return line.lstrip().startswith("#")
+
+
+def _holds(d: Decision, asked: dict[str, Any]) -> bool:
+    """True when the loaded decision `d` carries every value `asked` set."""
+    return (
+        d.call == asked.get("call")
+        and d.reason == asked.get("reason")
+        and d.task == asked.get("task", "")
+        and d.comparison == asked.get("comparison", "")
+        and d.group == asked.get("group", {})
+        and d.cells == bool(asked.get("cells", False))
+        and d.missing_cut == asked.get("missing_cut", "")
+        and d.missing_filter == asked.get("missing_filter", "")
+        and d.fingerprints == asked.get("fingerprints", {})
+    )
 
 
 def write_decision(path: Path, decision: dict[str, Any]) -> None:
@@ -685,9 +728,11 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
         decision: The whole decision, `id` first, as the file holds it.
 
     Raises:
-        ConfigError: The file does not load afterwards (the original text is
-            restored), or a decision with that id exists but its item does not
-            start with `- id: <id>`, so a line edit cannot find it.
+        ConfigError: The file does not load afterwards, or does not hold the
+            values asked for (the original text is restored either way);
+            `decisions:` is not a block list (see `_decisions_block`); or a
+            decision with that id exists but its item does not start with
+            `- id: <id>`, so a line edit cannot find it.
     """
     path = Path(path)
     decision_id = decision.get("id")
@@ -695,7 +740,7 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
         raise ConfigError(f"{path}: decisions: a decision needs a text id")
     original = path.read_text()
     lines = original.splitlines()
-    head, end = _decisions_block(lines)
+    head, end = _decisions_block(path, lines)
 
     first_item = next(
         (i for i in range(head + 1, end) if re.match(r"\s*- ", lines[i])), None
@@ -734,24 +779,41 @@ def write_decision(path: Path, decision: dict[str, Any]) -> None:
             insert -= 1
         lines[insert:insert] = new
     else:
-        # The item ends at the next line indented at or below its `- ` marker.
+        # The item ends at the next key or item indented at or below its `- `
+        # marker. A comment there may sit between the item's own keys, so it
+        # ends nothing; one that trails the item leads into what follows.
         stop = next(
             (
                 i
                 for i in range(start + 1, end)
-                if lines[i].strip() and len(lines[i]) - len(lines[i].lstrip()) <= indent
+                if lines[i].strip()
+                and not _is_comment(lines[i])
+                and len(lines[i]) - len(lines[i].lstrip()) <= indent
             ),
             end,
         )
-        while stop > start + 1 and not lines[stop - 1].strip():
+        while stop > start + 1 and (
+            not lines[stop - 1].strip()
+            or (
+                _is_comment(lines[stop - 1])
+                and len(lines[stop - 1]) - len(lines[stop - 1].lstrip()) <= indent
+            )
+        ):
             stop -= 1
         lines[start:stop] = new
 
-    path.write_text("\n".join(lines) + "\n")
+    replace_text(path, "\n".join(lines) + "\n")
     try:
-        loaded = load_view_config(path)
-        if [d.id for d in loaded.decisions].count(decision_id) != 1:
+        found = [d for d in load_view_config(path).decisions if d.id == decision_id]
+        if len(found) != 1:
             raise ConfigError(f"{path}: decisions: {decision_id!r} is not unique")
-    except ConfigError as exc:
-        path.write_text(original)
-        raise ConfigError(f"{exc} (not written; the file is unchanged)") from exc
+        if not _holds(found[0], decision):
+            raise ConfigError(
+                f"{path}: decisions: {decision_id!r} does not read back with the "
+                "call, reason, task and key fields asked for"
+            )
+    except BaseException as exc:
+        replace_text(path, original)
+        if isinstance(exc, ConfigError):
+            raise ConfigError(f"{exc} (not written; the file is unchanged)") from exc
+        raise

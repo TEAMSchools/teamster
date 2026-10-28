@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import (
@@ -759,6 +760,72 @@ def test_write_decision_refuses_an_id_it_cannot_find_by_its_line(tmp_path):
         write_decision(
             path,
             {"id": "example", "missing_cut": "T", "call": "deliberate", "reason": "r"},
+        )
+
+    assert path.read_text() == text
+
+
+def test_write_decision_replaces_an_item_with_a_column_0_comment_inside(tmp_path):
+    text = EXAMPLE.replace(
+        "    reason: counted differently\n",
+        "# the owner asked about this\n    reason: counted differently\n",
+    )
+    path = _write(tmp_path, text)
+
+    write_decision(
+        path,
+        {
+            "id": "example",
+            "comparison": "ada-y1-region",
+            "group": {"column": "grade_level", "values": ["9"]},
+            "call": "fix_cube",
+            "reason": "Owner: Cube is wrong",
+            "task": "#6150",
+            "fingerprints": {"cube": "abc", "dashboard": "def"},
+        },  # fmt: skip
+    )
+
+    (d,) = load_view_config(path).decisions
+    assert (d.call, d.reason, d.task) == ("fix_cube", "Owner: Cube is wrong", "#6150")
+    assert "counted differently" not in path.read_text()
+
+
+def test_write_decision_restores_when_the_file_does_not_hold_what_was_asked(
+    tmp_path, monkeypatch
+):
+    path = _write(tmp_path, EXAMPLE)
+    asked = {"id": "example", "comparison": "ada-y1-region",
+             "group": {"column": "grade_level", "values": ["9"]},
+             "call": "deliberate", "reason": "asked",
+             "fingerprints": {"cube": "abc", "dashboard": "def"}}  # fmt: skip
+    real_dump = yaml.safe_dump
+    monkeypatch.setattr(
+        yaml,
+        "safe_dump",
+        lambda data, **kw: real_dump([{**data[0], "reason": "other"}], **kw),
+    )
+
+    with pytest.raises(ConfigError, match="reason"):
+        write_decision(path, asked)
+
+    assert path.read_text() == EXAMPLE
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "decisions: [{id: example, missing_cut: T, call: deliberate, reason: r}]",
+        "decisions: null",
+        "decisions: ~",
+    ],
+)
+def test_write_decision_refuses_a_decisions_key_it_cannot_extend(tmp_path, line):
+    text = EXAMPLE.split("decisions:")[0] + line + "\n"
+    path = _write(tmp_path, text)
+
+    with pytest.raises(ConfigError, match="decisions"):
+        write_decision(
+            path, {"id": "a", "missing_cut": "U", "call": "deliberate", "reason": "r"}
         )
 
     assert path.read_text() == text
