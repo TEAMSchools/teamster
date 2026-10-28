@@ -1,10 +1,16 @@
 import json
 from datetime import datetime, timedelta, timezone
 
+import pytest
 from cube_validation.answers import (
+    Answer,
+    AnswerError,
     HandCheck,
+    approved_decisions,
     example_cell,
     hand_check,
+    note_refusal,
+    parse_answers,
     questions_json,
 )
 from cube_validation.compare import CellDiff, Group
@@ -349,3 +355,162 @@ def test_hand_check_values_under_10_are_masked_whatever_the_measure():
     run = _owner_run([_cell(dashboard=7.5, cube=0.25)])
     check = _questions(run)[0]["hand_checks"][0]
     assert (check["dashboard"], check["cube"]) == ("7.5", "0.25")
+
+
+def _body(*blocks):
+    fenced = "".join(f"```json\n{json.dumps(b)}\n```\n\n" for b in blocks)
+    return "## Answers\n\nQ1: the dashboard is right.\n\n" + fenced
+
+
+def test_parse_answers_reads_the_one_json_block():
+    body = _body(
+        [
+            {
+                "question": "Q1",
+                "decisions": ["a", "b"],
+                "call": "fix_cube",
+                "note": "the fact drops them",
+            },
+            {
+                "question": "Q2",
+                "decisions": ["c"],
+                "call": "fix_source",
+                "note": "Miami entered tardies wrong",
+                "task": "#9001",
+            },
+        ]  # fmt: skip
+    )
+
+    assert parse_answers(body) == [
+        Answer("Q1", ("a", "b"), "fix_cube", "the fact drops them"),
+        Answer("Q2", ("c",), "fix_source", "Miami entered tardies wrong", "#9001"),
+    ]
+
+
+@pytest.mark.parametrize(
+    "body, match",
+    [
+        ("no block here", "1 fenced json block"),
+        (_body([], []), "1 fenced json block"),
+        (
+            _body(
+                [{"question": "Q1", "decisions": ["a"], "call": "fix_it", "note": ""}]
+            ),
+            "fix_it",
+        ),  # fmt: skip
+        (
+            _body(
+                [
+                    {
+                        "question": "Q1",
+                        "decisions": ["a"],
+                        "call": "fix_source",
+                        "note": "n",
+                    }
+                ]
+            ),
+            "fix_source needs a task",
+        ),  # fmt: skip
+        (
+            _body(
+                [
+                    {
+                        "question": "Q1",
+                        "decisions": ["a"],
+                        "call": "fix_source",
+                        "note": "n",
+                        "task": "ask Ana",
+                    }
+                ]
+            ),
+            "https://",
+        ),  # fmt: skip
+        (
+            _body(
+                [{"question": "Q1", "decisions": [], "call": "deliberate", "note": "n"}]
+            ),
+            "decision id",
+        ),  # fmt: skip
+        (_body({"question": "Q1"}), "list"),
+        (_body([]), "at least 1 answer"),
+        ("```json\n{not json\n```", "not JSON"),
+    ],
+)
+def test_parse_answers_refuses(body, match):
+    with pytest.raises(AnswerError, match=match):
+        parse_answers(body)
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "ask jane.doe@example.org",
+        "student 1234567 was missed",
+        "call 555-123-4567",
+        "ids 12 34 56",
+    ],
+)
+def test_note_refusal_catches_emails_and_digit_runs(note):
+    assert note_refusal(note)
+
+
+@pytest.mark.parametrize(
+    "note", ["checked on 2026-10-27, Cube is right", "grade 9 only", ""]
+)
+def test_note_refusal_lets_dates_and_small_numbers_through(note):
+    assert note_refusal(note) is None
+
+
+TRIAGE = {
+    "items": [
+        {"id": "ada:region=Miami", "stub": {"comparison": "ada",
+         "group": {"column": "regions_region_name", "values": ["Miami"]}}},
+        {"id": "cut:Team", "stub": {"missing_cut": "Team"}},
+        {"id": "ada:cells", "stub": {"comparison": "ada", "cells": True}},
+    ]
+}  # fmt: skip
+FPS = {"ada": {"cube": "c1", "dashboard": "d1"}}
+
+
+def test_approved_decisions_take_the_stub_and_the_run_fingerprints():
+    approved = [
+        {"id": "miami", "call": "fix_cube", "reason": "r1", "task": "#1",
+         "item": "ada:region=Miami"},
+        {"id": "team", "call": "deliberate", "reason": "r2", "task": "",
+         "item": "cut:Team"},
+        {"id": "cells", "call": "domain_owner", "reason": "r3", "item": "ada:cells"},
+    ]  # fmt: skip
+
+    miami, team, cells = approved_decisions(approved, TRIAGE, FPS)
+
+    assert miami == {
+        "id": "miami",
+        "comparison": "ada",
+        "group": {"column": "regions_region_name", "values": ["Miami"]},
+        "call": "fix_cube",
+        "reason": "r1",
+        "task": "#1",
+        "fingerprints": {"cube": "c1", "dashboard": "d1"},
+    }
+    assert team == {"id": "team", "missing_cut": "Team", "call": "deliberate",
+                    "reason": "r2"}  # fmt: skip
+    assert cells["cells"] is True and cells["fingerprints"] == FPS["ada"]
+
+
+@pytest.mark.parametrize(
+    "entry, match",
+    [
+        ({"id": "x", "call": "deliberate", "reason": "r", "item": "nope"}, "nope"),
+        ({"id": "x", "call": "deliberate", "item": "cut:Team"}, "reason"),
+    ],
+)
+def test_approved_decisions_refuse(entry, match):
+    with pytest.raises(AnswerError, match=match):
+        approved_decisions([entry], TRIAGE, FPS)
+
+
+def test_approved_decisions_refuse_a_comparison_the_run_has_no_fingerprints_for():
+    entry = {"id": "x", "call": "deliberate", "reason": "r", "item": "ada:cells"}
+
+    with pytest.raises(AnswerError, match="fingerprints"):
+        approved_decisions([entry], TRIAGE, {})

@@ -1974,3 +1974,322 @@ def test_triage_runs_a_value_check_and_records_the_verdict(fakes, tmp_path, caps
     (gap,) = [i for i in items if i["kind"] == "gap"]
     assert "school_level: same field, different coding" in gap["evidence"]
     assert "MS" not in json.dumps(items)
+
+
+# --- add-decisions and record-answers ----------------------------------------
+
+
+def _gap_triage_item():
+    return {"id": "cut:Team", "kind": "gap", "comparison": "", "label": "l",
+            "stub": {"missing_cut": "Team"}, "suggestion": "deliberate",
+            "evidence": [], "candidates": []}  # fmt: skip
+
+
+def _approved(tmp_path, entries):
+    path = tmp_path / "approved.json"
+    path.write_text(json.dumps(entries))
+    return path
+
+
+def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    (run_json.parent / "triage.json").write_text(
+        json.dumps({"items": [_triage_item("e"), _gap_triage_item()]})
+    )
+    approved = _approved(
+        tmp_path,
+        [
+            {
+                "id": "miami-scope",
+                "call": "fix_cube",
+                "reason": "Cube drops Miami.",
+                "task": "#6150",
+                "item": "i",
+            },
+            {
+                "id": "no-team",
+                "call": "deliberate",
+                "reason": "A label only.",
+                "task": "",
+                "item": "cut:Team",
+            },
+        ],  # fmt: skip
+    )
+    capsys.readouterr()
+
+    assert cli.main(["add-decisions", str(path), str(approved)]) == 0
+
+    cfg = load_view_config(path)
+    miami, team = cfg.decisions
+    assert (miami.comparison, miami.call, miami.task) == (
+        "ada-region",
+        "fix_cube",
+        "#6150",
+    )
+    assert miami.group == {"column": "regions_region_name", "values": ["Miami"]}
+    assert miami.fingerprints == _saved_fingerprints(tmp_path)
+    assert (team.missing_cut, team.comparison, team.fingerprints) == ("Team", "", {})
+    assert cfg.comparisons[0].proof is not None
+    out = capsys.readouterr().out
+    assert "miami-scope" in out and "no-team" in out
+    assert "`run`" in out.rstrip().splitlines()[-1]
+
+    # The written decision covers the group on the next run.
+    assert cli.main(["run", str(path)]) == 0
+    assert "miami-scope" in _section(capsys.readouterr().out, "Applied:", "To re-")
+
+
+def test_add_decisions_refuses_an_unknown_item_and_writes_nothing(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    (run_json.parent / "triage.json").write_text(
+        json.dumps({"items": [_triage_item("e")]})
+    )
+    approved = _approved(
+        tmp_path,
+        [
+            {"id": "miami-scope", "call": "deliberate", "reason": "r", "item": "i"},
+            {"id": "other", "call": "deliberate", "reason": "r", "item": "gone"},
+        ],
+    )
+    before = path.read_text()
+
+    assert cli.main(["add-decisions", str(path), str(approved)]) == 1
+
+    assert "gone" in capsys.readouterr().err
+    assert path.read_text() == before
+
+
+def test_add_decisions_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    approved = _approved(
+        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": "i"}]
+    )
+
+    assert cli.main(["add-decisions", str(path), str(approved)]) == 1
+
+    assert "triage" in capsys.readouterr().err
+
+
+OWNER_DECISIONS = """\
+decisions:
+  - id: miami-scope
+    comparison: ada-region
+    group: { column: regions_region_name, values: [Miami] }
+    call: domain_owner
+    reason: The dashboard keeps Miami rows the fact drops.
+    task: "#7"
+    fingerprints: { cube: abc, dashboard: def }
+  - id: newark-scope
+    comparison: ada-region
+    group: { column: regions_region_name, values: [Newark] }
+    call: domain_owner
+    reason: Newark counts differ.
+    task: "#7"
+    fingerprints: { cube: abc, dashboard: def }
+  - id: camden-scope
+    comparison: ada-region
+    group: { column: regions_region_name, values: [Camden] }
+    call: domain_owner
+    reason: Camden counts differ.
+    task: "#7"
+    fingerprints: { cube: abc, dashboard: def }
+  - id: paterson-scope
+    comparison: ada-region
+    group: { column: regions_region_name, values: [Paterson] }
+    call: domain_owner
+    reason: Paterson counts differ.
+    task: "#7"
+    fingerprints: { cube: abc, dashboard: def }
+  - id: no-team
+    missing_cut: Team
+    call: domain_owner
+    reason: Cube has no team.
+    task: "#7"
+  - id: settled
+    missing_cut: Homeroom
+    call: deliberate
+    reason: A label only.
+"""
+TASKS = "tasks:\n  cube_fix: '#6150'\n  dashboard_fix: https://app.asana.com/0/1/2\n"
+
+
+def _owner_file(tmp_path, tasks=TASKS, view="v"):
+    tmp_path.mkdir(exist_ok=True)
+    text = YML.replace("view: v\n", f"view: {view}\n") + OWNER_DECISIONS + tasks
+    return _file(tmp_path, text)
+
+
+def _comment(tmp_path, answers):
+    path = tmp_path / "comment.md"
+    path.write_text(
+        "Thanks! My answers:\n\n- Q1: the dashboard is right\n\n```json\n"
+        + json.dumps(answers, indent=1)
+        + "\n```\n"
+    )
+    return path
+
+
+def _answer(decisions, call, note="", task=""):
+    out = {"question": "Q1", "decisions": decisions, "call": call, "note": note}
+    return {**out, "task": task} if task else out
+
+
+def _record(path, comment, *extra):
+    return cli.main(
+        ["record-answers", *map(str, path), "--comment", str(comment),
+         "--author", "owner-login", *extra]
+    )  # fmt: skip
+
+
+def test_record_answers_dry_run_prints_author_and_changes_writes_nothing(
+    tmp_path, capsys
+):
+    path = _owner_file(tmp_path)
+    before = path.read_text()
+    comment = _comment(
+        tmp_path, [_answer(["miami-scope"], "fix_cube", "the fact drops them")]
+    )
+
+    assert _record([path], comment) == 0
+
+    out = capsys.readouterr().out
+    assert out.startswith("Comment by owner-login\n")
+    assert "miami-scope: call domain_owner -> fix_cube" in out
+    assert "miami-scope: task #7 -> #6150" in out
+    assert "Owner: the fact drops them" in out
+    assert "--yes" in out.rstrip().splitlines()[-1]
+    assert path.read_text() == before
+
+
+def test_record_answers_maps_calls_to_tasks_block(tmp_path, capsys):
+    path = _owner_file(tmp_path)
+    comment = _comment(
+        tmp_path,
+        [
+            _answer(["miami-scope"], "fix_cube", "the fact drops them"),
+            _answer(["newark-scope"], "fix_dashboard", "the sheet double counts"),
+            _answer(["camden-scope"], "fix_source", "tardies coded wrong", "#9001"),
+            _answer(["paterson-scope"], "domain_owner", "need to talk on 2026-11-02"),
+            _answer(["no-team"], "deliberate"),
+        ],
+    )
+
+    assert _record([path], comment, "--yes") == 0
+
+    by_id = {d.id: d for d in load_view_config(path).decisions}
+    assert (by_id["miami-scope"].call, by_id["miami-scope"].task) == (
+        "fix_cube",
+        "#6150",
+    )
+    assert by_id["miami-scope"].reason == (
+        "The dashboard keeps Miami rows the fact drops. Owner: the fact drops them"
+    )
+    assert (by_id["newark-scope"].call, by_id["newark-scope"].task) == (
+        "fix_dashboard",
+        "https://app.asana.com/0/1/2",
+    )
+    assert (by_id["camden-scope"].call, by_id["camden-scope"].task) == (
+        "fix_source",
+        "#9001",
+    )
+    paterson = by_id["paterson-scope"]
+    assert (paterson.call, paterson.task) == ("domain_owner", "#7")
+    assert paterson.reason.endswith("Owner: need to talk on 2026-11-02")
+    no_team = by_id["no-team"]
+    assert (no_team.call, no_team.task, no_team.reason) == (
+        "deliberate",
+        "#7",
+        "Cube has no team.",
+    )
+    assert by_id["settled"].reason == "A label only."
+    assert "`run`" in capsys.readouterr().out.rstrip().splitlines()[-1]
+
+
+def test_record_answers_refuses_a_fix_call_with_no_tasks_entry(tmp_path, capsys):
+    path = _owner_file(tmp_path, tasks="tasks:\n  cube_fix: '#6150'\n")
+    before = path.read_text()
+    comment = _comment(tmp_path, [_answer(["newark-scope"], "fix_dashboard", "n")])
+
+    assert _record([path], comment, "--yes") == 1
+
+    assert "dashboard_fix" in capsys.readouterr().err
+    assert path.read_text() == before
+
+
+SHARED = """\
+  - id: shared
+    missing_cut: Grade
+    call: domain_owner
+    reason: Cube has no grade.
+"""
+
+
+@pytest.mark.parametrize(
+    "bad, match",
+    [
+        (_answer(["gone"], "deliberate", "n"), "gone"),
+        (_answer(["settled"], "fix_cube", "n"), "settled"),
+        (_answer(["miami-scope"], "deliberate", "again"), "miami-scope"),
+        (_answer(["shared"], "deliberate", "n"), "shared"),
+        (_answer(["paterson-scope"], "deliberate", "mail a@b.org"), "email"),
+    ],
+)
+def test_record_answers_refuses_whole_comment_on_any_mismatch(
+    tmp_path, capsys, bad, match
+):
+    files = []
+    for folder, view, decisions in (
+        ("a", "v", OWNER_DECISIONS),
+        ("b", "w", OWNER_DECISIONS.replace("id: ", "id: w-")),
+    ):
+        (tmp_path / folder).mkdir()
+        text = YML.replace("view: v\n", f"view: {view}\n") + decisions + SHARED + TASKS
+        files.append(_file(tmp_path / folder, text))
+    before = [f.read_text() for f in files]
+    comment = _comment(
+        tmp_path,
+        [
+            _answer(["miami-scope"], "fix_cube", "the fact drops them"),
+            _answer(["w-camden-scope"], "fix_cube", "same"),
+            bad,
+        ],
+    )
+
+    assert _record(files, comment, "--yes") == 1
+
+    assert match in capsys.readouterr().err
+    assert [f.read_text() for f in files] == before
+
+
+@pytest.mark.parametrize(
+    "note, refused",
+    [
+        ("ask jane.doe@example.org", True),
+        ("student 1234567 was missed", True),
+        ("call 555-123-4567", True),
+        ("checked on 2026-10-27; Cube is right", False),
+    ],
+)
+def test_record_answers_refuses_email_and_number_runs_in_notes(
+    tmp_path, capsys, note, refused
+):
+    path = _owner_file(tmp_path)
+    before = path.read_text()
+    comment = _comment(tmp_path, [_answer(["miami-scope"], "fix_cube", note)])
+
+    assert _record([path], comment, "--yes") == (1 if refused else 0)
+
+    err = capsys.readouterr().err
+    if refused:
+        assert "Q1" in err and path.read_text() == before
+    else:
+        assert load_view_config(path).decisions[0].reason.endswith(note)

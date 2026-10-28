@@ -1,20 +1,29 @@
-"""Pick the example cell an owner checks by hand and pin each side's SQL to it.
+"""The owner's questions out, and the decisions that answer them back in.
 
-The owner pastes these queries into the BigQuery console under their own access,
-and the texts go into a GitHub issue, so the example is never one person's row:
-every dimension is a reviewed column and at least `MASK_BELOW` students stand
-behind it. This module runs no queries; it selects and formats saved data.
+Out: pick the example cell an owner checks by hand and pin each side's SQL to
+it. The owner pastes these queries into the BigQuery console under their own
+access, and the texts go into a GitHub issue, so the example is never one
+person's row: every dimension is a reviewed column and at least `MASK_BELOW`
+students stand behind it.
+
+In: turn an approved triage batch, or the owner's answers comment, into
+decisions. Their reasons are committed to git, so a note naming a person by
+email or number is refused. This module runs no queries and writes no files;
+it selects and formats saved data.
 """
 
 from __future__ import annotations
 
+import json
+import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
-from .config import Decision, ViewConfig
+from .config import _TASK, CALLS, Decision, ViewConfig
 from .cube_client import _literal
 from .report import (
+    _SEPARATED_DIGITS,
     MASK_BELOW,
     RunResult,
     _is_identifier,
@@ -284,4 +293,273 @@ def questions_json(
                 "expired": now >= expires,
             }
         )
+    return out
+
+
+# --- decisions in ------------------------------------------------------------
+
+
+class AnswerError(Exception):
+    """An approved batch or an answers comment cannot be written as decisions.
+
+    Raised before anything is written, so nothing from that batch or comment
+    lands in any file.
+    """
+
+
+@dataclass(frozen=True)
+class Answer:
+    """One answer in the owner's comment, to the question with id `question`.
+
+    `call` is one of `config.CALLS`; `domain_owner` is a free-text answer.
+    `task` is the issue the owner's session opened for `fix_source`.
+    """
+
+    question: str
+    decisions: tuple[str, ...]
+    call: str
+    note: str
+    task: str = ""
+
+
+_JSON_BLOCK = re.compile(r"^```json[ \t]*\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
+_ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+# What a note cannot carry into a committed reason. A date is removed first, so
+# an owner may cite one. A person's name cannot be told from other words by
+# code; both skills check for names before anything is posted or written.
+NOTE_REFUSALS = (
+    ("an email address", re.compile(r"\S+@\S+\.\w+")),
+    ("a run of 5 or more digits", re.compile(r"\d{5,}")),
+    ("a run of 5 or more digits", _SEPARATED_DIGITS),
+)
+
+
+def note_refusal(note: str) -> str | None:
+    """Name what `note` carries that `NOTE_REFUSALS` keeps out, else None."""
+    text = _ISO_DATE.sub("", note)
+    return next((what for what, pattern in NOTE_REFUSALS if pattern.search(text)), None)
+
+
+def _text(entry: dict, key: str, where: str, *, required: bool = True) -> str:
+    value = entry.get(key, "")
+    if not isinstance(value, str) or (required and not value.strip()):
+        raise AnswerError(f"{where}: `{key}` must be non-empty text")
+    return value.strip()
+
+
+def parse_answers(body: str) -> list[Answer]:
+    """Read the answers from the one fenced `json` block of an answers comment.
+
+    The block is a list of `{"question": "Q<n>", "decisions": [<id>, ...],
+    "call": <call>, "note": <text>, "task": <link>}`; `task` is needed only for
+    `fix_source` and refused on any other call.
+
+    Raises:
+        AnswerError: The comment has no or several `json` blocks, the block is
+            not a non-empty list of answers, a call is not in `config.CALLS`,
+            or a task is missing, misplaced, or not an https:// link or
+            #<issue>.
+    """
+    blocks = _JSON_BLOCK.findall(body)
+    if len(blocks) != 1:
+        raise AnswerError(
+            f"the comment needs exactly 1 fenced json block; it has {len(blocks)}"
+        )
+    try:
+        data = json.loads(blocks[0])
+    except json.JSONDecodeError as exc:
+        raise AnswerError(f"the json block is not JSON ({exc})") from exc
+    if not isinstance(data, list) or not data:
+        raise AnswerError("the json block must be a list of at least 1 answer")
+
+    out = []
+    for i, entry in enumerate(data):
+        where = f"answer {i + 1}"
+        if not isinstance(entry, dict):
+            raise AnswerError(f"{where}: must be an object")
+        question = where = _text(entry, "question", where)
+        decisions = entry.get("decisions")
+        if (
+            not isinstance(decisions, list)
+            or not decisions
+            or not all(isinstance(d, str) and d for d in decisions)
+        ):
+            raise AnswerError(f"{where}: `decisions` must list at least 1 decision id")
+        call = _text(entry, "call", where)
+        if call not in CALLS:
+            raise AnswerError(
+                f"{where}: call must be one of {', '.join(CALLS)}; got {call!r}"
+            )
+        task = _text(entry, "task", where, required=False)
+        if call == "fix_source" and not task:
+            raise AnswerError(f"{where}: fix_source needs a task")
+        if task and call != "fix_source":
+            raise AnswerError(f"{where}: only fix_source takes a task; got {call}")
+        if task and not _TASK.fullmatch(task):
+            raise AnswerError(
+                f"{where}: task must be an https:// link or #<issue>; got {task!r}"
+            )
+        out.append(
+            Answer(
+                question=question,
+                decisions=tuple(decisions),
+                call=call,
+                note=_text(entry, "note", where, required=False),
+                task=task,
+            )
+        )
+    return out
+
+
+@dataclass(frozen=True)
+class Change:
+    """What one answer does to one decision in the file at `path`."""
+
+    path: str
+    decision: str
+    question: str
+    call: tuple[str, str]
+    task: tuple[str, str]
+    reason: tuple[str, str]
+
+
+def answer_changes(
+    answers: list[Answer], configs: list[tuple[str, ViewConfig]]
+) -> list[Change]:
+    """Match each answer to its decisions and say what it changes.
+
+    The new reason is `<old reason> Owner: <note>`. The new task is the file's
+    `tasks.cube_fix` for `fix_cube`, `tasks.dashboard_fix` for
+    `fix_dashboard`, the answer's own task for `fix_source`, and unchanged for
+    the others. A free-text (`domain_owner`) answer keeps its call.
+
+    Args:
+        answers: The parsed comment.
+        configs: Each validation file's path and config.
+
+    Raises:
+        AnswerError: Any answer does not fit, which refuses the whole comment:
+            a decision id is in none of the files or in several, is not a
+            `domain_owner` decision, or is answered twice; a note carries what
+            `NOTE_REFUSALS` keeps out; a free-text answer has no note; or a fix
+            call's file has no `tasks:` entry for it.
+    """
+    out = []
+    seen: set[str] = set()
+    for a in answers:
+        if what := note_refusal(a.note):
+            raise AnswerError(
+                f"{a.question}: the note has {what}; ask the owner to reword it"
+            )
+        if a.call == "domain_owner" and not a.note:
+            raise AnswerError(f"{a.question}: a free-text answer needs its note")
+        for decision_id in a.decisions:
+            if decision_id in seen:
+                raise AnswerError(
+                    f"{a.question}: decision {decision_id!r} is answered twice"
+                )
+            seen.add(decision_id)
+            found = [
+                (path, cfg, d)
+                for path, cfg in configs
+                for d in cfg.decisions
+                if d.id == decision_id
+            ]
+            if not found:
+                raise AnswerError(
+                    f"{a.question}: no decision {decision_id!r} in the files given"
+                )
+            if len(found) > 1:
+                raise AnswerError(
+                    f"{a.question}: decision {decision_id!r} is in "
+                    f"{', '.join(path for path, _, _ in found)}; which is meant "
+                    "is unclear"
+                )
+            ((path, cfg, d),) = found
+            if d.call != "domain_owner":
+                raise AnswerError(
+                    f"{a.question}: decision {decision_id!r} is {d.call}, not "
+                    "domain_owner; it no longer matches the question"
+                )
+            task = d.task
+            key = {"fix_cube": "cube_fix", "fix_dashboard": "dashboard_fix"}.get(a.call)
+            if key:
+                if key not in cfg.tasks:
+                    raise AnswerError(
+                        f"{a.question}: {path} has no `tasks.{key}` for {a.call}; "
+                        "add it first"
+                    )
+                task = cfg.tasks[key]
+            elif a.call == "fix_source":
+                task = a.task
+            reason = f"{d.reason.rstrip()} Owner: {a.note}" if a.note else d.reason
+            out.append(
+                Change(
+                    path=path,
+                    decision=decision_id,
+                    question=a.question,
+                    call=(d.call, a.call),
+                    task=(d.task, task),
+                    reason=(d.reason, reason),
+                )
+            )
+    return out
+
+
+_STUB_KEYS = ("comparison", "group", "cells", "missing_cut", "missing_filter")
+
+
+def approved_decisions(
+    approved: list, triage: dict, fingerprints: dict[str, dict[str, str]]
+) -> list[dict]:
+    """Turn an approved triage batch into decisions, in the file's key order.
+
+    Each decision takes its key fields from the triage item's `stub`, which
+    holds the group's real values, and the comparison's `{cube, dashboard}`
+    from the run's fingerprints. A missing cut or filter covers the view, so
+    it takes neither a comparison nor fingerprints.
+
+    Args:
+        approved: `[{"id", "call", "reason", "task", "item"}]`; `item` is a
+            triage item id and `task` may be empty.
+        triage: The view's `triage.json`.
+        fingerprints: The latest run's fingerprints per comparison id.
+
+    Raises:
+        AnswerError: An entry is malformed, repeats an id, names an item the
+            triage does not list, or names a comparison the run has no
+            fingerprints for.
+    """
+    stubs = {item.get("id"): item.get("stub") or {} for item in triage.get("items", [])}
+    out = []
+    ids: set[str] = set()
+    for i, entry in enumerate(approved):
+        if not isinstance(entry, dict):
+            raise AnswerError(f"approved entry {i + 1}: must be an object")
+        where = f"approved entry {i + 1}"
+        decision_id = _text(entry, "id", where)
+        if decision_id in ids:
+            raise AnswerError(f"{where}: id {decision_id!r} repeats")
+        ids.add(decision_id)
+        item = _text(entry, "item", where)
+        if item not in stubs:
+            raise AnswerError(f"{where}: triage lists no item {item!r}")
+        stub = stubs[item]
+        decision: dict = {"id": decision_id}
+        decision.update({k: stub[k] for k in _STUB_KEYS if k in stub})
+        decision["call"] = _text(entry, "call", where)
+        decision["reason"] = _text(entry, "reason", where)
+        if task := _text(entry, "task", where, required=False):
+            decision["task"] = task
+        if comparison := stub.get("comparison"):
+            fp = fingerprints.get(comparison) or {}
+            if not (fp.get("cube") and fp.get("dashboard")):
+                raise AnswerError(
+                    f"{where}: the run has no fingerprints for {comparison!r}"
+                )
+            decision["fingerprints"] = {
+                "cube": fp["cube"],
+                "dashboard": fp["dashboard"],
+            }
+        out.append(decision)
     return out

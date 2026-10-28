@@ -3,7 +3,12 @@ from pathlib import Path
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.config import ConfigError, load_view_config, write_proof
+from cube_validation.config import (
+    ConfigError,
+    load_view_config,
+    write_decision,
+    write_proof,
+)
 
 EXAMPLE = """\
 view: student_attendance_enrollment_daily_view
@@ -674,3 +679,86 @@ def test_tasks_block_values_must_be_links(tmp_path):
 
     with pytest.raises(ConfigError, match=r"tasks\.cube_fix.*https://"):
         load_view_config(path)
+
+
+def test_write_decision_replaces_by_id_and_keeps_comments(tmp_path):
+    text = EXAMPLE.replace("decisions:\n", "# why each call was made\ndecisions:\n")
+    path = _write(tmp_path, text + "# tasks follow\n")
+
+    write_decision(
+        path,
+        {
+            "id": "example",
+            "comparison": "ada-y1-region",
+            "group": {"column": "grade_level", "values": ["9.50", "010", "no"]},
+            "call": "fix_cube",
+            "reason": "Cube: drops grade 9",
+            "task": "#6150",
+            "fingerprints": {"cube": "abc", "dashboard": "def"},
+        },
+    )
+
+    after = path.read_text()
+    assert "# why each call was made\ndecisions:\n" in after
+    assert after.endswith("# tasks follow\n")
+    assert after.split("decisions:", 1)[0] == text.split("decisions:", 1)[0]
+    (d,) = load_view_config(path).decisions
+    assert (d.id, d.call, d.task, d.reason) == (
+        "example",
+        "fix_cube",
+        "#6150",
+        "Cube: drops grade 9",
+    )
+    # Values YAML would rewrite are written quoted, so they load as text.
+    assert d.group == {"column": "grade_level", "values": ["9.50", "010", "no"]}
+
+
+def test_write_decision_appends_a_new_id(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    new = {"id": "no-team", "missing_cut": "Team", "call": "deliberate",
+           "reason": "homeroom label only"}  # fmt: skip
+
+    write_decision(path, new)
+
+    first, second = load_view_config(path).decisions
+    assert first.id == "example" and first.reason == "counted differently"
+    assert (second.id, second.missing_cut) == ("no-team", "Team")
+
+
+def test_write_decision_starts_a_decisions_block(tmp_path):
+    path = _write(tmp_path, EXAMPLE.split("decisions:")[0])
+
+    write_decision(
+        path, {"id": "a", "missing_filter": "Team", "call": "deliberate", "reason": "r"}
+    )
+
+    (d,) = load_view_config(path).decisions
+    assert (d.id, d.missing_filter) == ("a", "Team")
+
+
+def test_write_decision_restores_file_when_result_does_not_load(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    bad = {"id": "example", "comparison": "ada-y1-region", "call": "fix_cube",
+           "reason": "r", "fingerprints": {"cube": "abc", "dashboard": "def"}}  # fmt: skip
+
+    with pytest.raises(ConfigError, match=r"decisions\[0\]\.task"):
+        write_decision(path, bad)
+
+    assert path.read_text() == EXAMPLE
+
+
+def test_write_decision_refuses_an_id_it_cannot_find_by_its_line(tmp_path):
+    # `id` is not the item's first key, so a line edit could not replace it.
+    text = EXAMPLE.replace(
+        "  - id: example\n    comparison: ada-y1-region\n",
+        "  - comparison: ada-y1-region\n    id: example\n",
+    )
+    path = _write(tmp_path, text)
+
+    with pytest.raises(ConfigError, match="example"):
+        write_decision(
+            path,
+            {"id": "example", "missing_cut": "T", "call": "deliberate", "reason": "r"},
+        )
+
+    assert path.read_text() == text

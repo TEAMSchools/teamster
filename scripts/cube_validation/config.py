@@ -643,3 +643,115 @@ def write_proof(path: Path, comparison_id: str, proof: dict[str, Any]) -> None:
         lines[proof_at:proof_end] = new
 
     path.write_text("\n".join(lines) + "\n")
+
+
+def _decisions_block(lines: list[str]) -> tuple[int, int]:
+    """The `decisions:` line and the line after its block, adding the key if absent.
+
+    The block ends at the next top-level key; a comment at column 0 does not
+    end it, so the caller trims trailing comments before appending.
+    """
+    head = next(
+        (
+            i
+            for i, line in enumerate(lines)
+            if re.fullmatch(r"decisions:\s*(\[\])?\s*(#.*)?", line)
+        ),
+        None,
+    )
+    if head is None:
+        while lines and not lines[-1].strip():
+            lines.pop()
+        lines.append("decisions:")
+        head = len(lines) - 1
+    elif "[]" in lines[head].split("#", 1)[0]:
+        lines[head] = "decisions:"
+    end = next(
+        (i for i in range(head + 1, len(lines)) if re.match(r"[^\s#-]", lines[i])),
+        len(lines),
+    )
+    return head, end
+
+
+def write_decision(path: Path, decision: dict[str, Any]) -> None:
+    """Replace the `decisions:` item with `decision`'s id, or append it.
+
+    The edit is line-based like `write_proof`, so comments and layout outside
+    that item survive. Values YAML would rewrite (`9.50`, `010`, `no`) are
+    written quoted.
+
+    Args:
+        path: The validation file.
+        decision: The whole decision, `id` first, as the file holds it.
+
+    Raises:
+        ConfigError: The file does not load afterwards (the original text is
+            restored), or a decision with that id exists but its item does not
+            start with `- id: <id>`, so a line edit cannot find it.
+    """
+    path = Path(path)
+    decision_id = decision.get("id")
+    if not isinstance(decision_id, str) or not decision_id:
+        raise ConfigError(f"{path}: decisions: a decision needs a text id")
+    original = path.read_text()
+    lines = original.splitlines()
+    head, end = _decisions_block(lines)
+
+    first_item = next(
+        (i for i in range(head + 1, end) if re.match(r"\s*- ", lines[i])), None
+    )
+    indent = (
+        len(lines[first_item]) - len(lines[first_item].lstrip())
+        if first_item is not None
+        else 2
+    )
+    block = yaml.safe_dump([decision], default_flow_style=None, sort_keys=False)
+    new = [" " * indent + line for line in block.splitlines()]
+
+    start = next(
+        (
+            i
+            for i in range(head + 1, end)
+            if re.fullmatch(
+                rf"\s{{{indent}}}- id:\s*['\"]?{re.escape(decision_id)}['\"]?\s*(#.*)?",
+                lines[i],
+            )
+        ),
+        None,
+    )
+    if start is None:
+        if any(d.id == decision_id for d in load_view_config(path).decisions):
+            raise ConfigError(
+                f"{path}: decisions: {decision_id!r} does not start with "
+                f"`- id: {decision_id}`; edit it by hand"
+            )
+        # Append after the block's last item line, before trailing blanks and
+        # column-0 comments that lead into the next key.
+        insert = end
+        while insert > head + 1 and (
+            not lines[insert - 1].strip() or lines[insert - 1].startswith("#")
+        ):
+            insert -= 1
+        lines[insert:insert] = new
+    else:
+        # The item ends at the next line indented at or below its `- ` marker.
+        stop = next(
+            (
+                i
+                for i in range(start + 1, end)
+                if lines[i].strip() and len(lines[i]) - len(lines[i].lstrip()) <= indent
+            ),
+            end,
+        )
+        while stop > start + 1 and not lines[stop - 1].strip():
+            stop -= 1
+        lines[start:stop] = new
+
+    path.write_text("\n".join(lines) + "\n")
+    try:
+        loaded = load_view_config(path)
+        if [d.id for d in loaded.decisions].count(decision_id) != 1:
+            raise ConfigError(f"{path}: decisions: {decision_id!r} is not unique")
+    except ConfigError as exc:
+        path.write_text(original)
+        raise ConfigError(f"{exc} (not written; the file is unchanged)") from exc

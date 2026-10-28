@@ -1,8 +1,8 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
-Commands: `discover`, `prove`, `check-api`, `run`, `triage`, `review`, `members`,
-`inventory-workbook`, `inventory`. Exit codes: 0
-done, 1 refused (the message says why), 2 usage error. This module parses
+Commands: `discover`, `prove`, `check-api`, `run`, `triage`, `add-decisions`,
+`review`, `record-answers`, `members`, `inventory-workbook`, `inventory`. Exit
+codes: 0 done, 1 refused (the message says why), 2 usage error. This module parses
 arguments and builds the clients; `pipeline.py` does the work. Tests replace
 `make_warehouse`, `make_cube`, `tableau_session`, `utcnow` and `cache_root`.
 """
@@ -24,14 +24,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import tableauserverclient as TSC
+import yaml
 
-from . import builder, pipeline, report, tableau, triage
+from . import answers, builder, pipeline, report, tableau, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import (
     ConfigError,
     ViewConfig,
     load_view_config,
     with_fact_dataset,
+    write_decision,
 )
 from .cube_client import Cube, CubeError, CubeRefusal
 from .moment import MomentError
@@ -57,6 +59,7 @@ REFUSALS = (
     CubeRefusal,
     CubeError,
     tableau.RefreshMovedError,
+    answers.AnswerError,
 )
 
 
@@ -222,6 +225,28 @@ def _parser() -> argparse.ArgumentParser:
     email(p)
     max_usd(p)
 
+    p = sub.add_parser(
+        "add-decisions", help="write an approved triage batch as decisions"
+    )
+    view_file(p)
+    p.add_argument(
+        "approved",
+        type=Path,
+        help='JSON list of {"id", "call", "reason", "task", "item"}',
+    )
+
+    p = sub.add_parser(
+        "record-answers", help="write a domain owner's answers comment as decisions"
+    )
+    p.add_argument("views", type=Path, nargs="+", help="validation files")
+    p.add_argument(
+        "--comment", type=Path, required=True, help="the answers comment's body"
+    )
+    p.add_argument("--author", required=True, help="the comment author's login")
+    p.add_argument(
+        "--yes", action="store_true", help="write; without it, only print the changes"
+    )
+
     p = sub.add_parser("review", help="print the domain-owner review issue body")
     p.add_argument("views", type=Path, nargs="+", help="validation files")
     p.add_argument("--domain", required=True, help="domain whose owner reviews")
@@ -255,6 +280,9 @@ def _dispatch(args: argparse.Namespace) -> int:
         configs = [_load(v) for v in args.views]
         print(pipeline.review(configs, args.domain, cache_root()))
         return 0
+
+    if args.command == "record-answers":
+        return _record_answers(args.views, args.comment, args.author, args.yes)
 
     if args.command == "members":
         return _members(_cube(args))
@@ -293,6 +321,9 @@ def _dispatch(args: argparse.Namespace) -> int:
             cache_root=cache_root(),
         )
         return 0
+
+    if args.command == "add-decisions":
+        return _add_decisions(cfg, args.view, args.approved)
 
     if args.command == "check-api":
         cube = _cube(args)
@@ -349,6 +380,97 @@ def _dispatch(args: argparse.Namespace) -> int:
                 ),
             )
     return 1 if refused else 0
+
+
+RUN_AGAIN = (
+    "The decisions changed, and their fingerprint covers `reason`: `run` {} "
+    "again before `review`."
+)
+
+
+def _write_all(writes: list[tuple[Path, dict]]) -> None:
+    """Write each decision, restoring every file if any write fails."""
+    originals = {path: path.read_text() for path, _ in writes}
+    try:
+        for path, decision in writes:
+            write_decision(path, decision)
+    except ConfigError:
+        for path, text in originals.items():
+            path.write_text(text)
+        raise
+
+
+def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
+    """Write an approved triage batch into the view's `decisions:`.
+
+    Stubs come from the triage beside the latest run (see
+    `pipeline._triage_file`) and fingerprints from that run. The whole batch
+    is written or none of it.
+    """
+    approved = _read_json(approved_path, "approved")
+    run, run_json = pipeline.latest_run(cfg, cache_root())
+    found = pipeline._triage_file(run_json, cache_root() / cfg.view)
+    if found is None:
+        raise pipeline.Refusal(f"{cfg.view}: no triage.json; `triage` it first")
+    try:
+        saved = json.loads(found.read_text())
+    except json.JSONDecodeError as exc:
+        raise pipeline.Refusal(
+            f"{cfg.view}: triage.json is unreadable; re-run triage"
+        ) from exc
+
+    decisions = answers.approved_decisions(approved, saved, run.fingerprints)
+    taken = {d.id for d in cfg.decisions} & {d["id"] for d in decisions}
+    if taken:
+        raise pipeline.Refusal(
+            f"{path}: decisions already has {', '.join(sorted(taken))}; pick new ids"
+        )
+    _write_all([(path, d) for d in decisions])
+    for d in decisions:
+        print(f"{path}: wrote {d['id']} ({d['call']})")
+    print(RUN_AGAIN.format(path))
+    return 0
+
+
+def _record_answers(views: list[Path], comment: Path, author: str, yes: bool) -> int:
+    """Print what an answers comment changes; write it only with `yes`.
+
+    Any answer that does not fit refuses the whole comment, and a failed
+    write restores every file, so a comment is written whole or not at all.
+    """
+    if not comment.is_file():
+        raise pipeline.Refusal(f"{comment}: no such comment file")
+    configs = [(str(v), _load(v)) for v in views]
+    changes = answers.answer_changes(
+        answers.parse_answers(comment.read_text(encoding="utf-8")), configs
+    )
+
+    print(f"Comment by {author}")
+    for c in changes:
+        where = f"{c.path}: {c.decision}"
+        if c.call[0] != c.call[1]:
+            print(f"{where}: call {c.call[0]} -> {c.call[1]}")
+        if c.task[0] != c.task[1]:
+            print(f"{where}: task {c.task[0] or '(none)'} -> {c.task[1]}")
+        if c.reason[0] != c.reason[1]:
+            print(f"{where}: reason -> {c.reason[1]}")
+    if not yes:
+        print("Nothing written; confirm with the analyst, then re-run with --yes.")
+        return 0
+
+    writes = []
+    for c in changes:
+        path = Path(c.path)
+        raw = yaml.safe_load(path.read_text())["decisions"]
+        decision = dict(next(d for d in raw if d.get("id") == c.decision))
+        decision.update(call=c.call[1], reason=c.reason[1])
+        if c.task[1]:
+            decision["task"] = c.task[1]
+        writes.append((path, decision))
+    _write_all(writes)
+    print(f"Wrote {len(writes)} decisions.")
+    print(RUN_AGAIN.format(" ".join(dict.fromkeys(c.path for c in changes))))
+    return 0
 
 
 def _members(cube: Cube) -> int:
