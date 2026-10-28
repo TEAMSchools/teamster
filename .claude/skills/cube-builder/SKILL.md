@@ -87,11 +87,7 @@ Run these before the plan calls anything missing.
    member on a cube no view exposes never reaches `members.json`. Search
    `src/cube/model/**/*.yml` for the field's name, its column and words from its
    meaning: `rg -n -i '<term>' src/cube/model`.
-2. Same SQL is refused. After writing a new measure, run `members` against the
-   local Cube: a member under another name with the same `fact` and
-   `sql_fingerprint` in `members.json` is the same measure. Drop the new one and
-   reuse that one.
-3. A same-named member on another cube or view is a candidate, not a match. Show
+2. A same-named member on another cube or view is a candidate, not a match. Show
    the analyst what it counts (the key it counts, its table's grain, its
    filters) beside what the dashboard counts, and propose one verdict:
    - same population, already in the dashboard's view: reuse it, build nothing;
@@ -102,7 +98,8 @@ Run these before the plan calls anything missing.
 
    The analyst confirms each verdict before the plan is written.
 
-Dimensions follow the same path.
+Dimensions take both steps. A new measure also gets the same-SQL check in
+_Build_ step 4.
 
 ## Plan
 
@@ -133,32 +130,47 @@ Build shallowest tier first, one PR type at a time. Each PR follows the root
 CLAUDE.md branch flow, is based on `origin/main`, and carries
 `Refs #<build issue>`.
 
-| PR type         | What it changes                                        | Reviewer           |
-| --------------- | ------------------------------------------------------ | ------------------ |
-| 1: YAML only    | New measures over members already present; comparisons | simple review      |
-| 2: Cube changes | New dimensions, joins, a new cube                      | analytics engineer |
-| 3: Fact changes | New columns or a new mart in dbt                       | data engineer      |
+Comparisons, proofs and decisions go in `src/cube/validation/<view>.yml` on a
+separate validation branch, stacked on
+`cristinabaldor/feat/claude-cube-validation-and-build-skill` until #6160 merges,
+never in a builder PR. The runner's `PKG` is always the validator worktree's
+`scripts/cube_validation`.
+
+| PR type         | What it changes                           | Reviewer           |
+| --------------- | ----------------------------------------- | ------------------ |
+| 1: YAML only    | New measures over members already present | simple review      |
+| 2: Cube changes | New dimensions, joins, a new cube         | analytics engineer |
+| 3: Fact changes | New columns or a new mart in dbt          | data engineer      |
 
 **A type 3 PR merges before the type 2 PR that reads its column.**
 
 1. Type 3: invoke `dbt-local-dev`, then `uv run dbt build --select <model>+`
    builds the column into `zz_<user>_kipptaf_marts`.
-2. Start a local Cube over the branch's model: a `CUBEJS_SCHEMA_PATH` copy, per
-   `.claude/rules/cube-authoring.md`; `cube-ops` covers starting it in the
-   background. Point the runner's `CUBE_REST_URL` at
-   `http://localhost:4000/cubejs-api/v1`. Use a Cube Cloud Dev Mode deployment
-   only when the analyst asks for it.
+2. Start a local Cube over the PR's model, per the `CUBEJS_SCHEMA_PATH` copy in
+   `.claude/rules/cube-authoring.md`: the copy comes from the PR's worktree, and
+   the server runs from the main checkout's `src/cube`, since a worktree has no
+   dotenv file. `cube-ops` covers starting it in the background. Use a Cube
+   Cloud Dev Mode deployment only when the analyst asks for it.
+   - Start the server with a throwaway `CUBEJS_API_SECRET=<local value>`.
+   - In the runner, `monkeypatch.setenv` `CUBE_API_SECRET` to that same value
+     and `CUBE_REST_URL` to `http://localhost:4000/cubejs-api/v1`.
+   - Smoke-test one `check-api` before relying on the server.
 3. While the column exists only in the dev build, redirect the copy's
    `sql_table` to `zz_<user>_kipptaf_marts` (never the working tree) and pass
    `--fact-dataset zz_<user>_kipptaf_marts` to `check-api`, `prove` and `run`.
-4. Add the comparison that proves the piece, by the `cube-validation` runbook
-   steps 2 and 3. A new dimension is proven by slicing an existing measure by it
-   (the new dimension mapped under `dims`).
-5. Run the `cube-validation` runbook steps 4 to 7: `prove`, `check-api`,
+4. After writing a new measure, copy `members.json` aside, then run `members`
+   against the local Cube. A `same SQL: <new>, <other>` line means the new
+   measure is `<other>` under another name: confirm in `members.json`, drop the
+   new one and reuse `<other>`. Restore the copy, or rerun `members` against
+   Cube Cloud, before any later `inventory`.
+5. On the validation branch, add the comparison that proves the piece by the
+   `cube-validation` runbook steps 2 and 3. A new dimension is proven by slicing
+   an existing measure by it (the new dimension mapped under `dims`).
+6. Run the `cube-validation` runbook steps 4 to 7: `prove`, `check-api`,
    `prove --check`, `run`.
-6. The PR description says what was proven, the moment, the branch, and the
+7. The PR description says what was proven, the moment, the branch, and the
    `Cube:` and `Fact:` lines `run` printed.
-7. After a type 3 PR merges and its production build lands, rerun `run` for the
+8. After a type 3 PR merges and its production build lands, rerun `run` for the
    type 2 PR without `--fact-dataset` and update its description.
 
 ## Finish
