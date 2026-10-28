@@ -48,43 +48,6 @@ def test_list_logs_once_per_call(monkeypatch):
     log.info.assert_called_once()
 
 
-def test_list_passes_params_through(monkeypatch):
-    monkeypatch.setattr(overgrad_resources.time, "sleep", lambda _: None)
-
-    resource = OvergradResource(api_key="test")
-    object.__setattr__(resource, "_log", MagicMock())
-
-    seen = []
-
-    def fake_request(params, **_):
-        seen.append(dict(params))
-        return _FakeResponse(page=params["page"], total_pages=2)
-
-    object.__setattr__(resource, "_session", SimpleNamespace(request=fake_request))
-
-    caller_params = {"updated_after": "2026-10-28T18:00:00.000Z"}
-    resource.list(path="admissions", params=caller_params)
-
-    assert [p["updated_after"] for p in seen] == ["2026-10-28T18:00:00.000Z"] * 2
-    assert [p["page"] for p in seen] == [1, 2]
-    assert all(p["limit"] == resource.page_limit for p in seen)
-    assert caller_params == {"updated_after": "2026-10-28T18:00:00.000Z"}
-
-
-def test_list_accepts_params_none(monkeypatch):
-    monkeypatch.setattr(overgrad_resources.time, "sleep", lambda _: None)
-
-    resource = OvergradResource(api_key="test")
-    object.__setattr__(resource, "_log", MagicMock())
-
-    def fake_request(params, **_):
-        return _FakeResponse(page=params["page"], total_pages=1)
-
-    object.__setattr__(resource, "_session", SimpleNamespace(request=fake_request))
-
-    assert resource.list(path="admissions", params=None) == [{"id": 1}]
-
-
 def test_list_stops_on_empty_result(monkeypatch):
     monkeypatch.setattr(overgrad_resources.time, "sleep", lambda _: None)
 
@@ -190,7 +153,8 @@ def test_list_by_cursor_delete_mid_pull_skips_nothing(monkeypatch):
 
     data = _cursor_resource(monkeypatch, api).list_by_cursor(path="followings")
 
-    assert {r["id"] for r in data} >= {2, 3, 4, 5, 6}
+    # id 1 was read before its delete, so it stays in this pull
+    assert {r["id"] for r in data} == {1, 2, 3, 4, 5, 6}
 
 
 def test_list_by_cursor_full_page_of_one_timestamp(monkeypatch):

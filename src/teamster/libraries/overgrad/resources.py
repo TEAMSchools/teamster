@@ -73,10 +73,19 @@ class OvergradResource(ConfigurableResource):
         callers dedupe by `id`.
         """
         url = self._get_url(path)
-        params: dict = {"limit": self.page_limit, "page": 1}
+        cursor: str | None = None
+        page_number = 1
 
         data = []
         while True:
+            params: dict[str, int | str] = {
+                "limit": self.page_limit,
+                "page": page_number,
+            }
+
+            if cursor is not None:
+                params["updated_after"] = cursor
+
             response_json: dict = self._request(
                 method="GET", url=url, params=params
             ).json()
@@ -84,19 +93,24 @@ class OvergradResource(ConfigurableResource):
             page = response_json.pop("data")
             data.extend(page)
 
-            if len(data) == len(page):
+            if cursor is None:
                 self._log.info(f"GET: {url} {response_json}")
 
             if len(page) < self.page_limit:
                 break
 
-            cursor = page[-1]["updated_at"]
+            # shortcut: a record with a null `updated_at` never matches
+            # `updated_after` and is not pulled; none exist today, and one
+            # ending a page fails the run here
+            next_cursor = check.not_none(page[-1]["updated_at"])
 
-            if cursor == params.get("updated_after"):
-                # a full page shares one timestamp: step through it by page
-                params["page"] += 1
+            if next_cursor == cursor:
+                # shortcut: a full page sharing one timestamp steps by page
+                # number, so an edit inside that group mid-pull can still skip
+                # a record; add an `id` tiebreak if 100+ record bulk updates appear
+                page_number += 1
             else:
-                params = {"limit": self.page_limit, "page": 1, "updated_after": cursor}
+                cursor, page_number = next_cursor, 1
 
             # Overgrad's API limits users to making 60 requests per minute and 1000
             # requests per hour
@@ -105,10 +119,7 @@ class OvergradResource(ConfigurableResource):
         return data
 
     def list(self, path: str, *args: str, **kwargs) -> list[dict]:
-        kwargs["params"] = {
-            **(kwargs.pop("params", None) or {}),
-            "limit": self.page_limit,
-        }
+        kwargs["params"] = {"limit": self.page_limit}
 
         url = self._get_url(path, *args)
 

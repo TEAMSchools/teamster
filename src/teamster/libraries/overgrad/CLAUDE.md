@@ -21,7 +21,7 @@ Uses a `pool` to rate-limit concurrent API calls per code location
 
 ## Resource: `OvergradResource`
 
-REST client with `list()` (auto-paginates up to `page_limit`, passing caller
-`params` through), `list_by_cursor()` (pages on the last `updated_at` seen; the
-result repeats records, so dedupe by `id`), and `get()` (single record by ID).
-Authenticates via `ApiKey` header.
+REST client with `list()` (auto-paginates up to `page_limit`),
+`list_by_cursor()` (pages on the last `updated_at` seen; the result repeats
+records, so dedupe by `id`), and `get()` (single record by ID). Authenticates
+via `ApiKey` header.
