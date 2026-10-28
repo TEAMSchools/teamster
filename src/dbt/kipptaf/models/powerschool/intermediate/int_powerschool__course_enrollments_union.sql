@@ -1,4 +1,3 @@
--- Refs #5704: rebuilt in CI to pick up courses_gradescale_name
 with
     union_relations as (
         {{
