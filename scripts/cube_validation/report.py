@@ -92,6 +92,14 @@ class RunResult:
     # `dataset.table` fact, so an analyst can say so in a PR description.
     cube_host: str = ""
     fact: str = ""
+    # What an owner's hand check needs, kept in run.json and never printed:
+    # each cell that neither passes nor is dashboard-filtered (`comparison`,
+    # `cut`, `key`, `dims` as Cube name and value pairs, `dashboard`, `cube`,
+    # `n_students`, None without `rows`), and per comparison and cut label
+    # the [dashboard, Cube] SQL the run executed and each one's dry-run USD.
+    diff_cells: list[dict] = field(default_factory=list)
+    cell_sql: dict[str, dict[str, list[str]]] = field(default_factory=dict)
+    cell_sql_usd: dict[str, dict[str, list[float]]] = field(default_factory=dict)
 
 
 def mask(n: int) -> str:

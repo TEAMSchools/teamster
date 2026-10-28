@@ -177,15 +177,23 @@ class Warehouse:
             f"no CREATE_VIEW job for {dataset}.{name} before {utc_literal(ts)}"
         )
 
+    def estimate(self, sql: str) -> float:
+        """Return the USD cost of `sql` from a dry run, counted against no cap.
+
+        For a query someone else runs outside the validator; `price` is the
+        one that counts.
+        """
+        config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
+        job = self._client.query(sql, job_config=config)
+        return (job.total_bytes_processed or 0) / _TIB * USD_PER_TIB
+
     def price(self, sql: str) -> float:
         """Return the USD cost of `sql` from a dry run, without running it.
 
         Raises:
             CostCapError: inside `budget`, the running total passed the cap.
         """
-        config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
-        job = self._client.query(sql, job_config=config)
-        usd = (job.total_bytes_processed or 0) / _TIB * USD_PER_TIB
+        usd = self.estimate(sql)
         if self._daily_cap is not None:
             today = self.spent_today()
             if today + usd > self._daily_cap:

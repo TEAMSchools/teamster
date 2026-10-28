@@ -264,6 +264,20 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
     )
 
 
+def _students_sql(comparison: Comparison, student: str, rows_sql: str) -> str:
+    """Distinct `student` values (the first grain pair) per cell over `rows_sql`.
+
+    `rows_sql` is `dashboard_rows_sql` as of the moment: it spans every cut
+    and keeps rows the `dashboard_filters` drop, so a cell's count can exceed
+    what one cut shows.
+    """
+    names = _unique(d.dashboard for d in comparison.dims)
+    count = f"COUNT(DISTINCT {student}) AS n_students"
+    group = f" GROUP BY {', '.join(names)}" if names else ""
+    # trunk-ignore(bandit/B608): identifiers are validated in config.py; rows_sql is built from them
+    return f"SELECT {', '.join([*names, count])} FROM ({rows_sql}){group}"
+
+
 def _filter_flags(comparison: Comparison) -> list[tuple[str, str]]:
     """Each dashboard-only filter's flag column and label (its column)."""
     return [
@@ -601,6 +615,15 @@ class _Sides:
     sql: dict[str, tuple[str, str]] = dataclasses.field(default_factory=dict)
     fingerprints: dict[str, dict[str, str]] = dataclasses.field(default_factory=dict)
     moved: dict[str, bool] = dataclasses.field(default_factory=dict)
+    # Per comparison and cut label, the [dashboard, Cube] SQL run and its price.
+    cell_sql: dict[str, dict[str, list[str]]] = dataclasses.field(default_factory=dict)
+    cell_sql_usd: dict[str, dict[str, list[float]]] = dataclasses.field(
+        default_factory=dict
+    )
+    # Per comparison with `rows`, distinct students by cell key.
+    students: dict[str, dict[tuple[str, ...], int]] = dataclasses.field(
+        default_factory=dict
+    )
 
 
 def _cube_sql(
@@ -654,9 +677,14 @@ def _compare_one(
         dash_at = at(probe_sql(cfg, comparison, cut), build.start)
         sides.cube_tables |= cube_at.tables
         sides.live |= cube_at.live | dash_at.live
-        cube_rows = wh.rows(
-            wrap_cube(cube_at.sql, cfg.view, dims, dates, comparison.measure)
-        )
+        wrapped = wrap_cube(cube_at.sql, cfg.view, dims, dates, comparison.measure)
+        label = cut_label(cut)
+        sides.cell_sql.setdefault(comparison.id, {})[label] = [dash_at.sql, wrapped]
+        sides.cell_sql_usd.setdefault(comparison.id, {})[label] = [
+            wh.estimate(dash_at.sql),
+            wh.estimate(wrapped),
+        ]
+        cube_rows = wh.rows(wrapped)
         dash_rows = wh.rows(dash_at.sql)
         unfiltered = None
         if comparison.dashboard_filters:
@@ -707,6 +735,11 @@ def _compare_one(
         )
         sides.groups += compare.groups_from(comparison.id, result)
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
+        student = comparison.rows.grain[0].dashboard
+        sides.students[comparison.id] = {
+            tuple(_key(r[d.dashboard]) for d in comparison.dims): r["n_students"]
+            for r in wh.rows(_students_sql(comparison, student, dash_at.sql))
+        }
 
     sides.fingerprints[comparison.id] = {
         "cube": decisions.sql_fingerprint(sort_school_filters("\n".join(cube_parts))),
@@ -1087,6 +1120,9 @@ def run(
         fingerprints=sides.fingerprints,
         decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
         gaps_unknown=gaps_unknown,
+        diff_cells=_diff_cells(sides),
+        cell_sql=sides.cell_sql,
+        cell_sql_usd=sides.cell_sql_usd,
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells, findings)
     print(text)
@@ -1096,6 +1132,25 @@ def run(
     )
     print(f"Saved {saved}")
     return result
+
+
+def _diff_cells(sides: _Sides) -> list[dict]:
+    """Every cell that neither passes nor is dashboard-filtered, for run.json."""
+    return [
+        {
+            "comparison": c.comparison,
+            "cut": c.cut,
+            "key": c.key,
+            "dims": [list(d) for d in c.dims],
+            "dashboard": c.dashboard,
+            "cube": c.cube,
+            "n_students": sides.students.get(c.comparison, {}).get(
+                tuple(v for _, v in c.dims)
+            ),
+        }
+        for c in sides.cells
+        if c.verdict not in ("pass", "dashboard_filtered")
+    ]
 
 
 def _json_default(value: Any) -> Any:
@@ -1165,6 +1220,9 @@ def _run_from_json(data: dict) -> RunResult:
         decisions_fingerprint=data.get("decisions_fingerprint", ""),
         gaps_unknown=data.get("gaps_unknown", []),
         dashboard_filters=data.get("dashboard_filters", []),
+        diff_cells=data.get("diff_cells", []),
+        cell_sql=data.get("cell_sql", {}),
+        cell_sql_usd=data.get("cell_sql_usd", {}),
     )
 
 

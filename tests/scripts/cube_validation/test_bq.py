@@ -290,6 +290,18 @@ def test_the_daily_cap_spans_runs_and_counts_no_refused_query(tmp_path):
     small.price("select 3")  # $0.60 + $0.30 fits: the refused $0.60 was not counted
 
 
+def test_estimate_does_not_count_against_the_daily_cap(tmp_path):
+    client = FakeClient(nbytes=int(2.0 / 6.25 * TIB))  # $2.00, over both caps
+    wh = Warehouse(client=client)
+    wh.configure_local(tmp_path, 1.0)
+
+    with wh.budget(1.0):
+        assert wh.estimate("select 1") == pytest.approx(2.0, abs=0.001)
+        assert wh.spent == 0.0
+    assert wh.spent_today() == 0.0
+    assert client.queries == [("select 1", True)]
+
+
 def test_billed_bytes_replace_the_estimate_after_a_query_runs(tmp_path):
     client = FakeClient(rows=[{"x": 1}], nbytes=int(1.0 / 6.25 * TIB))
     real = client.query

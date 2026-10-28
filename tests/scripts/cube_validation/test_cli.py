@@ -109,6 +109,10 @@ class FakeBigQuery:
         self.ran: list[str] = []
         self.probe = probe or [{"region": "Newark", "value": 0.9123}]
         self.cells = cells
+        self.students = [
+            {"region": "Miami", "n_students": 12},
+            {"region": "Newark", "n_students": 40},
+        ]
         self.views: dict[str, str] = {}
         self.build = (START, END)
 
@@ -143,6 +147,8 @@ class FakeBigQuery:
             return [{"f": 1}]
         if "-- outer" in sql:
             return RECONCILE_ROWS
+        if "AS n_students" in sql:
+            return self.students
         if "AS value" in sql and "fct_f" in sql:
             if self.cells is not None:
                 return self.cells
@@ -323,7 +329,11 @@ def test_run_keeps_student_rows_in_bigquery(fakes, tmp_path, capsys):
 
     for sql in fakes.bq.ran:
         if "student_number" in sql or "lea_student_identifier" in sql:
-            assert "-- outer" in sql and "COUNT(DISTINCT __student)" in sql
+            # The reconcile, or the per-cell student count: counts, never rows.
+            assert ("-- outer" in sql and "COUNT(DISTINCT __student)" in sql) or (
+                sql.startswith("SELECT region, COUNT(DISTINCT student_number) ")
+                and sql.endswith(" GROUP BY region")
+            )
     out = capsys.readouterr().out
     assert "student_number" not in out
 
@@ -1629,6 +1639,98 @@ decisions:
     out = capsys.readouterr().out
     assert "`ada-cells` (ada-region cells, deliberate)" in out
     assert "cell differences to triage" not in out
+
+
+def _saved_run(tmp_path):
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    return json.loads(saved.read_text())
+
+
+def test_run_saves_differing_cells_and_their_pinned_sql(fakes, tmp_path):
+    fakes.bq.cells = [{"regions_region_name": "Miami", "value": 0.95}]
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    saved = _saved_run(tmp_path)
+    first = saved["diff_cells"][0]
+    assert first == {
+        "comparison": "ada-region",
+        "cut": "{}",
+        "key": "regions_region_name=Miami",
+        "dims": [["regions_region_name", "Miami"]],
+        "dashboard": None,
+        "cube": 0.95,
+        "n_students": 12,
+    }
+    assert len(saved["diff_cells"]) == 4  # Miami and Newark, under both cuts
+    assert [c["n_students"] for c in saved["diff_cells"][:2]] == [12, 40]
+    counts = [s for s in fakes.bq.ran if "AS n_students" in s and "-- outer" not in s]
+    assert len(counts) == 1
+    assert "COUNT(DISTINCT student_number)" in counts[0]
+
+    sql = saved["cell_sql"]["ada-region"]
+    assert set(sql) == {"{}", '{"Region": "Miami"}'}
+    dashboard, cube = sql["{}"]
+    assert "FOR SYSTEM_TIME AS OF" in dashboard and "rpt_d" in dashboard
+    assert "FOR SYSTEM_TIME AS OF" in cube and "AS value FROM (" in cube
+    assert dashboard in fakes.bq.ran and cube in fakes.bq.ran
+    usd = saved["cell_sql_usd"]["ada-region"]
+    assert set(usd) == set(sql) and all(len(v) == 2 for v in usd.values())
+
+
+def test_run_saves_each_sides_dry_run_price_outside_the_cap(fakes, tmp_path):
+    fakes.bq.cost = lambda sql: 0.5 if "FOR SYSTEM_TIME" in sql else 0.0
+    fakes.bq.cells = [{"regions_region_name": "Miami", "value": 0.95}]
+    args = ["run", str(_file(tmp_path)), "--max-usd", "50", "--max-usd-per-day", "50"]
+    assert cli.main(args) == 0
+
+    saved = _saved_run(tmp_path)
+    assert saved["cell_sql_usd"]["ada-region"]["{}"] == pytest.approx([0.5, 0.5])
+    ran = [s for s in fakes.bq.ran if "FOR SYSTEM_TIME" in s]
+    assert saved["cost_usd"] == pytest.approx(0.5 * len(ran), abs=0.01)
+    ledger = json.loads((tmp_path / "cache" / "spend.json").read_text())
+    assert sum(ledger.values()) == pytest.approx(saved["cost_usd"], abs=0.01)
+
+
+def test_run_without_rows_leaves_n_students_none(fakes, tmp_path):
+    fakes.bq.cells = [{"regions_region_name": "Miami", "value": 0.95}]
+    text = YML.split("    rows:\n", 1)[0] + PROOF + YML.split(PROOF, 1)[1]
+    assert cli.main(["run", str(_file(tmp_path, text))]) == 0
+
+    saved = _saved_run(tmp_path)
+    assert saved["diff_cells"]
+    assert all(c["n_students"] is None for c in saved["diff_cells"])
+    assert not any("n_students" in s for s in fakes.bq.ran)
+    assert set(saved["cell_sql"]["ada-region"]) == {"{}", '{"Region": "Miami"}'}
+
+
+def test_run_saves_no_cell_that_passes(fakes, tmp_path):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+
+    assert _saved_run(tmp_path)["diff_cells"] == []
+
+
+def test_old_run_json_without_new_fields_still_loads(fakes, tmp_path):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    saved = _saved_run(tmp_path)
+    for name in ("diff_cells", "cell_sql", "cell_sql_usd"):
+        del saved[name]
+
+    result = pipeline._run_from_json(saved)
+
+    assert result.diff_cells == [] and result.cell_sql == {}
+    assert result.cell_sql_usd == {}
+
+
+def test_run_json_round_trips_the_hand_check_fields(fakes, tmp_path):
+    fakes.bq.cells = [{"regions_region_name": "Miami", "value": 0.95}]
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    saved = _saved_run(tmp_path)
+
+    result = pipeline._run_from_json(saved)
+
+    assert result.diff_cells == saved["diff_cells"]
+    assert result.cell_sql == saved["cell_sql"]
+    assert result.cell_sql_usd == saved["cell_sql_usd"]
 
 
 def test_prove_sets_a_parameter_on_the_copy(fakes, tmp_path, capsys):
