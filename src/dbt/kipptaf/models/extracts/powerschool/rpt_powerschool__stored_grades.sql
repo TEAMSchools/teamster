@@ -19,12 +19,12 @@ select
     ce.sections_termid as termid,
     ce.school_level,
 
-    0 as potentialcrhrs,
-    0 as earnedcrhrs,
+    0 as `PotentialCrHrs`,
+    0 as `EarnedCrHrs`,
 
     least(fg.term_percent_grade_adjusted, 100) as percent,
 
-    if(ce.school_level = 'HS', fg.comment_value, null) as comment,
+    if(ce.school_level = 'HS', fg.comment_value, null) as `Comment`,
 from {{ ref("int_students__final_grades") }} as fg
 inner join
     {{ ref("int_students__course_enrollments") }} as ce
