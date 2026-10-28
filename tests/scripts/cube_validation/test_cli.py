@@ -1723,3 +1723,34 @@ def test_triage_takes_fact_dataset_and_refuses_a_bad_one(fakes, tmp_path, capsys
 
     assert code == 1
     assert "fact dataset" in capsys.readouterr().err
+
+
+def test_triage_runs_a_value_check_and_records_the_verdict(fakes, tmp_path, capsys):
+    proof = PROOF + (
+        "      missing_cuts: []\n"
+        "      missing_filters: [School Level]\n"
+        "      restricting_filters: [School Level]\n"
+        "      missing_columns: { School Level: school_level }\n"
+    )
+    path = _file(tmp_path, YML.replace(PROOF, proof))
+    assert cli.main(["run", str(path)]) == 0, capsys.readouterr().err
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    fakes.cube.meta = lambda: {
+        "cubes": [
+            {
+                "name": "v",
+                "dimensions": [{"name": "v.school_level", "title": "School Level"}],
+            }
+        ]
+    }
+    fakes.cube._load = lambda q: [{"v.school_level": "MS"}]
+    fakes.bq.ran.clear()
+    capsys.readouterr()
+
+    assert cli.main(["triage", str(path)]) == 0, capsys.readouterr().err
+
+    assert any("DISTINCT CAST(school_level AS STRING)" in s for s in fakes.bq.ran)
+    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    (gap,) = [i for i in items if i["kind"] == "gap"]
+    assert "school_level: same field, different coding" in gap["evidence"]
+    assert "MS" not in json.dumps(items)

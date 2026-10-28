@@ -31,6 +31,7 @@ from .report import (
     _where,
     mask,
 )
+from .timetravel import PROJECT
 
 # The order the analyst's batch shows suggestions, the owner last.
 SUGGESTIONS = ("map_filters", "filters_nothing", "docs", "owner")
@@ -226,6 +227,7 @@ def suggest(
     out = []
     for item, source in entries:
         evidence: tuple[str, ...] = ()
+        verdict_lines: tuple[str, ...] = ()
         candidates: tuple[str, ...] = ()
         members: list[str] = []
         call = ""
@@ -254,10 +256,9 @@ def suggest(
                 verdicts = (
                     [(m, values(caption, m)) for m in candidates] if values else []
                 )
-                same = [(m, v) for m, v in verdicts if v.startswith("same values")]
-                if same:
-                    call = "map_filters"
-                    evidence = tuple(f"{m}: {v}" for m, v in same)
+                verdict_lines = tuple(f"{m}: {v}" for m, v in verdicts if v)
+                if any(v.startswith("same values") for _, v in verdicts):
+                    call, evidence = "map_filters", verdict_lines
         else:
             comparison = by_id.get(item.comparison)
             if comparison:
@@ -267,9 +268,9 @@ def suggest(
                     members += [to_cube.get(c, c) for c, _ in source.dims]
 
         if not call:
-            evidence = _doc_evidence(members, docs)
-            call = "docs" if evidence else "owner"
-            evidence = evidence or (NO_ANSWER,)
+            quoted = _doc_evidence(members, docs)
+            call = "docs" if quoted else "owner"
+            evidence = verdict_lines + (quoted or (NO_ANSWER,))
 
         if isinstance(source, Group) and source.dims:
             stub_group = item.stub["group"]
@@ -297,7 +298,6 @@ REFERENCE_MAX_VALUES = 50
 _ID_SUFFIXES = ("_number", "_id", "_name", "_email")
 _SAME = "same values: map it under filters:"
 _CODING = "same field, different coding"
-_DIFFERENT = "different values"
 _NOT_COMPARED = "not compared: identifier column"
 _SQL_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _TABLE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*")
@@ -322,15 +322,6 @@ def pii_members(meta: dict, view: str) -> set[str]:
     return out
 
 
-def _abbreviates(short: set[str], long: set[str]) -> bool:
-    """True when each short value starts a different long value, ignoring case."""
-    if len(short) != len(long):
-        return False
-    left = sorted(v.lower() for v in short)
-    right = sorted(v.lower() for v in long)
-    return all(b.startswith(a) for a, b in zip(left, right))
-
-
 def _dashboard_view(cfg: ViewConfig, column: str) -> str:
     """The dashboard table behind `column`: the comparison that names it, else the first."""
     for c in cfg.comparisons:
@@ -352,8 +343,12 @@ def value_check(
 
     The dashboard side reads as of `moment.start`, the Cube side as Cube serves
     it now. Both queries count against the run and daily caps, so call this
-    inside `wh.budget`. It runs no query for a `pii` member, and compares
-    nothing when either side has more than `REFERENCE_MAX_VALUES` values.
+    inside `wh.budget`. It runs no query for a `pii` member or for a member or
+    column named like an identifier, and compares nothing when either side has
+    more than `REFERENCE_MAX_VALUES` values. A distinct-value list carries no
+    group size, so values print only to the terminal, and only when both the
+    member and the column are in `report._SHOWN_COLUMNS`; they never reach
+    `triage.json` or the evidence.
 
     Args:
         wh: The warehouse the dashboard side reads through.
@@ -366,21 +361,24 @@ def value_check(
 
     Returns:
         One of `same values: map it under filters:`,
-        `same field, different coding`, `different values`,
-        `not compared: identifier column`. The values print only for a member in
-        `report._SHOWN_COLUMNS`.
+        `same field, different coding` (the candidate already matches by name
+        or description, so differing values mean differing codes) or
+        `not compared: identifier column`.
     """
     table = _dashboard_view(cfg, column)
     if (
         member in pii
         or member.endswith(_ID_SUFFIXES)
+        or column.endswith(_ID_SUFFIXES)
         or not _SQL_NAME.fullmatch(column)
         or not _TABLE.fullmatch(table)
     ):
         return _NOT_COMPARED
 
+    dataset, name = table.split(".")
     sql = (
-        f"SELECT DISTINCT CAST({column} AS STRING) AS value FROM {table} "  # trunk-ignore(bandit/B608)
+        f"SELECT DISTINCT CAST({column} AS STRING) AS value "  # trunk-ignore(bandit/B608)
+        f"FROM `{PROJECT}`.`{dataset}`.`{name}` "
         f"WHERE {column} IS NOT NULL LIMIT {REFERENCE_MAX_VALUES + 1}"
     )
     dash = {
@@ -393,20 +391,16 @@ def value_check(
     rows = pipeline._priced_load(
         cube, wh, {"dimensions": [key], "limit": REFERENCE_MAX_VALUES + 1}
     )
-    theirs = {str(r[key]) for r in rows if r.get(key) is not None}
-    if len(theirs) > REFERENCE_MAX_VALUES:
+    # Count before dropping nulls: a null can fill the limit and cut the set short.
+    if len(rows) > REFERENCE_MAX_VALUES:
         return _NOT_COMPARED
+    theirs = {str(r[key]) for r in rows if r.get(key) is not None}
 
     if dash == theirs:
         return _SAME
-    verdict = (
-        _CODING
-        if _abbreviates(dash, theirs) or _abbreviates(theirs, dash)
-        else _DIFFERENT
-    )
-    if not _is_identifier(member):
+    if not (_is_identifier(member) or _is_identifier(column)):
         print(f"  {member}: dashboard {sorted(dash)} vs Cube {sorted(theirs)}")
-    return verdict
+    return _CODING
 
 
 def _missing_column(cfg: ViewConfig, caption: str) -> str:

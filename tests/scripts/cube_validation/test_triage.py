@@ -104,16 +104,28 @@ def test_same_values_suggests_map_filters():
     assert s.evidence == ("grade_level: same values on 9 of 9",)
 
 
-def test_different_values_do_not_map_filters():
+def test_every_verdict_reaches_the_evidence_but_only_same_maps():
     cfg = _cfg(restricting_filters=["Grade Level"])
     docs = {"grade_level": _doc("grade_level")}
 
     [s] = suggest(
-        cfg, _run(gaps=[_gap("Grade Level")]), docs, lambda c, m: "differ on 2"
+        cfg,
+        _run(gaps=[_gap("Grade Level")]),
+        docs,
+        lambda c, m: "same field, different coding",
     )
 
     assert s.suggestion == "owner"
     assert s.candidates == ("grade_level",)
+    assert "grade_level: same field, different coding" in s.evidence
+
+    [s] = suggest(
+        cfg,
+        _run(gaps=[_gap("Grade Level")]),
+        docs,
+        lambda c, m: "not compared: identifier column",
+    )
+    assert "grade_level: not compared: identifier column" in s.evidence
 
 
 def test_member_docs_suggest_docs_with_quoted_evidence():
@@ -323,7 +335,14 @@ class _Wh:
         return [{"value": v} for v in self.values]
 
 
-def _check(monkeypatch, dash, theirs, member="school_level", pii=frozenset()):
+def _check(
+    monkeypatch,
+    dash,
+    theirs,
+    member="school_level",
+    pii=frozenset(),
+    column="school_level",
+):
     """Run `value_check` against fake warehouse and Cube value sets."""
     wh = _Wh(dash)
     loads = []
@@ -336,10 +355,10 @@ def _check(monkeypatch, dash, theirs, member="school_level", pii=frozenset()):
         pipeline, "_as_of", lambda sql, ts, wh_: SimpleNamespace(sql=sql)
     )
     monkeypatch.setattr(pipeline, "_priced_load", load)
-    cfg = _cfg(missing_columns={"School Level": "school_level"})
+    cfg = _cfg(missing_columns={"School Level": column})
     object.__setattr__(cfg.comparisons[0], "dashboard_view", "ds.rpt_d")
     verdict = value_check(
-        wh, object(), cfg, "school_level", member, Build(START, END, "j"), set(pii)
+        wh, object(), cfg, column, member, Build(START, END, "j"), set(pii)
     )
     return verdict, wh, loads
 
@@ -364,22 +383,48 @@ def test_value_check_skips_identifier_and_high_cardinality_columns(monkeypatch, 
 def test_value_check_same_values_and_different_coding(monkeypatch, capsys):
     verdict, wh, loads = _check(monkeypatch, ["A", "B"], ["B", "A"])
     assert verdict == "same values: map it under filters:"
-    assert "FROM ds.rpt_d" in wh.ran[0]
+    assert "`ds`.`rpt_d`" in wh.ran[0]
     assert loads[0]["dimensions"] == ["enrollment.school_level"]
 
     verdict, _, _ = _check(monkeypatch, ["W", "B"], ["White", "Black"])
     assert verdict == "same field, different coding"
 
+    # Every candidate already matched by name or description, so a difference
+    # in values is a difference in coding.
     verdict, _, _ = _check(monkeypatch, ["1", "2"], ["White", "Black"])
-    assert verdict == "different values"
+    assert verdict == "same field, different coding"
     # An unreviewed member's values never print.
     assert "White" not in capsys.readouterr().out
 
 
 def test_value_check_prints_values_only_for_a_shown_column(monkeypatch, capsys):
-    verdict, _, _ = _check(monkeypatch, ["Sr"], ["Jr"], member="grade_level")
-    assert verdict == "different values"
+    verdict, _, _ = _check(
+        monkeypatch, ["Sr"], ["Jr"], member="grade_level", column="grade_level"
+    )
+    assert verdict == "same field, different coding"
     assert "Sr" in capsys.readouterr().out
+
+
+def test_value_check_prints_nothing_when_the_column_is_not_shown(monkeypatch, capsys):
+    verdict, _, _ = _check(
+        monkeypatch, ["Sr"], ["Jr"], member="grade_level", column="school_level"
+    )
+    assert verdict == "same field, different coding"
+    assert "Sr" not in capsys.readouterr().out
+
+
+def test_value_check_runs_no_query_for_an_identifier_column(monkeypatch):
+    for column in ("student_number", "x_id", "full_name", "contact_email"):
+        verdict, wh, loads = _check(monkeypatch, ["1"], ["1"], column=column)
+        assert verdict == "not compared: identifier column"
+        assert wh.ran == [] and loads == []
+
+
+def test_value_check_counts_rows_before_dropping_nulls(monkeypatch):
+    # A null plus 50 real values fills the limit: the set may be cut short.
+    cut = [f"v{i}" for i in range(REFERENCE_MAX_VALUES)] + [None]
+    verdict, _, _ = _check(monkeypatch, ["a"], cut)
+    assert verdict == "not compared: identifier column"
 
 
 def test_value_check_reads_the_dashboard_as_of_the_run_start(monkeypatch):
