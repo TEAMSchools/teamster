@@ -92,19 +92,25 @@ def members(cube: Cube, skipped: list[dict] | None = None) -> list[Member]:
 
 
 def same_sql(found: list[Member]) -> list[list[Member]]:
-    """Groups of measures on different cubes with equal SQL over the same fact.
+    """Groups of measures with equal SQL over the same fact and different names.
 
     The expression alone is not enough: `count(distinct t.student_id)` on 2
-    facts counts different students. Views are left out: a view member repeats
-    its cube's, and a dimension has no SQL to compare.
+    facts counts different students. Views are included because Cube's `/meta`
+    shows a normal viewer only views, but one measure exposed on several views
+    shares a short name (the part after the last dot) and is one measure, not a
+    duplicate. A dimension has no SQL to compare.
     """
     by_sql = defaultdict(list)
 
     for m in found:
-        if m.kind != "view" and m.sql_fingerprint:
+        if m.sql_fingerprint:
             by_sql[(m.fact, m.sql_fingerprint)].append(m)
 
-    return [group for group in by_sql.values() if len({m.cube for m in group}) > 1]
+    return [
+        group
+        for group in by_sql.values()
+        if len({m.name.rsplit(".", 1)[-1] for m in group}) > 1
+    ]
 
 
 def same_name(found: list[Member], name: str) -> list[Member]:

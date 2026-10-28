@@ -87,17 +87,17 @@ def test_members_compiles_every_measure_once():
 
 def test_same_sql_groups_equal_expressions_on_one_fact():
     cube = MetaCube(
-        [_cube("a", ["m"]), _cube("b", ["m"]), _cube("c", ["m"])],
+        [_cube("a", ["m"]), _cube("b", ["n"]), _cube("c", ["o"])],
         {
             "a.m": ("fct_a", "sum(`t`.x)"),
-            "b.m": ("fct_a", "SUM(`t`.x)"),
-            "c.m": ("fct_a", "sum(`t`.y)"),
+            "b.n": ("fct_a", "SUM(`t`.x)"),
+            "c.o": ("fct_a", "sum(`t`.y)"),
         },
     )
 
     groups = builder.same_sql(builder.members(cube))
 
-    assert [sorted(m.name for m in g) for g in groups] == [["a.m", "b.m"]]
+    assert [sorted(m.name for m in g) for g in groups] == [["a.m", "b.n"]]
 
 
 def test_same_sql_does_not_group_equal_expressions_on_different_facts():
@@ -126,13 +126,34 @@ def test_members_skips_a_measure_that_fails_to_compile():
     assert skipped == [{"name": "a.bad", "reason": "cannot compile a.bad"}]
 
 
-def test_same_sql_ignores_a_view_repeating_its_cube():
+def test_same_sql_ignores_one_measure_repeated_on_several_views():
     cube = MetaCube(
-        [_cube("a", ["m"]), _cube("v", ["m"], kind="view")],
-        {"a.m": ("fct_a", "sum(`t`.x)"), "v.m": ("fct_a", "sum(`t`.x)")},
+        [_cube(v, ["m"], kind="view") for v in ("v1", "v2", "v3")],
+        {f"{v}.m": ("fct_a", "sum(`t`.x)") for v in ("v1", "v2", "v3")},
     )
 
     assert builder.same_sql(builder.members(cube)) == []
+
+
+def test_same_sql_groups_different_names_on_views_over_one_fact():
+    cube = MetaCube(
+        [
+            _cube("v1", ["count_tardy"], kind="view"),
+            _cube("v2", ["tardy_count"], kind="view"),
+            _cube("v3", ["count_tardy"], kind="view"),
+        ],
+        {
+            "v1.count_tardy": ("fct_a", "sum(`t`.x)"),
+            "v2.tardy_count": ("fct_a", "sum(`t`.x)"),
+            "v3.count_tardy": ("fct_a", "sum(`t`.x)"),
+        },
+    )
+
+    groups = builder.same_sql(builder.members(cube))
+
+    assert [sorted(m.name for m in g) for g in groups] == [
+        ["v1.count_tardy", "v2.tardy_count", "v3.count_tardy"]
+    ]
 
 
 def test_same_name_finds_count_students_on_every_cube():
@@ -148,11 +169,11 @@ def test_same_name_finds_count_students_on_every_cube():
 
 def test_members_command_writes_json_and_prints_groups(monkeypatch, tmp_path, capsys):
     cube = MetaCube(
-        [_cube("a", ["m", "bad"]), _cube("b", ["m"])],
+        [_cube("a", ["m", "bad"]), _cube("b", ["n"])],
         {
             "a.m": ("fct_a", "sum(`t`.x)"),
             "a.bad": ("fct_a", None),
-            "b.m": ("fct_a", "sum(`t`.x)"),
+            "b.n": ("fct_a", "sum(`t`.x)"),
         },
     )
     monkeypatch.setattr(cli, "make_cube", lambda url, secret, email: cube)
@@ -164,10 +185,10 @@ def test_members_command_writes_json_and_prints_groups(monkeypatch, tmp_path, ca
     assert cli.main(["members"]) == 0
 
     written = json.loads((tmp_path / "cache" / "members.json").read_text())
-    assert sorted(m["name"] for m in written["members"]) == ["a.m", "b.m"]
+    assert sorted(m["name"] for m in written["members"]) == ["a.m", "b.n"]
     assert written["skipped"] == [{"name": "a.bad", "reason": "cannot compile a.bad"}]
     captured = capsys.readouterr()
-    assert "a.m" in captured.out and "b.m" in captured.out
+    assert "a.m" in captured.out and "b.n" in captured.out
     assert "skipped a.bad: cannot compile a.bad" in captured.err
 
 
