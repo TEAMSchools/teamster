@@ -625,3 +625,104 @@ def test_inventory_command_prints_a_table_then_json(monkeypatch, tmp_path, capsy
     printed = json.loads(out[out.index("[\n") :])
     assert {r["field"] for r in printed} >= {"Walkthrough Rate", "Unused Count"}
     assert printed[0]["sources"] == ["catalog", "review"]
+
+
+def _dimension(name, title="", **extra):
+    return builder.Member(
+        name=name,
+        cube=name.split(".", 1)[0],
+        kind="dimension",
+        title=title,
+        description="",
+        sql="",
+        sql_fingerprint="",
+        fact="",
+        **extra,
+    )
+
+
+def test_members_lists_dimensions_without_compiling_them():
+    dims = [{"name": "a.region", "title": "Region", "description": "Where"}]
+    cube = MetaCube(
+        [_cube("a", ["m"], dimensions=dims)], {"a.m": ("fct_a", "sum(`t`.x)")}
+    )
+
+    found = {m.name: m for m in builder.members(cube)}
+
+    assert cube.compiled_queries == [{"measures": ["a.m"]}]
+    region = found["a.region"]
+    assert (region.kind, region.title, region.description) == (
+        "dimension",
+        "Region",
+        "Where",
+    )
+    assert (region.sql, region.sql_fingerprint, region.fact) == ("", "", "")
+
+
+def test_same_sql_ignores_dimensions():
+    found = [_dimension("a.region"), _dimension("b.region")]
+
+    assert builder.same_sql(found) == []
+
+
+def test_inventory_gives_a_dimension_its_backticked_where_member():
+    catalog = builder.catalog_rows(_CATALOG, "ddi_suite")
+    found = [_dimension("student_tiers.tier", title="Tier")]
+
+    rows = {
+        r.field: r
+        for r in builder.inventory(
+            catalog, [_use("Student Tier", role="cut", name="nj_tier")], [], found
+        )
+    }
+
+    assert rows["Student Tier"].member == "student_tiers.tier"
+    assert rows["Student Tier"].disagreement == ""
+
+
+def test_inventory_flags_a_cube_covered_dimension_with_no_member():
+    catalog = builder.catalog_rows(_CATALOG, "ddi_suite")
+
+    rows = {
+        r.field: r
+        for r in builder.inventory(
+            catalog, [_use("Student Tier", role="cut", name="nj_tier")], [], []
+        )
+    }
+
+    assert rows["Student Tier"].disagreement == (
+        "catalog says cube-covered, no member found"
+    )
+
+
+def test_inventory_does_not_join_on_a_later_fragment_of_a_catalog_cell():
+    catalog = builder.catalog_rows(_CATALOG, "ddi_suite")
+    review = [_use("Mastery Rate"), _use("Overall Score")]
+
+    rows = {r.field: r for r in builder.inventory(catalog, review, [], [])}
+
+    assert rows["Mastery Rate"].sources == ("catalog", "review")
+    assert rows["Overall Score"].sources == ("review",)
+
+
+def test_inventory_notes_a_catalog_row_joining_several_fields():
+    catalog = [
+        {
+            "field": "Student Tier (Bucket 1/2/Unbucketed), Is Low 25 FL, Is SIPPS",
+            "kind": "dimension",
+            "status": "mart-ready",
+            "where": "",
+        }
+    ]
+    review = [
+        _use("Student Tier", role="cut"),
+        _use("Is SIPPS", role="cut"),
+        _use("Bucket", role="cut"),
+    ]
+
+    rows = {r.field: r for r in builder.inventory(catalog, review, [], [])}
+
+    for caption in ("Student Tier", "Is SIPPS"):
+        assert rows[caption].sources == ("catalog", "review")
+        assert "catalog row matches several fields" in rows[caption].disagreement
+    assert rows["Bucket"].sources == ("review",)

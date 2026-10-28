@@ -1,6 +1,6 @@
 """The builder's view of Cube and of a dashboard.
 
-Listing Cube's measures first keeps the builder from adding one Cube already
+Listing Cube's measures and dimensions first keeps the builder from adding one Cube already
 has, under the same name or another. Inventorying the workbook lists what each
 sheet uses, so the missing Cube pieces can be planned. Joining that list with
 the gap catalog and the dashboard's Asana task gives one row per field.
@@ -8,8 +8,9 @@ the gap catalog and the dashboard's Asana task gives one row per field.
 
 from __future__ import annotations
 
-# trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import re
+
+# trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from dataclasses import dataclass
@@ -22,8 +23,9 @@ from .pipeline import _measure_expression
 
 @dataclass(frozen=True)
 class Member:
-    """One measure. `sql` is its compiled expression, `fact` the `fct_*` table
-    it reads ("" when none)."""
+    """One measure or dimension. For a measure, `kind` is its cube's type; for a
+    dimension it is `dimension`. `sql` is a measure's compiled expression, `fact`
+    the `fct_*` table it reads ("" when none; both "" for a dimension)."""
 
     name: str
     cube: str
@@ -36,15 +38,30 @@ class Member:
 
 
 def members(cube: Cube, skipped: list[dict] | None = None) -> list[Member]:
-    """Every measure of every cube and view in `/meta`, each compiled alone.
+    """Every measure and dimension of every cube and view in `/meta`.
 
-    Compiling asks Cube for SQL and runs nothing in BigQuery. A measure Cube
+    Each measure is compiled alone; a dimension is listed as `/meta` gives it,
+    with no SQL. Compiling asks Cube for SQL and runs nothing in BigQuery. A measure Cube
     cannot compile or bind is left out and, when `skipped` is given, appended
     to it as `{"name", "reason"}`, so one bad measure does not end the listing.
     """
     found = []
 
     for entry in cube.meta()["cubes"]:
+        for dim in entry.get("dimensions", []):
+            found.append(
+                Member(
+                    name=dim["name"],
+                    cube=entry["name"],
+                    kind="dimension",
+                    title=dim.get("title", ""),
+                    description=dim.get("description", ""),
+                    sql="",
+                    sql_fingerprint="",
+                    fact="",
+                )
+            )
+
         for measure in entry.get("measures", []):
             name = measure["name"]
             owner, short = name.split(".", 1)
@@ -79,12 +96,12 @@ def same_sql(found: list[Member]) -> list[list[Member]]:
 
     The expression alone is not enough: `count(distinct t.student_id)` on 2
     facts counts different students. Views are left out: a view member repeats
-    its cube's.
+    its cube's, and a dimension has no SQL to compare.
     """
     by_sql = defaultdict(list)
 
     for m in found:
-        if m.kind != "view":
+        if m.kind != "view" and m.sql_fingerprint:
             by_sql[(m.fact, m.sql_fingerprint)].append(m)
 
     return [group for group in by_sql.values() if len({m.cube for m in group}) > 1]
@@ -284,7 +301,7 @@ def catalog_rows(markdown: str, slug: str) -> list[dict]:
 @dataclass(frozen=True)
 class InventoryRow:
     """One field of a dashboard across the catalog, the workbook review and
-    Asana. `member` is the Cube measure it maps to ("" when none).
+    Asana. `member` is the Cube member it maps to ("" when none).
     `disagreement` says in plain words where the sources differ ("" when they
     agree)."""
 
@@ -316,6 +333,23 @@ def _catalog_names(field: str) -> list[str]:
     return [n for part in re.split(r"[,/]", _plain(field)) if (n := part.strip())]
 
 
+def _cell_matches(field: str, name: str) -> bool:
+    """Whether a catalog first cell names `name`.
+
+    The whole cell and its first comma fragment match by containment. Later
+    fragments (after a comma or slash) match only an equal name, so a note such
+    as `overall/standard toggle` does not pull in every field containing
+    `overall`.
+    """
+    whole = _plain(field)
+    first = whole.split(",", 1)[0].strip()
+    return (
+        _same_field(whole, name)
+        or _same_field(first, name)
+        or any(n.lower() == name.lower() for n in _catalog_names(field))
+    )
+
+
 def _caption_name(caption: str) -> str:
     """A review caption to match on; `SUM(x)` matches as `x`, not as `SUM`."""
     if m := _AGG_CAPTION.fullmatch(caption.strip()):
@@ -340,13 +374,14 @@ def _statuses(texts: list[str]) -> set[str]:
 
 
 def _find_member(
-    found: list[Member], wheres: list[str], bare: str, caption: str
+    found: list[Member], wheres: list[str], bare: str, caption: str, kind: str
 ) -> tuple[str, bool]:
-    """The member for a measure and whether several matched by name or title.
+    """The member for a field and whether several matched by name or title.
 
     A backticked member in a catalog `where` cell wins, then a member whose
-    short name is `bare`, then one titled `caption`. A view repeats its cube's
-    members, so views are used only when no cube matches.
+    short name is `bare`, then one titled `caption`. Name and title matches
+    are limited to the field's `kind` when it has one. A view repeats its
+    cube's measures, so views are used only when no cube matches.
     """
     by_name = {m.name: m for m in found}
     for where in wheres:
@@ -360,6 +395,8 @@ def _find_member(
             return None
         return (hits[0].name, False) if len(hits) == 1 else ("", True)
 
+    if kind:
+        found = [m for m in found if (m.kind == "dimension") == (kind == "dimension")]
     by_short = [m for m in found if m.name.split(".", 1)[1] == bare]
     by_title = [m for m in found if m.title.lower() == caption.lower() != ""]
     return pick(by_short) or pick(by_title) or ("", False)
@@ -374,23 +411,25 @@ def inventory(
     """One row per field across the catalog, the workbook review and Asana.
 
     The review list is the backbone: a catalog or Asana row joins a review
-    field when either name contains the other (see `_same_field`); a catalog
-    first cell is split into names first. Rows that match no review field,
+    field when either name contains the other (see `_cell_matches` for how a
+    catalog first cell is read). Rows that match no review field,
     and Asana rows matching no catalog row either, become rows of their own.
     A field the review marks as presentation is left out, with whatever
-    catalog or Asana rows name it. Only measures are matched to members, since
-    members are measures. Deferred Asana items are listed and marked, not
+    catalog or Asana rows name it. A catalog row that joins more than one review
+    field is noted on each. Deferred Asana items are listed and marked, not
     dropped.
     """
-    base = {id(r): _catalog_names(r["field"]) for r in catalog}
     joined = {id(r): False for r in catalog}
+    fields_of = {id(r): 0 for r in catalog}
     groups = []  # (review field | None, catalog rows, asana rows)
 
     for use in review:
         name = _caption_name(use.caption)
-        rows = [r for r in catalog if any(_same_field(n, name) for n in base[id(r)])]
+        rows = [r for r in catalog if _cell_matches(r["field"], name)]
         for r in rows:
             joined[id(r)] = True
+            if not use.presentation:
+                fields_of[id(r)] += 1
         groups.append([use, rows, []])
 
     for r in catalog:
@@ -406,9 +445,7 @@ def inventory(
         ] or [
             g
             for g in groups
-            if g[0] is None
-            and g[1]
-            and any(_same_field(n, name) for n in base[id(g[1][0])])
+            if g[0] is None and g[1] and _cell_matches(g[1][0]["field"], name)
         ]
         if hits:
             for g in hits:
@@ -449,9 +486,9 @@ def inventory(
         )
 
         member, several = "", False
-        if kind == "measure" or (kind == "" and not cat_rows):
+        if kind or not cat_rows:
             member, several = _find_member(
-                found, [r["where"] for r in cat_rows], bare, caption
+                found, [r["where"] for r in cat_rows], bare, caption, kind
             )
 
         notes = []
@@ -463,12 +500,15 @@ def inventory(
         statuses = _statuses([r["status"] for r in cat_rows])
         if several:
             notes.append(f"members named {bare or caption} on several cubes")
-        elif kind == "measure" and statuses:
+        elif statuses:
             if not member and "cube-covered" in statuses:
                 notes.append("catalog says cube-covered, no member found")
             elif member and "cube-covered" not in statuses:
                 first = next(s for s in _CATALOG_STATUSES if s in statuses)
                 notes.append(f"catalog says {first}, member found")
+
+        if any(fields_of[id(r)] > 1 for r in cat_rows):
+            notes.append("catalog row matches several fields")
 
         if any(a.get("status") == "deferred" for a in asana_rows):
             notes.append("deferred in asana")

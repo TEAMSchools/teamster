@@ -322,7 +322,7 @@ def _members(cube: Cube) -> int:
             indent=2,
         )
     )
-    print(f"{len(found)} measures written to {path}")
+    print(f"{len(found)} members written to {path}")
 
     for group in builder.same_sql(found):
         print(f"same SQL: {', '.join(m.name for m in group)}")
