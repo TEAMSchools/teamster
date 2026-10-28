@@ -3,7 +3,7 @@ select
     grade_level,
     schoolid,
     gpa_points,
-    percent,
+    `percent`,
     grade,
     storecode,
     credit_type,

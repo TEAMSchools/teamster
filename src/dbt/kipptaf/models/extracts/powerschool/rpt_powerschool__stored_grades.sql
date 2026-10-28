@@ -22,7 +22,7 @@ select
     0 as `PotentialCrHrs`,
     0 as `EarnedCrHrs`,
 
-    least(fg.term_percent_grade_adjusted, 100) as percent,
+    least(fg.term_percent_grade_adjusted, 100) as `percent`,
 
     if(ce.school_level = 'HS', fg.comment_value, null) as `Comment`,
 from {{ ref("int_students__final_grades") }} as fg

@@ -66,10 +66,6 @@ with
             st.student_number,
             loc.powerschool_school_id as schoolid,
 
-            -- PowerSchool's yearid is academic_year - 1990. Deriving it keeps
-            -- fct_grades_term's reporting-terms join working for both branches.
-            g.academic_year - 1990 as yearid,
-
             cast(null as int64) as studentid,
 
             -- Focus posts one grade per marking period with no adjusted variant
@@ -91,6 +87,10 @@ with
             cast(null as string) as comment_value,
 
             safe_cast(g.credits as float64) as potential_credit_hours,
+
+            -- PowerSchool's yearid is academic_year - 1990. Deriving it keeps
+            -- fct_grades_term's reporting-terms join working for both branches.
+            g.academic_year - 1990 as yearid,
 
             -- PowerSchool stores the exclusion; Focus stores the inclusion.
             if(g.affects_gpa = 'Y', 0, 1) as exclude_from_gpa,
