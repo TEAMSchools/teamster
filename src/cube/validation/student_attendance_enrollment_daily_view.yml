@@ -852,12 +852,12 @@ decisions:
       values:
         - Camden
         - Newark
-    call: domain_owner
+    call: deliberate
     reason:
-      "Some students have membership days with no recorded attendance. Cube's
-      count_students (membership days only) counts them; the dashboard keeps
-      only rows with an attendance value. Owner: should a student with no
-      recorded attendance count?"
+      Cube's count_students is the enrollment headcount and counts students
+      whether or not their attendance was recorded; every student rate divides
+      by count_students_measured, the students with recorded attendance, in both
+      views. The dashboard's student count is that measured population.
     fingerprints:
       cube: 944ce9db7b614f965d6d69a840556fc32cfdf57ba239be16120934786e7d8cc2
       dashboard: f1e7cdd58f63fa415d3e46c2c218f9e2165db906c13fef0100f0b04ceb5ec630
@@ -940,11 +940,11 @@ decisions:
       dashboard: 2887fc51c00befe6e3764f7f352cbb071b8be2d84bc4b41f4b29d794e7aefb3d
   - id: missing-cut-lastfirst
     missing_cut: Lastfirst
-    call: domain_owner
+    call: deliberate
     reason:
-      "The Roster lists students by name. The validator keys students by
-      lea_student_identifier, so a name cut adds nothing to check. Owner:
-      confirm Cube needs no name-based cut."
+      Cube has the student's name as full_name (Last, First, Mi.); the validator
+      keys students by lea_student_identifier, so the name cut adds nothing to
+      check.
   - id: missing-cut-teacher-name
     missing_cut: Teacher Name
     call: domain_owner
@@ -978,11 +978,10 @@ decisions:
       question is in the enroll_status decisions.
   - id: missing-filter-ethnicity
     missing_filter: Ethnicity
-    call: domain_owner
+    call: deliberate
     reason:
-      "Cube has race, with labels where the dashboard uses letter codes (A, B, H
-      and so on). Owner: are these the same field, and which coding should Cube
-      use?"
+      "Same field: Cube's race decodes the PowerSchool ethnicity code the
+      dashboard shows into a full category label."
   - id: missing-filter-filter-death-of-student
     missing_filter: Filter - Death of Student
     call: domain_owner
@@ -1013,10 +1012,11 @@ decisions:
       should Cube carry?"
   - id: missing-filter-is-truant-current
     missing_filter: Is Truant Current
-    call: domain_owner
+    call: deliberate
     reason:
-      "The Roster and Grade Rollup can filter current truants; truancy lives on
-      the periods view, not this daily view. Owner: is that split right?"
+      "Current truancy is a period-end question: the periods view's
+      count_truants and pct_truant answer it, and the daily is_truant
+      description sends callers there."
   - id: missing-filter-nj-overall-student-tier
     missing_filter: NJ Overall Student Tier
     call: domain_owner
@@ -1027,11 +1027,10 @@ decisions:
       should Cube carry?"
   - id: missing-filter-region-filter
     missing_filter: Region [Filter]
-    call: domain_owner
+    call: deliberate
     reason:
-      "A second region filter on Y1 ADA - Region; Cube has regions_region_name,
-      already paired with the Region filter. Owner: confirm this one adds
-      nothing."
+      A copy of region with every member selected, so it filters nothing;
+      regions_region_name already covers region.
   - id: missing-filter-school
     missing_filter: School
     call: domain_owner
@@ -1054,10 +1053,10 @@ decisions:
       out-of-district students; Cube has no such set. Owner: does Cube need it?"
   - id: missing-filter-schoolid
     missing_filter: Schoolid
-    call: domain_owner
+    call: deliberate
     reason:
-      "Cube identifies schools by abbreviation and name, not PowerSchool
-      schoolid. Owner: confirm that is enough."
+      Analysts pick schools by locations_abbreviation or
+      locations_location_name; Cube needs no PowerSchool school id.
   - id: missing-filter-is-self-contained
     missing_filter: is_self_contained
     call: domain_owner
@@ -1103,21 +1102,19 @@ decisions:
       dashboard: 89a24e57eb1a8098c4247f855c9a72e62fb92d870c18ea215f6a3f2011acd3e2
   - id: missing-filter-grouping
     missing_filter: Grouping
-    call: domain_owner
+    call: deliberate
     reason:
-      "Board YOY's Grouping filter switches the bars between school, region,
-      grade, school level, ethnicity, sex and IEP status through a parameter;
-      Cube offers each of those as its own dimension. Owner: confirm no single
-      Grouping member is needed."
+      "A display switch, not a field: it changes which dimension Board YOY
+      groups by, and a Cube query names that dimension directly."
   - id: cells-students-y1-region
     comparison: students-y1-region
     cells: true
-    call: domain_owner
+    call: deliberate
     reason:
-      "Some students have membership days with no recorded attendance. Cube's
-      count_students (membership days only) counts them; the dashboard keeps
-      only rows with an attendance value. Owner: should a student with no
-      recorded attendance count?"
+      Cube's count_students is the enrollment headcount and counts students
+      whether or not their attendance was recorded; every student rate divides
+      by count_students_measured, the students with recorded attendance, in both
+      views. The dashboard's student count is that measured population.
     fingerprints:
       cube: 944ce9db7b614f965d6d69a840556fc32cfdf57ba239be16120934786e7d8cc2
       dashboard: f1e7cdd58f63fa415d3e46c2c218f9e2165db906c13fef0100f0b04ceb5ec630

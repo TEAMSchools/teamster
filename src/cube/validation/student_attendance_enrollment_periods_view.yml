@@ -175,12 +175,11 @@ decisions:
       should Cube carry?"
   - id: missing-filter-calendardate
     missing_filter: Calendardate
-    call: domain_owner
+    call: deliberate
     reason:
-      "The Y1 ADA sheets can be limited to a date range; Cube's periods view
-      answers as of each period's end, and a date range belongs on the daily
-      view's attendance_date. Owner: confirm the year-end figure is the one the
-      dashboard means."
+      The periods view reads each period's end, and its description explains
+      that a date filter selects which periods come back; a date range belongs
+      on the daily view's attendance_date.
   - id: missing-filter-enroll-status
     missing_filter: Enroll Status
     call: domain_owner
@@ -190,11 +189,10 @@ decisions:
       question is in the enroll_status decisions.
   - id: missing-filter-ethnicity
     missing_filter: Ethnicity
-    call: domain_owner
+    call: deliberate
     reason:
-      "Cube has race, with labels where the dashboard uses letter codes (A, B, H
-      and so on). Owner: are these the same field, and which coding should Cube
-      use?"
+      "Same field: Cube's race decodes the PowerSchool ethnicity code the
+      dashboard shows into a full category label."
   - id: missing-filter-iep-status
     missing_filter: Iep Status
     call: domain_owner
@@ -219,11 +217,10 @@ decisions:
       should Cube carry?"
   - id: missing-filter-region-filter
     missing_filter: Region [Filter]
-    call: domain_owner
+    call: deliberate
     reason:
-      "A second region filter on Y1 ADA - Region; Cube has regions_region_name,
-      already paired with the Region filter. Owner: confirm this one adds
-      nothing."
+      A copy of region with every member selected, so it filters nothing;
+      regions_region_name already covers region.
   - id: missing-filter-school
     missing_filter: School
     call: domain_owner
@@ -240,10 +237,10 @@ decisions:
       need it?"
   - id: missing-filter-schoolid
     missing_filter: Schoolid
-    call: domain_owner
+    call: deliberate
     reason:
-      "Cube identifies schools by abbreviation and name, not PowerSchool
-      schoolid. Owner: confirm that is enough."
+      Analysts pick schools by locations_abbreviation or
+      locations_location_name; Cube needs no PowerSchool school id.
   - id: missing-filter-is-self-contained
     missing_filter: is_self_contained
     call: domain_owner
