@@ -1,10 +1,17 @@
+import json
 from datetime import datetime, timedelta, timezone
 
-from cube_validation.answers import HandCheck, example_cell, hand_check
-from cube_validation.config import ColumnPair, Comparison, ViewConfig
+from cube_validation.answers import (
+    HandCheck,
+    example_cell,
+    hand_check,
+    questions_json,
+)
+from cube_validation.compare import CellDiff, Group
+from cube_validation.config import ColumnPair, Comparison, Decision, ViewConfig
 from cube_validation.decisions import Applied
 from cube_validation.moment import Build
-from cube_validation.report import RunResult
+from cube_validation.report import RunResult, render_review_issue
 
 START = datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc)
 END = datetime(2026, 10, 27, 6, 5, tzinfo=timezone.utc)
@@ -164,3 +171,154 @@ def test_a_trailing_comment_cannot_swallow_the_closing_paren():
     check = hand_check(run, _cfg(), "enrollment", START)
 
     assert "-- note\n) WHERE" in check.dashboard_sql
+
+
+# --- questions_json ----------------------------------------------------------
+
+REASON = "Registrar owns the rule"
+
+
+def _owner_run(diff_cells, measure_cells=3):
+    def group_decision(id, value):
+        return Decision(
+            id, "enrollment", "domain_owner", f"{REASON} (1234567)",
+            {"column": "region", "values": [value]},
+        )  # fmt: skip
+
+    cells = Decision("c1", "enrollment", "domain_owner", "Codes differ?", cells=True)
+    applied = Applied(
+        quiet=[
+            (group_decision("d-newark", "Newark"),
+             Group("enrollment", (("region", "Newark"),), "value_differs", 40, 12)),
+            (group_decision("d-camden", "Camden"),
+             Group("enrollment", (("region", "Camden"),), "value_differs", 5, 5)),
+        ],
+        quiet_cells=[(cells, CellDiff("enrollment", {"differs": measure_cells}))],
+    )  # fmt: skip
+    run = _run(diff_cells)
+    run.applied = applied
+    return run
+
+
+TRIAGE = {
+    "enrollment": {
+        "view": "enrollment",
+        "items": [
+            {
+                "id": "enrollment:region=<redacted>",
+                "kind": "group",
+                "comparison": "enrollment",
+                "label": "x",
+                "stub": {
+                    "comparison": "enrollment",
+                    "group": {"column": "region", "values": ["Camden"]},
+                },
+                "suggestion": "owner",
+                "evidence": ["note on Camden, student 1234567"],
+                "candidates": [],
+            },
+            {
+                "id": "enrollment:cells",
+                "kind": "cells",
+                "comparison": "enrollment",
+                "label": "y",
+                "stub": {"comparison": "enrollment", "cells": True},
+                "suggestion": "owner",
+                "evidence": ["no description or ai_context answers it"],
+                "candidates": [],
+            },
+            {
+                "id": "other:cells",
+                "kind": "cells",
+                "comparison": "other",
+                "label": "z",
+                "stub": {"comparison": "other", "cells": True},
+                "suggestion": "owner",
+                "evidence": ["UNRELATED"],
+                "candidates": [],
+            },
+        ],
+    }
+}
+DEFS = {"enrollment": {"enrollment": {"dashboard": "codes ET, T", "cube": "codes T%"}}}
+
+
+def _questions(run, cfg=None, triage=TRIAGE):
+    return questions_json([run], [cfg or _cfg()], DEFS, triage, START)
+
+
+def test_questions_json_matches_markdown_questions_one_to_one():
+    run = _owner_run([_cell()])
+    questions = _questions(run)
+    body = render_review_issue("Registrar", [run], DEFS, questions)
+    bullets = [x for x in body.split("## Proposed")[0].splitlines() if "Reason:" in x]
+
+    assert [q["id"] for q in questions] == ["Q1", "Q2"]
+    assert len(bullets) == len(questions)
+    for q, bullet in zip(questions, bullets):
+        assert all(count in bullet for count in q["counts"])
+        assert f"Reason: {q['reason']}" in bullet
+    assert questions[0]["decisions"] == ["d-newark", "d-camden"]
+    assert questions[1]["decisions"] == ["c1"]
+    assert questions[0]["views"] == ["enrollment"]
+    assert questions[0]["definitions"] == {
+        "dashboard": ["`enrollment` in `enrollment`: codes ET, T"],
+        "cube": ["`enrollment` in `enrollment`: codes T%"],
+    }
+    assert questions[0]["evidence"] == ["note on <redacted>, student <redacted>"]
+    assert questions[1]["evidence"] == ["no description or ai_context answers it"]
+    assert questions[0]["moment"] == {
+        "start": START.isoformat(),
+        "end": END.isoformat(),
+        "job_id": "j",
+    }
+    assert questions[0]["expires"] == (START + timedelta(days=7)).isoformat()
+    assert questions[0]["expired"] is False
+    check = questions[0]["hand_checks"][0]
+    assert check["comparison"] == "enrollment" and check["view"] == "enrollment"
+    assert check["dims"] == [["regions_region_name", "Newark"], ["grade_level", "7"]]
+    assert (check["dashboard"], check["cube"]) == ("10", "12")
+    assert check["cube_sql"].endswith("SAFE_CAST(grade_level AS NUMERIC) = 7")
+    assert (check["dashboard_usd"], check["cube_usd"]) == (0.01, 0.02)
+
+
+def test_questions_json_hides_what_the_markdown_hides():
+    cmp = Comparison(
+        id="enrollment",
+        measure="count_tardies",
+        dims=[
+            ColumnPair("regions_region_name", "regions_region_name"),
+            ColumnPair("grade_level", "grade_level"),
+        ],
+    )
+    cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
+    run = _owner_run([_cell(dashboard=7.0, cube=12.0)])
+
+    text = json.dumps(_questions(run, cfg))
+
+    # Camden's group has 5 students, so its value and its counts stay hidden.
+    assert "Camden" not in text and "1234567" not in text
+    assert "UNRELATED" not in text
+    assert "<10 cells differ" in text and "3 cells" not in text
+    assert "45 rows" in text and " 5 rows" not in text
+    # A count measure's value under 10 is masked like any count.
+    check = _questions(run, cfg)[0]["hand_checks"][0]
+    assert (check["dashboard"], check["cube"]) == ("<10", "12")
+    assert "stub" not in text
+
+
+def test_question_without_example_cell_says_find_one_locally():
+    run = _owner_run([_cell(n=9)])
+    questions = _questions(run, triage={})
+
+    assert questions[0]["hand_checks"] == [
+        {
+            "view": "enrollment",
+            "comparison": "enrollment",
+            "none": "no group cell with 10+ students differs; find an example "
+            "under your own access",
+        }
+    ]
+    assert questions[0]["evidence"] == []
+    body = render_review_issue("Registrar", [run], DEFS, questions)
+    assert "no group cell with 10+ students differs" in body.split("<details>")[0]

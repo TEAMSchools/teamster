@@ -27,7 +27,7 @@ from typing import Any
 
 import tableauserverclient as TSC
 
-from . import checks, compare, decisions
+from . import answers, checks, compare, decisions
 from . import discover as finder
 from . import report, tableau
 from .bq import Warehouse
@@ -1277,20 +1277,42 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
     return run_result, saved[-1]
 
 
-def review(configs: list[ViewConfig], domain: str, cache_root: Path) -> str:
+def review(
+    configs: list[ViewConfig],
+    domain: str,
+    cache_root: Path,
+    now: datetime | None = None,
+) -> str:
     """Return the review-issue body from each view's latest saved run.
 
-    Reads only the local cache; nothing is posted.
+    Reads only the local cache: each run and the `triage.json` beside it, when
+    there is one. Nothing is posted.
+
+    Args:
+        configs: The views to review.
+        domain: The domain whose owner reviews.
+        cache_root: The run cache.
+        now: The current time, to say whether a hand check's pinned SQL still
+            runs; defaults to the clock.
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`).
     """
-    runs = [latest_run(cfg, cache_root)[0] for cfg in configs]
+    saved = [latest_run(cfg, cache_root) for cfg in configs]
+    runs = [run for run, _ in saved]
+    triage = {
+        run.view: json.loads(path.read_text())
+        for run, run_json in saved
+        if (path := run_json.parent / "triage.json").exists()
+    }
     definitions = {
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs
     }
-    body = report.render_review_issue(domain, runs, definitions)
+    questions = answers.questions_json(
+        runs, configs, definitions, triage, now or datetime.now(timezone.utc)
+    )
+    body = report.render_review_issue(domain, runs, definitions, questions)
     if waiting := report.untasked(d for cfg in configs for d in cfg.decisions):
         # stderr, so the reminder never lands in the issue body.
         print(

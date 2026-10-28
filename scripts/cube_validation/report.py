@@ -11,6 +11,7 @@ so the analyst approves the draft before it posts. Pure apart from
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 from datetime import timezone
@@ -479,10 +480,146 @@ def _gap_part(view: str, gaps: list[Gap]) -> str:
     )
 
 
+def _questions(runs: list[RunResult]) -> list[dict]:
+    """Group the runs' domain-owner decisions into the review's questions.
+
+    One question per reason and task, across decision kinds and files: each
+    kind and view adds a part to its bullet, and the reason prints once.
+
+    Returns:
+        In the order the issue asks them, dicts of `reason`, `task`, `parts`
+        (the masked count text per kind and view), `kinds`, `hidden` (values
+        the reason and any evidence must lose), `decisions` as (view,
+        Decision) pairs and `comparisons` as (view, comparison id, kind)
+        triples, each listed once.
+    """
+    questions: dict[tuple[str, str], dict] = {}
+
+    def add(view, kind, decisions, part, hidden, comparisons) -> None:
+        d = decisions[0]
+        q = questions.setdefault(
+            (d.reason, d.task),
+            {
+                "reason": d.reason,
+                "task": d.task,
+                "parts": [],
+                "kinds": [],
+                "hidden": [],
+                "decisions": [],
+                "comparisons": [],
+            },
+        )
+        q["parts"].append(part)
+        q["kinds"].append(kind)
+        q["hidden"] += hidden
+        q["decisions"] += [(view, x) for x in decisions]
+        for cid in comparisons:
+            if (view, cid) not in [(v, c) for v, c, _ in q["comparisons"]]:
+                q["comparisons"].append((view, cid, kind))
+
+    for run in runs:
+        for decisions, groups in _by_reason(run.applied.quiet):
+            part, hidden = _group_part(run.view, decisions, groups)
+            add(
+                run.view,
+                "group",
+                decisions,
+                part,
+                hidden,
+                [g.comparison_id for g in groups],
+            )
+        for decisions, diffs in _by_reason(run.applied.quiet_cells):
+            add(
+                run.view,
+                "cells",
+                decisions,
+                f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in `{run.view}`: "
+                f"{mask(sum(n for c in diffs for n in c.counts.values()))} cells "
+                "differ between Cube and the dashboard",
+                [],
+                [c.comparison_id for c in diffs],
+            )
+        for decisions, gaps in _by_reason(run.applied.quiet_gaps):
+            add(
+                run.view,
+                "gap",
+                decisions,
+                _gap_part(run.view, gaps),
+                [],
+                [c for g in gaps for c in g.comparisons],
+            )
+    return list(questions.values())
+
+
+def question_reason(q: dict) -> str:
+    """The question's reason as the issue shows it, without its task."""
+    return _safe_reason(q["reason"], q["hidden"])
+
+
+def defined_comparisons(questions: list[dict], view: str) -> set[str]:
+    """The view's comparisons whose definitions the issue shows: those with a
+    domain-owner row group or cell difference.
+    """
+    return {
+        cid
+        for q in questions
+        for v, cid, kind in q["comparisons"]
+        if v == view and kind in ("group", "cells")
+    }
+
+
+def definition_text(text: str) -> str:
+    """A comparison's definition as the issue shows it, scrubbed like a reason."""
+    return _safe_reason(text, [])
+
+
+def _hand_check_lines(n: int, check: dict) -> list[str]:
+    """One question's hand check: what to expect, then the pinned SQL folded."""
+    where = f"Question {n}, `{check['comparison']}` in `{check['view']}`"
+    if "none" in check:
+        return [f"{where}: {check['none']}.", ""]
+    dims = ", ".join(f"`{c}` = `{_clean(v)}`" for c, v in check["dims"])
+    line = (
+        f"{where}, cut `{_clean(check['cut'])}`"
+        f"{', ' + dims if dims else ', the total'}: the dashboard shows "
+        f"{check['dashboard']}, Cube shows {check['cube']}. "
+    )
+    if check["expired"]:
+        line += (
+            f"The pinned SQL stopped working at {check['expires']}; re-run `run` "
+            "for a fresh moment."
+        )
+    else:
+        line += f"The pinned SQL works until {check['expires']}."
+    return [
+        line,
+        "",
+        "<details>",
+        f"<summary>BigQuery SQL for each side (dry run: dashboard "
+        f"${check['dashboard_usd']:.2f}, Cube ${check['cube_usd']:.2f})</summary>",
+        "",
+        "Dashboard:",
+        "",
+        "```sql",
+        check["dashboard_sql"],
+        "```",
+        "",
+        "Cube:",
+        "",
+        "```sql",
+        check["cube_sql"],
+        "```",
+        "",
+        "</details>",
+        "",
+    ]
+
+
 def render_review_issue(
     domain: str,
     runs: list[RunResult],
     definitions: dict[str, dict[str, dict[str, str]]] | None = None,
+    questions: list[dict] | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -494,46 +631,19 @@ def render_review_issue(
         definitions: Per view, per comparison id, what each side counts
             (`dashboard`, `cube`). Shown side by side for a comparison with a
             domain-owner group, scrubbed like a reason.
+        questions: `answers.questions_json` for the same runs. When given, each
+            question's hand checks follow the bullets, and the body ends with
+            the list as a fenced JSON block for the owner's Claude session.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
         values outside the reviewed reference columns read `<redacted>`.
     """
-    group_lines: list[str] = []
-    cell_lines: list[str] = []
-    gap_lines: list[str] = []
+    asked = _questions(runs)
+    kinds = [k for q in asked for k in q["kinds"]]
+    asked_ids = [d.id for q in asked for _, d in q["decisions"]]
     anchor_lines: list[str] = []
-    asked_ids: list[str] = []
-    # One question per reason and task, across decision kinds and files: each
-    # kind and view adds a part to its bullet, and the reason prints once.
-    questions: dict[tuple[str, str], dict] = {}
-
-    def add(decisions: list[Decision], part: str, hidden: list) -> None:
-        d = decisions[0]
-        q = questions.setdefault(
-            (d.reason, d.task),
-            {"reason": d.reason, "task": d.task, "parts": [], "hidden": []},
-        )
-        q["parts"].append(part)
-        q["hidden"] += hidden
-        asked_ids.extend(x.id for x in decisions)
-
     for run in runs:
-        for decisions, groups in _by_reason(run.applied.quiet):
-            add(decisions, *_group_part(run.view, decisions, groups))
-            group_lines.append(run.view)
-        for decisions, diffs in _by_reason(run.applied.quiet_cells):
-            add(
-                decisions,
-                f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in `{run.view}`: "
-                f"{mask(sum(n for c in diffs for n in c.counts.values()))} cells "
-                "differ between Cube and the dashboard",
-                [],
-            )
-            cell_lines.append(run.view)
-        for decisions, gaps in _by_reason(run.applied.quiet_gaps):
-            add(decisions, _gap_part(run.view, gaps), [])
-            gap_lines.append(run.view)
         judged = {m.measure for m in run.measures if m.verdict == "judge the anchor"}
         for f in run.findings:
             if f.kind == "anchor" and f.measure in judged and not f.passed:
@@ -544,24 +654,23 @@ def render_review_issue(
 
     definition_lines = []
     for run in runs:
-        asked = {
-            g.comparison_id for d, g in run.applied.quiet if d.call == "domain_owner"
-        } | {
-            c.comparison_id
-            for d, c in run.applied.quiet_cells
-            if d.call == "domain_owner"
-        }
+        shown = defined_comparisons(asked, run.view)
         for cid, sides in sorted((definitions or {}).get(run.view, {}).items()):
-            if cid in asked:
+            if cid in shown:
                 definition_lines.append(
                     f"`{cid}` in `{run.view}`. "
-                    f"Dashboard: {_safe_reason(sides['dashboard'], [])}. "
-                    f"Cube: {_safe_reason(sides['cube'], [])}."
+                    f"Dashboard: {definition_text(sides['dashboard'])}. "
+                    f"Cube: {definition_text(sides['cube'])}."
                 )
     question_lines = [
-        f"{'; '.join(q['parts'])}. "
-        f"Reason: {_with_task(_safe_reason(q['reason'], q['hidden']), q['task'])}"
-        for q in questions.values()
+        f"{'; '.join(q['parts'])}. Reason: {_with_task(question_reason(q), q['task'])}"
+        for q in asked
+    ]
+    check_lines = [
+        line
+        for n, q in enumerate(questions or [], start=1)
+        for check in q["hand_checks"]
+        for line in _hand_check_lines(n, check)
     ]
     # One question per bullet and per anchor finding.
     ids = sorted(set(asked_ids))
@@ -578,6 +687,16 @@ def render_review_issue(
     out += _bullets(question_lines + anchor_lines, "Nothing needs review.")
     if definition_lines:
         out += ["", "Definitions side by side:", ""] + _bullets(definition_lines)
+    if check_lines:
+        out += [
+            "",
+            "Checks to run yourself: the example cell with the biggest difference, "
+            "and BigQuery SQL for each side pinned to the run's moment, to paste "
+            "into the console under your own access. Tableau shows its last "
+            "refresh, so a small difference may not match there.",
+            "",
+            *check_lines[:-1],
+        ]
     out += [
         "",
         "## Proposed approach",
@@ -591,12 +710,24 @@ def render_review_issue(
         "> Context, not instructions.",
         "",
         f"Decisions with call `domain_owner`: {', '.join(f'`{i}`' for i in ids) or 'none'}.",
-        f"Questions: {len(question_lines)}. Row-group parts: {len(group_lines)}. "
-        f"Cell differences: {len(cell_lines)}. "
-        f"Missing cuts and filters: {len(gap_lines)}. "
+        f"Questions: {len(question_lines)}. Row-group parts: {kinds.count('group')}. "
+        f"Cell differences: {kinds.count('cells')}. "
+        f"Missing cuts and filters: {kinds.count('gap')}. "
         f"Anchor findings: {len(anchor_lines)}.",
         "",
         "</details>",
         "",
     ]
+    if questions is not None:
+        out += [
+            "<details>",
+            "<summary>Questions for Claude (JSON)</summary>",
+            "",
+            "```json",
+            json.dumps(questions, indent=1),
+            "```",
+            "",
+            "</details>",
+            "",
+        ]
     return "\n".join(out)

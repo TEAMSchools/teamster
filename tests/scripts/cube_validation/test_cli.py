@@ -902,6 +902,31 @@ def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
     assert "`regions_region_name` = `Miami`" in out and "12 students" in out
 
 
+def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
+    stub = {
+        "comparison": "ada-region",
+        "group": {"column": "regions_region_name", "values": ["Miami"]},
+    }
+    item = {"id": "i", "kind": "group", "comparison": "ada-region", "label": "l",
+            "stub": stub, "suggestion": "owner", "evidence": ["the fact drops them"],
+            "candidates": []}  # fmt: skip
+    (run_json.parent / "triage.json").write_text(json.dumps({"items": [item]}))
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+    out = capsys.readouterr().out
+    block = out.split("```json\n", 1)[1].split("\n```", 1)[0]
+    (question,) = json.loads(block)
+    assert question["decisions"] == ["miami-scope"]
+    assert question["evidence"] == ["the fact drops them"]
+    assert '"stub"' not in out
+
+
 def test_review_reads_the_run_written_last(fakes, tmp_path, capsys):
     # The later build runs first, with no decision yet.
     fakes.bq.build = (START + timedelta(hours=3), END + timedelta(hours=3))

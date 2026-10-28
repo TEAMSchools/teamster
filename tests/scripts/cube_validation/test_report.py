@@ -1,11 +1,14 @@
 import dataclasses
+import json
+import re
 from datetime import datetime, timezone
 
+from cube_validation.answers import questions_json
 from cube_validation.checks import Finding
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Gap, Group
-from cube_validation.config import Decision
+from cube_validation.config import ColumnPair, Comparison, Decision, ViewConfig
 from cube_validation.decisions import Applied
 from cube_validation.moment import Build
 from cube_validation.report import (
@@ -733,3 +736,50 @@ def test_review_footnote_names_students_and_staff():
         "Counts under 10 show as `<10`, and identifiers of students and staff "
         "are hidden." in body
     )
+
+
+def test_review_issue_ends_with_fenced_json_in_details():
+    run = _run(
+        applied=Applied(quiet=[(_decision(), _run().applied.quiet[0][1])]),
+        diff_cells=[
+            {
+                "comparison": "enrollment",
+                "cut": "All",
+                "key": "a",
+                "dims": [["regions_region_name", "Newark"]],
+                "dashboard": 40.0,
+                "cube": 52.0,
+                "n_students": 40,
+            }
+        ],
+        cell_sql={"enrollment": {"All": ["SELECT 'dash' AS d", "SELECT 'cube' AS c"]}},
+        cell_sql_usd={"enrollment": {"All": [0.01, 0.02]}},
+    )
+    cfg = ViewConfig(
+        view="enrollment_view",
+        fact="d.t",
+        comparisons=[
+            Comparison(
+                id="enrollment",
+                measure="enrolled",
+                dims=[ColumnPair("Region", "regions_region_name")],
+            )
+        ],
+    )
+    questions = questions_json([run], [cfg], {}, {}, START)
+
+    body = render_review_issue("Registrar", [run], None, questions)
+
+    tail = re.search(
+        r"<details>\n<summary>Questions for Claude \(JSON\)</summary>\n\n"
+        r"```json\n(.*)\n```\n\n</details>\n*\Z",
+        body,
+        re.DOTALL,
+    )
+    assert tail and json.loads(tail.group(1)) == questions
+    check = questions[0]["hand_checks"][0]
+    markdown = body[: tail.start()]
+    for sql in (check["dashboard_sql"], check["cube_sql"]):
+        block = markdown[: markdown.index(sql)].rsplit("<details>", 1)[1]
+        assert "</details>" not in block and "<summary>" in block
+    assert markdown.count("<details>") == 2  # the hand check and For Claude
