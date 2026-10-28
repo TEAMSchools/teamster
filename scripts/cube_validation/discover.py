@@ -357,7 +357,8 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
             continue
         m = FIELD_REF.search(fmt.get("field") or "")
         shown = _ref_caption(m, caption) if m else None
-        if shown:
+        # An empty format sets no displayed decimals.
+        if shown and fmt.get("value"):
             decimals.setdefault(shown, displayed_decimals(fmt.get("value") or ""))
 
     filters = []

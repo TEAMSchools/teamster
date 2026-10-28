@@ -66,3 +66,12 @@ def test_rank_boosts_the_dashboard_caption_and_can_return_all():
     assert ranked[0].caption == "# Late" and ranked[0].score >= 1
     assert len(ranked) == 5
     assert len(rank("count_tardy_days", "sum(is_tardy)", calcs, limit=None)) == 7
+
+
+def test_sheet_shape_skips_an_empty_number_format():
+    twb = TWB.replace(
+        "value='n#,##0' />",
+        "value='n#,##0' />\n            "
+        "<format attr='text-format' field='[federated.x].[none:region:nk]' value='' />",
+    )
+    assert sheet_shape(twb, "Roster").decimals == {"# Tardy": 0, "SUM(Membership)": 3}
