@@ -1421,6 +1421,16 @@ class SheetGaps:
 
 _WHOLE_REF = re.compile(r"\[(?P<name>[^\]]+)\]")
 _PARAMETER_REF = re.compile(r"\[Parameters\]\.\[(?P<name>[^\]]+)\]")
+_STRING_LITERAL = re.compile(r"'[^']*'|\"[^\"]*\"")
+_FIELD_REF = re.compile(r"\[[^\]]+\]")
+
+
+def _parameter_only(formula: str) -> re.Match | None:
+    """The first parameter a formula reads, when it reads no other field."""
+    bare = _STRING_LITERAL.sub("", formula)
+    if _FIELD_REF.search(_PARAMETER_REF.sub("", bare)):
+        return None
+    return _PARAMETER_REF.search(bare)
 
 
 def _parameter_captions(twb_xml: str) -> dict[str, str]:
@@ -1441,6 +1451,10 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     A field counts as having one when the comparison maps it anywhere: a dim,
     a filter, or a row grain or value. Aggregated fields, `Measure Names`,
     user filters and fields built on the viewer's identity are skipped.
+
+    Also returns `notes` (a plain copy of a mapped field, or a calculation that
+    reads only parameters) and `columns` (the datasource column behind each
+    plain missing field).
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     ws = finder.worksheet(ET.fromstring(twb_xml), comparison.sheet or "")
@@ -1489,7 +1503,7 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
         formula = (calcs.get(name) or "").strip()
         if name not in calcs:
             columns[caption.get(name, name)] = name
-        elif (param := _PARAMETER_REF.search(formula)) is not None:
+        elif (param := _parameter_only(formula)) is not None:
             notes[caption.get(name, name)] = (
                 f"display switch on {parameters.get(param['name']) or param['name']}"
             )

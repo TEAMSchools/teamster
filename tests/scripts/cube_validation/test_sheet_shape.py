@@ -364,7 +364,7 @@ NOTES_TWB = f"""<?xml version='1.0' encoding='utf-8' ?>
         <calculation class='tableau' formula='[grade_level]' />
       </column>
       <column caption='Show Rate' name='[Calculation_3]'>
-        <calculation class='tableau' formula='IF [Parameters].[Parameter 1] = 1 THEN [rate] END' />
+        <calculation class='tableau' formula='[Parameters].[Parameter 1] = "ADA"' />
       </column>
     </datasource>
   </datasources>
@@ -379,7 +379,7 @@ NOTES_TWB = f"""<?xml version='1.0' encoding='utf-8' ?>
               <calculation class='tableau' formula='[grade_level]' />
             </column>
             <column caption='Show Rate' name='[Calculation_3]' role='dimension'>
-              <calculation class='tableau' formula='IF [Parameters].[Parameter 1] = 1 THEN [rate] END' />
+              <calculation class='tableau' formula='[Parameters].[Parameter 1] = "ADA"' />
             </column>
           </datasource-dependencies>
           <filter class='categorical' column='{DS}.[none:Calculation_2:nk]'>
@@ -416,3 +416,23 @@ def test_sheet_gaps_notes_copies_and_display_switches():
         "Show Rate": "display switch on Metric",
     }
     assert gaps.columns == {"Enroll Status": "enroll_status"}
+
+
+def test_sheet_gaps_note_nothing_when_a_parameter_mixes_with_a_field():
+    twb = NOTES_TWB.replace(
+        "formula='[Parameters].[Parameter 1] = \"ADA\"'",
+        "formula='IF [grade_level] &gt;= [Parameters].[Parameter 1] THEN 1 END'",
+    )
+    gaps = pipeline.sheet_gaps(twb, _comparison())
+    assert "Show Rate" in gaps.filters
+    assert "Show Rate" not in gaps.notes
+
+
+def test_sheet_gaps_copy_note_uses_the_sheet_caption_for_a_dim():
+    base = _comparison()
+    comparison = dataclasses.replace(
+        base,
+        dims=[*base.dims, ColumnPair(dashboard="grade_level", cube="grade")],
+    )
+    gaps = pipeline.sheet_gaps(NOTES_TWB, comparison)
+    assert gaps.notes["Grade Copy"] == "copy of Grade"
