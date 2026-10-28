@@ -16,6 +16,7 @@ from cube_validation.cube_client import (
     CubeRefusal,
     bind,
     drop_limit,
+    member_docs,
     mint_token,
     network_schools,
     refuse_unless_safe,
@@ -314,3 +315,52 @@ def test_network_failure_is_a_cube_error(monkeypatch, error):
     monkeypatch.setattr(urllib.request, "urlopen", fail)
     with pytest.raises(CubeError, match="did not answer"):
         urlopen_json("GET", "https://cube.example/x", {})
+
+
+def test_meta_calls_meta_endpoint():
+    calls = []
+    cube = Cube(
+        "https://c/cubejs-api/v1",
+        "s",
+        "e@x",
+        fetch=lambda m, u, h, b: calls.append((m, u)) or {"cubes": []},
+    )
+
+    assert cube.meta() == {"cubes": []}
+    assert calls == [("GET", "https://c/cubejs-api/v1/meta")]
+
+
+def test_member_docs_reads_description_and_ai_context_for_one_view():
+    meta = {
+        "cubes": [
+            {
+                "name": "v",
+                "measures": [
+                    {
+                        "name": "v.pct_tardy",
+                        "title": "Pct Tardy",
+                        "description": "Share tardy.",
+                        "meta": {"ai_context": "Codes T*."},
+                    }
+                ],
+                "dimensions": [
+                    {"name": "v.grade_level", "title": "Grade", "description": "Grade."}
+                ],
+                "segments": [],
+            },
+            {
+                "name": "other",
+                "measures": [{"name": "other.x"}],
+                "dimensions": [],
+                "segments": [],
+            },
+        ]
+    }
+
+    docs = member_docs(meta, "v")
+
+    assert set(docs) == {"pct_tardy", "grade_level"}
+    assert docs["pct_tardy"].ai_context == "Codes T*."
+    assert docs["grade_level"].ai_context == ""
+    assert docs["grade_level"].kind == "dimension"
+    assert docs["pct_tardy"].kind == "measure"

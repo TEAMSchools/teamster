@@ -165,6 +165,46 @@ class Cube:
 
         return out["data"]
 
+    def meta(self) -> dict:
+        """Return Cube's `/meta` response: every cube and view this viewer sees."""
+        return self._call("GET", "/meta")
+
+
+@dataclass(frozen=True)
+class MemberDoc:
+    """What a member tells a caller about itself through `/meta`."""
+
+    name: str
+    title: str
+    description: str
+    ai_context: str
+    kind: str  # measure, dimension or segment
+
+
+_KINDS = {"measures": "measure", "dimensions": "dimension", "segments": "segment"}
+
+
+def member_docs(meta: dict, view: str) -> dict[str, MemberDoc]:
+    """Return `view`'s members from a `/meta` response, keyed by bare name."""
+    docs: dict[str, MemberDoc] = {}
+
+    for cube in meta.get("cubes", []):
+        if cube.get("name") != view:
+            continue
+
+        for field, kind in _KINDS.items():
+            for m in cube.get(field) or []:
+                name = m["name"].split(".", 1)[-1]
+                docs[name] = MemberDoc(
+                    name=name,
+                    title=m.get("title") or "",
+                    description=m.get("description") or "",
+                    ai_context=(m.get("meta") or {}).get("ai_context") or "",
+                    kind=kind,
+                )
+
+    return docs
+
 
 def _utc(query: dict) -> dict:
     """Default the query timezone to UTC, as `src/cube/mcp/server.py` does.
