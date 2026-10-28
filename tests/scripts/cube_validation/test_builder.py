@@ -393,3 +393,235 @@ def test_inventory_shows_the_groups_of_a_code_group_on_a_shelf():
 
     assert use.role == "cut"
     assert use.formula == "Tardy = T, ET"
+
+
+_CATALOG = """# Gap catalog
+
+## Other Dash (`other`)
+
+### Measures
+
+| metric | agg | source field / formula (trimmed) | dashboards | status | where | regions |
+| ------ | --- | -------------------------------- | ---------- | ------ | ----- | ------- |
+| Wrong Rate | Avg | `x` | d | cube-covered | `a.wrong` | all |
+
+## DDI Suite (`ddi_suite`)
+
+- workbook: DDI Suite
+
+### Measures
+
+| metric | agg | source field / formula (trimmed) | dashboards | status | where | regions |
+| ------ | --- | -------------------------------- | ---------- | ------ | ----- | ------- |
+| Mastery rate (`is_mastery_int`), overall/standard toggle | Avg | `x` | d | **cube-covered** | `student_assessment_scores.pct_proficient` / `is_mastery` | all |
+| Walkthrough Rate | Avg | `y` | d | mart-ready | `fct_staff_observation_scores.score_value` | all |
+| Unused Count | Sum | `z` | d | cube-covered | `a.unused` | all |
+
+### Dimensions
+
+| dimension | used as | status | where | regions |
+| --------- | ------- | ------ | ----- | ------- |
+| Student Tier (Bucket 1/2), Is SIPPS | rows | cube-covered | `student_tiers.tier` | all |
+
+### Notes
+
+| not | a | table |
+"""
+
+
+def _member(name, title=""):
+    cube, short = name.split(".", 1)
+    return builder.Member(
+        name=name,
+        cube=cube,
+        kind="cube",
+        title=title,
+        description="",
+        sql="",
+        sql_fingerprint="",
+        fact="",
+    )
+
+
+def _use(caption, role="measure", name=None, presentation=False):
+    return builder.FieldUse(
+        caption=caption,
+        name=name or caption,
+        role=role,
+        formula="",
+        sheets=("S",),
+        presentation=presentation,
+    )
+
+
+def test_catalog_rows_reads_the_dashboards_measures_and_dimensions():
+    rows = builder.catalog_rows(_CATALOG, "ddi_suite")
+
+    assert [(r["kind"], r["status"]) for r in rows] == [
+        ("measure", "**cube-covered**"),
+        ("measure", "mart-ready"),
+        ("measure", "cube-covered"),
+        ("dimension", "cube-covered"),
+    ]
+    assert (
+        rows[0]["field"] == "Mastery rate (`is_mastery_int`), overall/standard toggle"
+    )
+    assert rows[3]["where"] == "`student_tiers.tier`"
+    assert builder.catalog_rows(_CATALOG, "nope") == []
+
+
+def test_inventory_matches_members_and_flags_disagreements():
+    catalog = builder.catalog_rows(_CATALOG, "ddi_suite")
+    review = [
+        _use("Mastery Rate"),
+        _use("Walkthrough Rate"),
+        _use("SUM(Tardy Rate)", name="SUM(tardy_rate)"),
+        _use("Student Tier", role="cut", name="nj_student_tier"),
+    ]
+    found = [
+        _member("student_assessment_scores.pct_proficient"),
+        _member("attendance.tardy_rate", title="Tardy Rate"),
+    ]
+
+    rows = {r.field: r for r in builder.inventory(catalog, review, [], found)}
+
+    mastery = rows["Mastery Rate"]
+    assert mastery.member == "student_assessment_scores.pct_proficient"
+    assert mastery.sources == ("catalog", "review")
+    assert mastery.disagreement == ""
+    walkthrough = rows["Walkthrough Rate"]
+    assert walkthrough.member == ""
+    assert walkthrough.disagreement == ""
+    tardy = rows["SUM(Tardy Rate)"]
+    assert tardy.member == "attendance.tardy_rate"
+    assert tardy.sources == ("review",)
+    assert tardy.disagreement == "not in catalog"
+    assert rows["Student Tier"].kind == "dimension"
+    assert rows["Student Tier"].sources == ("catalog", "review")
+    only_catalog = rows["Unused Count"]
+    assert only_catalog.sources == ("catalog",)
+    assert only_catalog.disagreement == (
+        "only in catalog; catalog says cube-covered, no member found"
+    )
+
+
+def test_inventory_flags_a_member_the_catalog_says_is_missing():
+    catalog = [
+        {
+            "field": "Tardy Rate",
+            "kind": "measure",
+            "status": "mart-missing",
+            "where": "",
+        }
+    ]
+    found = [_member("attendance.tardy_rate", title="Tardy Rate")]
+
+    (row,) = builder.inventory(catalog, [_use("Tardy Rate")], [], found)
+
+    assert row.member == "attendance.tardy_rate"
+    assert row.disagreement == "catalog says mart-missing, member found"
+
+
+def test_inventory_matches_a_member_by_the_fields_bare_name():
+    found = [_member("attendance.nj_tier"), _member("other.nj_tier")]
+    review = [_use("Tier", name="nj_tier"), _use("Rate", name="rate")]
+    found.append(_member("attendance.rate"))
+
+    rows = {r.field: r for r in builder.inventory([], review, [], found)}
+
+    assert rows["Rate"].member == "attendance.rate"
+    assert rows["Tier"].member == ""
+    assert "several" in rows["Tier"].disagreement
+
+
+def test_inventory_leaves_out_presentation_fields():
+    catalog = [
+        {"field": "Viewer Url", "kind": "dimension", "status": "x", "where": ""},
+    ]
+    review = [
+        _use("Viewer Url", role="cut", presentation=True),
+        _use("Tardy Rate"),
+    ]
+    asana = [{"field": "viewer url", "status": "open"}]
+
+    rows = builder.inventory(catalog, review, asana, [])
+
+    assert [r.field for r in rows] == ["Tardy Rate"]
+
+
+def test_inventory_lists_deferred_asana_items_without_planning_them():
+    asana = [
+        {"field": "Tardy Rate", "status": "open"},
+        {"field": "Parent Contact Rate", "status": "deferred"},
+        {"field": "Brand New", "status": "open"},
+    ]
+
+    rows = {r.field: r for r in builder.inventory([], [_use("Tardy Rate")], asana, [])}
+
+    assert rows["Tardy Rate"].sources == ("review", "asana")
+    assert rows["Tardy Rate"].disagreement == "not in catalog"
+    assert rows["Parent Contact Rate"].sources == ("asana",)
+    assert (
+        rows["Parent Contact Rate"].disagreement == "only in asana; deferred in asana"
+    )
+    assert rows["Brand New"].disagreement == "only in asana"
+
+
+def test_inventory_attaches_an_asana_item_to_the_catalog_row_it_names():
+    catalog = [
+        {
+            "field": "Unused Count",
+            "kind": "measure",
+            "status": "mart-ready",
+            "where": "",
+        }
+    ]
+    asana = [{"field": "unused count", "status": "open"}]
+
+    (row,) = builder.inventory(catalog, [], asana, [])
+
+    assert row.sources == ("catalog", "asana")
+    assert row.disagreement == ""
+
+
+def test_inventory_command_prints_a_table_then_json(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
+    catalog = tmp_path / "plan.md"
+    catalog.write_text(_CATALOG, encoding="utf-8")
+    review = tmp_path / "review.json"
+    review.write_text(
+        json.dumps(
+            [
+                {
+                    "caption": "Walkthrough Rate",
+                    "name": "SUM(w)",
+                    "role": "measure",
+                    "formula": "",
+                    "sheets": ["S"],
+                    "presentation": False,
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    asana = tmp_path / "asana.json"
+    asana.write_text("[]", encoding="utf-8")
+    argv = ["inventory", str(catalog), "ddi_suite", "--review", str(review)]
+    argv += ["--asana", str(asana)]
+
+    assert cli.main(argv) == 1
+    assert "members" in capsys.readouterr().err
+
+    (tmp_path / "cache").mkdir()
+    (tmp_path / "cache" / "members.json").write_text(
+        json.dumps({"members": [], "skipped": []}), encoding="utf-8"
+    )
+
+    assert cli.main(argv) == 0
+
+    out = capsys.readouterr().out
+    assert "| field | kind | member | sources | disagreement |" in out
+    assert "| Walkthrough Rate | measure |  | catalog, review |" in out
+    printed = json.loads(out[out.index("[\n") :])
+    assert {r["field"] for r in printed} >= {"Walkthrough Rate", "Unused Count"}
+    assert printed[0]["sources"] == ["catalog", "review"]

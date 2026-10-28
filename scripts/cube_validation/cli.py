@@ -1,7 +1,7 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
 Commands: `discover`, `prove`, `check-api`, `run`, `review`, `members`,
-`inventory-workbook`. Exit codes: 0
+`inventory-workbook`, `inventory`. Exit codes: 0
 done, 1 refused (the message says why), 2 usage error. This module parses
 arguments and builds the clients; `pipeline.py` does the work. Tests replace
 `make_warehouse`, `make_cube`, `tableau_session`, `utcnow` and `cache_root`.
@@ -202,6 +202,14 @@ def _parser() -> argparse.ArgumentParser:
         "inventory-workbook", help="list the fields each worksheet of a .twb uses"
     )
     p.add_argument("twb", type=Path, help="a downloaded .twb file")
+
+    p = sub.add_parser(
+        "inventory", help="join the gap catalog, workbook review and Asana per field"
+    )
+    p.add_argument("catalog", type=Path, help="the gap catalog markdown")
+    p.add_argument("slug", help="the dashboard's slug in the catalog")
+    p.add_argument("--review", type=Path, required=True, help="inventory-workbook JSON")
+    p.add_argument("--asana", type=Path, required=True, help="JSON of field, status")
     return parser
 
 
@@ -222,6 +230,9 @@ def _dispatch(args: argparse.Namespace) -> int:
 
     if args.command == "inventory-workbook":
         return _inventory_workbook(args.twb)
+
+    if args.command == "inventory":
+        return _inventory(args.catalog, args.slug, args.review, args.asana)
 
     cfg = _load(args.view)
 
@@ -328,6 +339,60 @@ def _inventory_workbook(path: Path) -> int:
     except ET.ParseError as exc:
         raise pipeline.Refusal(f"{path}: not a workbook ({exc})") from exc
     print(json.dumps([dataclasses.asdict(u) for u in uses], indent=2))
+    return 0
+
+
+def _read_json(path: Path, what: str) -> list:
+    """The list in a JSON file, or a refusal naming `what`."""
+    if not path.is_file():
+        raise pipeline.Refusal(f"{path}: no such {what} file")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise pipeline.Refusal(f"{path}: not JSON ({exc})") from exc
+    if not isinstance(data, list):
+        raise pipeline.Refusal(f"{path}: expected a JSON list")
+    return data
+
+
+def _inventory(catalog: Path, slug: str, review: Path, asana: Path) -> int:
+    """Print a dashboard's fields from 3 sources as a markdown table, then JSON."""
+    if not catalog.is_file():
+        raise pipeline.Refusal(f"{catalog}: no such catalog file")
+    saved = cache_root() / "members.json"
+    if not saved.is_file():
+        raise pipeline.Refusal(f"{saved}: missing; run `members` first")
+
+    try:
+        found = [
+            builder.Member(**m)
+            for m in json.loads(saved.read_text(encoding="utf-8"))["members"]
+        ]
+        uses = [
+            builder.FieldUse(**{**u, "sheets": tuple(u["sheets"])})
+            for u in _read_json(review, "review")
+        ]
+        items = [
+            {"field": a["field"], "status": a["status"]}
+            for a in _read_json(asana, "asana")
+        ]
+    except (TypeError, KeyError, json.JSONDecodeError) as exc:
+        raise pipeline.Refusal(f"unreadable input ({exc!r})") from exc
+
+    rows = builder.inventory(
+        builder.catalog_rows(catalog.read_text(encoding="utf-8"), slug),
+        uses,
+        items,
+        found,
+    )
+
+    print("| field | kind | member | sources | disagreement |")
+    print("| --- | --- | --- | --- | --- |")
+    for r in rows:
+        cells = [r.field, r.kind, r.member, ", ".join(r.sources), r.disagreement]
+        print("| " + " | ".join(c.replace("|", "\\|") for c in cells) + " |")
+    print()
+    print(json.dumps([dataclasses.asdict(r) for r in rows], indent=2))
     return 0
 
 
