@@ -112,15 +112,19 @@ models:
           kipppaterson). The region wrappers filter on it.
         data_type: string
       - name: school_level
-        description: School level of the section's school, MS or HS.
+        description: >-
+          School level of the section's school, MS or HS, from school_level_alt.
+          Grades 5 and up at KIPP Sumner read as MS because they run as a middle
+          school, so they land in the MS import file.
         data_type: string
 
 unit_tests:
   - name: test_rpt_powerschool__stored_grades_filters
     description: >-
-      Keeps graded MS and HS rows with credit hours above 0. Drops ES, homeroom,
-      0-credit, and ungraded rows, and enrollments with no final grade. Caps
-      percent at 100 and nulls the comment on MS rows.
+      Keeps graded MS and HS rows with credit hours above 0, including Sumner
+      grade 5+ rows as MS. Drops ES, homeroom, 0-credit, and ungraded rows, and
+      enrollments with no final grade. Caps percent at 100 and nulls the comment
+      on MS rows.
     model: rpt_powerschool__stored_grades
     given:
       - input: ref('int_students__final_grades')
@@ -148,6 +152,8 @@ unit_tests:
           union all
           select
               6, 'kippnewark', 1006, 73253, 'Q1', 0.0, null, null, 1.0, 'c6'
+          union all
+          select 8, 'kippcamden', 1008, 179905, 'Q1', 3.0, 85.0, 'B', 1.0, 'c8'
       - input: ref('int_students__course_enrollments')
         format: sql
         rows: |
@@ -164,31 +170,36 @@ unit_tests:
               'School M' as school_name,
               3600 as sections_termid,
               'MS' as school_level,
+              'MS' as school_level_alt,
               false as is_homeroom
           union all
           select
               2, 'kippnewark', 10, 'ENG', 'ENG10', 'English 10', 'Teacher, B',
-              12, 'Scale B', 'School H', 3600, 'HS', false
+              12, 'Scale B', 'School H', 3600, 'HS', 'HS', false
           union all
           select
               3, 'kippnewark', 4, 'MATH', 'MATH04', 'Math 4', 'Teacher, C', 13,
-              'Scale A', 'School E', 3600, 'ES', false
+              'Scale A', 'School E', 3600, 'ES', 'ES', false
           union all
           select
               4, 'kippnewark', 10, 'HR', 'HR', 'Homeroom', 'Teacher, B', 14,
-              'Scale B', 'School H', 3600, 'HS', true
+              'Scale B', 'School H', 3600, 'HS', 'HS', true
           union all
           select
               5, 'kippnewark', 7, 'ART', 'ART07', 'Art 7', 'Teacher, D', 15,
-              'Scale A', 'School M', 3600, 'MS', false
+              'Scale A', 'School M', 3600, 'MS', 'MS', false
           union all
           select
               6, 'kippnewark', 10, 'SCI', 'SCI10', 'Biology', 'Teacher, E', 16,
-              'Scale B', 'School H', 3600, 'HS', false
+              'Scale B', 'School H', 3600, 'HS', 'HS', false
           union all
           select
               7, 'kippnewark', 10, 'SOC', 'SOC10', 'History', 'Teacher, F', 17,
-              'Scale B', 'School H', 3600, 'HS', false
+              'Scale B', 'School H', 3600, 'HS', 'HS', false
+          union all
+          select
+              8, 'kippcamden', 6, 'ENG', 'ENG06', 'English 6', 'Teacher, G', 18,
+              'Scale A', 'School S', 3600, 'ES', 'MS', false
     expect:
       rows:
         - student_number: 1001
@@ -209,3 +220,12 @@ unit_tests:
           Comment: c2
           school_level: HS
           code_location: kippnewark
+        - student_number: 1008
+          percent: 85.0
+          sectionid: 18
+          gradescale_name: Scale A
+          PotentialCrHrs: 0
+          EarnedCrHrs: 0
+          Comment: null
+          school_level: MS
+          code_location: kippcamden

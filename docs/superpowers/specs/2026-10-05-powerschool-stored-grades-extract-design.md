@@ -282,3 +282,22 @@ as CSV and import into that region's PowerSchool server.
 2. Blank-comment test import: before the first live MS run, import a small MS
    file with a blank `Comment` into one region's PowerSchool (a test server if
    one is available). Confirm rows load and existing comments are untouched.
+
+## Revision 2026-10-28 (final review): school level
+
+This replaces the `school_level in ('MS', 'HS')` filter above and the
+`school_level` source row in the output columns table.
+
+The grades owner confirmed that the import stores every student in grade 5 and
+up at every NJ school, in separate MS and HS files per region. KIPP Sumner
+(Camden) is classified ES, but its grades 5 and up run as a middle school.
+Filtering on `school_level` dropped those rows, and they were the only ES rows
+that passed the other filters.
+
+- The filter and the `school_level` output column read `school_level_alt` from
+  `int_students__course_enrollments`. It applies the Sumner grade 5+ override,
+  so those rows land in the Camden MS file.
+- `Comment` keys off the same column (`school_level_alt = 'HS'`).
+- In prod, `school_level_alt in ('MS', 'HS')` and `grade_level >= 5` select the
+  same rows in all 3 regions. The level column was kept because the files are
+  split by level.

@@ -17,14 +17,14 @@ select
     ce.courses_gradescale_name as gradescale_name,
     ce.school_name as schoolname,
     ce.sections_termid as termid,
-    ce.school_level,
+    ce.school_level_alt as school_level,
 
     0 as `PotentialCrHrs`,
     0 as `EarnedCrHrs`,
 
     least(fg.term_percent_grade_adjusted, 100) as `percent`,
 
-    if(ce.school_level = 'HS', fg.comment_value, null) as `Comment`,
+    if(ce.school_level_alt = 'HS', fg.comment_value, null) as `Comment`,
 from {{ ref("int_students__final_grades") }} as fg
 inner join
     {{ ref("int_students__course_enrollments") }} as ce
@@ -35,5 +35,5 @@ where
     -- revisit if 0-credit courses ever need storing
     and fg.potential_credit_hours != 0
     and not ce.is_homeroom
-    -- ES grades are not stored through this import
-    and ce.school_level in ('MS', 'HS')
+    -- grade 5 and up is stored at every NJ school; ES grades are not
+    and ce.school_level_alt in ('MS', 'HS')
