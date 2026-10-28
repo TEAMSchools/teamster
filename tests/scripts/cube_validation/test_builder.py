@@ -334,3 +334,62 @@ def test_inventory_workbook_command_refuses_a_missing_or_broken_file(tmp_path, c
 
     assert cli.main(["inventory-workbook", str(broken)]) == 1
     assert "refused" in capsys.readouterr().err
+
+
+def test_inventory_keeps_each_formula_of_calcs_sharing_a_caption():
+    xml = f"""<workbook><datasources>
+      <datasource name='a'><column caption='Rate' name='[Calc_A]' role='measure'>
+        <calculation class='tableau' formula='SUM([x])' /></column></datasource>
+      <datasource name='b'><column caption='Rate' name='[Calc_B]' role='measure'>
+        <calculation class='tableau' formula='AVG([y])' /></column>
+        <column caption='Rate' name='[raw]' role='measure' /></datasource>
+    </datasources><worksheets>
+      {
+        _sheet(
+            "S",
+            _dep("Calc_A", "User", "usr", "measure", "Rate")
+            + _dep("Calc_B", "User", "usr", "measure", "Rate")
+            + _dep("raw", "Sum", "sum", "measure", "Rate"),
+            cols="[a].[usr:Calc_A:nk] [b].[usr:Calc_B:nk] [b].[sum:raw:qk]",
+        )
+    }
+    </worksheets></workbook>"""
+
+    formulas = {u.name: u.formula for u in builder.workbook_inventory(xml)}
+
+    assert formulas == {
+        "Calc_A": "SUM([x])",
+        "Calc_B": "AVG([y])",
+        "SUM(raw)": "SUM([raw])",
+    }
+
+
+def test_inventory_shows_the_formula_inside_an_aggregated_calc():
+    xml = _twb(
+        _sheet(
+            "S",
+            _dep("Calc_1", "Sum", "sum", "measure", "Tardy Rate"),
+            cols="[ds].[sum:Calc_1:qk]",
+        ),
+        _CALC_COLUMNS,
+    )
+
+    (use,) = builder.workbook_inventory(xml)
+
+    assert use.name == "SUM(Calc_1)"
+    assert use.caption == "SUM(Tardy Rate)"
+    assert use.formula.startswith("SUM(SUM(IIF(")
+    assert "[tardy_code: Tardy = T, ET]" in use.formula
+
+
+def test_inventory_shows_the_groups_of_a_code_group_on_a_shelf():
+    xml = _twb(
+        _sheet(
+            "S", _dep("tardy_code", "None", "none"), rows="[ds].[none:tardy_code:nk]"
+        )
+    )
+
+    (use,) = builder.workbook_inventory(xml)
+
+    assert use.role == "cut"
+    assert use.formula == "Tardy = T, ET"

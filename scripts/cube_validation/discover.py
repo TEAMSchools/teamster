@@ -108,6 +108,7 @@ class Calc:
     caption: str
     formula: str
     worksheets: list[str]
+    name: str = ""
 
 
 @dataclass(frozen=True)
@@ -194,7 +195,7 @@ def calculated_fields(twb_xml: str) -> list[Calc]:
             if not formula or name in found:
                 continue
             caption = column.get("caption") or name.strip("[]")
-            found[name] = Calc(caption, formula, sorted(used_by.get(name, set())))
+            found[name] = Calc(caption, formula, sorted(used_by.get(name, set())), name)
     return sorted(found.values(), key=lambda c: c.caption)
 
 
@@ -266,6 +267,7 @@ def aggregated_fields(twb_xml: str) -> list[Calc]:
                 f"{agg}({captions.get(column, _bare(column))})",
                 f"{agg}({column})",
                 sorted(sheets),
+                column,
             )
             for (agg, column), sheets in found.items()
         ),

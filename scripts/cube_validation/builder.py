@@ -113,17 +113,17 @@ class FieldUse:
 _ROLE_ORDER = ("parameter", "measure", "cut", "filter")
 
 
-def _sheet_uses(ws: ET.Element) -> dict[str, str]:
-    """A worksheet's fields, by bare field name (an aggregate keeps its
-    function), each with the role the sheet gives it.
+def _sheet_uses(ws: ET.Element) -> dict[tuple[str, str], str]:
+    """A worksheet's fields as `(aggregation, bare name)`, each with the role the
+    sheet gives it. The aggregation is `""` unless a raw field is aggregated.
 
     A cut wins over a filter on the same field, and a measure over both.
     """
-    uses: dict[str, str] = {}
+    uses: dict[tuple[str, str], str] = {}
 
-    def add(name: str, role: str) -> None:
-        if name not in uses or _ROLE_ORDER.index(role) < _ROLE_ORDER.index(uses[name]):
-            uses[name] = role
+    def add(key: tuple[str, str], role: str) -> None:
+        if key not in uses or _ROLE_ORDER.index(role) < _ROLE_ORDER.index(uses[key]):
+            uses[key] = role
 
     roles = {
         finder._bare(col.get("name") or ""): col.get("role")
@@ -131,21 +131,22 @@ def _sheet_uses(ws: ET.Element) -> dict[str, str]:
     }
     for col in ws.iter("column"):
         if col.get("param-domain-type"):
-            add(finder._bare(col.get("name") or ""), "parameter")
+            add(("", finder._bare(col.get("name") or "")), "parameter")
 
-    def field_of(ref: str) -> tuple[str, str] | None:
+    def field_of(ref: str) -> tuple[tuple[str, str], str] | None:
         m = finder.FIELD_REF.search(ref)
         if m is None:
             return None
         if m["deriv"] in finder._AGG_PREFIXES:
-            return f"{finder._AGG_PREFIXES[m['deriv']]}({m['name']})", "measure"
+            return (finder._AGG_PREFIXES[m["deriv"]], m["name"]), "measure"
         if m["deriv"] == "usr":
             # `usr` is also in AGGREGATES: it marks a calculation, whose role
             # says whether it aggregates.
-            return m["name"], "measure" if roles.get(m["name"]) == "measure" else "cut"
+            role = "measure" if roles.get(m["name"]) == "measure" else "cut"
+            return ("", m["name"]), role
         if finder.is_value(m):
             return None
-        return m["name"], "cut"
+        return ("", m["name"]), "cut"
 
     shelves = " ".join(
         [el.text or "" for el in ws.iter() if el.tag in ("rows", "cols")]
@@ -178,22 +179,34 @@ def workbook_inventory(twb_xml: str) -> list[FieldUse]:
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
-    formulas = {c.caption: c.formula for c in finder.calculated_fields(twb_xml)}
-    formulas |= {c.caption: c.formula for c in finder.aggregated_fields(twb_xml)}
+    calcs = {finder._bare(c.name): c.formula for c in finder.calculated_fields(twb_xml)}
+    raw = {
+        (c.formula.split("(", 1)[0], finder._bare(c.name)): c.formula
+        for c in finder.aggregated_fields(twb_xml)
+    }
     found_bins = finder.bins(twb_xml)
 
-    merged: dict[str, dict] = {}
+    def formula_of(agg: str, bare: str) -> str:
+        if agg and bare in calcs:
+            return f"{agg}({calcs[bare]})"
+        if agg:
+            return raw.get((agg, bare), "")
+        return calcs.get(bare) or found_bins.get(bare, "")
+
+    merged: dict[tuple[str, str], dict] = {}
     for ws in root.iter("worksheet"):
         sheet = ws.get("name") or ""
         caption, personal = finder.sheet_fields(ws)
-        for name, role in _sheet_uses(ws).items():
-            bare = name.split("(", 1)[1][:-1] if name.endswith(")") else name
+        for (agg, bare), role in _sheet_uses(ws).items():
             shown = caption.get(bare, bare)
-            if bare != name:
-                shown = f"{name.split('(', 1)[0]}({shown})"
             entry = merged.setdefault(
-                name,
-                {"caption": shown, "role": role, "sheets": set(), "personal": False},
+                (agg, bare),
+                {
+                    "caption": f"{agg}({shown})" if agg else shown,
+                    "role": role,
+                    "sheets": set(),
+                    "personal": False,
+                },
             )
             if _ROLE_ORDER.index(role) < _ROLE_ORDER.index(entry["role"]):
                 entry["role"] = role
@@ -201,8 +214,8 @@ def workbook_inventory(twb_xml: str) -> list[FieldUse]:
             entry["personal"] |= bare in personal
 
     uses = []
-    for name, entry in merged.items():
-        formula = finder.explain_bins(formulas.get(entry["caption"], ""), found_bins)
+    for (agg, bare), entry in merged.items():
+        formula = finder.explain_bins(formula_of(agg, bare), found_bins)
         presentation = (
             entry["role"] == "parameter"
             or entry["personal"]
@@ -212,7 +225,7 @@ def workbook_inventory(twb_xml: str) -> list[FieldUse]:
         uses.append(
             FieldUse(
                 caption=entry["caption"],
-                name=name,
+                name=f"{agg}({bare})" if agg else bare,
                 role=entry["role"],
                 formula=formula,
                 sheets=tuple(sorted(entry["sheets"])),
