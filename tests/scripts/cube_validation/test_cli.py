@@ -380,7 +380,9 @@ def _identity_sql(sql):
 def test_run_prices_a_cube_load_before_it_runs(fakes, tmp_path, capsys):
     fakes.bq.cost = lambda sql: 10.0 if _identity_sql(sql) else 0.0
 
-    assert cli.main(["run", str(_file(tmp_path))]) == 1
+    # Above the run cap, under a raised daily cap: the run cap must refuse it.
+    argv = ["run", str(_file(tmp_path)), "--max-usd-per-day", "100"]
+    assert cli.main(argv) == 1
 
     assert "5.00" in capsys.readouterr().err
     assert fakes.cube.loads == []
@@ -865,7 +867,8 @@ def test_check_api_prices_the_api_side_before_it_loads(fakes, tmp_path, capsys):
         else 0.0
     )
 
-    assert cli.main(["check-api", str(_file(tmp_path))]) == 1
+    argv = ["check-api", str(_file(tmp_path)), "--max-usd-per-day", "100"]
+    assert cli.main(argv) == 1
 
     assert "5.00" in capsys.readouterr().err
     assert fakes.cube.loads == []

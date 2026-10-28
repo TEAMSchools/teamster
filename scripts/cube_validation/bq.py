@@ -21,7 +21,7 @@ from .timetravel import PROJECT, TableInfo, closing_paren, utc_literal
 USD_PER_TIB = 6.25
 _TIB = 2**40
 JOBS_RETENTION_DAYS = 180
-VIEW_HISTORY_FIRST_DAYS = 3
+VIEW_HISTORY_DAYS = (3, 30, JOBS_RETENTION_DAYS)
 _VIEW_HEAD = re.compile(
     r"create\s+(?:or\s+replace\s+)?(?:materialized\s+)?view\s+"
     r"(?:if\s+not\s+exists\s+)?[`\w.-]+",
@@ -158,9 +158,9 @@ class Warehouse:
     ) -> tuple[datetime, str]:
         """Return the start and body of the latest `CREATE_VIEW` job before `ts`."""
         # The price of a JOBS_BY_PROJECT read grows with the days it spans, and
-        # dbt recreates most views on every build, so look back a few days
-        # before paying for the whole retention.
-        for days in (VIEW_HISTORY_FIRST_DAYS, JOBS_RETENTION_DAYS):
+        # dbt recreates most views on every build, so look back a few days,
+        # then a month, before paying for the whole retention.
+        for days in VIEW_HISTORY_DAYS:
             row = self._latest_create_view(
                 dataset,
                 name,

@@ -32,7 +32,7 @@ URL_VAR = "CUBE_REST_URL"
 SECRET_VAR = "CUBE_API_SECRET"
 EMAIL_VAR = "CUBE_VALIDATION_EMAIL"
 # Every run on this machine shares 1 daily BigQuery cap (UTC day).
-DAILY_MAX_USD = 10.0
+DAILY_MAX_USD = 3.0
 
 # Errors that mean "stopped on purpose or by a check". Anything else is a bug
 # and keeps its traceback; no message here carries a secret.

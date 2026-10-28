@@ -69,25 +69,45 @@ def test_view_sql_uses_create_view_job_when_changed_after():
     assert "INTERVAL 3 DAY" in sql
 
 
-def test_view_history_looks_back_a_few_days_before_the_whole_retention():
-    table = FakeTable(modified=TS + timedelta(days=1))
-    client = FakeClient(table)
-    answers = iter([[], [{"query": "create view `p`.`ds`.`v` as select old"}]])
+def _history_answers(client, answers):
     real = client.query
+    it = iter(answers)
 
     def query(sql, job_config=None):
         job = real(sql, job_config)
         if not (job_config and job_config.dry_run):
-            job._rows = next(answers)
+            job._rows = next(it)
         return job
 
     client.query = query
+
+
+def test_view_history_widens_from_3_to_30_to_180_days():
+    table = FakeTable(modified=TS + timedelta(days=1))
+    client = FakeClient(table)
+    _history_answers(
+        client, [[], [], [{"query": "create view `p`.`ds`.`v` as select old"}]]
+    )
     wh = Warehouse(client=client)
 
     assert wh.view_sql_as_of("ds", "v", TS) == "select old"
     sqls = [s for s, dry in client.queries if not dry]
-    assert "INTERVAL 3 DAY" in sqls[0]
-    assert "INTERVAL 180 DAY" in sqls[1]
+    assert ["INTERVAL 3 DAY" in sqls[0], "INTERVAL 30 DAY" in sqls[1]] == [True] * 2
+    assert "INTERVAL 180 DAY" in sqls[2]
+
+
+def test_view_history_found_in_30_days_skips_the_whole_retention():
+    table = FakeTable(modified=TS + timedelta(days=1))
+    client = FakeClient(table)
+    _history_answers(
+        client, [[], [{"query": "create view `p`.`ds`.`v` as select old"}]]
+    )
+    wh = Warehouse(client=client)
+
+    assert wh.view_sql_as_of("ds", "v", TS) == "select old"
+    sqls = [s for s, dry in client.queries if not dry]
+    assert len(sqls) == 2
+    assert "INTERVAL 30 DAY" in sqls[1]
 
 
 def test_view_history_is_read_once_per_view_and_moment():
