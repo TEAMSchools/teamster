@@ -345,13 +345,34 @@ class _Frame:
             frame = frame.parent
         return text
 
-    def full_relaxed(self, sql: str) -> str:
-        """As `full`, with every step of every frame above neutralized too."""
+    def full_relaxed(self, sql: str, picks: bool = True) -> str:
+        """As `full`, with every step of every frame above neutralized too.
+
+        With `picks`, their row picks are dropped as well.
+        """
         frame, text = self, sql
         while frame.parent is not None and frame.table is not None:
-            text = frame.parent.query.relaxed_all({frame.table: text})
+            text = frame.parent.query.relaxed_all({frame.table: text}, picks=picks)
             frame = frame.parent
         return text
+
+    def full_marked(self, sql: str, marks: list[str]) -> tuple[str, list[str] | None]:
+        """As `full`, with each row pick above that reads this frame marked too.
+
+        Returns:
+            The SQL and every mark, `marks` first; None marks when a pick
+            above cannot be marked in full.
+        """
+        frame, text = self, sql
+        while frame.parent is not None and frame.table is not None:
+            text, more = frame.parent.query.inline_marked(
+                {frame.table: text}, len(marks)
+            )
+            if more is None:
+                return text, None
+            marks = marks + more
+            frame = frame.parent
+        return text, marks
 
     @property
     def name(self) -> str:
@@ -653,22 +674,34 @@ class _Bucket:
     def _guarded(self, frame: _Frame, steps: list[Step], step_id: str):
         """The variants for `steps` neutralized together, split at any row pick.
 
-        Where a row pick follows the steps, a row counts for them only when
-        its pick held 1 candidate; the rest come back under a `STAND_IN` id.
-        Where the count cannot be carried to the output, every row does.
+        Where a row pick follows the steps, in this frame or any above, a row
+        counts for them only when its pick held 1 candidate; the rest come
+        back under a `STAND_IN` id. Where a pick cannot be marked, or its
+        count cannot be carried to the output, every row does.
         """
         sql, marks = frame.query.relaxed_marked(steps)
-        full = frame.full(sql)
+        full, marks = (sql, None) if marks is None else frame.full_marked(sql, marks)
+        if marks is None:
+            return self._stand_in(frame, steps, step_id)
         if not marks:
             return [(step_id, self.side.rows(full))]
         split = carry(full, marks)
         if split is None:
-            return [(f"{STAND_IN}{step_id}", self.side.rows(full))]
+            return self._stand_in(frame, steps, step_id)
         one, several = split
         return [
             (step_id, self.side.rows(one)),
             (f"{STAND_IN}{step_id}", self.side.rows(several)),
         ]
+
+    def _stand_in(self, frame: _Frame, steps: list[Step], step_id: str):
+        """Every row of the variant as a stand-in.
+
+        The guard cannot see through a pick that follows the steps. The SQL
+        is the plain relaxed one, so no mark reaches the output.
+        """
+        full = frame.full(frame.query.relaxed_many(steps))
+        return [(f"{STAND_IN}{step_id}", self.side.rows(full))]
 
     def first_queries(self) -> list[str]:
         """The level-0 queries, split as they will run, to price up front."""

@@ -788,3 +788,146 @@ def test_a_filter_ahead_of_a_pick_with_1_candidate_is_still_proven(duck):
 
     assert found.proven
     assert [c["label"] for c in found.cause()] == ["f: x"]
+
+
+# --- fix round 4: the guard fails closed -------------------------------------------
+
+WINDOW = "ROW_NUMBER() OVER (PARTITION BY student ORDER BY d DESC) AS rn"
+IN_PICK = (
+    f"WITH r AS (SELECT student, item, school, {WINDOW} FROM `teamster-332318.d.src` "
+    "WHERE d IN (SELECT d FROM `teamster-332318.d.days` WHERE z)) "
+    "SELECT student, item, school FROM r WHERE rn = 1"
+)
+UNION_PICK = (
+    f"WITH u AS (SELECT student, item, school, {WINDOW} FROM `teamster-332318.d.src` "
+    "WHERE x UNION ALL SELECT student, item, school, {rn} "
+    "FROM `teamster-332318.d.src2` WHERE d > 0) "
+    "SELECT student, item, school FROM u WHERE rn = 1"
+)
+EXCEPT_PICK = (
+    f"WITH r AS (SELECT student, item, school, {WINDOW} FROM `teamster-332318.d.src` "
+    "WHERE x), k AS (SELECT student, item, school FROM r WHERE rn = 1 "
+    "EXCEPT DISTINCT SELECT student, item, school FROM `teamster-332318.d.excl`) "
+    "SELECT student, item, school FROM k"
+)
+PARENT_PICK = (
+    f"WITH r AS (SELECT student, item, school, {WINDOW} "
+    "FROM `teamster-332318.d.fact3`) "
+    "SELECT student, item, school FROM r WHERE rn = 1"
+)
+RAW3 = "student BIGINT, item VARCHAR, school VARCHAR, d BIGINT, keep BOOLEAN"
+FACT3 = {
+    "fact3": (
+        "select student, item, school, d from `teamster-332318`.`d`.`raw3` where keep",
+        [],
+    )
+}
+
+
+def test_a_step_in_the_window_s_in_subquery_is_no_cause_where_a_row_could_stand_in(
+    duck,
+):
+    # N-new-1 (D2): relaxing `z` lets the junk (1, a, 3) win the pick over b.
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table(
+        "src",
+        SRC,
+        [
+            (1, "a", "X", 1, True),
+            (1, "b", "X", 2, True),
+            (1, "a", "X", 3, True),
+            (1, "c", "X", 4, True),
+        ],
+    )
+    duck.table("days", "d BIGINT, z BOOLEAN", [(1, True), (2, True), (3, False)])
+
+    found = _trace(duck, IN_PICK, [_group(1)])[trace.item_key(_group(1))]
+
+    assert not found.proven and not found.steps
+    assert "a row pick follows r: z; another row could stand in" in found.evidence()[-1]
+
+
+def test_a_step_in_one_union_branch_is_guarded_by_that_branch_s_pick(duck):
+    # N-new-2 (U): each branch computes its own rn; the junk (1, a, 3) fails x.
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table(
+        "src",
+        SRC,
+        [(1, "a", "X", 1, True), (1, "b", "X", 2, True), (1, "a", "X", 3, False)],
+    )
+    duck.table("src2", SRC, [(9, "z", "X", 1, True)])
+    dash = UNION_PICK.format(rn=WINDOW)
+
+    found = _trace(duck, dash, [_group(1)])[trace.item_key(_group(1))]
+
+    assert not found.proven and not found.steps
+    assert "a row pick follows u: x; another row could stand in" in found.evidence()[-1]
+
+    # 1 candidate: student 1's only row fails x, so x alone is the cause.
+    duck.table("src", SRC, [(1, "a", "X", 1, False)])
+
+    found = _trace(duck, dash, [_group(1)])[trace.item_key(_group(1))]
+
+    assert found.proven and [c["label"] for c in found.cause()] == ["u: x"]
+
+
+def test_a_pick_a_branch_computes_without_a_window_blocks_every_step_ahead(duck):
+    # N-new-2: the second branch's rn is a literal, so the guard cannot count
+    # its candidates; even a 1-candidate row stays unattributed.
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table("src", SRC, [(1, "a", "X", 1, False)])
+    duck.table("src2", SRC, [(9, "z", "X", 1, True)])
+
+    found = _trace(duck, UNION_PICK.format(rn="1 AS rn"), [_group(1)])[
+        trace.item_key(_group(1))
+    ]
+
+    assert not found.proven and not found.steps
+    assert "a row pick follows u: x; another row could stand in" in found.evidence()[-1]
+
+
+def test_a_count_is_never_carried_through_an_except(duck):
+    # N-new-3 (X): the true relaxed query still excludes (1, a). A NULL mark
+    # on the EXCEPT's other branch would stop it matching, and put it back.
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table("src", SRC, [(1, "a", "X", 1, False)])
+    duck.table("excl", "student BIGINT, item VARCHAR, school VARCHAR", [(1, "a", "X")])
+
+    found = _trace(duck, EXCEPT_PICK, [_group(1)])[trace.item_key(_group(1))]
+
+    assert not found.proven and not found.steps
+    assert not any("__cand" in sql for sql in duck.ran)
+
+
+def test_a_pick_in_the_level_above_guards_a_step_below(duck, tmp_path):
+    # P-old-1 (C): the side picks over fact3; relaxing fact3's `keep` lets the
+    # junk (1, a, 3) win the pick over b.
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table(
+        "raw3",
+        RAW3,
+        [(1, "a", "X", 1, False), (1, "b", "X", 2, True), (1, "a", "X", 3, False)],
+    )
+    duck.table("fact3", RAW3.replace(", keep BOOLEAN", ""), [(1, "b", "X", 2)])
+    manifest = _manifest(tmp_path, FACT3)
+
+    found = _trace(duck, PARENT_PICK, [_group(1)], levels=1, manifest=manifest)[
+        trace.item_key(_group(1))
+    ]
+
+    assert not found.proven and not found.steps
+    assert (
+        "a row pick follows fact3/main: keep; another row could stand in"
+        in found.evidence()[-1]
+    )
+
+    # 1 candidate: student 1's only row fails `keep`, so `keep` is the cause.
+    duck.table("raw3", RAW3, [(1, "a", "X", 1, False)])
+    duck.table("fact3", RAW3.replace(", keep BOOLEAN", ""), [])
+
+    found = _trace(duck, PARENT_PICK, [_group(1)], levels=1, manifest=manifest)[
+        trace.item_key(_group(1))
+    ]
+
+    assert found.proven
+    assert [c["label"] for c in found.cause()] == ["fact3/main: keep"]

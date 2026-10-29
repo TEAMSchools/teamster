@@ -1,3 +1,5 @@
+import pytest
+
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.sqlsteps import LABEL_CHARS, Query, carry
 
@@ -446,3 +448,113 @@ def test_a_count_an_aggregate_would_swallow_is_not_carried():
     sql, marks = q.relaxed_marked([step])
 
     assert carry(sql, marks) is None
+
+
+# --- fix round 4: the guard fails closed ------------------------------------------
+
+WINDOW = "ROW_NUMBER() OVER (PARTITION BY student ORDER BY d DESC) AS rn"
+KEY = frozenset({"student", "item"})
+
+
+def test_a_step_in_an_in_subquery_of_the_window_s_select_is_marked():
+    # N-new-1: the step feeds the pick through the WHERE, not the FROM.
+    q = Query(
+        f"WITH r AS (SELECT student, item, {WINDOW} FROM `teamster-332318.d.src` "
+        "WHERE d IN (SELECT d FROM `teamster-332318.d.days` WHERE z)) "
+        "SELECT student, item FROM r WHERE rn = 1",
+        KEY,
+        "student",
+    )
+    step = next(s for s in q.steps("cube") if s.label == "r: z")
+
+    assert q.relaxed_marked([step])[1] == ["__cand0"]
+
+
+UNION_PICKS = (
+    f"WITH u AS (SELECT student, item, {WINDOW} FROM `teamster-332318.d.src` WHERE x "
+    "UNION ALL SELECT student, item, {rn} FROM `teamster-332318.d.src2` WHERE y) "
+    "SELECT student, item FROM u WHERE rn = 1"
+)
+
+
+def test_a_pick_over_a_union_marks_the_branch_a_step_feeds():
+    # N-new-2: each branch computes its own rn.
+    q = Query(UNION_PICKS.format(rn=WINDOW), KEY, "student")
+    x = next(s for s in q.steps("cube") if s.label == "u: x")
+    y = next(s for s in q.steps("cube") if s.label == "u: y")
+
+    for_x, marks_x = q.relaxed_marked([x])
+    for_y, marks_y = q.relaxed_marked([y])
+
+    assert marks_x == marks_y == ["__cand0"]
+    first, second = _flat(for_x).split("UNION ALL")
+    assert "__cand0" in first and "__cand0" not in second
+    first, second = _flat(for_y).split("UNION ALL")
+    assert "__cand0" in second and "__cand0" not in first
+
+
+def test_a_pick_a_branch_computes_without_a_window_cannot_be_marked():
+    # N-new-2: the second branch's rn is a literal, so its candidates cannot
+    # be counted; the whole pick is then out of the guard's reach.
+    q = Query(UNION_PICKS.format(rn="1 AS rn"), KEY, "student")
+    x = next(s for s in q.steps("cube") if s.label == "u: x")
+
+    sql, marks = q.relaxed_marked([x])
+
+    assert marks is None
+    assert "__cand" not in sql and sql == q.relaxed(x)
+
+
+def _set_op(op: str) -> str:
+    return (
+        f"WITH r AS (SELECT student, item, {WINDOW} FROM `teamster-332318.d.src` "
+        f"WHERE x), k AS (SELECT student, item FROM r WHERE rn = 1 {op} "
+        "SELECT student, item FROM `teamster-332318.d.excl`) "
+        "SELECT student, item FROM k"
+    )
+
+
+@pytest.mark.parametrize(
+    "op", ["EXCEPT DISTINCT", "INTERSECT DISTINCT", "UNION DISTINCT"]
+)
+def test_a_count_is_carried_through_union_all_and_no_other_set_operation(op):
+    # N-new-3: a mark on one branch alone changes which rows the others keep.
+    for text, carried in ((_set_op(op), False), (_set_op("UNION ALL"), True)):
+        q = Query(text, KEY, "student")
+        step = next(s for s in q.steps("cube") if s.label == "r: x")
+        sql, marks = q.relaxed_marked([step])
+
+        assert marks == ["__cand0"]
+        assert (carry(sql, marks) is not None) == carried
+
+
+def test_a_count_from_a_table_read_twice_is_not_carried():
+    # A frame inlined twice: one copy's count says nothing about the other's.
+    child = (
+        "SELECT student, item, COUNT(*) OVER (PARTITION BY student) AS __cand0 "
+        "FROM `teamster-332318.d.src`"
+    )
+    once = f"SELECT a.student, a.item FROM ({child}) AS a"
+    twice = f"{once} JOIN ({child}) AS b ON a.student = b.student"
+
+    assert carry(once, ["__cand0"]) is not None
+    assert carry(twice, ["__cand0"]) is None
+
+
+def test_a_pick_reading_an_inlined_table_is_marked():
+    # P-old-1: the pick sits in the frame above the step.
+    q = Query(
+        f"WITH r AS (SELECT student, item, {WINDOW} FROM `teamster-332318.d.fact3`) "
+        "SELECT student, item FROM r WHERE rn = 1",
+        KEY,
+        "student",
+    )
+    child = "SELECT student, item, d FROM `teamster-332318.d.raw3` WHERE keep"
+
+    sql, marks = q.inline_marked({("d", "fact3"): child}, 2)
+
+    assert marks == ["__cand2"]
+    assert "COUNT(*) OVER (PARTITION BY student) AS __cand2" in _flat(sql)
+    assert "WHERE keep" in _flat(sql)
+    other = {("d", "other"): child}
+    assert q.inline_marked(other, 2) == (q.inline(other), [])
