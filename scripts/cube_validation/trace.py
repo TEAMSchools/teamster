@@ -33,6 +33,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import sqlglot
 from google.api_core.exceptions import GoogleAPIError
 from sqlglot.errors import SqlglotError
 
@@ -55,6 +56,8 @@ from .sqlsteps import Query, Step, TableRef
 from .timetravel import PROJECT, repin
 
 MAX_LEVELS = 3
+# Older sqlglot cannot parse BigQuery time travel after a table alias.
+SQLGLOT_MAJOR = 30
 # BigQuery refuses a query longer than 1,024K characters.
 MAX_QUERY_CHARS = 900_000
 # A relaxed variant can multiply rows; BigQuery stops a query past this.
@@ -1017,9 +1020,17 @@ def check_ready(
     proof later explains would have needed. Call inside `wh.budget`.
 
     Raises:
-        pipeline.Refusal: A comparison's SQL changed since the run, or the
-            manifest or a model's compiled SQL is missing.
+        pipeline.Refusal: sqlglot is older than the parser the as-of SQL
+            needs, a comparison's SQL changed since the run, or the manifest
+            or a model's compiled SQL is missing.
     """
+    found = sqlglot.__version__
+    if int(found.split(".")[0]) < SQLGLOT_MAJOR:
+        raise pipeline.Refusal(
+            f"sqlglot {found} cannot parse the run's as-of SQL; the trace needs "
+            f"{SQLGLOT_MAJOR} or later. Run from a checkout synced to the "
+            "branch's uv.lock (`uv sync`)"
+        )
     _plan(
         cfg,
         run,

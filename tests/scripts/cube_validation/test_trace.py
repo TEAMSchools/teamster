@@ -898,3 +898,9 @@ def test_a_level_zero_dry_run_error_stops_only_its_bucket(monkeypatch):
     assert "level 0" in stopped.stopped and stopped.unknown == 5
     assert not result.items[trace.item_key(dash_only)].stopped
     assert any("bucket = 'dashboard_only'" in sql for sql in wh.ran)
+
+
+def test_check_ready_refuses_an_old_sqlglot(monkeypatch):
+    monkeypatch.setattr(trace.sqlglot, "__version__", "28.0.0")
+    with pytest.raises(pipeline.Refusal, match="sqlglot 28.0.0 cannot parse"):
+        trace.check_ready(None, None, wh=None, cube=None)
