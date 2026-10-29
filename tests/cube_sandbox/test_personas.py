@@ -23,6 +23,13 @@ def test_every_persona_uses_an_invalid_domain() -> None:
         assert p.email.endswith(".invalid"), p.email
 
 
+def test_every_persona_has_a_one_sentence_builder_summary() -> None:
+    for p in personas.load(PERSONAS):
+        assert p.builder_summary.strip(), p.email
+        assert "\n" not in p.builder_summary.strip(), p.email
+        assert p.builder_summary.strip().endswith("."), p.email
+
+
 def test_emails_are_ascii() -> None:
     for p in personas.load(PERSONAS):
         # google_email is the key resolveAccess matches exactly. A non-ASCII

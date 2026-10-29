@@ -15,6 +15,7 @@ personas:
     given_name: Sheryl
     surname: Swoopes
     purpose: Network-wide student access, full staff PII remit.
+    builder_summary: Sees every school's students and every staff record.
     scopes:
       student_location_scope: network
       # "Full" remit: every location, every department group. The widest pair
@@ -31,6 +32,9 @@ personas:
     given_name: Ororo
     surname: Munroe
     purpose: School-scoped students; chain-scoped PII with a non-empty chain.
+    builder_summary: >-
+      Sees the students at one school, and the staff records of the one person
+      who reports to her.
     scopes:
       student_location_scope: school
       # A school-based manager: her own school, her own department group. The
@@ -50,6 +54,9 @@ personas:
     given_name: Žydrūnas
     surname: Ilgauskas
     purpose: Region-scoped students; teaching-staff PII. Empty chain.
+    builder_summary: >-
+      Sees the students in one region, and the staff records of teachers in that
+      region.
     scopes:
       student_location_scope: region
       # His region, every department group. `all` and not `own_group`: the
@@ -69,6 +76,7 @@ personas:
     given_name: A'ja
     surname: Ogwumike
     purpose: Default-deny on every axis. Resolves to a row with no groups.
+    builder_summary: Sees no student or staff records at all.
     scopes:
       student_location_scope: none
       # The only persona with an empty remit, and deliberately so: hasRemit
@@ -85,6 +93,9 @@ personas:
     given_name: Karl-Anthony
     surname: Maximoff
     purpose: Rank-scoped PII with both a remit and a chain.
+    builder_summary: >-
+      Sees every school's students, and the staff records of his direct reports
+      plus anyone below his rank in his department.
     scopes:
       student_location_scope: network
       # "Both a remit and a chain": network locations intersected with his own
@@ -102,6 +113,9 @@ personas:
   - email: shaquille.oquinn@ktaf-sandbox.invalid
     given_name: Shaquille
     surname: O'Quinn
+    builder_summary: >-
+      Sees the students at one school, but no staff records because no one
+      reports to him.
     purpose:
       Chain-scoped PII with an EMPTY chain. Exercises the no-group default-deny
       path that exists because Cube errors on an equals-[] row filter, and that

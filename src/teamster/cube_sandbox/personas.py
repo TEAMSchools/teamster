@@ -21,6 +21,7 @@ class Persona:
     given_name: str
     surname: str
     purpose: str
+    builder_summary: str
     scopes: dict[str, str]
     reportees: list[str] = field(default_factory=list)
 

@@ -137,6 +137,7 @@ def test_persona_with_an_unhandled_scope_value_is_rejected() -> None:
         given_name="X",
         surname="Y",
         purpose="invalid",
+        builder_summary="x.",
         scopes={"staff_pii_scope": "made_up"},
         reportees=[],
     )
@@ -165,6 +166,7 @@ def test_persona_with_a_non_none_sensitive_tier_value_is_accepted() -> None:
         given_name="X",
         surname="Y",
         purpose="valid",
+        builder_summary="x.",
         scopes={"staff_compensation_scope": "reporting_chain"},
         reportees=[],
     )
