@@ -582,7 +582,7 @@ CELLS_RUN = dict(
 )  # fmt: skip
 
 
-def _cells(tmp_path, monkeypatch, proven=True, run=None):
+def _cells(tmp_path, monkeypatch, proven=True, run=None, cfg=CFG):
     run = run or _run([_group(3)], **CELLS_RUN)
     path = _saved(tmp_path, monkeypatch, run)
     saved = json.loads(path.read_text())
@@ -592,7 +592,7 @@ def _cells(tmp_path, monkeypatch, proven=True, run=None):
                         "step": "C1", "label": "fails ok1", "n_rows": 3}])  # fmt: skip
     path.write_text(json.dumps(saved))
     confirm.run_confirm(
-        CFG,
+        cfg,
         tmp_path / "v.yml",
         wh=None,
         cube=None,
@@ -618,6 +618,58 @@ def test_cells_confirm_when_every_differing_cell_lies_in_proven_groups(
 def test_cells_refuse_with_the_count_left_outside_proven_groups(tmp_path, monkeypatch):
     with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
         _cells(tmp_path, monkeypatch, proven=False)
+
+
+def test_cells_refuse_when_the_difference_is_not_the_proven_rows(tmp_path, monkeypatch):
+    # Cube shows 2 more than the dashboard, but the proven group holds 3 rows.
+    run = _run(
+        [_group(3)],
+        cells=CELLS_RUN["cells"],
+        diff_cells=[{**CELLS_RUN["diff_cells"][0], "cube": 3.0}],
+    )
+
+    with pytest.raises(pipeline.Refusal, match="exceed the proven rows by 1"):
+        _cells(tmp_path, monkeypatch, run=run)
+
+
+def test_cells_link_only_to_groups_under_their_cut(tmp_path, monkeypatch):
+    by_school = Comparison(
+        id="mastery",
+        measure="pct",
+        dims=[ColumnPair("school", "abbreviation")],
+        rows=ROWS,
+        filters={"School": ColumnPair("school", "abbreviation")},
+    )
+    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[by_school])
+    # The cell sits under the cut School = Y; the only proven group is X.
+    run = _run(
+        [_group(3)],
+        cells=CELLS_RUN["cells"],
+        diff_cells=[{**CELLS_RUN["diff_cells"][0], "cut": '{"School": "Y"}',
+                     "dims": []}],
+    )  # fmt: skip
+
+    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
+        _cells(tmp_path, monkeypatch, run=run, cfg=cfg)
+
+
+def test_a_null_group_and_an_empty_string_group_are_proven_apart(
+    duck, tmp_path, offline
+):
+    _tables(
+        duck,
+        [(1, "a", None), (2, "b", ""), (3, "c", "")],
+        [(1, "a", None, False, True), (2, "b", "", False, True),
+         (3, "c", "", True, False)],
+    )  # fmt: skip
+    null = Group("mastery", (("abbreviation", ""),), "cube_only", 1, 1,
+                 nulls=("abbreviation",))  # fmt: skip
+    empty = Group("mastery", (("abbreviation", ""),), "cube_only", 2, 2)
+
+    items = _reprove(duck, tmp_path, _run([null, empty]))
+
+    assert [i["suggestion"] for i in items] == ["cause", "cause"]
+    assert sorted(sum(c["n_rows"] for c in i["cause"]) for i in items) == [1, 2]
 
 
 # --- the gate ----------------------------------------------------------------------

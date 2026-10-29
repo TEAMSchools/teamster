@@ -114,8 +114,23 @@ def test_groups_from_drops_match_and_keeps_counts():
 
     assert groups_from("c1", rows) == [
         Group("c1", (("grade_level_cube", "5"),), "cube_only", 3, 2),
-        Group("c1", (("grade_level_cube", ""),), "value_differs", 1, 1),
+        Group(
+            "c1", (("grade_level_cube", ""),), "value_differs", 1, 1,
+            nulls=("grade_level_cube",),
+        ),
+    ]  # fmt: skip
+
+
+def test_a_null_group_and_an_empty_string_group_stay_apart():
+    rows = [
+        {"bucket": "cube_only", "module": None, "n_rows": 3, "n_students": 2},
+        {"bucket": "cube_only", "module": "", "n_rows": 4, "n_students": 4},
     ]
+
+    null, empty = groups_from("c1", rows)
+
+    assert null.dims == empty.dims == (("module", ""),)
+    assert (null.nulls, empty.nulls) == (("module",), ())
 
 
 def test_groups_from_without_group_by_columns():

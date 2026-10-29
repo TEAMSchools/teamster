@@ -1353,7 +1353,13 @@ def _json_default(value: Any) -> Any:
 
 def _group(data: dict) -> Group:
     """JSON stores `dims` as lists; a group compares by tuples."""
-    return Group(**{**data, "dims": tuple(tuple(d) for d in data["dims"])})
+    return Group(
+        **{
+            **data,
+            "dims": tuple(tuple(d) for d in data["dims"]),
+            "nulls": tuple(data.get("nulls") or ()),
+        }
+    )
 
 
 def _gap(data: dict) -> Gap:

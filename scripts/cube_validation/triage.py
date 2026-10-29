@@ -1033,7 +1033,7 @@ def run_triage(
         found = suggest(cfg, run, docs, values, traced.items if traced else None)
         items = [_as_json(s) for s in found]
         if proofs is not None:
-            confirm.apply_runs(run, items, ran)
+            confirm.apply_runs(run, items, ran, cfg)
             items.sort(key=lambda i: SUGGESTIONS.index(i["suggestion"]))
         mark_decided(run, items, cfg.decisions, note=True)
         found = [_from_json(i) for i in items]

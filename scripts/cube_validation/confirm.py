@@ -407,7 +407,7 @@ def unmatched_sql(
     )
     whens = []
     for item_id, g in items:
-        nulls = set(getattr(g, "nulls", ()))
+        nulls = set(g.nulls)
         test = " AND ".join(
             f"{column} IS NULL"
             if column in nulls
@@ -653,36 +653,79 @@ def _bucket_items(run: RunResult, comparison: str, bucket: str):
     ]
 
 
+def _counts_rows(comparison: Comparison | None) -> bool:
+    """A comparison whose rows carry no value column counts them: each row is
+    1 toward its cell."""
+    return bool(comparison and comparison.rows and not comparison.rows.values)
+
+
+def _in_cut(g: Group, comparison: Comparison | None, cut: str) -> bool:
+    """Whether a group's columns allow its rows under a cell's cut.
+
+    A cut filter on a column the group does not split by allows any value;
+    for a count measure the size check then catches rows outside the cut.
+    """
+    if comparison is None:
+        return True
+    try:
+        chosen = {**comparison.defaults, **json.loads(cut or "{}")}
+    except json.JSONDecodeError:
+        return True
+    for caption, value in chosen.items():
+        pair = comparison.filters.get(caption)
+        held = g.value_of(pair.cube) if pair else None
+        if held is None:
+            continue
+        values = value if isinstance(value, list) else [value]
+        if pipeline._key(held) not in {pipeline._key(v) for v in values}:
+            return False
+    return True
+
+
+_SIGN = {"cube_only": 1, "dashboard_filtered": 1, "dashboard_only": -1}
+
+
 def link_cells(
-    run: RunResult, items: list[dict], comparison: str | None = None
-) -> dict[str, tuple[int, int]]:
+    run: RunResult,
+    items: list[dict],
+    comparison: str | None = None,
+    cfg: ViewConfig | None = None,
+) -> dict[str, tuple[int, int, float]]:
     """Move each cell set whose differing cells' rows all lie in proven groups.
 
     A cell's rows lie in the open groups of its comparison whose columns agree
-    with the cell's. A cell no open group agrees with, or one a group outside
-    `cause` agrees with, is not linked.
+    with the cell's dims and its cut. A cell no open group agrees with, or one
+    a group outside `cause` agrees with, is not linked. For a comparison that
+    counts its rows, the cell's difference (Cube minus dashboard) must also
+    equal the linked groups' net rows (Cube-only and dashboard-filtered rows
+    add, dashboard-only rows take away); otherwise the cell is not linked.
 
     Returns:
-        Per cell-set item id, the differing cells not linked and all of them.
+        Per cell-set item id: the differing cells not linked, all of them, and
+        the summed gap between the cells' differences and their proven rows.
     """
     entries = triage._entries(run)
     by_id = {i["id"]: i for i in items}
+    by_cmp = {c.id: c for c in (cfg.comparisons if cfg else [])}
     out = {}
-    for item, source in entries:
+    for item, _ in entries:
         if item.kind != "cells" or (comparison and item.comparison != comparison):
             continue
+        spec = by_cmp.get(item.comparison)
+        counts = _counts_rows(spec)
         groups = [
             (i.id, g)
             for i, g in entries
             if isinstance(g, Group) and g.comparison_id == item.comparison
         ]
         cells = [c for c in run.diff_cells if c["comparison"] == item.comparison]
-        unlinked, used = 0, {}
+        unlinked, used, gap = 0, {}, 0.0
         for cell in cells:
             match = [
                 (gid, g)
                 for gid, g in groups
-                if all(
+                if _in_cut(g, spec, cell.get("cut", "{}"))
+                and all(
                     g.value_of(col) is None
                     or pipeline._key(g.value_of(col)) == pipeline._key(value)
                     for col, value in cell["dims"]
@@ -691,9 +734,16 @@ def link_cells(
             proven = [gid for gid, _ in match if by_id[gid]["suggestion"] == "cause"]
             if not match or len(proven) < len(match):
                 unlinked += 1
-            else:
-                used |= dict.fromkeys(proven)
-        out[item.id] = (unlinked, len(cells))
+                continue
+            if counts:
+                net = sum(_SIGN.get(g.bucket, 0) * g.n_rows for _, g in match)
+                differs = (cell.get("cube") or 0) - (cell.get("dashboard") or 0)
+                if abs(differs - net) > 1e-9:
+                    unlinked += 1
+                    gap += abs(differs - net)
+                    continue
+            used |= dict.fromkeys(proven)
+        out[item.id] = (unlinked, len(cells), gap)
         target = by_id[item.id]
         if cells and not unlinked:
             merged: dict[tuple, dict] = {}
@@ -715,15 +765,20 @@ def link_cells(
         else:
             if target.get("suggestion") == "cause":
                 target.update(suggestion="investigate", cause=None, proof=None)
-            line = (
-                f"{unlinked} of {len(cells)} differing cells have rows outside "
-                "proven groups"
-                if cells
-                else "the run lists no differing cells to link; `run` again"
-            )
+            if not cells:
+                line = posted = "the run lists no differing cells to link; `run` again"
+            else:
+                line = (
+                    f"{unlinked} of {len(cells)} differing cells have rows outside "
+                    "proven groups"
+                )
+                posted = line
+                if gap:
+                    line += f"; their differences exceed the proven rows by {gap:g}"
+                    posted += "; their differences exceed the proven rows"
             target["evidence"] = [line, *_unlinked(target.get("evidence"))]
             target["evidence_posted"] = [
-                line,
+                posted,
                 *_unlinked(target.get("evidence_posted")),
             ]
     return out
@@ -825,14 +880,16 @@ def explained(runs: list[Ran]) -> set[tuple]:
     }
 
 
-def apply_runs(run: RunResult, items: list[dict], runs: list[Ran]) -> None:
+def apply_runs(
+    run: RunResult, items: list[dict], runs: list[Ran], cfg: ViewConfig
+) -> None:
     """Sort the items by the proofs' runs, then link cell sets."""
     for r in runs:
         if r.found is None:
             note(items, {i for i, _ in r.items}, r.why, r.proof.path.name)
         else:
             apply_outcomes(items, r.proof, r.found)
-    link_cells(run, items)
+    link_cells(run, items, cfg=cfg)
 
 
 def reprove(
@@ -845,7 +902,7 @@ def reprove(
     cube: Cube,
 ) -> None:
     """Re-run every stored proof of the view on the run's rows, then link cells."""
-    apply_runs(run, items, run_stored(cfg, run, directory, wh=wh, cube=cube))
+    apply_runs(run, items, run_stored(cfg, run, directory, wh=wh, cube=cube), cfg)
 
 
 # --- the command -------------------------------------------------------------------
@@ -956,14 +1013,19 @@ def run_confirm(
     wanted = set(items or []) or None
 
     if cells:
-        linked = link_cells(run, all_items, comparison)
+        linked = link_cells(run, all_items, comparison, cfg)
         if not linked:
             raise pipeline.Refusal(f"{comparison}: no open cell set to confirm")
-        for item_id, (unlinked, total) in linked.items():
+        for item_id, (unlinked, total, gap) in linked.items():
             if unlinked:
+                over = (
+                    f"; their differences exceed the proven rows by {gap:g}"
+                    if gap
+                    else ""
+                )
                 raise pipeline.Refusal(
                     f"{item_id}: {unlinked} of {total} differing cells have rows "
-                    "outside groups in `cause`; prove those groups first"
+                    f"outside groups in `cause`{over}; prove those groups first"
                 )
         _mark(run, all_items, cfg)
         _save_triage(path, loaded, all_items)
@@ -1005,7 +1067,7 @@ def run_confirm(
     stored.parent.mkdir(parents=True, exist_ok=True)
     stored.write_text(proof.text)
     apply_outcomes(all_items, proof, found)
-    link_cells(run, all_items, comparison)
+    link_cells(run, all_items, comparison, cfg)
     _mark(run, all_items, cfg)
     _save_triage(path, loaded, all_items)
     moved = sum(1 for o in found.values() if o.explained)

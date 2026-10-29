@@ -24,13 +24,18 @@ Verdict = Literal["pass", "differs", "dashboard_only", "cube_only"]
 
 @dataclass(frozen=True)
 class Group:
-    """One non-match bucket of one result row, with every group-by column."""
+    """One non-match bucket of one result row, with every group-by column.
+
+    A NULL value reads `""` in `dims`, as an empty string does; `nulls` names
+    the columns that were NULL, so the two stay apart.
+    """
 
     comparison_id: str
     dims: tuple[tuple[str, str], ...]
     bucket: str
     n_rows: int
     n_students: int
+    nulls: tuple[str, ...] = ()
 
     def value_of(self, column: str) -> str | None:
         """The group's value in `column`; `""` names a row with no group-by."""
@@ -469,7 +474,7 @@ def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
     Returns:
         One `Group` per non-match row, carrying all its group-by columns in
         query order, so a row's students are counted once. A NULL value
-        becomes an empty string.
+        becomes an empty string, and its column is listed in `nulls`.
     """
     reserved = {"bucket", "n_rows", "n_students", "__filter"}
     return [
@@ -489,6 +494,7 @@ def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
             bucket=row["bucket"],
             n_rows=int(row["n_rows"]),
             n_students=int(row["n_students"]),
+            nulls=tuple(k for k, v in row.items() if k not in reserved and v is None),
         )
         for row in result_rows
         if row["bucket"] != "match"
