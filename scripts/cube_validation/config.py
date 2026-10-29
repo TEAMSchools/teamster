@@ -26,6 +26,10 @@ CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "fix_source")
 # The `tasks:` block names a domain's Cube-fix issue and dashboard-fix task,
 # which `record-answers` copies into a decision's `task`.
 TASK_KEYS = ("cube_fix", "dashboard_fix")
+# The side of a comparison whose SQL holds a cause decision's step.
+CAUSE_SIDES = ("dashboard", "cube")
+# A committed decision carries no long digit run from a SQL literal.
+LONG_DIGITS = re.compile(r"\d{5,}")
 _TASK = re.compile(r"https://\S+|#\d+")
 # Filter operators for `scope` (Cube side) and `dashboard_filters` (dashboard
 # side). The comparisons take exactly 1 number; `set` means not null.
@@ -160,6 +164,11 @@ class Decision:
     missing_filter: str = ""
     # Covers the comparison's cell differences instead of a row group.
     cells: bool = False
+    # Covers the row groups whose rows a proven step drops, in place of
+    # `group`: `{side, step, groups}`, where `step` is the trace's label with
+    # each run of 5 or more digits written `<n>`, and `groups` the masked keys
+    # (`decisions.group_keys`) of the groups it covers.
+    cause: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -536,11 +545,12 @@ def _decision(
         reader.fail("task", f"must be an https:// link or #<issue>; got {task!r}")
     missing_cut = reader.get("missing_cut", str, default="")
     missing_filter = reader.get("missing_filter", str, default="")
-    keys = ("group", "missing_cut", "missing_filter", "cells")
+    keys = ("group", "missing_cut", "missing_filter", "cells", "cause")
     named = [k for k in keys if reader.data.get(k)]
     if len(named) > 1:
         reader.fail(
-            named[1], "set only one of group, missing_cut, missing_filter and cells"
+            named[1],
+            "set only one of group, missing_cut, missing_filter, cells and cause",
         )
     cells = reader.get("cells", bool, default=False)
     if missing_cut or missing_filter:
@@ -555,6 +565,9 @@ def _decision(
             reader.fail("comparison", f"{comparison!r} is not a comparison id")
         group = reader.get("group", dict, default={})
         _decision_values(reader.child("group", group), texts)
+    cause = reader.get("cause", dict, default={})
+    if cause:
+        _cause(reader.child("cause", cause))
     return Decision(
         id=reader.get("id", str, required=True),
         comparison=comparison,
@@ -566,7 +579,33 @@ def _decision(
         missing_cut=missing_cut,
         missing_filter=missing_filter,
         cells=bool(cells),
+        cause=cause,
     )
+
+
+def _cause(reader: _Reader) -> None:
+    """Check a cause decision's `side`, `step` and `groups`."""
+    side = reader.get("side", str, required=True)
+    if side not in CAUSE_SIDES:
+        reader.fail("side", f"must be one of {', '.join(CAUSE_SIDES)}; got {side!r}")
+    step = reader.get("step", str, required=True)
+    if not step.strip():
+        reader.fail("step", "must be the step's label")
+    if LONG_DIGITS.search(step):
+        reader.fail(
+            "step", "carries a run of 5 or more digits; write each such run as <n>"
+        )
+    groups = reader.get("groups", list, required=True)
+    if not groups:
+        reader.fail("groups", "must list at least 1 group key")
+    for i, key in enumerate(groups):
+        if not isinstance(key, str) or not key:
+            reader.fail(f"groups[{i}]", "must be a group key from triage")
+        if groups.index(key) != i:
+            reader.fail(f"groups[{i}]", f"lists {key!r} twice")
+    for key in reader.data:
+        if key not in ("side", "step", "groups"):
+            reader.fail(str(key), "must be one of side, step and groups")
 
 
 def _tasks(root: _Reader) -> dict[str, str]:
@@ -796,6 +835,7 @@ def _holds(d: Decision, asked: dict[str, Any]) -> bool:
         and d.cells == bool(asked.get("cells", False))
         and d.missing_cut == asked.get("missing_cut", "")
         and d.missing_filter == asked.get("missing_filter", "")
+        and d.cause == asked.get("cause", {})
         and d.fingerprints == asked.get("fingerprints", {})
     )
 

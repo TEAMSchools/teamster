@@ -25,6 +25,9 @@ from cube_validation.config import ColumnPair, Comparison, load_view_config
 from cube_validation.cube_client import Compiled
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.decisions import step_fingerprint
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.tableau import Snapshot, formula_fingerprint
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -961,7 +964,11 @@ def test_review_quotes_the_masked_copy_of_exact_triage_evidence(
 STEP = {"side": "dashboard", "step": "dashboard:main:1", "label": "x", "n_rows": 12}
 
 
-def _triage_item(evidence, suggestion="cause", item_id="i"):
+# The Miami group's triage item id, which a cause decision lists as its key.
+MIAMI = "ada-region:regions_region_name=Miami"
+
+
+def _triage_item(evidence, suggestion="cause", item_id=MIAMI):
     stub = {
         "comparison": "ada-region",
         "group": {"column": "regions_region_name", "values": ["Miami"]},
@@ -2573,7 +2580,7 @@ def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
                 "call": "fix_cube",
                 "reason": "Cube drops Miami.",
                 "task": "#6150",
-                "item": "i",
+                "item": MIAMI,
             },
             {
                 "id": "no-team",
@@ -2595,8 +2602,13 @@ def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
         "fix_cube",
         "#6150",
     )
-    assert miami.group == {"column": "regions_region_name", "values": ["Miami"]}
-    assert miami.fingerprints == _saved_fingerprints(tmp_path)
+    # A cause item becomes a decision on its proven step, keyed by the item.
+    assert miami.group == {}
+    assert miami.cause == {"side": "dashboard", "step": "x", "groups": [MIAMI]}
+    assert miami.fingerprints == {
+        **_saved_fingerprints(tmp_path),
+        "step": step_fingerprint("x"),
+    }
     assert (team.missing_cut, team.comparison, team.fingerprints) == ("Team", "", {})
     assert cfg.comparisons[0].proof is not None
     out = capsys.readouterr().out
@@ -2617,7 +2629,7 @@ def test_add_decisions_re_applies_to_the_saved_run_offline(
     _write_triage(run_json, [_triage_item("e")])
     approved = _approved(
         tmp_path,
-        [{"id": "miami-scope", "call": "deliberate", "reason": "r", "item": "i"}],
+        [{"id": "miami-scope", "call": "deliberate", "reason": "r", "item": MIAMI}],
     )
     calls = _client_calls(fakes)
     _no_clients(monkeypatch)
@@ -2629,7 +2641,7 @@ def test_add_decisions_re_applies_to_the_saved_run_offline(
     assert "Re-applied decisions to the saved run of" in out
     assert "0 open groups" in out
     applied = json.loads(run_json.read_text())["applied"]
-    assert [d["id"] for d, _ in applied["quiet"]] == ["miami-scope"]
+    assert [d["id"] for d, _ in applied["quiet_causes"]] == ["miami-scope"]
     assert _client_calls(fakes) == calls
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
 
@@ -2651,7 +2663,7 @@ def test_add_decisions_refuses_a_decision_overlapping_one_in_the_file(
     _triaged_run(path, tmp_path)
     approved = _approved(
         tmp_path,
-        [{"id": "miami-again", "call": "deliberate", "reason": "r", "item": "i"}],
+        [{"id": "miami-again", "call": "deliberate", "reason": "r", "item": MIAMI}],
     )
     before = path.read_text()
     capsys.readouterr()
@@ -2671,8 +2683,8 @@ def test_add_decisions_refuses_two_in_one_batch_claiming_one_group(
     approved = _approved(
         tmp_path,
         [
-            {"id": "one", "call": "deliberate", "reason": "r", "item": "i"},
-            {"id": "two", "call": "deliberate", "reason": "r", "item": "i"},
+            {"id": "one", "call": "deliberate", "reason": "r", "item": MIAMI},
+            {"id": "two", "call": "deliberate", "reason": "r", "item": MIAMI},
         ],
     )
     before = path.read_text()
@@ -2680,7 +2692,7 @@ def test_add_decisions_refuses_two_in_one_batch_claiming_one_group(
 
     assert cli.main(["add-decisions", str(path), str(approved)]) == 1
 
-    assert "both claim" in capsys.readouterr().err
+    assert "approved twice" in capsys.readouterr().err
     assert path.read_text() == before
 
 
@@ -2690,7 +2702,7 @@ def test_add_decisions_without_a_usable_run_still_writes(
     path = _file(tmp_path)
     _triaged_run(path, tmp_path)
     approved = _approved(
-        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": "i"}]
+        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": MIAMI}]
     )
     # A run saved before re-applying existed: add-decisions reads it, reapply
     # cannot.
@@ -2717,7 +2729,7 @@ def test_add_decisions_refuses_an_unknown_item_and_writes_nothing(
     approved = _approved(
         tmp_path,
         [
-            {"id": "miami-scope", "call": "deliberate", "reason": "r", "item": "i"},
+            {"id": "miami-scope", "call": "deliberate", "reason": "r", "item": MIAMI},
             {"id": "other", "call": "deliberate", "reason": "r", "item": "gone"},
         ],
     )
@@ -2736,7 +2748,7 @@ def test_add_decisions_refuses_while_an_item_is_in_investigate(fakes, tmp_path, 
         tmp_path, [_triage_item("e"), _triage_item("x", "investigate", "j")]
     )
     approved = _approved(
-        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": "i"}]
+        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": MIAMI}]
     )
     before = path.read_text()
     capsys.readouterr()
@@ -2757,7 +2769,7 @@ def test_add_decisions_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     path = _file(tmp_path)
     assert cli.main(["run", str(path)]) == 0
     approved = _approved(
-        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": "i"}]
+        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": MIAMI}]
     )
 
     assert cli.main(["add-decisions", str(path), str(approved)]) == 1
@@ -3140,3 +3152,62 @@ def test_record_answers_twice_adds_the_note_once(tmp_path, capsys):
         "Paterson counts differ. Owner: need to talk"
     )
     assert "already recorded" in capsys.readouterr().out
+
+
+CAUSE_OWNER = """\
+decisions:
+  - id: no-section
+    comparison: ada-region
+    cause:
+      side: cube
+      step: "main: s.section_id IS NOT NULL"
+      groups: ["ada-region:regions_region_name=Miami"]
+    call: domain_owner
+    reason: Should a score with no section count?
+    task: "#7"
+    fingerprints: { cube: abc, dashboard: def, step: "0f" }
+"""
+
+
+def test_record_answers_writes_onto_the_cause_decision(tmp_path, capsys):
+    path = _file(tmp_path, YML + CAUSE_OWNER + TASKS)
+    comment = _comment(
+        tmp_path, [_answer(["no-section"], "fix_cube", "a score needs its section")]
+    )
+
+    assert _record([path], comment, "--yes") == 0
+
+    (d,) = load_view_config(path).decisions
+    assert (d.call, d.task) == ("fix_cube", "#6150")
+    assert d.reason.endswith("Owner: a score needs its section")
+    assert d.cause == {
+        "side": "cube",
+        "step": "main: s.section_id IS NOT NULL",
+        "groups": ["ada-region:regions_region_name=Miami"],
+    }
+    assert d.fingerprints == {"cube": "abc", "dashboard": "def", "step": "0f"}
+
+
+def test_add_decisions_merges_a_cause_into_the_files_decision(fakes, tmp_path, capsys):
+    path = _file(tmp_path)
+    _triaged_run(path, tmp_path)
+    first = _approved(
+        tmp_path, [{"id": "a", "call": "domain_owner", "reason": "r", "item": MIAMI}]
+    )
+    assert cli.main(["add-decisions", str(path), str(first)]) == 0
+    # A hand edit drops the group from the decision; the next triage lists it
+    # again, and approving it merges it back instead of writing a second one.
+    text = path.read_text().replace(MIAMI, "ada-region:gone")
+    path.write_text(text)
+    assert cli.main(["reapply", str(path)]) == 0
+    _triaged_run(path, tmp_path)
+    again = _approved(
+        tmp_path, [{"id": "b", "call": "domain_owner", "reason": "r2", "item": MIAMI}]
+    )
+    capsys.readouterr()
+
+    assert cli.main(["add-decisions", str(path), str(again)]) == 0, capsys.readouterr()
+
+    (d,) = load_view_config(path).decisions
+    assert d.id == "a" and d.reason == "r"
+    assert d.cause["groups"] == ["ada-region:gone", MIAMI]

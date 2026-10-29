@@ -23,6 +23,8 @@ from typing import Any
 
 from .config import _TASK, CALLS, Decision, ViewConfig
 from .cube_client import _literal
+from .decisions import mask_step, step_fingerprint
+from .discover import _tokens
 from .report import (
     _SEPARATED_DIGITS,
     MASK_BELOW,
@@ -32,6 +34,7 @@ from .report import (
     _safe_reason,
     defined_comparisons,
     definition_text,
+    mask,
     question_reason,
 )
 
@@ -174,7 +177,12 @@ def hand_check(
 
 
 def _covers(d: Decision, stub: dict) -> bool:
-    """True when a triage item's stub is the item `d` covers, by its key fields."""
+    """True when a triage item's stub is the item `d` covers, by its key fields.
+
+    A cause decision names its items by key, not by stub (`_cause_evidence`).
+    """
+    if d.cause:
+        return False
     if d.missing_cut or d.missing_filter:
         return (d.missing_cut, d.missing_filter) == (
             stub.get("missing_cut", ""),
@@ -189,6 +197,54 @@ def _covers(d: Decision, stub: dict) -> bool:
         {str(v) for v in group.get("values", [])}
         & {str(v) for v in d.group.get("values", [])}
     )
+
+
+def docs_on_step(step: str, docs: dict[str, list[str]]) -> list[str]:
+    """Quote each member doc sharing a word with the step, as `<member>: <text>`.
+
+    A plain token test: T20 may replace it with a better match.
+    """
+    wanted = _tokens(step)
+    return [
+        f"{name}: {text}"
+        for name, texts in docs.items()
+        for text in texts
+        if wanted & _tokens(text)
+    ]
+
+
+def _cause_evidence(
+    d: Decision, n_groups: int, triage: dict, cfg: ViewConfig | None
+) -> list[str]:
+    """A cause question's evidence: its step, its counts and the docs on it.
+
+    Rows are those the triage attributed to this very step (same side and
+    full label) in the items whose keys the decision lists. Docs are those of
+    the comparison's measure and dims that mention the step's words. Empty
+    when the triage lists none of its items.
+    """
+    rows = [
+        c.get("n_rows") or 0
+        for item in triage.get("items", [])
+        if item.get("comparison") == d.comparison
+        and item.get("id") in d.cause.get("groups", [])
+        for c in item.get("cause") or []
+        if c.get("side") == d.cause.get("side")
+        and step_fingerprint(c.get("label", "")) == d.fingerprints.get("step")
+    ]
+    if not rows:
+        return []
+    step = str(d.cause.get("step"))
+    cmp = next(
+        (c for c in (cfg.comparisons if cfg else []) if c.id == d.comparison), None
+    )
+    members = [cmp.measure, *(p.cube for p in cmp.dims)] if cmp else []
+    docs = triage.get("docs") or {}
+    return [
+        f"step ({d.cause.get('side')} side): {step}",
+        f"{mask(n_groups)} row groups, {mask(sum(rows))} rows attributed to it",
+        *docs_on_step(step, {m: docs[m] for m in members if m in docs}),
+    ]
 
 
 def _shown_number(x: float | None) -> str | None:
@@ -269,12 +325,14 @@ def questions_json(
             for item in triage.get(view, {}).get("items", [])
             if _covers(d, item.get("stub") or {})
         ]
-        evidence = list(
-            dict.fromkeys(
-                _safe_reason(line, q["hidden"])
-                for item in items
-                for line in item.get("evidence", [])
+        lines = [line for item in items for line in item.get("evidence", [])]
+        if q["kinds"] == ["cause"]:
+            ((view, d),) = q["decisions"]
+            lines = _cause_evidence(
+                d, q["n_groups"], triage.get(view, {}), by_cfg.get(view)
             )
+        evidence = list(
+            dict.fromkeys(_safe_reason(line, q["hidden"]) for line in lines)
         )
 
         checks = []
@@ -547,31 +605,80 @@ def answer_changes(
 _STUB_KEYS = ("comparison", "group", "cells", "missing_cut", "missing_filter")
 
 
+def _is_cause_item(item: dict) -> bool:
+    """A row group triage proved, which becomes decisions on its steps."""
+    return (
+        item.get("kind") == "group"
+        and item.get("suggestion") == "cause"
+        and bool(item.get("cause"))
+    )
+
+
+def _file_cause(d: Decision) -> dict:
+    """A cause decision from the file as the dict `write_decision` takes."""
+    out: dict = {
+        "id": d.id,
+        "comparison": d.comparison,
+        "cause": {**d.cause, "groups": list(d.cause.get("groups", []))},
+        "call": d.call,
+        "reason": d.reason,
+    }
+    if d.task:
+        out["task"] = d.task
+    out["fingerprints"] = dict(d.fingerprints)
+    return out
+
+
 def approved_decisions(
-    approved: list, triage: dict, fingerprints: dict[str, dict[str, str]]
+    approved: list,
+    triage: dict,
+    fingerprints: dict[str, dict[str, str]],
+    existing: list[Decision] | tuple[Decision, ...] = (),
 ) -> list[dict]:
     """Turn an approved triage batch into decisions, in the file's key order.
 
-    Each decision takes its key fields from the triage item's `stub`, which
-    holds the group's real values, and the comparison's `{cube, dashboard}`
-    from the run's fingerprints. A missing cut or filter covers the view, so
-    it takes neither a comparison nor fingerprints.
+    A row group in the `cause` pile becomes one `cause` decision per proven
+    step (a pair `A + B` or a fallback `A / B` is one step), listing the
+    item's id as its group key. A step already decided, in the batch or in
+    `existing`, takes the key into that decision's `groups` and keeps its
+    id, reason and task; the entry's id names only the steps new to it, the
+    second as `<id>-2` and so on. The written step masks each run of 5 or
+    more digits as `<n>`; `fingerprints.step` hashes the full label.
+
+    Every other item takes its key fields from the triage item's `stub`,
+    which holds the group's real values. Either kind takes the comparison's
+    `{cube, dashboard}` from the run's fingerprints. A missing cut or filter
+    covers the view, so it takes neither a comparison nor fingerprints.
 
     Args:
         approved: `[{"id", "call", "reason", "task", "item"}]`; `item` is a
             triage item id and `task` may be empty.
         triage: The view's `triage.json`.
         fingerprints: The latest run's fingerprints per comparison id.
+        existing: The file's decisions, for merging and for ids in use.
+
+    Returns:
+        The decisions to write: new ones, and the file's cause decisions with
+        their merged `groups`, each under its own id.
 
     Raises:
-        AnswerError: An entry is malformed, repeats an id, has a reason that
-            carries what `NOTE_REFUSALS` keeps out, names an item the triage
-            does not list, or names a comparison the run has no fingerprints
-            for.
+        AnswerError: An entry is malformed, repeats an id or an item, takes an
+            id the file has, has a reason that carries what `NOTE_REFUSALS`
+            keeps out, names an item the triage does not list, names a
+            comparison the run has no fingerprints for, or gives a decided
+            step another call, or one whose SQL changed since it was decided.
     """
-    stubs = {item.get("id"): item.get("stub") or {} for item in triage.get("items", [])}
-    out = []
+    items = {item.get("id"): item for item in triage.get("items", [])}
+    taken = {d.id for d in existing}
+    in_file = {
+        (d.comparison, str(d.cause.get("side", "")), d.fingerprints.get("step", "")): d
+        for d in existing
+        if d.cause
+    }
+    steps: dict[tuple, dict] = {}
+    out: list[dict] = []
     ids: set[str] = set()
+    seen: set[str] = set()
     for i, entry in enumerate(approved):
         if not isinstance(entry, dict):
             raise AnswerError(f"approved entry {i + 1}: must be an object")
@@ -580,28 +687,83 @@ def approved_decisions(
         if decision_id in ids:
             raise AnswerError(f"{where}: id {decision_id!r} repeats")
         ids.add(decision_id)
-        item = _text(entry, "item", where)
-        if item not in stubs:
-            raise AnswerError(f"{where}: triage lists no item {item!r}")
-        stub = stubs[item]
-        decision: dict = {"id": decision_id}
-        decision.update({k: stub[k] for k in _STUB_KEYS if k in stub})
-        decision["call"] = _text(entry, "call", where)
-        decision["reason"] = _text(entry, "reason", where)
+        item_id = _text(entry, "item", where)
+        if item_id not in items:
+            raise AnswerError(f"{where}: triage lists no item {item_id!r}")
+        if item_id in seen:
+            raise AnswerError(f"{where}: item {item_id!r} is approved twice")
+        seen.add(item_id)
+        item = items[item_id]
+        stub = item.get("stub") or {}
+        call = _text(entry, "call", where)
+        reason = _text(entry, "reason", where)
         # The reason is committed to git, like an owner's note.
-        if what := note_refusal(decision["reason"]):
+        if what := note_refusal(reason):
             raise AnswerError(f"{where}: the reason has {what}; reword it")
-        if task := _text(entry, "task", where, required=False):
-            decision["task"] = task
-        if comparison := stub.get("comparison"):
+        task = _text(entry, "task", where, required=False)
+        fp: dict[str, str] = {}
+        comparison = str(stub.get("comparison") or "")
+        if comparison:
             fp = fingerprints.get(comparison) or {}
             if not (fp.get("cube") and fp.get("dashboard")):
                 raise AnswerError(
                     f"{where}: the run has no fingerprints for {comparison!r}"
                 )
-            decision["fingerprints"] = {
-                "cube": fp["cube"],
-                "dashboard": fp["dashboard"],
-            }
-        out.append(decision)
+            fp = {"cube": fp["cube"], "dashboard": fp["dashboard"]}
+
+        if not _is_cause_item(item):
+            if decision_id in taken:
+                raise AnswerError(
+                    f"{where}: decisions already has {decision_id!r}; pick a new id"
+                )
+            decision: dict = {"id": decision_id}
+            decision.update({k: stub[k] for k in _STUB_KEYS if k in stub})
+            decision["call"], decision["reason"] = call, reason
+            if task:
+                decision["task"] = task
+            if fp:
+                decision["fingerprints"] = fp
+            out.append(decision)
+            continue
+
+        if not comparison:
+            raise AnswerError(f"{where}: item {item_id!r} names no comparison")
+        new = 0
+        for c in item["cause"]:
+            side, label = c.get("side", ""), c.get("label", "")
+            key = (comparison, side, step_fingerprint(label))
+            target = steps.get(key)
+            if target is None and key in in_file:
+                found = in_file[key]
+                if any(found.fingerprints.get(s) != fp[s] for s in fp):
+                    raise AnswerError(
+                        f"{where}: decision {found.id!r} on that {side} step was "
+                        "made on other SQL; re-confirm it before adding to it"
+                    )
+                target = steps[key] = _file_cause(found)
+                out.append(target)
+            if target is None:
+                new += 1
+                new_id = decision_id if new == 1 else f"{decision_id}-{new}"
+                if new_id in taken or any(d["id"] == new_id for d in out):
+                    raise AnswerError(
+                        f"{where}: decisions already has {new_id!r}; pick a new id"
+                    )
+                target = steps[key] = {
+                    "id": new_id,
+                    "comparison": comparison,
+                    "cause": {"side": side, "step": mask_step(label), "groups": []},
+                    "call": call,
+                    "reason": reason,
+                    **({"task": task} if task else {}),
+                    "fingerprints": {**fp, "step": key[2]},
+                }
+                out.append(target)
+            elif target["call"] != call:
+                raise AnswerError(
+                    f"{where}: the {side} step {mask_step(label)!r} is decided "
+                    f"{target['call']} in {target['id']!r}, not {call}"
+                )
+            if item_id not in target["cause"]["groups"]:
+                target["cause"]["groups"].append(item_id)
     return out

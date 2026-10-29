@@ -597,25 +597,26 @@ def _check_claims(writes: list[tuple[Path, dict]]) -> None:
 def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     """Write an approved triage batch into the view's `decisions:`.
 
-    Stubs come from the triage beside the latest run and fingerprints from that
-    run. Refuses while that triage is stale or holds an unproven item (see
+    Stubs and proven causes come from the triage beside the latest run and
+    fingerprints from that run; a cause already decided in the file takes the
+    new groups into that decision (see `answers.approved_decisions`). Refuses
+    while that triage is stale or holds an unproven item (see
     `triage.proven_triage`). The whole batch is written or none of it.
     """
     approved = _read_json(approved_path, "approved")
     run, run_json = pipeline.latest_run(cfg, cache_root())
     saved = triage.proven_triage(run, run_json)
 
-    decisions = answers.approved_decisions(approved, saved, run.fingerprints)
-    taken = {d.id for d in cfg.decisions} & {d["id"] for d in decisions}
-    if taken:
-        raise pipeline.Refusal(
-            f"{path}: decisions already has {', '.join(sorted(taken))}; pick new ids"
-        )
+    decisions = answers.approved_decisions(
+        approved, saved, run.fingerprints, existing=cfg.decisions
+    )
     writes = [(path, d) for d in decisions]
     _check_claims(writes)
     _write_all(writes)
+    had = {d.id for d in cfg.decisions}
     for d in decisions:
-        print(f"{path}: wrote {d['id']} ({d['call']})")
+        done = "added groups to" if d["id"] in had else "wrote"
+        print(f"{path}: {done} {d['id']} ({d['call']})")
     _reapply_written([path])
     return 0
 

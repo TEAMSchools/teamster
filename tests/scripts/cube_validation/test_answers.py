@@ -586,3 +586,199 @@ def test_approved_decisions_refuse_a_reason_a_note_could_not_carry():
 
     with pytest.raises(AnswerError, match="email"):
         approved_decisions([entry], TRIAGE, FPS)
+
+
+# --- cause decisions (T17) ---------------------------------------------------
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.decisions import apply, group_keys, step_fingerprint  # noqa: E402
+
+NO_SECTION = "main: s.section_id IS NOT NULL"
+WEEK_JOIN = "weeks: d.week_start <= a.score_date AND a.term = 20250701"
+CAUSE_FPS = {"enrollment": {"cube": "c1", "dashboard": "d1"}}
+
+
+def _cause_entry(label, side="cube", n_rows=20):
+    return {"side": side, "step": f"{side}:main:1", "label": label, "n_rows": n_rows}
+
+
+def _cause_item(item_id, *causes, comparison="enrollment"):
+    return {"id": item_id, "kind": "group", "comparison": comparison, "label": "l",
+            "stub": {"comparison": comparison,
+                     "group": {"column": "region", "values": ["raw"]}},
+            "suggestion": "cause", "evidence": ["trace line"], "candidates": [],
+            "cause": list(causes)}  # fmt: skip
+
+
+def _ok(id, item, call="domain_owner", reason="r"):
+    return {"id": id, "call": call, "reason": reason, "item": item}
+
+
+def test_a_cause_item_becomes_one_decision_per_step():
+    item = _cause_item("k1", _cause_entry(NO_SECTION),
+                       _cause_entry(WEEK_JOIN, side="dashboard"))  # fmt: skip
+
+    first, second = approved_decisions(
+        [_ok("no-section", "k1")], {"items": [item]}, CAUSE_FPS
+    )
+
+    assert first == {
+        "id": "no-section",
+        "comparison": "enrollment",
+        "cause": {"side": "cube", "step": NO_SECTION, "groups": ["k1"]},
+        "call": "domain_owner",
+        "reason": "r",
+        "fingerprints": {"cube": "c1", "dashboard": "d1",
+                         "step": step_fingerprint(NO_SECTION)},
+    }  # fmt: skip
+    assert second["id"] == "no-section-2"
+    # The SQL literal's digits never reach the file; the hash keeps them.
+    assert second["cause"]["step"] == (
+        "weeks: d.week_start <= a.score_date AND a.term = <n>"
+    )
+    assert second["fingerprints"]["step"] == step_fingerprint(WEEK_JOIN)
+    assert "20250701" not in json.dumps([first, second])
+
+
+def test_cause_items_sharing_a_step_merge_into_one_decision():
+    items = [_cause_item(k, _cause_entry(NO_SECTION)) for k in ("k1", "k2", "k3")]
+    approved = [_ok("no-section", "k1"), _ok("again", "k2"), _ok("more", "k3")]
+
+    (decision,) = approved_decisions(approved, {"items": items}, CAUSE_FPS)
+
+    assert decision["id"] == "no-section"
+    assert decision["cause"]["groups"] == ["k1", "k2", "k3"]
+
+
+def test_cause_items_merge_into_the_files_decision_for_that_step():
+    existing = Decision(
+        "no-section", "enrollment", "domain_owner", "kept reason", task="#9",
+        cause={"side": "cube", "step": NO_SECTION, "groups": ["k1"]},
+        fingerprints={**CAUSE_FPS["enrollment"], "step": step_fingerprint(NO_SECTION)},
+    )  # fmt: skip
+    item = _cause_item("k2", _cause_entry(NO_SECTION))
+
+    (decision,) = approved_decisions(
+        [_ok("new-id", "k2", reason="other")], {"items": [item]}, CAUSE_FPS,
+        existing=[existing],
+    )  # fmt: skip
+
+    assert decision == {
+        "id": "no-section",
+        "comparison": "enrollment",
+        "cause": {"side": "cube", "step": NO_SECTION, "groups": ["k1", "k2"]},
+        "call": "domain_owner",
+        "reason": "kept reason",
+        "task": "#9",
+        "fingerprints": existing.fingerprints,
+    }
+
+
+def test_a_step_with_another_full_label_is_a_new_decision():
+    old = "main: a.term = 20240701"
+    existing = Decision(
+        "old-term", "enrollment", "domain_owner", "r",
+        cause={"side": "cube", "step": "main: a.term = <n>", "groups": ["k1"]},
+        fingerprints={**CAUSE_FPS["enrollment"], "step": step_fingerprint(old)},
+    )  # fmt: skip
+    item = _cause_item("k2", _cause_entry("main: a.term = 20250701"))
+
+    (decision,) = approved_decisions(
+        [_ok("new-term", "k2")], {"items": [item]}, CAUSE_FPS, existing=[existing]
+    )
+
+    assert decision["id"] == "new-term" and decision["cause"]["groups"] == ["k2"]
+
+
+@pytest.mark.parametrize(
+    "existing_kw, entry_kw, match",
+    [
+        ({"call": "fix_cube", "task": "#1"}, {}, "fix_cube"),
+        ({"fingerprints_cube": "old"}, {}, "re-confirm"),
+        ({"id": "taken", "step_label": "other"}, {"id": "taken"}, "already has"),
+    ],
+)
+def test_cause_merges_refuse(existing_kw, entry_kw, match):
+    label = existing_kw.get("step_label", NO_SECTION)
+    existing = Decision(
+        existing_kw.get("id", "no-section"), "enrollment",
+        existing_kw.get("call", "domain_owner"), "r", task=existing_kw.get("task", ""),
+        cause={"side": "cube", "step": label, "groups": ["k1"]},
+        fingerprints={"cube": existing_kw.get("fingerprints_cube", "c1"),
+                      "dashboard": "d1", "step": step_fingerprint(label)},
+    )  # fmt: skip
+    item = _cause_item("k2", _cause_entry(NO_SECTION))
+    entry = {**_ok("new", "k2"), **entry_kw}
+
+    with pytest.raises(AnswerError, match=match):
+        approved_decisions([entry], {"items": [item]}, CAUSE_FPS, existing=[existing])
+
+
+def test_cause_items_merging_with_another_call_refuse():
+    items = [_cause_item(k, _cause_entry(NO_SECTION)) for k in ("k1", "k2")]
+    approved = [_ok("a", "k1"), _ok("b", "k2", call="deliberate")]
+
+    with pytest.raises(AnswerError, match="domain_owner"):
+        approved_decisions(approved, {"items": items}, CAUSE_FPS)
+
+
+def test_an_item_approved_twice_refuses():
+    items = [_cause_item("k1", _cause_entry(NO_SECTION))]
+
+    with pytest.raises(AnswerError, match="twice"):
+        approved_decisions(
+            [_ok("a", "k1"), _ok("b", "k1")], {"items": items}, CAUSE_FPS
+        )
+
+
+def _ddi():
+    """3 schools x 2 proven causes: each school has a group of each cause."""
+    schools = ("Newark", "Camden", "Paterson")
+    groups = [
+        Group("enrollment", (("region", s), ("grade_level", grade)),
+              "dashboard_only", 30, 12)
+        for s in schools for grade in ("7", "8")
+    ]  # fmt: skip
+    keys = group_keys(groups)
+    items = [
+        _cause_item(key, _cause_entry(NO_SECTION if g.value_of("grade_level") == "7"
+                                      else WEEK_JOIN, n_rows=30))
+        for g, key in zip(groups, keys, strict=True)
+    ]  # fmt: skip
+    triage = {"view": "enrollment", "items": items,
+              "docs": {"student_count": ["Counts a score only when its section is set."],
+                       "grade_level": ["The grade on the anchor date."]}}  # fmt: skip
+    return groups, keys, triage
+
+
+def test_review_asks_one_question_per_cause_not_per_school():
+    groups, keys, triage = _ddi()
+    approved = [
+        _ok(f"school-{i}", key, reason=f"Which rule holds at school {i}?")
+        for i, key in enumerate(keys)
+    ]
+    written = approved_decisions(approved, triage, CAUSE_FPS)
+    decisions = [Decision(**d) for d in written]
+    run = _run([])
+    run.applied = apply(decisions, groups, CAUSE_FPS)
+
+    questions = questions_json([run], [_cfg()], DEFS, {"enrollment": triage}, START)
+    body = render_review_issue("Registrar", [run], DEFS, questions)
+
+    assert len(decisions) == 2 and run.applied.open == []
+    assert [q["decisions"] for q in questions] == [["school-0"], ["school-1"]]
+    no_section, week = questions
+    assert no_section["evidence"] == [
+        f"step (cube side): {NO_SECTION}",
+        "<10 row groups, 90 rows attributed to it",
+        # The step names a section; the measure's doc does too. The grade's
+        # doc shares no token with it.
+        "student_count: Counts a score only when its section is set",
+    ]
+    assert week["evidence"][0] == (
+        "step (cube side): weeks: d.week_start <= a.score_date AND a.term = <n>"
+    )
+    assert "20250701" not in body
+    bullets = [x for x in body.split("## Proposed")[0].splitlines() if "Reason:" in x]
+    assert len(bullets) == 2
+    assert f"`{NO_SECTION}`" in bullets[0] and "<10 row groups, 90 rows" in bullets[0]

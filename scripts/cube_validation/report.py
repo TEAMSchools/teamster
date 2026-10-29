@@ -178,6 +178,11 @@ def _bullets(items: list[str], empty: str = "None.") -> list[str]:
 
 
 def _decision_line(d: Decision) -> str:
+    if d.cause:
+        return (
+            f"`{d.id}` ({d.comparison} {d.cause.get('side')} step "
+            f"`{_clean(str(d.cause.get('step')))}`, {d.call}): {d.reason}"
+        )
     if d.cells:
         return f"`{d.id}` ({d.comparison} cells, {d.call}): {d.reason}"
     if d.missing_cut or d.missing_filter:
@@ -288,6 +293,8 @@ def render_local(run: RunResult) -> str:
     out += ["", "## Decisions", "", "Applied:"]
     out += _bullets(
         [_decision_line(d) for d, _ in run.applied.quiet]
+        # A cause decision quiets many groups; it is listed once.
+        + list(dict.fromkeys(_decision_line(d) for d, _ in run.applied.quiet_causes))
         + [_decision_line(d) for d, _ in run.applied.quiet_gaps]
         + [_decision_line(d) for d, _ in run.applied.quiet_cells]
     )
@@ -309,6 +316,7 @@ def render_local(run: RunResult) -> str:
         d
         for d, _ in [
             *run.applied.quiet,
+            *run.applied.quiet_causes,
             *run.applied.quiet_gaps,
             *run.applied.quiet_cells,
         ]
@@ -521,6 +529,34 @@ def _group_part(
     ), hidden
 
 
+def _by_cause(pairs) -> list[tuple[Decision, list[Group]]]:
+    """Domain-owner cause decisions, each with its groups, in first-seen order."""
+    out: dict[str, tuple[Decision, list[Group]]] = {}
+    for decision, group in pairs:
+        if decision.call == "domain_owner":
+            out.setdefault(decision.id, (decision, []))[1].append(group)
+    return list(out.values())
+
+
+def _cause_part(view: str, d: Decision, groups: list[Group]) -> tuple[str, list]:
+    """A cause question's part, and the values its reason must lose.
+
+    It names the step, never a group's values, and masks the counts of its
+    groups and of their rows.
+    """
+    rows = sum(g.n_rows for g in groups)
+    plural = "group" if len(groups) == 1 else "groups"
+    hidden = [
+        v for g in groups for c, v in g.dims if _shown_value(g, c, v) == "<redacted>"
+    ]
+    return (
+        f"step `{_clean(str(d.cause.get('step')))}` on the "
+        f"{d.cause.get('side')} side of `{d.comparison}` in `{view}` "
+        f"({', '.join(sorted({g.bucket for g in groups}))}): "
+        f"{mask(len(groups))} row {plural}, {mask(rows)} rows"
+    ), hidden
+
+
 def _gap_part(view: str, gaps: list[Gap]) -> str:
     if len(gaps) == 1:
         kind = "a sheet cut" if gaps[0].kind == "cut" else "a sheet filter"
@@ -541,21 +577,23 @@ def _questions(runs: list[RunResult]) -> list[dict]:
     """Group the runs' domain-owner decisions into the review's questions.
 
     One question per reason and task, across decision kinds and files: each
-    kind and view adds a part to its bullet, and the reason prints once.
+    kind and view adds a part to its bullet, and the reason prints once. A
+    cause decision is its own question, whatever its reason: one per cause
+    and task, never one per school.
 
     Returns:
         In the order the issue asks them, dicts of `reason`, `task`, `parts`
         (the masked count text per kind and view), `kinds`, `hidden` (values
         the reason and any evidence must lose), `decisions` as (view,
         Decision) pairs and `comparisons` as (view, comparison id, kind)
-        triples, each listed once.
+        triples, each listed once; a cause question also has `n_groups`.
     """
-    questions: dict[tuple[str, str], dict] = {}
+    questions: dict[tuple, dict] = {}
 
-    def add(view, kind, decisions, part, hidden, comparisons) -> None:
+    def add(view, kind, decisions, part, hidden, comparisons, key=None) -> None:
         d = decisions[0]
         q = questions.setdefault(
-            (d.reason, d.task),
+            key or (d.reason, d.task),
             {
                 "reason": d.reason,
                 "task": d.task,
@@ -584,6 +622,20 @@ def _questions(runs: list[RunResult]) -> list[dict]:
                 part,
                 hidden,
                 [g.comparison_id for g in groups],
+            )
+        for decision, groups in _by_cause(run.applied.quiet_causes):
+            part, hidden = _cause_part(run.view, decision, groups)
+            add(
+                run.view,
+                "cause",
+                [decision],
+                part,
+                hidden,
+                [decision.comparison],
+                key=("cause", run.view, decision.id, decision.task),
+            )
+            questions[("cause", run.view, decision.id, decision.task)]["n_groups"] = (
+                len(groups)
             )
         for decisions, diffs in _by_reason(run.applied.quiet_cells):
             add(
@@ -616,13 +668,14 @@ def question_reason(q: dict) -> str:
 def defined_comparisons(questions: list[dict], view: str) -> set[str]:
     """The view's comparisons whose definitions the issue shows.
 
-    Those are the comparisons with a domain-owner row group or cell difference.
+    Those are the comparisons with a domain-owner row group, cause or cell
+    difference.
     """
     return {
         cid
         for q in questions
         for v, cid, kind in q["comparisons"]
-        if v == view and kind in ("group", "cells")
+        if v == view and kind in ("group", "cause", "cells")
     }
 
 
@@ -800,6 +853,7 @@ def render_review_issue(
         "",
         f"Decisions with call `domain_owner`: {', '.join(f'`{i}`' for i in ids) or 'none'}.",
         f"Questions: {len(question_lines)}. Row-group parts: {kinds.count('group')}. "
+        f"Cause parts: {kinds.count('cause')}. "
         f"Cell differences: {kinds.count('cells')}. "
         f"Missing cuts and filters: {kinds.count('gap')}. "
         f"Anchor findings: {len(anchor_lines)}.",

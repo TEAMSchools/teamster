@@ -1398,6 +1398,9 @@ def _run_from_json(data: dict) -> RunResult:
             quiet_gaps=[
                 (Decision(**d), _gap(g)) for d, g in applied.get("quiet_gaps", [])
             ],
+            quiet_causes=[
+                (Decision(**d), _group(g)) for d, g in applied.get("quiet_causes", [])
+            ],
         ),
         findings=[Finding(**f) for f in data["findings"]],
         live_sources=data["live_sources"],
@@ -1472,7 +1475,7 @@ def _apply_saved(cfg: ViewConfig, saved: RunResult) -> Applied:
     try:
         return decisions.apply(
             cfg.decisions,
-            was.open + [g for _, g in was.quiet],
+            was.groups(),
             saved.fingerprints,
             gaps=was.open_gaps + [g for _, g in was.quiet_gaps],
             cell_diffs=was.open_cells + [d for _, d in was.quiet_cells],

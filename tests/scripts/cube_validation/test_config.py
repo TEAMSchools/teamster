@@ -913,3 +913,88 @@ def test_write_decision_refuses_a_decisions_key_it_cannot_extend(tmp_path, line)
         )
 
     assert path.read_text() == text
+
+
+# --- cause decisions (T17) ---------------------------------------------------
+
+CAUSE_DECISION = """\
+  - id: no-section
+    comparison: ada-y1-region
+    cause:
+      side: cube
+      step: "main: s.section_id IS NOT NULL"
+      groups: ["ada-y1-region:region=Newark", "ada-y1-region:region=<redacted>#2"]
+    call: domain_owner
+    reason: the owner says whether a score with no section counts
+    fingerprints: { cube: abc, dashboard: def, step: "0f0f" }
+"""
+
+
+def test_cause_decision_loads(tmp_path):
+    d = load_view_config(_write(tmp_path, EXAMPLE + CAUSE_DECISION)).decisions[1]
+
+    assert (d.comparison, d.group, d.cells) == ("ada-y1-region", {}, False)
+    assert d.cause == {
+        "side": "cube",
+        "step": "main: s.section_id IS NOT NULL",
+        "groups": ["ada-y1-region:region=Newark", "ada-y1-region:region=<redacted>#2"],
+    }
+    assert d.fingerprints["step"] == "0f0f"
+
+
+@pytest.mark.parametrize(
+    "old, new, match",
+    [
+        ("side: cube", "side: both", r"cause\.side.*dashboard, cube"),
+        ('step: "main: s.section_id IS NOT NULL"', "step: ''", r"cause\.step"),
+        (
+            'step: "main: s.section_id IS NOT NULL"',
+            'step: "main: s.term_id = 20250701"',
+            r"cause\.step.*5 or more digits.*<n>",
+        ),
+        (
+            'groups: ["ada-y1-region:region=Newark", "ada-y1-region:region=<redacted>#2"]',
+            "groups: []",
+            r"cause\.groups",
+        ),
+        (
+            'groups: ["ada-y1-region:region=Newark", "ada-y1-region:region=<redacted>#2"]',
+            "groups: [x, x]",
+            r"cause\.groups.*twice",
+        ),
+        ("comparison: ada-y1-region\n    cause", "cause", r"comparison"),
+    ],
+)
+def test_cause_decision_shape_is_checked(tmp_path, old, new, match):
+    text = EXAMPLE + CAUSE_DECISION.replace(old, new)
+
+    with pytest.raises(ConfigError, match=match):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_cause_decision_takes_no_group(tmp_path):
+    text = EXAMPLE + CAUSE_DECISION + "    group: { column: region, values: [x] }\n"
+
+    with pytest.raises(ConfigError, match="only one of group.*cause"):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_write_decision_round_trips_a_cause_decision(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    decision = {
+        "id": "no-section",
+        "comparison": "ada-y1-region",
+        "cause": {
+            "side": "cube",
+            "step": "main: x = <n>",
+            "groups": ["ada-y1-region:region=Newark", "a:b=<redacted>,c=<redacted>#3"],
+        },
+        "call": "domain_owner",
+        "reason": "r",
+        "fingerprints": {"cube": "abc", "dashboard": "def", "step": "0f"},
+    }
+
+    write_decision(path, decision)
+
+    d = load_view_config(path).decisions[1]
+    assert d.cause == decision["cause"] and d.fingerprints == decision["fingerprints"]

@@ -22,7 +22,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import pipeline, trace
+from . import decisions, pipeline, trace
 from .bq import CostCapError, Warehouse
 from .compare import CellDiff, Gap, Group
 from .config import Proof, ViewConfig
@@ -141,30 +141,14 @@ def _gap_item(g: Gap) -> Item:
     )
 
 
-def _group_ids(groups: list[Group]) -> list[str]:
-    """Name each group by its masked values, numbering ids that collide.
-
-    Groups sharing a masked id take `#2`, `#3` in the order of their raw
-    dims, so the suffix is stable across runs.
-    """
-    base = []
-    for g in groups:
-        shown = ",".join(f"{c}={_shown_value(g, c, v)}" for c, v in g.dims)
-        base.append(f"{g.comparison_id}:{shown or 'all'}")
-    ids = list(base)
-    for name in dict.fromkeys(base):
-        same = [i for i, b in enumerate(base) if b == name]
-        if len(same) > 1:
-            same.sort(key=lambda i: (groups[i].dims, groups[i].bucket))
-            for n, i in enumerate(same[1:], start=2):
-                ids[i] = f"{name}#{n}"
-    return ids
-
-
 def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
     """Pair each open item with the object it came from."""
     open_groups = run.applied.open
-    ids = _group_ids(open_groups)
+    # Numbered over every group of the run, so an item's id is the key a
+    # cause decision lists whichever of its siblings are quiet.
+    every = run.applied.groups()
+    key_of = dict(zip(every, decisions.group_keys(every), strict=True))
+    ids = [key_of[g] for g in open_groups]
     out: list[tuple[Item, Group | Gap | CellDiff]] = [
         (_group_item(g, i, open_groups), g)
         for g, i in zip(open_groups, ids, strict=True)
@@ -359,6 +343,26 @@ def _doc_evidence(members: list[str], docs: dict[str, MemberDoc]) -> tuple[str, 
     return tuple(out)
 
 
+def _involved_docs(cfg: ViewConfig, docs: dict[str, MemberDoc]) -> dict[str, list]:
+    """Each comparison's measure and dims, with their description and ai_context.
+
+    `review` reads them offline for a cause question's evidence.
+    """
+    members = [
+        m for c in cfg.comparisons for m in (c.measure, *(p.cube for p in c.dims))
+    ]
+    return {
+        name: texts
+        for name in dict.fromkeys(members)
+        if name in docs
+        and (
+            texts := [
+                t for t in (docs[name].description, docs[name].ai_context) if t.strip()
+            ]
+        )
+    }
+
+
 NOT_TRACED = "not traced (`triage --no-trace`)"
 NO_ROWS = "no rows to trace: values differ on rows both sides have"
 NO_GRAIN = "not traced: the comparison has no `rows` grain"
@@ -493,7 +497,8 @@ def suggest(
         if posted is None:
             posted = evidence
 
-        if isinstance(source, Group) and source.dims:
+        # A cause item's decision lists its own key, not a column value.
+        if isinstance(source, Group) and source.dims and call != "cause":
             stub_group = item.stub["group"]
             column, value = stub_group["column"], stub_group["values"][0]
             # No column of this group is its own: the decision covers siblings.
@@ -791,6 +796,7 @@ def run_triage(
                 "moment": _moment(run),
                 "decisions_fingerprint": run.decisions_fingerprint,
                 "open": open_keys(run),
+                "docs": _involved_docs(cfg, docs),
                 "items": items,
             },
             indent=1,
