@@ -187,14 +187,23 @@ def open_items(run: RunResult) -> list[Item]:
 def _open_key(source: Group | Gap | CellDiff) -> str:
     """Name an open item by what it is, not by which other items are open.
 
-    An item's id and stub change as its siblings close; this does not.
+    An item's id and stub change as its siblings close; this does not. The
+    counts are part of it, so a re-run whose rows changed at the same moment
+    re-opens a group or cell set the triage already sorted.
     """
     if isinstance(source, Group):
-        raw = ["group", source.comparison_id, source.bucket, source.dims]
+        raw = [
+            "group",
+            source.comparison_id,
+            source.bucket,
+            source.dims,
+            source.n_rows,
+            source.n_students,
+        ]
     elif isinstance(source, Gap):
         raw = ["gap", source.kind, source.field]
     else:
-        raw = ["cells", source.comparison_id]
+        raw = ["cells", source.comparison_id, sorted(source.counts.items())]
     return hashlib.sha256(json.dumps(raw).encode()).hexdigest()[:16]
 
 

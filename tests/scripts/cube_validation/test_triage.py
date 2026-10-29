@@ -520,3 +520,19 @@ def test_pii_members_reads_contains_pii_from_meta():
         ]
     }
     assert pii_members(meta, "enrollment") == {"ssn"}
+
+
+def test_open_key_changes_when_a_group_or_cell_set_changes_its_counts():
+    from cube_validation.triage import _open_key
+
+    dims = (("grade_level", "9"),)
+    base = Group("enrollment", dims, "cube_only", 40, 38)
+    assert _open_key(base) == _open_key(Group("enrollment", dims, "cube_only", 40, 38))
+    assert _open_key(base) != _open_key(Group("enrollment", dims, "cube_only", 41, 38))
+    assert _open_key(base) != _open_key(Group("enrollment", dims, "cube_only", 40, 39))
+
+    cells = CellDiff("enrollment", {"differs": 3})
+    assert _open_key(cells) != _open_key(CellDiff("enrollment", {"differs": 4}))
+    assert _open_key(cells) == _open_key(
+        CellDiff("enrollment", {"differs": 3}, ("why",))
+    )
