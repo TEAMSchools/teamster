@@ -520,8 +520,7 @@ def test_a_proof_file_opts_out_of_trunk_and_keeps_its_bucket_map():
     text = confirm.compose(CAUSES, PROOF)
 
     assert text.startswith(
-        "-- trunk-ignore-all(sqlfluff)\n-- trunk-ignore-all(sql-banned-syntax)\n"
-        "-- fmt: off\n"
+        "-- trunk-ignore-all(sqlfluff)\n-- fmt: off\n"
         f"-- cause C1 = dashboard: {CAUSES['C1'][1]}\n"
     )
     assert confirm.split_block(text) == (CAUSES, PROOF.strip())
@@ -807,3 +806,12 @@ def test_a_proof_classifies_value_differing_rows(duck, tmp_path, offline, monkey
     (item,) = items
     assert item["suggestion"] == "cause", item["evidence"]
     assert item["cause"][0]["n_rows"] == 3
+
+
+def test_compose_opts_out_of_banned_syntax_only_when_the_proof_uses_it():
+    causes = {"C1": ("dashboard", "WPP modules")}
+    plain = confirm.compose(causes, "select __row, 'C1' as cause from {unmatched}")
+    picked = confirm.compose(causes, "select * from {unmatched} qualify true")
+    assert "sql-banned-syntax" not in plain
+    assert "sql-banned-syntax" in picked
+    assert confirm.split_block(picked)[0] == causes

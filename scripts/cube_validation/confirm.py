@@ -55,8 +55,9 @@ UNEXPLAINED = "UNEXPLAINED"
 COLUMNS = ("__row", "cause")
 SIDES = ("cube", "dashboard")
 # Trunk lints and formats every committed `.sql` file; a proof is not dbt SQL,
-# and a reformat would only churn it. A proof with no QUALIFY or GROUP BY ALL
-# gets a non-blocking `ignore-does-nothing` note for the second line.
+# and a reformat would only churn it. The sql-banned-syntax opt-out is written
+# only when the proof uses what it bans: an unused one trips
+# `trunk/ignore-does-nothing`.
 HEADER = (
     "-- trunk-ignore-all(sqlfluff)",
     "-- trunk-ignore-all(sql-banned-syntax)",
@@ -129,7 +130,9 @@ def file_fingerprint(path: Path) -> str | None:
 def compose(causes: dict[str, tuple[str, str]], body: str) -> str:
     """The proof file: the lint opt-outs, its bucket map, then the SQL."""
     block = [f"-- cause {b} = {side}: {words}" for b, (side, words) in causes.items()]
-    return "\n".join([*HEADER, *block]) + "\n\n" + body.strip() + "\n"
+    banned = re.search(r"\bqualify\b|\bgroup\s+by\s+all\b", body, re.IGNORECASE)
+    header = [h for h in HEADER if banned or "sql-banned-syntax" not in h]
+    return "\n".join([*header, *block]) + "\n\n" + body.strip() + "\n"
 
 
 def split_block(text: str) -> tuple[dict[str, tuple[str, str]], str]:
