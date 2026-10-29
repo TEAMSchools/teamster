@@ -27,8 +27,10 @@ sandbox to production must be a change of 2 URLs and nothing else.
 - Each signed-in builder sees the sandbox as a fabricated persona, never as
   themselves. The default persona is network-wide, so every screen shows data on
   day one.
-- The data team can move a builder to a narrower persona without a deploy, so a
-  builder can see a permission boundary.
+- A builder switches persona themselves, by changing `CUBE_EXCHANGE_URL` in
+  their app's settings. Building for more than one permission level is part of
+  the normal routine, not a request to the data team: every app a builder ships
+  will be used by people who see different slices of data.
 - One log line per token issued, naming the builder, the persona and the app, so
   the sandbox has the per-app audit trail the production path will need.
 
@@ -42,8 +44,8 @@ sandbox to production must be a change of 2 URLs and nothing else.
 - Turning Cube's denial (HTTP 500, `You requested hidden member`) into a 403.
   Apps reach Cube directly, so the exchange cannot, and the skill already
   explains the 500.
-- Self-serve persona switching. Version 1 has the data team switch a builder on
-  request.
+- An in-app "view as" switcher. That is a Builder Brain feature. The exchange's
+  per-persona URLs support one later without a change here.
 - Background or unattended tokens. There is no service identity.
 
 ## Anti-goals
@@ -52,9 +54,11 @@ The design fails, even if it works, if any of these happens:
 
 - The exchange can ever issue a token signed with the production
   `CUBEJS_API_SECRET`.
-- Anything in the request (a header, query parameter or body field) can choose
-  the persona. That would put a scope in app code, which the skill forbids, and
-  app code would then differ between sandbox and production.
+- A header, query parameter or body field can choose the persona. That would put
+  a scope in app code, which the skill forbids, and app code would then differ
+  between sandbox and production. The persona lives only in the URL path, which
+  the app reads from `CUBE_EXCHANGE_URL` configuration, so the code that runs
+  against the sandbox is the code that runs against production.
 - A minted Cube token, or the AuthKit token, appears in a log.
 - A builder's own email reaches Cube. The sandbox has no row for real staff, so
   that request would fail as an unknown user, which is the confusion the default
@@ -70,6 +74,21 @@ Authorization: Bearer <AuthKit access token>
 ```
 
 No body. `CUBE_EXCHANGE_URL` is the full URL the app posts to, path included.
+The path picks the persona:
+
+| `CUBE_EXCHANGE_URL` path | Persona                                                   |
+| ------------------------ | --------------------------------------------------------- |
+| `/token`                 | The default, `sheryl.swoopes` (network-wide)              |
+| `/as/<persona>/token`    | `<persona>`, the part of a persona's email before the `@` |
+
+So `https://<exchange host>/as/aja.ogwumike/token` signs the builder in as A'ja
+Ogwumike, who resolves but can see nothing. The skill appends nothing to
+`CUBE_EXCHANGE_URL`, so the persona path works with the skill as written.
+
+`GET /personas` lists every persona with its `CUBE_EXCHANGE_URL` and a
+one-sentence, plain-language description of what it can see, so a builder picks
+one without reading `personas.yml`. It needs no sign-in: every persona is
+fabricated.
 
 Success, HTTP 200:
 
@@ -89,8 +108,9 @@ Failures, each a JSON body `{"error": "<plain sentence>"}`:
 | ------ | ------------------------------------------------------------------------------------------------------------- |
 | 401    | No `Authorization` header, or the AuthKit token fails verification or has expired                             |
 | 403    | A valid token from an app not on the allowlist, or whose `email` is not on a KTAF domain; the body says which |
-| 405    | Any method other than `POST`                                                                                  |
-| 500    | The exchange is misconfigured (no secret, no persona map); the body says which                                |
+| 404    | `/as/<persona>/token` names no persona; the body points to `GET /personas`                                    |
+| 405    | Any method other than `POST` on a token path                                                                  |
+| 500    | The exchange is misconfigured (no secret, unreadable `personas.yml`); the body says which                     |
 
 ## The minted token (decided)
 
@@ -146,28 +166,24 @@ call.)
 ## Personas (decided)
 
 - The default persona is `sheryl.swoopes@ktaf-sandbox.invalid`: network-wide
-  students and full staff remit. Every builder gets it unless assigned another.
-- An assignment maps a builder's KTAF email to one persona from
-  `src/cube/sandbox/personas.yml`. The exchange refuses to start, or answers
-  500, if an assignment names a persona not in that file, so a typo cannot
-  silently fall back to the default.
-- `unresolvable@ktaf-sandbox.invalid` is a valid assignment target. It lets a
-  builder see the "unknown user" denial on purpose. It is deliberately absent
-  from `personas.yml`, so the allowed targets are that file plus this one
-  address.
-- A bad assignments file (unreadable, or naming an unknown persona) is rejected
-  whole. The exchange keeps serving the last good copy and logs an error on
-  every refresh until it is fixed, so one typo never stops every builder. At a
-  cold start with no good copy, every builder gets the default persona and the
-  error is logged. (My call.)
+  students and full staff remit. `/token` uses it, so a new app shows data on
+  day one with no choice to make.
+- Each builder picks a persona per app, through the URL path (see _The
+  contract_). Nothing is stored per builder, so the exchange holds no state and
+  the data team has no assignment step.
+- The valid personas are the ones in `src/cube/sandbox/personas.yml`, plus
+  `unresolvable`. That one resolves to `unresolvable@ktaf-sandbox.invalid`,
+  which has no row on purpose, so a builder can see the "unknown user" denial
+  their app must handle. It is deliberately absent from `personas.yml`, and
+  `GET /personas` lists it with that explanation.
+- An unknown persona in the path is a 404, never a fallback to the default, so a
+  typo is visible on the first request.
+- `personas.yml` gets a `builder_summary` field per persona: one plain sentence
+  for `GET /personas` ("Sees every school's students and all staff records").
+  The existing `purpose` field stays, written for the data team.
 - The image needs `personas.yml`, so the Docker build context is `src/cube/` and
-  the deploy workflow's `paths:` include `src/cube/sandbox/personas.yml`. (My
-  call.)
-- Assignments live outside the repo, because builder emails are staff contact
-  data and must not be committed. Version 1 stores them as one JSON object in a
-  Google Cloud Storage bucket in `teamster-cube-sandbox`, read with a 60-second
-  cache, so the data team edits a file and the change lands within a minute with
-  no deploy. My call; see _Open_.
+  the deploy workflow's `paths:` include `src/cube/sandbox/personas.yml`. A new
+  persona reaches builders on the next deploy. (My call.)
 
 ## Hosting (decided)
 
@@ -179,9 +195,8 @@ call.)
   let anyone with secret access there read both.
 - This needs billing enabled on `teamster-cube-sandbox`, which has none today.
   With `--min-instances=0` the exchange costs close to nothing when idle.
-- Its own runtime service account, with access to exactly 2 things: the
-  `cube-sandbox-api-secret` secret and read on the assignments object, both in
-  `teamster-cube-sandbox`.
+- Its own runtime service account, with access to exactly 1 thing: the
+  `cube-sandbox-api-secret` secret in `teamster-cube-sandbox`.
 - The deploy workflow's identity (the GitHub Workload Identity Federation
   principal for this repo) gets `run.admin`, `artifactregistry.writer` and
   `iam.serviceAccountUser` on `teamster-cube-sandbox`. That grant is to the
@@ -211,12 +226,10 @@ runbook for him rather than provisioning anything itself. In order:
    Cloud. This is the one step where a person guarantees the production secret
    never reaches the exchange, so the runbook says it in bold. Grant the runtime
    account `secretAccessor` on that secret only.
-5. Create the assignments bucket and an empty assignments object, and grant the
-   runtime account read on that object only.
-6. Grant the repo's GitHub deploy identity the 3 deploy roles listed under
+5. Grant the repo's GitHub deploy identity the 3 deploy roles listed under
    _Hosting_.
 
-The first deploy cannot run until all 6 are done.
+The first deploy cannot run until all 5 are done.
 
 ## Logging (decided)
 
@@ -243,30 +256,28 @@ same fields. Rejections log the status and reason only.
   server) and the module layout under `src/cube/sandbox_exchange/`.
 - Whether to share the verifier with `server.py` through a small common module
   or to copy its ~30 lines; either is fine if both are tested.
-- A production mode switch (own identity, no persona map, production secret) may
-  be stubbed behind configuration, but must refuse to start without an explicit
-  setting, and is not deployed.
+- A production mode switch (own identity, no persona paths, production secret)
+  may be stubbed behind configuration, but must refuse to start without an
+  explicit setting, and is not deployed.
 - Rate limiting per builder, if Cloud Run's instance cap is not enough.
 
 ## Verification
 
-1. Unit tests: a valid token maps to the default persona; an assigned builder
-   maps to their persona; a non-KTAF domain gets 403; a missing, malformed,
-   wrong-issuer or expired token gets 401; an unknown persona in the map fails
-   loudly; the minted token decodes with `iat`, `exp` 300 seconds later, and
-   top-level `email`.
+1. Unit tests: `/token` maps to the default persona; `/as/<persona>/token` maps
+   to that persona, `unresolvable` included; an unknown persona gets 404; a
+   persona header or body field is ignored; a non-KTAF domain gets 403; a
+   missing, malformed, wrong-issuer or expired token gets 401; `GET /personas`
+   lists every persona in `personas.yml` plus `unresolvable`; the minted token
+   decodes with `iat`, `exp` 300 seconds later, and top-level `email`.
 2. A contract test that posts exactly what the skill's §5 snippet sends and
    reads exactly what it reads.
 3. After deploy: sign in to a test app (or use an AuthKit token for a KTAF test
    account), exchange it, and `POST /load` against the sandbox. Expect Swoopes's
-   rows. Assign the account to `aja.ogwumike@ktaf-sandbox.invalid` and expect
-   the `staff_directory` rows only within 60 seconds.
+   rows. Repeat through `/as/ororo.munroe/token` and expect one school's rows,
+   then through `/as/aja.ogwumike/token` and expect Cube's denial.
 
 ## Open
 
-- **Assignment storage.** A JSON object in Cloud Storage is my call for
-  version 1. Self-serve switching (a builder choosing their own persona) needs a
-  signed-in page and is deferred.
 - **Registering apps in AuthKit.** Each Builder Brain app needs its own AuthKit
   application and redirect URIs. That procedure is operational, not code, and
   needs a named owner and turnaround on the data team.
