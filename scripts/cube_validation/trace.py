@@ -875,13 +875,26 @@ class _Bucket:
 
 
 def _one_moment(
-    at, end_tables: set[str], moved: dict[str, bool], build: Build, wh: Warehouse
+    at,
+    end_tables: set[str],
+    moved: dict[str, bool],
+    build: Build,
+    wh: Warehouse,
+    doing: str = "trace through",
 ) -> str:
-    """Read a descended table's SQL at the moment the rest of the query reads.
+    """Read SQL expanded at the build start at the moment the rest of the query reads.
 
     It is expanded as of the build start, when the build read its inputs; a
     table the Cube side reads at the build end is moved there, after checking
     it did not change in between (BigQuery reads a table at 1 moment).
+
+    Args:
+        at: `as_of` output at the build start.
+        end_tables: The tables the rest of the query reads at the build end.
+        moved: Each table already checked, and whether it changed; updated.
+        build: The run's moment.
+        wh: The warehouse, for the change check.
+        doing: What the refusal says could not be done, before the tables.
 
     Raises:
         pipeline.Refusal: Such a table changed during the build.
@@ -892,7 +905,7 @@ def _one_moment(
     moved |= {t: t in changed for t in unknown}
     if bad := [t for t in clash if moved[t]]:
         raise pipeline.Refusal(
-            f"cannot trace through {', '.join(bad)}: it changed during the build, "
+            f"cannot {doing} {', '.join(bad)}: it changed during the build, "
             "and BigQuery reads a table at 1 moment per query"
         )
     return repin(at.sql, clash, build.start, build.end)

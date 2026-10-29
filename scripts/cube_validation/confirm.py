@@ -40,7 +40,7 @@ from sqlglot.tokens import TokenType
 from . import compare, decisions, pipeline, trace, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .compare import Group
-from .config import Comparison, ViewConfig, id_like
+from .config import Comparison, ViewConfig, id_like, mask_digits
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build
 from .report import RunResult, shown_counts
@@ -51,6 +51,8 @@ from .trace import TIMEOUT_S, TRACED, _failure
 PROVABLE = (*TRACED, "value_differs")
 
 PLACEHOLDER = "{unmatched}"
+# Enough of a BigQuery message to name the table and the reason.
+MAX_MESSAGE = 600
 UNEXPLAINED = "UNEXPLAINED"
 COLUMNS = ("__row", "cause")
 SIDES = ("cube", "dashboard")
@@ -625,6 +627,18 @@ def outcomes(
     return out
 
 
+def bigquery_said(exc: GoogleAPIError) -> str:
+    """A BigQuery error with its message, for the terminal and local files only.
+
+    The message names tables, columns and timestamps; ID-shaped numbers in it
+    are masked in case it quotes a value. Posted text keeps a fixed line.
+    """
+    message = " ".join(str(getattr(exc, "message", None) or exc).split())
+    if len(message) > MAX_MESSAGE:
+        message = message[:MAX_MESSAGE] + "..."
+    return f"{_failure(exc)}: {mask_digits(message)}"
+
+
 def run_proof(
     wh: Warehouse,
     cfg: ViewConfig,
@@ -633,20 +647,36 @@ def run_proof(
     proof: Proof,
     items: list[tuple[str, Group]],
     build: Build,
+    moved: dict[str, bool] | None = None,
 ) -> dict[str, Outcome]:
     """Check, pin, price and run a proof on the run's rows. Call inside `wh.budget`.
 
     The proof's own tables are read as of the build start, as the dashboard
-    side is (`timetravel.as_of`); `{unmatched}` is already pinned.
+    side is (`timetravel.as_of`); a table `{unmatched}` reads at the build end
+    (one only the Cube side reads) is read there too, as the trace does,
+    since BigQuery reads a table at 1 moment per query.
+
+    Args:
+        moved: The tables already checked for a change during the build, and
+            whether they changed; shared across the proofs of one triage.
 
     Raises:
         pipeline.Refusal: The proof fails a check (see `check_sql` and
-            `outcomes`), cannot be read as of the moment, or BigQuery refuses
-            it; only its job id and reason are kept.
+            `outcomes`), cannot be read as of the moment, reads a table that
+            changed during the build at the build end, or BigQuery refuses it
+            (its message is kept for the terminal).
         CostCapError: It would pass the run's or the day's cap.
     """
     literals = check_sql(proof.body, grain_names(comparison), identifying(comparison))
-    body = pipeline._as_of(proof.body, build.start, wh).sql
+    at = pipeline._as_of(proof.body, build.start, wh)
+    body = trace._one_moment(
+        at,
+        set(sides.cube.tables - sides.dashboard.tables),
+        {} if moved is None else moved,
+        build,
+        wh,
+        doing=f"read in {proof.path.name}",
+    )
     ctes, select = unmatched_sql(cfg, comparison, sides, proof.bucket, items)
     sql = proof_query(ctes, select, body, literals)
     try:
@@ -656,7 +686,7 @@ def run_proof(
         rows = wh.rows(sql, timeout_s=TIMEOUT_S)
     except GoogleAPIError as exc:
         raise pipeline.Refusal(
-            f"{proof.path.name}: BigQuery refused it ({_failure(exc)})"
+            f"{proof.path.name}: BigQuery refused it ({bigquery_said(exc)})"
         ) from exc
     return outcomes(rows, proof, items, literals)
 
@@ -907,6 +937,7 @@ def run_stored(
     by_id = {c.id: c for c in cfg.comparisons}
     schools: set[str] | None = None
     sides: dict[str, pipeline.RowSides] = {}
+    moved: dict[str, bool] = {}
     out = []
     for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
         try:
@@ -940,6 +971,7 @@ def run_stored(
                 proof,
                 bucket_items,
                 run.moment,
+                moved,
             )
         except (
             pipeline.Refusal,
@@ -950,7 +982,7 @@ def run_stored(
         ) as exc:
             ran.why = f"proof {path.name} not run: {exc}"
         except GoogleAPIError as exc:
-            ran.why = f"proof {path.name} not run ({_failure(exc)})"
+            ran.why = f"proof {path.name} not run ({bigquery_said(exc)})"
         if ran.why:
             print(ran.why)
         out.append(ran)

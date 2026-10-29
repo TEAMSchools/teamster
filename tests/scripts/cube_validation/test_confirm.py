@@ -29,7 +29,7 @@ from cube_validation.moment import Build
 from cube_validation.report import RunResult
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.timetravel import AsOf, TableInfo
+from cube_validation.timetravel import AsOf, TableInfo, utc_literal
 from google.api_core.exceptions import BadRequest
 
 BUILD = Build(
@@ -248,6 +248,66 @@ def test_a_proof_that_cannot_run_notes_why_and_moves_nothing(duck, tmp_path, off
     assert "invalidQuery" in item["evidence"][0] and "12345" not in item["evidence"][0]
     assert item["evidence_posted"][0] == (
         "proof mastery__cube_only.sql not run; see the terminal"
+    )
+
+
+def test_a_refused_proof_keeps_bigquerys_message_locally(duck, tmp_path, offline):
+    _tables(duck)
+    said = "Conflicting 'FOR SYSTEM_TIME AS OF' expressions found for table m.t 12345"
+
+    class Failing(Wh):
+        def rows(self, sql, timeout_s=None):
+            raise BadRequest(said, errors=[{"reason": "invalidQuery"}])
+
+    (item,) = _reprove(duck, tmp_path, _run([_group(3)]), wh=Failing(duck))
+
+    assert "Conflicting 'FOR SYSTEM_TIME AS OF'" in item["evidence"][0]
+    assert "for table m.t <n>" in item["evidence"][0]
+    assert item["evidence_posted"][0] == (
+        "proof mastery__cube_only.sql not run; see the terminal"
+    )
+
+
+# A proof reading the table only the Cube side reads.
+CUBE_TABLE_PROOF = PROOF.replace(
+    "AND f.item = u.aid",
+    "AND f.item = u.aid\nLEFT JOIN `teamster-332318`.`m`.`cube_t` AS c ON c.lea = u.lea",
+)
+
+
+def test_a_proof_reads_a_table_the_cube_side_reads_at_the_build_end(
+    duck, tmp_path, offline, monkeypatch
+):
+    _tables(duck)
+    checked = []
+    monkeypatch.setattr(
+        trace, "changed_between", lambda wh, t, a, b: checked.append(list(t)) or []
+    )
+    wh = Wh(duck)
+
+    (item,) = _reprove(duck, tmp_path, _run([_group(3)]), body=CUBE_TABLE_PROOF, wh=wh)
+
+    assert item["suggestion"] == "cause"
+    assert checked == [["m.cube_t"]]
+    sql = wh.ran[-1][0]
+    at = "FOR SYSTEM_TIME AS OF TIMESTAMP"
+    assert f"`teamster-332318.m.cube_t` AS c {at} '{utc_literal(BUILD.end)}'" in sql
+    # The dashboard's table stays at the build start.
+    assert f"`teamster-332318.d.fact` AS f {at} '{utc_literal(BUILD.start)}'" in sql
+
+
+def test_a_proof_refuses_a_cube_side_table_that_changed_during_the_build(
+    duck, tmp_path, offline, monkeypatch
+):
+    _tables(duck)
+    monkeypatch.setattr(trace, "changed_between", lambda wh, t, a, b: list(t))
+
+    (item,) = _reprove(duck, tmp_path, _run([_group(3)]), body=CUBE_TABLE_PROOF)
+
+    assert item["suggestion"] == "investigate"
+    assert (
+        "cannot read in mastery__cube_only.sql m.cube_t: it changed during the build"
+        in item["evidence"][0]
     )
 
 
