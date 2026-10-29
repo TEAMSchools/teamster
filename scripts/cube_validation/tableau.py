@@ -540,8 +540,10 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
     is nested innermost on its shelf as a dimension (`none`, the instance the
     workbook already uses for that field when there is one). An added field the
     sheet does not list joins its datasource dependencies, copied from the
-    datasource. Tableau recomputes every measure at the new grain. Only that
-    worksheet's text changes; filters are left alone.
+    datasource. Tableau recomputes every measure at the new grain. A dropped
+    field's sorts and formats go with it, and so does any table calculation
+    along it (see `_strip_dropped`); its filters stay. Only that worksheet's
+    text changes.
 
     Args:
         twb_xml: The workbook XML.
@@ -592,6 +594,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
     def is_named(ref: str, wanted: str) -> bool:
         return wanted in (shown(ref), _ref_column(ref))
 
+    before = {leaf for t in trees.values() for leaf in _shelf_leaves(t)}
     for wanted in shelves.get("drop", []):
         if not any(
             is_named(leaf, wanted) for t in trees.values() for leaf in _shelf_leaves(t)
@@ -604,6 +607,12 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
             tag: _without(tree, lambda ref, w=wanted: is_named(ref, w))
             for tag, tree in trees.items()
         }
+    kept = {leaf for t in trees.values() for leaf in _shelf_leaves(t)}
+    dropped = {_ref_column(r) for r in before - kept} - {_ref_column(r) for r in kept}
+    calcs = _table_calcs_along(ws, dropped)
+    trees = {
+        tag: _without(tree, lambda ref: ref in calcs) for tag, tree in trees.items()
+    }
 
     top = root.find("datasources")
     datasources = {
@@ -674,9 +683,103 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
         return f"<{m['tag']}{attrs}>{body.replace('>', '&gt;')}</{m['tag']}>"
 
     text = _SHELF_TAG.sub(shelf, text)
+    text = _strip_dropped(text, dropped, calcs)
     out = twb_xml[: block.start()] + text + twb_xml[block.end() :]
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     ET.fromstring(out)
+    return out
+
+
+def _table_calcs_along(ws: ET.Element, dropped: set[str]) -> set[str]:
+    """The sheet's table calculations that order or address along a dropped
+    column, as `[datasource].[instance]` refs.
+    """
+    found = set()
+    for deps in ws.iter("datasource-dependencies"):
+        for instance in deps.findall("column-instance"):
+            calc = instance.find("table-calc")
+            if calc is None:
+                continue
+            fields = [v for el in calc.iter() for v in el.attrib.values() if "].[" in v]
+            if any(_field_column(v) in dropped for v in fields):
+                found.add(f"[{deps.get('datasource')}].{instance.get('name')}")
+    return found
+
+
+def _element(tag: str) -> re.Pattern:
+    """One `tag` element, empty or with a body, with the line it starts."""
+    return re.compile(
+        rf"(?:\r?\n[ \t]*)?<{tag}(?=[\s/>])[^>]*?(?:/>|>.*?</{tag}>)", re.DOTALL
+    )
+
+
+_EMPTY_ELEMENT = re.compile(r"(?:\r?\n[ \t]*)?<[\w:-]+(?=[\s/])[^>]*/>")
+_SLICE = re.compile(r"(?:\r?\n[ \t]*)?<column>([^<]*)</column>")
+_EMPTY_STYLE_RULE = re.compile(
+    r"(?:\r?\n[ \t]*)?<style-rule(?=[\s>])[^>]*>\s*</style-rule>"
+)
+# What sorts or formats one field, and goes when the field leaves the view.
+_PER_FIELD = {"natural-sort", "sort", "format"}
+
+
+def _strip_dropped(text: str, dropped: set[str], calcs: set[str]) -> str:
+    """A reshaped worksheet without what still leans on a dropped field.
+
+    A sort or format on a dropped column goes. A table calculation along one
+    goes entirely (its instance, every encoding, format, label run, filter and
+    slice naming it), since along the remaining fields it would mean something
+    else. Filters on a dropped column stay: they keep filtering, and the
+    filter cards on the sheet and its dashboards name them.
+    """
+
+    def on_dropped(attrs: dict[str, str]) -> bool:
+        ref = attrs.get("field") or attrs.get("column") or ""
+        return "].[" in ref and _field_column(ref) in dropped
+
+    def names_calc(attrs: dict[str, str]) -> bool:
+        return bool({attrs.get("field"), attrs.get("column")} & calcs)
+
+    def head(element: str) -> tuple[str, dict[str, str]]:
+        tag = element.lstrip().split(">", 1)[0]
+        return tag[1:].split(None, 1)[0].rstrip("/"), _attrs(tag)
+
+    def empty(m: re.Match) -> str:
+        tag, attrs = head(m[0])
+        if names_calc(attrs) or (tag in _PER_FIELD and on_dropped(attrs)):
+            return ""
+        return m[0]
+
+    def dependencies(m: re.Match) -> str:
+        ds = _attrs(m[0].split(">", 1)[0]).get("datasource", "")
+        return _element("column-instance").sub(
+            lambda c: (
+                ""
+                if f"[{ds}].{_attrs(c[0].lstrip().split('>', 1)[0]).get('name')}"
+                in calcs
+                else c[0]
+            ),
+            m[0],
+        )
+
+    def body(m: re.Match) -> str:
+        tag, attrs = head(m[0])
+        if names_calc(attrs) or (tag == "format" and on_dropped(attrs)):
+            return ""
+        return m[0]
+
+    def run(m: re.Match) -> str:
+        content = html.unescape(m[0])
+        return "" if any(ref in content for ref in calcs) else m[0]
+
+    out = _DEPENDENCIES.sub(dependencies, text)
+    out = _EMPTY_ELEMENT.sub(empty, out)
+    for tag in ("format", "filter"):
+        out = _element(tag).sub(body, out)
+    out = _element("run").sub(run, out)
+    out = _SLICE.sub(lambda m: "" if html.unescape(m[1]) in calcs else m[0], out)
+    # A rule this edit emptied goes: no reference shows an empty <style-rule>.
+    if not _EMPTY_STYLE_RULE.search(text):
+        out = _EMPTY_STYLE_RULE.sub("", out)
     return out
 
 

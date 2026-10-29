@@ -128,7 +128,9 @@ cause, do not retry around it.
      The proof copy drops it and adds mapped fields (each under `dims`), and
      Tableau recomputes the measure, so an average stays right where
      `split_rows` cannot. The proof then covers the reshaped grain, not the
-     sheet's own; tell the analyst, and the run result says so.
+     sheet's own; tell the analyst, and the run result says so. A dropped
+     field's sorts, formats and any table calc along it leave the copy (that
+     calc's column leaves the export); its filters stay.
    - `definitions: {dashboard: ..., cube: ...}`: what each side counts, in a
      sentence or a code list. The review issue shows both for a comparison with
      a domain-owner question. It goes to GitHub: never name a person.

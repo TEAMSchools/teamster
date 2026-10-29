@@ -705,3 +705,46 @@ def test_set_shelves_refuses_a_measure_and_an_unlisted_calculation():
         set_shelves(SHELVES_TWB, "Mastery Grid", {"add": {"rows": ["Is Mastery Int"]}})
     with pytest.raises(ValueError, match="'Mastery Band' is a calculation"):
         set_shelves(SHELVES_TWB, "Mastery Grid", {"add": {"rows": ["Mastery Band"]}})
+
+
+DKI_TWB = (Path(__file__).parent / "fixtures" / "dki_grid.twb").read_text()
+DKI_DS = "[federated.0dki (copy)]"
+
+
+def test_set_shelves_drop_takes_the_sorts_formats_and_table_calcs_along_it():
+    out = set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["Week Start Monday"]})
+
+    ET.fromstring(out)
+    before, after = _worksheets(DKI_TWB), _worksheets(out)
+    grid = after["Mastery Grid"]
+    week, calc = "none:week_start_monday:ok", "diff:avg:is_mastery_int:qk:2"
+    # The sort and the per-field formats on the dropped field go.
+    assert "<natural-sort" not in grid
+    assert f"field='{DKI_DS}.[{week}]'" not in grid
+    # The table calc ordered along the week goes everywhere it appears.
+    assert calc not in grid
+    # Filters on the week stay, with their slices; so does every other field's
+    # formats, the table calc along the rows, and the other label run.
+    assert grid.count(f"<filter class='categorical' column='{DKI_DS}.[") == 4
+    assert grid.count("<slices>") == 1 and grid.count("<column>[federated") == 4
+    assert f"field='{DKI_DS}.[none:school:nk]' value='12'" in grid
+    assert "name='[diff:avg:is_mastery_int:qk]'" in grid
+    assert f"<tooltip column='{DKI_DS}.[diff:avg:is_mastery_int:qk]' />" in grid
+    assert f"<![CDATA[<{DKI_DS}.[avg:is_mastery_int:qk]>]]>" in grid
+    # Rules the edit emptied (header, mark) go; the others stay.
+    assert "<style-rule element='mark'>" not in grid
+    assert "<style-rule element='header'>" not in grid
+    assert grid.count("<style-rule ") == 2
+    assert after["Mastery by Week"] == before["Mastery by Week"]
+    assert out.replace(grid, "") == DKI_TWB.replace(before["Mastery Grid"], "")
+
+
+def test_set_shelves_drop_keeps_a_table_calc_along_kept_fields():
+    out = set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["School"]})
+
+    grid = _worksheets(out)["Mastery Grid"]
+    assert grid.count("diff:avg:is_mastery_int:qk:2") == DKI_TWB.count(
+        "diff:avg:is_mastery_int:qk:2"
+    )
+    assert f"field='{DKI_DS}.[none:school:nk]'" not in grid
+    assert "<natural-sort" in grid
