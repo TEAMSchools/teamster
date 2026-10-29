@@ -23,8 +23,9 @@ models:
       - name: row_label
         data_type: string
         description:
-          Readable row name, for example "1 ED, full need, 80%+ URM — % of
-          band".
+          'Readable row name, for example "1 ED, full need, 80%+ URM: % of
+          band". Goal rows take their label from the early_application_criteria
+          macro.'
       - name: cooper_norcross
         data_type: string
         description: Display value for KIPP Cooper Norcross High School.
@@ -127,6 +128,7 @@ unit_tests:
       rows:
         - {
             row_sort: 1,
+            row_label: "N: flagged Is ED/EA = Yes",
             cooper_norcross: 2,
             newark_collegiate: 1,
             newark_lab: 0,
@@ -134,6 +136,7 @@ unit_tests:
           }
         - {
             row_sort: 2,
+            row_label: Seniors in band,
             cooper_norcross: 2,
             newark_collegiate: 0,
             newark_lab: 0,
@@ -141,6 +144,7 @@ unit_tests:
           }
         - {
             row_sort: 3,
+            row_label: Seniors in band,
             cooper_norcross: 0,
             newark_collegiate: 0,
             newark_lab: 0,
@@ -148,6 +152,7 @@ unit_tests:
           }
         - {
             row_sort: 4,
+            row_label: Seniors in band,
             cooper_norcross: 0,
             newark_collegiate: 1,
             newark_lab: 0,
@@ -155,6 +160,7 @@ unit_tests:
           }
         - {
             row_sort: 5,
+            row_label: Seniors in band,
             cooper_norcross: 0,
             newark_collegiate: 0,
             newark_lab: 0,
@@ -162,6 +168,7 @@ unit_tests:
           }
         - {
             row_sort: 6,
+            row_label: "1 ED, full need, 80%+ URM: % of N",
             cooper_norcross: 50% (1/2),
             newark_collegiate: 0% (0/1),
             newark_lab: "-",
@@ -169,6 +176,7 @@ unit_tests:
           }
         - {
             row_sort: 7,
+            row_label: "1 ED, full need, 80%+ URM: % of band",
             cooper_norcross: 50% (1/2),
             newark_collegiate: "-",
             newark_lab: "-",
@@ -176,6 +184,7 @@ unit_tests:
           }
         - {
             row_sort: 8,
+            row_label: "2 EA, 78%+ URM: % of N",
             cooper_norcross: 50% (1/2),
             newark_collegiate: 0% (0/1),
             newark_lab: "-",
@@ -183,6 +192,7 @@ unit_tests:
           }
         - {
             row_sort: 9,
+            row_label: "2 EA, 78%+ URM: % of band",
             cooper_norcross: 50% (1/2),
             newark_collegiate: "-",
             newark_lab: "-",
@@ -190,6 +200,7 @@ unit_tests:
           }
         - {
             row_sort: 10,
+            row_label: "Met both: % of N",
             cooper_norcross: 50% (1/2),
             newark_collegiate: 0% (0/1),
             newark_lab: "-",
@@ -197,6 +208,7 @@ unit_tests:
           }
         - {
             row_sort: 11,
+            row_label: "Met both: % of band",
             cooper_norcross: 50% (1/2),
             newark_collegiate: "-",
             newark_lab: "-",
@@ -204,6 +216,7 @@ unit_tests:
           }
         - {
             row_sort: 12,
+            row_label: "1 ED/EA, full need, 80%+ URM: % of N",
             cooper_norcross: 0% (0/2),
             newark_collegiate: 0% (0/1),
             newark_lab: "-",
@@ -211,6 +224,7 @@ unit_tests:
           }
         - {
             row_sort: 13,
+            row_label: "1 ED/EA, full need, 80%+ URM: % of band",
             cooper_norcross: "-",
             newark_collegiate: "-",
             newark_lab: "-",
@@ -218,6 +232,7 @@ unit_tests:
           }
         - {
             row_sort: 14,
+            row_label: "2 additional early, 68%+ URM: % of N",
             cooper_norcross: 0% (0/2),
             newark_collegiate: 0% (0/1),
             newark_lab: "-",
@@ -225,6 +240,7 @@ unit_tests:
           }
         - {
             row_sort: 15,
+            row_label: "2 additional early, 68%+ URM: % of band",
             cooper_norcross: "-",
             newark_collegiate: "-",
             newark_lab: "-",
@@ -232,6 +248,7 @@ unit_tests:
           }
         - {
             row_sort: 16,
+            row_label: "Met both: % of N",
             cooper_norcross: 0% (0/2),
             newark_collegiate: 0% (0/1),
             newark_lab: "-",
@@ -239,6 +256,7 @@ unit_tests:
           }
         - {
             row_sort: 17,
+            row_label: "Met both: % of band",
             cooper_norcross: "-",
             newark_collegiate: "-",
             newark_lab: "-",
@@ -246,6 +264,7 @@ unit_tests:
           }
         - {
             row_sort: 18,
+            row_label: "3 early, 68%+ URM: % of N",
             cooper_norcross: 0% (0/2),
             newark_collegiate: 0% (0/1),
             newark_lab: "-",
@@ -253,6 +272,7 @@ unit_tests:
           }
         - {
             row_sort: 19,
+            row_label: "3 early, 68%+ URM: % of band",
             cooper_norcross: "-",
             newark_collegiate: 0% (0/1),
             newark_lab: "-",

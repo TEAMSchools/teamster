@@ -102,8 +102,8 @@ models:
       - name: what_they_have
         data_type: string
         description:
-          Qualifying and near-bar colleges as "Qualifying — ...; Near the bar —
-          ...", leaving out an empty part. Null when the senior has neither.
+          'Qualifying and near-bar colleges as "Qualifying: ...; Near the bar:
+          ...", leaving out an empty part. Null when the senior has neither.'
         config:
           meta:
             contains_pii: true

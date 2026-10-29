@@ -11,71 +11,7 @@ with
             required_count,
             requires_full_need,
             sets_aside_full_need,
-        from
-            unnest(
-                [
-                    struct(
-                        'ed_80_full_need' as criterion_code,
-                        1 as criterion_sort,
-                        '3.75+' as gpa_band,
-                        '1 ED, full need, 80%+ URM' as criterion_label,
-                        'ED' as required_type,
-                        'ED' as type_label,
-                        80 as urm_bar,
-                        1 as required_count,
-                        true as requires_full_need,
-                        false as sets_aside_full_need
-                    ),
-                    struct(
-                        'ea_78',
-                        2,
-                        '3.75+',
-                        '2 EA, 78%+ URM',
-                        'EA',
-                        'EA',
-                        78,
-                        2,
-                        false,
-                        false
-                    ),
-                    struct(
-                        'early_80_full_need',
-                        3,
-                        '3.50-3.74',
-                        '1 ED/EA, full need, 80%+ URM',
-                        'any',
-                        'ED or EA',
-                        80,
-                        1,
-                        true,
-                        false
-                    ),
-                    struct(
-                        'additional_68',
-                        4,
-                        '3.50-3.74',
-                        '2 additional early, 68%+ URM',
-                        'any',
-                        'early',
-                        68,
-                        2,
-                        false,
-                        true
-                    ),
-                    struct(
-                        'early_68',
-                        5,
-                        '3.00-3.49',
-                        '3 early, 68%+ URM',
-                        'any',
-                        'early',
-                        68,
-                        3,
-                        false,
-                        false
-                    )
-                ]
-            )
+        from unnest({{ early_application_criteria() }})
     ),
 
     submitted_colleges as (
@@ -94,16 +30,25 @@ with
             _dbt_source_project, overgrad_student_id, university_id, application_type
     ),
 
+    set_aside_bars as (
+        select a.gpa_band, f.urm_bar,
+        from criteria as a
+        inner join criteria as f on a.gpa_band = f.gpa_band
+        where a.sets_aside_full_need and f.requires_full_need
+    ),
+
     full_need_set_aside as (
         select
-            _dbt_source_project,
-            overgrad_student_id,
+            s._dbt_source_project,
+            s.overgrad_student_id,
 
-            min_by(university_id, university_name) as set_aside_university_id,
-        from submitted_colleges
-        -- the 3.50-3.74 full-need bar; this college is not counted as additional
-        where urm_graduation_rate >= 80 and is_full_need
-        group by _dbt_source_project, overgrad_student_id
+            b.gpa_band,
+
+            min_by(s.university_id, s.university_name) as set_aside_university_id,
+        from submitted_colleges as s
+        inner join set_aside_bars as b on s.urm_graduation_rate >= b.urm_bar
+        where s.is_full_need
+        group by s._dbt_source_project, s.overgrad_student_id, b.gpa_band
     ),
 
     senior_criteria as (
@@ -129,6 +74,7 @@ with
             full_need_set_aside as fa
             on r.overgrad_student_id = fa.overgrad_student_id
             and r._dbt_source_project = fa._dbt_source_project
+            and r.gpa_band = fa.gpa_band
     ),
 
     candidates as (

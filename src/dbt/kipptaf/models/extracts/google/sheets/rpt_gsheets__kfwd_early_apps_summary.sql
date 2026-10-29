@@ -52,7 +52,6 @@ with
 
             logical_and(is_met) as is_met,
         from {{ ref("int_students__early_application_criteria_scaffold") }}
-        where gpa_band in ('3.75+', '3.50-3.74')
         group by _dbt_source_project, overgrad_student_id
     ),
 
@@ -64,7 +63,52 @@ with
             ) as school_key
     ),
 
-    summary_rows as (
+    criteria as (
+        select criterion_code, criterion_sort, gpa_band, criterion_label,
+        from unnest({{ early_application_criteria() }})
+    ),
+
+    bands as (
+        select gpa_band, min(criterion_sort) as band_sort, count(*) as goal_count,
+        from criteria
+        group by gpa_band
+    ),
+
+    metrics as (
+        select
+            c.criterion_code as metric_code,
+            c.gpa_band,
+            c.criterion_label as metric_label,
+            c.criterion_sort as within_band_sort,
+
+            b.band_sort,
+        from criteria as c
+        inner join bands as b on c.gpa_band = b.gpa_band
+
+        union all
+
+        -- a band with more than 1 goal also gets a "met both" row, after its goals
+        select
+            'met_both' as metric_code,
+            gpa_band,
+            'Met both' as metric_label,
+            99 as within_band_sort,
+            band_sort,
+        from bands
+        where goal_count > 1
+    ),
+
+    metrics_sorted as (
+        select
+            metric_code,
+            gpa_band,
+            metric_label,
+
+            row_number() over (order by band_sort, within_band_sort) as metric_sort,
+        from metrics
+    ),
+
+    count_rows as (
         select row_sort, gpa_band, row_label, metric_code, basis, band_filter,
         from
             unnest(
@@ -93,109 +137,41 @@ with
                         null,
                         'count',
                         ['Below 3.00', 'No GPA']
-                    ),
-                    struct(
-                        6,
-                        '3.75+',
-                        '1 ED, full need, 80%+ URM: % of N',
-                        'ed_80_full_need',
-                        'n',
-                        ['3.75+']
-                    ),
-                    struct(
-                        7,
-                        '3.75+',
-                        '1 ED, full need, 80%+ URM: % of band',
-                        'ed_80_full_need',
-                        'band',
-                        ['3.75+']
-                    ),
-                    struct(
-                        8, '3.75+', '2 EA, 78%+ URM: % of N', 'ea_78', 'n', ['3.75+']
-                    ),
-                    struct(
-                        9,
-                        '3.75+',
-                        '2 EA, 78%+ URM: % of band',
-                        'ea_78',
-                        'band',
-                        ['3.75+']
-                    ),
-                    struct(10, '3.75+', 'Met both: % of N', 'met_both', 'n', ['3.75+']),
-                    struct(
-                        11,
-                        '3.75+',
-                        'Met both: % of band',
-                        'met_both',
-                        'band',
-                        ['3.75+']
-                    ),
-                    struct(
-                        12,
-                        '3.50-3.74',
-                        '1 ED/EA, full need, 80%+ URM: % of N',
-                        'early_80_full_need',
-                        'n',
-                        ['3.50-3.74']
-                    ),
-                    struct(
-                        13,
-                        '3.50-3.74',
-                        '1 ED/EA, full need, 80%+ URM: % of band',
-                        'early_80_full_need',
-                        'band',
-                        ['3.50-3.74']
-                    ),
-                    struct(
-                        14,
-                        '3.50-3.74',
-                        '2 additional early, 68%+ URM: % of N',
-                        'additional_68',
-                        'n',
-                        ['3.50-3.74']
-                    ),
-                    struct(
-                        15,
-                        '3.50-3.74',
-                        '2 additional early, 68%+ URM: % of band',
-                        'additional_68',
-                        'band',
-                        ['3.50-3.74']
-                    ),
-                    struct(
-                        16,
-                        '3.50-3.74',
-                        'Met both: % of N',
-                        'met_both',
-                        'n',
-                        ['3.50-3.74']
-                    ),
-                    struct(
-                        17,
-                        '3.50-3.74',
-                        'Met both: % of band',
-                        'met_both',
-                        'band',
-                        ['3.50-3.74']
-                    ),
-                    struct(
-                        18,
-                        '3.00-3.49',
-                        '3 early, 68%+ URM: % of N',
-                        'early_68',
-                        'n',
-                        ['3.00-3.49']
-                    ),
-                    struct(
-                        19,
-                        '3.00-3.49',
-                        '3 early, 68%+ URM: % of band',
-                        'early_68',
-                        'band',
-                        ['3.00-3.49']
                     )
                 ]
             )
+    ),
+
+    summary_rows as (
+        select row_sort, gpa_band, row_label, metric_code, basis, band_filter,
+        from count_rows
+
+        union all
+
+        -- after the 5 count rows, each goal gets a "% of N" then a "% of band" row
+        select
+            5 + 2 * metric_sort - 1 as row_sort,
+            gpa_band,
+            metric_label || ': % of N' as row_label,
+            metric_code,
+
+            'n' as basis,
+
+            [gpa_band] as band_filter,
+        from metrics_sorted
+
+        union all
+
+        select
+            5 + 2 * metric_sort as row_sort,
+            gpa_band,
+            metric_label || ': % of band' as row_label,
+            metric_code,
+
+            'band' as basis,
+
+            [gpa_band] as band_filter,
+        from metrics_sorted
     ),
 
     grid_seniors as (
