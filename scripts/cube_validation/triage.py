@@ -220,19 +220,21 @@ def _doc_evidence(members: list[str], docs: dict[str, MemberDoc]) -> tuple[str, 
 
 def _group_topic(
     g: Group, to_cube: dict[str, str], docs: dict[str, MemberDoc]
-) -> set[str]:
-    """Words naming a group's columns: each column, its member and the member's title.
+) -> dict[str, set[str]]:
+    """Words naming a group's columns, keyed by the member each column is.
 
-    A dashboard-only filter's dim names the filter's column in its value.
+    Each column gives its name, its member's and the member's title. A
+    dashboard-only filter's dim names the filter's column in its value and
+    belongs to no member (key `""`).
     """
-    out: set[str] = set()
+    out: dict[str, set[str]] = {}
     for column, value in g.dims:
         if column == "dashboard_filter":
-            out |= _tokens(value)
+            out.setdefault("", set()).update(_tokens(value))
             continue
         member = to_cube.get(column, column)
         title = docs[member].title if member in docs else ""
-        out |= _tokens(f"{column} {member} {title}")
+        out.setdefault(member, set()).update(_tokens(f"{column} {member} {title}"))
     return out
 
 
@@ -244,10 +246,16 @@ def _cells_topic(diff: CellDiff) -> set[str]:
     return words - _CAUSE_WORDS
 
 
-def _speaks_to(members: list[str], topic: set[str], docs: dict[str, MemberDoc]) -> bool:
-    """Whether any member's description or ai_context names a word of `topic`."""
+def _speaks_to(
+    members: list[str], topics: dict[str, set[str]], docs: dict[str, MemberDoc]
+) -> bool:
+    """Whether a member's description or ai_context names a word of the item.
+
+    A member's own words never count for it: every column's description names
+    the column, so it says nothing about why that column's rows differ.
+    """
     return any(
-        _tokens(text) & topic
+        _tokens(text) & set().union(*(w for k, w in topics.items() if k != name))
         for name in members
         if (d := docs.get(name))
         for text in (d.description, d.ai_context)
@@ -274,9 +282,10 @@ def suggest(
         One suggestion per open item, ordered by `SUGGESTIONS`, owner last.
         `docs` needs a description or ai_context of an involved member to name
         the item: its group's column or that member's title, the gap's
-        caption, or a word of the cell set's candidate causes. The measure's
-        own name and title never count, since its description is always
-        there. Docs that name nothing are still quoted on an `owner` item.
+        caption, or a word of the cell set's candidate causes. A member's
+        docs never count for its own column, and the measure's name and title
+        never count, since its description is always there. Docs that name
+        nothing are still quoted on an `owner` item.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     entries = _entries(run)
@@ -287,7 +296,7 @@ def suggest(
         candidates: tuple[str, ...] = ()
         members: list[str] = []
         measures: list[str] = []
-        topic: set[str] = set()
+        topics: dict[str, set[str]] = {}
         call = ""
 
         if isinstance(source, Gap):
@@ -295,7 +304,7 @@ def suggest(
             caption = gap.field
             measures = [by_id[c].measure for c in gap.comparisons if c in by_id]
             members = list(measures)
-            topic = _tokens(caption)
+            topics = {"": _tokens(caption)}
             # Only the sheets the gap sits on speak for it; a proof that
             # predates `restricting_filters` leaves the answer unknown.
             proofs: list[Proof] = [
@@ -327,15 +336,16 @@ def suggest(
                 if isinstance(source, Group):
                     to_cube = {p.dashboard: p.cube for p in comparison.dims}
                     members += [to_cube.get(c, c) for c, _ in source.dims]
-                    topic = _group_topic(source, to_cube, docs)
+                    topics = _group_topic(source, to_cube, docs)
                 elif isinstance(source, CellDiff):
-                    topic = _cells_topic(source)
+                    topics = {"": _cells_topic(source)}
 
         if not call:
             for m in measures:
-                topic -= _tokens(f"{m} {docs[m].title if m in docs else ''}")
+                own = _tokens(f"{m} {docs[m].title if m in docs else ''}")
+                topics = {k: w - own for k, w in topics.items()}
             quoted = _doc_evidence(members, docs)
-            if _speaks_to(members, topic, docs):
+            if _speaks_to(members, topics, docs):
                 call, evidence = "docs", verdict_lines + quoted
             else:
                 call, evidence = "owner", verdict_lines + quoted + (NO_ANSWER,)

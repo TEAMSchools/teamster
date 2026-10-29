@@ -132,7 +132,7 @@ def test_every_verdict_reaches_the_evidence_but_only_same_maps():
     assert "grade_level: not compared: identifier column" in s.evidence
 
 
-def test_member_docs_suggest_docs_with_quoted_evidence():
+def test_a_members_own_docs_do_not_explain_its_group_but_are_quoted():
     cfg = _cfg()
     docs = {
         "student_count": _doc("student_count", description="Counts enrolled students."),
@@ -142,11 +142,72 @@ def test_member_docs_suggest_docs_with_quoted_evidence():
 
     [s] = suggest(cfg, _run(groups=[group]), docs)
 
-    assert s.suggestion == "docs"
+    assert s.suggestion == "owner"
     assert s.evidence == (
         "student_count: Counts enrolled students.",
         "grade_level: Use for the grade filter.",
+        "no description or ai_context answers it",
     )
+
+
+def _pct_cfg():
+    cmp = Comparison(
+        id="enrollment",
+        measure="pct_proficient",
+        dims=[ColumnPair("Grade", "grade_level")],
+        proof=_proof(),
+    )
+    return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
+
+
+def test_grade_level_own_description_naming_grade_goes_to_owner():
+    docs = {
+        "pct_proficient": MemberDoc(
+            "pct_proficient", "", "Share of students proficient.", "", "measure"
+        ),
+        "grade_level": _doc("grade_level", description="The grade the student is in."),
+    }
+    group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
+
+    [s] = suggest(_pct_cfg(), _run(groups=[group]), docs)
+
+    assert s.suggestion == "owner"
+
+
+def test_measure_description_naming_grade_explains_a_grade_group():
+    docs = {
+        "pct_proficient": MemberDoc(
+            "pct_proficient", "", "Proficiency by grade at test time.", "", "measure"
+        ),
+        "grade_level": _doc("grade_level", description="The grade the student is in."),
+    }
+    group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
+
+    [s] = suggest(_pct_cfg(), _run(groups=[group]), docs)
+
+    assert s.suggestion == "docs"
+
+
+def test_another_dims_description_can_explain_the_group():
+    docs = {
+        "region_name": _doc(
+            "region_name", description="Region name; grade bands vary."
+        ),
+        "grade_level": _doc("grade_level", description="The grade the student is in."),
+    }
+    own = Group("enrollment", (("region_name", "Camden"),), "cube_only", 40, 38)
+    both = Group(
+        "enrollment",
+        (("region_name", "Camden"), ("grade_level", "9")),
+        "cube_only",
+        40,
+        38,
+    )
+
+    [s] = suggest(_cfg(), _run(groups=[own]), docs)
+    assert s.suggestion == "owner"
+    [s] = suggest(_cfg(), _run(groups=[both]), docs)
+    assert s.suggestion == "docs"
 
 
 def _measure_doc(description="", ai_context=""):
@@ -326,9 +387,7 @@ def test_colliding_masked_ids_get_a_stable_suffix():
 
 def test_colliding_ids_keep_their_own_docs_evidence():
     cfg = _cfg()
-    docs = {
-        "student_number": _doc("student_number", description="The student's number.")
-    }
+    docs = {"student_count": _measure_doc("Counts each student number once.")}
     a = Group("enrollment", (("student_number", "222"),), "cube_only", 2, 2)
     b = Group("enrollment", (("grade_level", "9"),), "value_differs", 2, 2)
     c = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
