@@ -980,14 +980,17 @@ def gcp_token() -> str:
     return credentials.token
 
 
+LOG_MAX_PAGES = 10
+
+
 def logging_read(
-    query: str, utc_start: str, utc_end: str, limit: int = 100, max_pages: int = 10
+    query: str, utc_start: str, utc_end: str, limit: int = 100
 ) -> list[dict]:
     # Pages newest-first; a single page would drop the oldest events of a burst.
     full = f'({query}) AND timestamp >= "{utc_start}" AND timestamp <= "{utc_end}"'
     entries: list[dict] = []
     token = None
-    for _ in range(max_pages):
+    for _ in range(LOG_MAX_PAGES):
         body = {
             "resourceNames": [f"projects/{PROJECT_ID}"],
             "filter": full,
@@ -1092,7 +1095,8 @@ def _step_pod_labels(
     for i in range(0, len(names), 50):
         quoted = " OR ".join(f'"{n}"' for n in names[i : i + 50])
         query = (
-            'protoPayload.methodName="io.k8s.core.v1.pods.create" '
+            f'logName="projects/{PROJECT_ID}/logs/cloudaudit.googleapis.com%2Factivity" '
+            'AND protoPayload.methodName="io.k8s.core.v1.pods.create" '
             f"AND protoPayload.response.metadata.name=({quoted})"
         )
         for e in logging_read(query, lead, utc_end):
@@ -1166,6 +1170,10 @@ def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
         )
     return {
         "stepPodLookupError": step_lookup_error,
+        # Step pods the audit lookup did not find; they stay UNKNOWN.
+        "stepPodsUnmatched": len(set(step_pods) - set(step_labels)),
+        # At the page cap, the oldest events of the window are missing.
+        "podEventsTruncated": len(pod) >= 100 * LOG_MAX_PAGES,
         "clusterEvents": [
             {
                 "timestamp": e["timestamp"],

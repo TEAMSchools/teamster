@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
+import pytest
+
 SKILL_SCRIPTS = (
     Path(__file__).resolve().parents[2] / ".claude/skills/dagster-day2/scripts"
 )
@@ -146,6 +148,18 @@ def test_logging_read_retries_quota_429(monkeypatch):
     monkeypatch.setattr(dc, "sleep", waits.append)
     assert dc.logging_read("q", "a", "b") == [{"ok": True}]
     assert waits == [0, 20, 40]
+
+
+def test_logging_read_raises_after_four_429s(monkeypatch):
+    class Resp:
+        status_code = 429
+        text = "quota"
+
+    monkeypatch.setattr(dc, "gcp_token", lambda: "t")
+    monkeypatch.setattr(dc.httpx, "post", lambda *_a, **_k: Resp())
+    monkeypatch.setattr(dc, "sleep", lambda _s: None)
+    with pytest.raises(RuntimeError):
+        dc.logging_read("q", "a", "b")
 
 
 def test_correlate_preempting_event():

@@ -35,7 +35,7 @@ Output shape:
   "step_07_agents":      {"agents": [...], "agentCount": N},
   "step_08_agent_pod_churn": {"events": [...], "skipped": bool},
   "step_09_daemons":     {"daemons": [...], "allHealthy": bool},
-  "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [{"timestamp":..., "timestampEt":"...", "podName":..., "reason":..., "message":..., "runId": "<uuid|null>", "runStatus": "SUCCESS|FAILURE|UNKNOWN", "stepKey": "<step pods only|null>"}], "stepPodLookupError": "<str|null>"},
+  "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [{"timestamp":..., "timestampEt":"...", "podName":..., "reason":..., "message":..., "runId": "<uuid|null>", "runStatus": "SUCCESS|FAILURE|UNKNOWN", "stepKey": "<step pods only|null>"}], "stepPodLookupError": "<str|null>", "stepPodsUnmatched": N, "podEventsTruncated": bool},
   "step_11_alerts":      {"alerts": [...]},
   "step_12_error_groups":{"groups": [{"groupId":..., "exception":..., "affectedServices":[{"service":...,"version":"<pod>"}], "exceptionLine":"<bottom-of-traceback or null>", "correlatedPodEvent":{"reason":"Preempted|Preempting|Evicted|OOMKilling", "timestamp":..., "podName":...} | null, "category":"sigterm_during_import|preemption_artifact|unclassified"}], "buckets": {"inWindow":[], "staleOpen":[]}},
   "step_13_oom_metrics": {"oomRuns": [...], "skipped": bool},
@@ -174,7 +174,12 @@ tags each event (Preempted, Preempting, Evicted, OOMKilling, BackOff) with
 `runId` + `runStatus`. A `dagster-run-*` pod carries its runId in its name. A
 `dagster-step-*` pod name is a hash, so the collector reads the runId and
 `stepKey` from the audit log entry that created the pod; if that lookup fails,
-`stepPodLookupError` is set and step pods stay `UNKNOWN`.
+`stepPodLookupError` is set and step pods stay `UNKNOWN`. `stepPodsUnmatched`
+counts step pods the lookup did not find. `stepKey` is the pod's `dagster/op`
+label, which Kubernetes caps at 63 characters with `[`, `]` and similar replaced
+by `-`; take the exact key from `get_run_logs` when it looks cut.
+`podEventsTruncated: true` means the read hit its page cap and the window's
+oldest pod events are missing; narrow the window and re-run.
 
 - `runStatus: "SUCCESS"` — run already terminated successfully. The evicted pod
   was a disrupted scheduling attempt absorbed by
