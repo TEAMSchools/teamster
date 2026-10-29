@@ -1584,6 +1584,7 @@ def review(
     domain: str,
     cache_root: Path,
     now: datetime | None = None,
+    view_files: list[Path] | None = None,
 ) -> str:
     """Return the review-issue body from each view's latest saved run.
 
@@ -1599,6 +1600,8 @@ def review(
         cache_root: The run cache.
         now: The current time, to say whether a hand check's pinned SQL still
             runs; defaults to the clock.
+        view_files: Each config's validation file, in order: stored proof
+            paths are relative to its directory.
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
@@ -1608,9 +1611,11 @@ def review(
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
+    # Stored proof paths are relative to each validation file's directory.
+    bases = [f.parent for f in view_files] if view_files else [None] * len(configs)
     proven = {
-        run.view: triage.proven_triage(run, run_json, cfg.decisions)
-        for (run, run_json), cfg in zip(saved, configs, strict=True)
+        run.view: triage.proven_triage(run, run_json, cfg.decisions, base)
+        for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
     }
     found = {view: triage.posted_triage(loaded) for view, loaded in proven.items()}
     # One question per unanswered owner cause, over the groups it decides.

@@ -294,15 +294,14 @@ def item_key(g: Group) -> tuple:
 
 @dataclass
 class TraceResult:
-    """Each traced group's trace, and why the trace stopped early, if it did.
+    """Each traced group's trace, and why each stopped bucket stopped.
 
     `stops` holds each stopped bucket's own reason, by (comparison id,
-    bucket); a stop in one bucket never stops another. `stopped` is set only
-    when the trace stopped before any bucket's items were traced.
+    bucket); a stop in one bucket never stops another, and each item it
+    stopped says so in its own evidence.
     """
 
     items: dict[tuple, ItemTrace]
-    stopped: str = ""
     stops: dict[tuple[str, str], str] = field(default_factory=dict)
 
 
@@ -1114,6 +1113,7 @@ def trace_run(
     manifest_path: Path = MANIFEST,
     levels: int = MAX_LEVELS,
     max_minutes: float = TRACE_MAX_MINUTES,
+    skip: set[tuple] = frozenset(),
 ) -> TraceResult:
     """Trace every open row group of a run to the steps that drop its rows.
 
@@ -1133,6 +1133,7 @@ def trace_run(
             trace descends into.
         levels: How many tables deep to descend.
         max_minutes: The whole trace's time limit.
+        skip: `item_key`s of groups not to trace.
 
     Returns:
         Per `item_key`, the trace of each traced group (the one-sided buckets
@@ -1143,7 +1144,8 @@ def trace_run(
         pipeline.Refusal: A comparison's SQL changed since the run, or the
             manifest or a model's compiled SQL is missing.
     """
-    open_groups = run.applied.open
+    # A group a stored proof explains needs no lead.
+    open_groups = [g for g in run.applied.open if item_key(g) not in skip]
     out: dict[tuple, ItemTrace] = {}
     by_id = {c.id: c for c in cfg.comparisons}
     todo = [

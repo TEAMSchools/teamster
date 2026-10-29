@@ -379,7 +379,15 @@ def _load(path: Path) -> ViewConfig:
 def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "review":
         configs = [_load(v) for v in args.views]
-        print(pipeline.review(configs, args.domain, cache_root(), now=utcnow()))
+        print(
+            pipeline.review(
+                configs,
+                args.domain,
+                cache_root(),
+                now=utcnow(),
+                view_files=args.views,
+            )
+        )
         return 0
 
     if args.command == "record-answers":
@@ -611,7 +619,7 @@ def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     """
     approved = _read_json(approved_path, "approved")
     run, run_json = pipeline.latest_run(cfg, cache_root())
-    saved = triage.proven_triage(run, run_json, cfg.decisions)
+    saved = triage.proven_triage(run, run_json, cfg.decisions, path.parent)
 
     decisions = answers.approved_decisions(
         approved, saved, run.fingerprints, existing=cfg.decisions

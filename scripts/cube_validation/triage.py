@@ -243,7 +243,10 @@ def _moment(run: RunResult) -> dict:
 
 
 def proven_triage(
-    run: RunResult, run_json: Path, recorded: list[Decision] | None = None
+    run: RunResult,
+    run_json: Path,
+    recorded: list[Decision] | None = None,
+    base: Path | None = None,
 ) -> dict:
     """Read the triage of the view's latest run, refusing while any item is unproven.
 
@@ -259,6 +262,8 @@ def proven_triage(
         run_json: The `run.json` it came from.
         recorded: The view's decisions. When given, each proven row group is
             marked by the cause decisions that decide it (`mark_decided`).
+        base: The validation file's directory, which stored proof paths are
+            relative to.
 
     Raises:
         pipeline.Refusal: No triage sits beside the run, it is unreadable or of
@@ -321,7 +326,7 @@ def proven_triage(
             f"{'it' if bare == 1 else 'them'} with `triage confirm`, then re-run "
             "`triage`"
         )
-    if moved := sum(1 for i in items if _proof_changed(i.get("proof"))):
+    if moved := sum(1 for i in items if _proof_changed(i.get("proof"), base)):
         raise pipeline.Refusal(
             f"{view}: {moved} item{'' if moved == 1 else 's'} in `cause` "
             f"rest{'s' if moved == 1 else ''} on a proof file changed since "
@@ -489,16 +494,20 @@ def cause_asks(
     return out
 
 
-def _proof_changed(proof: dict | None) -> bool:
+def _proof_changed(proof: dict | None, base: Path | None = None) -> bool:
     """A stored proof's file is gone, or no longer the proof triage ran.
 
+    The recorded path is relative to the validation file's directory, `base`.
     Compared by `confirm.fingerprint`, so a formatting-only edit is no change.
     """
     if not proof or not proof.get("path"):
         return False
     from . import confirm
 
-    return confirm.file_fingerprint(Path(proof["path"])) != proof.get("fingerprint")
+    path = Path(proof["path"])
+    if base is not None and not path.is_absolute():
+        path = base / path
+    return confirm.file_fingerprint(path) != proof.get("fingerprint")
 
 
 def posted_triage(loaded: dict) -> dict:
@@ -615,7 +624,6 @@ def suggest(
     docs: dict[str, MemberDoc],
     values: Callable[[str, str], str] | None = None,
     traces: dict[tuple, trace.ItemTrace] | None = None,
-    stopped: str = "",
 ) -> list[Suggestion]:
     """Sort each open item into a pile, first matching rule wins.
 
@@ -628,8 +636,6 @@ def suggest(
             `None` skips value checks.
         traces: Each traced row group's trace, by `trace.item_key`; `None`
             when the trace was skipped.
-        stopped: Why the trace stopped early, if it did: a group it did not
-            reach says so.
 
     Returns:
         One suggestion per open item, ordered by `SUGGESTIONS`. A missing
@@ -724,8 +730,6 @@ def suggest(
                     found, posted_found = traced.leads(), traced.leads(posted=True)
                 elif traces is None:
                     found = (NOT_TRACED,)
-                elif stopped and source.bucket in trace.TRACED:
-                    found = (f"trace stopped: {stopped}",)
                 elif source.bucket == "value_differs":
                     found = (NO_ROWS,)
                 else:
@@ -968,12 +972,13 @@ def run_triage(
 ) -> list[Suggestion]:
     """Sort each open item of the view's latest run into a pile and print them.
 
-    Traces the run's row groups first (`trace.trace_run`) unless `trace_rows`
-    is False; its queries count against `max_usd` and the daily cap with the
-    value checks. A cap or `trace_max_minutes` hit partway stops the trace;
-    what it found is kept and the batch is still written. Then re-runs every
-    stored proof in `proofs` on the run's rows (`confirm.reprove`; None skips
-    them), under the same caps: only a proof moves an item to `cause`. Prints
+    Re-runs every stored proof in `proofs` on the run's rows first
+    (`confirm.run_stored`; None skips them): only a proof moves a row group
+    to `cause`. Then traces the row groups no proof explains
+    (`trace.trace_run`) unless `trace_rows` is False, for leads. Both count
+    against `max_usd` and the daily cap with the value checks. A cap or
+    `trace_max_minutes` hit partway stops the trace; what it found is kept
+    and the batch is still written, as it is when a proof cannot run. Prints
     `batch_lines`. Writes every item to `triage.json`
     beside that run's `run.json`, with the run's moment, decisions
     fingerprint and open items (see `proven_triage`), each proven row group
@@ -1001,7 +1006,17 @@ def run_triage(
             # The trace's paid work is kept: the batch is still written.
             return f"not checked: {exc}"
 
+    from . import confirm
+
     with wh.budget(max_usd):
+        # Proofs first: they are the only path to `cause`, so a trace that
+        # hits a cap never un-proves an item, and nothing they explain is
+        # traced.
+        ran = (
+            confirm.run_stored(cfg, run, proofs, wh=wh, cube=cube)
+            if proofs is not None
+            else []
+        )
         traced = (
             trace.trace_run(
                 cfg,
@@ -1010,23 +1025,15 @@ def run_triage(
                 cube=cube,
                 manifest_path=manifest or trace.MANIFEST,
                 max_minutes=trace_max_minutes or trace.TRACE_MAX_MINUTES,
+                skip=confirm.explained(ran),
             )
             if trace_rows
             else None
         )
-        found = suggest(
-            cfg,
-            run,
-            docs,
-            values,
-            traced.items if traced else None,
-            traced.stopped if traced else "",
-        )
+        found = suggest(cfg, run, docs, values, traced.items if traced else None)
         items = [_as_json(s) for s in found]
         if proofs is not None:
-            from . import confirm
-
-            confirm.reprove(cfg, run, items, proofs, wh=wh, cube=cube)
+            confirm.apply_runs(run, items, ran)
             items.sort(key=lambda i: SUGGESTIONS.index(i["suggestion"]))
         mark_decided(run, items, cfg.decisions, note=True)
         found = [_from_json(i) for i in items]

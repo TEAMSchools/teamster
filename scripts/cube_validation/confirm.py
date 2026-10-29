@@ -37,11 +37,11 @@ from sqlglot import exp
 from sqlglot.errors import SqlglotError
 from sqlglot.tokens import TokenType
 
-from . import compare, decisions, pipeline, triage
+from . import compare, decisions, pipeline, trace, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .compare import Group
 from .config import Comparison, ViewConfig
-from .cube_client import Cube, network_schools
+from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build
 from .report import RunResult, shown_counts
 from .trace import TIMEOUT_S, TRACED, _failure
@@ -89,6 +89,11 @@ class Proof:
     @property
     def text(self) -> str:
         return compose(self.causes, self.body)
+
+    @property
+    def recorded(self) -> str:
+        """The path `triage.json` records: relative to the validation file."""
+        return "/".join(self.path.parts[-3:])
 
     @property
     def fingerprint(self) -> str:
@@ -608,7 +613,7 @@ def apply_outcomes(items: list[dict], proof: Proof, found: dict[str, Outcome]) -
                 ],
                 proof={
                     "kind": "query",
-                    "path": str(proof.path),
+                    "path": proof.recorded,
                     "fingerprint": proof.fingerprint,
                 },
                 evidence=_proof_lines(proof, outcome, False) + also,
@@ -733,6 +738,103 @@ def _unlinked(lines: list[str] | None) -> list[str]:
     ]
 
 
+@dataclass
+class Ran:
+    """One stored proof's run: its outcomes per item, or why it did not run."""
+
+    proof: Proof
+    items: list[tuple[str, Group]]
+    found: dict[str, Outcome] | None = None
+    why: str = ""
+
+
+def run_stored(
+    cfg: ViewConfig,
+    run: RunResult,
+    directory: Path,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+) -> list[Ran]:
+    """Run every stored proof of the view on the run's rows. Call inside `wh.budget`.
+
+    A proof that cannot run (a failed check, a cap, a BigQuery or Cube error,
+    its SQL no longer the run's) keeps why and moves nothing; the rest still
+    run. Each comparison's row SQL is rebuilt once.
+    """
+    by_id = {c.id: c for c in cfg.comparisons}
+    schools: set[str] | None = None
+    sides: dict[str, pipeline.RowSides] = {}
+    out = []
+    for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
+        try:
+            proof = read_proof(path)
+        except (OSError, pipeline.Refusal) as exc:
+            print(f"Proof {path.name} skipped: {exc}")
+            continue
+        comparison = by_id.get(proof.comparison)
+        bucket_items = _bucket_items(run, proof.comparison, proof.bucket)
+        if comparison is None or not bucket_items:
+            continue
+        ran = Ran(proof, bucket_items)
+        try:
+            if schools is None:
+                schools = network_schools(wh)
+            if comparison.id not in sides:
+                sides[comparison.id] = pipeline.row_sides(
+                    cfg,
+                    comparison,
+                    wh=wh,
+                    cube=cube,
+                    build=run.moment,
+                    schools=schools,
+                    fingerprints=run.fingerprints.get(comparison.id, {}),
+                )
+            ran.found = run_proof(
+                wh,
+                cfg,
+                comparison,
+                sides[comparison.id],
+                proof,
+                bucket_items,
+                run.moment,
+            )
+        except (
+            pipeline.Refusal,
+            CostCapError,
+            ViewHistoryError,
+            CubeError,
+            CubeRefusal,
+        ) as exc:
+            ran.why = f"proof {path.name} not run: {exc}"
+        except GoogleAPIError as exc:
+            ran.why = f"proof {path.name} not run ({_failure(exc)})"
+        if ran.why:
+            print(ran.why)
+        out.append(ran)
+    return out
+
+
+def explained(runs: list[Ran]) -> set[tuple]:
+    """The `trace.item_key` of every group a proof fully explains."""
+    return {
+        trace.item_key(g)
+        for r in runs
+        for item_id, g in r.items
+        if r.found and r.found[item_id].explained
+    }
+
+
+def apply_runs(run: RunResult, items: list[dict], runs: list[Ran]) -> None:
+    """Sort the items by the proofs' runs, then link cell sets."""
+    for r in runs:
+        if r.found is None:
+            note(items, {i for i, _ in r.items}, r.why, r.proof.path.name)
+        else:
+            apply_outcomes(items, r.proof, r.found)
+    link_cells(run, items)
+
+
 def reprove(
     cfg: ViewConfig,
     run: RunResult,
@@ -742,48 +844,8 @@ def reprove(
     wh: Warehouse,
     cube: Cube,
 ) -> None:
-    """Re-run every stored proof of the view on the run's rows, then link cells.
-
-    A proof that cannot run (a failed check, a cap, a BigQuery error, its SQL
-    no longer the run's) notes why on its items and moves none of them.
-    Call inside `wh.budget`.
-    """
-    by_id = {c.id: c for c in cfg.comparisons}
-    schools: set[str] | None = None
-    for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
-        try:
-            proof = read_proof(path)
-        except pipeline.Refusal as exc:
-            print(f"Proof {path.name} skipped: {exc}")
-            continue
-        comparison = by_id.get(proof.comparison)
-        bucket_items = _bucket_items(run, proof.comparison, proof.bucket)
-        if comparison is None or not bucket_items:
-            continue
-        ids = {i for i, _ in bucket_items}
-        try:
-            if schools is None:
-                schools = network_schools(wh)
-            sides = pipeline.row_sides(
-                cfg,
-                comparison,
-                wh=wh,
-                cube=cube,
-                build=run.moment,
-                schools=schools,
-                fingerprints=run.fingerprints.get(comparison.id, {}),
-            )
-            found = run_proof(
-                wh, cfg, comparison, sides, proof, bucket_items, run.moment
-            )
-        except (pipeline.Refusal, CostCapError, ViewHistoryError) as exc:
-            note(items, ids, f"proof {path.name} not run: {exc}", path.name)
-            continue
-        except GoogleAPIError as exc:
-            note(items, ids, f"proof {path.name} not run ({_failure(exc)})", path.name)
-            continue
-        apply_outcomes(items, proof, found)
-    link_cells(run, items)
+    """Re-run every stored proof of the view on the run's rows, then link cells."""
+    apply_runs(run, items, run_stored(cfg, run, directory, wh=wh, cube=cube))
 
 
 # --- the command -------------------------------------------------------------------
@@ -807,6 +869,20 @@ def _load_triage(run: RunResult, run_json: Path) -> tuple[Path, dict]:
             f"{run.view}: the latest run has open items its triage lacks; {again}"
         )
     return found, loaded
+
+
+def _mark(run: RunResult, items: list[dict], cfg: ViewConfig) -> None:
+    """Refresh the decision marks after a re-sort, as `triage` writes them."""
+    for item in items:
+        item.pop("decisions", None)
+        item.pop("decided", None)
+        for key in ("evidence", "evidence_posted"):
+            item[key] = [
+                line
+                for line in item.get(key) or []
+                if not line.startswith(("decision ", "decisions "))
+            ]
+    triage.mark_decided(run, items, cfg.decisions, note=True)
 
 
 def _save_triage(path: Path, loaded: dict, items: list[dict]) -> None:
@@ -889,6 +965,7 @@ def run_confirm(
                     f"{item_id}: {unlinked} of {total} differing cells have rows "
                     "outside groups in `cause`; prove those groups first"
                 )
+        _mark(run, all_items, cfg)
         _save_triage(path, loaded, all_items)
         _report(all_items, set(linked))
         print(f"Saved {path}")
@@ -929,6 +1006,7 @@ def run_confirm(
     stored.write_text(proof.text)
     apply_outcomes(all_items, proof, found)
     link_cells(run, all_items, comparison)
+    _mark(run, all_items, cfg)
     _save_triage(path, loaded, all_items)
     moved = sum(1 for o in found.values() if o.explained)
     print(f"Saved {stored}: {moved} of {len(found)} items proven.")

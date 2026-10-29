@@ -11,7 +11,13 @@ from cube_validation import confirm, pipeline, trace, triage
 from cube_validation.compare import CellDiff, Group
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.config import ColumnPair, Comparison, RowSpec, ViewConfig
+from cube_validation.config import (
+    ColumnPair,
+    Comparison,
+    Decision,
+    RowSpec,
+    ViewConfig,
+)
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.decisions import Applied
@@ -168,6 +174,8 @@ def test_a_stored_proof_proves_every_row_of_an_item(duck, tmp_path, offline):
         {"side": "dashboard", "step": "C2", "label": CAUSES["C2"][1], "n_rows": 1},
     ]
     path = tmp_path / "proofs" / "v" / "mastery__cube_only.sql"
+    # Recorded relative to the validation file's directory.
+    assert item["proof"]["path"] == "proofs/v/mastery__cube_only.sql"
     assert item["proof"]["kind"] == "query"
     assert item["proof"]["fingerprint"] == confirm.file_fingerprint(path)
     # The proof reads its own tables as of the run, under the trace's limit.
@@ -235,6 +243,83 @@ def test_a_proof_that_cannot_run_notes_why_and_moves_nothing(duck, tmp_path, off
     assert item["evidence_posted"][0] == (
         "proof mastery__cube_only.sql not run; see the terminal"
     )
+
+
+def test_a_cube_error_notes_the_items_and_a_comparison_is_rebuilt_once(
+    duck, tmp_path, monkeypatch
+):
+    monkeypatch.setattr(confirm, "network_schools", lambda wh: set())
+    calls = []
+
+    def failing(*a, **k):
+        calls.append(1)
+        raise confirm.CubeError("Cube answered 502")
+
+    monkeypatch.setattr(pipeline, "row_sides", failing)
+    run = _run([_group(3), _group(2, "Y", "dashboard_only")])
+    items = _items(run)
+    directory, _ = _proof(tmp_path)
+    (directory / "mastery__dashboard_only.sql").write_text(
+        confirm.compose(CAUSES, PROOF)
+    )
+
+    confirm.reprove(CFG, run, items, directory, wh=Wh(duck), cube=None)
+
+    assert {i["suggestion"] for i in items} == {"investigate"}
+    assert all("not run: Cube answered 502" in i["evidence"][0] for i in items)
+    # A failed rebuild is not cached, so each proof tries once.
+    assert len(calls) == 2
+
+
+def test_both_buckets_of_a_comparison_share_one_rebuild(duck, tmp_path, offline,
+                                                         monkeypatch):  # fmt: skip
+    _tables(duck)
+    calls = []
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: calls.append(1) or SIDES)
+    run = _run([_group(3), _group(2, "Y", "dashboard_only")])
+    directory, _ = _proof(tmp_path)
+    (directory / "mastery__dashboard_only.sql").write_text(
+        confirm.compose(CAUSES, PROOF)
+    )
+
+    confirm.reprove(CFG, run, _items(run), directory, wh=Wh(duck), cube=None)
+
+    assert len(calls) == 1
+
+
+def test_confirm_refreshes_the_decision_marks(duck, tmp_path, monkeypatch, offline):
+    _tables(duck)
+    run = _run([_group(3)])
+    run.fingerprints = {"mastery": {"cube": "c", "dashboard": "d"}}
+    triage_json = _saved(tmp_path, monkeypatch, run)
+    fp = confirm.fingerprint(CAUSES, PROOF)
+    decided = [
+        Decision(f"d{i}", "mastery", "deliberate", "r",
+                 cause={"side": side, "label": words},
+                 fingerprints={"cube": "c", "dashboard": "d", "proof": fp})
+        for i, (side, words) in enumerate(CAUSES.values())
+    ]  # fmt: skip
+    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[COMPARISON],
+                     decisions=decided)  # fmt: skip
+    draft = tmp_path / "draft.sql"
+    draft.write_text(PROOF)
+
+    confirm.run_confirm(
+        cfg,
+        tmp_path / "validation" / "v.yml",
+        wh=Wh(duck),
+        cube=None,
+        max_usd=1.0,
+        cache_root=tmp_path,
+        comparison="mastery",
+        bucket="cube_only",
+        sql=draft,
+        causes=[f"{b}={side}:{words}" for b, (side, words) in CAUSES.items()],
+    )
+
+    (item,) = json.loads(triage_json.read_text())["items"]
+    assert item["decided"] is True
+    assert set(item["decisions"].values()) == {"d0", "d1"}
 
 
 # --- the tool counts: rows dropped, repeated or named by a value refuse --------------
@@ -549,14 +634,14 @@ def test_the_gate_accepts_proven_items_until_their_proof_changes(
     confirm.reprove(CFG, run, saved["items"], directory, wh=Wh(duck), cube=None)
     path.write_text(json.dumps(saved))
 
-    assert triage.proven_triage(run, path.parent / "run.json")["items"]
+    assert triage.proven_triage(run, path.parent / "run.json", base=tmp_path)["items"]
 
     # Formatting is no change; a changed predicate is.
     proof.write_text(
         proof.read_text().replace("SELECT u.__row", "select   U.__ROW")
         + "\n-- reviewed\n"
     )
-    assert triage.proven_triage(run, path.parent / "run.json")["items"]
+    assert triage.proven_triage(run, path.parent / "run.json", base=tmp_path)["items"]
     proof.write_text(proof.read_text().replace("NOT f.ok2", "f.ok2"))
     with pytest.raises(pipeline.Refusal, match="proof file changed since triage"):
-        triage.proven_triage(run, path.parent / "run.json")
+        triage.proven_triage(run, path.parent / "run.json", base=tmp_path)

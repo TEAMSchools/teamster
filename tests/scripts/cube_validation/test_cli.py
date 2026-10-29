@@ -5,6 +5,7 @@ import os
 import re
 import urllib.request
 import xml.etree.ElementTree
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -2319,13 +2320,55 @@ def test_triage_re_runs_the_stored_proofs_unless_told_not_to(
     assert cli.main(["run", str(path)]) == 0
     seen = []
     monkeypatch.setattr(
-        confirm, "reprove", lambda cfg, run, items, d, **k: seen.append(d)
+        confirm, "run_stored", lambda cfg, run, d, **k: seen.append(d) or []
     )
 
     assert cli.main(["triage", str(path), "--no-trace"]) == 0
     assert cli.main(["triage", str(path), "--no-trace", "--no-proofs"]) == 0
 
     assert seen == [path.parent / "proofs" / "v"]
+
+
+def test_triage_proves_first_and_traces_only_what_no_proof_explains(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    run = pipeline._run_from_json(json.loads(saved.read_text()))
+    (group,) = run.applied.open
+    proof = confirm.Proof(
+        path.parent / "proofs" / "v" / f"ada-region__{group.bucket}.sql",
+        "ada-region",
+        group.bucket,
+        {"C1": ("dashboard", "the sheet drops them")},
+        "SELECT 1",
+    )
+    order = []
+
+    def stored(cfg, run_, d, **k):
+        order.append("proofs")
+        items = confirm._bucket_items(run_, "ada-region", group.bucket)
+        found = {i: confirm.Outcome(g.n_rows, Counter({"C1": g.n_rows}))
+                 for i, g in items}  # fmt: skip
+        return [confirm.Ran(proof, items, found)]
+
+    def traced(cfg, run_, *, skip, **k):
+        order.append("trace")
+        assert skip == {trace.item_key(group)}
+        # A cap stops the trace: it never un-proves what a proof explained.
+        return trace.TraceResult({}, stops={("ada-region", group.bucket): "cap"})
+
+    monkeypatch.setattr(confirm, "run_stored", stored)
+    monkeypatch.setattr(trace, "trace_run", traced)
+
+    assert cli.main(["triage", str(path)]) == 0
+
+    assert order == ["proofs", "trace"]
+    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    (item,) = [i for i in items if i["kind"] == "group"]
+    assert item["suggestion"] == "cause"
+    assert item["proof"]["path"] == f"proofs/v/ada-region__{group.bucket}.sql"
 
 
 def test_triage_confirm_reaches_its_command(fakes, tmp_path, monkeypatch):
@@ -2451,7 +2494,7 @@ def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch)
     run = pipeline._run_from_json(json.loads(saved.read_text()))
     seen = {}
 
-    def traced(cfg, run_, *, wh, cube, manifest_path, max_minutes):
+    def traced(cfg, run_, *, wh, cube, manifest_path, max_minutes, skip):
         seen["manifest"], seen["minutes"] = manifest_path, max_minutes
         found = {}
         for g in run_.applied.open:
@@ -2523,10 +2566,18 @@ def test_triage_writes_its_batch_when_the_trace_stops(
     path = _file(tmp_path)
     assert cli.main(["run", str(path)]) == 0
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    run = pipeline._run_from_json(json.loads(saved.read_text()))
+    (open_group,) = run.applied.open
+    stopped = trace.ItemTrace("dashboard", open_group.n_rows)
+    stopped.unknown = open_group.n_rows
+    stopped.stopped = "the trace passed its time limit"
     monkeypatch.setattr(
         trace,
         "trace_run",
-        lambda *a, **k: trace.TraceResult({}, "the trace passed its time limit"),
+        lambda *a, **k: trace.TraceResult(
+            {trace.item_key(open_group): stopped},
+            stops={("ada-region", open_group.bucket): stopped.stopped},
+        ),
     )
 
     assert cli.main(["triage", str(path)]) == 0
@@ -2534,7 +2585,7 @@ def test_triage_writes_its_batch_when_the_trace_stops(
     items = json.loads((saved.parent / "triage.json").read_text())["items"]
     (group,) = [i for i in items if i["kind"] == "group"]
     assert group["suggestion"] == "investigate"
-    assert group["evidence"][0] == "trace stopped: the trace passed its time limit"
+    assert "trace stopped: the trace passed its time limit" in group["evidence"]
 
 
 def test_a_value_check_past_the_cap_still_writes_the_batch(
