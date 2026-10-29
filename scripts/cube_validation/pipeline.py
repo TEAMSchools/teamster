@@ -993,7 +993,9 @@ def _unproven_totals(comparisons: list[Comparison]) -> list[str]:
 
 
 def reshape_text(shelves: dict[str, Any]) -> str:
-    """`dropped A, B; added C to rows, D to columns`, for a `shelves:` key."""
+    """`dropped A; added C to rows, D to columns; cleared the filters on E`,
+    for a `shelves:` key.
+    """
     parts = []
     if shelves.get("drop"):
         parts.append(f"dropped {', '.join(shelves['drop'])}")
@@ -1003,6 +1005,8 @@ def reshape_text(shelves: dict[str, Any]) -> str:
     ]
     if added:
         parts.append(f"added {', '.join(added)}")
+    if shelves.get("clear_filters"):
+        parts.append(f"cleared the filters on {', '.join(shelves['clear_filters'])}")
     return "; ".join(parts)
 
 

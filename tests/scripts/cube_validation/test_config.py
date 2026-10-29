@@ -654,6 +654,11 @@ def test_shelves_load_when_each_added_field_maps_to_a_dim(tmp_path):
     }
 
 
+def test_shelves_load_a_cleared_filter_alone(tmp_path):
+    first = _shelves(tmp_path, "{ clear_filters: [Discipline] }")
+    assert first.shelves == {"clear_filters": ["Discipline"]}
+
+
 @pytest.mark.parametrize(
     "shelves, message",
     [
@@ -665,8 +670,9 @@ def test_shelves_load_when_each_added_field_maps_to_a_dim(tmp_path):
         ("{ add: { pages: [Region] } }", r"shelves\.add: takes rows and cols"),
         ("{ drop: Week }", r"shelves\.drop: must be list"),
         ("{ drop: [2026] }", r"shelves\.drop: captions must be text"),
-        ("{ keep: [Region] }", "shelves: takes drop and add"),
-        ("{}", "shelves: set drop or add"),
+        ("{ clear_filters: Discipline }", r"shelves\.clear_filters: must be list"),
+        ("{ keep: [Region] }", "shelves: takes drop, add and clear_filters"),
+        ("{}", "shelves: set drop, add or clear_filters"),
     ],
 )
 def test_shelves_refuse_an_unmapped_add_and_a_bad_shape(tmp_path, shelves, message):

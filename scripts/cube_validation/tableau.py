@@ -542,20 +542,23 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
     sheet does not list joins its datasource dependencies, copied from the
     datasource. Tableau recomputes every measure at the new grain. A dropped
     field's sorts and formats go with it, and so does any table calculation
-    along it (see `_strip_dropped`); its filters stay. Only that worksheet's
+    along it (see `_strip_dropped`); its filters stay. Each `clear_filters`
+    caption's filters are reset to keep every member. Only that worksheet's
     text changes.
 
     Args:
         twb_xml: The workbook XML.
         sheet: The worksheet name.
-        shelves: `{drop: [caption], add: {rows: [caption], cols: [caption]}}`.
+        shelves: `{drop: [caption], add: {rows: [caption], cols: [caption]},
+            clear_filters: [caption]}`.
 
     Raises:
         ValueError: The workbook has no such worksheet, a dropped caption is
             not on the sheet's rows or columns, an added caption names no
             field of the sheet's datasources (or more than 1), names a
             measure, a calculation the sheet does not list, or a field
-            already on the rows or columns.
+            already on the rows or columns, or a cleared caption names no
+            filter of the sheet or a filter not on members.
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)
@@ -684,6 +687,8 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
 
     text = _SHELF_TAG.sub(shelf, text)
     text = _strip_dropped(text, dropped, calcs)
+    for wanted in shelves.get("clear_filters", []):
+        text = _clear_filter(text, wanted, sheet, shown, is_named)
     out = twb_xml[: block.start()] + text + twb_xml[block.end() :]
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     ET.fromstring(out)
@@ -780,6 +785,58 @@ def _strip_dropped(text: str, dropped: set[str], calcs: set[str]) -> str:
     # A rule this edit emptied goes: no reference shows an empty <style-rule>.
     if not _EMPTY_STYLE_RULE.search(text):
         out = _EMPTY_STYLE_RULE.sub("", out)
+    return out
+
+
+def _clear_filter(
+    text: str,
+    wanted: str,
+    sheet: str,
+    shown: Callable[[str], str],
+    is_named: Callable[[str, str], bool],
+) -> str:
+    """A worksheet whose filters on `wanted` keep every member.
+
+    Each such filter keeps its element and attributes (a context filter stays
+    one, and its filter cards still name it); its members become the level's
+    every member, the form an untouched All filter takes.
+    """
+    nl = "\r\n" if "\r\n" in text else "\n"
+    found = 0
+
+    def clear(m: re.Match) -> str:
+        nonlocal found
+        element = m[0].lstrip()
+        lead = m[0][: len(m[0]) - len(element)]
+        opening = element.split(">", 1)[0]
+        column = _attrs(opening).get("column", "")
+        if not is_named(column, wanted):
+            return m[0]
+        found += 1
+        if _attrs(opening).get("class") != "categorical":
+            raise ValueError(
+                f"the filter on {wanted!r} on {sheet!r} is not on members; "
+                "only a member filter can be cleared"
+            )
+        indent = lead.lstrip("\r\n")
+        level = _xml_attr("[" + column.rsplit("].[", 1)[-1])
+        members = (
+            f"<groupfilter function='level-members' level='{level}' "
+            "user:ui-enumeration='all' user:ui-marker='enumerate' />"
+        )
+        opening = opening.rstrip("/").rstrip()
+        return f"{lead}{opening}>{nl}{indent}  {members}{nl}{indent}</filter>"
+
+    out = _element("filter").sub(clear, text)
+    if not found:
+        on_sheet = [
+            shown(_attrs(m[0].lstrip().split(">", 1)[0]).get("column", ""))
+            for m in _element("filter").finditer(text)
+        ]
+        raise ValueError(
+            f"{sheet!r} has no filter on {wanted!r}; it filters "
+            f"{', '.join(dict.fromkeys(on_sheet)) or 'nothing'}"
+        )
     return out
 
 

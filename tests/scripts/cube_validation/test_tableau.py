@@ -748,3 +748,38 @@ def test_set_shelves_drop_keeps_a_table_calc_along_kept_fields():
     )
     assert f"field='{DKI_DS}.[none:school:nk]'" not in grid
     assert "<natural-sort" in grid
+
+
+def test_set_shelves_clears_a_filter_on_one_sheet_only():
+    for src in (DKI_TWB, DKI_TWB.replace("\n", "\r\n")):
+        out = set_shelves(
+            src,
+            "Mastery Grid",
+            {"drop": ["Week Start Monday"], "clear_filters": ["Discipline"]},
+        )
+
+        ET.fromstring(out)
+        before, after = _worksheets(src), _worksheets(out)
+        nl = "\r\n" if "\r\n" in src else "\n"
+        grid = after["Mastery Grid"]
+        assert (
+            f"<filter class='categorical' column='{DKI_DS}.[Discipline]' "
+            f"filter-group='94'>{nl}            <groupfilter function='level-members' "
+            "level='[Discipline]' user:ui-enumeration='all' "
+            f"user:ui-marker='enumerate' />{nl}          </filter>"
+        ) in grid
+        assert "&quot;ELA&quot;' user:ui-domain" not in grid
+        # The year filter still narrows; the other sheet keeps its own.
+        assert "member='2026'" in grid
+        assert after["Mastery by Week"] == before["Mastery by Week"]
+
+
+def test_set_shelves_refuses_to_clear_a_missing_or_range_filter():
+    with pytest.raises(ValueError, match="no filter on 'School'; it filters Disc"):
+        set_shelves(DKI_TWB, "Mastery Grid", {"clear_filters": ["School"]})
+    ranged = DKI_TWB.replace(
+        "<filter class='categorical' column='[federated.0dki (copy)].[none:academic",
+        "<filter class='quantitative' column='[federated.0dki (copy)].[none:academic",
+    )
+    with pytest.raises(ValueError, match="'Academic Year' .* is not on members"):
+        set_shelves(ranged, "Mastery Grid", {"clear_filters": ["Academic Year"]})

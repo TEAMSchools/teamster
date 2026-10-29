@@ -2043,7 +2043,16 @@ def test_probe_fingerprint_covers_shelves(tmp_path):
         return pipeline.probe_fingerprint(cfg, cfg.comparisons[0])
 
     other = _reshaped(YML).replace("drop: [Team, Region]", "drop: [Region]")
-    assert len({fp(YML), fp(_reshaped(YML)), fp(other)}) == 3
+    cleared = _reshaped(YML).replace("add:", "clear_filters: [Team], add:")
+    assert len({fp(YML), fp(_reshaped(YML)), fp(other), fp(cleared)}) == 4
+
+
+def test_reshape_text_names_cleared_filters():
+    shelves = {"drop": ["Week"], "clear_filters": ["Discipline", "Term"]}
+    assert (
+        pipeline.reshape_text(shelves)
+        == "dropped Week; cleared the filters on Discipline, Term"
+    )
 
 
 def test_run_names_a_reshaped_proof(fakes, tmp_path, capsys):

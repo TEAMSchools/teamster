@@ -353,6 +353,9 @@ def _shelves(
 ) -> dict[str, Any]:
     """Read `shelves`; each added caption must name a dim.
 
+    `clear_filters` names sheet filters the proof copy resets to keep every
+    member, so the proof covers values the sheet filters out.
+
     A caption names a dim when a `filters:` caption maps it to the dim's
     dashboard column, or when it is that column's name, as is or in Tableau's
     default caption form (`Grade Level` for `grade_level`).
@@ -360,11 +363,13 @@ def _shelves(
     if reader.data.get("shelves") is None:
         return {}
     child = reader.child("shelves", reader.get("shelves", dict))
-    if set(child.data) - {"drop", "add"}:
-        child.fail("", "takes drop and add")
+    if set(child.data) - {"drop", "add", "clear_filters"}:
+        child.fail("", "takes drop, add and clear_filters")
     out: dict[str, Any] = {}
     if drop := _caption_list(child, "drop"):
         out["drop"] = drop
+    if cleared := _caption_list(child, "clear_filters"):
+        out["clear_filters"] = cleared
     if child.data.get("add") is not None:
         add = child.child("add", child.get("add", dict))
         if set(add.data) - {"rows", "cols"}:
@@ -387,7 +392,7 @@ def _shelves(
             if captions:
                 out.setdefault("add", {})[shelf] = captions
     if not out:
-        child.fail("", "set drop or add")
+        child.fail("", "set drop, add or clear_filters")
     return out
 
 

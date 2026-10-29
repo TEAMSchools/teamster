@@ -131,6 +131,9 @@ cause, do not retry around it.
      sheet's own; tell the analyst, and the run result says so. A dropped
      field's sorts, formats and any table calc along it leave the copy (that
      calc's column leaves the export); its filters stay.
+     `clear_filters: [<caption>]` resets that sheet's filter on each caption to
+     every member (the analyst's call to validate past it, such as all subjects,
+     not ELA).
    - `definitions: {dashboard: ..., cube: ...}`: what each side counts, in a
      sentence or a code list. The review issue shows both for a comparison with
      a domain-owner question. It goes to GitHub: never name a person.
