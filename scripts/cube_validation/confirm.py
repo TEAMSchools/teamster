@@ -44,6 +44,7 @@ from .config import Comparison, ViewConfig, id_like, mask_digits, row_population
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build
 from .report import RunResult, shown_counts
+from .timetravel import PROJECT
 from .trace import TIMEOUT_S, TRACED, _failure
 
 # The buckets a stored proof classifies: the one-sided rows the trace leads on,
@@ -53,6 +54,9 @@ PROVABLE = (*TRACED, "value_differs")
 PLACEHOLDER = "{unmatched}"
 # Enough of a BigQuery message to name the table and the reason.
 MAX_MESSAGE = 600
+_NOT_AN_ID = re.compile(
+    re.escape(PROJECT) + r"|\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?"
+)
 UNEXPLAINED = "UNEXPLAINED"
 COLUMNS = ("__row", "cause")
 SIDES = ("cube", "dashboard")
@@ -636,7 +640,17 @@ def bigquery_said(exc: GoogleAPIError) -> str:
     message = " ".join(str(getattr(exc, "message", None) or exc).split())
     if len(message) > MAX_MESSAGE:
         message = message[:MAX_MESSAGE] + "..."
-    return f"{_failure(exc)}: {mask_digits(message)}"
+    # The project and the timestamps name what clashed; they are no ID.
+    kept: list[str] = []
+
+    def keep(m: re.Match) -> str:
+        kept.append(m[0])
+        return f"\x00{len(kept) - 1}\x00"
+
+    masked = mask_digits(_NOT_AN_ID.sub(keep, message))
+    return f"{_failure(exc)}: " + re.sub(
+        "\x00(\\d+)\x00", lambda m: kept[int(m[1])], masked
+    )
 
 
 def run_proof(

@@ -253,7 +253,11 @@ def test_a_proof_that_cannot_run_notes_why_and_moves_nothing(duck, tmp_path, off
 
 def test_a_refused_proof_keeps_bigquerys_message_locally(duck, tmp_path, offline):
     _tables(duck)
-    said = "Conflicting 'FOR SYSTEM_TIME AS OF' expressions found for table m.t 12345"
+    said = (
+        "Conflicting 'FOR SYSTEM_TIME AS OF' expressions found for table "
+        "'teamster-332318.m.t': 2026-10-28 21:34:52.982 UTC vs. 2026-10-28 "
+        "21:34:41.073 UTC; for table m.t 12345"
+    )
 
     class Failing(Wh):
         def rows(self, sql, timeout_s=None):
@@ -263,6 +267,9 @@ def test_a_refused_proof_keeps_bigquerys_message_locally(duck, tmp_path, offline
 
     assert "Conflicting 'FOR SYSTEM_TIME AS OF'" in item["evidence"][0]
     assert "for table m.t <n>" in item["evidence"][0]
+    assert (
+        "'teamster-332318.m.t': 2026-10-28 21:34:52.982 UTC vs." in item["evidence"][0]
+    )
     assert item["evidence_posted"][0] == (
         "proof mastery__cube_only.sql not run; see the terminal"
     )
