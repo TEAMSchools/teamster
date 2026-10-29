@@ -20,8 +20,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import sqlglot
 from google.api_core.exceptions import GoogleAPIError
+from sqlglot.errors import SqlglotError
 
 from . import compare, pipeline
 from .bq import Warehouse
@@ -37,7 +37,7 @@ MAX_LEVELS = 2
 # BigQuery refuses a query longer than 1,024K characters.
 MAX_QUERY_CHARS = 900_000
 # A relaxed variant can multiply rows; BigQuery stops a query past this.
-TIMEOUT_S = 600
+TIMEOUT_S = 1800
 MANIFEST = (
     Path(__file__).resolve().parents[2] / "src/dbt/kipptaf/target/prod/manifest.json"
 )
@@ -426,7 +426,7 @@ def _trace_bucket(
                     # another checkout can name a column the table lacks, and
                     # a WITH RECURSIVE runs only at the top of a query.
                     wh.estimate(side.rows(child.full(child.query.sql())))
-                except (GoogleAPIError, sqlglot.errors.SqlglotError) as exc:
+                except (GoogleAPIError, SqlglotError) as exc:
                     print(f"Trace cannot descend into {ref.name}: {exc}")
                     blocked.add(ref.name)
                     continue
