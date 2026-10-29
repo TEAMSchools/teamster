@@ -86,6 +86,19 @@ Every `*_scope` column of `dim_staff_cube_access`, per persona:
 Reporting chains: Munroe → Ilgauskas, and Maximoff → Ogwumike. Everyone else has
 an empty chain.
 
+### Regions and schools
+
+The sandbox keeps production's shape: four school regions of different sizes
+(Newark, Miami, Camden, Paterson, largest first) and a Network Office region
+with one office and no students. A sixth, nameless region carries the manifest's
+null cells, so a kit meets a missing region name without the named five ever
+being the ones affected.
+
+Schools are `SBX###`, named "Sandbox School ###", with a few "Sandbox Campus"
+rows. Each persona works at a school inside its own region, and every
+region-scoped persona has at least one teacher in its region, so a region-level
+screen shows several schools and a teaching-staff view has someone to show.
+
 `staff_location_scope` and `staff_department_scope` are the remit pair, and they
 are the two a reader misses. They reach `access.js` as the parameters `locScope`
 and `deptScope`, so searching that file for `*_scope` finds five columns rather
@@ -154,6 +167,11 @@ an empty result, so a dev-mode run would report a falsely clean suite
 At least one `ROWS` canary is required. A suite of denials alone goes green
 against a deployment that denies everyone, which looks identical to perfect
 isolation.
+
+`ROWS` and `ZERO` judge the values, not the row count. Every canary is
+`SELECT count(*)`, which returns one row even when nothing matched, so a `ROWS`
+canary counted by rows could not fail. A result made only of nulls and zero
+aggregates is empty.
 
 Cube Cloud routes on the database name, so the runner needs the deployment name
 passed explicitly — its default suits a local Cube server and no cloud
@@ -273,10 +291,17 @@ with no cloud access.
 | `uv run python -m teamster.cube_sandbox.divergence`         | Assert the three query pairs still disagree         | Yes                 |
 | `uv run python -m teamster.cube_sandbox.mutate`             | Score whether the canaries are load-bearing         | Yes                 |
 | `uv run python -m teamster.cube_sandbox.meta_check`         | Assert `/meta` matches the pinned catalog           | Yes                 |
+| `uv run python -m teamster.cube_sandbox.sentinel`           | Assert every served email and school is fabricated  | Yes                 |
 
-The last three read their connection details from the environment and exit with
+The live checks read their connection details from the environment and exit with
 a message naming what is missing rather than falling back to localhost. A suite
 that quietly measures a dev server reports on a deployment nobody ships.
+
+The sentinel exists because the isolation test checks whichever key it is
+handed, not what the deployment is configured with. A production project or key
+pasted into the sandbox deployment would serve real records under a secret an
+outside party holds; the sentinel reads through the deployment's own endpoint
+and fails on any address outside `.invalid` or any school outside `SBX###`.
 
 `.github/workflows/cube-sandbox-contract.yaml` runs the consistency check, a
 `tiny` generate-and-score, and the unit tests on every pull request touching
@@ -307,9 +332,13 @@ uv run python -m teamster.cube_sandbox.generate --scale full
 uv run python -m teamster.cube_sandbox.load --avro-dir build/cube_sandbox/full
 
 # 5. Assert the result.
+uv run python -m teamster.cube_sandbox.sentinel
 uv run scripts/cube_rls_matrix.py --expect src/cube/sandbox/canaries.yml
 uv run python -m teamster.cube_sandbox.divergence
 ```
+
+The sentinel needs `CUBE_SANDBOX_REST_URL` and `CUBE_SANDBOX_API_SECRET`, the
+sandbox deployment's `CUBEJS_API_SECRET`.
 
 Step 4 needs `GOOGLE_APPLICATION_CREDENTIALS` pointing at the sandbox service
 account key, and the `teamster-cube-sandbox-staging` bucket to exist. Step 5
@@ -375,11 +404,10 @@ would be a step toward the cross-project binding the design exists to prevent.
 
 ## Known gaps
 
-- **The loaded profile is `tiny`.** 21 tables, roughly 8,300 rows, verified
-  column-for-column against the pinned snapshot, with all ten canaries passing
-  against the deployment. A production-scale profile is a `--scale` argument and
-  no code change, but until it runs, nothing here supports a conclusion about
-  pagination, timeouts or query cost.
+- **The loaded profile is `tiny`.** A production-scale profile is a `--scale`
+  argument and no code change, but until it runs, nothing here supports a
+  conclusion about pagination, timeouts or query cost, and the `Continue wait`
+  polling path has not been exercised.
 - **No persona holds an individual exception grant.** Every generated
   `additional_location_grants` is an empty array, so the branch that grant
   column exists for — "my region plus one specific other school" — is never

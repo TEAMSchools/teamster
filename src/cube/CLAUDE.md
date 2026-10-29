@@ -43,8 +43,9 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   flows into `cube.js`'s `checkAuth`, which resolves it via `resolveAccess` into
   the enriched `securityContext` every view's `access_policy` reads. Not nested
   under `u`/`securityContext`/`userContext`.
-- `Authorization` header is raw token — **no `Bearer` prefix** (Cube Cloud
-  Metadata API exception per docs is a footnote, not the norm).
+- `Authorization` header carries the raw token. A `Bearer ` prefix is also
+  accepted by the deployment, but send the raw token: it is what `checkAuth`
+  verifies.
 - Cube Cloud "Personal Core Data API Token" (PAT) returns 403 against `/meta`
   even with the right format — labeled "for SQL API connections" and behaves
   that way. JWT-from-secret is the only reliable path.

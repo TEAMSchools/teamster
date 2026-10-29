@@ -2,14 +2,13 @@
 #
 # WHY THIS EXISTS RATHER THAN CUBE'S OWN SPEC
 #
-# Cube publishes one at packages/cubejs-api-gateway/openspec.yml, and a client
-# generated from it does not authenticate against this deployment. It declares
-# `bearerAuth` with `scheme: bearer`, so a generator emits
-# `Authorization: Bearer <token>`. KTAF's `checkAuth` replaces Cube's default
-# JWT handling and reads the RAW token, so the prefix makes every call fail —
-# with a 403 that says nothing about a prefix.
+# Cube publishes one at packages/cubejs-api-gateway/openspec.yml, but it
+# describes Cube's default JWT handling, which KTAF's `checkAuth` replaces. The
+# deployment also accepts `Authorization: Bearer <token>`; the scheme here stays
+# an apiKey so a generated client sends the raw token, which is what
+# `checkAuth` verifies.
 #
-# Three more things that spec cannot know, each of which a generator ignores:
+# Things that spec cannot know, each of which a generator ignores:
 #
 #   - `iat` is mandatory. `checkAuth` verifies with `maxAge: "12h"`, which
 #     derives its cutoff from `iat`, so a token minted without one is rejected
@@ -19,6 +18,9 @@
 #   - `/v1/load` can answer HTTP 200 with `{"error": "Continue wait"}`. That is
 #     not a result and not a failure; it means poll again. A client that treats
 #     200 as success returns that object to its caller as data.
+#   - An access denial is HTTP 500, not 403, and its message tells the caller
+#     to set `public: true` on the model. That advice is for a model author;
+#     an agent that follows it edits files it does not own. See `Denied`.
 #
 # Shapes here are taken from `src/cube/mcp/server.py`, which calls these
 # endpoints against this deployment, rather than from documentation. Note
@@ -36,8 +38,10 @@ info:
   description: >
     Read-only analytics over a Cube semantic layer backed entirely by fabricated
     data. No real student or staff record is reachable through this deployment.
-    The model is identical to KTAF production's, so a client built here repoints
-    by changing the server URL and the signing secret, and nothing else.
+    The model is identical to KTAF production's, so queries written here run
+    unchanged against production. Authentication does not carry over: production
+    never issues its signing secret to a client, so a client must not treat the
+    secret as a setting it swaps at repoint.
   contact:
     name: KTAF Data Team
 
@@ -112,6 +116,7 @@ paths:
                   - $ref: "#/components/schemas/ContinueWait"
         "400": { $ref: "#/components/responses/BadQuery" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/Denied" }
 
   /v1/sql:
     get:
@@ -119,8 +124,7 @@ paths:
       summary: The SQL a query compiles to, without running it
       description: >
         The query travels as a JSON-encoded string in a GET parameter, not as a
-        request body. Useful for confirming which access policy applied: a
-        default-denied query compiles to `WHERE (1 = 0)`.
+        request body.
       operationId: getSql
       parameters:
         - name: query
@@ -157,8 +161,8 @@ components:
       in: header
       name: Authorization
       description: >
-        The bare JWT, with NO `Bearer` prefix. Declared as an apiKey rather than
-        `http`/`bearer` precisely so a generator does not add one.
+        The JWT, sent raw. A `Bearer ` prefix is also accepted, but the raw
+        token is what `checkAuth` verifies, so send it without one.
 
 
         Mint per request with HS256 over the sandbox API secret. The entire
@@ -190,17 +194,44 @@ components:
                   Re-mint it.
     BadQuery:
       description: >
-        The query did not compile. A view the caller's access excludes reports
-        as not found, which is indistinguishable from a typo by message alone —
-        tell them apart by the view name you asked for.
+        The query is malformed, most often a member named without its `view.`
+        prefix.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            bareMember:
+              value:
+                error: >-
+                  Invalid query format: "measures[0]" with value
+                  "count_employees" fails to match the required pattern
+    Denied:
+      description: >
+        Either the caller cannot see a member it asked for, or a member does not
+        exist. Cube reports both as a server error. A denial names the member
+        and suggests `public: true`; that suggestion is for whoever owns the
+        model and does not apply to a caller. Switch persona, or drop the
+        member. A token whose identity matches no person, or a request with no
+        `Authorization` header, is denied the same way on every view. The second
+        form names the path it could not find: check the member name against
+        `/v1/meta`.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
           examples:
             denied:
-              summary: Access denial, not a typo
+              summary: The caller's access excludes this member
               value:
-                error: Table or CTE with name 'staff_pii' not found
+                error: >-
+                  Error: You requested hidden member:
+                  'staff_pii.count_employees'. Please make it visible using
+                  `public: true`.
+            unknownMember:
+              summary: No such member
+              value:
+                error: >-
+                  Error: 'does_not_exist' not found for path
+                  'staff_directory.does_not_exist'
 
   schemas:
     Error:
