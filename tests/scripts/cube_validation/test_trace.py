@@ -447,7 +447,7 @@ def test_evidence_masks_a_part_its_total_would_give_away():
     found.labels["s"] = "main: s"
     found.none = 7
 
-    assert found.shown_total() == "masked"
+    assert found.shown_total() == "25"
     assert found.evidence() == (
         "main: s: masked rows",
         "<10 rows unattributed: <10 recovered by no step",
@@ -945,4 +945,26 @@ def test_a_row_only_a_row_pick_drops_says_so(duck):
     assert found.evidence()[-1] == (
         "<10 rows unattributed: <10 a row pick drops it; the row is in the "
         "tables the dashboard SQL reads"
+    )
+
+
+def test_masked_cells_of_a_breakdown_hold_10_or_more_together():
+    # P-old-2: 40 = 10 + (25 + 3 + 2). With the 25 shown, 40 - 10 - 25 gives
+    # the two small cells' sum; so the 25 is masked too, and the 30 may show.
+    found = trace.ItemTrace("dashboard", 40)
+    found.steps["a"] = 10
+    found.labels["a"] = "main: a"
+    found.many = 25
+    found.many_labels = ("main: b", "main: c")
+    found.pairs_many = 3
+    found.none = 2
+
+    lines = found.evidence()
+
+    assert found.shown_total() == "40"
+    assert lines[0] == "main: a: 10 rows"
+    assert lines[1] == (
+        "30 rows unattributed: masked recovered by steps in 2 or more scopes "
+        "(main: b, main: c); <10 recovered by more than one pair of steps; "
+        "<10 recovered by no step"
     )

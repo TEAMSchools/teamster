@@ -808,14 +808,23 @@ def test_review_issue_ends_with_fenced_json_in_details():
 
 
 def test_suppress_hides_a_lone_small_part_and_its_next_smallest():
-    # 25 = 18 + 7: masking 7 alone leaves it as 25 - 18.
-    assert suppress(25, [18, 7]) == ("masked", ["masked", "<10"])
+    # 25 = 18 + 7: masking 7 alone leaves it as 25 - 18. With both masked,
+    # the total gives only their sum, which holds 10 or more.
+    assert suppress(25, [18, 7]) == ("25", ["masked", "<10"])
 
 
 def test_suppress_rules():
     assert suppress(40, [20, 20]) == ("40", ["20", "20"])
     assert suppress(48, [30, 13, 5]) == ("48", ["30", "masked", "<10"])
-    assert suppress(15, [9, 6]) == ("masked", ["<10", "<10"])
-    assert suppress(30, [22, 4, 4]) == ("masked", ["22", "<10", "<10"])
+    assert suppress(15, [9, 6]) == ("15", ["<10", "<10"])
     assert suppress(5, [5]) == ("<10", ["<10"])
     assert suppress(120, [100, 20]) == ("120", ["100", "20"])
+
+
+def test_suppress_masks_until_the_masked_parts_hold_10_together():
+    # Two `<10` parts summing to under 10: the total minus the shown parts
+    # would give their sum, so the next-smallest part is masked too.
+    assert suppress(30, [22, 4, 4]) == ("30", ["masked", "<10", "<10"])
+    assert suppress(40, [25, 3, 2]) == ("40", ["masked", "<10", "<10"])
+    assert suppress(50, [30, 11, 5, 4]) == ("50", ["30", "masked", "<10", "<10"])
+    assert suppress(12, [11, 1]) == ("12", ["masked", "<10"])
