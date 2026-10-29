@@ -2395,9 +2395,13 @@ def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch)
     items = json.loads((saved.parent / "triage.json").read_text())["items"]
     groups = [i for i in items if i["kind"] == "group"]
     assert len(groups) == len(run.applied.open)
-    assert {i["suggestion"] for i in groups} == {"cause"}
-    assert groups[0]["cause"][0]["label"] == "main: region <> 'Miami'"
-    assert "cause (" in capsys.readouterr().out
+    # The trace leads; it never proves.
+    assert {i["suggestion"] for i in groups} == {"investigate"}
+    assert groups[0]["cause"] is None
+    assert groups[0]["evidence"][0].startswith(
+        "lead: relaxing main: region <> 'Miami' brings back "
+    )
+    assert "investigate (" in capsys.readouterr().out
 
 
 # The real one: `_cache_in_tmp` replaces it in every test.

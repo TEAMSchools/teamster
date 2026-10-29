@@ -267,6 +267,23 @@ class ItemTrace:
                 lines.append(f"trace stopped: {self.stopped}")
         return tuple(lines)
 
+    def leads(self) -> tuple[str, ...]:
+        """`evidence`, each cause worded as a lead to test, never as a cause.
+
+        A step whose relaxing brings rows back is where to look first; the
+        session proves the cause (`triage confirm`).
+        """
+        causes = self.steps.most_common()
+        parts = [n for _, n in causes]
+        if self.unattributed:
+            parts.append(self.unattributed)
+        total, texts = suppress(self.n_rows, parts)
+        lines = [
+            f"lead: relaxing {self.labels[s]} brings back {text} of {total} rows"
+            for (s, _), text in zip(causes, texts, strict=False)
+        ]
+        return tuple(lines) + self.evidence()[len(causes) :]
+
 
 def item_key(g: Group) -> tuple:
     return (g.comparison_id, g.bucket, g.dims)

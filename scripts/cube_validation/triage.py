@@ -3,11 +3,12 @@
 An open item is a row group, a comparison's cell differences, or a missing cut
 or filter. A pile never applies a call: the analyst reads it and decides, and
 an item in `investigate` blocks every decision on the view until it reaches a
-proven cause. A row group reaches `cause` when the trace (`trace.py`)
-attributes every one of its unmatched rows to a step; a missing cut or filter
-the sheet carries is its own proof. Item ids and labels carry no value the
-review issue would hide. `suggest` is pure; `value_check` and `run_triage`
-read the warehouse and Cube.
+proven cause. The trace (`trace.py`) only leads: a row group reaches `cause`
+when `triage confirm` (`confirm.py`) checks a classification query that names
+each of its unmatched rows' cause. A missing cut or filter the sheet carries,
+and rows the sheet's own dashboard-only filter drops, are their own proof.
+Item ids and labels carry no value the review issue would hide. `suggest` is
+pure; `value_check` and `run_triage` read the warehouse and Cube.
 """
 
 from __future__ import annotations
@@ -67,9 +68,10 @@ class Suggestion:
 
     `evidence` is the quoted note, verdict or member doc text; doc text is
     evidence only and never picks the pile. `candidates` are the Cube members a
-    missing filter or cut may map to. `cause` is, for a `cause` item, the steps
-    its rows are attributed to, each `{side, step, label, n_rows}`; it is None
-    until a trace proves one.
+    missing filter or cut may map to. `cause` is, for a `cause` item, its
+    causes, each `{side, step, label, n_rows}`; it is None until one is
+    proven. `proof` is, for an item `triage confirm` proved, what a re-run
+    checks before keeping the cause (see `carry_confirmed`).
     """
 
     item: Item
@@ -77,6 +79,7 @@ class Suggestion:
     evidence: tuple[str, ...]
     candidates: tuple[str, ...] = ()
     cause: list[dict] | None = None
+    proof: dict | None = None
 
 
 def _stub_dim(g: Group, open_groups: list[Group]) -> tuple[str, str]:
@@ -348,10 +351,10 @@ def suggest(
         One suggestion per open item, ordered by `SUGGESTIONS`. A missing
         filter the proof shows filters nothing, or whose values match a Cube
         member's, takes `filters_nothing` or `map_filters`; any other missing
-        cut or filter is `cause`, a sheet step on the dashboard side. A row
-        group whose rows the trace all attributes is `cause`, with the steps
-        and their row counts. Every other item is `investigate`, with what
-        the trace found and its involved members' docs as evidence.
+        cut or filter is `cause`, a sheet step on the dashboard side, and so
+        is a group the sheet's dashboard-only filter drops. Every other item
+        is `investigate`, with the trace's leads and its involved members'
+        docs as evidence.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     entries = _entries(run)
@@ -424,10 +427,18 @@ def suggest(
                     item = dataclasses.replace(
                         item, label=_group_label(source, traced.shown_total())
                     )
-                if traced is not None and traced.proven:
+                if (
+                    traced is not None
+                    and traced.proven
+                    and source.bucket == "dashboard_filtered"
+                ):
+                    # The run's reconcile proved each row: the sheet's own
+                    # dashboard-only filter drops it.
                     call, cause, evidence = "cause", traced.cause(), traced.evidence()
                 elif traced is not None:
-                    found = traced.evidence()
+                    # The trace is a lead: a person proves the cause with
+                    # `triage confirm`.
+                    found = traced.leads()
                 elif traces is None:
                     found = (NOT_TRACED,)
                 elif stopped and source.bucket in trace.TRACED:

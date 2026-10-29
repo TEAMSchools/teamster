@@ -371,20 +371,48 @@ def _traced(n_rows, **steps):
     return t
 
 
-def test_a_group_whose_rows_are_all_attributed_is_cause():
+def test_the_trace_never_yields_cause():
     group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
     traces = {trace.item_key(group): _traced(40, wpp=30, week_end=10)}
 
     [s] = suggest(_cfg(), _run(groups=[group]), {}, traces=traces)
 
-    assert s.suggestion == "cause"
-    assert s.cause == [
-        {"side": "dashboard", "step": "dashboard:responses:0", "label": "wpp",
-         "n_rows": 30},
-        {"side": "dashboard", "step": "dashboard:responses:1", "label": "week_end",
-         "n_rows": 10},
-    ]  # fmt: skip
-    assert s.evidence[:2] == ("wpp: 30 rows", "week_end: 10 rows")
+    assert s.suggestion == "investigate" and s.cause is None
+    assert s.evidence[:2] == (
+        "lead: relaxing wpp brings back 30 of 40 rows",
+        "lead: relaxing week_end brings back 10 of 40 rows",
+    )
+
+
+def test_a_lead_masks_a_small_count_and_what_gives_it_away():
+    group = Group("enrollment", (("grade_level", "9"),), "dashboard_only", 40, 38)
+    traces = {trace.item_key(group): _traced(40, wpp=35, week_end=5)}
+
+    [s] = suggest(_cfg(), _run(groups=[group]), {}, traces=traces)
+
+    assert s.evidence[:2] == (
+        "lead: relaxing wpp brings back masked of 40 rows",
+        "lead: relaxing week_end brings back <10 of 40 rows",
+    )
+
+
+def test_rows_the_sheet_s_own_filter_drops_stay_a_cause():
+    group = Group(
+        "enrollment",
+        (("dashboard_filter", "administered_at"), ("grade_level", "9")),
+        "dashboard_filtered",
+        12,
+        9,
+    )
+    found = trace.ItemTrace("dashboard", 12)
+    found.steps["dashboard:filter:administered_at"] = 12
+    found.labels["dashboard:filter:administered_at"] = "dashboard filter x"
+
+    [s] = suggest(
+        _cfg(), _run(groups=[group]), {}, traces={trace.item_key(group): found}
+    )
+
+    assert s.suggestion == "cause" and s.cause[0]["n_rows"] == 12
 
 
 def test_a_group_with_an_unattributed_row_stays_in_investigate():
@@ -401,7 +429,7 @@ def test_a_group_with_an_unattributed_row_stays_in_investigate():
     # 1 of 40 masked alone would read as 40 - 39: the 39 hides too, and the
     # total then gives only their sum.
     assert s.evidence == (
-        "wpp: masked rows",
+        "lead: relaxing wpp brings back masked of 40 rows",
         "<10 rows unattributed: <10 recovered by no step",
         "student_count: Counts students.",
     )
