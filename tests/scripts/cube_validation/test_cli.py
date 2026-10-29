@@ -979,8 +979,9 @@ def _proof_file(monkeypatch, tmp_path):
 
 def _proof_of(path):
     return {
+        "kind": "query",
         "path": str(path),
-        "fingerprint": hashlib.sha256(path.read_text().encode()).hexdigest(),
+        "fingerprint": confirm.file_fingerprint(path),
     }
 
 
@@ -3224,7 +3225,7 @@ def test_a_changed_proof_re_opens_a_cause_decision_for_re_approval(
 
     # The proof file changes; the next triage carries its new fingerprint.
     proof = Path(STORED_PROOF["path"])
-    proof.write_text(PROOF_TEXT + "-- tightened\n")
+    proof.write_text(PROOF_TEXT.replace("1 AS n", "2 AS n"))
     STORED_PROOF.update(_proof_of(proof))
     _triaged_run(path, tmp_path)
     capsys.readouterr()
@@ -3248,7 +3249,7 @@ def test_an_answered_cause_decision_is_never_re_approved_on_a_changed_proof(
     path.write_text(path.read_text().replace("    call: domain_owner\n",
                                              "    call: domain_owner\n    answer: domain_owner\n"))  # fmt: skip
     proof = Path(STORED_PROOF["path"])
-    proof.write_text(PROOF_TEXT + "-- tightened\n")
+    proof.write_text(PROOF_TEXT.replace("1 AS n", "2 AS n"))
     STORED_PROOF.update(_proof_of(proof))
     _triaged_run(path, tmp_path)
     before = path.read_text()

@@ -490,15 +490,15 @@ def cause_asks(
 
 
 def _proof_changed(proof: dict | None) -> bool:
-    """A stored proof's file is gone, or no longer the text triage ran."""
+    """A stored proof's file is gone, or no longer the proof triage ran.
+
+    Compared by `confirm.fingerprint`, so a formatting-only edit is no change.
+    """
     if not proof or not proof.get("path"):
         return False
-    path = Path(proof["path"])
-    if not path.is_file():
-        return True
-    return hashlib.sha256(path.read_text().encode()).hexdigest() != proof.get(
-        "fingerprint"
-    )
+    from . import confirm
+
+    return confirm.file_fingerprint(Path(proof["path"])) != proof.get("fingerprint")
 
 
 def posted_triage(loaded: dict) -> dict:

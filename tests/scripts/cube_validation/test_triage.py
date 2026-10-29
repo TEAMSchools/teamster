@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
-from cube_validation import pipeline, trace
+from cube_validation import confirm, pipeline, trace
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Gap, Group
@@ -668,7 +668,6 @@ def test_open_key_changes_when_a_group_or_cell_set_changes_its_counts():
 # --- cause decisions: what the latest triage says they decide (T17) ----------
 
 import copy  # noqa: E402
-import hashlib  # noqa: E402
 import json  # noqa: E402
 
 import pytest  # noqa: E402
@@ -704,7 +703,8 @@ def _fp_run(groups):
 def _proof_file(tmp_path, text="SELECT 1"):
     path = tmp_path / "enrollment__dashboard_only.sql"
     path.write_text(text)
-    return {"path": str(path), "fingerprint": hashlib.sha256(text.encode()).hexdigest()}
+    return {"kind": "query", "path": str(path),
+            "fingerprint": confirm.file_fingerprint(path)}  # fmt: skip
 
 
 def _item(item_id, proof, *causes):
