@@ -331,10 +331,12 @@ cause, do not retry around it.
 
    Comparisons that differ only in `dims`, `measure` or what shapes their cells
    (same `dashboard_view`, `rows`, `filters`, `defaults`, `cuts`, `scope` and
-   `dashboard_filters`) reconcile the same rows. Prove one of them: its proof
-   also runs on the others' groups of that bucket, in `confirm` (printed as
-   "Also <comparison> (same rows)") and in every `triage`, unless one has a
-   proof file of its own, which then wins. Delete a duplicate file to share.
+   `dashboard_filters`) usually reconcile the same rows. Prove one of them: its
+   proof also runs on the others' groups of that bucket, in `confirm` (printed
+   as "Also <comparison> (same rows)") and in every `triage`, unless one has a
+   proof file of its own, which then wins, even when it fails. Each run checks
+   that comparison's own rows, so a dim whose join drops or repeats rows shows
+   as a refusal there. Delete a duplicate file to share.
 
    Every `triage` re-runs every stored proof on the new run's rows first, priced
    and capped (`--no-proofs` skips them), then traces only what no proof

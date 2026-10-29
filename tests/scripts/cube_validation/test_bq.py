@@ -451,3 +451,26 @@ def test_a_failed_query_carries_its_job_id():
         Warehouse(client=Failing()).rows("select 1")
 
     assert getattr(caught.value, JOB_ID) == "job-1"
+
+
+def test_a_query_that_fails_mid_run_still_counts_what_it_billed(tmp_path):
+    class Client(FakeClient):
+        def query(self, sql, job_config=None):
+            job = super().query(sql, job_config)
+
+            def boom():
+                raise BadRequest("timed out", errors=[{"reason": "timeout"}])
+
+            def reload():
+                job.total_bytes_billed = int(0.5 / 6.25 * TIB)
+
+            job.result, job.reload = boom, reload
+            return job
+
+    wh = Warehouse(client=Client())
+    wh.configure_local(tmp_path, daily_cap=3.0)
+
+    with pytest.raises(BadRequest), wh.budget(2.0):
+        wh.rows("select 1", timeout_s=1)
+
+    assert wh.spent_today() == pytest.approx(0.5, abs=0.001)

@@ -638,8 +638,6 @@ def bigquery_said(exc: GoogleAPIError) -> str:
     are masked in case it quotes a value. Posted text keeps a fixed line.
     """
     message = " ".join(str(getattr(exc, "message", None) or exc).split())
-    if len(message) > MAX_MESSAGE:
-        message = message[:MAX_MESSAGE] + "..."
     # The project and the timestamps name what clashed; they are no ID.
     kept: list[str] = []
 
@@ -647,10 +645,15 @@ def bigquery_said(exc: GoogleAPIError) -> str:
         kept.append(m[0])
         return f"\x00{len(kept) - 1}\x00"
 
-    masked = mask_digits(_NOT_AN_ID.sub(keep, message))
-    return f"{_failure(exc)}: " + re.sub(
-        "\x00(\\d+)\x00", lambda m: kept[int(m[1])], masked
+    masked = re.sub(
+        "\x00(\\d+)\x00",
+        lambda m: kept[int(m[1])],
+        mask_digits(_NOT_AN_ID.sub(keep, message)),
     )
+    # Cut after masking, so a cut never leaves part of an ID unmasked.
+    if len(masked) > MAX_MESSAGE:
+        masked = masked[:MAX_MESSAGE] + "..."
+    return f"{_failure(exc)}: {masked}"
 
 
 def run_proof(
@@ -947,7 +950,11 @@ def siblings(cfg: ViewConfig, comparison: Comparison) -> list[Comparison]:
 def _shared(
     cfg: ViewConfig, directory: Path, proof: Proof, comparison: Comparison
 ) -> list[Comparison]:
-    """The siblings a proof also classifies: those with no proof of their own."""
+    """The siblings a proof also classifies: those with no proof of their own.
+
+    A sibling's own proof wins even when it fails: its refusal shows, rather
+    than another proof standing in for it.
+    """
     return [
         c
         for c in siblings(cfg, comparison)

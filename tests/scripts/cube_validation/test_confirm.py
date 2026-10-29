@@ -996,3 +996,20 @@ def test_confirm_also_proves_the_comparisons_with_the_same_rows(
     assert "Also mastery-b (same rows): 1 of 1 items proven." in capsys.readouterr().out
     proofs = tmp_path / "validation" / "proofs" / "v"
     assert [p.name for p in proofs.iterdir()] == ["mastery__cube_only.sql"]
+
+
+def test_a_sibling_s_own_failing_proof_shows_its_refusal(duck, tmp_path, offline):
+    _tables(duck)
+    run = _sibling_run()
+    items = _items2(run)
+    directory, _ = _proof(tmp_path)
+    confirm.proof_path(directory, "mastery-b", "cube_only").write_text("not a proof")
+
+    _stored(run, items, directory, Wh(duck), cfg=CFG2)
+
+    by = {i["comparison"]: i for i in items}
+    assert by["mastery"]["suggestion"] == "cause"
+    assert by["mastery-b"]["suggestion"] == "investigate"
+    assert by["mastery-b"]["evidence"][0].startswith(
+        "proof mastery-b__cube_only.sql not run"
+    )

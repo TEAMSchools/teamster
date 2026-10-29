@@ -1019,3 +1019,31 @@ def test_a_step_too_long_alone_is_left_out_and_noted(monkeypatch):
     monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 10)
     with pytest.raises(trace.Stopped, match="alone is too long"):
         runner.plan(variants, [], [])
+
+
+def test_a_side_too_long_at_level_0_stops_only_its_bucket(monkeypatch):
+    side = _side(FLAT)
+    monkeypatch.setattr(trace, "network_schools", lambda wh: set())
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: side.sides)
+    cube_only = _group(5)
+    dash_only = Group("mastery", (("abbreviation", "X"),), "dashboard_only", 4, 4)
+    run = RunResult(
+        view="v",
+        moment=BUILD,
+        measures=[],
+        applied=Applied(open=[cube_only, dash_only]),
+    )
+    real = trace._Runner.plan
+
+    def plan(self, variants, exclude, include):
+        if self.side.bucket == "cube_only":
+            raise trace.Stopped("the cube SQL alone is too long to run")
+        return real(self, variants, exclude, include)
+
+    monkeypatch.setattr(trace._Runner, "plan", plan)
+    wh = FakeWarehouse(lambda sql: [])
+
+    result = trace.trace_run(CFG, run, wh=wh, cube=None, levels=0)
+
+    assert "alone is too long" in result.items[trace.item_key(cube_only)].stopped
+    assert not result.items[trace.item_key(dash_only)].stopped

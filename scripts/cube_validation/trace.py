@@ -1172,10 +1172,15 @@ def trace_run(
 
     # Each bucket is priced, and stops, on its own: one bucket's failure never
     # keeps another from being traced.
-    usd, ready = 0.0, []
-    firsts = [b.first_queries() for b in buckets]
-    priced = iter(_dry_runs(wh, [q for qs in firsts for q in qs]))
-    for b, qs in zip(buckets, firsts, strict=True):
+    usd, ready, planned = 0.0, [], []
+    for b in buckets:
+        try:
+            planned.append((b, b.first_queries()))
+        except Stopped as exc:
+            print(f"Trace {b.runner.label} stopped: level 0: {exc.reason}")
+            out |= b.stop(f"level 0: {exc.reason}")
+    priced = iter(_dry_runs(wh, [q for _, qs in planned for q in qs]))
+    for b, qs in planned:
         got = [next(priced) for _ in qs]
         try:
             if errors := [g for g in got if isinstance(g, GoogleAPIError)]:

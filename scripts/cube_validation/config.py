@@ -174,8 +174,10 @@ _POPULATION = (
 def row_population(comparison: Comparison) -> str | None:
     """A key shared by the comparisons that reconcile the same rows, or None.
 
-    Comparisons with the same key hold the same unmatched rows, grouped by
-    their own `dims`, so one proof can classify them all.
+    Comparisons with the same key usually hold the same unmatched rows,
+    grouped by their own `dims`, so one proof can classify them all. A dim
+    from another cube adds a join that can drop or repeat rows; a proof run
+    on each comparison's own rows refuses then, as for any proof.
     """
     if comparison.rows is None:
         return None

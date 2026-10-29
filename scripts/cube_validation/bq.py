@@ -230,7 +230,7 @@ class Warehouse:
     def refuse_past_caps(self, usd: float) -> None:
         """Refuse before running queries whose dry-run total is `usd`.
 
-        Counts nothing: each query is priced again as it runs.
+        Counts nothing: each query counts what it bills once it runs.
 
         Raises:
             CostCapError: `usd` more would pass the run's cap or the day's.
@@ -270,7 +270,7 @@ class Warehouse:
 
     @property
     def spent(self) -> float:
-        """USD priced since the latest `budget` opened."""
+        """USD priced or billed since the latest `budget` opened."""
         return self._spent
 
     def rows(self, sql: str, timeout_s: float | None = None) -> list[dict]:
@@ -281,7 +281,11 @@ class Warehouse:
         refuses a query that would bill more before it runs, at no charge; no
         dry run is needed. The bytes it billed count in both totals. With
         `timeout_s`, BigQuery stops the job after that many seconds and the
-        call raises.
+        call raises, counting what the job billed before it stopped.
+
+        The daily total counts a query once it ends, so 2 processes sharing a
+        ledger can each be allowed what is left while the other's query runs;
+        each run's own cap still bounds what it adds.
 
         Raises:
             CostCapError: Nothing is left under a cap, or BigQuery refused the
@@ -301,6 +305,8 @@ class Warehouse:
         try:
             out = [dict(r.items()) for r in job.result()]
         except GoogleAPIError as exc:
+            # A job stopped mid-run (a timeout) still bills what it read.
+            self._count_billed(job)
             errors = getattr(exc, "errors", None) or [{}]
             if left is not None and errors[0].get("reason") == _OVER_LIMIT:
                 raise CostCapError(
@@ -310,12 +316,24 @@ class Warehouse:
             # The id finds the job's own record; the message can quote values.
             setattr(exc, JOB_ID, getattr(job, "job_id", ""))
             raise
+        self._count_billed(job)
+        return out
+
+    def _count_billed(self, job) -> None:
+        """Count the bytes a finished or failed job billed in both totals."""
+        try:
+            if (
+                hasattr(job, "reload")
+                and getattr(job, "total_bytes_billed", None) is None
+            ):
+                job.reload()
+        except GoogleAPIError:
+            return
         billed = getattr(job, "total_bytes_billed", None)
         if isinstance(billed, int):
             usd = billed / _TIB * USD_PER_TIB
             self._spent += usd
             self._record(usd)
-        return out
 
     def _left(self) -> tuple[float, str] | None:
         """USD left under the tighter of the run's and the day's caps, and its name."""
