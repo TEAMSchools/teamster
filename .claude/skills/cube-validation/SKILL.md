@@ -336,10 +336,10 @@ cause, do not retry around it.
        `review`.
 
    `not compared: identifier column` means values were not compared, for
-   privacy; never compare them by hand. `also covers:` lists the sibling groups
-   the same decision would close: approve the item only if its cause is proven
-   for each. Anchor differences are judged here too. `CUBE_VALIDATION_CACHE`
-   points every command at another cache, such as a copy of a run to rework.
+   privacy; never compare them by hand. A proven row group is decided on its
+   step, not its school: every group the same step drops shares one decision.
+   Anchor differences are judged here too. `CUBE_VALIDATION_CACHE` points every
+   command at another cache, such as a copy of a run to rework.
 
 9. The calls:
    - `deliberate`: the difference is intended. Say what the Cube member counts
@@ -365,11 +365,15 @@ cause, do not retry around it.
    list of `{"id", "call", "reason", "task", "item"}`, where `item` is the
    triage item id, `id` a new decision id not already in the file, and `task`
    empty for `deliberate` and `domain_owner`. Map items are not in it. Then
-   `add-decisions <file> <approved.json>`: it takes each decision's key fields
-   from the item's stub and its fingerprints from the latest run, and writes the
-   whole batch or nothing, then re-applies every decision to the saved run
-   offline, so `review` reads it with no new `run`. After a hand edit to
-   `decisions:`, `reapply <file>` does the same.
+   `add-decisions <file> <approved.json>`: a row group in `cause` becomes one
+   `cause:` decision per proven step, and a step already decided (in the batch
+   or the file) takes the group into that decision, keeping its id and reason;
+   so give every item of one step the same call. A second new step of one item
+   takes the id `<id>-2`. Other items take their key fields from the stub.
+   Fingerprints come from the latest run. It writes the whole batch or nothing,
+   then re-applies every decision to the saved run offline, so `review` reads it
+   with no new `run`. After a hand edit to `decisions:`, `reapply <file>` does
+   the same.
 
    Before `review`, give the file a top-level `tasks:` block,
    `{cube_fix: <the domain's Cube-fix issue>, dashboard_fix: <its Asana dashboard-fix task>}`:
@@ -389,11 +393,20 @@ cause, do not retry around it.
    with no `comparison` and no `fingerprints`: it covers the field across the
    view. A comparison's cell differences take `cells: true` in place of `group`,
    with its `comparison` and `fingerprints`. Rows a dashboard-only filter drops
-   take `group: { column: dashboard_filter, values: [<its column>] }`.
+   take `group: { column: dashboard_filter, values: [<its column>] }`. A proven
+   step takes `cause: {side, step, groups}` in place of `group`: `step` is the
+   triage label with each run of 5 or more digits written `<n>`, `groups` the
+   triage item ids it covers, and `fingerprints` adds `step`, the hash of the
+   full label. A group split across steps stays quiet only while every decision
+   listing it holds. `add-decisions` writes these; do not hand-write one. A
+   group a `group` and a `cause` decision both cover with different calls
+   refuses.
 
 10. `review <files> --domain <domain>` prints the validation issue's body: the
     numbered questions, each with the owner's hand checks, and a closing JSON
-    block the owner's session reads. It refuses unless every file's view has a
+    block the owner's session reads. Each `domain_owner` cause decision is one
+    question, with its step, its masked group and row counts, and the member
+    docs that name the step's words. It refuses unless every file's view has a
     triage with nothing in `investigate`. stderr names any question with no
     triage evidence: `triage` that view and render again before posting. The
     footnote promises that identifiers of students and staff are hidden, which
