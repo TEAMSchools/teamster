@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
+import pytest
+
 SKILL_SCRIPTS = (
     Path(__file__).resolve().parents[2] / ".claude/skills/dagster-day2/scripts"
 )
@@ -83,6 +85,98 @@ def test_other_step_captured_logs_do_not_count():
         _step_failure(HEALTH_CHECK),
     ]
     assert _category(events) == "K8s pre-start kill"
+
+
+RUN_ID = "e9e0067b-b503-4919-8ab2-33811557d6f0"
+
+
+def test_attribute_run_pod_from_name():
+    pod = f"dagster-run-{RUN_ID}-abcde"
+    assert dc._attribute_pod_event(pod, {RUN_ID}, set()) == (RUN_ID, "FAILURE")
+
+
+def test_attribute_step_pod_from_audit_labels():
+    pod = "dagster-step-0efa5203795199117135e174e58a0c27-8bnk6"
+    assert dc._attribute_pod_event(pod, set(), {RUN_ID}, {pod: RUN_ID}) == (
+        RUN_ID,
+        "SUCCESS",
+    )
+    assert dc._attribute_pod_event(pod, set(), {RUN_ID}) == (None, "UNKNOWN")
+
+
+def test_logging_read_follows_page_tokens(monkeypatch):
+    pages = [
+        {"entries": [{"n": 1}], "nextPageToken": "t1"},
+        {"entries": [{"n": 2}]},
+    ]
+    sent: list[dict] = []
+
+    class Resp:
+        status_code = 200
+
+        def __init__(self, body: dict) -> None:
+            self._body = body
+
+        def json(self) -> dict:
+            return self._body
+
+    def fake_post(_url, headers, json, timeout):
+        sent.append(json)
+        return Resp(pages[len(sent) - 1])
+
+    monkeypatch.setattr(dc, "gcp_token", lambda: "t")
+    monkeypatch.setattr(dc.httpx, "post", fake_post)
+    monkeypatch.setattr(dc, "sleep", lambda _s: None)
+    assert dc.logging_read("q", "a", "b") == [{"n": 1}, {"n": 2}]
+    assert "pageToken" not in sent[0] and sent[1]["pageToken"] == "t1"
+
+
+def test_logging_read_retries_quota_429(monkeypatch):
+    codes = [429, 429, 200]
+    waits: list[int] = []
+
+    class Resp:
+        def __init__(self, code: int) -> None:
+            self.status_code = code
+            self.text = ""
+
+        def json(self) -> dict:
+            return {"entries": [{"ok": True}]}
+
+    monkeypatch.setattr(dc, "gcp_token", lambda: "t")
+    monkeypatch.setattr(dc.httpx, "post", lambda *_a, **_k: Resp(codes.pop(0)))
+    monkeypatch.setattr(dc, "sleep", waits.append)
+    assert dc.logging_read("q", "a", "b") == [{"ok": True}]
+    assert waits == [0, 20, 40]
+
+
+def test_logging_read_raises_after_four_429s(monkeypatch):
+    class Resp:
+        status_code = 429
+        text = "quota"
+
+    monkeypatch.setattr(dc, "gcp_token", lambda: "t")
+    monkeypatch.setattr(dc.httpx, "post", lambda *_a, **_k: Resp())
+    monkeypatch.setattr(dc, "sleep", lambda _s: None)
+    with pytest.raises(RuntimeError):
+        dc.logging_read("q", "a", "b")
+
+
+def test_correlate_preempting_event():
+    ev = {"podName": "p", "reason": "Preempting", "timestamp": "2026-10-29T04:00:05Z"}
+    hit = dc._correlate_pod_event(["p"], "2026-10-29T04:00:00Z", [ev])
+    assert hit is not None and hit["reason"] == "Preempting"
+
+
+def test_exception_line_takes_newest_entry(monkeypatch):
+    newest_first = [
+        {"textPayload": "ValueError: newer"},
+        {"textPayload": "KeyError: older"},
+    ]
+    monkeypatch.setattr(dc, "logging_read", lambda *_a, **_k: newest_first)
+    assert dc._resolve_exception_line("p", "2026-10-29T04:00:00Z") == (
+        "ValueError: newer"
+    )
 
 
 def test_to_et():

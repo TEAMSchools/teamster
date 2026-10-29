@@ -223,11 +223,15 @@ def _print_details(data: dict) -> None:
     )
     for (minute, reason, kind), n in sorted(pod_counts.items()):
         print(f"  {minute}  {reason:<10} {kind:<5} x{n}")
+    if err := data.get("step_10_gke_events", {}).get("stepPodLookupError"):
+        print(f"  step pods unattributed (audit-log lookup failed): {err[:200]}")
     for e in pods:
         if e.get("runStatus") == "FAILURE":
+            step = f" step={e['stepKey']}" if e.get("stepKey") else ""
             print(
                 f"  failed-run pod: {e.get('timestampEt') or e.get('timestamp')} "
-                f"{e.get('reason')} run={e.get('runId')}"
+                f"{e.get('reason')} {_pod_kind(e.get('podName'))} "
+                f"run={e.get('runId')}{step} | {(e.get('message') or '')[:80]}"
             )
     for e in pods:
         if _pod_kind(e.get("podName")) == "other":

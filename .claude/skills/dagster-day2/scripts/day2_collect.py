@@ -39,6 +39,7 @@ import sys
 from collections import Counter
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
+from time import sleep
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -979,24 +980,44 @@ def gcp_token() -> str:
     return credentials.token
 
 
+LOG_MAX_PAGES = 10
+
+
 def logging_read(
     query: str, utc_start: str, utc_end: str, limit: int = 100
 ) -> list[dict]:
+    # Pages newest-first; a single page would drop the oldest events of a burst.
     full = f'({query}) AND timestamp >= "{utc_start}" AND timestamp <= "{utc_end}"'
-    resp = httpx.post(
-        "https://logging.googleapis.com/v2/entries:list",
-        headers={"Authorization": f"Bearer {gcp_token()}"},
-        json={
+    entries: list[dict] = []
+    token = None
+    for _ in range(LOG_MAX_PAGES):
+        body = {
             "resourceNames": [f"projects/{PROJECT_ID}"],
             "filter": full,
             "orderBy": "timestamp desc",
             "pageSize": limit,
-        },
-        timeout=60.0,
-    )
-    if resp.status_code >= 400:
-        raise RuntimeError(f"logging HTTP {resp.status_code}: {resp.text[:300]}")
-    return resp.json().get("entries", [])
+        }
+        if token:
+            body["pageToken"] = token
+        # The read quota is per minute and shared project-wide; wait it out.
+        for wait in (0, 20, 40, 60):
+            sleep(wait)
+            resp = httpx.post(
+                "https://logging.googleapis.com/v2/entries:list",
+                headers={"Authorization": f"Bearer {gcp_token()}"},
+                json=body,
+                timeout=60.0,
+            )
+            if resp.status_code != 429:
+                break
+        if resp.status_code >= 400:
+            raise RuntimeError(f"logging HTTP {resp.status_code}: {resp.text[:300]}")
+        data = resp.json()
+        entries.extend(data.get("entries", []))
+        token = data.get("nextPageToken")
+        if not token:
+            break
+    return entries
 
 
 # ─── Step 8: Agent pod churn ──────────────────────────────────────────────
@@ -1039,19 +1060,50 @@ DAGSTER_RUN_POD_RE = re.compile(
 
 
 def _attribute_pod_event(
-    pod_name: str | None, failed_ids: set[str], success_ids: set[str]
+    pod_name: str | None,
+    failed_ids: set[str],
+    success_ids: set[str],
+    step_run_ids: dict[str, str] | None = None,
 ) -> tuple[str | None, str]:
     if not pod_name:
         return None, "UNKNOWN"
     m = DAGSTER_RUN_POD_RE.match(pod_name)
-    if not m:
+    run_id = m.group(1) if m else (step_run_ids or {}).get(pod_name)
+    if not run_id:
         return None, "UNKNOWN"
-    run_id = m.group(1)
     if run_id in success_ids:
         return run_id, "SUCCESS"
     if run_id in failed_ids:
         return run_id, "FAILURE"
     return run_id, "UNKNOWN"
+
+
+def _step_pod_labels(
+    pod_names: list[str], utc_start: str, utc_end: str
+) -> dict[str, dict]:
+    """Dagster labels of each step pod, from the audit log entry that created it.
+
+    A step pod's name hashes its run id, so the pod event alone cannot name the
+    run. Pods can be created before the window opens, so the search starts 12h
+    earlier.
+    """
+    lead = (
+        datetime.fromisoformat(utc_start.replace("Z", "+00:00")) - timedelta(hours=12)
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    names = sorted(set(pod_names))
+    labels: dict[str, dict] = {}
+    for i in range(0, len(names), 50):
+        quoted = " OR ".join(f'"{n}"' for n in names[i : i + 50])
+        query = (
+            f'logName="projects/{PROJECT_ID}/logs/cloudaudit.googleapis.com%2Factivity" '
+            'AND protoPayload.methodName="io.k8s.core.v1.pods.create" '
+            f"AND protoPayload.response.metadata.name=({quoted})"
+        )
+        for e in logging_read(query, lead, utc_end):
+            md = e.get("protoPayload", {}).get("response", {}).get("metadata", {})
+            if md.get("name"):
+                labels[md["name"]] = md.get("labels") or {}
+    return labels
 
 
 def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
@@ -1074,10 +1126,32 @@ def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
     pod = logging_read(pod_query, utc_start, utc_end)
     failed_ids = {f.get("runId") for f in step_01.get("failures", []) if f.get("runId")}
     success_ids = set(step_01.get("successRunIds", []) or [])
+    step_pods = [
+        n
+        for e in pod
+        if (
+            n := e.get("resource", {}).get("labels", {}).get("pod_name") or ""
+        ).startswith("dagster-step-")
+    ]
+    step_labels: dict[str, dict] = {}
+    step_lookup_error = None
+    if step_pods:
+        # Enrichment only: a failed lookup leaves step pods unattributed.
+        try:
+            step_labels = _step_pod_labels(step_pods, utc_start, utc_end)
+        except (RuntimeError, httpx.HTTPError) as exc:
+            step_lookup_error = str(exc)[:300]
+    step_run_ids = {
+        n: lb["dagster/run-id"]
+        for n, lb in step_labels.items()
+        if "dagster/run-id" in lb
+    }
     pod_events = []
     for e in pod:
         pod_name = e.get("resource", {}).get("labels", {}).get("pod_name")
-        run_id, run_status = _attribute_pod_event(pod_name, failed_ids, success_ids)
+        run_id, run_status = _attribute_pod_event(
+            pod_name, failed_ids, success_ids, step_run_ids
+        )
         pod_events.append(
             {
                 "timestamp": e["timestamp"],
@@ -1091,9 +1165,15 @@ def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
                 "message": e.get("jsonPayload", {}).get("message"),
                 "runId": run_id,
                 "runStatus": run_status,
+                "stepKey": step_labels.get(pod_name or "", {}).get("dagster/op"),
             }
         )
     return {
+        "stepPodLookupError": step_lookup_error,
+        # Step pods the audit lookup did not find; they stay UNKNOWN.
+        "stepPodsUnmatched": len(set(step_pods) - set(step_labels)),
+        # At the page cap, the oldest events of the window are missing.
+        "podEventsTruncated": len(pod) >= 100 * LOG_MAX_PAGES,
         "clusterEvents": [
             {
                 "timestamp": e["timestamp"],
@@ -1190,7 +1270,8 @@ def _resolve_exception_line(pod_name: str, last_seen: str) -> str | None:
     except (RuntimeError, httpx.HTTPError):
         return None
     candidates: list[str] = []
-    for e in entries:
+    # Entries arrive newest-first; walk oldest-first so the last match is newest.
+    for e in reversed(entries):
         text = e.get("textPayload") or e.get("jsonPayload", {}).get("message") or ""
         for line in text.splitlines():
             stripped = line.strip()
@@ -1202,7 +1283,7 @@ def _resolve_exception_line(pod_name: str, last_seen: str) -> str | None:
 def _correlate_pod_event(
     pod_names: list[str], last_seen: str, pod_events: list[dict]
 ) -> dict | None:
-    """Find a Preempted/Evicted/OOMKilling event on the same pod within ±10s."""
+    """Find a preemption, eviction, or OOM event on the same pod within ±10s."""
     if not pod_names or not last_seen or not pod_events:
         return None
     try:
@@ -1210,7 +1291,7 @@ def _correlate_pod_event(
     except ValueError:
         return None
     target_pods = set(pod_names)
-    benign_reasons = {"Preempted", "Evicted", "OOMKilling"}
+    benign_reasons = {"Preempted", "Preempting", "Evicted", "OOMKilling"}
     for ev in pod_events:
         if ev.get("podName") not in target_pods:
             continue
