@@ -13,7 +13,7 @@ import pytest
 import tableauserverclient as TSC
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, pipeline, report, tableau, trace, triage
+from cube_validation import cli, confirm, pipeline, report, tableau, trace, triage
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.bq import CostCapError, Warehouse
@@ -2284,6 +2284,43 @@ def test_the_daily_cap_refuses_a_run_across_runs(fakes, tmp_path, capsys):
 # --- triage ------------------------------------------------------------------
 
 
+def test_triage_re_runs_the_stored_proofs_unless_told_not_to(
+    fakes, tmp_path, monkeypatch
+):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    seen = []
+    monkeypatch.setattr(
+        confirm, "reprove", lambda cfg, run, items, d, **k: seen.append(d)
+    )
+
+    assert cli.main(["triage", str(path), "--no-trace"]) == 0
+    assert cli.main(["triage", str(path), "--no-trace", "--no-proofs"]) == 0
+
+    assert seen == [path.parent / "proofs" / "v"]
+
+
+def test_triage_confirm_reaches_its_command(fakes, tmp_path, monkeypatch):
+    path = _file(tmp_path)
+    seen = {}
+    monkeypatch.setattr(
+        confirm, "run_confirm", lambda cfg, view_file, **k: seen.update(k) or 0
+    )
+
+    assert (
+        cli.main(
+            ["triage", "confirm", str(path), "--comparison", "ada-region",
+             "--bucket", "cube_only", "--cause", "C1=cube:words",
+             "--items", "a,b", "--items", "c"]
+        )
+        == 0
+    )  # fmt: skip
+
+    assert seen["comparison"] == "ada-region" and seen["bucket"] == "cube_only"
+    assert seen["causes"] == ["C1=cube:words"] and seen["items"] == ["a", "b", "c"]
+    assert cli.main(["triage", "confirm", str(path), "--comparison", "x"]) == 1
+
+
 def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, capsys):
     path = _file(tmp_path)
     assert cli.main(["run", str(path)]) == 0
@@ -2306,6 +2343,7 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
     assert set(item) == {
         "id", "kind", "comparison", "label", "stub",
         "suggestion", "evidence", "evidence_posted", "candidates", "cause",
+        "proof",
     }  # fmt: skip
     assert item["stub"]["group"]["values"] == ["Miami"]
     assert (item["suggestion"], item["cause"]) == ("investigate", None)

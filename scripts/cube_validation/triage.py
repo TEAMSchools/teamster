@@ -255,8 +255,8 @@ def proven_triage(run: RunResult, run_json: Path) -> dict:
         pipeline.Refusal: No triage sits beside the run, it is unreadable or of
             another moment, the run has an open item the triage did not see,
             an item sits in a pile this validator does not sort into (a triage
-            from an older validator), a `cause` item has no cause, or an item
-            is in `investigate`.
+            from an older validator), a `cause` item has no cause, an item is
+            in `investigate`, or a proof an item rests on changed since.
     """
     view, found = run.view, run_json.parent / "triage.json"
     again = f"run `triage` for {run.moment.start:%Y-%m-%d %H:%M} UTC"
@@ -294,10 +294,28 @@ def proven_triage(run: RunResult, run_json: Path) -> dict:
     if n := piles["investigate"]:
         raise pipeline.Refusal(
             f"{view}: {n} triage item{'' if n == 1 else 's'} in `investigate`; "
-            "trace each to a proven cause (cube-validation skill, step 8), "
+            "prove each with `triage confirm` (cube-validation skill, step 8), "
             "then re-run `triage`"
         )
+    if moved := sum(1 for i in items if _proof_changed(i.get("proof"))):
+        raise pipeline.Refusal(
+            f"{view}: {moved} item{'' if moved == 1 else 's'} in `cause` "
+            f"rest{'s' if moved == 1 else ''} on a proof file changed since "
+            "triage; re-run `triage`"
+        )
     return loaded
+
+
+def _proof_changed(proof: dict | None) -> bool:
+    """A stored proof's file is gone, or no longer the text triage ran."""
+    if not proof or not proof.get("path"):
+        return False
+    path = Path(proof["path"])
+    if not path.is_file():
+        return True
+    return hashlib.sha256(path.read_text().encode()).hexdigest() != proof.get(
+        "fingerprint"
+    )
 
 
 def posted_triage(loaded: dict) -> dict:
@@ -545,6 +563,31 @@ def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
     return lines
 
 
+def _as_json(s: Suggestion) -> dict:
+    """One item as `triage.json` holds it."""
+    return {
+        **dataclasses.asdict(s.item),
+        "suggestion": s.suggestion,
+        "evidence": list(s.evidence),
+        "evidence_posted": list(s.posted if s.posted is not None else s.evidence),
+        "candidates": list(s.candidates),
+        "cause": s.cause,
+        "proof": s.proof,
+    }
+
+
+def _from_json(d: dict) -> Suggestion:
+    return Suggestion(
+        Item(d["id"], d["kind"], d["comparison"], d["label"], d["stub"]),
+        d["suggestion"],
+        tuple(d["evidence"]),
+        tuple(d["candidates"]),
+        d["cause"],
+        d.get("proof"),
+        tuple(d["evidence_posted"]),
+    )
+
+
 # --- value checks and the command --------------------------------------------
 
 # A column with more distinct values than this is a key, not a coding.
@@ -675,13 +718,17 @@ def run_triage(
     trace_rows: bool = True,
     manifest: Path | None = None,
     trace_max_minutes: float | None = None,
+    proofs: Path | None = None,
 ) -> list[Suggestion]:
     """Sort each open item of the view's latest run into a pile and print them.
 
     Traces the run's row groups first (`trace.trace_run`) unless `trace_rows`
     is False; its queries count against `max_usd` and the daily cap with the
     value checks. A cap or `trace_max_minutes` hit partway stops the trace;
-    what it found is kept and the batch is still written. Prints `batch_lines`. Writes every item to `triage.json`
+    what it found is kept and the batch is still written. Then re-runs every
+    stored proof in `proofs` on the run's rows (`confirm.reprove`; None skips
+    them), under the same caps: only a proof moves an item to `cause`. Prints
+    `batch_lines`. Writes every item to `triage.json`
     beside that run's `run.json`, with the run's moment, decisions
     fingerprint and open items (see `proven_triage`): it stays in the local
     cache, and its stubs and causes carry real values and exact counts.
@@ -728,6 +775,13 @@ def run_triage(
             traced.items if traced else None,
             traced.stopped if traced else "",
         )
+        items = [_as_json(s) for s in found]
+        if proofs is not None:
+            from . import confirm
+
+            confirm.reprove(cfg, run, items, proofs, wh=wh, cube=cube)
+            items.sort(key=lambda i: SUGGESTIONS.index(i["suggestion"]))
+            found = [_from_json(i) for i in items]
 
     out = run_json.parent / "triage.json"
     out.write_text(
@@ -737,19 +791,7 @@ def run_triage(
                 "moment": _moment(run),
                 "decisions_fingerprint": run.decisions_fingerprint,
                 "open": open_keys(run),
-                "items": [
-                    {
-                        **dataclasses.asdict(s.item),
-                        "suggestion": s.suggestion,
-                        "evidence": list(s.evidence),
-                        "evidence_posted": list(
-                            s.posted if s.posted is not None else s.evidence
-                        ),
-                        "candidates": list(s.candidates),
-                        "cause": s.cause,
-                    }
-                    for s in found
-                ],
+                "items": items,
             },
             indent=1,
         )

@@ -538,7 +538,9 @@ def test_a_dashboard_only_filter_group_is_proven_by_the_reconcile():
     assert found.cause()[0]["n_rows"] == 12
 
 
-@pytest.mark.parametrize("first", ["trace", "sqlsteps", "triage", "pipeline", "cli"])
+@pytest.mark.parametrize(
+    "first", ["trace", "sqlsteps", "triage", "confirm", "pipeline", "cli"]
+)
 def test_each_module_imports_first(first):
     scripts = Path(trace.__file__).resolve().parents[1]
     done = subprocess.run(

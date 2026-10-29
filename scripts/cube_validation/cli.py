@@ -1,7 +1,7 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
 Commands: `discover`, `preflight`, `prove`, `check-api`, `run`, `triage`,
-`add-decisions`, `reapply`, `review`, `record-answers`, `members`,
+`triage confirm`, `add-decisions`, `reapply`, `review`, `record-answers`, `members`,
 `inventory-workbook`, `inventory`. Exit
 codes: 0 done, 1 refused (the message says why), 2 usage error. This module parses
 arguments and builds the clients; `pipeline.py` does the work. Tests replace
@@ -28,7 +28,17 @@ from pathlib import Path
 import tableauserverclient as TSC
 import yaml
 
-from . import answers, builder, pipeline, preflight, report, tableau, trace, triage
+from . import (
+    answers,
+    builder,
+    confirm,
+    pipeline,
+    preflight,
+    report,
+    tableau,
+    trace,
+    triage,
+)
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import (
     ConfigError,
@@ -268,6 +278,47 @@ def _parser() -> argparse.ArgumentParser:
         default=trace.TRACE_MAX_MINUTES,
         help="stop the trace after this long, keeping what it found",
     )
+    p.add_argument(
+        "--no-proofs",
+        action="store_true",
+        help="skip re-running the view's stored proofs (`triage confirm`)",
+    )
+
+    # `triage confirm ...` on the command line; see `main`.
+    p = sub.add_parser(
+        "triage-confirm",
+        help="prove a comparison bucket's row groups with one classification query",
+    )
+    view_file(p)
+    fact_dataset(p)
+    email(p)
+    max_usd(p)
+    p.add_argument("--comparison", required=True, help="the comparison it proves")
+    p.add_argument(
+        "--bucket", choices=trace.TRACED, help="the unmatched rows it classifies"
+    )
+    p.add_argument(
+        "--sql",
+        type=Path,
+        help="the proof's SQL; defaults to the stored proof, to re-run an edit",
+    )
+    p.add_argument(
+        "--cause",
+        action="append",
+        default=[],
+        help="<bucket>=<side>:<plain words>, for every bucket the query returns",
+    )
+    p.add_argument(
+        "--items",
+        action="append",
+        default=[],
+        help="triage item ids to report (comma-separated); all are proven",
+    )
+    p.add_argument(
+        "--cells",
+        action="store_true",
+        help="confirm the comparison's cell set from its proven groups; no query",
+    )
 
     p = sub.add_parser(
         "add-decisions", help="write an approved triage batch as decisions"
@@ -371,8 +422,32 @@ def _dispatch(args: argparse.Namespace) -> int:
             trace_rows=not args.no_trace,
             manifest=args.manifest,
             trace_max_minutes=args.trace_max_minutes,
+            proofs=None if args.no_proofs else confirm.proofs_dir(args.view, cfg.view),
         )
         return 0
+
+    if args.command == "triage-confirm":
+        if not args.cells and not args.bucket:
+            raise pipeline.Refusal("pass --bucket, or --cells")
+        if args.cells:
+            # No query runs, so no warehouse or Cube is needed.
+            wh, cube = None, None
+        else:
+            wh, cube = _warehouse(args), _cube(args)
+        return confirm.run_confirm(
+            cfg,
+            args.view,
+            wh=wh,
+            cube=cube,
+            max_usd=args.max_usd,
+            cache_root=cache_root(),
+            comparison=args.comparison,
+            bucket=args.bucket,
+            sql=args.sql,
+            causes=args.cause,
+            items=[i for flag in args.items for i in flag.split(",") if i],
+            cells=args.cells,
+        )
 
     if args.command == "add-decisions":
         return _add_decisions(cfg, args.view, args.approved)
@@ -764,6 +839,8 @@ def main(argv: list[str]) -> int:
         0 when the command finished, 1 when it refused (the reason goes to
         stderr), 2 for a usage error.
     """
+    if argv[:2] == ["triage", "confirm"]:
+        argv = ["triage-confirm", *argv[2:]]
     try:
         args = _parser().parse_args(argv)
     except SystemExit as exc:

@@ -189,11 +189,13 @@ def _joined(
     group_by: list[ColumnPair],
     filters: Sequence[tuple[str, str]],
     keys: bool = False,
+    extra: Sequence[str] = (),
 ) -> tuple[str, list[str]]:
     """The `c`, `d` and `joined` CTEs of `reconcile_sql`, and the group columns.
 
     With `keys`, `joined` also carries each one-sided row's grain keys
-    (`__k0`, ...) and duplicate number (`__rn`), for `trace_sql`.
+    (`__k0`, ...) and duplicate number (`__rn`), for `trace_sql`. `extra`
+    adds select expressions over `c` and `d` to `joined`.
     """
     cube_grain = [p.cube for p in rows.grain]
     dash_grain = [p.dashboard for p in rows.grain]
@@ -257,6 +259,7 @@ def _joined(
                 if keys
                 else []
             ),
+            *extra,
         ]
     )
 
