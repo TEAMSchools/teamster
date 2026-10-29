@@ -29,7 +29,7 @@ import tableauserverclient as TSC
 
 from . import answers, checks, compare, decisions
 from . import discover as finder
-from . import report, tableau
+from . import report, tableau, triage
 from .bq import Warehouse
 from .checks import CheckResult, Finding
 from .compare import CellDiff, Gap, Group
@@ -804,6 +804,99 @@ def _compare_one(
     }
 
 
+@dataclasses.dataclass(frozen=True)
+class RowSides:
+    """The row SQL a run reconciled for one comparison, rebuilt for a trace.
+
+    `cube_rows_sql` is Cube's rows read as of the build end, with the tables
+    both sides read moved to the build start, as `run` reconciled them;
+    `columns` are the Cube members `wrap_cube` names.
+    """
+
+    cube: AsOf
+    dashboard: AsOf
+    cube_rows_sql: str
+    columns: list[str]
+
+
+def row_sides(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    build: Build,
+    schools: set[str],
+    fingerprints: dict[str, str],
+) -> RowSides:
+    """Rebuild the row SQL a run reconciled, refusing when it is not the same SQL.
+
+    Args:
+        cfg: The view's config.
+        comparison: A comparison with `rows`.
+        wh: The warehouse, for view history.
+        cube: Cube, for the compiled SQL.
+        build: The run's moment.
+        schools: The network's school abbreviations (`network_schools`).
+        fingerprints: The run's `cube` and `dashboard` fingerprints for it.
+
+    Raises:
+        Refusal: The comparison has no rows, or either side's SQL (cells and
+            rows, expanded as of the moment) differs from what the run ran.
+    """
+    if comparison.rows is None:
+        raise Refusal(f"comparison {comparison.id!r} has no rows to trace")
+
+    def cube_sql(query: dict, rows: bool = False) -> str:
+        return _cube_sql(cfg, cube, query, schools, rows=rows)
+
+    cube_at = _as_of(cube_sql(row_query(cfg.view, comparison), True), build.end, wh)
+    dash_at = _as_of(dashboard_rows_sql(cfg, comparison), build.start, wh)
+    now = {
+        "cube": decisions.sql_fingerprint(
+            sort_school_filters(
+                "\n".join(
+                    [
+                        _masked(
+                            _as_of(
+                                cube_sql(cell_query(cfg.view, comparison, {})),
+                                build.end,
+                                wh,
+                            ),
+                            build.end,
+                        ),
+                        _masked(cube_at, build.end),
+                    ]
+                )
+            )
+        ),
+        "dashboard": decisions.sql_fingerprint(
+            "\n".join(
+                [
+                    _masked(
+                        _as_of(probe_sql(cfg, comparison, {}), build.start, wh),
+                        build.start,
+                    ),
+                    _masked(dash_at, build.start),
+                ]
+            )
+        ),
+    }
+    changed = sorted(k for k in now if now[k] != fingerprints.get(k))
+    if changed:
+        raise Refusal(
+            f"comparison {comparison.id!r}: the {' and '.join(changed)} SQL is not "
+            "the SQL the run reconciled; `run` again, then trace"
+        )
+    shared = sorted(cube_at.tables & dash_at.tables)
+    return RowSides(
+        cube=cube_at,
+        dashboard=dash_at,
+        cube_rows_sql=repin(cube_at.sql, shared, build.end, build.start),
+        columns=_unique(p.cube for p in _row_pairs(comparison)),
+    )
+
+
 def _clauses(comparison: Comparison, groups: list[Group], sides: _Sides) -> list[str]:
     if comparison.id not in sides.sql:
         return []
@@ -1260,7 +1353,13 @@ def _json_default(value: Any) -> Any:
 
 def _group(data: dict) -> Group:
     """JSON stores `dims` as lists; a group compares by tuples."""
-    return Group(**{**data, "dims": tuple(tuple(d) for d in data["dims"])})
+    return Group(
+        **{
+            **data,
+            "dims": tuple(tuple(d) for d in data["dims"]),
+            "nulls": tuple(data.get("nulls") or ()),
+        }
+    )
 
 
 def _gap(data: dict) -> Gap:
@@ -1305,6 +1404,7 @@ def _run_from_json(data: dict) -> RunResult:
             quiet_gaps=[
                 (Decision(**d), _gap(g)) for d, g in applied.get("quiet_gaps", [])
             ],
+            causes=[Decision(**d) for d in applied.get("causes", [])],
         ),
         findings=[Finding(**f) for f in data["findings"]],
         live_sources=data["live_sources"],
@@ -1358,6 +1458,21 @@ def _older(cfg: ViewConfig, run_json: Path) -> Refusal:
         f"{cfg.view}: the saved run {run_json} was written by an older "
         "validator; `run` it again"
     )
+
+
+def _require_nulls(data: dict) -> None:
+    """Refuse a run saved before groups recorded which values were NULL.
+
+    Such a run reads a NULL group-by value as empty text, so a proof finds
+    none of that group's rows: the run, not the proof, is at fault.
+    """
+    applied = data.get("applied") or {}
+    groups = [*applied.get("open", []), *(g for _, g in applied.get("quiet", []))]
+    if any("nulls" not in g for g in groups):
+        moment = (data.get("moment") or {}).get("start", "<moment>")
+        raise Refusal(
+            f"this run predates NULL-aware groups; run again (`run --moment {moment}`)"
+        )
 
 
 def _reapplicable(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
@@ -1463,14 +1578,16 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
 
     Raises:
         Refusal: The view has no saved run, its saved run is in a shape this
-            validator cannot read, or its decisions changed since the run (a
-            run saved before runs recorded them counts as changed).
+            validator cannot read or predates NULL-aware groups, or its
+            decisions changed since the run (a run saved before runs recorded
+            them counts as changed).
     """
     data, run_json = _saved_run(cfg, cache_root)
     try:
         run_result = _run_from_json(data)
     except (KeyError, TypeError) as exc:
         raise _older(cfg, run_json) from exc
+    _require_nulls(data)
     if run_result.decisions_fingerprint != decisions.decisions_fingerprint(
         cfg.decisions
     ):
@@ -1485,31 +1602,20 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
 BODY_WARN_CHARS = 60_000
 
 
-def _triage_file(run_json: Path, view_root: Path) -> Path | None:
-    """The `triage.json` beside the run, else the newest in any moment folder.
-
-    Triage runs before the analyst records decisions, and the re-run that
-    applies them often lands on a newer build, in a new moment folder.
-    """
-    beside = run_json.parent / "triage.json"
-    if beside.exists():
-        return beside
-    found = sorted(view_root.glob("*/triage.json"), key=lambda p: p.stat().st_mtime)
-    return found[-1] if found else None
-
-
 def review(
     configs: list[ViewConfig],
     domain: str,
     cache_root: Path,
     now: datetime | None = None,
+    view_files: list[Path] | None = None,
 ) -> str:
     """Return the review-issue body from each view's latest saved run.
 
-    Reads only the local cache: each run and its triage (see `_triage_file`),
-    matching triage items to decisions by their stubs. Nothing is posted; a
-    question with no triage evidence, and a body near GitHub's cap, are named
-    on stderr.
+    Reads only the local cache: each run and its triage (see
+    `triage.proven_triage`), matching triage items to decisions by their stubs,
+    and to cause decisions by the causes the triage proved.
+    Nothing is posted; a question with no triage evidence, and a body near
+    GitHub's cap, are named on stderr.
 
     Args:
         configs: The views to review.
@@ -1517,34 +1623,39 @@ def review(
         cache_root: The run cache.
         now: The current time, to say whether a hand check's pinned SQL still
             runs; defaults to the clock.
+        view_files: Each config's validation file, in order: stored proof
+            paths are relative to its directory.
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
-            triage file is not a JSON object.
+            triage is missing, stale, unreadable, holds an unproven item, or
+            has a cause decision and a `group` decision disagreeing (see
+            `triage.proven_triage`).
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
-    triage = {}
-    for run, run_json in saved:
-        if found := _triage_file(run_json, cache_root / run.view):
-            unreadable = Refusal(
-                f"{run.view}: triage.json is unreadable; re-run triage"
-            )
-            try:
-                loaded = json.loads(found.read_text())
-            except json.JSONDecodeError as exc:
-                raise unreadable from exc
-            if not isinstance(loaded, dict):
-                raise unreadable
-            triage[run.view] = loaded
+    # Stored proof paths are relative to each validation file's directory.
+    bases = [f.parent for f in view_files] if view_files else [None] * len(configs)
+    proven = {
+        run.view: triage.proven_triage(run, run_json, cfg.decisions, base)
+        for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
+    }
+    found = {view: triage.posted_triage(loaded) for view, loaded in proven.items()}
+    # One question per unanswered owner cause, over the groups it decides.
+    causes = {
+        run.view: triage.cause_asks(
+            run, proven[run.view], cfg.decisions, triage.doc_leads(cfg)
+        )
+        for run, cfg in zip(runs, configs, strict=True)
+    }
     definitions = {
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs
     }
     questions = answers.questions_json(
-        runs, configs, definitions, triage, now or datetime.now(timezone.utc)
+        runs, configs, definitions, found, now or datetime.now(timezone.utc), causes
     )
-    body = report.render_review_issue(domain, runs, definitions, questions)
+    body = report.render_review_issue(domain, runs, definitions, questions, causes)
     if len(body) > BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.
         print(

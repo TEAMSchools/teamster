@@ -275,3 +275,55 @@ def test_cells_decision_reconfirms_when_sql_changed():
 def test_cells_decision_with_no_differences_is_no_longer_needed():
     applied = apply([_cells_decision()], [], {"enrollment": FP}, cell_diffs=[])
     assert applied.no_longer_needed == [_cells_decision()]
+
+
+# --- cause decisions (T17) ---------------------------------------------------
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.decisions import cause_state  # noqa: E402
+
+
+def _cause(id="c1", call="deliberate", fingerprints=None):
+    return Decision(
+        id=id,
+        comparison="enrollment",
+        call=call,
+        reason="known",
+        cause={"side": "cube", "label": "score has no section"},
+        fingerprints={**FP, "proof": "p1"} if fingerprints is None else fingerprints,
+    )
+
+
+def test_cause_state_names_what_changed():
+    d = _cause()
+
+    assert cause_state(d, "p1", FP) == "holds"
+    assert cause_state(d, "p2", FP) == "proof"
+    assert cause_state(d, "p1", {**FP, "cube": "c2"}) == "sql"
+    assert cause_state(_cause(fingerprints=dict(FP)), "p1", FP) == "proof"
+
+
+def test_apply_never_quiets_a_group_from_a_cause_decision():
+    group = _group()
+
+    applied = apply([_cause()], [group], {"enrollment": FP})
+
+    # The latest triage, not the run, says which groups a cause decides.
+    assert applied.open == [group] and applied.quiet == []
+    assert applied.causes == [_cause()] and applied.reconfirm == []
+
+
+def test_apply_reconfirms_a_cause_decision_whose_sql_changed_or_has_no_proof():
+    stale = _cause(fingerprints={**FP, "cube": "old", "proof": "p1"})
+    bare = _cause("c2", fingerprints=dict(FP))
+
+    applied = apply([stale, bare], [_group()], {"enrollment": FP})
+
+    assert applied.reconfirm == [stale, bare] and applied.causes == []
+
+
+def test_group_and_cause_decisions_coexist_in_apply():
+    applied = apply([_decision(), _cause()], [_group()], {"enrollment": FP})
+
+    assert [d.id for d, _ in applied.quiet] == ["d1"]
+    assert [d.id for d in applied.causes] == ["c1"]

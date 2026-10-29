@@ -24,13 +24,18 @@ Verdict = Literal["pass", "differs", "dashboard_only", "cube_only"]
 
 @dataclass(frozen=True)
 class Group:
-    """One non-match bucket of one result row, with every group-by column."""
+    """One non-match bucket of one result row, with every group-by column.
+
+    A NULL value reads `""` in `dims`, as an empty string does; `nulls` names
+    the columns that were NULL, so the two stay apart.
+    """
 
     comparison_id: str
     dims: tuple[tuple[str, str], ...]
     bucket: str
     n_rows: int
     n_students: int
+    nulls: tuple[str, ...] = ()
 
     def value_of(self, column: str) -> str | None:
         """The group's value in `column`; `""` names a row with no group-by."""
@@ -165,6 +170,38 @@ def reconcile_sql(
         `n_students` (distinct values of the first grain pair). No grain or
         value column is returned.
     """
+    ctes, group_names = _joined(
+        cube_rows_sql, dashboard_rows_sql, rows, group_by, filters
+    )
+    outer_select = ", ".join(
+        ["bucket", *group_names, "COUNT(*) AS n_rows"]
+        + ["COUNT(DISTINCT __student) AS n_students"]
+    )
+    group_clause = ", ".join(["bucket", *group_names])
+    return (
+        ctes
+        + "\n-- outer\n"
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
+        + f"SELECT {outer_select}\nFROM joined\n"
+        + f"GROUP BY {group_clause}\nORDER BY {group_clause}"
+    )
+
+
+def _joined(
+    cube_rows_sql: str,
+    dashboard_rows_sql: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]],
+    keys: bool = False,
+    extra: Sequence[str] = (),
+) -> tuple[str, list[str]]:
+    """The `c`, `d` and `joined` CTEs of `reconcile_sql`, and the group columns.
+
+    With `keys`, `joined` also carries each one-sided row's grain keys
+    (`__k0`, ...) and duplicate number (`__rn`), for `trace_sql`. `extra`
+    adds select expressions over `c` and `d` to `joined`.
+    """
     cube_grain = [p.cube for p in rows.grain]
     dash_grain = [p.dashboard for p in rows.grain]
 
@@ -212,13 +249,24 @@ def reconcile_sql(
             f"COALESCE(CAST(c.{first.cube} AS STRING), "
             f"CAST(d.{first.dashboard} AS STRING)) AS __student",
             *group_cols,
+            *(
+                [
+                    f"IF(c.{_IN} IS NULL, {d}, {c}) AS __k{i}"
+                    for i, (c, d) in enumerate(
+                        zip(
+                            _grain_keys([f"c.{g}" for g in cube_grain]),
+                            _grain_keys([f"d.{g}" for g in dash_grain]),
+                            strict=True,
+                        )
+                    )
+                ]
+                + [f"COALESCE(c.{_RN}, d.{_RN}) AS {_RN}"]
+                if keys
+                else []
+            ),
+            *extra,
         ]
     )
-    outer_select = ", ".join(
-        ["bucket", *group_names, "COUNT(*) AS n_rows"]
-        + ["COUNT(DISTINCT __student) AS n_students"]
-    )
-    group_clause = ", ".join(["bucket", *group_names])
 
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
@@ -232,11 +280,179 @@ def reconcile_sql(
         + joined_select
         + "\n  FROM c\n  FULL OUTER JOIN d\n    ON "
         + "\n    AND ".join(on)
-        + "\n)\n-- outer\n"
-        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
-        + f"SELECT {outer_select}\nFROM joined\n"
-        + f"GROUP BY {group_clause}\nORDER BY {group_clause}"
+        + "\n)"
+    ), group_names
+
+
+# Trace output step ids that are not steps. A row no variant recovers; a row
+# several recover (`*a|b`, their ids); a row the other side has more than once
+# (`=`, never attributed); and prefixes: a row a table's unrelaxed SQL
+# already returns (`!`), and a row only a presence check returns (`#`).
+NONE = ""
+MANY = "*"
+DUPLICATE = "="
+UNREPRODUCED = "!"
+PRESENT = "#"
+_SEP = "|"
+
+
+def trace_sql(
+    cube_rows_sql: str,
+    dashboard_rows_sql: str,
+    rows: RowSpec,
+    group_by: list[ColumnPair],
+    filters: Sequence[tuple[str, str]] = (),
+    *,
+    bucket: str,
+    side: str,
+    variants: Sequence[tuple[str, str]],
+    exclude: Sequence[str] = (),
+    include: Sequence[str] = (),
+    combine: bool = True,
+) -> str:
+    """Build the query that counts which relaxed variants recover each unmatched row.
+
+    The unmatched rows are rebuilt inside the query exactly as `reconcile_sql`
+    finds them, so no row leaves BigQuery: the result has the group columns,
+    a step id and a count, nothing else. A variant recovers a row when it
+    returns the row's grain (by the reconcile's keys and NULL rules). A row
+    whose grain the other side holds more than once (duplicate number past
+    1) is never traced: any step that fans out would "recover" it.
+
+    Args:
+        cube_rows_sql: The Cube rows the run reconciled.
+        dashboard_rows_sql: The dashboard rows the run reconciled.
+        rows: The grain and value column pairs.
+        group_by: The group-by columns, as `reconcile_sql` takes them.
+        filters: The dashboard-only filter flags, as `reconcile_sql` takes
+            them, so the rows bucket as the run's did.
+        bucket: `cube_only` or `dashboard_only`: the rows to trace.
+        side: The side the variants rewrite: `dashboard` (for Cube-only
+            rows) or `cube`. Their grain columns carry that side's names.
+        variants: `(step_id, rows_sql)` per relaxed variant. An id starting
+            with `UNREPRODUCED` marks a table's unrelaxed SQL: a row it
+            recovers is counted under that id whatever else recovers it. An
+            id starting with `PRESENT` marks a presence check: it counts a
+            row only when no step recovers it.
+        exclude: Variants whose recovered rows are left out first, because
+            a shallower level already explained them.
+        include: Variants a row must be recovered by to stay in play.
+        combine: True counts each row once: under the one step that recovers
+            it, `MANY` plus the ids of the several that do, a `PRESENT` id, or
+            `NONE`; then, under `+<step id>`, every row each variant
+            recovers. False counts each step's rows separately, plus every
+            row in play under `NONE`. Both count, under `DUPLICATE`, the rows
+            left out for a duplicate grain.
+
+    Returns:
+        One query returning `bucket`, each group-by column, `step_id` and
+        `n_rows`.
+    """
+    ctes, group_names = _joined(
+        cube_rows_sql, dashboard_rows_sql, rows, group_by, filters, keys=True
     )
+    group_names = [g for g in group_names if g != "__filter"]
+    grain = [p.cube if side == "cube" else p.dashboard for p in rows.grain]
+    n = len(grain)
+    keys = [f"__k{i}" for i in range(n)]
+    item = ["bucket", *group_names]
+
+    def keyed(name: str, sql: str) -> str:
+        cols = ", ".join(
+            f"{k} AS {kn}" for k, kn in zip(_grain_keys(grain), keys, strict=True)
+        )
+        return (
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
+            f"{name} AS (\n  SELECT DISTINCT {cols}\n  FROM (\n{sql}\n  ) AS s\n)"
+        )
+
+    def matches(v: str, u: str) -> str:
+        return " AND ".join(f"{v}.{k} = {u}.{k}" for k in keys)
+
+    parts = [
+        ctes,
+        # trunk-ignore(bandit/B608): the bucket is one of BUCKETS
+        f"u AS (\n  SELECT {', '.join(item + keys)}, {_RN}, "
+        f"FARM_FINGERPRINT(TO_JSON_STRING(STRUCT({', '.join(keys)}, {_RN}))) AS __row\n"
+        f"  FROM joined WHERE bucket = '{bucket}'\n)",
+    ]
+    parts += [keyed(f"x{i}", sql) for i, sql in enumerate(exclude)]
+    parts += [keyed(f"i{i}", sql) for i, sql in enumerate(include)]
+    keep = [f"{_RN} = 1"]
+    keep += [
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
+        f"NOT EXISTS (SELECT 1 FROM x{i} WHERE {matches(f'x{i}', 'u')})"
+        for i in range(len(exclude))
+    ]
+    keep += [
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
+        f"EXISTS (SELECT 1 FROM i{i} WHERE {matches(f'i{i}', 'u')})"
+        for i in range(len(include))
+    ]
+    # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
+    parts.append(f"p AS (\n  SELECT * FROM u WHERE {' AND '.join(keep)}\n)")
+    parts += [keyed(f"v{i}", sql) for i, (_, sql) in enumerate(variants)]
+    hits = (
+        "\n  UNION ALL\n  ".join(
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
+            f"SELECT p.__row, '{step_id}' AS step_id FROM p JOIN v{i} ON {matches(f'v{i}', 'p')}"
+            for i, (step_id, _) in enumerate(variants)
+        )
+        or "SELECT CAST(NULL AS INT64) AS __row, '' AS step_id FROM (SELECT 1) WHERE FALSE"
+    )
+    parts.append(f"hits AS (\n  {hits}\n)")
+    group_clause = ", ".join(item + ["step_id"])
+    duplicates = (
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
+        f"  UNION ALL SELECT {', '.join(item)}, '{DUPLICATE}' AS step_id "
+        f"FROM u WHERE {_RN} > 1\n"
+    )
+    if combine:
+        step = f"IF(STARTS_WITH(step_id, '{PRESENT}'), NULL, step_id)"
+        parts.append(
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
+            "per_row AS (\n  SELECT __row, CASE "
+            f"WHEN LOGICAL_OR(STARTS_WITH(step_id, '{UNREPRODUCED}')) "
+            f"THEN MIN(IF(STARTS_WITH(step_id, '{UNREPRODUCED}'), step_id, NULL)) "
+            f"WHEN COUNT(DISTINCT {step}) = 1 THEN MIN({step}) "
+            f"WHEN COUNT(DISTINCT {step}) > 1 THEN CONCAT('{MANY}', "
+            f"STRING_AGG(DISTINCT {step}, '{_SEP}' ORDER BY {step})) "
+            f"ELSE MIN(IF(STARTS_WITH(step_id, '{PRESENT}'), step_id, NULL)) "
+            "END AS step_id\n  FROM hits GROUP BY __row\n)"
+        )
+        # Then every row each variant recovers, `+`-prefixed, so the caller
+        # knows which variants explain anything, ambiguous rows included.
+        outer = (
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
+            f"SELECT {', '.join(item)}, step_id, COUNT(*) AS n_rows\n"
+            "FROM (\n"
+            f"  SELECT {', '.join(f'p.{c}' for c in item)}, "
+            f"IFNULL(per_row.step_id, '{NONE}') AS step_id "
+            "FROM p LEFT JOIN per_row USING (__row)\n"
+            f"  UNION ALL SELECT {', '.join(f'p.{c}' for c in item)}, "
+            "CONCAT('+', hits.step_id) AS step_id FROM p JOIN hits USING (__row)\n"
+            + duplicates
+            + ")\n"
+            f"GROUP BY {group_clause}"
+        )
+    else:
+        outer = (
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
+            f"SELECT {', '.join(item)}, step_id, COUNT(*) AS n_rows\n"
+            "FROM (\n"
+            f"  SELECT {', '.join(f'p.{c}' for c in item)}, hits.step_id "
+            "FROM p JOIN hits USING (__row)\n"
+            f"  UNION ALL SELECT {', '.join(item)}, '{NONE}' AS step_id FROM p\n"
+            + duplicates
+            + ")\n"
+            f"GROUP BY {group_clause}"
+        )
+    return ",\n".join(parts) + "\n-- outer\n" + outer
+
+
+def many_ids(step_id: str) -> list[str]:
+    """The step ids a `MANY` id lists."""
+    return [s for s in step_id[len(MANY) :].split(_SEP) if s]
 
 
 def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
@@ -250,7 +466,7 @@ def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
     Returns:
         One `Group` per non-match row, carrying all its group-by columns in
         query order, so a row's students are counted once. A NULL value
-        becomes an empty string.
+        becomes an empty string, and its column is listed in `nulls`.
     """
     reserved = {"bucket", "n_rows", "n_students", "__filter"}
     return [
@@ -270,6 +486,7 @@ def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
             bucket=row["bucket"],
             n_rows=int(row["n_rows"]),
             n_students=int(row["n_students"]),
+            nulls=tuple(k for k, v in row.items() if k not in reserved and v is None),
         )
         for row in result_rows
         if row["bucket"] != "match"

@@ -3,7 +3,8 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.bq import CostCapError, ViewHistoryError, Warehouse
+from cube_validation.bq import JOB_ID, CostCapError, ViewHistoryError, Warehouse
+from google.api_core.exceptions import BadRequest
 
 TS = datetime(2026, 10, 22, 19, 0, 0, tzinfo=timezone.utc)
 TIB = 2**40
@@ -319,3 +320,64 @@ def test_billed_bytes_replace_the_estimate_after_a_query_runs(tmp_path):
         wh.rows("select 1")
         assert wh.spent == pytest.approx(0.25, abs=0.001)
     assert wh.spent_today() == pytest.approx(0.25, abs=0.001)
+
+
+def test_refuse_past_caps_counts_nothing_and_names_the_cap(tmp_path):
+    wh = Warehouse(client=FakeClient())
+    with wh.budget(1.0):
+        wh.refuse_past_caps(0.9)
+        with pytest.raises(CostCapError, match=r"\$1\.00 cap"):
+            wh.refuse_past_caps(1.1)
+        assert wh.spent == 0.0
+
+    wh.configure_local(tmp_path, daily_cap=0.5)
+    with pytest.raises(CostCapError, match="daily cap"):
+        wh.refuse_past_caps(0.6)
+
+
+def test_rows_can_bound_a_query_s_run_time():
+    configs = []
+
+    class Client(FakeClient):
+        def query(self, sql, job_config=None):
+            configs.append(job_config)
+            return super().query(sql, job_config)
+
+    wh = Warehouse(client=Client())
+    wh.rows("select 1")
+    wh.rows("select 2", timeout_s=90)
+
+    assert configs[0] is None
+    assert int(configs[1].job_timeout_ms) == 90_000 and not configs[1].dry_run
+
+
+def test_the_spend_ledger_can_live_apart_from_the_cache(tmp_path):
+    ledger = tmp_path / "default"
+    wh = Warehouse(client=FakeClient(nbytes=TIB // 100))
+    wh.configure_local(tmp_path / "copy", daily_cap=3.0, ledger_dir=ledger)
+
+    wh.price("select 1")
+
+    assert (ledger / "spend.json").exists()
+    assert not (tmp_path / "copy" / "spend.json").exists()
+    other = Warehouse(client=FakeClient())
+    other.configure_local(tmp_path / "another", daily_cap=3.0, ledger_dir=ledger)
+    assert other.spent_today() == pytest.approx(6.25 / 100)
+
+
+def test_a_failed_query_carries_its_job_id():
+    class Failing(FakeClient):
+        def query(self, sql, job_config=None):
+            job = super().query(sql, job_config)
+            setattr(job, JOB_ID, "job-1")
+
+            def boom():
+                raise BadRequest("Bad int64 value: 12345")
+
+            job.result = boom
+            return job
+
+    with pytest.raises(BadRequest) as caught:
+        Warehouse(client=Failing()).rows("select 1")
+
+    assert getattr(caught.value, JOB_ID) == "job-1"

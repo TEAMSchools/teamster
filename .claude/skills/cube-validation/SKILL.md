@@ -24,7 +24,11 @@ loads only `src/cube/model/`, so these files never reach the semantic layer.
 - The tool never posts anything: not to Slack, not to GitHub, not to Asana.
   Claude posts, and only what the analyst approved.
 - Row-level output stays local. Never paste rows into an issue, a comment or a
-  commit; GitHub text shows counts under 10 as `<10`.
+  commit. The terminal and local files (`triage.json`, the cache) show exact
+  counts. Text bound for GitHub or a commit (the review issue, decision YAML,
+  the run report you post) shows counts under 10 as `<10`, and hides any count
+  that would give one away; mask a terminal count the same way before posting
+  it.
 - Nothing committed names a person or holds an email. Pass `--email` (a
   network-grant address) or set `CUBE_VALIDATION_EMAIL`.
 - **Check every decision reason for a student's or staff member's name before
@@ -32,8 +36,9 @@ loads only `src/cube/model/`, so these files never reach the semantic layer.
   ID-like number; neither can detect a name.
 - A triage item's `stub` holds the group's real values. It may reach the
   analyst's chat, never GitHub.
-- Validation-file changes go in their own commits, apart from tool changes, with
-  each file staged by name.
+- Validation-file changes, proof files under `src/cube/validation/proofs/`
+  included, go in their own commits, apart from tool changes, with each file
+  staged by name.
 - Tableau writes go only to the `TEMP-CB` project.
 - Source anchors are entered by hand under `anchors:` with `measure`, `value`,
   `source`, `as_of`, `date_range` and `filters`. Judge each difference in
@@ -45,9 +50,9 @@ loads only `src/cube/model/`, so these files never reach the semantic layer.
 
 Tableau and `CUBE_API_SECRET` come only from the pytest secrets fixture, and
 only the MAIN checkout's devcontainer template holds the Cube secret. So
-`discover`, `prove`, `check-api`, `run` and `triage` go through a throwaway
-`tests/test_zz_cube_validation.py` in `/workspaces/teamster`, never a worktree
-copy:
+`discover`, `prove`, `check-api`, `run`, `triage` and `triage confirm` go
+through a throwaway `tests/test_zz_cube_validation.py` in
+`/workspaces/teamster`, never a worktree copy:
 
 1. Write the runner, filling in the worktree path, the URL (the Cube Cloud REST
    base ending `/cubejs-api/v1`; never commit it) and the arguments:
@@ -74,8 +79,10 @@ copy:
                         "--comparison", "<id>"]) == 0
    ```
 
-2. Run `uv run pytest tests/test_zz_cube_validation.py -s --tb=short`, then
-   delete the file.
+2. Run it from `/workspaces/teamster`, where the secrets load, with the
+   validator worktree's environment, so the branch's sqlglot is used:
+   `uv run --project <worktree> pytest tests/test_zz_cube_validation.py -s --tb=short`.
+   Then delete the file.
 
 `review`, `add-decisions`, `reapply`, `record-answers` and `preflight` need no
 credentials: run them from the checkout that holds the validation files with
@@ -206,11 +213,148 @@ cause, do not retry around it.
    the `run` it reads.
 8. `triage <file>` reads the latest run and writes `triage.json` beside its
    `run.json`. It sorts every open item (row groups, cell differences, missing
-   cuts and filters) under one suggestion: `map_filters`, `filters_nothing`,
-   `docs`, then `owner`, each with a masked label and its evidence. Start from
-   the summary it prints first; a flood in one bucket means fix the grain. It
-   lists 25 items per suggestion; `triage.json` holds them all. Sort every item
-   into one of 5 piles (step 9 lists the calls):
+   cuts and filters) into one pile: `map_filters`, `filters_nothing`, `cause`,
+   then `investigate`, each with its label and its evidence. It lists 25 items
+   per pile; `triage.json` holds them all. Run `triage` after every `run`:
+   `add-decisions` and `review` read only the triage beside the latest run and
+   refuse one of another moment, one missing any of the run's open items, one
+   with an item in `investigate`, or one whose proof file changed since.
+
+   Nothing goes to the owner without a cause proven row by row. A row group
+   reaches `cause` only through a stored proof (below), including one whose
+   values differ on rows both sides hold (`--bucket value_differs`). A missing
+   cut or filter reaches it from the workbook (`sheet filter <caption>` or
+   `sheet cut`), and rows a `dashboard_filters` entry drops ("dashboard
+   filtered") from the run's own reconcile, as the cause
+   `sheet filter <caption>`. A cell set reaches it when every differing cell's
+   rows lie in groups in `cause`, so a cell set needs `rows` on its comparison
+   to be provable: add `rows` before `run`. A member description, a cell pattern
+   or a trace count is a lead, never a cause. A run saved before groups recorded
+   their NULLs is refused ("this run predates NULL-aware groups"):
+   `run --moment <its moment>` again.
+
+   The trace leads. `triage` relaxes each step of the other side's SQL (WHERE
+   and HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 3 dbt models)
+   and prints "lead: relaxing <step> brings back N of M rows" on each one-sided
+   group; a row in the tables that no single step brings back reads "lead: no
+   single step brings it back". It prices level 0 first and each later query
+   before it runs, under `--max-usd` and the daily cap; a cap,
+   `--trace-max-minutes` (default 120) or a failed dry run stops only that
+   bucket. `--no-trace` skips it. It reads
+   `src/dbt/kipptaf/target/prod/manifest.json` (`--manifest` for another) and,
+   when compiled SQL is missing, refuses with the `dbt compile` command to run
+   from the repository root; compile in a checkout whose dbt code built the
+   tables, once for every view you triage. It refuses when either side's SQL
+   changed since the run: `run` again. Counts are exact in the terminal and
+   `triage.json`; `review` quotes the masked copy (`evidence_posted`).
+
+   Prove causes with the analyst, in short turns, not alone:
+
+   1. Show the analyst the clusters before any SQL: the summary's buckets
+      (near-equal Cube-only and dashboard-only totals mean the grain fails to
+      join, not lost rows), then the `investigate` groups counted by side and by
+      each group-by column.
+   2. Before any SQL, read each doc an item's `lead: read docs/models/...` line
+      names (the docs that mention the comparison's dashboard model or Cube
+      fact), and search open issues (`mcp__github__search_issues`). Member
+      descriptions are not evidence: they have not explained a missing row. Then
+      read the model SQL along the lineage, both sides.
+   3. For each cluster, first split its rows by which pieces exist on the other
+      side, one aggregate query: is the student there, is the assessment (or the
+      other key) there, is only a code different? Counts only. A whole key
+      missing points straight at a cause (C3 below).
+   4. Then propose one hypothesis per cluster: its lead, the model predicate it
+      names, and the one aggregate query that tests it. Run it once the analyst
+      agrees. Queries return counts only; rows stay in BigQuery.
+   5. After 2 failed hypotheses on one cluster, or about $0.50 spent, stop and
+      ask the analyst for context.
+   6. Write the proof: one query per comparison and bucket that reads
+      `{unmatched}` and returns exactly `__row, cause`, one row per unmatched
+      row. `{unmatched}` holds `__row`, `item_key`, `side`, the group-by
+      columns, the grain under its Cube names, and `__rn` (past 1, a grain the
+      other side holds twice). A `CASE` in lineage order names each row's first
+      failing predicate, copied literally from the model's SQL. The cause is ONE
+      `CASE` whose every `THEN` is a quoted cause name (no `IF()`, nested `CASE`
+      or column there) and which ends in `ELSE 'UNEXPLAINED'`, never in a cause:
+      a later run's rows of a new cause must not be filed under an old one. A
+      row the join misses must fall to `'UNEXPLAINED'` too: test the join first
+      (or use `EXISTS`), and join a table at the row's grain, since a finer one
+      repeats rows. Name tables `` `teamster-332318`.`<dataset>`.`<table>` ``;
+      they are read as of the run's moment; `confirm` warns of a table named
+      without them. A proof may open with its own `WITH`.
+
+      ```sql
+      SELECT u.__row,
+        CASE
+          WHEN r.assessment_id IS NULL THEN 'UNEXPLAINED'
+          WHEN r.module_type = 'WPP' THEN 'C1'
+          WHEN r.module_type IS NULL AND r.source = 'apex' THEN 'C2'
+          ELSE 'UNEXPLAINED'
+        END AS cause
+      FROM {unmatched} AS u
+      LEFT JOIN `teamster-332318`.`kipptaf_marts`.`dim_assessments` AS r
+        ON r.assessment_id = u.assessment_id
+      ```
+
+   7. `triage confirm <file> --comparison <id> --bucket <cube_only|dashboard_only|value_differs> --sql <draft.sql> --cause C1=dashboard:<plain words> ...`
+      (through the runner) needs a `--cause` for every cause literal the query
+      returns. The tool counts the rows itself, joining the proof back to
+      `{unmatched}`, and refuses a row the proof drops or repeats, a cause that
+      is not that one `CASE` of quoted names ending in `ELSE 'UNEXPLAINED'`, any
+      column but `__row` and `cause`, a grain or ID column as the cause, a
+      literal compared with a column that names a person (the student column, a
+      `_number`, `_name` or `_email`, a student id or key;
+      `assessment_id = 189131` is fine), and an ID-like number or email in a
+      comment or string. These checks catch the common mistakes, not every one:
+      read the proof yourself. It is priced and capped like any query. It saves
+      the proof to
+      `src/cube/validation/proofs/<view>/<comparison>__<bucket>.sql`, under lint
+      opt-outs and its `-- cause <bucket> = <side>: <words>` block, and moves
+      each item it fully explains (no `UNEXPLAINED`) to `cause`. The rest stay,
+      with "proof <file> leaves N rows unexplained". `--items <ids>` narrows the
+      printout only. After an edit, run it again without `--sql`.
+      `--cells --comparison <id>` confirms a cell set, or refuses with the count
+      of cells outside proven groups and, for a count, the gap between the
+      cells' differences and the proven rows.
+   8. Show the analyst the proof file and the per-cause counts `confirm`
+      printed, and wait for an OK before the file is kept for commit. On a no,
+      delete the file and run `triage --no-trace` again.
+   9. Proven means 2 things: `UNEXPLAINED` is 0 for the item, and each bucket's
+      rule is a literal model predicate, not a paraphrase of a doc. For the rows
+      a predicate drops, a second aggregate shows the value (the date, the flag,
+      the missing key).
+
+   Every `triage` re-runs every stored proof on the new run's rows first, priced
+   and capped (`--no-proofs` skips them), then traces only what no proof
+   explains; an item with rows a proof no longer explains returns to
+   `investigate`. Re-triage a run whose leads are in hand with `--no-trace`;
+   trace again only when new items appeared. The proof files are the durable
+   record: commit them with the decisions, in the validation-file commit. They
+   hold SQL only: no values, no names. A formatting-only edit to one re-opens
+   nothing.
+
+   Worked example (DDI). Cube-only rows were classified through the dashboard's
+   `responses` CTE, dashboard-only rows through Cube's fact:
+
+   | Bucket | Side      | Model predicate                                                               | Found through                                     |
+   | ------ | --------- | ----------------------------------------------------------------------------- | ------------------------------------------------- |
+   | C1     | dashboard | `r.module_type != 'WPP'`                                                      | The domain doc and a `TODO: Remove SY26` comment  |
+   | C2     | dashboard | `module_type is null and source = 'apex'`: the `!=` drops a NULL              | The doc's "untagged assessments never appear"     |
+   | C3     | dashboard | the rollup's `academic_year`: the administration date sits a year early       | Comparing `date_taken`, the canonical date, title |
+   | C4     | dashboard | the join to a week row covering `administered_at`                             | One date before the first enrollment week         |
+   | C5     | dashboard | `is_enrolled_week_end`, `enroll_status`, `not is_out_of_district`             | Testing each flag of the `where` alone            |
+   | C6     | dashboard | the sheet's Exclude Future Assessments (`dashboard_filters`)                  | Already a dashboard-only filter                   |
+   | D1     | cube      | `score_anchors`: `not sc.is_replacement`                                      | Reading `score_anchors`; a known issue            |
+   | D2     | cube      | the resolver's `anchor_date >= cc_dateenrolled and anchor_date < cc_dateleft` | Sections in the subject exist, none spans it      |
+   | D3     | cube      | the resolver's homeroom tier: no section on the date                          | The same resolver                                 |
+   | D4     | cube      | `dim_student_section_enrollments` key with no `dim_student_enrollments` row   | A query on the dimension chain                    |
+
+   Dead ends there: an "off-grade" guess over-matched until `is_replacement`
+   named the rule; a "week join" label hid C4 until each flag was tested alone;
+   filtering anchors by `academic_year = 2026` dropped every internal anchor,
+   whose year is null.
+
+   - Investigate: no proven cause yet. It never goes to the owner.
    - Map under `filters:`: a `same values: map it under filters:` verdict. Once
      the analyst approves the batch, map the field under the comparison's
      `filters:` instead of recording a decision, then re-prove the comparisons
@@ -218,28 +362,21 @@ cause, do not retry around it.
      `same field, different coding` is not a map: the codes differ, and the item
      stays where triage put it.
    - Filters nothing: `deliberate`, quoting the evidence.
-   - Close as deliberate: a `docs` item whose quoted description or `ai_context`
-     explains the difference. Check the quote against the result first: a
-     description that says a code counts while Cube returns blank for it is a
-     contradiction, not an answer. A contradiction goes to the owner (or a known
-     issue), named in the reason.
-   - Known issue: search open GitHub issues (`mcp__github__search_issues`, by
-     measure, member, region and school words) for a known gap that explains the
-     item. The call is the one that issue fixes (`fix_source` for source data,
-     `fix_cube` for the Cube model), with the issue as `task`.
-   - Owner: anything the evidence does not answer. It becomes a `domain_owner`
-     decision with an empty `task`, and only these reach `review`.
+   - A `cause` item is one of these (step 9 lists the calls):
+     - Deliberate: the proven step is intended on that side.
+     - Known issue: an open GitHub issue names the step. The call is the one
+       that issue fixes (`fix_source` for source data, `fix_cube` for the Cube
+       model), with the issue as `task`.
+     - Owner: a question only the owner can settle about the proven step, such
+       as whether WPP should count or which date anchors a score. It becomes a
+       `domain_owner` decision with an empty `task`, and only these reach
+       `review`.
 
-   A missing cut or filter is a sheet field Cube has no member for: Cube cannot
-   make that cut, so the owner decides whether the measure needs it. "Cell
-   differences" lists candidate causes (patterns, where they cluster, both
-   definitions): leads to check, not findings. Rows a `dashboard_filters` entry
-   drops read "dashboard filtered", not Cube-only, and the filter is triaged as
-   a missing filter. `not compared: identifier column` means values were not
-   compared, for privacy; never compare them by hand. `also covers:` lists the
-   sibling groups the same decision would close: approve the item only if its
-   reason holds for each, else send it to the owner. Anchor differences are
-   judged here too.
+   `not compared: identifier column` means values were not compared, for
+   privacy; never compare them by hand. A proven row group is decided on its
+   causes, not its school: every group a cause explains shares one decision.
+   Anchor differences are judged here too. `CUBE_VALIDATION_CACHE` points every
+   command at another cache, such as a copy of a run to rework.
 
 9. The calls:
    - `deliberate`: the difference is intended. Say what the Cube member counts
@@ -255,21 +392,29 @@ cause, do not retry around it.
      from step 10, filled in after it is posted.
 
    Draft a reason for every item, so the analyst edits rather than writes: a
-   close quotes the evidence or names the issue; an owner item says why the
-   evidence leaves it to the owner, which his session shows him. Show the
-   analyst one batch, numbered across piles in the order above, owner pile last;
-   each line has the masked label, the evidence, the call and the drafted
-   reason. On "approve all" or "approve all but 2 and 6", the excluded items go
-   where the analyst says (the owner pile unless told otherwise). Write the
-   approved items, owner pile included, to `approved.json` in the session
-   scratchpad: a JSON list of `{"id", "call", "reason", "task", "item"}`, where
-   `item` is the triage item id, `id` a new decision id not already in the file,
-   and `task` empty for `deliberate` and `domain_owner`. Map items are not in
-   it. Then `add-decisions <file> <approved.json>`: it takes each decision's key
-   fields from the item's stub and its fingerprints from the latest run, and
-   writes the whole batch or nothing, then re-applies every decision to the
-   saved run offline, so `review` reads it with no new `run`. After a hand edit
-   to `decisions:`, `reapply <file>` does the same.
+   close quotes the item's `evidence_posted` in `triage.json` (masked), never
+   the terminal's exact counts, since the reason is committed, or names the
+   issue; an owner item names the proven step and the question it leaves, which
+   his session shows him. Show the analyst one batch, numbered across piles in
+   the order above, owner items last; each line has the label, the evidence, the
+   call and the drafted reason. On "approve all" or "approve all but 2 and 6",
+   the excluded items stay unrecorded until the analyst says where they go.
+   Write the approved items, owner items included, to `approved.json` in the
+   session scratchpad: a JSON list of
+   `{"id", "call", "reason", "task", "item", "cause"}`, where `item` is the
+   triage item id, `id` a new decision id not already in the file, `task` empty
+   for `deliberate` and `domain_owner`, and `cause` the cause's words, needed
+   only on an item with several causes: give such an item one entry per cause,
+   each with its own call. Map items are not in it. Then
+   `add-decisions <file> <approved.json>`: a proven row group (a stored proof's,
+   or a sheet filter's) becomes one `cause:` decision per cause that has none
+   yet, never a `group:` decision; a cause already decided keeps its decision,
+   so give every entry on one cause the same call. An item is decided once every
+   one of its causes is; approving it again changes nothing. Other items take
+   their key fields from the stub. Fingerprints come from the latest run and the
+   proof. It writes the whole batch or nothing, then re-applies every decision
+   to the saved run offline, so `review` reads it with no new `run`. After a
+   hand edit to `decisions:`, `reapply <file>` does the same.
 
    Before `review`, give the file a top-level `tasks:` block,
    `{cube_fix: <the domain's Cube-fix issue>, dashboard_fix: <its Asana dashboard-fix task>}`:
@@ -288,12 +433,27 @@ cause, do not retry around it.
    `missing_cut: <caption>` or `missing_filter: <caption>` in place of `group`,
    with no `comparison` and no `fingerprints`: it covers the field across the
    view. A comparison's cell differences take `cells: true` in place of `group`,
-   with its `comparison` and `fingerprints`. Rows a dashboard-only filter drops
-   take `group: { column: dashboard_filter, values: [<its column>] }`.
+   with its `comparison` and `fingerprints`. Never hand-write a `group:` or
+   `cells:` decision for an item triage holds in `investigate`: `add-decisions`
+   and `review` refuse while one closes such an item. A proven cause takes
+   `cause: {side, label}` in place of `group`, `label` being the proof's words
+   with each ID-shaped number written `<n>`, and `fingerprints` adds `proof`,
+   the proof's. It names no group: each `triage` re-runs the proofs and marks an
+   item `decided` when every one of its causes has a decision that still holds,
+   so a run never closes one. A decision whose SQL or proof changed decides
+   nothing until re-approved through `add-decisions`, never by pasting new
+   fingerprints; one the owner answered (`answer:`) is never re-approved: delete
+   it to ask again. `add-decisions` writes these; do not hand-write one. A cause
+   decision and a `group` decision on one group with different calls refuse.
 
 10. `review <files> --domain <domain>` prints the validation issue's body: the
     numbered questions, each with the owner's hand checks, and a closing JSON
-    block the owner's session reads. stderr names any question with no triage
+    block the owner's session reads. Each unanswered `domain_owner` cause is one
+    question, across the comparisons it is proven on, with its words, per
+    comparison the count of groups it decides and of the rows its proof
+    attributes to it, and the model-doc leads; the owner's answer records onto
+    every decision it lists. It refuses unless every file's view has a triage
+    with nothing in `investigate`. stderr names any question with no triage
     evidence: `triage` that view and render again before posting. The footnote
     promises that identifiers of students and staff are hidden, which holds only
     if no reason or definition names a person: read them first. Show the draft

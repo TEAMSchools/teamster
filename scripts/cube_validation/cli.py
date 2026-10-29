@@ -1,7 +1,7 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
 Commands: `discover`, `preflight`, `prove`, `check-api`, `run`, `triage`,
-`add-decisions`, `reapply`, `review`, `record-answers`, `members`,
+`triage confirm`, `add-decisions`, `reapply`, `review`, `record-answers`, `members`,
 `inventory-workbook`, `inventory`. Exit
 codes: 0 done, 1 refused (the message says why), 2 usage error. This module parses
 arguments and builds the clients; `pipeline.py` does the work. Tests replace
@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import copy
 import dataclasses
 import json
 import os
@@ -28,7 +29,17 @@ from pathlib import Path
 import tableauserverclient as TSC
 import yaml
 
-from . import answers, builder, pipeline, preflight, report, tableau, triage
+from . import (
+    answers,
+    builder,
+    confirm,
+    pipeline,
+    preflight,
+    report,
+    tableau,
+    trace,
+    triage,
+)
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import (
     ConfigError,
@@ -48,6 +59,8 @@ URL_VAR = "CUBE_REST_URL"
 # trunk-ignore(bandit/B105): environment variable name, not a value
 SECRET_VAR = "CUBE_API_SECRET"
 EMAIL_VAR = "CUBE_VALIDATION_EMAIL"
+# Points every command at another cache, such as a copy of a run to rework.
+CACHE_VAR = "CUBE_VALIDATION_CACHE"
 # Every run on this machine shares 1 daily BigQuery cap (UTC day).
 DAILY_MAX_USD = 3.0
 
@@ -74,7 +87,8 @@ def make_warehouse() -> Warehouse:
 def _warehouse(args: argparse.Namespace) -> Warehouse:
     """A warehouse that shares its view cache and daily spend with other runs."""
     wh = make_warehouse()
-    wh.configure_local(cache_root(), args.max_usd_per_day)
+    # One day's ledger per machine, wherever the cache is.
+    wh.configure_local(cache_root(), args.max_usd_per_day, ledger_dir=report.CACHE_ROOT)
     return wh
 
 
@@ -112,7 +126,8 @@ def utcnow() -> datetime:
 
 
 def cache_root() -> Path:
-    return report.CACHE_ROOT
+    """The local cache: `CUBE_VALIDATION_CACHE` when set, else `report.CACHE_ROOT`."""
+    return Path(os.environ.get(CACHE_VAR) or report.CACHE_ROOT)
 
 
 def _cube(args: argparse.Namespace) -> Cube:
@@ -242,11 +257,69 @@ def _parser() -> argparse.ArgumentParser:
     email(p)
     max_usd(p)
 
-    p = sub.add_parser("triage", help="suggest a call for each open item of a run")
+    p = sub.add_parser("triage", help="sort each open item of a run into a pile")
     view_file(p)
     fact_dataset(p)
     email(p)
     max_usd(p)
+    p.add_argument(
+        "--no-trace",
+        action="store_true",
+        help="skip tracing unmatched rows to the step that drops them",
+    )
+    p.add_argument(
+        "--manifest",
+        type=Path,
+        default=trace.MANIFEST,
+        help="dbt manifest with compiled SQL for the tables the trace descends into",
+    )
+    p.add_argument(
+        "--trace-max-minutes",
+        type=float,
+        default=trace.TRACE_MAX_MINUTES,
+        help="stop the trace after this long, keeping what it found",
+    )
+    p.add_argument(
+        "--no-proofs",
+        action="store_true",
+        help="skip re-running the view's stored proofs (`triage confirm`)",
+    )
+
+    # `triage confirm ...` on the command line; see `main`.
+    p = sub.add_parser(
+        "triage-confirm",
+        help="prove a comparison bucket's row groups with one classification query",
+    )
+    view_file(p)
+    fact_dataset(p)
+    email(p)
+    max_usd(p)
+    p.add_argument("--comparison", required=True, help="the comparison it proves")
+    p.add_argument(
+        "--bucket", choices=confirm.PROVABLE, help="the unmatched rows it classifies"
+    )
+    p.add_argument(
+        "--sql",
+        type=Path,
+        help="the proof's SQL; defaults to the stored proof, to re-run an edit",
+    )
+    p.add_argument(
+        "--cause",
+        action="append",
+        default=[],
+        help="<bucket>=<side>:<plain words>, for every bucket the query returns",
+    )
+    p.add_argument(
+        "--items",
+        action="append",
+        default=[],
+        help="triage item ids to report (comma-separated); all are proven",
+    )
+    p.add_argument(
+        "--cells",
+        action="store_true",
+        help="confirm the comparison's cell set from its proven groups; no query",
+    )
 
     p = sub.add_parser(
         "add-decisions", help="write an approved triage batch as decisions"
@@ -306,7 +379,15 @@ def _load(path: Path) -> ViewConfig:
 def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "review":
         configs = [_load(v) for v in args.views]
-        print(pipeline.review(configs, args.domain, cache_root(), now=utcnow()))
+        print(
+            pipeline.review(
+                configs,
+                args.domain,
+                cache_root(),
+                now=utcnow(),
+                view_files=args.views,
+            )
+        )
         return 0
 
     if args.command == "record-answers":
@@ -347,8 +428,35 @@ def _dispatch(args: argparse.Namespace) -> int:
             cube=_cube(args),
             max_usd=args.max_usd,
             cache_root=cache_root(),
+            trace_rows=not args.no_trace,
+            manifest=args.manifest,
+            trace_max_minutes=args.trace_max_minutes,
+            proofs=None if args.no_proofs else confirm.proofs_dir(args.view, cfg.view),
         )
         return 0
+
+    if args.command == "triage-confirm":
+        if not args.cells and not args.bucket:
+            raise pipeline.Refusal("pass --bucket, or --cells")
+        if args.cells:
+            # No query runs, so no warehouse or Cube is needed.
+            wh, cube = None, None
+        else:
+            wh, cube = _warehouse(args), _cube(args)
+        return confirm.run_confirm(
+            cfg,
+            args.view,
+            wh=wh,
+            cube=cube,
+            max_usd=args.max_usd,
+            cache_root=cache_root(),
+            comparison=args.comparison,
+            bucket=args.bucket,
+            sql=args.sql,
+            causes=args.cause,
+            items=[i for flag in args.items for i in flag.split(",") if i],
+            cells=args.cells,
+        )
 
     if args.command == "add-decisions":
         return _add_decisions(cfg, args.view, args.approved)
@@ -473,11 +581,12 @@ def _write_all(writes: list[tuple[Path, dict]]) -> None:
         raise
 
 
-def _check_claims(writes: list[tuple[Path, dict]]) -> None:
+def _check_claims(writes: list[tuple[Path, dict]], also=None) -> None:
     """Refuse, before writing, a batch whose decisions would claim one item twice.
 
     The writes are rehearsed on copies, so the check reads the decisions the
-    way the loader will read the real file.
+    way the loader will read the real file. `also(cfg)`, when given, checks
+    each rehearsed file's config too.
     """
     with tempfile.TemporaryDirectory() as tmp:
         copies: dict[Path, Path] = {}
@@ -490,7 +599,10 @@ def _check_claims(writes: list[tuple[Path, dict]]) -> None:
             write_decision(copies[path], decision)
         for path, copy in copies.items():
             try:
-                pipeline.check_claims(load_view_config(copy), cache_root())
+                rehearsed = load_view_config(copy)
+                pipeline.check_claims(rehearsed, cache_root())
+                if also is not None:
+                    also(rehearsed)
             except pipeline.Refusal as exc:
                 raise pipeline.Refusal(f"{path}: {exc}; nothing written") from exc
 
@@ -498,33 +610,32 @@ def _check_claims(writes: list[tuple[Path, dict]]) -> None:
 def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     """Write an approved triage batch into the view's `decisions:`.
 
-    Stubs come from the triage beside the latest run (see
-    `pipeline._triage_file`) and fingerprints from that run. The whole batch
-    is written or none of it.
+    Stubs and proven causes come from the triage beside the latest run and
+    fingerprints from that run; a cause already decided keeps its decision
+    (see `answers.approved_decisions`). Refuses while that triage is stale or
+    holds an unproven item (see `triage.proven_triage`), or when a cause
+    decision would disagree with a `group` decision on one group. The whole
+    batch is written or none of it.
     """
     approved = _read_json(approved_path, "approved")
     run, run_json = pipeline.latest_run(cfg, cache_root())
-    found = pipeline._triage_file(run_json, cache_root() / cfg.view)
-    if found is None:
-        raise pipeline.Refusal(f"{cfg.view}: no triage.json; `triage` it first")
-    try:
-        saved = json.loads(found.read_text())
-    except json.JSONDecodeError as exc:
-        raise pipeline.Refusal(
-            f"{cfg.view}: triage.json is unreadable; re-run triage"
-        ) from exc
+    saved = triage.proven_triage(run, run_json, cfg.decisions, path.parent)
 
-    decisions = answers.approved_decisions(approved, saved, run.fingerprints)
-    taken = {d.id for d in cfg.decisions} & {d["id"] for d in decisions}
-    if taken:
-        raise pipeline.Refusal(
-            f"{path}: decisions already has {', '.join(sorted(taken))}; pick new ids"
-        )
+    decisions = answers.approved_decisions(
+        approved, saved, run.fingerprints, existing=cfg.decisions
+    )
     writes = [(path, d) for d in decisions]
-    _check_claims(writes)
+
+    def agree(rehearsed: ViewConfig) -> None:
+        items = copy.deepcopy(saved.get("items", []))
+        triage.mark_decided(run, items, rehearsed.decisions, refuse=True)
+
+    _check_claims(writes, agree)
     _write_all(writes)
+    had = {d.id for d in cfg.decisions}
     for d in decisions:
-        print(f"{path}: wrote {d['id']} ({d['call']})")
+        done = "re-approved" if d["id"] in had else "wrote"
+        print(f"{path}: {done} {d['id']} ({d['call']})")
     _reapply_written([path])
     return 0
 
@@ -574,6 +685,10 @@ def _record_answers(views: list[Path], comment: Path, author: str, yes: bool) ->
         decision.update(call=c.call[1], reason=c.reason[1])
         if c.task[1]:
             decision["task"] = c.task[1]
+        if decision.get("cause"):
+            # Answered: `review` asks it no more, and it is never re-approved
+            # on a changed proof.
+            decision["answer"] = c.call[1]
         writes.append((path, decision))
     if not writes:
         print("Nothing to write; every answer is already recorded.")
@@ -748,6 +863,8 @@ def main(argv: list[str]) -> int:
         0 when the command finished, 1 when it refused (the reason goes to
         stderr), 2 for a usage error.
     """
+    if argv[:2] == ["triage", "confirm"]:
+        argv = ["triage-confirm", *argv[2:]]
     try:
         args = _parser().parse_args(argv)
     except SystemExit as exc:

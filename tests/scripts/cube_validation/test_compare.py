@@ -7,6 +7,7 @@ from cube_validation.compare import (
     groups_from,
     reconcile_sql,
     scope_filters,
+    trace_sql,
 )
 from cube_validation.config import ColumnPair, Comparison, RowSpec
 
@@ -113,8 +114,23 @@ def test_groups_from_drops_match_and_keeps_counts():
 
     assert groups_from("c1", rows) == [
         Group("c1", (("grade_level_cube", "5"),), "cube_only", 3, 2),
-        Group("c1", (("grade_level_cube", ""),), "value_differs", 1, 1),
+        Group(
+            "c1", (("grade_level_cube", ""),), "value_differs", 1, 1,
+            nulls=("grade_level_cube",),
+        ),
+    ]  # fmt: skip
+
+
+def test_a_null_group_and_an_empty_string_group_stay_apart():
+    rows = [
+        {"bucket": "cube_only", "module": None, "n_rows": 3, "n_students": 2},
+        {"bucket": "cube_only", "module": "", "n_rows": 4, "n_students": 4},
     ]
+
+    null, empty = groups_from("c1", rows)
+
+    assert null.dims == empty.dims == (("module", ""),)
+    assert (null.nulls, empty.nulls) == (("module",), ())
 
 
 def test_groups_from_without_group_by_columns():
@@ -329,3 +345,168 @@ def test_groups_from_names_the_dropping_filter_only_on_its_rows():
               "dashboard_filtered", 50, 3),
         Group("c1", (("grade_level", "9"),), "cube_only", 2, 1),
     ]  # fmt: skip
+
+
+# --- trace_sql -----------------------------------------------------------------
+
+
+def _trace(**kw):
+    args = dict(
+        bucket="cube_only",
+        side="dashboard",
+        variants=[("dashboard:main:1", "SELECT 1 AS student_number")],
+    )
+    args.update(kw)
+    return trace_sql(
+        "SELECT 1 AS lea_student_identifier",
+        "SELECT 1 AS student_number",
+        ROWS,
+        GROUP_BY,
+        **args,
+    )
+
+
+def test_trace_sql_returns_group_columns_a_step_and_a_count_only():
+    for combine in (True, False):
+        outer = _trace(combine=combine).rsplit("-- outer", 1)[1]
+
+        select = outer.split("FROM", 1)[0]
+        assert (
+            select == "\nSELECT bucket, grade_level_cube, step_id, COUNT(*) AS n_rows\n"
+        )
+        for col in ("calendardate", "attendance_date", "student_number"):
+            assert col not in outer
+            assert "lea_student_identifier" not in outer
+
+
+def test_trace_sql_rebuilds_the_bucket_inside_the_query():
+    sql = _trace()
+
+    assert "FULL OUTER JOIN d" in sql
+    assert "FROM joined WHERE bucket = 'cube_only'" in sql
+    assert "'dashboard:main:1' AS step_id" in sql
+
+
+def test_trace_sql_names_the_side_s_grain_columns():
+    sql = _trace(side="cube", bucket="dashboard_only")
+
+    assert "CAST(lea_student_identifier AS STRING)" in sql.split("v0 AS", 1)[1]
+    assert "bucket = 'dashboard_only'" in sql
+
+
+# --- trace_sql, run offline ----------------------------------------------------
+
+DUCK_ROWS = RowSpec(
+    grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")], values=[]
+)
+DUCK_GROUP = [ColumnPair("school", "abbreviation")]
+
+
+def _tables(duck, cube, dash, relaxed):
+    duck.table("cube_t", "lea BIGINT, aid VARCHAR, abbreviation VARCHAR", cube)
+    duck.table("dash_t", "student BIGINT, item VARCHAR, school VARCHAR", dash)
+    duck.table(
+        "dash_all",
+        "student BIGINT, item VARCHAR, school VARCHAR, ok1 BOOLEAN, ok2 BOOLEAN",
+        relaxed,
+    )
+
+
+def _run(duck, variants, **kw):
+    sql = trace_sql(
+        "SELECT lea, aid, abbreviation FROM cube_t",
+        "SELECT student, item, school FROM dash_t",
+        DUCK_ROWS,
+        DUCK_GROUP,
+        bucket="cube_only",
+        side="dashboard",
+        variants=variants,
+        **kw,
+    )
+    return {(r["abbreviation"], r["step_id"]): r["n_rows"] for r in duck.rows(sql)}
+
+
+def _step(name, flag):
+    return (name, f"SELECT student, item, school FROM dash_all WHERE {flag}")
+
+
+def test_trace_sql_attributes_one_two_and_no_steps_row_by_row(duck):
+    _tables(
+        duck,
+        [(1, "a", "X"), (2, "b", "X"), (3, "c", "X"), (4, None, "X")],
+        [(9, "z", "X")],
+        [
+            (1, "a", "X", True, False),
+            (2, "b", "X", True, True),
+            (4, None, "X", True, False),
+        ],
+    )
+
+    out = _run(duck, [_step("s1", "ok1"), _step("s2", "ok2")])
+
+    # Row 1 one step; row 2 both, by name; row 3 none; row 4's NULL later
+    # grain column matches a NULL on the other side.
+    assert out[("X", "s1")] == 2
+    assert out[("X", "*s1|s2")] == 1
+    assert out[("X", "")] == 1
+    assert (out[("X", "+s1")], out[("X", "+s2")]) == (3, 1)
+
+
+def test_trace_sql_never_traces_a_grain_the_other_side_has_twice(duck):
+    _tables(
+        duck,
+        [(1, "a", "X"), (1, "a", "X")],
+        [(1, "a", "X")],
+        [(1, "a", "X", True, True)],
+    )
+
+    out = _run(duck, [_step("s1", "ok1")])
+
+    # The second copy is Cube-only; a step that fans out would "recover" it.
+    assert out == {("X", "="): 1}
+
+
+def test_trace_sql_leaves_out_excluded_rows_and_keeps_included_ones(duck):
+    _tables(
+        duck,
+        [(1, "a", "X"), (2, "b", "X"), (3, "c", "X")],
+        [],
+        [
+            (1, "a", "X", True, False),
+            (2, "b", "X", False, True),
+            (3, "c", "X", True, True),
+        ],
+    )
+    exclude = ["SELECT student, item, school FROM dash_all WHERE student = 1"]
+    include = ["SELECT student, item, school FROM dash_all WHERE student < 3"]
+
+    out = _run(duck, [_step("s2", "ok2")], exclude=exclude, include=include)
+
+    assert out == {("X", "s2"): 1, ("X", "+s2"): 1}
+
+
+def test_trace_sql_counts_a_presence_check_only_when_no_step_recovers(duck):
+    _tables(
+        duck,
+        [(1, "a", "X"), (2, "b", "X")],
+        [],
+        [(1, "a", "X", True, False), (2, "b", "X", False, False)],
+    )
+    present = ("#main", "SELECT student, item, school FROM dash_all")
+
+    out = _run(duck, [_step("s1", "ok1"), present])
+
+    assert out[("X", "s1")] == 1 and out[("X", "#main")] == 1
+
+
+def test_trace_sql_counts_by_step_when_split(duck):
+    _tables(
+        duck,
+        [(1, "a", "X"), (2, "b", "X")],
+        [],
+        [(1, "a", "X", True, True), (2, "b", "X", False, True)],
+    )
+
+    out = _run(duck, [_step("s1", "ok1"), _step("s2", "ok2")], combine=False)
+
+    assert out == {("X", "s1"): 1, ("X", "s2"): 2, ("X", ""): 2}

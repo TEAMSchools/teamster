@@ -7,6 +7,7 @@ import yaml
 from cube_validation.config import (
     ConfigError,
     load_view_config,
+    mask_digits,
     write_decision,
     write_proof,
 )
@@ -913,3 +914,108 @@ def test_write_decision_refuses_a_decisions_key_it_cannot_extend(tmp_path, line)
         )
 
     assert path.read_text() == text
+
+
+# --- cause decisions (T17) ---------------------------------------------------
+
+CAUSE_DECISION = """\
+  - id: no-section
+    comparison: ada-y1-region
+    cause:
+      side: cube
+      label: score has no section on the anchor date
+    call: domain_owner
+    reason: the owner says whether a score with no section counts
+    fingerprints: { cube: abc, dashboard: def, proof: "0f0f" }
+"""
+
+
+def test_cause_decision_loads(tmp_path):
+    d = load_view_config(_write(tmp_path, EXAMPLE + CAUSE_DECISION)).decisions[1]
+
+    assert (d.comparison, d.group, d.cells, d.answer) == (
+        "ada-y1-region",
+        {},
+        False,
+        "",
+    )
+    assert d.cause == {
+        "side": "cube",
+        "label": "score has no section on the anchor date",
+    }
+    assert d.fingerprints["proof"] == "0f0f"
+
+
+LABEL_LINE = "      label: score has no section on the anchor date\n"
+
+
+@pytest.mark.parametrize(
+    "old, new, match",
+    [
+        ("side: cube", "side: both", r"cause\.side.*dashboard, cube"),
+        (LABEL_LINE, "      label: ''\n", r"cause\.label.*words"),
+        (LABEL_LINE, "      label: term 20250701\n", r"cause\.label.*5 or more.*<n>"),
+        (LABEL_LINE, "      label: call 973-555-1234\n", r"cause\.label.*5 or more.*<n>"),
+        (LABEL_LINE, LABEL_LINE + "      groups: [a]\n", r"cause\.groups.*side and label"),
+        ("comparison: ada-y1-region\n    cause", "cause", r"comparison"),
+        ("    call: domain_owner\n", "    call: domain_owner\n    answer: maybe\n",
+         r"answer.*one of"),
+    ],
+)  # fmt: skip
+def test_cause_decision_shape_is_checked(tmp_path, old, new, match):
+    text = EXAMPLE + CAUSE_DECISION.replace(old, new)
+
+    with pytest.raises(ConfigError, match=match):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_only_a_cause_decision_takes_an_answer(tmp_path):
+    text = EXAMPLE.replace('    task: ""\n', '    task: ""\n    answer: fix_cube\n')
+
+    with pytest.raises(ConfigError, match=r"answer.*cause decision"):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_cause_decision_takes_no_group(tmp_path):
+    text = EXAMPLE + CAUSE_DECISION + "    group: { column: region, values: [x] }\n"
+
+    with pytest.raises(ConfigError, match="only one of group.*cause"):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_write_decision_round_trips_a_cause_decision(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    decision = {
+        "id": "no-section",
+        "comparison": "ada-y1-region",
+        "cause": {"side": "cube", "label": "term <n> has no section"},
+        "call": "fix_cube",
+        "reason": "r",
+        "task": "#1",
+        "answer": "fix_cube",
+        "fingerprints": {"cube": "abc", "dashboard": "def", "proof": "0f"},
+    }
+
+    write_decision(path, decision)
+
+    d = load_view_config(path).decisions[1]
+    assert (d.cause, d.answer) == (decision["cause"], "fix_cube")
+    assert d.fingerprints == decision["fingerprints"]
+
+
+@pytest.mark.parametrize(
+    "text, want",
+    [
+        ("term 20250701", "term <n>"),
+        ("call 973-555-1234 or 1,234,567", "call <n> or <n>"),
+        ("id 12.345", "id <n>"),
+        # Not ID-shaped: school years, a date, small numbers apart.
+        ("since 2024-25 and 2025-2026", "since 2024-25 and 2025-2026"),
+        ("after 2025-07-01", "after 2025-07-01"),
+        ("grades 9 10 11 12", "grades 9 10 11 12"),
+        ("grades 9, 10, 11 since 2024", "grades 9, 10, 11 since 2024"),
+        ("1234 5678", "1234 5678"),
+    ],
+)
+def test_mask_digits_masks_only_id_shaped_numbers(text, want):
+    assert mask_digits(text) == want

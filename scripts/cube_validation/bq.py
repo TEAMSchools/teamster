@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from google.api_core.exceptions import GoogleAPIError
 from google.cloud import bigquery
 
 from .timetravel import PROJECT, TableInfo, closing_paren, utc_literal
@@ -51,17 +52,22 @@ class Warehouse:
         self._spent = 0.0
         self._views: dict[tuple[str, str], list[tuple[datetime, datetime, str]]] = {}
         self._cache_dir: Path | None = None
+        self._ledger_dir: Path | None = None
         self._daily_cap: float | None = None
 
-    def configure_local(self, cache_dir: Path, daily_cap: float | None) -> None:
+    def configure_local(
+        self, cache_dir: Path, daily_cap: float | None, ledger_dir: Path | None = None
+    ) -> None:
         """Keep view versions and each day's spend on disk, shared by every run.
 
         A view version found once is never looked up again: the definition in
         force over a past span cannot change. A query that would take the
         day's priced total (UTC day) past `daily_cap` USD is refused before it
-        runs, whichever run asks.
+        runs, whichever run asks. The day's spend sits in `ledger_dir` (the
+        cache by default), so runs on another cache still share one cap.
         """
         self._cache_dir = Path(cache_dir)
+        self._ledger_dir = Path(ledger_dir) if ledger_dir is not None else None
         self._daily_cap = daily_cap
         for key, spans in _read_json(self._cache_dir / _VIEWS_FILE, {}).items():
             dataset, name = key.split(".", 1)
@@ -212,16 +218,43 @@ class Warehouse:
         self._record(usd)
         return usd
 
+    def refuse_past_caps(self, usd: float) -> None:
+        """Refuse before running queries whose dry-run total is `usd`.
+
+        Counts nothing: each query is priced again as it runs.
+
+        Raises:
+            CostCapError: `usd` more would pass the run's cap or the day's.
+        """
+        if self._daily_cap is not None:
+            today = self.spent_today()
+            if today + usd > self._daily_cap:
+                raise CostCapError(
+                    f"today's validator spend is ${today:.2f}; these queries "
+                    f"(${usd:.2f}) would pass the ${self._daily_cap:.2f} daily cap "
+                    "(UTC day). Wait for tomorrow or raise --max-usd-per-day."
+                )
+        if self._cap is not None and self._spent + usd > self._cap:
+            raise CostCapError(
+                f"spent ${self._spent:.2f}; these queries (${usd:.2f}) would pass "
+                f"the ${self._cap:.2f} cap"
+            )
+
     def spent_today(self) -> float:
         """USD priced or billed today (UTC) by every run sharing this cache."""
-        if self._cache_dir is None:
+        ledger = self._ledger
+        if ledger is None:
             return 0.0
-        return float(_read_json(self._cache_dir / _SPEND_FILE, {}).get(_today(), 0.0))
+        return float(_read_json(ledger / _SPEND_FILE, {}).get(_today(), 0.0))
+
+    @property
+    def _ledger(self) -> Path | None:
+        return self._ledger_dir or self._cache_dir
 
     def _record(self, usd: float) -> None:
-        if self._cache_dir is None or not usd:
+        if self._ledger is None or not usd:
             return
-        path = self._cache_dir / _SPEND_FILE
+        path = self._ledger / _SPEND_FILE
         ledger = _read_json(path, {})
         ledger[_today()] = ledger.get(_today(), 0.0) + usd
         _write_json(path, ledger)
@@ -231,18 +264,29 @@ class Warehouse:
         """USD priced since the latest `budget` opened."""
         return self._spent
 
-    def rows(self, sql: str) -> list[dict]:
+    def rows(self, sql: str, timeout_s: float | None = None) -> list[dict]:
         """Run `sql` and return its rows.
 
         It is priced first when a run or daily cap is set; once it runs, the
-        bytes BigQuery billed replace that estimate in both totals.
+        bytes BigQuery billed replace that estimate in both totals. With
+        `timeout_s`, BigQuery stops the job after that many seconds and the
+        call raises.
         """
         estimate = 0.0
         if self._cap is not None or self._daily_cap is not None:
             estimate = self.price(sql)
 
-        job = self._client.query(sql)
-        out = [dict(r.items()) for r in job.result()]
+        if timeout_s is None:
+            job = self._client.query(sql)
+        else:
+            config = bigquery.QueryJobConfig(job_timeout_ms=int(timeout_s * 1000))
+            job = self._client.query(sql, job_config=config)
+        try:
+            out = [dict(r.items()) for r in job.result()]
+        except GoogleAPIError as exc:
+            # The id finds the job's own record; the message can quote values.
+            setattr(exc, JOB_ID, getattr(job, "job_id", ""))
+            raise
         billed = getattr(job, "total_bytes_billed", None)
         if isinstance(billed, int):
             delta = billed / _TIB * USD_PER_TIB - estimate
@@ -263,6 +307,8 @@ class Warehouse:
 
 _VIEWS_FILE = "view-history.json"
 _SPEND_FILE = "spend.json"
+# The attribute `rows` sets on a query's error: its BigQuery job id.
+JOB_ID = "job_id"
 
 
 def _today() -> str:

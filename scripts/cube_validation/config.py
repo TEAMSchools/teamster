@@ -26,6 +26,35 @@ CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "fix_source")
 # The `tasks:` block names a domain's Cube-fix issue and dashboard-fix task,
 # which `record-answers` copies into a decision's `task`.
 TASK_KEYS = ("cube_fix", "dashboard_fix")
+# The side of a comparison whose SQL holds a cause decision's step.
+CAUSE_SIDES = ("dashboard", "cube")
+# A committed decision carries no ID-shaped number: 5 or more digits, whole or
+# joined by single separators within one word (`973-555-1234`, `1,234,567`).
+# A school year or a date is not one, nor are small numbers apart (`9 10 11`).
+_ID_RUN = re.compile(r"\d+(?:[-.,/:]\d+)*")
+_YEAR_OR_DATE = re.compile(r"\d{4}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2}")
+# Digits split by spaces, dashes, commas or dots, for scrubbing free text
+# (`report._safe_reason`, `answers.NOTE_REFUSALS`).
+SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
+
+
+def id_like(text: str) -> bool:
+    """Text that could name a person: an email, or an ID-shaped number."""
+    return "@" in text or mask_digits(text) != text
+
+
+def mask_digits(text: str) -> str:
+    """Write each ID-shaped number in `text` as `<n>`."""
+
+    def masked(m: re.Match) -> str:
+        run = m[0]
+        if _YEAR_OR_DATE.fullmatch(run) or sum(c.isdigit() for c in run) < 5:
+            return run
+        return "<n>"
+
+    return _ID_RUN.sub(masked, text)
+
+
 _TASK = re.compile(r"https://\S+|#\d+")
 # Filter operators for `scope` (Cube side) and `dashboard_filters` (dashboard
 # side). The comparisons take exactly 1 number; `set` means not null.
@@ -160,6 +189,15 @@ class Decision:
     missing_filter: str = ""
     # Covers the comparison's cell differences instead of a row group.
     cells: bool = False
+    # Covers the row groups whose triage cause names this `{side, label}`, in
+    # place of `group`: `label` is the words of a stored proof's bucket, with
+    # each number of 5 or more digits written `<n>`. Which groups it covers is
+    # read from the latest triage, never stored here; `fingerprints.proof` is
+    # the proof file's.
+    cause: dict[str, Any] = field(default_factory=dict)
+    # The call the owner answered a cause decision with; set by
+    # `record-answers`, so `review` asks it no more.
+    answer: str = ""
 
 
 @dataclass(frozen=True)
@@ -536,11 +574,12 @@ def _decision(
         reader.fail("task", f"must be an https:// link or #<issue>; got {task!r}")
     missing_cut = reader.get("missing_cut", str, default="")
     missing_filter = reader.get("missing_filter", str, default="")
-    keys = ("group", "missing_cut", "missing_filter", "cells")
+    keys = ("group", "missing_cut", "missing_filter", "cells", "cause")
     named = [k for k in keys if reader.data.get(k)]
     if len(named) > 1:
         reader.fail(
-            named[1], "set only one of group, missing_cut, missing_filter and cells"
+            named[1],
+            "set only one of group, missing_cut, missing_filter, cells and cause",
         )
     cells = reader.get("cells", bool, default=False)
     if missing_cut or missing_filter:
@@ -555,6 +594,14 @@ def _decision(
             reader.fail("comparison", f"{comparison!r} is not a comparison id")
         group = reader.get("group", dict, default={})
         _decision_values(reader.child("group", group), texts)
+    cause = reader.get("cause", dict, default={})
+    if cause:
+        _cause(reader.child("cause", cause))
+    answer = reader.get("answer", str, default="")
+    if answer and not cause:
+        reader.fail("answer", "belongs to a cause decision")
+    if answer and answer not in CALLS:
+        reader.fail("answer", f"must be one of {', '.join(CALLS)}; got {answer!r}")
     return Decision(
         id=reader.get("id", str, required=True),
         comparison=comparison,
@@ -566,7 +613,26 @@ def _decision(
         missing_cut=missing_cut,
         missing_filter=missing_filter,
         cells=bool(cells),
+        cause=cause,
+        answer=answer,
     )
+
+
+def _cause(reader: _Reader) -> None:
+    """Check a cause decision's `side` and `label`."""
+    side = reader.get("side", str, required=True)
+    if side not in CAUSE_SIDES:
+        reader.fail("side", f"must be one of {', '.join(CAUSE_SIDES)}; got {side!r}")
+    label = reader.get("label", str, required=True)
+    if not label.strip():
+        reader.fail("label", "must be the cause's words")
+    if mask_digits(label) != label:
+        reader.fail(
+            "label", "carries a number of 5 or more digits; write each one as <n>"
+        )
+    for key in reader.data:
+        if key not in ("side", "label"):
+            reader.fail(str(key), "must be one of side and label")
 
 
 def _tasks(root: _Reader) -> dict[str, str]:
@@ -796,6 +862,8 @@ def _holds(d: Decision, asked: dict[str, Any]) -> bool:
         and d.cells == bool(asked.get("cells", False))
         and d.missing_cut == asked.get("missing_cut", "")
         and d.missing_filter == asked.get("missing_filter", "")
+        and d.cause == asked.get("cause", {})
+        and d.answer == asked.get("answer", "")
         and d.fingerprints == asked.get("fingerprints", {})
     )
 
