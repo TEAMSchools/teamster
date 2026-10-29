@@ -52,7 +52,7 @@ from .compare import (
 from .config import Comparison, ViewConfig
 from .cube_client import Cube, network_schools
 from .moment import Build, changed_between
-from .report import SUPPRESSED, RunResult, suppress
+from .report import SUPPRESSED, RunResult, shown_counts
 from .sqlsteps import Query, Step, TableRef, carry
 from .timetravel import PROJECT, repin
 
@@ -229,20 +229,24 @@ class ItemTrace:
             for s, n in self.steps.most_common()
         ]
 
-    def shown_total(self) -> str:
-        """The group's row count as the batch may print it next to the evidence."""
+    def _parts(self) -> list[int]:
         parts = [n for _, n in self.steps.most_common()]
         if self.unattributed:
             parts.append(self.unattributed)
-        return suppress(self.n_rows, parts)[0]
+        return parts
 
-    def evidence(self) -> tuple[str, ...]:
-        """Lines for the batch, with small counts and what reveals them masked."""
+    def shown_total(self, posted: bool = False) -> str:
+        """The group's row count as the batch may print it next to the evidence.
+
+        Exact for the terminal and the local cache; with `posted`, masked so
+        no small part of the evidence can be worked out.
+        """
+        return shown_counts(self.n_rows, self._parts(), posted)[0]
+
+    def evidence(self, posted: bool = False) -> tuple[str, ...]:
+        """Lines for the batch; with `posted`, small counts and what reveals them masked."""
         causes = self.steps.most_common()
-        parts = [n for _, n in causes]
-        if self.unattributed:
-            parts.append(self.unattributed)
-        _, texts = suppress(self.n_rows, parts)
+        _, texts = shown_counts(self.n_rows, self._parts(), posted)
         lines = [
             f"{self.labels[s]}: {text} rows"
             for (s, _), text in zip(causes, texts, strict=False)
@@ -251,9 +255,11 @@ class ItemTrace:
             lines.append("trace counts do not add up; trace it by hand")
         if self.unattributed:
             reasons = self._reasons()
-            total, why = suppress(self.unattributed, [n for _, n in reasons])
+            total, why = shown_counts(
+                self.unattributed, [n for _, n in reasons], posted
+            )
             shown = texts[-1] if len(texts) > len(causes) else total
-            if shown in ("<10", SUPPRESSED):
+            if posted and shown in ("<10", SUPPRESSED):
                 # A hidden count hides its whole breakdown, or the breakdown
                 # adds back up to it.
                 total = shown
@@ -267,22 +273,19 @@ class ItemTrace:
                 lines.append(f"trace stopped: {self.stopped}")
         return tuple(lines)
 
-    def leads(self) -> tuple[str, ...]:
+    def leads(self, posted: bool = False) -> tuple[str, ...]:
         """`evidence`, each cause worded as a lead to test, never as a cause.
 
         A step whose relaxing brings rows back is where to look first; the
         session proves the cause (`triage confirm`).
         """
         causes = self.steps.most_common()
-        parts = [n for _, n in causes]
-        if self.unattributed:
-            parts.append(self.unattributed)
-        total, texts = suppress(self.n_rows, parts)
+        total, texts = shown_counts(self.n_rows, self._parts(), posted)
         lines = [
             f"lead: relaxing {self.labels[s]} brings back {text} of {total} rows"
             for (s, _), text in zip(causes, texts, strict=False)
         ]
-        return tuple(lines) + self.evidence()[len(causes) :]
+        return tuple(lines) + self.evidence(posted)[len(causes) :]
 
 
 def item_key(g: Group) -> tuple:

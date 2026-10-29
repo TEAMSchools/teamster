@@ -155,6 +155,18 @@ def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
     return mask(total), texts
 
 
+def shown_counts(total: int, parts: list[int], posted: bool) -> tuple[str, list[str]]:
+    """A total and its parts as text: masked only where the text is posted.
+
+    Text bound for GitHub or a commit (the review issue, decision YAML, the
+    run report the runbook posts) goes through `suppress`. The terminal and
+    the local cache show exact counts.
+    """
+    if posted:
+        return suppress(total, parts)
+    return str(total), [str(n) for n in parts]
+
+
 def _verdict_text(m: MeasureResult) -> str:
     if m.verdict == "not validated" and m.strongest == "consistent only":
         return "not validated (consistent only)"

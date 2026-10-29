@@ -219,7 +219,8 @@ def test_item_ids_are_stable_and_hold_no_unreviewed_value():
     small_item = items[1]
     assert small_item.id == "enrollment:grade_level=<redacted>"
     assert small_item.stub["group"]["values"] == ["9"]
-    assert "<10 rows" in small_item.label and "<10 students" in small_item.label
+    # Its label stays local, so it shows exact counts.
+    assert ": 4 rows, 4 students" in small_item.label
     assert by_id["enrollment:grade_level=9"].stub == {
         "comparison": "enrollment",
         "group": {"column": "grade_level", "values": ["9"]},
@@ -384,13 +385,17 @@ def test_the_trace_never_yields_cause():
     )
 
 
-def test_a_lead_masks_a_small_count_and_what_gives_it_away():
+def test_a_lead_is_exact_locally_and_masked_for_the_review_issue():
     group = Group("enrollment", (("grade_level", "9"),), "dashboard_only", 40, 38)
     traces = {trace.item_key(group): _traced(40, wpp=35, week_end=5)}
 
     [s] = suggest(_cfg(), _run(groups=[group]), {}, traces=traces)
 
     assert s.evidence[:2] == (
+        "lead: relaxing wpp brings back 35 of 40 rows",
+        "lead: relaxing week_end brings back 5 of 40 rows",
+    )
+    assert s.posted[:2] == (
         "lead: relaxing wpp brings back masked of 40 rows",
         "lead: relaxing week_end brings back <10 of 40 rows",
     )
@@ -429,8 +434,8 @@ def test_a_group_with_an_unattributed_row_stays_in_investigate():
     # 1 of 40 masked alone would read as 40 - 39: the 39 hides too, and the
     # total then gives only their sum.
     assert s.evidence == (
-        "lead: relaxing wpp brings back masked of 40 rows",
-        "<10 rows unattributed: <10 recovered by no step",
+        "lead: relaxing wpp brings back 39 of 40 rows",
+        "1 rows unattributed: 1 recovered by no step",
         "student_count: Counts students.",
     )
     assert ": 40 rows, " in s.item.label

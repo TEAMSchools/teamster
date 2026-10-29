@@ -1605,7 +1605,10 @@ def review(
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
-    found = {run.view: triage.proven_triage(run, run_json) for run, run_json in saved}
+    found = {
+        run.view: triage.posted_triage(triage.proven_triage(run, run_json))
+        for run, run_json in saved
+    }
     definitions = {
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs

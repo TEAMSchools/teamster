@@ -936,6 +936,28 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
     assert '"stub"' not in out
 
 
+def test_review_quotes_the_masked_copy_of_exact_triage_evidence(
+    fakes, tmp_path, capsys
+):
+    # triage.json shows exact counts; the review issue is GitHub-bound.
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    run_json = next((tmp_path / "cache" / "v").glob("*/run.json"))
+    item = {
+        **_triage_item("lead: relaxing x brings back 3 of 40 rows"),
+        "evidence_posted": ["lead: relaxing x brings back <10 of 40 rows"],
+    }
+    _write_triage(run_json, [item])
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+
+    out = capsys.readouterr().out
+    assert "brings back <10 of 40 rows" in out
+    assert "3 of 40" not in out
+
+
 STEP = {"side": "dashboard", "step": "dashboard:main:1", "label": "x", "n_rows": 12}
 
 
@@ -2283,7 +2305,7 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
     item = written["items"][0]
     assert set(item) == {
         "id", "kind", "comparison", "label", "stub",
-        "suggestion", "evidence", "candidates", "cause",
+        "suggestion", "evidence", "evidence_posted", "candidates", "cause",
     }  # fmt: skip
     assert item["stub"]["group"]["values"] == ["Miami"]
     assert (item["suggestion"], item["cause"]) == ("investigate", None)

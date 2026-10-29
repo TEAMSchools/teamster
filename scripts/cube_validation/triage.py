@@ -36,7 +36,6 @@ from .report import (
     _is_identifier,
     _shown_value,
     _where,
-    mask,
 )
 from .timetravel import PROJECT
 
@@ -49,8 +48,8 @@ SUGGESTIONS = ("map_filters", "filters_nothing", "cause", "investigate")
 class Item:
     """One open item.
 
-    `kind` is `group`, `cells` or `gap`. `id` and `label` hide what the review
-    issue hides. `stub` holds the key fields of the decision that would cover
+    `kind` is `group`, `cells` or `gap`. `id` and `label` hide the values the
+    review issue hides; `label` shows exact counts and stays local. `stub` holds the key fields of the decision that would cover
     the item, with a group's real values: it becomes decision YAML and stays in
     the local cache, never posted.
     """
@@ -71,7 +70,9 @@ class Suggestion:
     missing filter or cut may map to. `cause` is, for a `cause` item, its
     causes, each `{side, step, label, n_rows}`; it is None until one is
     proven. `proof` is, for an item `triage confirm` proved, what a re-run
-    checks before keeping the cause (see `carry_confirmed`).
+    checks before keeping the cause (see `carry_confirmed`). `evidence`
+    shows exact counts; `posted` is the same lines masked for the review
+    issue (`report.shown_counts`), or None when it equals `evidence`.
     """
 
     item: Item
@@ -80,6 +81,7 @@ class Suggestion:
     candidates: tuple[str, ...] = ()
     cause: list[dict] | None = None
     proof: dict | None = None
+    posted: tuple[str, ...] | None = None
 
 
 def _stub_dim(g: Group, open_groups: list[Group]) -> tuple[str, str]:
@@ -100,12 +102,16 @@ def _stub_dim(g: Group, open_groups: list[Group]) -> tuple[str, str]:
     return g.dims[0]
 
 
-def _group_label(g: Group, rows: str | None = None) -> str:
-    """The group's masked label; `rows` replaces its row count's text."""
+def _group_label(g: Group) -> str:
+    """The group's label: its values as the id shows them, its exact counts.
+
+    Labels stay in the terminal and the local cache; the review issue never
+    shows them.
+    """
     return (
         f"{_where(g, lambda column, value: _shown_value(g, column, value))} in "
-        f"{g.comparison_id} ({g.bucket}): {rows or mask(g.n_rows)} rows, "
-        f"{mask(g.n_students)} students"
+        f"{g.comparison_id} ({g.bucket}): {g.n_rows} rows, "
+        f"{g.n_students} students"
     )
 
 
@@ -166,7 +172,7 @@ def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
     out += [(_gap_item(g), g) for g in run.applied.open_gaps]
     for diff in run.applied.open_cells:
         counts = ", ".join(
-            f"{mask(n)} {_CELL_WORDS.get(verdict, verdict)}"
+            f"{n} {_CELL_WORDS.get(verdict, verdict)}"
             for verdict, n in diff.counts.items()
         )
         item = Item(
@@ -294,6 +300,21 @@ def proven_triage(run: RunResult, run_json: Path) -> dict:
     return loaded
 
 
+def posted_triage(loaded: dict) -> dict:
+    """A triage as the review issue may quote it: each item's masked evidence.
+
+    `evidence` in `triage.json` shows exact counts for the analyst;
+    `evidence_posted` holds the same lines masked (`report.shown_counts`).
+    """
+    return {
+        **loaded,
+        "items": [
+            {**item, "evidence": item.get("evidence_posted", item.get("evidence", []))}
+            for item in loaded.get("items", [])
+        ],
+    }
+
+
 def _candidates(caption: str, docs: dict[str, MemberDoc]) -> tuple[str, ...]:
     """Name the non-measure members whose name, title or description holds the caption."""
     wanted = _tokens(caption)
@@ -367,6 +388,9 @@ def suggest(
         call = ""
         cause: list[dict] | None = None
         found: tuple[str, ...] = ()
+        # The same lines masked, for the review issue (`posted`).
+        posted: tuple[str, ...] | None = None
+        posted_found: tuple[str, ...] | None = None
 
         if isinstance(source, Gap):
             gap = source
@@ -421,12 +445,6 @@ def suggest(
                     members += [to_cube.get(c, c) for c, _ in source.dims]
             if isinstance(source, Group):
                 traced = (traces or {}).get(trace.item_key(source))
-                if traced is not None:
-                    # The breakdown masks what would give a small part away,
-                    # and the label's total with it.
-                    item = dataclasses.replace(
-                        item, label=_group_label(source, traced.shown_total())
-                    )
                 if (
                     traced is not None
                     and traced.proven
@@ -435,10 +453,11 @@ def suggest(
                     # The run's reconcile proved each row: the sheet's own
                     # dashboard-only filter drops it.
                     call, cause, evidence = "cause", traced.cause(), traced.evidence()
+                    posted = traced.evidence(posted=True)
                 elif traced is not None:
                     # The trace is a lead: a person proves the cause with
                     # `triage confirm`.
-                    found = traced.leads()
+                    found, posted_found = traced.leads(), traced.leads(posted=True)
                 elif traces is None:
                     found = (NOT_TRACED,)
                 elif stopped and source.bucket in trace.TRACED:
@@ -450,7 +469,11 @@ def suggest(
 
         if not call:
             call = "investigate"
-            evidence = found + verdict_lines + _doc_evidence(members, docs)
+            rest = verdict_lines + _doc_evidence(members, docs)
+            evidence = found + rest
+            posted = (posted_found if posted_found is not None else found) + rest
+        if posted is None:
+            posted = evidence
 
         if isinstance(source, Group) and source.dims:
             stub_group = item.stub["group"]
@@ -466,7 +489,8 @@ def suggest(
             ]
             if also:
                 evidence += (f"also covers: {', '.join(also)}",)
-        out.append(Suggestion(item, call, evidence, candidates, cause))
+                posted += (f"also covers: {', '.join(also)}",)
+        out.append(Suggestion(item, call, evidence, candidates, cause, posted=posted))
 
     return sorted(out, key=lambda s: SUGGESTIONS.index(s.suggestion))
 
@@ -718,6 +742,9 @@ def run_triage(
                         **dataclasses.asdict(s.item),
                         "suggestion": s.suggestion,
                         "evidence": list(s.evidence),
+                        "evidence_posted": list(
+                            s.posted if s.posted is not None else s.evidence
+                        ),
                         "candidates": list(s.candidates),
                         "cause": s.cause,
                     }

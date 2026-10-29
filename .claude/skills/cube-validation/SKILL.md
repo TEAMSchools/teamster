@@ -24,7 +24,11 @@ loads only `src/cube/model/`, so these files never reach the semantic layer.
 - The tool never posts anything: not to Slack, not to GitHub, not to Asana.
   Claude posts, and only what the analyst approved.
 - Row-level output stays local. Never paste rows into an issue, a comment or a
-  commit; GitHub text shows counts under 10 as `<10`.
+  commit. The terminal and local files (`triage.json`, the cache) show exact
+  counts. Text bound for GitHub or a commit (the review issue, decision YAML,
+  the run report you post) shows counts under 10 as `<10`, and hides any count
+  that would give one away; mask a terminal count the same way before posting
+  it.
 - Nothing committed names a person or holds an email. Pass `--email` (a
   network-grant address) or set `CUBE_VALIDATION_EMAIL`.
 - **Check every decision reason for a student's or staff member's name before
@@ -207,7 +211,7 @@ cause, do not retry around it.
 8. `triage <file>` reads the latest run and writes `triage.json` beside its
    `run.json`. It sorts every open item (row groups, cell differences, missing
    cuts and filters) into one pile: `map_filters`, `filters_nothing`, `cause`,
-   then `investigate`, each with a masked label and its evidence. Start from the
+   then `investigate`, each with its label and its evidence. Start from the
    summary it prints first; a flood in one bucket means fix the grain. It lists
    25 items per pile; `triage.json` holds them all. Run `triage` after every
    `run`: `add-decisions` and `review` read only the triage beside the latest
@@ -250,8 +254,8 @@ cause, do not retry around it.
 
    A group whose rows are all attributed lands in `cause` with each cause and
    its rows; otherwise it stays in `investigate` with the counts and why the
-   rest are unattributed. Counts that would let a small part be worked out read
-   `masked`.
+   rest are unattributed. Counts are exact; `triage.json` keeps a masked copy of
+   each item's evidence (`evidence_posted`), which `review` quotes.
 
    - Cost: the level-0 total is printed before any trace query runs, then each
      later query's price before it runs, with a running total; each is refused
@@ -332,11 +336,11 @@ cause, do not retry around it.
    close quotes the evidence or names the issue; an owner item names the proven
    step and the question it leaves, which his session shows him. Show the
    analyst one batch, numbered across piles in the order above, owner items
-   last; each line has the masked label, the evidence, the call and the drafted
-   reason. On "approve all" or "approve all but 2 and 6", the excluded items
-   stay unrecorded until the analyst says where they go. Write the approved
-   items, owner items included, to `approved.json` in the session scratchpad: a
-   JSON list of `{"id", "call", "reason", "task", "item"}`, where `item` is the
+   last; each line has the label, the evidence, the call and the drafted reason.
+   On "approve all" or "approve all but 2 and 6", the excluded items stay
+   unrecorded until the analyst says where they go. Write the approved items,
+   owner items included, to `approved.json` in the session scratchpad: a JSON
+   list of `{"id", "call", "reason", "task", "item"}`, where `item` is the
    triage item id, `id` a new decision id not already in the file, and `task`
    empty for `deliberate` and `domain_owner`. Map items are not in it. Then
    `add-decisions <file> <approved.json>`: it takes each decision's key fields

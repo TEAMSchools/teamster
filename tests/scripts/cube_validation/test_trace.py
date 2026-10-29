@@ -448,10 +448,15 @@ def test_evidence_masks_a_part_its_total_would_give_away():
     found.labels["s"] = "main: s"
     found.none = 7
 
-    assert found.shown_total() == "25"
-    assert found.evidence() == (
+    assert found.shown_total(posted=True) == "25"
+    assert found.evidence(posted=True) == (
         "main: s: masked rows",
         "<10 rows unattributed: <10 recovered by no step",
+    )
+    # The terminal and triage.json show exact counts.
+    assert found.evidence() == (
+        "main: s: 18 rows",
+        "7 rows unattributed: 7 recovered by no step",
     )
 
 
@@ -655,7 +660,7 @@ def test_a_masked_unattributed_count_masks_its_whole_breakdown():
     found.labels |= {"a": "main: a", "b": "main: b"}
     found.none = 10
 
-    lines = found.evidence()
+    lines = found.evidence(posted=True)
 
     assert lines[:2] == ("main: a: 25 rows", "main: b: <10 rows")
     assert lines[2] == "masked rows unattributed: masked recovered by no step"
@@ -944,7 +949,7 @@ def test_a_row_only_a_row_pick_drops_says_so(duck):
 
     assert not found.proven and not found.steps and not found.needs_more
     assert found.evidence()[-1] == (
-        "<10 rows unattributed: <10 a row pick drops it; the row is in the "
+        "1 rows unattributed: 1 a row pick drops it; the row is in the "
         "tables the dashboard SQL reads"
     )
 
@@ -960,9 +965,9 @@ def test_masked_cells_of_a_breakdown_hold_10_or_more_together():
     found.pairs_many = 3
     found.none = 2
 
-    lines = found.evidence()
+    lines = found.evidence(posted=True)
 
-    assert found.shown_total() == "40"
+    assert found.shown_total(posted=True) == "40"
     assert lines[0] == "main: a: 10 rows"
     assert lines[1] == (
         "30 rows unattributed: masked recovered by steps in 2 or more scopes "
