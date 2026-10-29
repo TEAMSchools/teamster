@@ -59,6 +59,10 @@ from .timetravel import PROJECT, repin
 MAX_LEVELS = 3
 # BigQuery refuses a query longer than 1,024K characters.
 MAX_QUERY_CHARS = 900_000
+# Each pair variant copies the frame's whole SQL; BigQuery's planner refuses
+# many copies of a long side SQL (`resourcesExceeded`) before reading a byte.
+# This holds 4 copies of a 56K-character side SQL.
+MAX_PAIR_QUERY_CHARS = 240_000
 # A relaxed variant can multiply rows; BigQuery stops a query past this.
 TIMEOUT_S = 1800
 # Pairs of steps searched in one level's frame; past it the rows stay
@@ -100,6 +104,21 @@ class Stopped(RuntimeError):
         super().__init__(reason)
         self.reason = reason
         self.found = found or {}
+
+
+class TooComplex(Stopped):
+    """BigQuery would not plan a query: too many or too long variants.
+
+    A pair search catches it and skips only its rows; anywhere else it stops
+    the bucket like any failed dry run.
+    """
+
+
+def _too_complex(exc: GoogleAPIError) -> bool:
+    errors = getattr(exc, "errors", None) or [{}]
+    return errors[0].get("reason") == "resourcesExceeded" or (
+        "too complex" in str(exc).lower()
+    )
 
 
 @dataclass
@@ -255,10 +274,16 @@ def item_key(g: Group) -> tuple:
 
 @dataclass
 class TraceResult:
-    """Each traced group's trace, and why the trace stopped early, if it did."""
+    """Each traced group's trace, and why the trace stopped early, if it did.
+
+    `stops` holds each stopped bucket's own reason, by (comparison id,
+    bucket); a stop in one bucket never stops another. `stopped` is set only
+    when the trace stopped before any bucket's items were traced.
+    """
 
     items: dict[tuple, ItemTrace]
     stopped: str = ""
+    stops: dict[tuple[str, str], str] = field(default_factory=dict)
 
 
 class Manifest:
@@ -484,9 +509,10 @@ class _Runner:
         try:
             usd = sum(self.wh.estimate(q) for q in queries)
         except GoogleAPIError as exc:
-            # After paid queries, a dry run that fails stops the trace like
+            # After paid queries, a dry run that fails stops the bucket like
             # a cap, keeping what it found.
-            raise Stopped(f"{what}: the dry run failed ({_failure(exc)})") from exc
+            why = Stopped if not _too_complex(exc) else TooComplex
+            raise why(f"{what}: the dry run failed ({_failure(exc)})") from exc
         self.wh.refuse_past_caps(usd)
         self.meter.total += usd
         print(
@@ -517,15 +543,23 @@ class _Runner:
         return (self.side.comparison.id, row["bucket"], dims)
 
     def plan(
-        self, variants: list[tuple[str, str]], exclude: list[str], include: list[str]
+        self,
+        variants: list[tuple[str, str]],
+        exclude: list[str],
+        include: list[str],
+        max_chars: int | None = None,
     ) -> tuple[list[str], bool]:
         """The queries `level` runs first: 1 combined, or per-step batches.
+
+        Each query holds at most `max_chars` characters (`MAX_QUERY_CHARS` by
+        default), except a batch of 1 variant longer than that alone.
 
         Returns:
             The queries, and whether they are the 1 combined query.
         """
+        max_chars = max_chars or MAX_QUERY_CHARS
         whole = self.side.query(variants, exclude, True, include)
-        if len(whole) <= MAX_QUERY_CHARS:
+        if len(whole) <= max_chars:
             return [whole], True
         base = len(self.side.query([], exclude, False, include))
         # Each variant also costs its CTE and its line in `hits`.
@@ -535,7 +569,7 @@ class _Runner:
         batches: list[list[tuple[str, str]]] = [[]]
         size = base
         for v in variants:
-            if batches[-1] and size + len(v[1]) + extra > MAX_QUERY_CHARS:
+            if batches[-1] and size + len(v[1]) + extra > max_chars:
                 batches.append([])
                 size = base
             batches[-1].append(v)
@@ -548,16 +582,26 @@ class _Runner:
         exclude: list[str],
         what: str,
         include: list[str] | None = None,
+        pairs: bool = False,
     ) -> tuple[dict[tuple, Counter], dict[tuple, Counter]] | None:
         """Each item's rows by the one step that recovers them, and each step's hits.
+
+        With `pairs`, each query holds at most `MAX_PAIR_QUERY_CHARS`.
 
         Returns:
             Per item, rows by step id (a `MANY` id lists the steps, or
             `NONE`, `DUPLICATE`, an `UNREPRODUCED` or `PRESENT` id); and per
             item, every row each variant recovers. None when a query failed.
+
+        Raises:
+            TooComplex: With `pairs`, the shared-steps query is too long, or
+                BigQuery would not plan a query.
         """
         include = include or []
-        queries, whole = self.plan(variants, exclude, include)
+        max_chars = (
+            min(MAX_QUERY_CHARS, MAX_PAIR_QUERY_CHARS) if pairs else MAX_QUERY_CHARS
+        )
+        queries, whole = self.plan(variants, exclude, include, max_chars)
         if whole:
             rows = self._run(queries, what)
             return None if rows is None else self._read(rows)
@@ -594,7 +638,9 @@ class _Runner:
             subset = [v for v in variants if v[0] in shared]
             again = self.side.query(subset, exclude, True, include)
             combined = None
-            if len(again) <= MAX_QUERY_CHARS:
+            if pairs and len(again) > max_chars:
+                raise TooComplex(f"{what}, shared steps: the query is too long")
+            if len(again) <= max_chars:
                 rows = self._run([again], f"{what}, shared steps")
                 combined = None if rows is None else self._read(rows)[0]
             if combined is None:
@@ -784,17 +830,21 @@ class _Bucket:
             self._run()
         except (Stopped, CostCapError) as exc:
             reason = exc.reason if isinstance(exc, Stopped) else str(exc)
-            for item in self.out.values():
-                left = (
-                    item.n_rows
-                    - sum(item.steps.values())
-                    - sum(n for _, n in item._reasons())
-                )
-                if left > 0:
-                    item.unknown += left
-                    item.stopped = reason
-            self._finish()
-            raise Stopped(reason, self.out) from exc
+            raise Stopped(reason, self.stop(reason)) from exc
+        self._finish()
+        return self.out
+
+    def stop(self, reason: str) -> dict[tuple, ItemTrace]:
+        """Mark every row not yet accounted for as stopped by `reason`."""
+        for item in self.out.values():
+            left = (
+                item.n_rows
+                - sum(item.steps.values())
+                - sum(n for _, n in item._reasons())
+            )
+            if left > 0:
+                item.unknown += left
+                item.stopped = reason
         self._finish()
         return self.out
 
@@ -954,7 +1004,17 @@ class _Bucket:
         variants = [
             v for a, b in pairs for v in self._guarded(frame, [a, b], f"{a.id}+{b.id}")
         ]
-        got = self.runner.level(variants, exclude, f"{depth}, step pairs", [gate])
+        try:
+            got = self.runner.level(
+                variants, exclude, f"{depth}, step pairs", [gate], pairs=True
+            )
+        except TooComplex as exc:
+            # The pair search is a lead; one BigQuery will not plan costs
+            # only its own rows, never the rest of the trace.
+            print(f"Trace {self.runner.label}: pair search skipped, {exc.reason}")
+            for key, n in present.items():
+                self.out[key].skipped["query too complex"] += n
+            return
         if got is None:
             self._fail(present)
             return
@@ -1067,8 +1127,9 @@ def trace_run(
     Call inside `wh.budget`. Every refusal (a comparison's SQL changed, a
     manifest or compiled model missing) comes before the first priced trace
     query. The level-0 total is printed before any trace query runs, and
-    each later query's price before it runs, with a running total. A cap or
-    the time limit hit partway stops the trace but keeps what it found.
+    each later query's price before it runs, with a running total. A cap, the
+    time limit or a failed dry run stops only the bucket it hits, keeping
+    what that bucket found; the next bucket still runs.
 
     Args:
         cfg: The view's config.
@@ -1082,8 +1143,8 @@ def trace_run(
 
     Returns:
         Per `item_key`, the trace of each traced group (the one-sided buckets
-        of comparisons with `rows`, and dashboard-filtered groups), and why
-        the trace stopped early, if it did.
+        of comparisons with `rows`, and dashboard-filtered groups), and each
+        stopped bucket's reason.
 
     Raises:
         pipeline.Refusal: A comparison's SQL changed since the run, or the
@@ -1148,26 +1209,31 @@ def trace_run(
         for b in buckets:
             b.manifest = manifest
 
-    try:
-        usd = sum(wh.estimate(q) for b in buckets for q in b.first_queries())
-    except GoogleAPIError as exc:
-        reason = f"level 0: the dry run failed ({_failure(exc)})"
-        print(f"Trace stopped: {reason}")
-        return TraceResult(out, reason)
+    # Each bucket is priced, and stops, on its own: one bucket's failure never
+    # keeps another from being traced.
+    usd, ready, stops = 0.0, [], {}
+    for b in buckets:
+        try:
+            usd += sum(wh.estimate(q) for q in b.first_queries())
+        except GoogleAPIError as exc:
+            reason = f"level 0: the dry run failed ({_failure(exc)})"
+            print(f"Trace {b.runner.label} stopped: {reason}")
+            stops[(b.side.comparison.id, b.side.bucket)] = reason
+            out |= b.stop(reason)
+            continue
+        ready.append(b)
     print(
-        f"Trace: {len(buckets)} bucket(s), level 0 costs ${usd:.2f} (dry run); "
+        f"Trace: {len(ready)} bucket(s), level 0 costs ${usd:.2f} (dry run); "
         "each deeper level is priced before it runs."
     )
-    stopped = ""
-    for b in buckets:
+    for b in ready:
         try:
             out |= b.run()
         except Stopped as exc:
             out |= exc.found
-            stopped = exc.reason
-            print(f"Trace stopped: {stopped}")
-            break
-    return TraceResult(out, stopped)
+            stops[(b.side.comparison.id, b.side.bucket)] = exc.reason
+            print(f"Trace {b.runner.label} stopped: {exc.reason}")
+    return TraceResult(out, stops=stops)
 
 
 __all__ = [
@@ -1175,6 +1241,7 @@ __all__ = [
     "Manifest",
     "Step",
     "Stopped",
+    "TooComplex",
     "TraceResult",
     "compile_command",
     "item_key",

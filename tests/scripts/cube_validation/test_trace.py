@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -968,3 +969,136 @@ def test_masked_cells_of_a_breakdown_hold_10_or_more_together():
         "(main: b, main: c); <10 recovered by more than one pair of steps; "
         "<10 recovered by no step"
     )
+
+
+# --- a pair search too complex to plan, and per-bucket stops -----------------------
+
+PAIR_ID = re.compile(r"'[^']+\+[^']+' AS step_id")
+FACT_OK3 = f"{FACT}, ok3 BOOLEAN"
+FLAT_OK3 = FLAT + " AND f.ok3"
+
+
+def _too_complex():
+    return BadRequest("too big", errors=[{"reason": "resourcesExceeded"}])
+
+
+def test_a_pair_search_too_complex_to_plan_skips_only_its_rows(duck):
+    # (2, b) is present but needs ok1 and ok2 together: only a pair explains it.
+    _cube_rows(duck, [(2, "b", "X")])
+    duck.table("fact", FACT, [(2, "b", "X", False, False)])
+    wh = DuckWarehouse(duck)
+
+    def estimate(sql):
+        if PAIR_ID.search(sql):
+            raise _too_complex()
+        return 0.0
+
+    wh.estimate = estimate
+
+    found = _trace(duck, FLAT, [_group(1)], wh=wh)[trace.item_key(_group(1))]
+
+    assert found.skipped == {"query too complex": 1}
+    assert not found.stopped and not found.unknown
+    assert "pair search skipped: query too complex" in found.evidence()[-1]
+
+
+def test_pair_batches_stay_under_the_pair_query_cap(duck, monkeypatch):
+    # (2, b) fails ok1 and ok2: 3 pairs of 1 scope, each its own batch.
+    _cube_rows(duck, [(2, "b", "X")])
+    duck.table("fact", FACT_OK3, [(2, "b", "X", False, False, True)])
+    side = _side(FLAT_OK3)
+    q = trace.Query(FLAT_OK3, frozenset(side.grain()), side.grain()[0])
+    a, b = q.steps("dashboard")[:2]
+    one = [(f"{a.id}+{b.id}", q.relaxed_many([a, b]))]
+    monkeypatch.setattr(
+        trace, "MAX_PAIR_QUERY_CHARS", len(side.query(one, [], False)) + 200
+    )
+    wh = DuckWarehouse(duck)
+    priced = []
+
+    def estimate(sql):
+        if PAIR_ID.search(sql):
+            priced.append(sql)
+        return 0.0
+
+    wh.estimate = estimate
+
+    found = _trace(duck, FLAT_OK3, [_group(1)], wh=wh)[trace.item_key(_group(1))]
+
+    # A batch past the cap holds 1 pair alone: the cap splits, never drops.
+    assert len(priced) >= 2
+    assert all(
+        len(sql) <= trace.MAX_PAIR_QUERY_CHARS or len(PAIR_ID.findall(sql)) == 1
+        for sql in priced
+    )
+    assert found.proven and list(found.labels.values()) == ["main: f.ok1 + main: f.ok2"]
+
+
+def test_the_pair_query_cap_holds_4_copies_of_the_56k_side_sql():
+    # A 56K-character side SQL copied about 15 times was refused at planning.
+    assert 4 * 56_000 <= trace.MAX_PAIR_QUERY_CHARS < 6 * 56_000
+
+
+def test_a_stop_in_one_bucket_never_stops_the_other(monkeypatch):
+    side = _side(FLAT)
+    monkeypatch.setattr(trace, "network_schools", lambda wh: set())
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: side.sides)
+    cube_only = _group(5)
+    dash_only = Group("mastery", (("abbreviation", "X"),), "dashboard_only", 4, 4)
+    run = RunResult(
+        view="v",
+        moment=BUILD,
+        measures=[],
+        applied=Applied(open=[cube_only, dash_only]),
+    )
+    seen = []
+
+    class Failing(FakeWarehouse):
+        def estimate(self, sql):
+            # The up-front level-0 price passes; the cube_only bucket's own
+            # first query then fails its dry run.
+            if "bucket = 'cube_only'" in sql:
+                seen.append(sql)
+                if len(seen) > 1:
+                    raise BadRequest("x", errors=[{"reason": "invalidQuery"}])
+            return 0.0
+
+    wh = Failing(lambda sql: [])
+
+    result = trace.trace_run(CFG, run, wh=wh, cube=None, levels=0)
+
+    assert "invalidQuery" in result.items[trace.item_key(cube_only)].stopped
+    assert not result.items[trace.item_key(dash_only)].stopped
+    assert any("bucket = 'dashboard_only'" in sql for sql in wh.ran)
+    assert result.stops == {
+        ("mastery", "cube_only"): result.items[trace.item_key(cube_only)].stopped
+    }
+
+
+def test_a_level_zero_dry_run_error_stops_only_its_bucket(monkeypatch):
+    side = _side(FLAT)
+    monkeypatch.setattr(trace, "network_schools", lambda wh: set())
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: side.sides)
+    cube_only = _group(5)
+    dash_only = Group("mastery", (("abbreviation", "X"),), "dashboard_only", 4, 4)
+    run = RunResult(
+        view="v",
+        moment=BUILD,
+        measures=[],
+        applied=Applied(open=[cube_only, dash_only]),
+    )
+
+    class Failing(FakeWarehouse):
+        def estimate(self, sql):
+            if "bucket = 'cube_only'" in sql:
+                raise _too_complex()
+            return 0.0
+
+    wh = Failing(lambda sql: [])
+
+    result = trace.trace_run(CFG, run, wh=wh, cube=None, levels=0)
+
+    stopped = result.items[trace.item_key(cube_only)]
+    assert "level 0" in stopped.stopped and stopped.unknown == 5
+    assert not result.items[trace.item_key(dash_only)].stopped
+    assert any("bucket = 'dashboard_only'" in sql for sql in wh.ran)
