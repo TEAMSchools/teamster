@@ -2,31 +2,20 @@ models:
   - name: int_powerschool__ps_enrollment_all
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          name: int_powerschool__ps_enrollment_all__unique_student_entrydate
+          description: >-
+            A PowerSchool student has 2 enrollment stints that start on the same
+            day. Downstream models that key a stint on student and entry date
+            keep only 1 of them. Delete or correct the duplicate enrollment
+            record in PowerSchool.
           arguments:
             combination_of_columns:
               - studentid
               - entrydate
           config:
-            # zero-length stints are flagged by the expression test below
+            # no-shows share entry and exit date; inverted stints are flagged on
+            # stg_powerschool__students and stg_powerschool__reenrollments
             where: schoolid != 999999 and entrydate < exitdate
-            severity: warn
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - studentid
-              - exitdate
-          config:
-            # zero-length stints are flagged by the expression test below
-            where: schoolid != 999999 and entrydate < exitdate
-            severity: warn
-      # A never-show belongs on enroll_status = 1, which this model drops, so
-      # every zero- or negative-length stint left here is a record to clean up.
-      # Graduated placeholders at 999999 are zero-length by design.
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: entrydate < exitdate
-          config:
-            where: schoolid != 999999
             severity: warn
     columns:
       - name: studentid

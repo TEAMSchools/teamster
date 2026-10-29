@@ -31,13 +31,13 @@ with
                 'School Community Diagnostic Staff Survey',
                 'Engagement & Support Surveys'
             )
+            and sg.round_rn = 1
     ),
 
     /*
      * Manager Survey submissions, both arms. The live Google Forms arm and the
      * historic Alchemer archive reach int_surveys__survey_submissions with the
-     * same shape, so they need one branch rather than two. The subject of
-     * evaluation comes from the overlay for both.
+     * same shape, so they need one branch rather than two.
      */
     manager_submissions as (
         select
@@ -55,7 +55,7 @@ with
             rt.school_id as rt_school_id,
             rt.grade_band as rt_grade_band,
 
-            mso.subject_employee_number,
+            sg.subject_employee_number,
 
             'staff' as respondent_type,
         from {{ ref("int_surveys__survey_submissions") }} as sg
@@ -65,11 +65,7 @@ with
             and sg.academic_year = rt.academic_year
             and sg.term_code = rt.code
             and rt.type = 'SURVEY'
-        left join
-            {{ ref("int_surveys__manager_submission_subjects") }} as mso
-            on sg.survey_id = mso.survey_id
-            and sg.survey_response_id = mso.survey_response_id
-        where sg.survey_title = 'Manager Survey'
+        where sg.survey_title = 'Manager Survey' and sg.round_rn = 1
     ),
 
     /* Student SCD submissions */
@@ -108,7 +104,9 @@ with
             on sg.respondent_email = enr.student_email
             and enr.entrydate <= date(sg.date_submitted)
             and enr.exitdate >= date(sg.date_submitted)
-        where sg.survey_title = 'School Community Diagnostic Student Survey'
+        where
+            sg.survey_title = 'School Community Diagnostic Student Survey'
+            and sg.round_rn = 1
     ),
 
     /* Family SCD submissions */
@@ -141,6 +139,7 @@ with
                 'KIPP Miami Re-Commitment Form'
                 ' & Family School Community Diagnostic'
             )
+            and sg.round_rn = 1
     ),
 
     combined_staff as (
@@ -293,7 +292,7 @@ select
     date(date_submitted) as date_submitted_key,
 
     cast(null as string) as student_enrollment_key,
-    -- TODO(#5978): family forms capture no respondent identifier yet
+    -- family forms identify the student, not the contact
     cast(null as string) as student_contact_person_key,
     cast(null as string) as staff_key,
     cast(null as string) as subject_staff_key,

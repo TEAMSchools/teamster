@@ -1,5 +1,4 @@
 import re
-from contextlib import nullcontext
 from types import SimpleNamespace
 
 from dagster import MultiPartitionKey, SensorResult, build_sensor_context
@@ -19,12 +18,8 @@ FILENAME = "ADP_Payroll_20260815_47s.csv"
 
 
 def test_sensor_uppercases_group_code():
-    sftp_client = SimpleNamespace()
     ssh_couchdrop = SimpleNamespace(
-        get_connection=lambda: nullcontext(
-            SimpleNamespace(open_sftp=lambda: nullcontext(sftp_client))
-        ),
-        listdir_attr_r=lambda **kwargs: [
+        listdir_attr_r_or_skip=lambda **kwargs: [
             (
                 SimpleNamespace(filename=FILENAME, st_mtime=100.0, st_size=1),
                 f"{REMOTE_DIR}/{FILENAME}",

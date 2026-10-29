@@ -2,17 +2,17 @@
 -- class period, at the same time.
 --
 -- The marking-period resolution is load-bearing. int_focus__schedule.end_date
--- is null on most rows because Focus bounds a schedule row by its course
--- period's marking period rather than by the row's own end_date. Taken
--- literally, every Semester 1 row reads as open-ended and collides with its
--- Semester 2 partner, though the pair is simply a year-long course scheduled
--- as two halves. Falling back to the marking period's dates removes all of
--- them.
+-- is null on most rows because Focus bounds a schedule row by its marking
+-- period rather than by the row's own end_date. Taken literally, every
+-- Semester 1 row reads as open-ended and collides with its Semester 2 partner,
+-- though the pair is simply a year-long course scheduled as two halves.
+-- Falling back to the marking period's dates, which int_focus__schedule
+-- resolves including the full-year sentinel, removes all of them.
 --
 -- Scoped to a shared period_id. Two course periods of one course in DIFFERENT
--- class periods is a separate, much larger pattern (776 student-course groups
--- across 25 courses) that reads as a course meeting several times a week. It is
--- with Ops for a ruling and is deliberately not asserted here.
+-- class periods is a separate, much larger pattern that reads as a course
+-- meeting several times a week. It is with Ops for a ruling and is deliberately
+-- not asserted here.
 --
 -- A single shared boundary day is a normal sequential transfer, so the
 -- comparison is strict on both sides: only a genuine multi-day overlap is
@@ -20,20 +20,17 @@
 with
     resolved as (
         select
-            s.student_id,
-            s.course_id,
-            s.academic_year,
-            s.course_period_id,
-            s.period_id,
-            coalesce(s.start_date, mp.start_date) as effective_start_date,
-            coalesce(s.end_date, mp.end_date, date '9999-12-31') as effective_end_date,
-        from {{ ref("int_focus__schedule") }} as s
-        left join
-            {{ ref("stg_focus__course_periods") }} as cp
-            on s.course_period_id = cp.course_period_id
-        left join
-            {{ ref("stg_focus__marking_periods") }} as mp
-            on cp.marking_period_id = mp.marking_period_id
+            student_id,
+            course_id,
+            academic_year,
+            course_period_id,
+            period_id,
+
+            coalesce(start_date, marking_period_start_date) as resolved_start_date,
+            coalesce(
+                end_date, marking_period_end_date, date '9999-12-31'
+            ) as resolved_end_date,
+        from {{ ref("int_focus__schedule") }}
     )
 
 select
@@ -42,11 +39,11 @@ select
     a.academic_year,
     a.period_id,
     a.course_period_id as course_period_id_a,
-    a.effective_start_date as effective_start_date_a,
-    a.effective_end_date as effective_end_date_a,
+    a.resolved_start_date as resolved_start_date_a,
+    a.resolved_end_date as resolved_end_date_a,
     b.course_period_id as course_period_id_b,
-    b.effective_start_date as effective_start_date_b,
-    b.effective_end_date as effective_end_date_b,
+    b.resolved_start_date as resolved_start_date_b,
+    b.resolved_end_date as resolved_end_date_b,
 from resolved as a
 inner join
     resolved as b
@@ -56,5 +53,5 @@ inner join
     and a.period_id = b.period_id
     -- ordered pair: compares each combination once, never a row to itself
     and a.course_period_id < b.course_period_id
-    and a.effective_start_date < b.effective_end_date
-    and a.effective_end_date > b.effective_start_date
+    and a.resolved_start_date < b.resolved_end_date
+    and a.resolved_end_date > b.resolved_start_date

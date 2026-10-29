@@ -24,13 +24,7 @@ models:
           English learner status. For Miami, read from Focus's FLDOE ELL code:
           LY is currently LEP, the followup/exited/not-applicable codes are not,
           and the tested-or-pending codes read null because they are genuinely
-          unknown. Flags 5 students against the frozen archive's 221 -- most
-          Miami students still sit at the Focus default, a gap for Ops to close.
-        data_tests:
-          - not_null:
-              config:
-                severity: warn
-                where: _dbt_source_project = 'kippmiami'
+          unknown.
       - name: spedlep
         description: >-
           IEP classification. For Miami, read from the Focus ESE

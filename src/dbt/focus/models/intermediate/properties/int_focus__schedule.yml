@@ -21,8 +21,13 @@ models:
       course period or course is missing drops out here. Marking period is
       left-joined on syear and school_id as well as the id, resolving Focus's
       full-year sentinel (marking_period_id 0) to the school's year-level
-      marking period. Internal-only — a rpt_ view must sit between this model
-      and any external consumer.
+      marking period. A seat that starts after the student's last enrollment end
+      at that school and year is excluded before the stint pick; Focus schedules
+      rotation and next-term seats for students who have already withdrawn. A
+      seat with no start date is excluded the same way once that enrollment has
+      ended. A seat at a school where the student has no enrollment that year is
+      kept. Internal-only — a rpt_ view must sit between this model and any
+      external consumer.
     columns:
       - name: student_schedule_id
         description: >-
@@ -202,3 +207,26 @@ models:
         description: >-
           Last date of the marking period; the last day of the school year on a
           full-year schedule.
+      - name: effective_end_date
+        description: >-
+          Last day the student is in the section — the earliest of end_date,
+          marking_period_end_date, and the student's enrollment end at this
+          school and year. Focus leaves seats open when a student withdraws, so
+          this is the column that ends them on the withdrawal date. The
+          enrollment end is the latest student_enrollment end_date, and is null
+          (no clamp) while any enrollment there that year is still open. Same
+          last-day-enrolled convention as end_date.
+      - name: is_dropped
+        description: >-
+          Whether the student left the section before it ended — an inference,
+          because Focus records no drop. True when end_date falls before
+          marking_period_end_date and the seat did not close with a withdrawal.
+          A withdrawal close falls in a gap in the student's enrollment at this
+          school and year — on or after the day every stint so far has ended,
+          and before the next stint starts. So a student who leaves and later
+          re-enrolls at the same school keeps the first withdrawal's closes out
+          of the drops, and a stint that ends while a longer one is still open
+          is not a withdrawal. A stint that ends before it starts is ignored. A
+          seat closed before the student's first stint starts still counts as a
+          drop, and so does an early close at a school where the student has no
+          enrollment that year. False on every open seat.

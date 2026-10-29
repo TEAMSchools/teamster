@@ -20,7 +20,9 @@ HERE = Path(__file__).resolve().parent
 
 ID_RE = re.compile(r"^[a-z0-9_]+$")
 
-# The nine values documented in README.md, mapped to display labels.
+# The values documented under Systems in docs/guides/launch-page-guide.md,
+# mapped to display labels. Every `google-*` value is subject to the guide's
+# sharing check.
 SYSTEMS = {
     "tableau": "Tableau",
     "appsheet": "AppSheet",
@@ -29,6 +31,7 @@ SYSTEMS = {
     "google-slides": "Google Slides",
     "google-form": "Google Form",
     "google-doc": "Google Doc",
+    "google-folder": "Google Drive folder",
     "apps-script": "Apps Script",
     "other": "Other",
 }

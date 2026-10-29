@@ -37,6 +37,10 @@ models:
       stands in until then. This rule is inferred from the data, not confirmed
       by Focus documentation. If it proves wrong, remove the
       `focus_posted_grades` join and decide how the two rows should combine.
+
+
+      Focus rows with grade-type token E are exam grades, not term grades, and
+      are dropped.
     config:
       materialized: table
       meta:
@@ -76,6 +80,8 @@ models:
               - cc_dcid
               - storecode
               - _dbt_source_project
+          config:
+            severity: error
     columns:
       - name: cc_dcid
         description: >-
@@ -203,13 +209,22 @@ models:
           Date the grade was last changed. Null on every Focus row — Focus's
           modified_date is null on every student_report_card_grades row.
         data_type: date
+      - name: comment_value
+        description: >-
+          Teacher comment on the final grade, from PowerSchool pgfinalgrades.
+          Null on every Focus row.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
 
 unit_tests:
   - name: test_int_students__final_grades_posted_grade_supersedes_dt
     description:
       A Focus posted grade (no grade-type token) replaces the DT running grade
       for the same student, course period and marking period. A DT grade with no
-      posted grade beside it stays.
+      posted grade beside it stays. An E exam grade beside a posted grade is
+      dropped.
     model: int_students__final_grades
     given:
       - input: ref('base_powerschool__final_grades')
@@ -251,6 +266,15 @@ unit_tests:
             schoolid: 58
             marking_period_short_name: Q1
             grade_title: D
+            _dbt_source_project: kippmiami
+          - student_id: 13
+            course_period_id: 100
+            marking_period_id: 7181
+            grade_type_token: E
+            academic_year: 2026
+            schoolid: 58
+            marking_period_short_name: Q1
+            grade_title: F
             _dbt_source_project: kippmiami
       - input: ref('int_focus__schedule')
         rows:

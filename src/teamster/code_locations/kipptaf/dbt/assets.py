@@ -19,7 +19,8 @@ core_dbt_assets = build_dbt_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
     name=f"{CODE_LOCATION}__dbt_assets",
-    exclude="source:adp_payroll+ tag:google_sheet",
+    # selectors.yml keeps tests that read a sheet and a core model in this set
+    selector="core_dbt_assets",
     op_tags={
         "dagster-k8s/config": {
             "container_config": {

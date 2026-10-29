@@ -4,7 +4,8 @@ Source-system staging project for **PowerSchool SIS** data. Produces clean,
 contract-enforced staging models consumed by the NJ district dbt projects
 (`kippnewark`, `kippcamden`, `kipppaterson`) and `kipptaf`. `kippmiami` no
 longer consumes it — its SIS moved to Focus (#4441). The exception is an archive
-rebuild, which re-includes the package in `kippmiami` and removes it again
+rebuild, which re-includes the package (dlt variant, reading the frozen
+`dagster_kippmiami_dlt_powerschool` pull) in `kippmiami` and removes it again
 afterward; `src/dbt/kippmiami/CLAUDE.md` carries that recipe. If you find the
 package listed in that project's `packages.yml`, a rebuild is mid-flight.
 
@@ -16,7 +17,7 @@ models/
     base/        # base models (light renaming, no logic)
     staging/
       dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); ENABLED by default — the live SIS path
-      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default; the kippmiami archive rebuild (#5201) enabled it once)
+      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default)
       sftp/      # models sourced from SFTP file extracts (disabled by default; unused)
     intermediate/
 ```
@@ -72,8 +73,9 @@ columns at once — dbt reports only the first.
 
 ## GPA Gotchas
 
-- **`storecode = 'Y1'` only**: Q1–Q4 records have `gpa_points = 0` by design —
-  only `storecode = 'Y1'` rows are used in GPA calculations.
+- **`storecode = 'Y1'` only**: Q1–Q4 records carry scale `gpa_points` too, but
+  only `storecode = 'Y1'` rows are used in GPA calculations. Filter on
+  `storecode`, never on `gpa_points != 0`.
 - **`districtentrydate` null placeholder**: PowerSchool stores null/missing
   dates as `1899-xx-xx`. Derive network tenure from `MIN(academic_year)` in
   storedgrades instead.

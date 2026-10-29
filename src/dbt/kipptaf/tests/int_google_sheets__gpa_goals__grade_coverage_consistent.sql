@@ -1,3 +1,4 @@
+-- depends_on: {{ ref("stg_google_sheets__gpa_goals") }}
 with
     /* scoped to years the student spine covers, matching the sibling
        every_goal_aggregates test. Goals for a year not yet underway are entered

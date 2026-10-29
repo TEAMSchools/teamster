@@ -47,14 +47,16 @@ models:
 
           The two SIS record it differently and neither is wrong. PowerSchool
           has no separate departure date, so `cc_dateleft` is already this
-          concept -- the actual leave date when the student left, the term end
-          plus a day while the enrollment is open. Focus keeps the two apart, so
-          this resolves to the schedule `end_date` when the student left and
-          `marking_period_end_date` otherwise, plus a day. Both SIS therefore
-          give the first day the student is no longer enrolled, so a window is
-          `date >= cc_dateenrolled and date < exit_date` in every region. A
-          consumer that compares `cc_dateleft` instead drops every open Focus
-          enrollment, because the comparison is unknown.
+          concept -- the actual leave date when the student left the class or
+          the school, the term end plus a day while the enrollment is open.
+          Focus keeps the two apart and leaves seats open when a student
+          withdraws, so this is the Focus schedule `effective_end_date` plus a
+          day -- the earliest of the drop date, the term end and the student's
+          withdrawal, so a Miami seat ends at withdrawal as a NJ seat does. Both
+          SIS therefore give the first day the student is no longer enrolled, so
+          a window is `date >= cc_dateenrolled and date < exit_date` in every
+          region. A consumer that compares `cc_dateleft` instead drops every
+          open Focus enrollment, because the comparison is unknown.
         data_type: date
         data_tests:
           - not_null:
@@ -81,15 +83,13 @@ models:
         description: >-
           Whether the student unenrolled from this section before its expected
           end. PowerSchool derives it from its `sectionid < 0` convention. Focus
-          has no equivalent, so the Miami value is an INFERENCE: the schedule
-          row's `end_date` falls before its marking period ends, and the student
-          still holds an open schedule row that year. The second half excludes a
-          withdrawal sweep, which closes every one of a leaver's rows at once
-          and is not a drop -- it stands in for PowerSchool's own `dateleft =
-          exitdate` exclusion. Both regions therefore mean the same thing by the
-          column, reached two different ways. Measured 2026-08-27: 2.97% of
-          Miami AY2026 rows, against 0.23% to 8.55% across the three NJ regions
-          at the same point in the year. See #4968.
+          has no equivalent, so the Miami value is the Focus schedule
+          `is_dropped` INFERENCE: the seat closed before its marking period ends
+          and not with a withdrawal. A seat that closes on or after the end of
+          an enrollment stint at that school, before any re-enrollment there, is
+          part of the withdrawal, not a drop -- that stands in for PowerSchool's
+          own `dateleft = exitdate` exclusion. Both regions therefore mean the
+          same thing by the column, reached two different ways.
         data_type: bool
       - name: is_dropped_course
         description: >-
@@ -256,3 +256,8 @@ models:
           -- Focus dates a section to its marking period, so multiple sections
           in the same course commonly share both dates.
         data_type: int64
+      - name: courses_gradescale_name
+        description: >-
+          Name of the course's grade scale, from the scale's own PowerSchool
+          gradescaleitem row. Null for Focus.
+        data_type: string

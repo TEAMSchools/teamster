@@ -287,10 +287,12 @@ legitimately-superseded inactive rows that repeat the key.
 - Project-level `data_tests:` defaults flow through to singular tests too. Drop
   redundant `severity` / `store_failures` / `store_failures_as` from
   singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
-- Staging-layer tests MUST set `config: severity: error` on every test. The
+- Staging-layer tests MUST set `config: severity` explicitly on every test. The
   district and kipptaf project default is `warn`, so their staging tests without
-  explicit `severity: error` silently degrade to warnings and won't fail CI.
-  Intermediate tests may omit the override where a warning is acceptable.
+  an explicit severity silently degrade to warnings and won't fail CI. Set
+  `error`, except on a ticketed test (#5558): it runs at `warn` on the earliest
+  model that can route its ticket, which is often a staging model. Intermediate
+  tests may omit the override where a warning is acceptable.
 - Tests on marts and `rpt_` models follow _Tests on marts and `rpt_` models_ at
   the end of this file.
 - Removing a `severity: warn` override reverts to the project default: `warn` in
@@ -354,6 +356,17 @@ state.
 A singular test that reads more than one model needs `meta.dagster.ref` in
 `tests/properties.yml`, or Dagster never sees its result: `build_dbt_assets`
 drops the observation dagster-dbt falls back to.
+
+The ref must name a model the test reads. dagster-dbt builds a check only from a
+test's dbt parents, so a ref to any other model (a downstream view, a sibling)
+silently never becomes a check. To attach a test that reads only a source, add
+`-- depends_on: {{ ref("<model>") }}` to its SQL.
+
+In kipptaf, a singular test whose ref is a `stg_google_sheets__*` model also
+needs `tags: [google_sheet]` in its `config:`. Without the tag it also runs in
+the core dbt run (`src/dbt/kipptaf/selectors.yml`), which has no check for it,
+so an `error` failure there fails the core run with no check to show why.
+Generic tests declared on a sheet model get the tag from `dbt_project.yml`.
 
 dagster-dbt resolves `meta.dagster.ref` via `(name, package, version)`. Omitting
 `package:` defaults to the running project — so a test under

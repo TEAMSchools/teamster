@@ -13,6 +13,7 @@ sources:
       - name: int_surveys__alchemer_submissions
         config:
           meta:
+            contains_pii: true
             dagster:
               asset_key:
                 - kipptaf
@@ -21,6 +22,7 @@ sources:
       - name: int_surveys__alchemer_responses
         config:
           meta:
+            contains_pii: true
             dagster:
               asset_key:
                 - kipptaf

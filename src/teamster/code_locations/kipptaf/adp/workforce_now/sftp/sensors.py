@@ -30,15 +30,12 @@ def adp_wfn_sftp_sensor(
 
     min_mtime = min(cursor.values(), default=0)
 
-    with (
-        ssh_adp_workforce_now.get_connection() as connection,
-        connection.open_sftp() as sftp_client,
-    ):
-        files = ssh_adp_workforce_now.listdir_attr_r(
-            sftp_client=sftp_client,
-            exclude_dirs=["./payroll"],
-            min_mtime=min_mtime,
-        )
+    files = ssh_adp_workforce_now.listdir_attr_r_or_skip(
+        exclude_dirs=["./payroll"], min_mtime=min_mtime
+    )
+
+    if isinstance(files, SkipReason):
+        return files
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]

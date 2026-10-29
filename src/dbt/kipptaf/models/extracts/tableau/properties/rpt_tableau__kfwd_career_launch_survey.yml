@@ -4,14 +4,14 @@ models:
       contract:
         enforced: true
     data_tests:
-      # TODO(#3818): survey contact_id duplicates break the grain
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - contact_id
               - response_id
+              - enrollment_id
           config:
-            severity: warn
+            severity: error
     columns:
       - name: contact_id
         data_type: string
@@ -61,8 +61,17 @@ models:
         data_type: numeric
       - name: institution
         data_type: string
+      - name: enrollment_id
+        data_type: string
+        description:
+          Salesforce id of the graduated postsecondary enrollment on this row.
+          Null when the alum has no graduated enrollment.
       - name: reconciliation_response_id
         data_type: string
+        description:
+          The survey response id when the career launch reconciliation sheet
+          matched this response to this alum. Null when the match came from
+          email or Salesforce id, and on rows with no response.
       - name: college_programs
         data_type: string
       - name: is_basta

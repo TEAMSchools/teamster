@@ -3,10 +3,12 @@ models:
     description: >-
       Assessment goal targets from the academic goals Google Sheet, at grade,
       school, region, network, grade-band, and assessment-band levels. One row
-      per sheet row. The intended key (year, school, grade, state assessment
-      code, subject) is tested at warn severity, because the sheet is
-      hand-entered and can carry duplicate rows; downstream,
-      `dim_assessment_goals` keeps the higher school goal when it does.
+      per academic year, school, grade, state assessment code and subject. The
+      sheet is hand-entered and can repeat a key, so this model keeps the row
+      with the higher school goal and every goals consumer reads one row per
+      key. The singular test
+      `stg_google_sheets__assessments__academic_goals__sheet_duplicates` keeps
+      the repeated keys visible until someone removes them from the sheet.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -16,6 +18,8 @@ models:
               - Grade_Level
               - State_Assessment_Code
               - Illuminate_Subject_Area
+          config:
+            severity: error
     columns:
       - name: Academic_Year
         data_type: int64

@@ -8,7 +8,9 @@ with
         select
             *,
 
-            lag(location_key, 1, '') over (
+            -- sentinel keeps an assignment's first record even when its
+            -- location_key is null, so it is not dropped as "unchanged"
+            lag(location_key, 1, 'first_record') over (
                 partition by item_id order by effective_date_start asc
             ) as location_key_lag,
         from assignments

@@ -198,11 +198,13 @@ with
             (academic_year + 13) + (-1 * grade_level) as cohort_primary,
 
             lag(yearid, 1) over (
-                partition by studentid order by yearid asc
+                partition by studentid
+                order by yearid asc, exitdate asc, reenrollments_dcid desc
             ) as yearid_prev,
 
             lag(grade_level, 1) over (
-                partition by studentid order by yearid asc
+                partition by studentid
+                order by yearid asc, exitdate asc, reenrollments_dcid desc
             ) as grade_level_prev,
 
             row_number() over (
@@ -256,18 +258,6 @@ with
             if(rn_year = 1, year_in_network, null) as year_in_network,
             if(exitcode = 'G1', cohort_primary, null) as cohort_graduated,
             if(exitdate is not null, true, false) as is_enrolled_y1,
-
-            if(
-                date(academic_year, 10, 1) between entrydate and exitdate, true, false
-            ) as is_enrolled_oct01,
-            if(
-                date(academic_year, 10, 15) between entrydate and exitdate, true, false
-            ) as is_enrolled_oct15,
-            if(
-                date(academic_year + 1, 3, 15) between entrydate and exitdate,
-                true,
-                false
-            ) as is_enrolled_mar15,
 
             case
                 when yearid = yearid_prev

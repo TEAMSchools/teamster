@@ -5,18 +5,21 @@ models:
       Illuminate response data. Starts from `int_assessments__scaffold` and LEFT
       JOINs student responses, the canonical performance band set, and the
       canonical assessment, so scaffold rows with no responses are kept with
-      null response columns. `date_taken` is nulled when it falls more than 365
-      days from the canonical administered date, or, when there is no
-      administered date, outside `academic_year` plus or minus one year. For
-      internal assessments, multipart member assessments (sharing a
-      `canonical_assessment_id` per `int_assessments__assessments_members`) are
-      aggregated to one row per student, `is_replacement`, and response with
-      summed points, the earliest `date_taken`, and a deterministic single
-      school/region selection. External assessments pass through one row per
-      scaffold row and response. `assessment_id` here is the canonical id, not
-      the per-row member id; `assessment_ids` (array) preserves the underlying
-      member ids for drilldown. Performance band labels and the reporting terms
-      of the administered and taken dates are joined last. Apex rows (`source =
+      null response columns. Responses that `int_assessments__performance_bands`
+      groups under one `canonical_response_type_id` (a standard Illuminate keeps
+      in several standards sets) are summed into one row per sitting.
+      `date_taken` is nulled when it falls more than 365 days from the canonical
+      administered date, or, when there is no administered date, outside
+      `academic_year` plus or minus one year. For internal assessments,
+      multipart member assessments (sharing a `canonical_assessment_id` per
+      `int_assessments__assessments_members`) are aggregated to one row per
+      student, `is_replacement`, and response with summed points, the earliest
+      `date_taken`, and a deterministic single school/region selection. External
+      assessments pass through one row per scaffold row and response.
+      `assessment_id` here is the canonical id, not the per-row member id;
+      `assessment_ids` (array) preserves the underlying member ids for
+      drilldown. Performance band labels and the reporting terms of the
+      administered and taken dates are joined last. Apex rows (`source =
       'apex'`) skip the Illuminate responses and bands: each takes its points,
       percent, band, and mastery from `int_focus__apex_results`, one row per
       scaffold row and response, and carries the scaffold's section match.
@@ -152,8 +155,10 @@ models:
       - name: response_type_id
         data_type: int64
         description: >-
-          Standard or reporting group id for the response (`-1` for overall),
-          from `int_illuminate__agg_student_responses`.
+          Standard or reporting group id for the response (`-1` for overall).
+          The `canonical_response_type_id` from
+          `int_assessments__performance_bands`, so a standard scored through
+          several records carries the lowest of their ids.
       - name: response_type_code
         data_type: string
         description: From `int_illuminate__agg_student_responses`.
@@ -162,7 +167,9 @@ models:
         description: From `int_illuminate__agg_student_responses`.
       - name: response_type_root_description
         data_type: string
-        description: From `int_illuminate__agg_student_responses`.
+        description: >-
+          From `int_illuminate__agg_student_responses`. When merged records
+          carry different roots, the alphabetically first.
       - name: date_taken
         data_type: date
         description: >-
@@ -180,14 +187,23 @@ models:
         config:
           meta:
             source_column: int_illuminate__agg_student_responses.points
+      - name: points_possible
+        data_type: numeric
+        description: >-
+          Points possible, summed the same way as `points`. For Apex rows, the
+          `points_possible` from `int_focus__apex_results`.
+        config:
+          meta:
+            source_column: int_illuminate__agg_student_responses.points_possible
       - name: percent_correct
         data_type: numeric
         description: >-
           For internal rows, `sum(points) / sum(points_possible) * 100` across
           the rolled-up members, rounded to one decimal. For external rows, the
           per-row `percent_correct` from
-          `int_illuminate__agg_student_responses`. For Apex rows, the
-          `percent_correct` from `int_focus__apex_results`.
+          `int_illuminate__agg_student_responses`, or the same points ratio when
+          one sitting scored the response through several records. For Apex
+          rows, the `percent_correct` from `int_focus__apex_results`.
       - name: title
         data_type: string
         description: >-
@@ -371,6 +387,7 @@ unit_tests:
         rows:
           - {
               student_assessment_id: 1,
+              assessment_id: 9001,
               response_type: overall,
               response_type_id: -1,
               points_possible: 20.0,
@@ -378,13 +395,14 @@ unit_tests:
               percent_correct: 75.0,
             }
       - input: ref('int_assessments__performance_bands')
-        rows:
-          - {
-              assessment_id: 9001,
-              response_type: overall,
-              response_type_id: -1,
-              canonical_performance_band_set_id: 5,
-            }
+        format: sql
+        rows: |
+          select
+              9001 as assessment_id,
+              'overall' as response_type,
+              -1 as response_type_id,
+              -1 as canonical_response_type_id,
+              5 as canonical_performance_band_set_id
       - input: ref('int_illuminate__performance_band_sets')
         rows:
           - {
@@ -438,4 +456,165 @@ unit_tests:
             is_multipart_assessment: false,
             cc_dcid: null,
             section_match_method: null,
+          }
+  - name: test_int_assessments__response_rollup_split_standard
+    description: >-
+      One sitting of an external assessment scores standard CODE.A through 2
+      Illuminate records (3 of 4 and 0 of 2 points) that the band model groups
+      under id 11. They merge into 1 row, 3 of 6 points (50), banded from the
+      shared set. CODE.B has 1 record and keeps Illuminate's reported 77.8.
+      CODE.C's 2 records sit on different band sets, so the merged row has no
+      band.
+    model: int_assessments__response_rollup
+    given:
+      - input: ref('int_assessments__scaffold')
+        format: sql
+        rows: |
+          select
+              301 as illuminate_student_id,
+              301 as student_number,
+              'illuminate' as source,
+              9002 as assessment_id,
+              'Unit Check' as title,
+              cast(null as string) as scope,
+              'Mathematics' as subject_area,
+              'Math' as discipline,
+              2026 as academic_year,
+              date('2026-09-28') as administered_at,
+              cast(null as string) as module_type,
+              cast(null as string) as module_code,
+              'Newark' as region,
+              'kippnewark' as _dbt_source_project,
+              73252 as powerschool_school_id,
+              7 as grade_level_id,
+              false as is_internal_assessment,
+              false as is_replacement,
+              2 as student_assessment_id,
+              9002 as canonical_assessment_id,
+              date('2026-10-01') as date_taken,
+              cast(null as int64) as cc_dcid,
+              cast(null as string) as section_match_method
+      - input: ref('int_focus__apex_results')
+        rows: []
+      - input: ref('int_illuminate__agg_student_responses')
+        rows:
+          - {
+              student_assessment_id: 2,
+              assessment_id: 9002,
+              response_type: standard,
+              response_type_id: 11,
+              response_type_code: CODE.A,
+              response_type_description: Standard A,
+              points_possible: 4.0,
+              points: 3.0,
+              percent_correct: 75.0,
+            }
+          - {
+              student_assessment_id: 2,
+              assessment_id: 9002,
+              response_type: standard,
+              response_type_id: 12,
+              response_type_code: CODE.A,
+              response_type_description: Standard A,
+              points_possible: 2.0,
+              points: 0.0,
+              percent_correct: 0.0,
+            }
+          - {
+              student_assessment_id: 2,
+              assessment_id: 9002,
+              response_type: standard,
+              response_type_id: 13,
+              response_type_code: CODE.B,
+              response_type_description: Standard B,
+              points_possible: 9.0,
+              points: 7.0,
+              percent_correct: 77.8,
+            }
+          - {
+              student_assessment_id: 2,
+              assessment_id: 9002,
+              response_type: standard,
+              response_type_id: 14,
+              response_type_code: CODE.C,
+              response_type_description: Standard C,
+              points_possible: 1.0,
+              points: 1.0,
+              percent_correct: 100.0,
+            }
+          - {
+              student_assessment_id: 2,
+              assessment_id: 9002,
+              response_type: standard,
+              response_type_id: 15,
+              response_type_code: CODE.C,
+              response_type_description: Standard C,
+              points_possible: 1.0,
+              points: 1.0,
+              percent_correct: 100.0,
+            }
+      - input: ref('int_assessments__performance_bands')
+        format: sql
+        rows: |
+          select
+              9002 as assessment_id,
+              'standard' as response_type,
+              11 as response_type_id,
+              11 as canonical_response_type_id,
+              5 as canonical_performance_band_set_id
+          union all
+          select 9002, 'standard', 12, 11, 5
+          union all
+          select 9002, 'standard', 13, 13, 5
+          union all
+          select 9002, 'standard', 14, 14, cast(null as int64)
+          union all
+          select 9002, 'standard', 15, 14, cast(null as int64)
+      - input: ref('int_illuminate__performance_band_sets')
+        rows:
+          - {
+              performance_band_set_id: 5,
+              minimum_value: 70.0,
+              maximum_value: 100.0,
+              label: Proficient,
+              label_number: 4,
+              is_mastery: true,
+            }
+          - {
+              performance_band_set_id: 5,
+              minimum_value: 0.0,
+              maximum_value: 69.9,
+              label: Below,
+              label_number: 2,
+              is_mastery: false,
+            }
+      - input: ref('int_assessments__assessments_canonical')
+        rows: []
+      - input: ref('stg_google_sheets__reporting__terms')
+        rows: []
+    expect:
+      rows:
+        - {
+            response_type_id: 11,
+            response_type_code: CODE.A,
+            points: 3.0,
+            points_possible: 6.0,
+            percent_correct: 50.0,
+            performance_band_label: Below,
+          }
+        - {
+            response_type_id: 13,
+            response_type_code: CODE.B,
+            points: 7.0,
+            points_possible: 9.0,
+            percent_correct: 77.8,
+            performance_band_label: Proficient,
+          }
+        - {
+            response_type_id: 14,
+            response_type_code: CODE.C,
+            points: 2.0,
+            points_possible: 2.0,
+            percent_correct: 100.0,
+            performance_band_label: null,
           }

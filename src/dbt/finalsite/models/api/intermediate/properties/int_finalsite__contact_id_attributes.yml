@@ -14,6 +14,23 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: focus_student_id_prefixed
+        data_type: string
+        description:
+          Focus student id with the FLDOE district number (8400) prepended to
+          `focus_student_id`. Equals Focus `students.student_id` directly and is
+          the value every Focus SFTP extract emits as the student id.
+        data_tests:
+          - unique:
+              name: int_finalsite__contact_id_attributes__focus_student_id_prefixed_unique
+              description: >-
+                More than 1 Finalsite record carries the same Focus student id.
+                Downstream, the Focus SFTP feeds match both records to one Focus
+                student. Merge the duplicate records, or correct the Focus
+                student id on the wrong one, in Finalsite.
+              config:
+                where: focus_student_id_prefixed is not null
+                severity: warn
       - name: power_school_contact_id
         data_type: string
         description: PowerSchool contact id from the `id_attributes` array.
@@ -25,9 +42,3 @@ models:
         description:
           Finalsite-minted Focus student id from the `id_attributes` array,
           without the FLDOE district prefix.
-      - name: focus_student_id_prefixed
-        data_type: string
-        description:
-          Focus student id with the FLDOE district number (8400) prepended to
-          `focus_student_id`. Equals Focus `students.student_id` directly and is
-          the value every Focus SFTP extract emits as the student id.

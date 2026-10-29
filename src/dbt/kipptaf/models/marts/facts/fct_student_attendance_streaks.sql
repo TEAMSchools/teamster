@@ -11,15 +11,9 @@ with
         from {{ ref("int_students__student_enrollment_union") }}
     ),
 
-    -- TODO(#4835): two kippcamden students carry a short AY2026 stint and a
-    -- full-year stint sharing an entrydate, so the half-open date-range join
-    -- below matches both and fans the streak out. Both matches hash to the
-    -- SAME student_enrollment_key (entrydate is its only enrollment input), so
-    -- collapsing them is information-preserving, not duplicate-masking. A
-    -- genuine overlap -- two stints with DIFFERENT entrydates covering one
-    -- streak -- still fans out and still fails the PK test, which is correct.
-    -- Deduped here rather than in the union: the union should faithfully
-    -- represent its source rows, which other consumers may legitimately need.
+    -- Stints sharing an entrydate hash to one student_enrollment_key, so the
+    -- dedupe keeps the longest. The source test
+    -- int_powerschool__ps_enrollment_all__unique_student_entrydate flags them.
     -- Focus stints cannot overlap here: int_focus__student_enrollment_roster
     -- trims each stint to the day before the next one starts.
     enrollments as (
