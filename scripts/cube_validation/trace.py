@@ -911,6 +911,36 @@ def _one_moment(
     return repin(at.sql, clash, build.start, build.end)
 
 
+@dataclass
+class Prepared:
+    """What planning a triage fetches once, for `check_ready`, the stored proofs
+    and `trace_run` to share: the network's schools, each comparison's row SQL,
+    the dbt manifest, and each table checked for a change during the build."""
+
+    schools: set[str] | None = None
+    sides: dict[str, pipeline.RowSides] = field(default_factory=dict)
+    manifest: Manifest | None = None
+    moved: dict[str, bool] = field(default_factory=dict)
+
+    def row_sides(
+        self, cfg: ViewConfig, comparison: Comparison, run: RunResult, wh, cube
+    ) -> pipeline.RowSides:
+        """The comparison's row SQL as the run reconciled it, rebuilt once."""
+        if self.schools is None:
+            self.schools = network_schools(wh)
+        if comparison.id not in self.sides:
+            self.sides[comparison.id] = pipeline.row_sides(
+                cfg,
+                comparison,
+                wh=wh,
+                cube=cube,
+                build=run.moment,
+                schools=self.schools,
+                fingerprints=run.fingerprints.get(comparison.id, {}),
+            )
+        return self.sides[comparison.id]
+
+
 def _plan(
     cfg: ViewConfig,
     run: RunResult,
@@ -921,6 +951,7 @@ def _plan(
     manifest_path: Path,
     levels: int,
     meter: _Meter,
+    prepared: Prepared,
 ) -> list[_Bucket]:
     """One `_Bucket` per traced comparison bucket of `open_groups`.
 
@@ -938,20 +969,10 @@ def _plan(
     ]
     if not todo:
         return []
-    schools = network_schools(wh)
-    moved: dict[str, bool] = {}
     plans = []
     for cid in todo:
         comparison = by_id[cid]
-        sides = pipeline.row_sides(
-            cfg,
-            comparison,
-            wh=wh,
-            cube=cube,
-            build=run.moment,
-            schools=schools,
-            fingerprints=run.fingerprints.get(cid, {}),
-        )
+        sides = prepared.row_sides(cfg, comparison, run, wh, cube)
         shared = sides.cube.tables & sides.dashboard.tables
         for bucket in TRACED:
             groups = [
@@ -970,14 +991,16 @@ def _plan(
             manifest=None,
             levels=levels,
             end_tables=set(side.sides.cube.tables - shared),
-            moved=moved,
+            moved=prepared.moved,
             meter=meter,
         )
         for side, groups, shared in plans
     ]
     if levels:
         roots = [t for b in buckets for t in b.root.query.tables()]
-        manifest = Manifest.load(manifest_path, roots)
+        if prepared.manifest is None:
+            prepared.manifest = Manifest.load(manifest_path, roots)
+        manifest = prepared.manifest
         manifest.require_compiled(roots, levels)
         for b in buckets:
             b.manifest = manifest
@@ -992,11 +1015,15 @@ def check_ready(
     cube: Cube,
     manifest_path: Path = MANIFEST,
     levels: int = MAX_LEVELS,
-) -> None:
+    prepared: Prepared | None = None,
+) -> Prepared:
     """Refuse now what `trace_run` would refuse, before anything is spent.
 
     Checks every open row group, so it may ask for a model only a group a
     proof later explains would have needed. Call inside `wh.budget`.
+
+    Returns:
+        What the check fetched, for the stored proofs and `trace_run` to reuse.
 
     Raises:
         pipeline.Refusal: sqlglot is older than the parser the as-of SQL
@@ -1010,6 +1037,7 @@ def check_ready(
             f"{SQLGLOT_MAJOR} or later. Run from a checkout synced to the "
             "branch's uv.lock (`uv sync`)"
         )
+    prepared = prepared or Prepared()
     _plan(
         cfg,
         run,
@@ -1019,7 +1047,9 @@ def check_ready(
         manifest_path=manifest_path,
         levels=levels,
         meter=_Meter(None),
+        prepared=prepared,
     )
+    return prepared
 
 
 def trace_run(
@@ -1032,6 +1062,7 @@ def trace_run(
     levels: int = MAX_LEVELS,
     max_minutes: float = TRACE_MAX_MINUTES,
     skip: set[tuple] = frozenset(),
+    prepared: Prepared | None = None,
 ) -> TraceResult:
     """Trace every open row group of a run to the steps that drop its rows.
 
@@ -1052,6 +1083,7 @@ def trace_run(
         levels: How many tables deep to descend.
         max_minutes: The whole trace's time limit.
         skip: `item_key`s of groups not to trace.
+        prepared: What `check_ready` fetched; fetched here when None.
 
     Returns:
         Per `item_key`, the trace of each traced group (the one-sided buckets
@@ -1074,6 +1106,7 @@ def trace_run(
         manifest_path=manifest_path,
         levels=levels,
         meter=meter,
+        prepared=prepared or Prepared(),
     )
     if not buckets:
         return TraceResult(out)
@@ -1106,6 +1139,7 @@ def trace_run(
 __all__ = [
     "ItemTrace",
     "Manifest",
+    "Prepared",
     "Step",
     "Stopped",
     "TraceResult",

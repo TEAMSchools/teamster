@@ -903,3 +903,24 @@ def test_check_ready_refuses_an_old_sqlglot(monkeypatch):
     monkeypatch.setattr(trace.sqlglot, "__version__", "28.0.0")
     with pytest.raises(pipeline.Refusal, match="sqlglot 28.0.0 cannot parse"):
         trace.check_ready(None, None, wh=None, cube=None)
+
+
+def test_check_ready_s_plan_is_reused_by_the_trace(monkeypatch):
+    side = _side(FLAT)
+    calls = []
+    monkeypatch.setattr(trace, "network_schools", lambda wh: calls.append("s") or set())
+
+    def sides(*a, **k):
+        calls.append("r")
+        return side.sides
+
+    monkeypatch.setattr(pipeline, "row_sides", sides)
+    run = RunResult(
+        view="v", moment=BUILD, measures=[], applied=Applied(open=[_group(5)])
+    )
+    wh = FakeWarehouse(lambda sql: [])
+
+    prepared = trace.check_ready(CFG, run, wh=wh, cube=None, levels=0)
+    trace.trace_run(CFG, run, wh=wh, cube=None, levels=0, prepared=prepared)
+
+    assert calls == ["s", "r"]

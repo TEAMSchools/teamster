@@ -927,17 +927,16 @@ def run_stored(
     *,
     wh: Warehouse,
     cube: Cube,
+    prepared: trace.Prepared | None = None,
 ) -> list[Ran]:
     """Run every stored proof of the view on the run's rows. Call inside `wh.budget`.
 
     A proof that cannot run (a failed check, a cap, a BigQuery or Cube error,
     its SQL no longer the run's) keeps why and moves nothing; the rest still
-    run. Each comparison's row SQL is rebuilt once.
+    run. Each comparison's row SQL is rebuilt once, or taken from `prepared`.
     """
     by_id = {c.id: c for c in cfg.comparisons}
-    schools: set[str] | None = None
-    sides: dict[str, pipeline.RowSides] = {}
-    moved: dict[str, bool] = {}
+    prepared = prepared or trace.Prepared()
     out = []
     for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
         try:
@@ -951,27 +950,17 @@ def run_stored(
             continue
         ran = Ran(proof, bucket_items)
         try:
-            if schools is None:
-                schools = network_schools(wh)
-            if comparison.id not in sides:
-                sides[comparison.id] = pipeline.row_sides(
-                    cfg,
-                    comparison,
-                    wh=wh,
-                    cube=cube,
-                    build=run.moment,
-                    schools=schools,
-                    fingerprints=run.fingerprints.get(comparison.id, {}),
-                )
+            if prepared.schools is None:
+                prepared.schools = network_schools(wh)
             ran.found = run_proof(
                 wh,
                 cfg,
                 comparison,
-                sides[comparison.id],
+                prepared.row_sides(cfg, comparison, run, wh, cube),
                 proof,
                 bucket_items,
                 run.moment,
-                moved,
+                prepared.moved,
             )
         except (
             pipeline.Refusal,

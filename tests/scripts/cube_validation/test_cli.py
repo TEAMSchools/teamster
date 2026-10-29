@@ -2511,7 +2511,7 @@ def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch)
     run = pipeline._run_from_json(json.loads(saved.read_text()))
     seen = {}
 
-    def traced(cfg, run_, *, wh, cube, manifest_path, max_minutes, skip):
+    def traced(cfg, run_, *, wh, cube, manifest_path, max_minutes, skip, prepared):
         seen["manifest"], seen["minutes"] = manifest_path, max_minutes
         found = {}
         for g in run_.applied.open:
