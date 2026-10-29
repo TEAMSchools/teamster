@@ -44,8 +44,10 @@ with
             _dbt_source_project,
             overgrad_student_id,
             university_id,
+            university_name,
             application_status,
             is_submitted,
+            is_early,
             due_date,
             updated_at,
 
@@ -63,7 +65,7 @@ with
 
             application_label || ' ' || urm_text as submitted_label,
         from application_labels
-        where is_submitted
+        where is_submitted and is_early
     ),
 
     submitted as (
@@ -91,7 +93,20 @@ with
                 distinct application_label, ', ' order by application_label
             ) as will_apply_early_applications,
         from application_labels
-        where application_status = 'Will Apply'
+        where application_status = 'Will Apply' and is_early
+        group by _dbt_source_project, overgrad_student_id
+    ),
+
+    no_deadline_type as (
+        select
+            _dbt_source_project,
+            overgrad_student_id,
+
+            string_agg(
+                distinct university_name, ', ' order by university_name
+            ) as submitted_no_deadline_type_applications,
+        from application_labels
+        where is_submitted and not is_early
         group by _dbt_source_project, overgrad_student_id
     ),
 
@@ -115,6 +130,8 @@ select
 
     wa.will_apply_early_applications,
     wa.earliest_will_apply_due_date,
+
+    nd.submitted_no_deadline_type_applications,
 
     s.last_name || ', ' || s.first_name as student_name,
     s.assigned_counselor__first_name
@@ -150,6 +167,10 @@ left join
     will_apply as wa
     on s.overgrad_student_id = wa.overgrad_student_id
     and s._dbt_source_project = wa._dbt_source_project
+left join
+    no_deadline_type as nd
+    on s.overgrad_student_id = nd.overgrad_student_id
+    and s._dbt_source_project = nd._dbt_source_project
 left join
     latest_application as la
     on s.overgrad_student_id = la.overgrad_student_id

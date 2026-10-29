@@ -10,6 +10,7 @@ with
             will_apply_early_applications,
             earliest_will_apply_due_date,
             submitted_early_applications,
+            submitted_no_deadline_type_applications,
 
             case
                 when is_ed_ea_flagged and submitted_early_count = 0
@@ -31,6 +32,7 @@ select
     will_apply_early_applications,
     earliest_will_apply_due_date,
     submitted_early_applications,
+    submitted_no_deadline_type_applications,
 
     case
         section

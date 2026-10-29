@@ -134,17 +134,17 @@ unit_tests:
       - input: ref("int_students__early_applications")
         format: sql
         rows: |
-          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'ED' as application_type, true as is_submitted, cast(95.8 as numeric) as urm_graduation_rate, true as is_full_need
+          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'ED' as application_type, true as is_submitted, cast(95.8 as numeric) as urm_graduation_rate, true as is_full_need, true as is_early
           union all
-          select 'kippcamden', 1, 102, 'Example College B', 'EA', true, cast(79.1 as numeric), true
+          select 'kippcamden', 1, 102, 'Example College B', 'EA', true, cast(79.1 as numeric), true, true
           union all
-          select 'kippcamden', 1, 103, 'Example College C', 'EA', true, cast(88.8 as numeric), true
+          select 'kippcamden', 1, 103, 'Example College C', 'EA', true, cast(88.8 as numeric), true, true
           union all
-          select 'kippcamden', 2, 104, 'Example College D', 'ED', true, cast(78.2 as numeric), true
+          select 'kippcamden', 2, 104, 'Example College D', 'ED', true, cast(78.2 as numeric), true, true
           union all
-          select 'kippcamden', 2, 102, 'Example College B', 'EA', true, cast(79.1 as numeric), true
+          select 'kippcamden', 2, 102, 'Example College B', 'EA', true, cast(79.1 as numeric), true, true
           union all
-          select 'kippcamden', 2, 105, 'Example College E', 'EA', true, cast(73.6 as numeric), true
+          select 'kippcamden', 2, 105, 'Example College E', 'EA', true, cast(73.6 as numeric), true, true
     expect:
       rows:
         - overgrad_student_id: 1
@@ -201,13 +201,15 @@ unit_tests:
       - input: ref("int_students__early_applications")
         format: sql
         rows: |
-          select 'kippnewark' as _dbt_source_project, 3 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'EA' as application_type, true as is_submitted, cast(65.0 as numeric) as urm_graduation_rate, true as is_full_need
+          select 'kippnewark' as _dbt_source_project, 3 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'EA' as application_type, true as is_submitted, cast(65.0 as numeric) as urm_graduation_rate, true as is_full_need, true as is_early
           union all
-          select 'kippnewark', 4, 102, 'Example College B', 'EA', true, cast(70.0 as numeric), true
+          select 'kippnewark', 4, 102, 'Example College B', 'EA', true, cast(70.0 as numeric), true, true
           union all
-          select 'kippnewark', 4, 103, 'Example College C', 'ED', true, cast(72.0 as numeric), true
+          select 'kippnewark', 4, 103, 'Example College C', 'ED', true, cast(72.0 as numeric), true, true
           union all
-          select 'kippnewark', 4, 104, 'Example College D', 'EA', true, cast(63.0 as numeric), true
+          select 'kippnewark', 4, 104, 'Example College D', 'EA', true, cast(63.0 as numeric), true, true
+          union all
+          select 'kippnewark', 3, 106, 'Example College E', cast(null as string), true, cast(90.0 as numeric), true, false
     expect:
       rows:
         - overgrad_student_id: 3
@@ -238,11 +240,11 @@ unit_tests:
       - input: ref("int_students__early_applications")
         format: sql
         rows: |
-          select 'kippnewark' as _dbt_source_project, 5 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'EA' as application_type, true as is_submitted, cast(92.0 as numeric) as urm_graduation_rate, true as is_full_need
+          select 'kippnewark' as _dbt_source_project, 5 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'EA' as application_type, true as is_submitted, cast(92.0 as numeric) as urm_graduation_rate, true as is_full_need, true as is_early
           union all
-          select 'kippnewark', 5, 102, 'Example College B', 'ED', true, cast(88.0 as numeric), true
+          select 'kippnewark', 5, 102, 'Example College B', 'ED', true, cast(88.0 as numeric), true, true
           union all
-          select 'kippnewark', 5, 103, 'Example College C', 'EA', true, cast(70.0 as numeric), true
+          select 'kippnewark', 5, 103, 'Example College C', 'EA', true, cast(70.0 as numeric), true, true
     expect:
       rows:
         - overgrad_student_id: 5
@@ -278,15 +280,15 @@ unit_tests:
       - input: ref("int_students__early_applications")
         format: sql
         rows: |
-          select 'kippcamden' as _dbt_source_project, 6 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'ED' as application_type, true as is_submitted, cast(80.0 as numeric) as urm_graduation_rate, true as is_full_need
+          select 'kippcamden' as _dbt_source_project, 6 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'ED' as application_type, true as is_submitted, cast(80.0 as numeric) as urm_graduation_rate, true as is_full_need, true as is_early
           union all
-          select 'kippcamden', 7, 102, 'Example College B', 'ED', true, cast(75.0 as numeric), true
+          select 'kippcamden', 7, 102, 'Example College B', 'ED', true, cast(75.0 as numeric), true, true
           union all
-          select 'kippcamden', 7, 103, 'Example College C', 'EA', true, cast(null as numeric), true
+          select 'kippcamden', 7, 103, 'Example College C', 'EA', true, cast(null as numeric), true, true
           union all
-          select 'kippcamden', 8, 104, 'Example College D', 'ED', true, cast(74.9 as numeric), true
+          select 'kippcamden', 8, 104, 'Example College D', 'ED', true, cast(74.9 as numeric), true, true
           union all
-          select 'kippcamden', 9, 105, 'Example College E', 'ED', true, cast(90.0 as numeric), true
+          select 'kippcamden', 9, 105, 'Example College E', 'ED', true, cast(90.0 as numeric), true, true
     expect:
       rows:
         - overgrad_student_id: 6

@@ -37,6 +37,9 @@ models:
       - name: section_label
         data_type: string
         description: Readable section heading for the sheet.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
         description: Student name as last name, first name.
@@ -76,6 +79,15 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: submitted_no_deadline_type_applications
+        data_type: string
+        description:
+          Submitted applications whose deadline type is missing in Overgrad.
+          They cannot count as early until a counselor fills in the deadline
+          type, so a section A senior listed here may have applied early.
+        config:
+          meta:
+            contains_pii: true
 
 unit_tests:
   - name: test_rpt_gsheets__kfwd_early_apps_not_submitted
@@ -88,13 +100,13 @@ unit_tests:
       - input: ref("int_students__early_applications_rollup")
         format: sql
         rows: |
-          select 'kippnewark' as _dbt_source_project, 1 as overgrad_student_id, 'A, Student' as student_name, 'KIPP Newark Lab High School' as high_school, 'Counselor Two' as counselor_name, '3.00-3.49' as gpa_band, true as is_ed_ea_flagged, 0 as submitted_early_count, 'Example College A (EA)' as will_apply_early_applications, date '2026-11-01' as earliest_will_apply_due_date, cast(null as string) as submitted_early_applications
+          select 'kippnewark' as _dbt_source_project, 1 as overgrad_student_id, 'A, Student' as student_name, 'KIPP Newark Lab High School' as high_school, 'Counselor Two' as counselor_name, '3.00-3.49' as gpa_band, true as is_ed_ea_flagged, 0 as submitted_early_count, 'Example College A (EA)' as will_apply_early_applications, date '2026-11-01' as earliest_will_apply_due_date, cast(null as string) as submitted_early_applications, 'Example College H' as submitted_no_deadline_type_applications
           union all
-          select 'kippnewark', 2, 'B, Student', 'KIPP Newark Lab High School', 'Counselor Two', '3.00-3.49', true, 1, cast(null as string), cast(null as date), 'Example College B (EA) 70.0%'
+          select 'kippnewark', 2, 'B, Student', 'KIPP Newark Lab High School', 'Counselor Two', '3.00-3.49', true, 1, cast(null as string), cast(null as date), 'Example College B (EA) 70.0%', cast(null as string)
           union all
-          select 'kippnewark', 3, 'C, Student', 'KIPP Newark Collegiate Academy', 'Counselor Three', '3.50-3.74', false, 1, cast(null as string), cast(null as date), 'Example College C (EA) 73.6%'
+          select 'kippnewark', 3, 'C, Student', 'KIPP Newark Collegiate Academy', 'Counselor Three', '3.50-3.74', false, 1, cast(null as string), cast(null as date), 'Example College C (EA) 73.6%', cast(null as string)
           union all
-          select 'kippnewark', 4, 'D, Student', 'KIPP Newark Collegiate Academy', 'Counselor Three', '3.50-3.74', false, 0, cast(null as string), cast(null as date), cast(null as string)
+          select 'kippnewark', 4, 'D, Student', 'KIPP Newark Collegiate Academy', 'Counselor Three', '3.50-3.74', false, 0, cast(null as string), cast(null as date), cast(null as string), cast(null as string)
     expect:
       rows:
         - overgrad_student_id: 1
@@ -102,8 +114,10 @@ unit_tests:
           will_apply_early_applications: Example College A (EA)
           earliest_will_apply_due_date: 2026-11-01
           submitted_early_applications: null
+          submitted_no_deadline_type_applications: Example College H
         - overgrad_student_id: 3
           section: B
           will_apply_early_applications: null
           earliest_will_apply_due_date: null
           submitted_early_applications: Example College C (EA) 73.6%
+          submitted_no_deadline_type_applications: null

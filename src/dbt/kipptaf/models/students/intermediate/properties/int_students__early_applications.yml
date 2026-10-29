@@ -4,9 +4,12 @@ models:
       One row per Overgrad college application whose deadline type is early
       (early action, early action II, early decision, early decision II, or
       single-choice early action), across every graduating class and school.
-      Classifies each application as ED or EA, flags whether it was submitted,
-      and attaches the college's 6-year URM graduation rate from the Salesforce
-      account matched on IPEDS id. Feeds the KIPP Forward early apps tracker.
+      Also keeps applications with no deadline type, with is_early false, so the
+      tracker can show counselors a submitted application that cannot count as
+      early until its deadline type is filled in. Classifies each early
+      application as ED or EA, flags whether it was submitted, and attaches the
+      college's 6-year URM graduation rate from the Salesforce account matched
+      on IPEDS id. Feeds the KIPP Forward early apps tracker.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -31,34 +34,63 @@ models:
       - name: university_name
         data_type: string
         description: Name of the college applied to, from Overgrad.
+        config:
+          meta:
+            contains_pii: true
       - name: due_date_type
         data_type: string
-        description: Overgrad deadline type of the application.
+        description:
+          Overgrad deadline type of the application. Null when not filled in.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_early
+        data_type: boolean
+        description:
+          True when the deadline type is one of the 5 early types. False when
+          the deadline type is missing.
+        config:
+          meta:
+            contains_pii: true
       - name: application_type
         data_type: string
         description:
           ED for early decision and early decision II deadlines; EA for early
           action, early action II, and single-choice early action deadlines.
+          Null when the deadline type is missing.
+        config:
+          meta:
+            contains_pii: true
       - name: due_date
         data_type: date
         description: Application deadline date from Overgrad.
+        config:
+          meta:
+            contains_pii: true
       - name: application_status
         data_type: string
         description:
           Overgrad application status, for example Applied or Will Apply.
+        config:
+          meta:
+            contains_pii: true
       - name: is_submitted
         data_type: boolean
         description:
           True when the status is Applied or later (Accepted, Denied, Deferred,
           Waitlisted, Enrolled). Will Apply, Withdrew, and Did Not Apply are not
           submitted.
+        config:
+          meta:
+            contains_pii: true
       - name: urm_graduation_rate
         data_type: numeric
         description:
           Adjusted 6-year graduation rate for underrepresented minority
           students, on a 0 to 100 scale, from the Salesforce account whose NCES
-          id matches the college's IPEDS id. Null when no account matches or the
-          account has no rate.
+          id matches the college's IPEDS id. A college with 2 Salesforce
+          accounts gets 1 rate, the higher of the 2. Null when no account
+          matches or the account has no rate.
       - name: is_full_need
         data_type: boolean
         description:
@@ -73,9 +105,10 @@ unit_tests:
   - name: test_int_students__early_applications_classification
     model: int_students__early_applications
     description:
-      Keeps only early deadline types, labels ED and EA, marks Applied and
-      Accepted as submitted but not Will Apply or Withdrew, and joins the URM
-      rate on IPEDS id.
+      Keeps early deadline types and missing deadline types, drops regular and
+      priority, labels ED and EA, marks Applied and Accepted as submitted but
+      not Will Apply or Withdrew, and joins 1 URM rate per IPEDS id even when 2
+      Salesforce accounts share it.
     given:
       - input: ref("int_overgrad__admissions")
         rows:
@@ -139,8 +172,20 @@ unit_tests:
             status: Applied
             due_date__date: 2026-12-01
             updated_at: 2026-10-28T13:00:00Z
+          - id: 7
+            student__id: 10
+            _dbt_source_project: kippnewark
+            university__id: 700
+            university__ipeds_id: 777
+            university_name: Example College G
+            due_date__type: null
+            status: Applied
+            due_date__date: null
+            updated_at: 2026-10-28T13:00:00Z
       - input: ref("stg_kippadb__account")
         rows:
+          - nces_id: 111
+            adjusted_6_year_minority_graduation_rate: 80.0
           - nces_id: 111
             adjusted_6_year_minority_graduation_rate: 80.0
           - nces_id: 333
@@ -148,22 +193,32 @@ unit_tests:
     expect:
       rows:
         - admission_id: 1
+          is_early: true
           application_type: ED
           is_submitted: true
           urm_graduation_rate: 80.0
           is_full_need: true
         - admission_id: 2
+          is_early: true
           application_type: ED
           is_submitted: false
           urm_graduation_rate: null
           is_full_need: true
         - admission_id: 3
+          is_early: true
           application_type: EA
           is_submitted: true
           urm_graduation_rate: null
           is_full_need: true
         - admission_id: 4
+          is_early: true
           application_type: EA
           is_submitted: false
+          urm_graduation_rate: null
+          is_full_need: true
+        - admission_id: 7
+          is_early: false
+          application_type: null
+          is_submitted: true
           urm_graduation_rate: null
           is_full_need: true

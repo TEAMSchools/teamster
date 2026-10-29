@@ -89,6 +89,15 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: submitted_no_deadline_type_applications
+        data_type: string
+        description:
+          Submitted applications whose Overgrad deadline type is missing, as
+          college names, alphabetical and comma-separated. They cannot count as
+          early until a counselor fills in the deadline type. Null when none.
+        config:
+          meta:
+            contains_pii: true
       - name: latest_overgrad_updated_at
         data_type: timestamp
         description:
@@ -174,17 +183,19 @@ unit_tests:
       - input: ref("int_students__early_applications")
         format: sql
         rows: |
-          select 'kippcamden' as _dbt_source_project, 11 as admission_id, 1 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'early_decision' as due_date_type, 'ED' as application_type, date '2026-11-01' as due_date, 'Applied' as application_status, true as is_submitted, cast(95.8 as numeric) as urm_graduation_rate, true as is_full_need, timestamp '2026-10-28 13:00:00' as updated_at
+          select 'kippcamden' as _dbt_source_project, 11 as admission_id, 1 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'early_decision' as due_date_type, 'ED' as application_type, date '2026-11-01' as due_date, 'Applied' as application_status, true as is_submitted, cast(95.8 as numeric) as urm_graduation_rate, true as is_full_need, timestamp '2026-10-28 13:00:00' as updated_at, true as is_early
           union all
-          select 'kippcamden', 12, 1, 102, 'Example College B', 'early_action', 'EA', date '2026-11-01', 'Applied', true, cast(79.1 as numeric), true, timestamp '2026-10-27 13:00:00'
+          select 'kippcamden', 12, 1, 102, 'Example College B', 'early_action', 'EA', date '2026-11-01', 'Applied', true, cast(79.1 as numeric), true, timestamp '2026-10-27 13:00:00', true
           union all
-          select 'kippnewark', 31, 3, 103, 'Example College C', 'early_action', 'EA', date '2026-11-01', 'Withdrew', false, cast(70 as numeric), true, timestamp '2026-10-01 13:00:00'
+          select 'kippnewark', 31, 3, 103, 'Example College C', 'early_action', 'EA', date '2026-11-01', 'Withdrew', false, cast(70 as numeric), true, timestamp '2026-10-01 13:00:00', true
           union all
-          select 'kippnewark', 32, 3, 104, 'Example College D', 'early_action', 'EA', date '2026-12-01', 'Will Apply', false, cast(70 as numeric), true, timestamp '2026-10-01 13:00:00'
+          select 'kippnewark', 32, 3, 104, 'Example College D', 'early_action', 'EA', date '2026-12-01', 'Will Apply', false, cast(70 as numeric), true, timestamp '2026-10-01 13:00:00', true
           union all
-          select 'kippnewark', 33, 3, 105, 'Example College E', 'early_action', 'EA', date '2026-11-01', 'Will Apply', false, null, true, timestamp '2026-10-01 13:00:00'
+          select 'kippnewark', 33, 3, 105, 'Example College E', 'early_action', 'EA', date '2026-11-01', 'Will Apply', false, null, true, timestamp '2026-10-01 13:00:00', true
           union all
-          select 'kippcamden', 41, 4, 106, 'Example College F', 'early_action', 'EA', date '2026-11-01', 'Applied', true, cast(70 as numeric), true, timestamp '2026-10-01 13:00:00'
+          select 'kippcamden', 41, 4, 106, 'Example College F', 'early_action', 'EA', date '2026-11-01', 'Applied', true, cast(70 as numeric), true, timestamp '2026-10-01 13:00:00', true
+          union all
+          select 'kippnewark', 34, 3, 107, 'Example College G', cast(null as string), cast(null as string), cast(null as date), 'Applied', true, cast(75 as numeric), true, timestamp '2026-10-01 13:00:00', false
     expect:
       rows:
         - overgrad_student_id: 1
@@ -196,6 +207,7 @@ unit_tests:
             Example College A (ED) 95.8%, Example College B (EA) 79.1%
           will_apply_early_applications: null
           earliest_will_apply_due_date: null
+          submitted_no_deadline_type_applications: null
           latest_overgrad_updated_at: 2026-10-28 13:00:00
         - overgrad_student_id: 2
           gpa_band: No GPA
@@ -205,6 +217,7 @@ unit_tests:
           submitted_early_applications: null
           will_apply_early_applications: null
           earliest_will_apply_due_date: null
+          submitted_no_deadline_type_applications: null
           latest_overgrad_updated_at: 2026-10-20 00:00:00
         - overgrad_student_id: 3
           gpa_band: 3.00-3.49
@@ -215,6 +228,7 @@ unit_tests:
           will_apply_early_applications:
             Example College D (EA), Example College E (EA)
           earliest_will_apply_due_date: 2026-11-01
+          submitted_no_deadline_type_applications: Example College G
           latest_overgrad_updated_at: 2026-10-20 00:00:00
         - overgrad_student_id: 4
           gpa_band: 3.50-3.74
@@ -224,6 +238,7 @@ unit_tests:
           submitted_early_applications: Example College F (EA) 70.0%
           will_apply_early_applications: null
           earliest_will_apply_due_date: null
+          submitted_no_deadline_type_applications: null
           latest_overgrad_updated_at: 2026-10-20 00:00:00
         - overgrad_student_id: 5
           gpa_band: 3.75+
@@ -233,6 +248,7 @@ unit_tests:
           submitted_early_applications: null
           will_apply_early_applications: null
           earliest_will_apply_due_date: null
+          submitted_no_deadline_type_applications: null
           latest_overgrad_updated_at: 2026-10-20 00:00:00
 
   - name: test_int_students__early_applications_rollup_distinct_colleges
@@ -257,9 +273,9 @@ unit_tests:
       - input: ref("int_students__early_applications")
         format: sql
         rows: |
-          select 'kippcamden' as _dbt_source_project, 11 as admission_id, 1 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'early_action' as due_date_type, 'EA' as application_type, date '2026-11-01' as due_date, 'Applied' as application_status, true as is_submitted, cast(70 as numeric) as urm_graduation_rate, true as is_full_need, timestamp '2026-10-28 13:00:00' as updated_at
+          select 'kippcamden' as _dbt_source_project, 11 as admission_id, 1 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'early_action' as due_date_type, 'EA' as application_type, date '2026-11-01' as due_date, 'Applied' as application_status, true as is_submitted, cast(70 as numeric) as urm_graduation_rate, true as is_full_need, timestamp '2026-10-28 13:00:00' as updated_at, true as is_early
           union all
-          select 'kippcamden', 12, 1, 101, 'Example College A', 'early_action', 'EA', date '2026-11-01', 'Applied', true, cast(70 as numeric), true, timestamp '2026-10-28 13:00:00'
+          select 'kippcamden', 12, 1, 101, 'Example College A', 'early_action', 'EA', date '2026-11-01', 'Applied', true, cast(70 as numeric), true, timestamp '2026-10-28 13:00:00', true
     expect:
       rows:
         - overgrad_student_id: 1

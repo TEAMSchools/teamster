@@ -89,7 +89,7 @@ with
             max(urm_graduation_rate) as urm_graduation_rate,
             logical_and(is_full_need) as is_full_need,
         from {{ ref("int_students__early_applications") }}
-        where is_submitted
+        where is_submitted and is_early
         group by
             _dbt_source_project, overgrad_student_id, university_id, application_type
     ),
