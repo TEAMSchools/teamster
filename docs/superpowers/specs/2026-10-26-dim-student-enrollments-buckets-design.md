@@ -133,3 +133,54 @@ yields here. `nj_` is dropped because Miami has buckets too.
   all 1,027, but `sources-kippmiami.yml` deliberately omits archive enrollment
   stints, so using it needs a reason. Acceptance: every student maps.
 - Cube titles and which views list the new members explicitly.
+
+## Revision 2026-10-29
+
+The DDI Suite builder inventory
+([#6192](https://github.com/TEAMSchools/teamster/issues/6192)) adds 1 column to
+this design and corrects 1 non-goal.
+
+### `bucket_subject` on `dim_assessments`
+
+DDI Suite filters by 1 "Student Tier" field on 32 sheets, and that filter
+applies each score's own subject. Separate `ela_bucket` and `math_bucket`
+columns cannot do that in 1 filter when a query mixes subjects.
+
+- Add `bucket_subject` to `dim_assessments`: `Reading`, `Math`, or null, from
+  the assessment's subject.
+- Add a `bucket` dimension to the `student_assessment_scores` cube. It reads
+  `ela_bucket` when `bucket_subject` is `Reading` and `math_bucket` when it is
+  `Math`.
+- The mapping lives in dbt because `academic_subject` is an open vocabulary, and
+  1 value carries a trailing space. A CASE list in Cube YAML would drift.
+- The mapping matches the dashboards: K-8 `Text Study` and `Mathematics`, and
+  the high-school English and math courses that the dashboards reach through
+  credit types `ENG` and `MATH`. Middle-school `Algebra I` gets no tier in the
+  dashboards today
+  ([#6191](https://github.com/TEAMSchools/teamster/issues/6191)). Decide its
+  mapping in the PR and record the choice.
+- No Cube dimension in `src/cube/model` reads a joined cube's column yet.
+  Compile the `bucket` dimension before the Cube PR relies on it.
+
+A separate bucket cube at student x year x subject gives the same numbers. It
+was set aside because it needs a new key on the scores fact and does nothing for
+ADA.
+
+### Miami in the dashboards
+
+The first non-goal says the dashboards gain Miami's archived buckets. Only the
+K-8 rows of `rpt_tableau__assessment_dashboard` do. `rpt_tableau__ddi_dashboard`
+and the grade 9-12 rows of `rpt_tableau__assessment_dashboard` leave Miami's
+tier blank, because their tier join reaches the student's section through
+`studentid`, which is null for Miami.
+[#6191](https://github.com/TEAMSchools/teamster/issues/6191) fixes the extracts.
+Until then, Cube shows Miami's stored bucket, and the DDI Suite validation
+records the difference as accepted.
+
+### Verification added
+
+- A simulation of the 2 Module Dashboard bucket sheets for 2026-27 Literacy
+  matched the dashboard in 93 of 105 cells. Every other cell traces to Miami's
+  blank dashboard tier or to score rows that only 1 side has. Where both sides
+  have the student, the bucket matched every time. Rerun the comparison on the
+  validation branch after the Cube PR.
