@@ -63,12 +63,13 @@ overall run failed. Use the `byRun` grouping to identify the actual failing run,
 then cross-reference `step_01_failed_runs.failures` for the run-level root
 cause. `latestRun` is the latest run that planned the asset, so a later
 successful run clears the flag; the collector does not fetch materialization
-times. Before reporting an asset as still degraded, check with
-`mcp__dagster__get_asset_materializations` that it has no materialization after
-the failed run started. `materializationType` is the dbt materialization, null
-for non-dbt assets (counted as `non-dbt` in `byMaterializationType`). A plain
-dbt view re-runs only on a code change (a `union_relations` view also re-runs
-after a parent's code change), so a view in a stale cluster stays flagged until
+times. Before reporting an in-window cluster as still degraded, check one of its
+assets with `mcp__dagster__get_asset_materializations`: a materialization from a
+later run means the cluster recovered. A materialization from the failed run
+itself does not. `materializationType` is the dbt materialization, null for
+non-dbt assets (counted as `non-dbt` in `byMaterializationType`). A plain dbt
+view re-runs only on a code change (a `union_relations` view also re-runs after
+a parent's code change), so a view in a stale cluster stays flagged until
 someone materializes it by hand, even when its view in BigQuery works.
 
 Per-step error: if a step fails, its key holds `{"error": "..."}` instead of the
@@ -327,9 +328,9 @@ seen before the window; leave it out of the report.
   Issues, not Impact. Their runs predate `step_01`, so list them by run with
   `byMaterializationType` instead of verifying each model.
 
-**Actions**: No action (transient + retry success), Monitor
-(recurring/emerging), Investigate (retry failure), Escalate (sustained platform
-issue).
+**Actions**: No action (transient + retry success), Monitor (recurring/emerging,
+or a retry still `STARTED` when the collector ran), Investigate (retry failure),
+Escalate (sustained platform issue).
 
 **Known self-resolving alerts**: kipptaf `dagster-step-*` CPU-limit alerts
 during import self-resolve in about a minute (limits in

@@ -231,7 +231,7 @@ def _print_details(data: dict) -> None:
             print(
                 f"  failed-run pod: {e.get('timestampEt') or e.get('timestamp')} "
                 f"{e.get('reason')} {_pod_kind(e.get('podName'))} "
-                f"run={e.get('runId')}{step}"
+                f"run={e.get('runId')}{step} | {(e.get('message') or '')[:80]}"
             )
     for e in pods:
         if _pod_kind(e.get("podName")) == "other":
