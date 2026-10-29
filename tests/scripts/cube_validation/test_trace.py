@@ -748,3 +748,43 @@ def test_a_skipped_pair_search_says_why(duck, monkeypatch):
 
     assert not found.proven
     assert "pair search skipped: 1 pairs" in found.evidence()[-1]
+
+
+# --- fix round 3: a filter that feeds a row pick -----------------------------------
+
+PICKED = (
+    "WITH f AS (SELECT student, item, school, d FROM `teamster-332318.d.src` "
+    "WHERE x), "
+    "r AS (SELECT student, item, school, ROW_NUMBER() OVER "
+    "(PARTITION BY student ORDER BY d DESC) AS rn FROM f) "
+    "SELECT student, item, school FROM r WHERE rn = 1"
+)
+SRC = "student BIGINT, item VARCHAR, school VARCHAR, d BIGINT, x BOOLEAN"
+
+
+def test_a_filter_whose_relaxing_lets_another_row_win_a_pick_is_no_cause(duck):
+    # Student 1's pick keeps b. Relaxing `x` lets a later junk (1, a) win the
+    # pick: (1, a) "comes back", but the pick, not `x`, dropped the real one.
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table(
+        "src",
+        SRC,
+        [(1, "a", "X", 1, True), (1, "b", "X", 2, True), (1, "a", "X", 3, False)],
+    )
+
+    found = _trace(duck, PICKED, [_group(1)])[trace.item_key(_group(1))]
+
+    assert not found.proven and not found.steps
+    assert "a row pick follows f: x; another row could stand in" in found.evidence()[-1]
+
+
+def test_a_filter_ahead_of_a_pick_with_1_candidate_is_still_proven(duck):
+    # Student 2's only row fails `x`: relaxing it brings back that row, the
+    # only one its pick can keep.
+    _cube_rows(duck, [(2, "c", "X")])
+    duck.table("src", SRC, [(2, "c", "X", 1, False)])
+
+    found = _trace(duck, PICKED, [_group(1)])[trace.item_key(_group(1))]
+
+    assert found.proven
+    assert [c["label"] for c in found.cause()] == ["f: x"]

@@ -1,5 +1,5 @@
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.sqlsteps import LABEL_CHARS, Query
+from cube_validation.sqlsteps import LABEL_CHARS, Query, carry
 
 # Shaped like the DDI dashboard's rows: CTEs, an INNER JOIN, a LEFT JOIN a later
 # WHERE requires, a `module_type` conjunct, a LEFT JOIN nothing needs, a dead
@@ -410,3 +410,39 @@ def test_relaxed_all_also_drops_row_picks():
     out = _flat(Query(sql, frozenset({"student"}), "student").relaxed_all())
 
     assert "rn = 1" not in out
+
+
+PICK = (
+    "WITH f AS (SELECT student, item, d FROM `teamster-332318.d.src` WHERE x), "
+    "r AS (SELECT student, item, ROW_NUMBER() OVER "
+    "(PARTITION BY student ORDER BY d DESC) AS rn FROM f) "
+)
+
+
+def test_only_a_step_ahead_of_a_pick_is_marked():
+    q = Query(
+        PICK + "SELECT student, item FROM r WHERE rn = 1 AND item <> 'z'",
+        frozenset({"student", "item"}),
+        "student",
+    )
+    before = next(s for s in q.steps("cube") if s.label == "f: x")
+    after = next(s for s in q.steps("cube") if "<> 'z'" in s.label)
+
+    sql, marks = q.relaxed_marked([before])
+
+    assert marks == ["__cand0"]
+    assert "COUNT(*) OVER (PARTITION BY student) AS __cand0" in sql
+    assert q.relaxed_marked([after])[1] == []
+
+
+def test_a_count_an_aggregate_would_swallow_is_not_carried():
+    q = Query(
+        PICK + "SELECT student, MAX(item) AS item FROM r WHERE rn = 1 GROUP BY student",
+        frozenset({"student", "item"}),
+        "student",
+    )
+    step = next(s for s in q.steps("cube") if s.label == "f: x")
+
+    sql, marks = q.relaxed_marked([step])
+
+    assert carry(sql, marks) is None

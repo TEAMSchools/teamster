@@ -37,12 +37,21 @@ from sqlglot.errors import SqlglotError
 
 from . import compare, pipeline
 from .bq import JOB_ID, CostCapError, Warehouse
-from .compare import DUPLICATE, MANY, NONE, PRESENT, UNREPRODUCED, Group, many_ids
+from .compare import (
+    DUPLICATE,
+    MANY,
+    NONE,
+    PRESENT,
+    STAND_IN,
+    UNREPRODUCED,
+    Group,
+    many_ids,
+)
 from .config import Comparison, ViewConfig
 from .cube_client import Cube, network_schools
 from .moment import Build, changed_between
 from .report import SUPPRESSED, RunResult, suppress
-from .sqlsteps import Query, Step, TableRef
+from .sqlsteps import Query, Step, TableRef, carry
 from .timetravel import PROJECT, repin
 
 MAX_LEVELS = 3
@@ -100,7 +109,9 @@ class ItemTrace:
     together (`a+b`). The rest are unattributed: `many` recovered by steps of
     several scopes, `pairs_many` by several pairs, `needs_more` present but
     recovered by no single step or pair, `skipped` present but with more
-    pairs than `MAX_PAIRS` to search, `unreproduced` already returned by
+    pairs than `MAX_PAIRS` to search, `stand_in` recovered only where a row
+    pick after the step held another row that could stand in, `unreproduced`
+    already returned by
     the unrelaxed SQL, `duplicates` a grain the other side holds twice,
     `unknown` behind a query that failed or a stop, and `none` missing below
     the deepest level, under `below`. `recovered` counts every row each
@@ -116,6 +127,7 @@ class ItemTrace:
     pairs_many: int = 0
     needs_more: Counter = field(default_factory=Counter)
     skipped: Counter = field(default_factory=Counter)
+    stand_in: Counter = field(default_factory=Counter)
     unreproduced: Counter = field(default_factory=Counter)
     duplicates: int = 0
     unknown: int = 0
@@ -148,6 +160,10 @@ class ItemTrace:
         out += [
             (f"pair search skipped: {why}", n)
             for why, n in sorted(self.skipped.items())
+        ]
+        out += [
+            (f"a row pick follows {at}; another row could stand in", n)
+            for at, n in sorted(self.stand_in.items())
         ]
         out += [
             (f"already returned by the {t} SQL with no step neutralized", n)
@@ -631,8 +647,28 @@ class _Bucket:
             )
             for step in frame.query.steps(side.side, frame.name):
                 self.steps[step.id] = step
-                out.append((step.id, side.rows(frame.full(frame.query.relaxed(step)))))
+                out += self._guarded(frame, [step], step.id)
         return out
+
+    def _guarded(self, frame: _Frame, steps: list[Step], step_id: str):
+        """The variants for `steps` neutralized together, split at any row pick.
+
+        Where a row pick follows the steps, a row counts for them only when
+        its pick held 1 candidate; the rest come back under a `STAND_IN` id.
+        Where the count cannot be carried to the output, every row does.
+        """
+        sql, marks = frame.query.relaxed_marked(steps)
+        full = frame.full(sql)
+        if not marks:
+            return [(step_id, self.side.rows(full))]
+        split = carry(full, marks)
+        if split is None:
+            return [(f"{STAND_IN}{step_id}", self.side.rows(full))]
+        one, several = split
+        return [
+            (step_id, self.side.rows(one)),
+            (f"{STAND_IN}{step_id}", self.side.rows(several)),
+        ]
 
     def first_queries(self) -> list[str]:
         """The level-0 queries, split as they will run, to price up front."""
@@ -687,6 +723,10 @@ class _Bucket:
 
     def _label(self, ids: list[str], joiner: str) -> str:
         return joiner.join(self.steps[i].label for i in ids)
+
+    def _cause_label(self, step_id: str) -> str:
+        """A step's or a pair's (`a+b`) label."""
+        return self._label(step_id.split("+"), " + ")
 
     def _fail(self, in_play: dict[tuple, int]) -> dict[tuple, int]:
         for key, n in in_play.items():
@@ -748,6 +788,8 @@ class _Bucket:
                         item.duplicates += n if level == 0 else 0
                     elif step_id.startswith(UNREPRODUCED):
                         item.unreproduced[step_id[1:]] += n
+                    elif step_id.startswith(STAND_IN):
+                        item.stand_in[self._cause_label(step_id[1:])] += n
                     elif step_id.startswith(MANY):
                         ids = many_ids(step_id)
                         if len({self.steps[i].scope for i in ids}) == 1:
@@ -837,11 +879,7 @@ class _Bucket:
                 self.out[key].needs_more[where] += n
             return
         variants = [
-            (
-                f"{a.id}+{b.id}",
-                self.side.rows(frame.full(frame.query.relaxed_many([a, b]))),
-            )
-            for a, b in pairs
+            v for a, b in pairs for v in self._guarded(frame, [a, b], f"{a.id}+{b.id}")
         ]
         got = self.runner.level(variants, exclude, f"{depth}, step pairs", [gate])
         if got is None:
@@ -857,6 +895,8 @@ class _Bucket:
                     item.needs_more[where] += n
                 elif step_id.startswith(MANY):
                     item.pairs_many += n
+                elif step_id.startswith(STAND_IN):
+                    item.stand_in[self._cause_label(step_id[1:])] += n
                 elif step_id != DUPLICATE:
                     a, b = step_id.split("+", 1)
                     item.steps[step_id] += n

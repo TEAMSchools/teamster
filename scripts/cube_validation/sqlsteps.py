@@ -314,6 +314,13 @@ def _picked_by(source: _Source, name: str, depth: int = 0) -> bool:
 
     A `SELECT *` passes the column through, so its own source is read too.
     """
+    return _pick_window(source, name, depth) is not None
+
+
+def _pick_window(
+    source: _Source, name: str, depth: int = 0
+) -> tuple[exp.Select, exp.Window] | None:
+    """The select computing `source`'s pick column `name`, and its window."""
     node = source.node
     if isinstance(node, exp.Table):
         cte = _cte_for(node)
@@ -337,16 +344,195 @@ def _picked_by(source: _Source, name: str, depth: int = 0) -> bool:
                 and isinstance(inner, exp.Window)
                 and isinstance(inner.this, _PICKS)
             ):
-                return True
+                return q, inner
         star = any(
             isinstance(e, exp.Star)
             or (isinstance(e, exp.Column) and isinstance(e.this, exp.Star))
             for e in q.expressions
         )
         if star and depth < 10:
-            if any(_picked_by(x, name, depth + 1) for x in _sources(q)):
+            for x in _sources(q):
+                found = _pick_window(x, name, depth + 1)
+                if found is not None:
+                    return found
+    return None
+
+
+def _picks(tree: exp.Expression, live) -> list[tuple[exp.Select, exp.Window]]:
+    """Every live row pick: the select its window runs in, and the window."""
+    out = []
+    for s, _ in live.values():
+        sources = _sources(s)
+        where = s.args.get("where")
+        for c in _conjuncts(where.this) if where is not None else []:
+            if not _is_row_pick(c, s, sources):
+                continue
+            col = c.this if isinstance(c.this, exp.Column) else c.expression
+            for x in sources:
+                if not col.table or x.alias == col.table:
+                    found = _pick_window(x, col.name)
+                    if found is not None:
+                        out.append(found)
+                        break
+        qualify = s.args.get("qualify")
+        if qualify is not None:
+            for w in qualify.find_all(exp.Window):
+                if isinstance(w.this, _PICKS):
+                    out.append((s, w))
+    return out
+
+
+def _feeds(step_select: exp.Select, target: exp.Select, depth: int = 0) -> bool:
+    """`step_select` is `target`, or among the queries `target` reads."""
+    if step_select is target:
+        return True
+    if depth > 20:
+        return False
+    for x in _sources(target):
+        node = x.node
+        if isinstance(node, exp.Table):
+            cte = _cte_for(node)
+            node = cte.this if cte is not None else None
+        if node is None:
+            continue
+        for q in node.find_all(exp.Select):
+            if q is step_select:
+                return True
+        if isinstance(node, exp.Subquery):
+            node = node.this
+        branches = [node]
+        while branches:
+            b = branches.pop()
+            while isinstance(b, exp.Subquery):
+                b = b.this
+            if isinstance(b, exp.SetOperation):
+                branches += [b.this, b.expression]
+            elif isinstance(b, exp.Select) and _feeds(step_select, b, depth + 1):
                 return True
     return False
+
+
+def carry(sql: str, marks: list[str]) -> tuple[str, str] | None:
+    """Split a variant's rows by how many rows each one's pick could keep.
+
+    Each mark is a `COUNT(*) OVER (PARTITION BY <the pick's partition>)`
+    column `relaxed_marked` added where a pick's window runs. It is carried
+    up through every query that reads it to the output.
+
+    Returns:
+        The rows whose every pick had exactly 1 candidate, and the rest, both
+        with the variant's own columns; None when a query on the way (an
+        aggregate, a subquery outside FROM) cannot carry the count.
+    """
+    tree = sqlglot.parse_one(sql, dialect=DIALECT)
+    for mark in marks:
+        start = next(
+            (
+                q
+                for q in tree.find_all(exp.Select)
+                if any(e.alias == mark for e in q.expressions)
+            ),
+            None,
+        )
+        if start is None or not _carry_up(tree, start, mark, 0):
+            return None
+    body = tree.sql(dialect=DIALECT)
+    cols = ", ".join(marks)
+    one = " AND ".join(f"COALESCE({m}, 1) = 1" for m in marks)
+    # trunk-ignore(bandit/B608): the marks are this module's own column names
+    head = f"SELECT * EXCEPT ({cols}) FROM (\n{body}\n) AS __picked WHERE "
+    return head + one, head + f"NOT ({one})"
+
+
+def _projects(q: exp.Select, alias: str, mark: str) -> bool:
+    """`q`'s output already holds `mark`, through `*` or by name."""
+    for e in q.expressions:
+        if isinstance(e, exp.Star) or e.alias_or_name == mark:
+            return True
+        if isinstance(e, exp.Column) and isinstance(e.this, exp.Star):
+            if e.table in ("", alias):
+                return True
+    return False
+
+
+def _add(q: exp.Select, alias: str, mark: str) -> bool:
+    """Pass `alias.mark` through `q`'s output; False where it cannot go."""
+    if _projects(q, alias, mark):
+        return True
+    if q.args.get("group") is not None or any(
+        a.find_ancestor(exp.Window) is None
+        for e in q.expressions
+        for a in e.find_all(exp.AggFunc)
+    ):
+        return False
+    q.append("expressions", exp.alias_(exp.column(mark, table=alias), mark))
+    return True
+
+
+def _carry_up(tree: exp.Expression, q: exp.Expression, mark: str, depth: int) -> bool:
+    """Carry `mark` from query `q`'s output up to the tree's output."""
+    if q is tree or depth > 30:
+        return q is tree
+    parent = q.parent
+    while isinstance(parent, exp.Paren):
+        parent = parent.parent
+    if isinstance(parent, exp.SetOperation):
+        # A UNION matches columns by position: every other branch gets NULL.
+        top = parent
+        while isinstance(top.parent, exp.SetOperation):
+            top = top.parent
+        for b in _branches(top):
+            if b is not q and not _projects(b, "", mark):
+                if not _add_null(b, mark):
+                    return False
+        return _carry_up(tree, top, mark, depth + 1)
+    if isinstance(parent, exp.Subquery):
+        if isinstance(parent.parent, exp.SetOperation):
+            return _carry_up(tree, parent, mark, depth + 1)
+        if isinstance(parent.parent, (exp.From, exp.Join)):
+            reader = parent.parent.parent
+            if isinstance(reader, exp.Select) and _add(
+                reader, parent.alias_or_name, mark
+            ):
+                return _carry_up(tree, reader, mark, depth + 1)
+        return False
+    if isinstance(parent, exp.CTE):
+        for t in list(tree.find_all(exp.Table)):
+            if _cte_for(t) is not parent:
+                continue
+            reader = (
+                t.parent.parent if isinstance(t.parent, (exp.From, exp.Join)) else None
+            )
+            if not isinstance(reader, exp.Select) or not _add(
+                reader, t.alias_or_name, mark
+            ):
+                return False
+            if not _carry_up(tree, reader, mark, depth + 1):
+                return False
+        return True
+    if parent is tree and isinstance(tree, exp.Select):
+        return True
+    return parent is None
+
+
+def _branches(node: exp.Expression) -> list[exp.Select]:
+    out, todo = [], [node]
+    while todo:
+        n = todo.pop()
+        while isinstance(n, exp.Subquery):
+            n = n.this
+        if isinstance(n, exp.SetOperation):
+            todo += [n.this, n.expression]
+        elif isinstance(n, exp.Select):
+            out.append(n)
+    return out
+
+
+def _add_null(q: exp.Select, mark: str) -> bool:
+    if q.args.get("group") is not None:
+        return False
+    q.append("expressions", exp.alias_(exp.cast(exp.null(), "INT64"), mark))
+    return True
 
 
 def _is_row_pick(c: exp.Expression, s: exp.Select, sources: list[_Source]) -> bool:
@@ -647,10 +833,35 @@ class Query:
 
     def relaxed_many(self, steps: list[Step]) -> str:
         """The query with every one of `steps` neutralized together."""
+        return self.relaxed_marked(steps)[0]
+
+    def relaxed_marked(self, steps: list[Step]) -> tuple[str, list[str]]:
+        """`relaxed_many`, with each row pick downstream of a step marked.
+
+        A neutralized step upstream of a pick can let another row win it. So
+        where each such pick's window runs, a column `__cand<n>` counts the
+        rows in its partition; `carry` splits the rows by it.
+
+        Returns:
+            The SQL, and the mark columns it carries (none: no pick follows).
+        """
         tree = self._tree.copy()
-        raws = self._analysis(tree).raw_steps()
-        _neutralize([raws[s.ordinal] for s in steps])
-        return tree.sql(dialect=DIALECT)
+        analysis = self._analysis(tree)
+        raws = analysis.raw_steps()
+        chosen = [raws[s.ordinal] for s in steps]
+        marks: list[str] = []
+        for select, window in _picks(tree, analysis.live):
+            if not any(_feeds(r.select, select) for r in chosen):
+                continue
+            mark = f"__cand{len(marks)}"
+            count = exp.Window(
+                this=exp.Count(this=exp.Star()),
+                partition_by=[p.copy() for p in window.args.get("partition_by") or []],
+            )
+            select.append("expressions", exp.alias_(count, mark))
+            marks.append(mark)
+        _neutralize(chosen)
+        return tree.sql(dialect=DIALECT), marks
 
     def relaxed_all(
         self, replacements: dict[tuple[str, str], str] | None = None

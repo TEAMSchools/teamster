@@ -239,6 +239,9 @@ cause, do not retry around it.
    - Only a row missing from a table descends into it, through the table's dbt
      compiled SQL as of the run's moment, 3 tables deep.
    - A grain the other side holds twice is never attributed.
+   - A step (or pair, or fallback) ahead of a row pick counts only for rows
+     whose pick partition held 1 candidate once the step is neutralized;
+     otherwise another row could stand in, and the row stays unattributed.
 
    A group whose rows are all attributed lands in `cause` with each cause and
    its rows; otherwise it stays in `investigate` with the counts and why the
