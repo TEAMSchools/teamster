@@ -703,7 +703,7 @@ def link_cells(
             target.update(
                 suggestion="cause",
                 cause=list(merged.values()),
-                proof={"groups": list(used)},
+                proof={"kind": "cells", "groups": list(used)},
                 evidence=[line],
                 evidence_posted=[line],
             )

@@ -25,7 +25,7 @@ from pathlib import Path
 from . import decisions, pipeline, trace
 from .bq import CostCapError, Warehouse
 from .compare import CellDiff, Gap, Group
-from .config import Decision, Proof, ViewConfig, mask_digits
+from .config import Comparison, Decision, Proof, ViewConfig, mask_digits
 from .cube_client import Cube, MemberDoc, member_docs
 from .discover import _tokens
 from .moment import Build
@@ -43,6 +43,10 @@ from .timetravel import PROJECT
 # The piles, in the order the analyst's batch shows them. Only a `cause` item
 # carries a proven cause; an `investigate` item has none yet.
 SUGGESTIONS = ("map_filters", "filters_nothing", "cause", "investigate")
+# What a `cause` rests on: a stored classification query (`confirm.py`), the
+# run's own reconcile (rows the sheet's dashboard-only filter drops), the
+# workbook XML (a missing cut or filter), or proven groups (a cell set).
+PROOF_KINDS = ("query", "reconcile", "workbook", "cells")
 
 
 @dataclass(frozen=True)
@@ -304,16 +308,12 @@ def proven_triage(
             "prove each with `triage confirm` (cube-validation skill, step 8), "
             "then re-run `triage`"
         )
-    # A gap's proof is the workbook XML, and a dashboard-filtered group's the
-    # run's own reconcile; any other cause rests on a stored proof.
-    buckets = {i.id: g.bucket for i, g in _entries(run) if isinstance(g, Group)}
+    # Every cause rests on a typed proof (`PROOF_KINDS`).
     if bare := sum(
         1
         for i in items
         if i["suggestion"] == "cause"
-        and i.get("kind") in ("group", "cells")
-        and not i.get("proof")
-        and buckets.get(i["id"]) != "dashboard_filtered"
+        and (i.get("proof") or {}).get("kind") not in PROOF_KINDS
     ):
         raise pipeline.Refusal(
             f"{view}: {bare} `cause` item{'' if bare == 1 else 's'} "
@@ -563,6 +563,48 @@ def _involved_docs(cfg: ViewConfig, docs: dict[str, MemberDoc]) -> dict[str, lis
 
 
 NOT_TRACED = "not traced (`triage --no-trace`)"
+NO_FILTER = "no `dashboard_filters` entry names the filter that drops these rows"
+
+
+def _filter_cause(
+    comparison: Comparison | None, g: Group
+) -> tuple[list[dict], tuple[str, ...], tuple[str, ...]] | None:
+    """A dashboard-filtered group's cause, from the run's reconcile.
+
+    The reconcile found every row present with the comparison's
+    `dashboard_filters` entry off and absent with it on.
+
+    Returns:
+        The cause, its evidence and the posted copy; None when no entry names
+        the group's filter.
+    """
+    column = g.value_of("dashboard_filter")
+    entry = next(
+        (
+            e
+            for e in (comparison.dashboard_filters if comparison else [])
+            if e["dashboard"] == column
+        ),
+        None,
+    )
+    if entry is None:
+        return None
+    label = f"dashboard filter {pipeline._dashboard_filter_sql(entry)}"
+    cause = [
+        {
+            "side": "dashboard",
+            "step": f"dashboard:filter:{column}",
+            "label": label,
+            "n_rows": g.n_rows,
+        }
+    ]
+    return (
+        cause,
+        (f"the run's reconcile: {label} drops all {g.n_rows} rows",),
+        (f"the run's reconcile: {label} drops every row",),
+    )
+
+
 NO_ROWS = "no rows to trace: values differ on rows both sides have"
 NO_GRAIN = "not traced: the comparison has no `rows` grain"
 
@@ -608,6 +650,7 @@ def suggest(
         members: list[str] = []
         call = ""
         cause: list[dict] | None = None
+        proof: dict | None = None
         found: tuple[str, ...] = ()
         # The same lines masked, for the review issue (`posted`).
         posted: tuple[str, ...] | None = None
@@ -644,7 +687,7 @@ def suggest(
                     # The workbook carries it: that is the proof. Whether
                     # Cube needs it is the owner's call on a proven step.
                     step = f"sheet {gap.kind} {caption}"
-                    call = "cause"
+                    call, proof = "cause", {"kind": "workbook"}
                     cause = [
                         {
                             "side": "dashboard",
@@ -666,15 +709,15 @@ def suggest(
                     members += [to_cube.get(c, c) for c, _ in source.dims]
             if isinstance(source, Group):
                 traced = (traces or {}).get(trace.item_key(source))
-                if (
-                    traced is not None
-                    and traced.proven
-                    and source.bucket == "dashboard_filtered"
-                ):
+                if source.bucket == "dashboard_filtered":
                     # The run's reconcile proved each row: the sheet's own
-                    # dashboard-only filter drops it.
-                    call, cause, evidence = "cause", traced.cause(), traced.evidence()
-                    posted = traced.evidence(posted=True)
+                    # dashboard-only filter drops it. No trace is needed.
+                    filtered = _filter_cause(comparison, source)
+                    if filtered:
+                        call, proof = "cause", {"kind": "reconcile"}
+                        cause, evidence, posted = filtered
+                    else:
+                        found = (NO_FILTER,)
                 elif traced is not None:
                     # The trace is a lead: a person proves the cause with
                     # `triage confirm`.
@@ -711,7 +754,7 @@ def suggest(
             if also:
                 evidence += (f"also covers: {', '.join(also)}",)
                 posted += (f"also covers: {', '.join(also)}",)
-        out.append(Suggestion(item, call, evidence, candidates, cause, posted=posted))
+        out.append(Suggestion(item, call, evidence, candidates, cause, proof, posted))
 
     return sorted(out, key=lambda s: SUGGESTIONS.index(s.suggestion))
 

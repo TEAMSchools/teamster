@@ -1105,33 +1105,6 @@ def _one_moment(
     return repin(at.sql, clash, build.start, build.end)
 
 
-def _filter_traces(cfg: ViewConfig, groups: list[Group]) -> dict[tuple, ItemTrace]:
-    """Rows a dashboard-only filter drops: the reconcile already proved each one."""
-    by_id = {c.id: c for c in cfg.comparisons}
-    out = {}
-    for g in groups:
-        comparison = by_id.get(g.comparison_id)
-        column = g.value_of("dashboard_filter")
-        entry = next(
-            (
-                e
-                for e in (comparison.dashboard_filters if comparison else [])
-                if e["dashboard"] == column
-            ),
-            None,
-        )
-        if entry is None:
-            continue
-        step = f"dashboard:filter:{column}"
-        out[item_key(g)] = ItemTrace(
-            "dashboard",
-            g.n_rows,
-            Counter({step: g.n_rows}),
-            {step: f"dashboard filter {pipeline._dashboard_filter_sql(entry)}"},
-        )
-    return out
-
-
 def trace_run(
     cfg: ViewConfig,
     run: RunResult,
@@ -1163,7 +1136,7 @@ def trace_run(
 
     Returns:
         Per `item_key`, the trace of each traced group (the one-sided buckets
-        of comparisons with `rows`, and dashboard-filtered groups), and each
+        of comparisons with `rows`), and each
         stopped bucket's reason.
 
     Raises:
@@ -1171,9 +1144,7 @@ def trace_run(
             manifest or a model's compiled SQL is missing.
     """
     open_groups = run.applied.open
-    out = _filter_traces(
-        cfg, [g for g in open_groups if g.bucket == "dashboard_filtered"]
-    )
+    out: dict[tuple, ItemTrace] = {}
     by_id = {c.id: c for c in cfg.comparisons}
     todo = [
         c

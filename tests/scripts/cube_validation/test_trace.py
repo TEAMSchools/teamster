@@ -514,30 +514,6 @@ def _answer_row(step_id, n):
     return {"bucket": "cube_only", "abbreviation": "X", "step_id": step_id, "n_rows": n}
 
 
-def test_a_dashboard_only_filter_group_is_proven_by_the_reconcile():
-    filtered = Comparison(
-        id="mastery",
-        measure="pct",
-        dashboard_filters=[
-            {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0}
-        ],
-    )
-    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[filtered])
-    group = Group(
-        "mastery",
-        (("dashboard_filter", "administered_at"), ("abbreviation", "BOLD")),
-        "dashboard_filtered",
-        12,
-        9,
-    )
-
-    (found,) = trace._filter_traces(cfg, [group]).values()
-
-    assert found.proven
-    assert found.cause()[0]["label"].startswith("dashboard filter administered_at <= ")
-    assert found.cause()[0]["n_rows"] == 12
-
-
 @pytest.mark.parametrize(
     "first", ["trace", "sqlsteps", "triage", "confirm", "pipeline", "cli"]
 )

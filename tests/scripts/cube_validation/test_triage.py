@@ -401,7 +401,11 @@ def test_a_lead_is_exact_locally_and_masked_for_the_review_issue():
     )
 
 
-def test_rows_the_sheet_s_own_filter_drops_stay_a_cause():
+def test_rows_the_sheet_s_own_filter_drops_are_a_cause_with_no_trace():
+    cfg = _cfg()
+    cfg.comparisons[0].dashboard_filters.append(
+        {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0}
+    )
     group = Group(
         "enrollment",
         (("dashboard_filter", "administered_at"), ("grade_level", "9")),
@@ -409,15 +413,21 @@ def test_rows_the_sheet_s_own_filter_drops_stay_a_cause():
         12,
         9,
     )
-    found = trace.ItemTrace("dashboard", 12)
-    found.steps["dashboard:filter:administered_at"] = 12
-    found.labels["dashboard:filter:administered_at"] = "dashboard filter x"
 
-    [s] = suggest(
-        _cfg(), _run(groups=[group]), {}, traces={trace.item_key(group): found}
-    )
+    # `--no-trace`: the reconcile alone proves it.
+    [s] = suggest(cfg, _run(groups=[group]), {}, traces=None)
 
-    assert s.suggestion == "cause" and s.cause[0]["n_rows"] == 12
+    assert s.suggestion == "cause" and s.proof == {"kind": "reconcile"}
+    assert s.cause[0]["n_rows"] == 12
+    assert s.cause[0]["label"].startswith("dashboard filter administered_at <= ")
+    assert s.evidence[0].endswith("drops all 12 rows")
+    assert s.posted[0].endswith("drops every row")
+
+
+def test_a_gap_the_workbook_carries_rests_on_the_workbook():
+    [s] = suggest(_cfg(), _run(gaps=[_gap("Team", "cut")]), {})
+
+    assert s.suggestion == "cause" and s.proof == {"kind": "workbook"}
 
 
 def test_a_group_with_an_unattributed_row_stays_in_investigate():
@@ -853,15 +863,19 @@ def test_the_gate_refuses_a_proven_group_or_cell_set_with_no_proof(tmp_path):
     proven_triage(run, _write_run_triage(tmp_path, run, [{**item, "proof": proof}]))
 
 
-def test_the_gate_takes_a_dashboard_filtered_group_or_a_gap_with_no_proof(tmp_path):
+def test_the_gate_takes_a_reconcile_or_workbook_proof_and_no_bare_cause(tmp_path):
     run = _fp_run(_groups("Newark", bucket="dashboard_filtered"))
     run.applied.open_gaps = [_gap()]
     (key, gap_id) = [i.id for i in open_items(run)]
     items = [
-        _item(key, None, ("dashboard", "dashboard filter", 30)),
+        _item(key, {"kind": "reconcile"}, ("dashboard", "dashboard filter", 30)),
         {"id": gap_id, "kind": "gap", "comparison": "", "suggestion": "cause",
          "cause": [{"side": "dashboard", "label": "sheet filter x"}],
-         "proof": None},
+         "proof": {"kind": "workbook"}},
     ]  # fmt: skip
 
     assert proven_triage(run, _write_run_triage(tmp_path, run, items))["items"]
+
+    items[1]["proof"] = None
+    with pytest.raises(pipeline.Refusal, match="1 `cause` item rests on no proof"):
+        proven_triage(run, _write_run_triage(tmp_path, run, items))
