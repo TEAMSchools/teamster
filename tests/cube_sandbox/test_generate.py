@@ -914,3 +914,38 @@ def test_realistic_scores_fall_inside_their_stint(
     low, high = generate.REALISTIC_SCORES_PER_STINT
     assert per_stint
     assert all(low <= n <= high for n in per_stint.values())
+
+
+def test_school_regions_carry_their_production_bands(
+    tiny: dict[str, list[dict]],
+) -> None:
+    # Production: Newark, Miami and Camden run elementary, middle and high
+    # schools; Paterson runs elementary and middle only. A region missing a
+    # band sends its students to another region's schools, which no real
+    # student does.
+    regions = {row["region_key"]: row["name"] for row in tiny["dim_regions"]}
+    bands: dict[str, set[str]] = {}
+    for row in tiny["dim_locations"][1:-1]:
+        if row["is_campus"] or row["grade_band"] is None:
+            continue
+        bands.setdefault(regions.get(row["region_key"]), set()).add(row["grade_band"])
+    for name in ("Newark Region", "Miami Region", "Camden Region"):
+        assert bands[name] == {"ES", "MS", "HS"}, name
+    assert bands["Paterson Region"] == {"ES", "MS"}
+
+
+def test_realistic_students_stay_in_their_region_below_high_school(
+    realistic: dict[str, list[dict]],
+) -> None:
+    # Only a Paterson high schooler leaves home, because Paterson has no high
+    # school. Everyone else attends a school in their own region every year.
+    locations = {row["location_key"]: row for row in realistic["dim_locations"]}
+    regions_by_student: dict[str, set[str]] = {}
+    for row in realistic["dim_student_enrollments"][1:-1]:
+        school = locations.get(row["location_key"])
+        if school is None or row["grade_level"] is None or row["grade_level"] >= 9:
+            continue
+        regions_by_student.setdefault(row["student_key"], set()).add(
+            school["region_key"]
+        )
+    assert all(len(r) == 1 for r in regions_by_student.values())

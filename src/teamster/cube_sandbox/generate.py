@@ -439,6 +439,9 @@ def school_week_end(day: dt.date) -> dt.date:
 
 # ES K-4, MS 5-8, HS 9-12, matching the bands dim_locations carries.
 _GRADE_BANDS = ("ES", "MS", "HS")
+# Regions that run fewer bands than all three, keyed by `_REGIONS` index.
+# Paterson (3) has no high school in production.
+_REGION_BANDS = {3: ("ES", "MS")}
 
 
 def grade_band_of(grade: int) -> str:
@@ -1323,6 +1326,22 @@ class _Fabricator:
     def _is_campus_row(self, index: int) -> bool:
         return index == _OFFICE_LOCATION or index % 8 == 0
 
+    def _location_band(self, index: int) -> str:
+        """The grade band of a school row, cycled within its own region.
+
+        Cycling by row index instead left whole regions without a band, and
+        their students were then sent to another region's schools, which no
+        real student is. Paterson runs no high school, as in production.
+        """
+        region = self._location_region(index)
+        bands = _REGION_BANDS.get(region, _GRADE_BANDS)
+        earlier = sum(
+            1
+            for i in range(index)
+            if not self._is_campus_row(i) and self._location_region(i) == region
+        )
+        return bands[earlier % len(bands)]
+
     def _special_dim_locations(self, index: int, rng: random.Random) -> dict[str, Any]:
         region = self.rows["dim_regions"][self._location_region(index)]
         campus = self._is_campus_row(index)
@@ -1337,7 +1356,7 @@ class _Fabricator:
             "address": f"{100 + index} Fabricated Way",
             "region_key": region["region_key"],
             "is_campus": campus,
-            "grade_band": None if campus else ["ES", "MS", "HS"][index % 3],
+            "grade_band": None if campus else self._location_band(index),
         }
 
     def _school_in_region(self, region_index: int, nth: int) -> dict[str, Any]:
