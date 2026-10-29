@@ -172,8 +172,14 @@ def _parser() -> argparse.ArgumentParser:
     view_file(p)
     email(p)
     p.add_argument("--measure", required=True, help="Cube measure short name")
-    p.add_argument(
+    source = p.add_mutually_exclusive_group()
+    source.add_argument(
         "--exposure", action="append", default=[], help="limit to an exposure name"
+    )
+    source.add_argument(
+        "--twb",
+        type=Path,
+        help="read this local .twb instead of downloading; no Tableau sign-in",
     )
     p.add_argument(
         "--caption", help="the dashboard's name for the measure; ranks first"
@@ -346,7 +352,12 @@ def _dispatch(args: argparse.Namespace) -> int:
 
     if args.command == "discover":
         cube = _cube(args)
-        with tableau_session() as tbl:
+        if args.twb is not None and not args.twb.is_file():
+            raise pipeline.Refusal(f"{args.twb}: no such workbook file")
+        # A local workbook needs no Tableau sign-in; Cube still compiles the
+        # measure.
+        session = contextlib.nullcontext() if args.twb else tableau_session()
+        with session as tbl:
             pipeline.discover(
                 cfg,
                 args.measure,
@@ -356,6 +367,7 @@ def _dispatch(args: argparse.Namespace) -> int:
                 only=args.exposure,
                 caption=args.caption,
                 limit=None if args.all else args.limit,
+                twb_path=args.twb,
             )
         return 0
 

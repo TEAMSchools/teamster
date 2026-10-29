@@ -1627,6 +1627,26 @@ def test_discover_boosts_a_caption_and_describes_its_sheet(
     assert "999999" not in out
 
 
+def test_discover_reads_a_local_workbook_without_tableau(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    def no_tableau():
+        raise AssertionError("discover --twb must not sign in to Tableau")
+
+    monkeypatch.setattr(cli, "tableau_session", no_tableau)
+    twb = tmp_path / "roster.twb"
+    twb.write_text((FIXTURES / "roster.twb").read_text())
+    argv = ["discover", str(_file(tmp_path)), "--measure", "avg_daily_attendance",
+            "--caption", "# Tardy", "--twb", str(twb)]  # fmt: skip
+
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    out = capsys.readouterr().out
+    assert "'# Tardy'" in out
+    assert "Roster (roster.twb): rows Region, Student Number" in out
+    assert fakes.cube.compiled_queries == [{"measures": ["v.avg_daily_attendance"]}]
+
+
 def test_discover_keeps_the_top_5_by_default(fakes, tmp_path, monkeypatch, capsys):
     _exposures(tmp_path, monkeypatch)
     fakes.tbl.twb = (FIXTURES / "roster.twb").read_text()

@@ -19,7 +19,7 @@ import sys
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import Counter
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -2224,53 +2224,39 @@ def discover(
     measure: str,
     *,
     cube: Cube,
-    tbl: tableau.Tableau,
+    tbl: tableau.Tableau | None,
     exposures_path: Path,
     only: list[str],
     caption: str | None = None,
     limit: int | None = finder.TOP_N,
+    twb_path: Path | None = None,
 ) -> list[finder.Candidate]:
     """Print workbook fields ranked against a measure, then each listed sheet's
     shape: shelves, export form, displayed decimals and filters.
 
     Calculated fields and aggregated raw fields both rank; a formula that uses a
     code group shows its codes. `caption` boosts the dashboard's name for the
-    measure; `limit` None prints every candidate.
+    measure; `limit` None prints every candidate. With `twb_path` the one local
+    workbook is read instead of the exposures' downloads, and `tbl` is unused.
     """
     compiled = cube.compiled({"measures": [_member(cfg.view, measure)]})
     member_sql = _measure_expression(compiled.sql, cfg.view, measure)
 
-    exposures = finder.tableau_exposures(exposures_path)
-    if exposures.skipped:
-        print(
-            f"Skipped exposures without a luid or models: {', '.join(exposures.skipped)}"
-        )
-
     found: list[finder.Candidate] = []
     twbs: dict[str, str] = {}
-    for exposure in exposures:
-        if only and exposure.name not in only:
-            continue
-        if not exposure.luid:
-            print(f"Skipped {exposure.name}: empty luid")
-            continue
-        try:
-            twb = tbl.download_twb(exposure.luid)
-        except (
-            TSC.ServerResponseError,
-            zipfile.BadZipFile,
-            ValueError,
-            OSError,
-        ) as exc:
-            print(f"Could not read {exposure.label}: {type(exc).__name__}: {exc}")
-            continue
-        twbs[exposure.luid] = twb
+    workbooks = (
+        [(str(twb_path), twb_path.name, twb_path.read_text(encoding="utf-8"))]
+        if twb_path is not None
+        else _exposure_workbooks(tbl, exposures_path, only)
+    )
+    for luid, label, twb in workbooks:
+        twbs[luid] = twb
         found += finder.rank(
             measure,
             member_sql,
             finder.calculated_fields(twb) + finder.aggregated_fields(twb),
-            workbook_luid=exposure.luid,
-            workbook_label=exposure.label,
+            workbook_luid=luid,
+            workbook_label=label,
             caption=caption,
             limit=None,
         )
@@ -2289,6 +2275,36 @@ def discover(
         )
     _print_sheets(found, twbs)
     return found
+
+
+def _exposure_workbooks(
+    tbl: tableau.Tableau | None, exposures_path: Path, only: list[str]
+) -> Iterator[tuple[str, str, str]]:
+    """Download each Tableau exposure's workbook: luid, label and XML."""
+    if tbl is None:
+        raise Refusal("discover needs a Tableau session or a local --twb")
+    exposures = finder.tableau_exposures(exposures_path)
+    if exposures.skipped:
+        print(
+            f"Skipped exposures without a luid or models: {', '.join(exposures.skipped)}"
+        )
+    for exposure in exposures:
+        if only and exposure.name not in only:
+            continue
+        if not exposure.luid:
+            print(f"Skipped {exposure.name}: empty luid")
+            continue
+        try:
+            twb = tbl.download_twb(exposure.luid)
+        except (
+            TSC.ServerResponseError,
+            zipfile.BadZipFile,
+            ValueError,
+            OSError,
+        ) as exc:
+            print(f"Could not read {exposure.label}: {type(exc).__name__}: {exc}")
+            continue
+        yield exposure.luid, exposure.label, twb
 
 
 def _print_sheets(found: list[finder.Candidate], twbs: dict[str, str]) -> None:
