@@ -231,10 +231,11 @@ cause, do not retry around it.
    - A row 1 step alone brings back is attributed to it. A row several steps of
      one scope each bring back is attributed to them as one cause (`A / B`);
      across scopes it stays unattributed.
-   - The rest are checked for presence (every step of the level neutralized, its
-     tables unchanged). A present row is attributed to the 1 pair of steps in
-     one scope that brings it back (`A + B`); 3 or more steps, or steps in 2 or
-     more scopes, stay unattributed. A present row never descends.
+   - The rest are checked for presence: every step of the level and of every
+     level above neutralized, row picks too, its tables unchanged. A present row
+     is attributed to the 1 pair of steps in one scope that brings it back
+     (`A + B`); 3 or more steps, steps in 2 or more scopes, or a row pick stay
+     unattributed. A present row never descends.
    - Only a row missing from a table descends into it, through the table's dbt
      compiled SQL as of the run's moment, 3 tables deep.
    - A grain the other side holds twice is never attributed.
@@ -250,8 +251,10 @@ cause, do not retry around it.
      default cache whatever `CUBE_VALIDATION_CACHE` says. A cap or
      `--trace-max-minutes` (default 120) hit partway stops the trace: what it
      found is kept, the rest say "trace stopped", and `triage.json` is still
-     written. No row leaves BigQuery; a failed query keeps only its job id and
-     reason. `--no-trace` skips it and leaves every row group in `investigate`.
+     written, groups proven before the stop keeping their cause. A dry run that
+     fails partway stops it the same way. No row leaves BigQuery; a failed query
+     keeps only its job id and reason. `--no-trace` skips it and leaves every
+     row group in `investigate`.
    - Compiled SQL: the trace reads `src/dbt/kipptaf/target/prod/manifest.json`
      in the checkout running the tool (`--manifest` for another). Before any
      trace query, `triage` refuses when the manifest or a model's compiled SQL
@@ -262,6 +265,8 @@ cause, do not retry around it.
      select. Compile in a checkout whose dbt code built the tables (`main` as of
      the run's moment): a table whose compiled SQL no longer runs is skipped and
      named ("below"), and rows its SQL returns unrelaxed are never attributed.
+     Before triaging several views, compile once with every model their refusals
+     name, or each view's compile strips the others'.
    - Its SQL must be the run's: `triage` refuses when either side's SQL changed
      since the run; `run` again first.
    - `CUBE_VALIDATION_CACHE` points every command at another cache, such as a

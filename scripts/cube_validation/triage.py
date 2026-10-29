@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import pipeline, trace
-from .bq import Warehouse
+from .bq import CostCapError, Warehouse
 from .compare import CellDiff, Gap, Group
 from .config import Proof, ViewConfig
 from .cube_client import Cube, MemberDoc, member_docs
@@ -666,7 +666,11 @@ def run_triage(
         column = _missing_column(cfg, caption)
         if not column:
             return ""
-        return value_check(wh, cube, cfg, column, member, run.moment, pii)
+        try:
+            return value_check(wh, cube, cfg, column, member, run.moment, pii)
+        except CostCapError as exc:
+            # The trace's paid work is kept: the batch is still written.
+            return f"not checked: {exc}"
 
     with wh.budget(max_usd):
         traced = (

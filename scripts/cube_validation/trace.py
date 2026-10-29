@@ -41,7 +41,7 @@ from .compare import DUPLICATE, MANY, NONE, PRESENT, UNREPRODUCED, Group, many_i
 from .config import Comparison, ViewConfig
 from .cube_client import Cube, network_schools
 from .moment import Build, changed_between
-from .report import RunResult, suppress
+from .report import SUPPRESSED, RunResult, suppress
 from .sqlsteps import Query, Step, TableRef
 from .timetravel import PROJECT, repin
 
@@ -99,7 +99,8 @@ class ItemTrace:
     each recovering it alone (`a/b`), or a pair of one scope recovering it
     together (`a+b`). The rest are unattributed: `many` recovered by steps of
     several scopes, `pairs_many` by several pairs, `needs_more` present but
-    recovered by no single step or pair, `unreproduced` already returned by
+    recovered by no single step or pair, `skipped` present but with more
+    pairs than `MAX_PAIRS` to search, `unreproduced` already returned by
     the unrelaxed SQL, `duplicates` a grain the other side holds twice,
     `unknown` behind a query that failed or a stop, and `none` missing below
     the deepest level, under `below`. `recovered` counts every row each
@@ -114,6 +115,7 @@ class ItemTrace:
     many_labels: tuple[str, ...] = ()
     pairs_many: int = 0
     needs_more: Counter = field(default_factory=Counter)
+    skipped: Counter = field(default_factory=Counter)
     unreproduced: Counter = field(default_factory=Counter)
     duplicates: int = 0
     unknown: int = 0
@@ -142,6 +144,10 @@ class ItemTrace:
         out += [
             (f"needs 3 or more steps, or steps in 2 or more scopes, in {at}", n)
             for at, n in sorted(self.needs_more.items())
+        ]
+        out += [
+            (f"pair search skipped: {why}", n)
+            for why, n in sorted(self.skipped.items())
         ]
         out += [
             (f"already returned by the {t} SQL with no step neutralized", n)
@@ -202,8 +208,12 @@ class ItemTrace:
         if self.unattributed:
             reasons = self._reasons()
             total, why = suppress(self.unattributed, [n for _, n in reasons])
-            if len(texts) > len(causes):
-                total = texts[-1] if total != "masked" else total
+            shown = texts[-1] if len(texts) > len(causes) else total
+            if shown in ("<10", SUPPRESSED):
+                # A hidden count hides its whole breakdown, or the breakdown
+                # adds back up to it.
+                total = shown
+                why = ["<10" if n < 10 else SUPPRESSED for _, n in reasons]
             lines.append(
                 f"{total} rows unattributed: "
                 + "; ".join(f"{t} {r}" for (r, _), t in zip(reasons, why, strict=True))
@@ -319,6 +329,14 @@ class _Frame:
             frame = frame.parent
         return text
 
+    def full_relaxed(self, sql: str) -> str:
+        """As `full`, with every step of every frame above neutralized too."""
+        frame, text = self, sql
+        while frame.parent is not None and frame.table is not None:
+            text = frame.parent.query.relaxed_all({frame.table: text})
+            frame = frame.parent
+        return text
+
     @property
     def name(self) -> str:
         return self.table[1] if self.table else ""
@@ -385,6 +403,13 @@ class _Side:
         )
 
 
+def _failure(exc: GoogleAPIError) -> str:
+    """A BigQuery error as its job and reason: its message can quote values."""
+    errors = getattr(exc, "errors", None) or [{}]
+    reason = errors[0].get("reason") or type(exc).__name__
+    return f"job {getattr(exc, JOB_ID, '') or '?'}, {reason}"
+
+
 class _Meter:
     """The whole trace's dry-run running total and its time limit."""
 
@@ -410,7 +435,12 @@ class _Runner:
     def _run(self, queries: list[str], what: str) -> list[dict] | None:
         """Run `queries`, or return None when one fails at run time."""
         self.meter.check()
-        usd = sum(self.wh.estimate(q) for q in queries)
+        try:
+            usd = sum(self.wh.estimate(q) for q in queries)
+        except GoogleAPIError as exc:
+            # After paid queries, a dry run that fails stops the trace like
+            # a cap, keeping what it found.
+            raise Stopped(f"{what}: the dry run failed ({_failure(exc)})") from exc
         self.wh.refuse_past_caps(usd)
         self.meter.total += usd
         print(
@@ -427,9 +457,7 @@ class _Runner:
                 # A neutralized step can fail only at run time (a cast, a
                 # date overflow). Its message can quote a row's values, so
                 # only the job and the reason are kept.
-                errors = getattr(exc, "errors", None) or [{}]
-                reason = errors[0].get("reason") or type(exc).__name__
-                note = f"{what}: job {getattr(exc, JOB_ID, '') or '?'}, {reason}"
+                note = f"{what}: {_failure(exc)}"
                 print(f"Trace query failed, {note}")
                 self.failures.append(note)
                 return None
@@ -441,6 +469,32 @@ class _Runner:
             for p in pipeline.group_dims(self.side.comparison)
         )
         return (self.side.comparison.id, row["bucket"], dims)
+
+    def plan(
+        self, variants: list[tuple[str, str]], exclude: list[str], include: list[str]
+    ) -> tuple[list[str], bool]:
+        """The queries `level` runs first: 1 combined, or per-step batches.
+
+        Returns:
+            The queries, and whether they are the 1 combined query.
+        """
+        whole = self.side.query(variants, exclude, True, include)
+        if len(whole) <= MAX_QUERY_CHARS:
+            return [whole], True
+        base = len(self.side.query([], exclude, False, include))
+        # Each variant also costs its CTE and its line in `hits`.
+        first = variants[0] if variants else ("", "")
+        extra = len(self.side.query([first], exclude, False, include)) - base
+        extra -= len(first[1])
+        batches: list[list[tuple[str, str]]] = [[]]
+        size = base
+        for v in variants:
+            if batches[-1] and size + len(v[1]) + extra > MAX_QUERY_CHARS:
+                batches.append([])
+                size = base
+            batches[-1].append(v)
+            size += len(v[1]) + extra + len(v[0])
+        return [self.side.query(b, exclude, False, include) for b in batches], False
 
     def level(
         self,
@@ -457,26 +511,14 @@ class _Runner:
             item, every row each variant recovers. None when a query failed.
         """
         include = include or []
-        whole = self.side.query(variants, exclude, True, include)
-        if len(whole) <= MAX_QUERY_CHARS:
-            rows = self._run([whole], what)
+        queries, whole = self.plan(variants, exclude, include)
+        if whole:
+            rows = self._run(queries, what)
             return None if rows is None else self._read(rows)
 
         # Too long for one query: count each step's rows apart, then count
         # once more over only the steps that share an item.
-        base = len(self.side.query([], exclude, False, include))
-        batches: list[list[tuple[str, str]]] = [[]]
-        size = base
-        for v in variants:
-            if batches[-1] and size + len(v[1]) > MAX_QUERY_CHARS:
-                batches.append([])
-                size = base
-            batches[-1].append(v)
-            size += len(v[1])
-        rows = self._run(
-            [self.side.query(b, exclude, False, include) for b in batches],
-            f"{what}, by step",
-        )
+        rows = self._run(queries, f"{what}, by step")
         if rows is None:
             return None
         hits: dict[tuple, Counter] = {}
@@ -592,9 +634,9 @@ class _Bucket:
                 out.append((step.id, side.rows(frame.full(frame.query.relaxed(step)))))
         return out
 
-    def first_query(self) -> str:
-        """The level-0 query, to price before anything runs."""
-        return self.side.query(self.variants([self.root]), [], True)
+    def first_queries(self) -> list[str]:
+        """The level-0 queries, split as they will run, to price up front."""
+        return self.runner.plan(self.variants([self.root]), [], [])[0]
 
     # --- descent --------------------------------------------------------------
 
@@ -664,7 +706,7 @@ class _Bucket:
                 )
                 if left > 0:
                     item.unknown += left
-                item.stopped = reason
+                    item.stopped = reason
             self._finish()
             raise Stopped(reason, self.out) from exc
         self._finish()
@@ -733,8 +775,11 @@ class _Bucket:
             in_play = {k: n for k, n in absent.items() if n}
             if not in_play:
                 return self._end({})
+            # Every step of this frame and of every frame above it is
+            # neutralized, row picks included: the check asks only whether
+            # the row is in the tables this frame reads.
             gates = [
-                (f"{PRESENT}{i}", side.rows(f.full(f.query.relaxed_all())))
+                (f"{PRESENT}{i}", side.rows(f.full_relaxed(f.query.relaxed_all())))
                 for i, f in enumerate(frames)
             ]
             got = self.runner.level(gates, exclude, f"{depth}, presence")
@@ -783,7 +828,11 @@ class _Bucket:
         where = frame.name or f"the {self.side.side} SQL"
         steps = frame.query.steps(self.side.side, frame.name)
         pairs = _pairs(steps)
-        if not pairs or len(pairs) > MAX_PAIRS:
+        if len(pairs) > MAX_PAIRS:
+            for key, n in present.items():
+                self.out[key].skipped[f"{len(pairs)} pairs in {where}"] += n
+            return
+        if not pairs:
             for key, n in present.items():
                 self.out[key].needs_more[where] += n
             return
@@ -986,8 +1035,12 @@ def trace_run(
         for b in buckets:
             b.manifest = manifest
 
-    first = [b.first_query() for b in buckets]
-    usd = sum(wh.estimate(q) for q in first)
+    try:
+        usd = sum(wh.estimate(q) for b in buckets for q in b.first_queries())
+    except GoogleAPIError as exc:
+        reason = f"level 0: the dry run failed ({_failure(exc)})"
+        print(f"Trace stopped: {reason}")
+        return TraceResult(out, reason)
     print(
         f"Trace: {len(buckets)} bucket(s), level 0 costs ${usd:.2f} (dry run); "
         "each deeper level is priced before it runs."

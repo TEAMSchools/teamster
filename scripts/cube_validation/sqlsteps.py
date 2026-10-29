@@ -309,8 +309,11 @@ class _Analysis:
 _PICKS = (exp.RowNumber, exp.Rank, exp.DenseRank)
 
 
-def _picked_by(source: _Source, name: str) -> bool:
-    """`name` is a ROW_NUMBER, RANK or DENSE_RANK column of `source`."""
+def _picked_by(source: _Source, name: str, depth: int = 0) -> bool:
+    """`name` is a ROW_NUMBER, RANK or DENSE_RANK column of `source`.
+
+    A `SELECT *` passes the column through, so its own source is read too.
+    """
     node = source.node
     if isinstance(node, exp.Table):
         cte = _cte_for(node)
@@ -335,19 +338,30 @@ def _picked_by(source: _Source, name: str) -> bool:
                 and isinstance(inner.this, _PICKS)
             ):
                 return True
+        star = any(
+            isinstance(e, exp.Star)
+            or (isinstance(e, exp.Column) and isinstance(e.this, exp.Star))
+            for e in q.expressions
+        )
+        if star and depth < 10:
+            if any(_picked_by(x, name, depth + 1) for x in _sources(q)):
+                return True
     return False
 
 
 def _is_row_pick(c: exp.Expression, s: exp.Select, sources: list[_Source]) -> bool:
-    """`rn = 1` (or `<= 1`, `< 2`) on a source's row-number or rank column."""
-    if not isinstance(c, (exp.EQ, exp.LTE, exp.LT)):
+    """`rn = 1` (or `<= 1`, `< 2`, either way round) on a row-number or rank column."""
+    if not isinstance(c, (exp.EQ, exp.LTE, exp.LT, exp.GTE, exp.GT)):
         return False
-    col, lit = c.this, c.expression
+    col, lit, op = c.this, c.expression, type(c)
     if isinstance(col, exp.Literal):
-        col, lit = lit, col
+        # `2 > rn` reads as `rn < 2`.
+        flip = {exp.GT: exp.LT, exp.GTE: exp.LTE, exp.LT: exp.GT, exp.LTE: exp.GTE}
+        col, lit, op = lit, col, flip.get(op, op)
     if not isinstance(col, exp.Column) or not isinstance(lit, exp.Literal):
         return False
-    if lit.this not in ("1", "2") or (lit.this == "2") != isinstance(c, exp.LT):
+    wanted = {exp.EQ: "1", exp.LTE: "1", exp.LT: "2"}
+    if wanted.get(op) != lit.this:
         return False
     owners = [x for x in sources if not col.table or x.alias == col.table]
     return any(_picked_by(x, col.name) for x in owners)
@@ -439,15 +453,21 @@ def _sources(s: exp.Select) -> list[_Source]:
 
 
 def _present(on: exp.Expression, alias: str, s: exp.Select, known: set[str]):
-    """A column of `alias` an ON equality makes non-null on every matched row."""
+    """A column of `alias` a key equality makes non-null on every matched row.
+
+    Only an equality with another source counts: a filter column such as
+    `x.status = 'on'` would make its own NULLs read as a missing match.
+    """
     for c in _conjuncts(on):
         if not isinstance(c, exp.EQ):
             continue
         for mine, theirs in ((c.this, c.expression), (c.expression, c.this)):
+            others = _aliases(theirs, s, known)
             if (
                 isinstance(mine, exp.Column)
                 and mine.table == alias
-                and alias not in _aliases(theirs, s, known)
+                and others
+                and alias not in others
             ):
                 return mine
     return None
@@ -637,21 +657,35 @@ class Query:
     ) -> str:
         """The query with every live step neutralized at once.
 
-        It keeps at least the rows any single neutralized step keeps, short
-        of an anti-join or a row pick that more rows can change, so a row it
-        does not return is one no step of this query recovers.
+        Row picks (QUALIFY, `rn = 1`) are dropped too: they are never a
+        cause, but a row they drop is still in the tables. So a row this does
+        not return is missing from the tables the query reads.
 
         Args:
             replacements: Tables to read as these subqueries instead, as
                 `inline` takes them.
         """
         tree = self._tree.copy()
-        for raw in self._analysis(tree).raw_steps():
+        analysis = self._analysis(tree)
+        picks = []
+        for s, _ in analysis.live.values():
+            sources = _sources(s)
+            where = s.args.get("where")
+            if where is not None:
+                picks += [
+                    c for c in _conjuncts(where.this) if _is_row_pick(c, s, sources)
+                ]
+            if s.args.get("qualify") is not None:
+                s.set("qualify", None)
+        for raw in analysis.raw_steps():
             if isinstance(raw.node, exp.Join):
                 if not raw.node.side:
                     _as_left(raw.node)
             elif raw.node is not None and raw.node.parent is not None:
                 raw.node.replace(exp.true())
+        for c in picks:
+            if c.parent is not None:
+                c.replace(exp.true())
         return _inline(tree, replacements or {}).sql(dialect=DIALECT)
 
     def inline(self, replacements: dict[tuple[str, str], str]) -> str:
@@ -722,7 +756,17 @@ def _neutralize(raws: list[_Raw]) -> None:
     by_select: dict[int, list[_Raw]] = {}
     for raw in raws:
         by_select.setdefault(id(raw.select), []).append(raw)
-    for group in by_select.values():
+
+    def depth(group: list[_Raw]) -> int:
+        n, p = 0, group[0].select.parent
+        while p is not None:
+            n += isinstance(p, exp.Select)
+            p = p.parent
+        return n
+
+    # Inner selects first: an outer step rewrites the conjunct that holds
+    # them through a copy, which would leave their own edit behind.
+    for group in sorted(by_select.values(), key=depth, reverse=True):
         s = group[0].select
         moved = _canonicalize(s)
         sources = _sources(s)

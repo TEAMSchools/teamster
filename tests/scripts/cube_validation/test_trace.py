@@ -562,3 +562,189 @@ def test_every_refusal_comes_before_the_first_trace_query(tmp_path, monkeypatch)
     with pytest.raises(pipeline.Refusal, match="no compiled SQL for fact"):
         trace.trace_run(CFG, run, wh=wh, cube=None, manifest_path=manifest.path)
     assert wh.ran == []
+
+
+# --- fix round 2 ------------------------------------------------------------------
+
+RAW_COLS = "student BIGINT, item VARCHAR, school VARCHAR, ok1 BOOLEAN"
+
+
+def test_a_row_two_levels_drop_never_descends_to_a_stand_in(duck, tmp_path):
+    # N1: the row is in `mid`; `fact`'s `keep` and the side's `ok1` both drop
+    # it. `raw` holds a junk row of its grain behind `good`.
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table(
+        "raw",
+        f"{RAW_COLS}, keep BOOLEAN, good BOOLEAN",
+        [(1, "a", "X", False, False, True), (1, "a", "X", True, True, False)],
+    )
+    duck.table("mid", f"{RAW_COLS}, keep BOOLEAN", [(1, "a", "X", False, False)])
+    duck.table("fact", RAW_COLS, [])
+    manifest = _manifest(
+        tmp_path,
+        {
+            "fact": (
+                "select student, item, school, ok1 "
+                "from `teamster-332318`.`d`.`mid` where keep",
+                ["mid"],
+            ),
+            "mid": (
+                "select student, item, school, ok1, keep "
+                "from `teamster-332318`.`d`.`raw` where good",
+                [],
+            ),
+        },
+    )
+    dash = (
+        "SELECT f.student, f.item, f.school FROM `teamster-332318.d.fact` AS f "
+        "WHERE f.ok1"
+    )
+
+    found = _trace(duck, dash, [_group(1)], levels=2, manifest=manifest)[
+        trace.item_key(_group(1))
+    ]
+
+    assert not found.proven and not found.steps
+    assert found.needs_more and not found.none
+
+
+def test_a_row_a_row_pick_drops_never_descends_to_a_stand_in(duck, tmp_path):
+    # N2: the side picks item b for student 1; `raw2` holds a later junk (1, a)
+    # behind `keep` that would win the pick.
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table(
+        "raw2",
+        "student BIGINT, item VARCHAR, school VARCHAR, d BIGINT, keep BOOLEAN",
+        [(1, "a", "X", 1, True), (1, "b", "X", 2, True), (1, "a", "X", 3, False)],
+    )
+    duck.table(
+        "fact2",
+        "student BIGINT, item VARCHAR, school VARCHAR, d BIGINT",
+        [(1, "a", "X", 1), (1, "b", "X", 2)],
+    )
+    manifest = _manifest(
+        tmp_path,
+        {
+            "fact2": (
+                "select student, item, school, d "
+                "from `teamster-332318`.`d`.`raw2` where keep",
+                [],
+            )
+        },
+    )
+    dash = (
+        "WITH r AS (SELECT student, item, school, ROW_NUMBER() OVER "
+        "(PARTITION BY student ORDER BY d DESC) AS rn "
+        "FROM `teamster-332318.d.fact2`) "
+        "SELECT student, item, school FROM r WHERE rn = 1"
+    )
+
+    found = _trace(duck, dash, [_group(1)], levels=1, manifest=manifest)[
+        trace.item_key(_group(1))
+    ]
+
+    assert not found.proven and not found.steps
+    assert not found.none
+
+
+def test_a_masked_unattributed_count_masks_its_whole_breakdown():
+    # N3: 40 = 25 + 5 + 10; with the 10 shown, 40 - 25 - 10 gives the 5.
+    found = trace.ItemTrace("dashboard", 40)
+    found.steps |= {"a": 25, "b": 5}
+    found.labels |= {"a": "main: a", "b": "main: b"}
+    found.none = 10
+
+    lines = found.evidence()
+
+    assert lines[:2] == ("main: a: 25 rows", "main: b: <10 rows")
+    assert lines[2] == "masked rows unattributed: masked recovered by no step"
+    assert "10" not in lines[2]
+
+
+def test_a_stop_keeps_the_items_already_proven(duck):
+    # N4: one item is proven at level 0; the stop comes after.
+    _cube_rows(duck, [(1, "a", "X"), (2, "b", "Y")])
+    duck.table("fact", FACT, [(1, "a", "X", False, True)])
+    wh = DuckWarehouse(duck)
+    queries = []
+
+    def rows(sql, timeout_s=None):
+        queries.append(sql)
+        if len(queries) > 1:
+            raise trace.Stopped("the trace passed its time limit")
+        return duck.rows(sql)
+
+    wh.rows = rows
+    groups = [_group(1, "X"), _group(1, "Y")]
+
+    with pytest.raises(trace.Stopped) as caught:
+        _trace(duck, FLAT, groups, wh=wh)
+
+    proven = caught.value.found[trace.item_key(groups[0])]
+    stopped = caught.value.found[trace.item_key(groups[1])]
+    assert proven.proven and not proven.stopped
+    assert stopped.stopped and not stopped.proven
+
+
+def test_a_dry_run_error_partway_stops_with_its_job_and_reason(duck):
+    # N5: level 0 ran (and was paid); the presence check fails its dry run.
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table("fact", FACT, [])
+    wh = DuckWarehouse(duck)
+
+    def estimate(sql):
+        if "'#0'" in sql:
+            exc = BadRequest(
+                "Unrecognized name: 12345", errors=[{"reason": "invalidQuery"}]
+            )
+            setattr(exc, JOB_ID, "job-7")
+            raise exc
+        return 0.0
+
+    wh.estimate = estimate
+
+    with pytest.raises(trace.Stopped) as caught:
+        _trace(duck, FLAT, [_group(1)], wh=wh)
+
+    assert "invalidQuery" in caught.value.reason and "12345" not in caught.value.reason
+    assert caught.value.found[trace.item_key(_group(1))].stopped
+
+
+def test_level_zero_is_priced_in_the_batches_it_runs_in(tmp_path, monkeypatch):
+    # N12: a level-0 query past the limit is priced split, never as one.
+    side = _side(FLAT)
+    monkeypatch.setattr(trace, "network_schools", lambda wh: set())
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: side.sides)
+    run = RunResult(
+        view="v", moment=BUILD, measures=[], applied=Applied(open=[_group(5)])
+    )
+    q = trace.Query(FLAT, frozenset(side.grain()), side.grain()[0])
+    one = [(s.id, q.relaxed(s)) for s in q.steps("dashboard")][:1]
+    # Room for 1 variant per query, not for all of them in one.
+    monkeypatch.setattr(trace, "MAX_QUERY_CHARS", len(side.query(one, [], False)) + 10)
+    priced = []
+
+    class Strict(FakeWarehouse):
+        def estimate(self, sql):
+            assert len(sql) <= trace.MAX_QUERY_CHARS, "priced an unsplit query"
+            priced.append(sql)
+            return 0.0
+
+    # Nothing comes back, so the trace stops after level 0.
+    wh = Strict(lambda sql: [])
+
+    trace.trace_run(CFG, run, wh=wh, cube=None, levels=0)
+
+    assert len(priced) >= 2
+
+
+def test_a_skipped_pair_search_says_why(duck, monkeypatch):
+    # N7: rows a pair could explain, with no pair searched.
+    _cube_rows(duck, [(2, "b", "X")])
+    duck.table("fact", FACT, [(2, "b", "X", False, False)])
+    monkeypatch.setattr(trace, "MAX_PAIRS", 0)
+
+    found = _trace(duck, FLAT, [_group(1)])[trace.item_key(_group(1))]
+
+    assert not found.proven
+    assert "pair search skipped: 1 pairs" in found.evidence()[-1]

@@ -348,3 +348,65 @@ def test_a_scalar_subquery_s_steps_are_left_alone_and_an_in_list_s_kept():
     assert any(label.endswith(": open") for label in labels)
     step = next(s for s in q.steps("cube") if s.label.endswith(": open"))
     assert "WHERE live" in q.relaxed(step) and "WHERE TRUE" in q.relaxed(step)
+
+
+def test_steps_in_a_nested_select_neutralize_with_the_outer_one():
+    # N6: the IN subquery's step sits inside the outer conjunct.
+    # The outer conjunct reads a LEFT-joined table, so neutralizing it keeps
+    # a copy of the conjunct, subquery and all.
+    sql = (
+        "SELECT t.student FROM `teamster-332318.d.t` AS t "
+        "LEFT JOIN `teamster-332318.d.u` AS u ON u.k = t.k "
+        "WHERE u.school IN (SELECT s FROM `teamster-332318.d.z` WHERE open) "
+        "AND t.ok"
+    )
+    q = Query(sql, frozenset({"student"}), "student")
+    outer = next(s for s in q.steps("cube") if "IN (" in s.label)
+    inner = next(s for s in q.steps("cube") if s.label.endswith(": open"))
+
+    alone = _flat(q.relaxed(outer))
+    both = _flat(q.relaxed_many([outer, inner]))
+
+    assert "WHERE open" in alone
+    assert "WHERE open" not in both and "OR NOT u.k IS NULL" in both
+
+
+def test_the_match_marker_is_a_key_column_never_a_filter_column():
+    # N8: `x.status = 'on'` filters; `x.k = t.k` is the key.
+    sql = (
+        "SELECT t.student FROM `teamster-332318.d.t` AS t "
+        "INNER JOIN `teamster-332318.d.x` AS x ON x.status = 'on' AND x.k = t.k"
+    )
+    q = Query(sql, frozenset({"student"}), "student")
+    step = next(s for s in q.steps("cube") if s.kind == "on")
+
+    out = _flat(q.relaxed(step))
+
+    assert "NOT x.k IS NULL" in out and "NOT x.status IS NULL" not in out
+
+
+def test_row_picks_written_backwards_or_passed_through_a_star_are_found():
+    # N9.
+    sql = (
+        "WITH r AS (SELECT *, ROW_NUMBER() OVER (PARTITION BY student ORDER BY d) "
+        "AS rn FROM `teamster-332318.d.t`), "
+        "s AS (SELECT * FROM r) "
+        "SELECT student FROM s WHERE 2 > rn AND 1 >= rn AND ok"
+    )
+    q = Query(sql, frozenset({"student"}), "student")
+
+    labels = [s.label for s in q.steps("cube")]
+
+    assert labels == ["main: ok"]
+
+
+def test_relaxed_all_also_drops_row_picks():
+    # N2: presence must bring back a row a pick drops.
+    sql = (
+        "WITH r AS (SELECT student, ROW_NUMBER() OVER (PARTITION BY student "
+        "ORDER BY d) AS rn FROM `teamster-332318.d.t`) "
+        "SELECT student FROM r WHERE rn = 1 QUALIFY TRUE"
+    )
+    out = _flat(Query(sql, frozenset({"student"}), "student").relaxed_all())
+
+    assert "rn = 1" not in out

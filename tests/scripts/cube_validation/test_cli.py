@@ -16,7 +16,7 @@ import tableauserverclient as TSC
 from cube_validation import cli, pipeline, report, tableau, trace, triage
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.bq import Warehouse
+from cube_validation.bq import CostCapError, Warehouse
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, load_view_config
@@ -2443,6 +2443,40 @@ def test_triage_writes_its_batch_when_the_trace_stops(
     (group,) = [i for i in items if i["kind"] == "group"]
     assert group["suggestion"] == "investigate"
     assert group["evidence"][0] == "trace stopped: the trace passed its time limit"
+
+
+def test_a_value_check_past_the_cap_still_writes_the_batch(
+    fakes, tmp_path, capsys, monkeypatch
+):
+    # N10: a cap hit in the value checks leaves the trace's work in place.
+    proof = PROOF + (
+        "      missing_cuts: []\n"
+        "      missing_filters: [School Level]\n"
+        "      restricting_filters: [School Level]\n"
+        "      missing_columns: { School Level: school_level }\n"
+    )
+    path = _file(tmp_path, YML.replace(PROOF, proof))
+    assert cli.main(["run", str(path)]) == 0, capsys.readouterr().err
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    fakes.cube.meta = lambda: {
+        "cubes": [
+            {
+                "name": "v",
+                "dimensions": [{"name": "v.school_level", "title": "School Level"}],
+            }
+        ]
+    }
+
+    def capped(*a, **k):
+        raise CostCapError("spent $5.00, over the $5.00 cap")
+
+    monkeypatch.setattr(triage, "value_check", capped)
+
+    assert cli.main(["triage", str(path), "--no-trace"]) == 0, capsys.readouterr().err
+
+    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    (gap,) = [i for i in items if i["kind"] == "gap"]
+    assert any(e.startswith("school_level: not checked:") for e in gap["evidence"])
 
 
 # --- add-decisions and record-answers ----------------------------------------
