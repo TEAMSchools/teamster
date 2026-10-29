@@ -562,8 +562,9 @@ def test_every_persona_school_sits_in_its_region(tiny: dict[str, list[dict]]) ->
         ), person.email
 
 
+@pytest.mark.parametrize("profile", ["tiny", "realistic"])
 def test_a_region_scoped_teaching_staff_persona_sees_a_teacher(
-    tiny: dict[str, list[dict]],
+    profile: str, request: pytest.FixtureRequest
 ) -> None:
     """Mirror of the staff-pii-teaching_staff policy, evaluated on the rows.
 
@@ -572,6 +573,7 @@ def test_a_region_scoped_teaching_staff_persona_sees_a_teacher(
     and that staff member's job function is TEACH or TIR. The ROWS canary
     asserts the same thing live; this catches it before a load.
     """
+    tiny = request.getfixturevalue(profile)
     access_by_staff = {row["staff_key"]: row for row in tiny["dim_staff_cube_access"]}
     location_by_key = {row["location_key"]: row for row in tiny["dim_locations"]}
     checked = 0
@@ -600,3 +602,315 @@ def test_a_region_scoped_teaching_staff_persona_sees_a_teacher(
         ]
         assert visible, person.email
     assert checked, "no persona exercises region-scoped teaching_staff"
+
+
+# -- the realistic profile -------------------------------------------------
+#
+# `tiny` proves every coverage cell; `realistic` is what an app builder points
+# a screen at. Three academic years of students who carry forward a grade at a
+# time, at schools whose band matches the grade, with one attendance row per
+# calendar day of each stint. Shrunk here so the fixture stays fast: the shape
+# is what is under test, not the volume.
+
+_SMALL_STUDENTS_PER_YEAR = 60
+_SMALL_STAFF = 60
+_BAND = {**dict.fromkeys(range(5), "ES"), **dict.fromkeys(range(5, 9), "MS")}
+_BAND |= dict.fromkeys(range(9, 13), "HS")
+
+
+@pytest.fixture(scope="module")
+def realistic() -> dict[str, list[dict]]:
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(generate, "REALISTIC_STUDENTS_PER_YEAR", _SMALL_STUDENTS_PER_YEAR)
+        patch.setattr(generate, "REALISTIC_STAFF", _SMALL_STAFF)
+        return generate.generate(
+            snapshot.load(),
+            personas.load(generate.PERSONAS_PATH),
+            "realistic",
+            generate.DEFAULT_SEED,
+        )
+
+
+def _real_stints(data: dict[str, list[dict]]) -> list[dict]:
+    """Enrollment rows that describe a real stint.
+
+    Skips the fixtures the coverage contract needs: the planted orphan (its
+    student and school resolve to nothing) and the stint carrying the
+    required nulls.
+    """
+    students = {row["student_key"] for row in data["dim_students"]}
+    locations = {row["location_key"] for row in data["dim_locations"]}
+    return [
+        row
+        for row in data["dim_student_enrollments"]
+        if row["academic_year"] is not None
+        and row["student_key"] in students
+        and row["location_key"] in locations
+    ]
+
+
+def test_realistic_is_an_accepted_scale() -> None:
+    assert generate.row_target("dim_regions", "realistic") == generate.row_target(
+        "dim_regions", "tiny"
+    )
+    assert generate.row_target("dim_dates", "realistic") <= generate.DATE_SPINE_MAX
+
+
+def test_a_realistic_run_leaves_no_uncovered_cell(
+    realistic: dict[str, list[dict]],
+) -> None:
+    assessed = coverage.assess({"cells": generate.load_cells()}, realistic)
+    assert coverage.uncovered(assessed) == []
+
+
+def test_realistic_enrollments_span_three_academic_years(
+    realistic: dict[str, list[dict]],
+) -> None:
+    target = generate.TARGET_ACADEMIC_YEAR
+    years = {row["academic_year"] for row in _real_stints(realistic)}
+    assert years == {target - 2, target - 1, target}
+
+
+def test_realistic_students_per_year_is_about_the_target(
+    realistic: dict[str, list[dict]],
+) -> None:
+    per_year: dict[int, set[str]] = {}
+    for row in _real_stints(realistic):
+        per_year.setdefault(row["academic_year"], set()).add(row["student_key"])
+    for year, students in per_year.items():
+        assert abs(len(students) - _SMALL_STUDENTS_PER_YEAR) <= 2, year
+
+
+def test_realistic_students_advance_one_grade_a_year(
+    realistic: dict[str, list[dict]],
+) -> None:
+    grades: dict[str, dict[int, set[int]]] = {}
+    for row in _real_stints(realistic):
+        grades.setdefault(row["student_key"], {}).setdefault(
+            row["academic_year"], set()
+        ).add(row["grade_level"])
+
+    steps = advanced = 0
+    for by_year in grades.values():
+        for year, grade in by_year.items():
+            # A transfer splits a year in two, never across two grades.
+            assert len(grade) == 1
+            assert 0 <= min(grade) <= max(grade) <= 12
+            if year + 1 in by_year:
+                steps += 1
+                delta = min(by_year[year + 1]) - min(grade)
+                assert delta >= 0, "a grade went backwards"
+                advanced += delta == 1
+    assert steps and advanced / steps >= 0.95
+
+    # Carried across years, not re-drawn each year.
+    multi_year = sum(1 for by_year in grades.values() if len(by_year) >= 2)
+    assert multi_year / len(grades) >= 0.5
+
+
+def test_realistic_birth_dates_agree_with_grade_every_year(
+    realistic: dict[str, list[dict]],
+) -> None:
+    born = {
+        row["student_key"]: row["birth_date"]
+        for row in realistic["dim_students"]
+        if row["birth_date"] is not None
+    }
+    for row in _real_stints(realistic):
+        birth = born.get(row["student_key"])
+        if birth is None:
+            continue
+        # Age on 1 September of the year, against the grade's typical age;
+        # birth_date_for_grade allows one year either side.
+        age = row["academic_year"] - birth.year - (birth.month > 9)
+        assert abs(age - (row["grade_level"] + 5)) <= 2, row["grade_level"]
+
+
+def test_realistic_has_one_stint_per_student_per_year_except_transfers(
+    realistic: dict[str, list[dict]],
+) -> None:
+    by_student_year: dict[tuple[str, int], list[dict]] = {}
+    for row in _real_stints(realistic):
+        by_student_year.setdefault(
+            (row["student_key"], row["academic_year"]), []
+        ).append(row)
+    transfers = [rows for rows in by_student_year.values() if len(rows) > 1]
+    assert transfers, "no mid-year transfer"
+    assert len(transfers) / len(by_student_year) <= 0.1
+    for rows in transfers:
+        assert len(rows) == 2
+        first, second = sorted(rows, key=lambda row: row["entry_date_key"])
+        assert first["location_key"] != second["location_key"]
+        assert first["exit_date_key"] < second["entry_date_key"]
+
+
+def test_realistic_stints_sit_inside_their_academic_year(
+    realistic: dict[str, list[dict]],
+) -> None:
+    for row in _real_stints(realistic):
+        year = row["academic_year"]
+        assert generate.dt.date(year, 7, 1) <= row["entry_date_key"]
+        assert row["entry_date_key"] <= row["exit_date_key"]
+        assert row["exit_date_key"] <= generate.dt.date(year + 1, 6, 30)
+        assert row["graduation_year"] == year + 13 - row["grade_level"]
+        assert row["year_in_network"] >= 1
+
+
+def test_realistic_school_band_matches_grade(
+    realistic: dict[str, list[dict]],
+) -> None:
+    location = {row["location_key"]: row for row in realistic["dim_locations"]}
+    office = realistic["dim_locations"][generate._OFFICE_LOCATION]["location_key"]
+    for row in _real_stints(realistic):
+        school = location[row["location_key"]]
+        assert row["location_key"] != office
+        assert not school["is_campus"]
+        assert school["grade_band"] == _BAND[row["grade_level"]]
+
+
+def test_realistic_students_stay_at_one_school_per_band(
+    realistic: dict[str, list[dict]],
+) -> None:
+    schools: dict[tuple[str, str], set[str]] = {}
+    transferred = set()
+    for row in _real_stints(realistic):
+        key = (row["student_key"], _BAND[row["grade_level"]])
+        schools.setdefault(key, set()).add(row["location_key"])
+    by_student_year: dict[tuple[str, int], int] = {}
+    for row in _real_stints(realistic):
+        pair = (row["student_key"], row["academic_year"])
+        by_student_year[pair] = by_student_year.get(pair, 0) + 1
+        if by_student_year[pair] > 1:
+            transferred.add(row["student_key"])
+    for (student, _), seen in schools.items():
+        if student not in transferred:
+            assert len(seen) == 1
+
+
+def test_realistic_daily_rows_cover_each_stint_exactly(
+    realistic: dict[str, list[dict]],
+) -> None:
+    daily: dict[str, list[dict]] = {}
+    for row in realistic["fct_student_attendance_enrollment_daily"]:
+        daily.setdefault(row["student_enrollment_key"], []).append(row)
+    counts = set()
+    for stint in _real_stints(realistic):
+        rows = daily.get(stint["student_enrollment_key"], [])
+        days = [row["date_key"] for row in rows]
+        span = (stint["exit_date_key"] - stint["entry_date_key"]).days + 1
+        assert len(days) == len(set(days)) == span
+        assert min(days) == stint["entry_date_key"]
+        assert max(days) == stint["exit_date_key"]
+        assert {row["location_key"] for row in rows} == {stint["location_key"]}
+        counts.add(span)
+    # Late entrants, early leavers and transfers give students different day
+    # counts, which is what separates the two attendance views.
+    assert len(counts) > 5
+
+
+def test_realistic_daily_membership_follows_the_calendar(
+    realistic: dict[str, list[dict]],
+) -> None:
+    calendar = {
+        (row["location_key"], row["date_key"]): row
+        for row in realistic["dim_school_calendars"]
+    }
+    stints = {row["student_enrollment_key"] for row in _real_stints(realistic)}
+    checked = 0
+    for row in realistic["fct_student_attendance_enrollment_daily"]:
+        if row["student_enrollment_key"] not in stints:
+            continue
+        day = calendar[(row["location_key"], row["date_key"])]
+        if day["is_membership_day"] is None or row["membership_value"] is None:
+            continue
+        assert row["membership_value"] == (1.0 if day["is_membership_day"] else 0.0)
+        checked += 1
+    assert checked
+
+
+def test_realistic_calendars_cover_every_school_day(
+    realistic: dict[str, list[dict]],
+) -> None:
+    by_location: dict[str, list] = {}
+    for row in realistic["dim_school_calendars"]:
+        by_location.setdefault(row["location_key"], []).append(row)
+    used = {row["location_key"] for row in _real_stints(realistic)}
+    assert used <= set(by_location)
+
+    target = generate.TARGET_ACADEMIC_YEAR
+    for location in used:
+        rows = by_location[location]
+        days = [row["date_key"] for row in rows]
+        assert len(days) == len(set(days))
+        for year in range(target - 2, target + 1):
+            start, end = generate.calendar_span(year)
+            expected = {
+                start + generate.dt.timedelta(days=n)
+                for n in range((end - start).days + 1)
+            }
+            assert expected <= set(days), (location, year)
+        for row in rows:
+            if row["is_in_session"] and row["date_key"].weekday() >= 5:
+                pytest.fail(f"{row['date_key']} is a weekend in session")
+    # Holidays, not only weekends, are out of session.
+    weekday_off = {
+        row["date_key"]
+        for row in realistic["dim_school_calendars"]
+        if row["is_in_session"] is False and row["date_key"].weekday() < 5
+    }
+    assert any(day.month == 11 for day in weekday_off)
+    assert any(day.month == 12 for day in weekday_off)
+
+
+def test_realistic_periods_have_one_year_row_per_stint(
+    realistic: dict[str, list[dict]],
+) -> None:
+    year_rows: dict[str, int] = {}
+    for row in realistic["fct_student_attendance_enrollment_periods"]:
+        if row["period_type"] == "year":
+            key = row["student_enrollment_key"]
+            year_rows[key] = year_rows.get(key, 0) + 1
+    for stint in _real_stints(realistic):
+        assert year_rows.get(stint["student_enrollment_key"]) == 1
+
+
+def test_realistic_sections_give_each_stint_one_homeroom(
+    realistic: dict[str, list[dict]],
+) -> None:
+    sections: dict[str, list[dict]] = {}
+    for row in realistic["dim_student_section_enrollments"]:
+        sections.setdefault(row["student_enrollment_key"], []).append(row)
+    stints = _real_stints(realistic)
+    one_homeroom = 0
+    for stint in stints:
+        rows = sections.get(stint["student_enrollment_key"], [])
+        assert len(rows) == generate.REALISTIC_SECTIONS_PER_STINT
+        assert all(
+            row["academic_year"] in (stint["academic_year"], None) for row in rows
+        )
+        one_homeroom += sum(1 for row in rows if row["is_homeroom"]) == 1
+    # Null planting may take the flag off one row.
+    assert one_homeroom >= len(stints) - 1
+
+
+def test_realistic_scores_fall_inside_their_stint(
+    realistic: dict[str, list[dict]],
+) -> None:
+    section_stint = {
+        row["student_section_enrollment_key"]: row["student_enrollment_key"]
+        for row in realistic["dim_student_section_enrollments"]
+    }
+    stints = {row["student_enrollment_key"]: row for row in _real_stints(realistic)}
+    per_stint: dict[str, int] = {}
+    for row in realistic["fct_assessment_scores_enrollment_scoped"]:
+        stint = stints.get(section_stint.get(row["student_section_enrollment_key"]))
+        if stint is None:
+            continue
+        per_stint[stint["student_enrollment_key"]] = (
+            per_stint.get(stint["student_enrollment_key"], 0) + 1
+        )
+        day = row["assessment_date_key"]
+        assert stint["entry_date_key"] <= day <= stint["exit_date_key"]
+    low, high = generate.REALISTIC_SCORES_PER_STINT
+    assert per_stint
+    assert all(low <= n <= high for n in per_stint.values())

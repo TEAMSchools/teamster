@@ -285,7 +285,7 @@ with no cloud access.
 | `uv run python -m teamster.cube_sandbox.manifest`           | Regenerate `coverage_manifest.yml`                  | No                  |
 | `uv run python -m teamster.cube_sandbox.checks`             | Assert model, snapshot and manifest agree           | No                  |
 | `uv run python -m teamster.cube_sandbox.collisions`         | Assert no reserved surname belongs to a real person | No (needs prod)     |
-| `uv run python -m teamster.cube_sandbox.generate --scale …` | Write one Avro file per table to a local directory  | No                  |
+| `uv run python -m teamster.cube_sandbox.generate --scale …` | Write one Avro file per table for one profile       | No                  |
 | `uv run python -m teamster.cube_sandbox.coverage`           | Score the generated Avro against the manifest       | No                  |
 | `uv run python -m teamster.cube_sandbox.load`               | Stage to GCS, create the tables, load, verify       | Yes                 |
 | `uv run scripts/cube_sandbox_isolation.py`                  | Both isolation legs, as the sandbox service account | Yes                 |
@@ -295,6 +295,17 @@ with no cloud access.
 | `uv run python -m teamster.cube_sandbox.mutate`             | Score whether the canaries are load-bearing         | Yes                 |
 | `uv run python -m teamster.cube_sandbox.meta_check`         | Assert `/meta` matches the pinned catalog           | Yes                 |
 | `uv run python -m teamster.cube_sandbox.sentinel`           | Assert every served email and school is fabricated  | Yes                 |
+
+`--scale` picks one of three profiles:
+
+- `tiny` — 50 rows a table. Proves every coverage cell; too small to build a
+  screen on.
+- `realistic` — about 800 students a year across three academic years, carried
+  forward a grade at a time, at schools whose band matches the grade, with one
+  attendance row per calendar day of each enrollment and about 300 staff. Build
+  screens, trends and year-over-year views here. The sizes are constants at the
+  top of `generate.py`.
+- `full` — production volume. Never run, and too large to build in memory.
 
 The live checks read their connection details from the environment and exit with
 a message naming what is missing rather than falling back to localhost. A suite
@@ -407,10 +418,15 @@ would be a step toward the cross-project binding the design exists to prevent.
 
 ## Known gaps
 
-- **The loaded profile is `tiny`.** A production-scale profile is a `--scale`
-  argument and no code change, but until it runs, nothing here supports a
-  conclusion about pagination, timeouts or query cost, and the `Continue wait`
-  polling path has not been exercised.
+- **The loaded profile is `tiny`.** `realistic` is a `--scale` argument and no
+  code change, but even it is far below production volume, so nothing here
+  supports a conclusion about pagination, timeouts or query cost, and the
+  `Continue wait` polling path has not been exercised. `full` has never run.
+- **`realistic` is shaped only where students are.** Enrollments, the school
+  calendar, attendance, sections and scores follow the enrollment plan; the
+  other reference tables (terms, courses, assessments) keep the generic filler
+  of the other profiles, so their dates and years do not line up with the three
+  academic years.
 - **No persona holds an individual exception grant.** Every generated
   `additional_location_grants` is an empty array, so the branch that grant
   column exists for — "my region plus one specific other school" — is never

@@ -14,6 +14,7 @@ import decimal
 import hashlib
 import random
 import unicodedata
+from dataclasses import dataclass, replace
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -288,9 +289,49 @@ def weighted_cycle(weights: list[int], count: int) -> list[int]:
     return picks
 
 
+SCALES = ("tiny", "realistic", "full")
+
+# The realistic profile: enough students and staff that charts, trends, region
+# rollups and year-over-year comparisons behave like production, small enough
+# to build and load on a laptop. The size knobs are the two counts; tests
+# shrink them.
+REALISTIC_STUDENTS_PER_YEAR = 800
+REALISTIC_STAFF = 300
+# Academic years TARGET_ACADEMIC_YEAR - (n - 1) through TARGET_ACADEMIC_YEAR,
+# so a year-over-year screen has two prior years to compare against.
+REALISTIC_YEARS = 3
+# Share of students who leave each year, replaced by new entrants.
+REALISTIC_ATTRITION = 0.09
+# Of those leavers, the share who leave mid-year rather than after June.
+REALISTIC_EARLY_EXIT_SHARE = 0.5
+# Of the entrants above kindergarten, the share who arrive after day one.
+REALISTIC_LATE_ENTRY_SHARE = 0.5
+# Share of student-years split into two stints at two schools.
+REALISTIC_TRANSFER_SHARE = 0.03
+REALISTIC_SECTIONS_PER_STINT = 6
+REALISTIC_SECTIONS_PER_SCHOOL = 12
+REALISTIC_SCORES_PER_STINT = (3, 6)
+# Every other table: reference data whose size carries no meaning.
+REALISTIC_DEFAULT_ROWS = 200
+_STAFF_TABLES = frozenset(
+    {
+        "dim_staff",
+        "dim_staff_cube_access",
+        "dim_staff_reporting_chain",
+        "dim_staff_reporting_periods",
+        "dim_staff_work_history",
+    }
+)
+
+
 def row_target(table: str, scale: str) -> int:
-    """Rows to generate for one table under a named profile."""
-    if scale not in ("tiny", "full"):
+    """Rows to generate for one table under a named profile.
+
+    Under `realistic`, the student tables, the school calendar and the facts
+    are sized by the enrollment plan instead (see `_Fabricator._count`); the
+    value here is only the fallback for tables the plan does not shape.
+    """
+    if scale not in SCALES:
         raise ValueError(f"unknown scale {scale!r}")
     if table == "dim_dates":
         return DATE_SPINE_MAX
@@ -298,6 +339,8 @@ def row_target(table: str, scale: str) -> int:
         return _FIXED_ROWS[table]
     if scale == "tiny":
         return MANIFEST_FLOOR
+    if scale == "realistic":
+        return REALISTIC_STAFF if table in _STAFF_TABLES else REALISTIC_DEFAULT_ROWS
     return _PRODUCTION_ROWS.get(table, MANIFEST_FLOOR * 100)
 
 
@@ -388,6 +431,235 @@ def school_week_end(day: dt.date) -> dt.date:
     start = school_week_start(day)
     month_end = day.replace(day=calendar.monthrange(day.year, day.month)[1])
     return min(start + dt.timedelta(days=4), month_end)
+
+
+# --------------------------------------------------------------------------
+# The realistic profile's calendar and enrollment plan
+# --------------------------------------------------------------------------
+
+# ES K-4, MS 5-8, HS 9-12, matching the bands dim_locations carries.
+_GRADE_BANDS = ("ES", "MS", "HS")
+
+
+def grade_band_of(grade: int) -> str:
+    return "ES" if grade <= 4 else "MS" if grade <= 8 else "HS"
+
+
+def _next_weekday(day: dt.date) -> dt.date:
+    while day.weekday() >= 5:
+        day += dt.timedelta(days=1)
+    return day
+
+
+def _previous_weekday(day: dt.date) -> dt.date:
+    while day.weekday() >= 5:
+        day -= dt.timedelta(days=1)
+    return day
+
+
+def _nth_weekday(year: int, month: int, weekday: int, n: int) -> dt.date:
+    """The nth `weekday` (Monday 0) of a month; n = -1 is the last one."""
+    days = [
+        dt.date(year, month, d)
+        for d in range(1, calendar.monthrange(year, month)[1] + 1)
+        if dt.date(year, month, d).weekday() == weekday
+    ]
+    return days[n if n < 0 else n - 1]
+
+
+def calendar_span(academic_year: int) -> tuple[dt.date, dt.date]:
+    """The days a school calendar row exists for, staff return to year end.
+
+    Wider than the instruction span on both sides, so the calendar holds days
+    no student attends — the parent side of the calendar-to-fact orphan pair.
+    """
+    return dt.date(academic_year, 8, 1), dt.date(academic_year + 1, 6, 30)
+
+
+def instruction_span(academic_year: int) -> tuple[dt.date, dt.date]:
+    """First and last student day: mid-August to mid-June."""
+    return (
+        _next_weekday(dt.date(academic_year, 8, 15)),
+        _previous_weekday(dt.date(academic_year + 1, 6, 15)),
+    )
+
+
+@cache
+def _holidays(academic_year: int) -> frozenset[dt.date]:
+    """Weekdays inside the instruction span with no school."""
+    fall, spring = academic_year, academic_year + 1
+    thanksgiving = _nth_weekday(fall, 11, 3, 4)
+    spring_break = iso_week_start(dt.date(spring, 4, 10))
+    days = {
+        _nth_weekday(fall, 9, 0, 1),  # Labor Day
+        _nth_weekday(spring, 1, 0, 3),  # Martin Luther King Jr. Day
+        _nth_weekday(spring, 2, 0, 3),  # Presidents' Day
+        _nth_weekday(spring, 5, 0, -1),  # Memorial Day
+    }
+    days |= {thanksgiving - dt.timedelta(days=n) for n in range(4)}
+    days.add(thanksgiving + dt.timedelta(days=1))
+    winter = dt.date(fall, 12, 22)
+    days |= {winter + dt.timedelta(days=n) for n in range(12)}
+    days |= {spring_break + dt.timedelta(days=n) for n in range(5)}
+    return frozenset(days)
+
+
+def _days(first: dt.date, last: dt.date) -> list[dt.date]:
+    """Every calendar day from first to last, inclusive."""
+    return [first + dt.timedelta(days=n) for n in range((last - first).days + 1)]
+
+
+def is_school_day(day: dt.date, academic_year: int) -> bool:
+    first, last = instruction_span(academic_year)
+    return (
+        first <= day <= last
+        and day.weekday() < 5
+        and day not in _holidays(academic_year)
+    )
+
+
+def realistic_years() -> list[int]:
+    return list(
+        range(TARGET_ACADEMIC_YEAR - REALISTIC_YEARS + 1, TARGET_ACADEMIC_YEAR + 1)
+    )
+
+
+@dataclass
+class PlannedStudent:
+    """One student, fixed by the grade they had in the year they arrived."""
+
+    grade: int
+    year: int
+    region: int
+    status: str = "Active"
+
+
+@dataclass(frozen=True)
+class PlannedStint:
+    """One enrollment stint, before a school is chosen for it.
+
+    `transfer` marks the second leg of a mid-year move: it starts at a
+    different school from the leg before it.
+    """
+
+    student: int
+    year: int
+    grade: int
+    entry: dt.date
+    exit: dt.date
+    year_in_network: int
+    transfer: bool = False
+
+
+def plan_enrollments(
+    students_per_year: int, rng: random.Random
+) -> tuple[list[PlannedStudent], list[PlannedStint]]:
+    """Who is enrolled, in which grade, between which dates, each year.
+
+    Students carry forward: a returning student is one grade higher, twelfth
+    graders graduate, and a share leaves each year. Kindergartners and
+    entrants at assorted grades refill the roster to the same size, so most
+    students span two or three consecutive years with a grade step each
+    time — which is what a year-over-year screen needs to show anything.
+
+    Schools are chosen later, once dim_locations exists; nothing here needs
+    one.
+    """
+    years = realistic_years()
+    students: list[PlannedStudent] = []
+    stints: list[PlannedStint] = []
+
+    def admit(grade: int, year: int) -> int:
+        region = rng.choices(range(_SCHOOL_REGIONS), weights=_SCHOOL_REGION_WEIGHTS)
+        students.append(PlannedStudent(grade, year, region[0]))
+        return len(students) - 1
+
+    # student -> (grade, year in network), in admission order
+    active: dict[int, tuple[int, int]] = {}
+    for index in range(students_per_year):
+        grade = index % 13
+        active[admit(grade, years[0])] = (grade, rng.randint(1, grade + 1))
+    late: set[int] = set()
+    entrant_grades = list(range(1, 12))
+    # KIPP's middle and high schools start at grades 5 and 9, so most
+    # entrants above kindergarten arrive there.
+    entrant_weights = [3 if grade in (5, 9) else 1 for grade in entrant_grades]
+
+    for year in years:
+        first, last = instruction_span(year)
+        ids = list(active)
+        movable = [s for s in ids if active[s][0] < 12]
+        leavers = set(
+            rng.sample(
+                movable,
+                min(
+                    len(movable), max(1, round(students_per_year * REALISTIC_ATTRITION))
+                ),
+            )
+        )
+        staying = [s for s in ids if s not in leavers]
+        transfers = set(
+            rng.sample(
+                staying,
+                min(
+                    len(staying),
+                    max(1, round(students_per_year * REALISTIC_TRANSFER_SHARE)),
+                ),
+            )
+        )
+        early: set[int] = set()
+        for student in ids:
+            grade, network_years = active[student]
+            entry = first
+            if student in late:
+                entry = _next_weekday(first + dt.timedelta(days=rng.randint(5, 120)))
+            exit_ = last
+            if student in leavers and rng.random() < REALISTIC_EARLY_EXIT_SHARE:
+                early.add(student)
+                room = max(31, (last - entry).days - 10)
+                exit_ = _previous_weekday(
+                    entry + dt.timedelta(days=rng.randint(30, room))
+                )
+            leg = PlannedStint(student, year, grade, entry, exit_, network_years)
+            if student in transfers and (exit_ - entry).days > 90:
+                split = _previous_weekday(
+                    entry
+                    + dt.timedelta(days=rng.randint(40, (exit_ - entry).days - 40))
+                )
+                resume = _next_weekday(split + dt.timedelta(days=rng.randint(3, 10)))
+                stints.append(replace(leg, exit=split))
+                stints.append(replace(leg, entry=resume, transfer=True))
+            else:
+                stints.append(leg)
+
+        final = year == years[-1]
+        for student in ids:
+            grade, _ = active[student]
+            if grade == 12 and not final:
+                students[student].status = "Graduated"
+            elif student in leavers and (student in early or not final):
+                students[student].status = "Transferred Out"
+        if final:
+            break
+
+        carried = {
+            student: (grade + 1, network_years + 1)
+            for student, (grade, network_years) in active.items()
+            if grade < 12 and student not in leavers
+        }
+        kindergarten = max(1, round(students_per_year / 13))
+        for _ in range(kindergarten):
+            carried[admit(0, year + 1)] = (0, 1)
+        late = set()
+        for _ in range(max(0, students_per_year - len(carried))):
+            grade = rng.choices(entrant_grades, weights=entrant_weights)[0]
+            student = admit(grade, year + 1)
+            carried[student] = (grade, 1)
+            if rng.random() < REALISTIC_LATE_ENTRY_SHARE:
+                late.add(student)
+        active = carried
+
+    return students, stints
 
 
 # --------------------------------------------------------------------------
@@ -587,7 +859,14 @@ class _Fabricator:
         self.columns: dict[str, dict[str, Any]] = snap["tables"]
         self.people = people
         self.scale = scale
+        self.realistic = scale == "realistic"
         self.seed = seed
+        self._plan: tuple[list[PlannedStudent], list[PlannedStint]] | None = None
+        self._school_rows: list[dict[str, Any]] | None = None
+        self._school_choices: dict[tuple[str, int], list[dict[str, Any]]] = {}
+        self._school_of: dict[tuple[int, str], dict[str, Any]] = {}
+        self._periods: list[dict[str, Any]] | None = None
+        self._scores_per_stint: list[int] | None = None
         self.null_required = required_nulls(cells)
         self.orphan_required = required_orphans(cells)
         # Checked against, never filled from: see `_special_dim_staff_cube_access`.
@@ -703,6 +982,21 @@ class _Fabricator:
     def _head(self, table: str) -> int:
         return self.head.get(table, 0)
 
+    def _count(self, table: str) -> int:
+        """Rows for one table: the profile's target, or the plan's size.
+
+        Under `realistic` the student tables, the calendar and the facts are
+        as long as the enrollment plan makes them. Each such table keeps one
+        leading row for its planted orphans, as every table does, and the
+        enrollment table one trailing row as well (see
+        `_shape_realistic_enrollments`).
+        """
+        if self.realistic:
+            sizer = getattr(self, f"_realistic_count_{table}", None)
+            if sizer is not None:
+                return sizer()
+        return row_target(table, self.scale)
+
     def _pin(self, table: str, column: str, index: int) -> None:
         self.pinned.setdefault((table, column), set()).add(index)
 
@@ -797,7 +1091,7 @@ class _Fabricator:
 
     def build(self) -> dict[str, list[dict[str, Any]]]:
         for table in self.order:
-            count = row_target(table, self.scale)
+            count = self._count(table)
             # trunk-ignore(bandit/B311): fabricating rows, not keys
             rng = random.Random(f"{self.seed}:{table}")
             rows = self._base_rows(table, count, rng)
@@ -1192,6 +1486,8 @@ class _Fabricator:
         fifth-graders born in 1998, and a kit that derives age from either
         field alone then disagrees with itself.
         """
+        if self.realistic:
+            return self._realistic_student(index, rng)
         grade = rng.randint(0, 12)
         given, surname = self._person(index, rng)
         key = surrogate_key("dim_students.student_key", index)
@@ -1206,6 +1502,35 @@ class _Fabricator:
             "salesforce_contact_id": f"003SBX{index:012d}",
         }
 
+    def _realistic_student(self, index: int, rng: random.Random) -> dict[str, Any]:
+        """A planned student, born to fit the grade they arrived in.
+
+        One birth date serves every year the student appears, because the
+        grade steps by one each year. The row after the plan is an applicant
+        who never enrolled: the dim_students row no stint references.
+        """
+        students = self.plan[0]
+        if index < len(students):
+            planned = students[index]
+            grade, year, status = planned.grade, planned.year, planned.status
+        else:
+            grade, year, status = rng.randint(0, 12), TARGET_ACADEMIC_YEAR, "Inactive"
+        given, surname = self._person(index, rng)
+        return {
+            "student_key": self._student_key(index),
+            "full_name": f"{given} {surname}",
+            "birth_date": birth_date_for_grade(grade, year, rng),
+            "enrollment_status": status,
+            "lea_student_identifier": reserved_identifier(index),
+            "state_student_identifier": str(reserved_identifier(index + 1_000_000)),
+            "district_student_identifier": str(reserved_identifier(index + 2_000_000)),
+            "salesforce_contact_id": f"003SBX{index:012d}",
+        }
+
+    @staticmethod
+    def _student_key(index: int) -> str:
+        return surrogate_key("dim_students.student_key", index)
+
     def _special_dim_student_section_enrollments(
         self, index: int, rng: random.Random
     ) -> dict[str, Any]:
@@ -1213,9 +1538,41 @@ class _Fabricator:
 
     # -- per-table reconciliation -----------------------------------------
 
+    def _after_dim_course_sections(
+        self, rows: list[dict[str, Any]], rng: random.Random
+    ) -> None:
+        if not self.realistic:
+            return
+        # Every school offers sections, so a student is scheduled into
+        # sections at their own school.
+        schools = self._schools()
+        for index, row in enumerate(rows):
+            row["location_key"] = schools[index % len(schools)]["location_key"]
+
+    def _after_dim_school_calendars(
+        self, rows: list[dict[str, Any]], rng: random.Random
+    ) -> None:
+        if not self.realistic:
+            return
+        cells = (
+            (school["location_key"], day, year)
+            for school in self._schools()
+            for year in realistic_years()
+            for day in _days(*calendar_span(year))
+        )
+        for row, (location, day, year) in zip(rows, cells, strict=True):
+            in_session = is_school_day(day, year)
+            row["location_key"] = location
+            row["date_key"] = day
+            row["is_in_session"] = in_session
+            row["is_membership_day"] = in_session
+
     def _after_dim_student_enrollments(
         self, rows: list[dict[str, Any]], rng: random.Random
     ) -> None:
+        if self.realistic:
+            self._shape_realistic_enrollments(rows)
+            return
         for row in rows:
             cohort = self.student_cohort.get(row["student_key"])
             if cohort is None:
@@ -1231,16 +1588,19 @@ class _Fabricator:
     def _after_dim_student_section_enrollments(
         self, rows: list[dict[str, Any]], rng: random.Random
     ) -> None:
-        by_stint = {
-            row["student_enrollment_key"]: row
-            for row in self.rows["dim_student_enrollments"]
-        }
-        for row in rows:
-            stint = by_stint.get(row["student_enrollment_key"])
-            if stint is not None:
-                row["academic_year"] = stint["academic_year"]
-                row["entry_date"] = stint["entry_date_key"]
-                row["exit_date"] = stint["exit_date_key"]
+        if self.realistic:
+            self._shape_realistic_sections(rows)
+        else:
+            by_stint = {
+                row["student_enrollment_key"]: row
+                for row in self.rows["dim_student_enrollments"]
+            }
+            for row in rows:
+                stint = by_stint.get(row["student_enrollment_key"])
+                if stint is not None:
+                    row["academic_year"] = stint["academic_year"]
+                    row["entry_date"] = stint["entry_date_key"]
+                    row["exit_date"] = stint["exit_date_key"]
         resolve_spine(self.rows["dim_student_enrollments"], rows, rng)
 
     def _after_fct_student_attendance_enrollment_daily(
@@ -1254,6 +1614,11 @@ class _Fabricator:
         the students chronically absent as of a date — the first divergence
         the sandbox has to teach.
         """
+        head = self._head("fct_student_attendance_enrollment_daily")
+        if self.realistic:
+            self._shape_realistic_daily(rows, head, rng)
+            self._stamp_cumulative(rows, head)
+            return
         stints = [
             row
             for row in self._referenceable("dim_student_enrollments")
@@ -1270,7 +1635,6 @@ class _Fabricator:
         for row in calendars:
             by_location.setdefault(row["location_key"], []).append(row)
 
-        head = self._head("fct_student_attendance_enrollment_daily")
         for index, row in enumerate(rows):
             if index == head:
                 continue  # the planted orphan keeps its unmatched keys
@@ -1281,27 +1645,37 @@ class _Fabricator:
             stint = stints[
                 min(len(stints) - 1, int(len(stints) * (index / len(rows)) ** 2))
             ]
-            row["student_enrollment_key"] = stint["student_enrollment_key"]
-            row["location_key"] = stint["location_key"]
-            row["academic_year"] = stint["academic_year"]
             days = by_location.get(stint["location_key"]) or calendars
             day_row = days[index % len(days)]
-            day = day_row["date_key"]
-            row["date_key"] = day
-            row["week_start_monday"] = school_week_start(day)
-            row["is_in_session_day"] = bool(day_row["is_in_session"])
-            membership = 1.0 if day_row["is_membership_day"] else 0.0
-            row["membership_value"] = membership
-            rate = _stable_fraction(stint["student_enrollment_key"], 0.70, 0.99)
-            present = membership > 0 and rng.random() < rate
-            row["attendance_value"] = 1.0 if present else 0.0
-            row["present_weight"] = membership
-            row["is_absent"] = 0 if present else 1
-            row["is_ontime"] = 1 if present else 0
-            row["attendance_category"] = "Present" if present else "Absent Unexcused"
-            row["attendance_code"] = "P" if present else "AU"
+            self._mark_day(row, stint, day_row, rng)
 
         self._stamp_cumulative(rows, head)
+
+    def _mark_day(
+        self,
+        row: dict[str, Any],
+        stint: dict[str, Any],
+        day_row: dict[str, Any],
+        rng: random.Random,
+    ) -> None:
+        """One student's attendance on one calendar row of their school."""
+        day = day_row["date_key"]
+        row["student_enrollment_key"] = stint["student_enrollment_key"]
+        row["location_key"] = stint["location_key"]
+        row["academic_year"] = stint["academic_year"]
+        row["date_key"] = day
+        row["week_start_monday"] = school_week_start(day)
+        row["is_in_session_day"] = bool(day_row["is_in_session"])
+        membership = 1.0 if day_row["is_membership_day"] else 0.0
+        row["membership_value"] = membership
+        rate = _stable_fraction(stint["student_enrollment_key"], 0.70, 0.99)
+        present = membership > 0 and rng.random() < rate
+        row["attendance_value"] = 1.0 if present else 0.0
+        row["present_weight"] = membership
+        row["is_absent"] = 0 if present else 1
+        row["is_ontime"] = 1 if present else 0
+        row["attendance_category"] = "Present" if present else "Absent Unexcused"
+        row["attendance_code"] = "P" if present else "AU"
 
     def _stamp_cumulative(self, rows: list[dict[str, Any]], head: int) -> None:
         grouped: dict[Any, list[dict[str, Any]]] = {}
@@ -1336,6 +1710,24 @@ class _Fabricator:
         These are the same days, aggregated the other way — which is what
         makes the divergence a lesson rather than an artefact.
         """
+        periods = self._derived_periods()
+        if not periods:
+            return
+        head = self._head("fct_student_attendance_enrollment_periods")
+        for index, row in enumerate(rows):
+            if index == head:
+                continue
+            row.update(periods[index % len(periods)])
+            row["period_start_membership_date_key"] = row["period_start_date_key"]
+            row["student_period_key"] = surrogate_key(
+                "fct_student_attendance_enrollment_periods", index
+            )
+            row["is_truant"] = row["is_chronically_absent"]
+
+    def _derived_periods(self) -> list[dict[str, Any]]:
+        """A year row and one row per school week, per stint in the daily fact."""
+        if self._periods is not None:
+            return self._periods
         daily = self.rows["fct_student_attendance_enrollment_daily"]
         by_stint: dict[Any, list[dict[str, Any]]] = {}
         for row in daily:
@@ -1345,7 +1737,9 @@ class _Fabricator:
         for key, group in by_stint.items():
             group = sorted(group, key=lambda row: row["date_key"])
             last = group[-1]
-            weeks = sorted({school_week_start(row["date_key"]) for row in group})
+            by_week: dict[dt.date, list[dict[str, Any]]] = {}
+            for row in group:
+                by_week.setdefault(school_week_start(row["date_key"]), []).append(row)
             periods.append(
                 {
                     "student_enrollment_key": key,
@@ -1360,10 +1754,8 @@ class _Fabricator:
                     "academic_year": last["academic_year"],
                 }
             )
-            for week in weeks:
-                in_week = [
-                    row for row in group if school_week_start(row["date_key"]) == week
-                ]
+            for week in sorted(by_week):
+                in_week = by_week[week]
                 periods.append(
                     {
                         "student_enrollment_key": key,
@@ -1376,18 +1768,8 @@ class _Fabricator:
                         "academic_year": in_week[-1]["academic_year"],
                     }
                 )
-        if not periods:
-            return
-        head = self._head("fct_student_attendance_enrollment_periods")
-        for index, row in enumerate(rows):
-            if index == head:
-                continue
-            row.update(periods[index % len(periods)])
-            row["period_start_membership_date_key"] = row["period_start_date_key"]
-            row["student_period_key"] = surrogate_key(
-                "fct_student_attendance_enrollment_periods", index
-            )
-            row["is_truant"] = row["is_chronically_absent"]
+        self._periods = periods
+        return periods
 
     def _after_fct_assessment_scores_enrollment_scoped(
         self, rows: list[dict[str, Any]], rng: random.Random
@@ -1398,6 +1780,8 @@ class _Fabricator:
         average produces a number nobody can read as plausible, which is the
         one failure no assertion catches.
         """
+        if self.realistic:
+            self._shape_realistic_scores(rows)
         scope_by_administration = {}
         assessments = {
             row["assessment_key"]: row for row in self.rows["dim_assessments"]
@@ -1419,6 +1803,237 @@ class _Fabricator:
                 .scaleb(-2)
                 .quantize(_NUMERIC_QUANTUM)
             )
+
+    # -- the realistic profile --------------------------------------------
+    #
+    # The plan decides every student-year before any row exists; the hooks
+    # below lay it onto rows. Each shaped table keeps its row 0 for the
+    # planted orphans, so coverage holds at this scale exactly as at `tiny`.
+
+    @property
+    def plan(self) -> tuple[list[PlannedStudent], list[PlannedStint]]:
+        if self._plan is None:
+            self._plan = plan_enrollments(
+                REALISTIC_STUDENTS_PER_YEAR,
+                # trunk-ignore(bandit/B311): fabricating rows, not keys
+                random.Random(f"{self.seed}:enrollment-plan"),
+            )
+        return self._plan
+
+    def _real_stints(self) -> list[dict[str, Any]]:
+        """Enrollment rows the plan laid down, without the two fixture rows."""
+        return self.rows["dim_student_enrollments"][1:-1]
+
+    def _schools(self) -> list[dict[str, Any]]:
+        """Locations a student can attend.
+
+        A school with a grade band in one of the four school regions. Never
+        the office or a campus row, never row 0 (its region is the planted
+        orphan) and never the last row, which `_referenceable` withholds
+        from every child.
+        """
+        if self._school_rows is not None:
+            return self._school_rows
+        region_of = {
+            self.rows["dim_regions"][index]["region_key"]: index
+            for index in range(_SCHOOL_REGIONS)
+        }
+        schools = []
+        for index, row in enumerate(self._referenceable("dim_locations")):
+            region = region_of.get(row["region_key"])
+            if (
+                index == 0
+                or self._is_campus_row(index)
+                or region is None
+                or row["grade_band"] not in _GRADE_BANDS
+            ):
+                continue
+            schools.append(row)
+            self._school_choices.setdefault((row["grade_band"], region), []).append(row)
+        if not schools:
+            raise ValueError("dim_locations has no school a student could attend")
+        self._school_rows = schools
+        return schools
+
+    def _school_for(self, stint: PlannedStint) -> dict[str, Any]:
+        """The student's school for this stint's band, kept while in the band.
+
+        A region with no school in the band (Paterson has no high school)
+        sends the student to one in the largest region. A transfer leg moves
+        the student to a different school of the same band, which then
+        becomes their school.
+        """
+        self._schools()
+        band = grade_band_of(stint.grade)
+        mine = (stint.student, band)
+        current = self._school_of.get(mine)
+        if current is not None and not stint.transfer:
+            return current
+        largest = _SCHOOL_REGION_WEIGHTS.index(max(_SCHOOL_REGION_WEIGHTS))
+        region = self.plan[0][stint.student].region
+        candidates = self._school_choices.get(
+            (band, region)
+        ) or self._school_choices.get((band, largest), [])
+        if stint.transfer:
+            candidates = [row for row in candidates if row is not current] or [
+                row
+                for row in self._schools()
+                if row["grade_band"] == band and row is not current
+            ]
+        if not candidates:
+            raise ValueError(f"no {band} school for student {stint.student}")
+        seed = (stint.student, band, stint.year if stint.transfer else None)
+        pick = candidates[int(_stable_fraction(seed, 0, len(candidates)))]
+        self._school_of[mine] = pick
+        return pick
+
+    def _realistic_count_dim_students(self) -> int:
+        return len(self.plan[0]) + 1  # + the applicant no stint references
+
+    def _realistic_count_dim_student_enrollments(self) -> int:
+        return len(self.plan[1]) + 2  # + the orphan row and the null carrier
+
+    def _realistic_count_dim_student_enrollment_status(self) -> int:
+        return len(self.plan[1]) + 2
+
+    def _realistic_count_dim_course_sections(self) -> int:
+        return len(self._schools()) * REALISTIC_SECTIONS_PER_SCHOOL
+
+    def _realistic_count_dim_school_calendars(self) -> int:
+        days = sum(len(_days(*calendar_span(year))) for year in realistic_years())
+        return len(self._schools()) * days
+
+    def _realistic_count_dim_student_section_enrollments(self) -> int:
+        return 1 + REALISTIC_SECTIONS_PER_STINT * len(self.plan[1])
+
+    def _realistic_count_fct_student_attendance_enrollment_daily(self) -> int:
+        return 1 + sum((stint.exit - stint.entry).days + 1 for stint in self.plan[1])
+
+    def _realistic_count_fct_student_attendance_enrollment_periods(self) -> int:
+        return 1 + len(self._derived_periods())
+
+    def _realistic_count_fct_assessment_scores_enrollment_scoped(self) -> int:
+        return 1 + sum(self._score_counts())
+
+    def _score_counts(self) -> list[int]:
+        if self._scores_per_stint is None:
+            # trunk-ignore(bandit/B311): fabricating rows, not keys
+            rng = random.Random(f"{self.seed}:scores-per-stint")
+            self._scores_per_stint = [
+                rng.randint(*REALISTIC_SCORES_PER_STINT) for _ in self.plan[1]
+            ]
+        return self._scores_per_stint
+
+    def _shape_realistic_enrollments(self, rows: list[dict[str, Any]]) -> None:
+        """One row per planned stint, between two fixture rows.
+
+        Row 0 keeps the student and school orphans the foreign-key pass
+        planted and copies the rest from a real stint. The last row, which
+        `_referenceable` withholds from every child, carries every null the
+        manifest requires of this table — so `_plant_nulls` finds them
+        present and leaves the real stints whole, and every real stint's
+        dates can drive its attendance rows.
+        """
+        for row, stint in zip(rows[1:-1], self.plan[1], strict=True):
+            row.update(
+                student_key=self._student_key(stint.student),
+                location_key=self._school_for(stint)["location_key"],
+                academic_year=stint.year,
+                grade_level=stint.grade,
+                graduation_year=stint.year + 12 - stint.grade + 1,
+                year_in_network=stint.year_in_network,
+                entry_date_key=stint.entry,
+                exit_date_key=stint.exit,
+                is_retained_year=False,
+            )
+        keys = ("student_enrollment_key", "student_key", "location_key")
+        rows[0].update({k: v for k, v in rows[1].items() if k not in keys})
+        tail = rows[-1]
+        tail["student_key"] = rows[1]["student_key"]
+        tail["location_key"] = rows[1]["location_key"]
+        for column in self.columns["dim_student_enrollments"]:
+            if ("dim_student_enrollments", column) in self.null_required:
+                tail[column] = None
+
+    def _shape_realistic_sections(self, rows: list[dict[str, Any]]) -> None:
+        """A homeroom and the rest of a schedule, at the stint's own school."""
+        offered: dict[Any, list[Any]] = {}
+        for row in self._referenceable("dim_course_sections"):
+            if row["location_key"] is not None:
+                offered.setdefault(row["location_key"], []).append(
+                    row["course_section_key"]
+                )
+        anywhere = self._pool("dim_course_sections", "course_section_key")
+        stints = self._real_stints()
+        for index, row in enumerate(rows[1:]):
+            stint = stints[index // REALISTIC_SECTIONS_PER_STINT]
+            slot = index % REALISTIC_SECTIONS_PER_STINT
+            sections = offered.get(stint["location_key"]) or anywhere
+            start = int(
+                _stable_fraction(stint["student_enrollment_key"], 0, len(sections))
+            )
+            row.update(
+                student_enrollment_key=stint["student_enrollment_key"],
+                course_section_key=sections[(start + slot) % len(sections)],
+                academic_year=stint["academic_year"],
+                entry_date=stint["entry_date_key"],
+                exit_date=stint["exit_date_key"],
+                is_homeroom=slot == 0,
+                is_current_section_enrollment=(
+                    stint["academic_year"] == TARGET_ACADEMIC_YEAR
+                ),
+                is_dropped_course=False,
+                is_dropped_section=False,
+            )
+
+    def _shape_realistic_daily(
+        self, rows: list[dict[str, Any]], head: int, rng: random.Random
+    ) -> None:
+        """One row per stint per calendar day, entry to exit, weekends included.
+
+        Each day reads its school's calendar row, so membership is zero on a
+        weekend or a holiday. No attendance is taken on those days, so they
+        are neither an absence nor a category.
+        """
+        calendar = {
+            (row["location_key"], row["date_key"]): row
+            for row in self.rows["dim_school_calendars"]
+        }
+        cursor = iter(rows[head + 1 :])
+        for stint in self._real_stints():
+            for day in _days(stint["entry_date_key"], stint["exit_date_key"]):
+                row = next(cursor)
+                self._mark_day(row, stint, calendar[(stint["location_key"], day)], rng)
+                if not row["membership_value"]:
+                    row["is_absent"] = 0
+                    row["attendance_category"] = None
+                    row["attendance_code"] = None
+
+    def _shape_realistic_scores(self, rows: list[dict[str, Any]]) -> None:
+        """A few scores per stint, spread evenly across its dates.
+
+        Scored against a subject section rather than homeroom where the
+        stint has one, as an assessment is.
+        """
+        sections: dict[Any, list[dict[str, Any]]] = {}
+        for row in self._referenceable("dim_student_section_enrollments"):
+            sections.setdefault(row["student_enrollment_key"], []).append(row)
+        cursor = iter(rows[1:])
+        for stint, count in zip(self._real_stints(), self._score_counts(), strict=True):
+            entry, exit_ = stint["entry_date_key"], stint["exit_date_key"]
+            taken = sections.get(stint["student_enrollment_key"], [])
+            subjects = [row for row in taken if not row["is_homeroom"]] or taken
+            span = (exit_ - entry).days
+            for n in range(count):
+                row = next(cursor)
+                day = entry + dt.timedelta(days=span * (2 * n + 1) // (2 * count))
+                day = max(entry, _previous_weekday(day))
+                row["assessment_date_key"] = day
+                row["test_date_key"] = day
+                if subjects:
+                    row["student_section_enrollment_key"] = subjects[n % len(subjects)][
+                        "student_section_enrollment_key"
+                    ]
 
 
 def _stable_fraction(seed: Any, low: float, high: float) -> float:
@@ -1472,7 +2087,7 @@ def write(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scale", choices=("tiny", "full"), default="tiny")
+    parser.add_argument("--scale", choices=SCALES, default="tiny")
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     args = parser.parse_args(argv)
@@ -1484,6 +2099,8 @@ def main(argv: list[str] | None = None) -> int:
     written = write(tables, snap, out_dir)
     total = sum(len(rows) for rows in tables.values())
     print(f"wrote {len(written)} Avro files to {out_dir}: {total} rows")
+    for table in sorted(tables):
+        print(f"  {table}: {len(tables[table])}")
     return 0
 
 
