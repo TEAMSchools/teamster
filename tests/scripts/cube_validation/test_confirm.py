@@ -892,3 +892,100 @@ def test_compose_opts_out_of_banned_syntax_only_when_the_proof_uses_it():
     assert "sql-banned-syntax" not in plain
     assert "sql-banned-syntax" in picked
     assert confirm.split_block(picked)[0] == causes
+
+
+# --- one proof per row population -------------------------------------------------
+
+# Same rows as COMPARISON, another measure: its groups are the same rows.
+SIBLING = Comparison(
+    id="mastery-b",
+    measure="pct2",
+    dims=[ColumnPair("school", "abbreviation")],
+    rows=ROWS,
+)
+CFG2 = ViewConfig(view="v", fact="m.fct", comparisons=[COMPARISON, SIBLING])
+
+
+def test_comparisons_that_differ_only_in_dims_share_a_row_population():
+    from dataclasses import replace
+
+    by_region = replace(COMPARISON, id="r", dims=[ColumnPair("region", "region")])
+    narrower = replace(COMPARISON, id="n", scope=[{"school": ["X"]}])
+
+    key = confirm.row_population(COMPARISON)
+    assert key is not None and confirm.row_population(by_region) == key
+    assert confirm.row_population(narrower) != key
+    assert confirm.row_population(replace(COMPARISON, rows=None)) is None
+    assert confirm.siblings(CFG2, COMPARISON) == [SIBLING]
+
+
+def _items2(run):
+    return [triage._as_json(s) for s in triage.suggest(CFG2, run, {}, traces={})]
+
+
+def _sibling_run():
+    sib = Group("mastery-b", (("abbreviation", "X"),), "cube_only", 3, 3)
+    return _run([_group(3), sib])
+
+
+def test_a_stored_proof_also_proves_a_comparison_with_the_same_rows(
+    duck, tmp_path, offline
+):
+    _tables(duck)
+    run = _sibling_run()
+    items = _items2(run)
+    directory, _ = _proof(tmp_path)
+
+    _stored(run, items, directory, Wh(duck), cfg=CFG2)
+
+    by = {i["comparison"]: i for i in items}
+    assert {i["suggestion"] for i in items} == {"cause"}
+    assert by["mastery-b"]["proof"]["path"] == by["mastery"]["proof"]["path"]
+
+
+def test_a_comparison_s_own_proof_wins_over_a_shared_one(duck, tmp_path, offline):
+    _tables(duck)
+    run = _sibling_run()
+    items = _items2(run)
+    directory, _ = _proof(tmp_path)
+    own = confirm.proof_path(directory, "mastery-b", "cube_only")
+    own.write_text(confirm.compose(CAUSES, PROOF))
+    wh = Wh(duck)
+
+    _stored(run, items, directory, wh, cfg=CFG2)
+
+    by = {i["comparison"]: i for i in items}
+    assert by["mastery-b"]["proof"]["path"].endswith("mastery-b__cube_only.sql")
+    assert len(wh.ran) == 2  # each comparison ran once, with its own file
+
+
+def test_confirm_also_proves_the_comparisons_with_the_same_rows(
+    duck, tmp_path, monkeypatch, offline, capsys
+):
+    _tables(duck)
+    run = _sibling_run()
+    path = _saved(tmp_path, monkeypatch, run)
+    saved = json.loads(path.read_text())
+    saved["items"] = _items2(run)
+    path.write_text(json.dumps(saved))
+    draft = tmp_path / "draft.sql"
+    draft.write_text(PROOF)
+
+    confirm.run_confirm(
+        CFG2,
+        tmp_path / "validation" / "v.yml",
+        wh=Wh(duck),
+        cube=None,
+        max_usd=1.0,
+        cache_root=tmp_path,
+        comparison="mastery",
+        bucket="cube_only",
+        sql=draft,
+        causes=[f"{b}={side}:{words}" for b, (side, words) in CAUSES.items()],
+    )
+
+    items = json.loads(path.read_text())["items"]
+    assert {i["suggestion"] for i in items} == {"cause"}
+    assert "Also mastery-b (same rows): 1 of 1 items proven." in capsys.readouterr().out
+    proofs = tmp_path / "validation" / "proofs" / "v"
+    assert [p.name for p in proofs.iterdir()] == ["mastery__cube_only.sql"]

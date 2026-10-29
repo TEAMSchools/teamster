@@ -329,6 +329,13 @@ cause, do not retry around it.
       a predicate drops, a second aggregate shows the value (the date, the flag,
       the missing key).
 
+   Comparisons that differ only in `dims`, `measure` or what shapes their cells
+   (same `dashboard_view`, `rows`, `filters`, `defaults`, `cuts`, `scope` and
+   `dashboard_filters`) reconcile the same rows. Prove one of them: its proof
+   also runs on the others' groups of that bucket, in `confirm` (printed as
+   "Also <comparison> (same rows)") and in every `triage`, unless one has a
+   proof file of its own, which then wins. Delete a duplicate file to share.
+
    Every `triage` re-runs every stored proof on the new run's rows first, priced
    and capped (`--no-proofs` skips them), then traces only what no proof
    explains; an item with rows a proof no longer explains returns to

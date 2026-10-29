@@ -8,10 +8,11 @@ these files never reach the semantic layer.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import tempfile
-from dataclasses import dataclass, field, replace
+from dataclasses import asdict, dataclass, field, replace
 from datetime import date
 from pathlib import Path
 from typing import Any, NoReturn
@@ -155,6 +156,31 @@ class Comparison:
     # Tableau recomputes the measure at the new grain, so the proof covers that
     # grain, not the sheet's own.
     shelves: dict[str, Any] = field(default_factory=dict)
+
+
+# The keys that decide which rows a comparison reconciles and which of them
+# match; `dims` only group the rows, and the rest shape the cells.
+_POPULATION = (
+    "dashboard_view",
+    "rows",
+    "filters",
+    "defaults",
+    "cuts",
+    "scope",
+    "dashboard_filters",
+)
+
+
+def row_population(comparison: Comparison) -> str | None:
+    """A key shared by the comparisons that reconcile the same rows, or None.
+
+    Comparisons with the same key hold the same unmatched rows, grouped by
+    their own `dims`, so one proof can classify them all.
+    """
+    if comparison.rows is None:
+        return None
+    data = asdict(comparison)
+    return json.dumps([data[k] for k in _POPULATION], sort_keys=True, default=str)
 
 
 @dataclass(frozen=True)

@@ -40,7 +40,7 @@ from sqlglot.tokens import TokenType
 from . import compare, decisions, pipeline, trace, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .compare import Group
-from .config import Comparison, ViewConfig, id_like, mask_digits
+from .config import Comparison, ViewConfig, id_like, mask_digits, row_population
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build
 from .report import RunResult, shown_counts
@@ -920,6 +920,27 @@ class Ran:
     why: str = ""
 
 
+def siblings(cfg: ViewConfig, comparison: Comparison) -> list[Comparison]:
+    """The other comparisons that reconcile the same rows (`row_population`)."""
+    key = row_population(comparison)
+    return [
+        c
+        for c in cfg.comparisons
+        if key is not None and c.id != comparison.id and row_population(c) == key
+    ]
+
+
+def _shared(
+    cfg: ViewConfig, directory: Path, proof: Proof, comparison: Comparison
+) -> list[Comparison]:
+    """The siblings a proof also classifies: those with no proof of their own."""
+    return [
+        c
+        for c in siblings(cfg, comparison)
+        if not proof_path(directory, c.id, proof.bucket).is_file()
+    ]
+
+
 def run_stored(
     cfg: ViewConfig,
     run: RunResult,
@@ -933,7 +954,9 @@ def run_stored(
 
     A proof that cannot run (a failed check, a cap, a BigQuery or Cube error,
     its SQL no longer the run's) keeps why and moves nothing; the rest still
-    run. Each comparison's row SQL is rebuilt once, or taken from `prepared`.
+    run. A proof also runs on each comparison that reconciles the same rows
+    and has no proof of its own for the bucket (`siblings`). Each
+    comparison's row SQL is rebuilt once, or taken from `prepared`.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     prepared = prepared or trace.Prepared()
@@ -944,38 +967,55 @@ def run_stored(
         except (OSError, pipeline.Refusal) as exc:
             print(f"Proof {path.name} skipped: {exc}")
             continue
-        comparison = by_id.get(proof.comparison)
-        bucket_items = _bucket_items(run, proof.comparison, proof.bucket)
-        if comparison is None or not bucket_items:
+        if (own := by_id.get(proof.comparison)) is None:
             continue
-        ran = Ran(proof, bucket_items)
-        try:
-            if prepared.schools is None:
-                prepared.schools = network_schools(wh)
-            ran.found = run_proof(
-                wh,
-                cfg,
-                comparison,
-                prepared.row_sides(cfg, comparison, run, wh, cube),
-                proof,
-                bucket_items,
-                run.moment,
-                prepared.moved,
-            )
-        except (
-            pipeline.Refusal,
-            CostCapError,
-            ViewHistoryError,
-            CubeError,
-            CubeRefusal,
-        ) as exc:
-            ran.why = f"proof {path.name} not run: {exc}"
-        except GoogleAPIError as exc:
-            ran.why = f"proof {path.name} not run ({bigquery_said(exc)})"
-        if ran.why:
-            print(ran.why)
-        out.append(ran)
+        for comparison in [own, *_shared(cfg, directory, proof, own)]:
+            if ran := _run_one(cfg, run, comparison, proof, wh, cube, prepared):
+                out.append(ran)
     return out
+
+
+def _run_one(
+    cfg: ViewConfig,
+    run: RunResult,
+    comparison: Comparison,
+    proof: Proof,
+    wh: Warehouse,
+    cube: Cube,
+    prepared: trace.Prepared,
+) -> Ran | None:
+    """Run `proof` on one comparison's open groups of its bucket, if any."""
+    path = proof.path
+    bucket_items = _bucket_items(run, comparison.id, proof.bucket)
+    if not bucket_items:
+        return None
+    ran = Ran(proof, bucket_items)
+    try:
+        if prepared.schools is None:
+            prepared.schools = network_schools(wh)
+        ran.found = run_proof(
+            wh,
+            cfg,
+            comparison,
+            prepared.row_sides(cfg, comparison, run, wh, cube),
+            proof,
+            bucket_items,
+            run.moment,
+            prepared.moved,
+        )
+    except (
+        pipeline.Refusal,
+        CostCapError,
+        ViewHistoryError,
+        CubeError,
+        CubeRefusal,
+    ) as exc:
+        ran.why = f"proof {path.name} not run: {exc}"
+    except GoogleAPIError as exc:
+        ran.why = f"proof {path.name} not run ({bigquery_said(exc)})"
+    if ran.why:
+        print(ran.why)
+    return ran
 
 
 def explained(runs: list[Ran]) -> set[tuple]:
@@ -1148,25 +1188,47 @@ def run_confirm(
         )
 
     with wh.budget(max_usd):
-        sides = pipeline.row_sides(
+        prepared = trace.Prepared(schools=network_schools(wh))
+        found = run_proof(
+            wh,
             cfg,
             target,
-            wh=wh,
-            cube=cube,
-            build=run.moment,
-            schools=network_schools(wh),
-            fingerprints=run.fingerprints.get(comparison, {}),
+            prepared.row_sides(cfg, target, run, wh, cube),
+            proof,
+            bucket_items,
+            run.moment,
+            prepared.moved,
         )
-        found = run_proof(wh, cfg, target, sides, proof, bucket_items, run.moment)
+        # The comparisons holding the same rows: the proof classifies theirs
+        # too, unless one has its own. A refusal there keeps this proof.
+        shared = [
+            r
+            for c in _shared(cfg, stored.parent, proof, target)
+            if (r := _run_one(cfg, run, c, proof, wh, cube, prepared))
+        ]
 
     stored.parent.mkdir(parents=True, exist_ok=True)
     stored.write_text(proof.text)
     apply_outcomes(all_items, proof, found)
+    apply_runs(run, all_items, shared, cfg)
     link_cells(run, all_items, comparison, cfg)
     _mark(run, all_items, cfg)
     _save_triage(path, loaded, all_items)
     moved = sum(1 for o in found.values() if o.explained)
     print(f"Saved {stored}: {moved} of {len(found)} items proven.")
-    _report(all_items, wanted or set(found))
+    reported = set(found)
+    for r in shared:
+        sibling = _comparison_of(r)
+        if r.found is None:
+            print(f"Also {sibling}: not run; see above.")
+            continue
+        n = sum(1 for o in r.found.values() if o.explained)
+        print(f"Also {sibling} (same rows): {n} of {len(r.found)} items proven.")
+        reported |= set(r.found)
+    _report(all_items, wanted or reported)
     print(f"Saved {path}")
     return 0
+
+
+def _comparison_of(ran: Ran) -> str:
+    return ran.items[0][1].comparison_id
