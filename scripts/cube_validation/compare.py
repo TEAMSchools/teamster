@@ -293,9 +293,6 @@ MANY = "*"
 DUPLICATE = "="
 UNREPRODUCED = "!"
 PRESENT = "#"
-# A step's rows whose row pick held more than 1 candidate: another row could
-# stand in, so they are never attributed.
-STAND_IN = "~"
 _SEP = "|"
 
 
@@ -411,17 +408,12 @@ def trace_sql(
         f"FROM u WHERE {_RN} > 1\n"
     )
     if combine:
-        step = (
-            f"IF(STARTS_WITH(step_id, '{PRESENT}') "
-            f"OR STARTS_WITH(step_id, '{STAND_IN}'), NULL, step_id)"
-        )
+        step = f"IF(STARTS_WITH(step_id, '{PRESENT}'), NULL, step_id)"
         parts.append(
             # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
             "per_row AS (\n  SELECT __row, CASE "
             f"WHEN LOGICAL_OR(STARTS_WITH(step_id, '{UNREPRODUCED}')) "
             f"THEN MIN(IF(STARTS_WITH(step_id, '{UNREPRODUCED}'), step_id, NULL)) "
-            f"WHEN LOGICAL_OR(STARTS_WITH(step_id, '{STAND_IN}')) "
-            f"THEN MIN(IF(STARTS_WITH(step_id, '{STAND_IN}'), step_id, NULL)) "
             f"WHEN COUNT(DISTINCT {step}) = 1 THEN MIN({step}) "
             f"WHEN COUNT(DISTINCT {step}) > 1 THEN CONCAT('{MANY}', "
             f"STRING_AGG(DISTINCT {step}, '{_SEP}' ORDER BY {step})) "

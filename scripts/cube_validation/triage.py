@@ -393,8 +393,7 @@ def mark_decided(
     A decidable item gets `decisions`, `{cause_key: decision id or None}`, and
     `decided`, true only when every one of its causes has a decision that
     holds: the comparison's SQL and the item's proof file are the ones it was
-    made on. A pair `A + B` or a fallback `A / B` is one cause. A decision
-    that no longer holds counts as none.
+    made on. A decision that no longer holds counts as none.
 
     A holding cause decision on a group a `group` decision also covers,
     stale or not, is redundant when their calls agree and refused when they

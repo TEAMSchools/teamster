@@ -229,9 +229,11 @@ cause, do not retry around it.
    The trace leads. `triage` relaxes each step of the other side's SQL (WHERE
    and HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 3 dbt models)
    and prints "lead: relaxing <step> brings back N of M rows" on each one-sided
-   group. It prices level 0 first and each later query before it runs, under
-   `--max-usd` and the daily cap; a cap, `--trace-max-minutes` (default 120) or
-   a failed dry run stops only that bucket. `--no-trace` skips it. It reads
+   group; a row in the tables that no single step brings back reads "lead: no
+   single step brings it back". It prices level 0 first and each later query
+   before it runs, under `--max-usd` and the daily cap; a cap,
+   `--trace-max-minutes` (default 120) or a failed dry run stops only that
+   bucket. `--no-trace` skips it. It reads
    `src/dbt/kipptaf/target/prod/manifest.json` (`--manifest` for another) and,
    when compiled SQL is missing, refuses with the `dbt compile` command to run
    from the repository root; compile in a checkout whose dbt code built the

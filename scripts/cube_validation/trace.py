@@ -3,17 +3,16 @@
 A Cube-only row is traced through the dashboard side's SQL, a dashboard-only
 row through Cube's (`sqlsteps` finds the steps). At each level:
 
-1. Each step is neutralized alone. A row one step brings back is attributed
-   to it. A row several steps of one scope each bring back is attributed to
-   them as one cause (`A / B`: either alone lets it through); across scopes
-   it stays unattributed.
+1. Each step is neutralized alone. A row one step brings back is that
+   step's lead. A row several steps of one scope each bring back is their
+   lead together (`A / B`: either alone lets it through); across scopes it
+   is no single step's.
 2. The rest are checked for presence: the level's SQL with every one of its
    own steps neutralized, its tables unchanged, with the row picks kept and
    then, for the rows still missing, dropped too. A row the first brings
-   back is in the tables and dropped by several steps here; a pair of steps
-   in one scope that alone brings it back is its cause (`A + B`), else it
-   stays unattributed. A row only the second brings back is dropped by a
-   row pick, here or above. Neither descends.
+   back is in the tables, and no single step brings it back. A row only the
+   second brings back is dropped by a row pick, here or above. Neither
+   descends.
 3. Only a row presence does not bring back is missing from a table this level
    reads. The trace then inlines that table's dbt compiled SQL, as of the
    moment, and repeats, at most `MAX_LEVELS` tables deep, into a table whose
@@ -21,12 +20,12 @@ row through Cube's (`sqlsteps` finds the steps). At each level:
 
 Every variant runs inside one query that rebuilds the unmatched rows the way
 the run's reconcile did (`compare.trace_sql`), so no row leaves BigQuery; each
-query returns group columns, a step id and a count.
+query returns group columns, a step id and a count. The counts are leads: a
+person proves a cause (`confirm.py`).
 """
 
 from __future__ import annotations
 
-import itertools
 import json
 import time
 from collections import Counter
@@ -44,7 +43,6 @@ from .compare import (
     MANY,
     NONE,
     PRESENT,
-    STAND_IN,
     UNREPRODUCED,
     Group,
     many_ids,
@@ -53,21 +51,14 @@ from .config import Comparison, ViewConfig
 from .cube_client import Cube, network_schools
 from .moment import Build, changed_between
 from .report import SUPPRESSED, RunResult, shown_counts
-from .sqlsteps import Query, Step, TableRef, carry
+from .sqlsteps import Query, Step, TableRef
 from .timetravel import PROJECT, repin
 
 MAX_LEVELS = 3
 # BigQuery refuses a query longer than 1,024K characters.
 MAX_QUERY_CHARS = 900_000
-# Each pair variant copies the frame's whole SQL; BigQuery's planner refuses
-# many copies of a long side SQL (`resourcesExceeded`) before reading a byte.
-# This holds 4 copies of a 56K-character side SQL.
-MAX_PAIR_QUERY_CHARS = 240_000
 # A relaxed variant can multiply rows; BigQuery stops a query past this.
 TIMEOUT_S = 1800
-# Pairs of steps searched in one level's frame; past it the rows stay
-# unattributed rather than buying a search that size.
-MAX_PAIRS = 400
 TRACE_MAX_MINUTES = 120
 MANIFEST = (
     Path(__file__).resolve().parents[2] / "src/dbt/kipptaf/target/prod/manifest.json"
@@ -106,39 +97,20 @@ class Stopped(RuntimeError):
         self.found = found or {}
 
 
-class TooComplex(Stopped):
-    """BigQuery would not plan a query: too many or too long variants.
-
-    A pair search catches it and skips only its rows; anywhere else it stops
-    the bucket like any failed dry run.
-    """
-
-
-def _too_complex(exc: GoogleAPIError) -> bool:
-    errors = getattr(exc, "errors", None) or [{}]
-    return errors[0].get("reason") == "resourcesExceeded" or (
-        "too complex" in str(exc).lower()
-    )
-
-
 @dataclass
 class ItemTrace:
-    """What the trace found for one row group.
+    """What the trace found for one row group: leads, not causes.
 
-    `steps` counts the rows each cause recovers: one step, steps of one scope
-    each recovering it alone (`a/b`), or a pair of one scope recovering it
-    together (`a+b`). The rest are unattributed: `many` recovered by steps of
-    several scopes, `pairs_many` by several pairs, `needs_more` present but
-    recovered by no single step or pair, `skipped` present but with more
-    pairs than `MAX_PAIRS` to search, `picked` present once every step is
-    neutralized but dropped by a row pick here or above, `stand_in` recovered
-    only where a row pick after the step held another row that could stand
-    in, `unreproduced`
-    already returned by
-    the unrelaxed SQL, `duplicates` a grain the other side holds twice,
-    `unknown` behind a query that failed or a stop, and `none` missing below
-    the deepest level, under `below`. `recovered` counts every row each
-    step recovers, ambiguous ones included.
+    `steps` counts the rows each lead brings back: one step, or steps of one
+    scope each bringing it back alone (`a/b`). The rest are unattributed:
+    `many` brought back by steps of several scopes, `needs_more` in the
+    tables but brought back by no single step, `picked` in the tables once
+    every step is neutralized but dropped by a row pick here or above,
+    `unreproduced` already returned by the unrelaxed SQL, `duplicates` a
+    grain the other side holds twice, `unknown` behind a query that failed or
+    a stop, and `none` missing below the deepest level, under `below`.
+    `recovered` counts every row each step brings back, ambiguous ones
+    included.
     """
 
     side: str
@@ -147,11 +119,8 @@ class ItemTrace:
     labels: dict[str, str] = field(default_factory=dict)
     many: int = 0
     many_labels: tuple[str, ...] = ()
-    pairs_many: int = 0
     needs_more: Counter = field(default_factory=Counter)
-    skipped: Counter = field(default_factory=Counter)
     picked: Counter = field(default_factory=Counter)
-    stand_in: Counter = field(default_factory=Counter)
     unreproduced: Counter = field(default_factory=Counter)
     duplicates: int = 0
     unknown: int = 0
@@ -175,23 +144,13 @@ class ItemTrace:
                     self.many,
                 )
             )
-        if self.pairs_many:
-            out.append(("recovered by more than one pair of steps", self.pairs_many))
         out += [
-            (f"needs 3 or more steps, or steps in 2 or more scopes, in {at}", n)
+            (f"lead: no single step brings it back, in {at}", n)
             for at, n in sorted(self.needs_more.items())
-        ]
-        out += [
-            (f"pair search skipped: {why}", n)
-            for why, n in sorted(self.skipped.items())
         ]
         out += [
             (f"a row pick drops it; the row is in the tables {at} reads", n)
             for at, n in sorted(self.picked.items())
-        ]
-        out += [
-            (f"a row pick follows {at}; another row could stand in", n)
-            for at, n in sorted(self.stand_in.items())
         ]
         out += [
             (f"already returned by the {t} SQL with no step neutralized", n)
@@ -409,24 +368,6 @@ class _Frame:
             frame = frame.parent
         return text
 
-    def full_marked(self, sql: str, marks: list[str]) -> tuple[str, list[str] | None]:
-        """As `full`, with each row pick above that reads this frame marked too.
-
-        Returns:
-            The SQL and every mark, `marks` first; None marks when a pick
-            above cannot be marked in full.
-        """
-        frame, text = self, sql
-        while frame.parent is not None and frame.table is not None:
-            text, more = frame.parent.query.inline_marked(
-                {frame.table: text}, len(marks)
-            )
-            if more is None:
-                return text, None
-            marks = marks + more
-            frame = frame.parent
-        return text, marks
-
     @property
     def name(self) -> str:
         return self.table[1] if self.table else ""
@@ -530,8 +471,7 @@ class _Runner:
         except GoogleAPIError as exc:
             # After paid queries, a dry run that fails stops the bucket like
             # a cap, keeping what it found.
-            why = Stopped if not _too_complex(exc) else TooComplex
-            raise why(f"{what}: the dry run failed ({_failure(exc)})") from exc
+            raise Stopped(f"{what}: the dry run failed ({_failure(exc)})") from exc
         self.wh.refuse_past_caps(usd)
         self.meter.total += usd
         print(
@@ -566,19 +506,14 @@ class _Runner:
         variants: list[tuple[str, str]],
         exclude: list[str],
         include: list[str],
-        max_chars: int | None = None,
     ) -> tuple[list[str], bool]:
         """The queries `level` runs first: 1 combined, or per-step batches.
-
-        Each query holds at most `max_chars` characters (`MAX_QUERY_CHARS` by
-        default), except a batch of 1 variant longer than that alone.
 
         Returns:
             The queries, and whether they are the 1 combined query.
         """
-        max_chars = max_chars or MAX_QUERY_CHARS
         whole = self.side.query(variants, exclude, True, include)
-        if len(whole) <= max_chars:
+        if len(whole) <= MAX_QUERY_CHARS:
             return [whole], True
         base = len(self.side.query([], exclude, False, include))
         # Each variant also costs its CTE and its line in `hits`.
@@ -588,7 +523,7 @@ class _Runner:
         batches: list[list[tuple[str, str]]] = [[]]
         size = base
         for v in variants:
-            if batches[-1] and size + len(v[1]) + extra > max_chars:
+            if batches[-1] and size + len(v[1]) + extra > MAX_QUERY_CHARS:
                 batches.append([])
                 size = base
             batches[-1].append(v)
@@ -601,26 +536,16 @@ class _Runner:
         exclude: list[str],
         what: str,
         include: list[str] | None = None,
-        pairs: bool = False,
     ) -> tuple[dict[tuple, Counter], dict[tuple, Counter]] | None:
         """Each item's rows by the one step that recovers them, and each step's hits.
-
-        With `pairs`, each query holds at most `MAX_PAIR_QUERY_CHARS`.
 
         Returns:
             Per item, rows by step id (a `MANY` id lists the steps, or
             `NONE`, `DUPLICATE`, an `UNREPRODUCED` or `PRESENT` id); and per
             item, every row each variant recovers. None when a query failed.
-
-        Raises:
-            TooComplex: With `pairs`, the shared-steps query is too long, or
-                BigQuery would not plan a query.
         """
         include = include or []
-        max_chars = (
-            min(MAX_QUERY_CHARS, MAX_PAIR_QUERY_CHARS) if pairs else MAX_QUERY_CHARS
-        )
-        queries, whole = self.plan(variants, exclude, include, max_chars)
+        queries, whole = self.plan(variants, exclude, include)
         if whole:
             rows = self._run(queries, what)
             return None if rows is None else self._read(rows)
@@ -657,9 +582,7 @@ class _Runner:
             subset = [v for v in variants if v[0] in shared]
             again = self.side.query(subset, exclude, True, include)
             combined = None
-            if pairs and len(again) > max_chars:
-                raise TooComplex(f"{what}, shared steps: the query is too long")
-            if len(again) <= max_chars:
+            if len(again) <= MAX_QUERY_CHARS:
                 rows = self._run([again], f"{what}, shared steps")
                 combined = None if rows is None else self._read(rows)[0]
             if combined is None:
@@ -684,14 +607,6 @@ class _Runner:
             else:
                 found.setdefault(key, Counter())[step] += int(r["n_rows"])
         return found, hits
-
-
-def _pairs(steps: list[Step]) -> list[tuple[Step, Step]]:
-    """Every pair of steps that share a scope."""
-    by_scope: dict[str, list[Step]] = {}
-    for s in steps:
-        by_scope.setdefault(s.scope, []).append(s)
-    return [p for group in by_scope.values() for p in itertools.combinations(group, 2)]
 
 
 class _Bucket:
@@ -742,40 +657,8 @@ class _Bucket:
             )
             for step in frame.query.steps(side.side, frame.name):
                 self.steps[step.id] = step
-                out += self._guarded(frame, [step], step.id)
+                out.append((step.id, side.rows(frame.full(frame.query.relaxed(step)))))
         return out
-
-    def _guarded(self, frame: _Frame, steps: list[Step], step_id: str):
-        """The variants for `steps` neutralized together, split at any row pick.
-
-        Where a row pick follows the steps, in this frame or any above, a row
-        counts for them only when its pick held 1 candidate; the rest come
-        back under a `STAND_IN` id. Where a pick cannot be marked, or its
-        count cannot be carried to the output, every row does.
-        """
-        sql, marks = frame.query.relaxed_marked(steps)
-        full, marks = (sql, None) if marks is None else frame.full_marked(sql, marks)
-        if marks is None:
-            return self._stand_in(frame, steps, step_id)
-        if not marks:
-            return [(step_id, self.side.rows(full))]
-        split = carry(full, marks)
-        if split is None:
-            return self._stand_in(frame, steps, step_id)
-        one, several = split
-        return [
-            (step_id, self.side.rows(one)),
-            (f"{STAND_IN}{step_id}", self.side.rows(several)),
-        ]
-
-    def _stand_in(self, frame: _Frame, steps: list[Step], step_id: str):
-        """Every row of the variant as a stand-in.
-
-        The guard cannot see through a pick that follows the steps. The SQL
-        is the plain relaxed one, so no mark reaches the output.
-        """
-        full = frame.full(frame.query.relaxed_many(steps))
-        return [(f"{STAND_IN}{step_id}", self.side.rows(full))]
 
     def first_queries(self) -> list[str]:
         """The level-0 queries, split as they will run, to price up front."""
@@ -830,10 +713,6 @@ class _Bucket:
 
     def _label(self, ids: list[str], joiner: str) -> str:
         return joiner.join(self.steps[i].label for i in ids)
-
-    def _cause_label(self, step_id: str) -> str:
-        """A step's or a pair's (`a+b`) label."""
-        return self._label(step_id.split("+"), " + ")
 
     def _where(self, frame: _Frame) -> str:
         """A frame as the reasons name it: its table, or the side's own SQL."""
@@ -903,8 +782,6 @@ class _Bucket:
                         item.duplicates += n if level == 0 else 0
                     elif step_id.startswith(UNREPRODUCED):
                         item.unreproduced[step_id[1:]] += n
-                    elif step_id.startswith(STAND_IN):
-                        item.stand_in[self._cause_label(step_id[1:])] += n
                     elif step_id.startswith(MANY):
                         ids = many_ids(step_id)
                         if len({self.steps[i].scope for i in ids}) == 1:
@@ -956,8 +833,10 @@ class _Bucket:
                         missing[key] = n
                     elif step_id.startswith(PRESENT):
                         present.setdefault(int(step_id[1:]), {})[key] = n
+            # In the tables, and no single step brings it back.
             for i, rows in present.items():
-                self._search_pairs(frames[i], gates[i][1], rows, exclude, depth)
+                for key, n in rows.items():
+                    out[key].needs_more[self._where(frames[i])] += n
             exclude = exclude + [sql for _, sql in gates]
 
             # Then with the row picks dropped too: a row this brings back is
@@ -999,60 +878,6 @@ class _Bucket:
             if not frames:
                 return self._end(in_play)
         return None
-
-    def _search_pairs(
-        self,
-        frame: _Frame,
-        gate: str,
-        present: dict[tuple, int],
-        exclude: list[str],
-        depth: str,
-    ) -> None:
-        """Attribute rows present at `frame` to the one same-scope pair recovering them."""
-        where = self._where(frame)
-        steps = frame.query.steps(self.side.side, frame.name)
-        pairs = _pairs(steps)
-        if len(pairs) > MAX_PAIRS:
-            for key, n in present.items():
-                self.out[key].skipped[f"{len(pairs)} pairs in {where}"] += n
-            return
-        if not pairs:
-            for key, n in present.items():
-                self.out[key].needs_more[where] += n
-            return
-        variants = [
-            v for a, b in pairs for v in self._guarded(frame, [a, b], f"{a.id}+{b.id}")
-        ]
-        try:
-            got = self.runner.level(
-                variants, exclude, f"{depth}, step pairs", [gate], pairs=True
-            )
-        except TooComplex as exc:
-            # The pair search is a lead; one BigQuery will not plan costs
-            # only its own rows, never the rest of the trace.
-            print(f"Trace {self.runner.label}: pair search skipped, {exc.reason}")
-            for key, n in present.items():
-                self.out[key].skipped["query too complex"] += n
-            return
-        if got is None:
-            self._fail(present)
-            return
-        found, _ = got
-        for key, counts in found.items():
-            if key not in present:
-                continue
-            item = self.out[key]
-            for step_id, n in counts.items():
-                if step_id == NONE:
-                    item.needs_more[where] += n
-                elif step_id.startswith(MANY):
-                    item.pairs_many += n
-                elif step_id.startswith(STAND_IN):
-                    item.stand_in[self._cause_label(step_id[1:])] += n
-                elif step_id != DUPLICATE:
-                    a, b = step_id.split("+", 1)
-                    item.steps[step_id] += n
-                    item.labels[step_id] = self._label([a, b], " + ")
 
     def _end(self, in_play: dict[tuple, int]) -> None:
         for key, n in in_play.items():
@@ -1234,7 +1059,6 @@ __all__ = [
     "Manifest",
     "Step",
     "Stopped",
-    "TooComplex",
     "TraceResult",
     "compile_command",
     "item_key",

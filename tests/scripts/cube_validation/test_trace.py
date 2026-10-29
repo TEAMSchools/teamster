@@ -1,5 +1,4 @@
 import json
-import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -148,20 +147,20 @@ def test_one_step_two_steps_and_none_row_by_row(duck):
 
     found = _trace(duck, FLAT, [_group(3)])[trace.item_key(_group(3))]
 
-    assert found.steps == {
-        "dashboard:main:1": 1,
-        "dashboard:main:1+dashboard:main:2": 1,
-    }
-    assert (
-        found.labels["dashboard:main:1+dashboard:main:2"] == "main: f.ok1 + main: f.ok2"
-    )
+    assert found.steps == {"dashboard:main:1": 1}
+    # (2, b) needs both steps: no single step brings it back.
+    assert found.needs_more == {"the dashboard SQL": 1}
     assert found.none == 1 and not found.proven and found.consistent
+    assert (
+        "2 rows unattributed: 1 lead: no single step brings it back, in the "
+        "dashboard SQL; 1 recovered by no step"
+    ) in found.leads()
 
 
 def test_rows_present_but_dropped_by_two_steps_never_descend(duck, tmp_path):
     # D4: the row is in the table; two steps of the side drop it, and the
     # table's build has another row of the same grain a relaxed step would
-    # bring in. The pair is the cause, never the build's step.
+    # bring in. No single step leads, and the build's step never does.
     _cube_rows(duck, [(1, "a", "X")])
     duck.table(
         "raw",
@@ -184,9 +183,8 @@ def test_rows_present_but_dropped_by_two_steps_never_descend(duck, tmp_path):
         trace.item_key(_group(1))
     ]
 
-    assert found.proven
-    assert [c["label"] for c in found.cause()] == ["main: f.ok1 + main: f.ok2"]
-    assert not any("fact/" in s for s in found.steps)
+    assert not found.steps and found.needs_more == {"the dashboard SQL": 1}
+    assert not found.none
 
 
 def test_a_row_missing_from_a_table_descends_to_the_step_that_drops_it(duck, tmp_path):
@@ -722,18 +720,6 @@ def test_level_zero_is_priced_in_the_batches_it_runs_in(tmp_path, monkeypatch):
     assert len(priced) >= 2
 
 
-def test_a_skipped_pair_search_says_why(duck, monkeypatch):
-    # N7: rows a pair could explain, with no pair searched.
-    _cube_rows(duck, [(2, "b", "X")])
-    duck.table("fact", FACT, [(2, "b", "X", False, False)])
-    monkeypatch.setattr(trace, "MAX_PAIRS", 0)
-
-    found = _trace(duck, FLAT, [_group(1)])[trace.item_key(_group(1))]
-
-    assert not found.proven
-    assert "pair search skipped: 1 pairs" in found.evidence()[-1]
-
-
 # --- fix round 3: a filter that feeds a row pick -----------------------------------
 
 PICKED = (
@@ -744,22 +730,6 @@ PICKED = (
     "SELECT student, item, school FROM r WHERE rn = 1"
 )
 SRC = "student BIGINT, item VARCHAR, school VARCHAR, d BIGINT, x BOOLEAN"
-
-
-def test_a_filter_whose_relaxing_lets_another_row_win_a_pick_is_no_cause(duck):
-    # Student 1's pick keeps b. Relaxing `x` lets a later junk (1, a) win the
-    # pick: (1, a) "comes back", but the pick, not `x`, dropped the real one.
-    _cube_rows(duck, [(1, "a", "X")])
-    duck.table(
-        "src",
-        SRC,
-        [(1, "a", "X", 1, True), (1, "b", "X", 2, True), (1, "a", "X", 3, False)],
-    )
-
-    found = _trace(duck, PICKED, [_group(1)])[trace.item_key(_group(1))]
-
-    assert not found.proven and not found.steps
-    assert "a row pick follows f: x; another row could stand in" in found.evidence()[-1]
 
 
 def test_a_filter_ahead_of_a_pick_with_1_candidate_is_still_proven(duck):
@@ -808,68 +778,6 @@ FACT3 = {
 }
 
 
-def test_a_step_in_the_window_s_in_subquery_is_no_cause_where_a_row_could_stand_in(
-    duck,
-):
-    # N-new-1 (D2): relaxing `z` lets the junk (1, a, 3) win the pick over b.
-    _cube_rows(duck, [(1, "a", "X")])
-    duck.table(
-        "src",
-        SRC,
-        [
-            (1, "a", "X", 1, True),
-            (1, "b", "X", 2, True),
-            (1, "a", "X", 3, True),
-            (1, "c", "X", 4, True),
-        ],
-    )
-    duck.table("days", "d BIGINT, z BOOLEAN", [(1, True), (2, True), (3, False)])
-
-    found = _trace(duck, IN_PICK, [_group(1)])[trace.item_key(_group(1))]
-
-    assert not found.proven and not found.steps
-    assert "a row pick follows r: z; another row could stand in" in found.evidence()[-1]
-
-
-def test_a_step_in_one_union_branch_is_guarded_by_that_branch_s_pick(duck):
-    # N-new-2 (U): each branch computes its own rn; the junk (1, a, 3) fails x.
-    _cube_rows(duck, [(1, "a", "X")])
-    duck.table(
-        "src",
-        SRC,
-        [(1, "a", "X", 1, True), (1, "b", "X", 2, True), (1, "a", "X", 3, False)],
-    )
-    duck.table("src2", SRC, [(9, "z", "X", 1, True)])
-    dash = UNION_PICK.format(rn=WINDOW)
-
-    found = _trace(duck, dash, [_group(1)])[trace.item_key(_group(1))]
-
-    assert not found.proven and not found.steps
-    assert "a row pick follows u: x; another row could stand in" in found.evidence()[-1]
-
-    # 1 candidate: student 1's only row fails x, so x alone is the cause.
-    duck.table("src", SRC, [(1, "a", "X", 1, False)])
-
-    found = _trace(duck, dash, [_group(1)])[trace.item_key(_group(1))]
-
-    assert found.proven and [c["label"] for c in found.cause()] == ["u: x"]
-
-
-def test_a_pick_a_branch_computes_without_a_window_blocks_every_step_ahead(duck):
-    # N-new-2: the second branch's rn is a literal, so the guard cannot count
-    # its candidates; even a 1-candidate row stays unattributed.
-    _cube_rows(duck, [(1, "a", "X")])
-    duck.table("src", SRC, [(1, "a", "X", 1, False)])
-    duck.table("src2", SRC, [(9, "z", "X", 1, True)])
-
-    found = _trace(duck, UNION_PICK.format(rn="1 AS rn"), [_group(1)])[
-        trace.item_key(_group(1))
-    ]
-
-    assert not found.proven and not found.steps
-    assert "a row pick follows u: x; another row could stand in" in found.evidence()[-1]
-
-
 def test_a_count_is_never_carried_through_an_except(duck):
     # N-new-3 (X): the true relaxed query still excludes (1, a). A NULL mark
     # on the EXCEPT's other branch would stop it matching, and put it back.
@@ -881,40 +789,6 @@ def test_a_count_is_never_carried_through_an_except(duck):
 
     assert not found.proven and not found.steps
     assert not any("__cand" in sql for sql in duck.ran)
-
-
-def test_a_pick_in_the_level_above_guards_a_step_below(duck, tmp_path):
-    # P-old-1 (C): the side picks over fact3; relaxing fact3's `keep` lets the
-    # junk (1, a, 3) win the pick over b.
-    _cube_rows(duck, [(1, "a", "X")])
-    duck.table(
-        "raw3",
-        RAW3,
-        [(1, "a", "X", 1, False), (1, "b", "X", 2, True), (1, "a", "X", 3, False)],
-    )
-    duck.table("fact3", RAW3.replace(", keep BOOLEAN", ""), [(1, "b", "X", 2)])
-    manifest = _manifest(tmp_path, FACT3)
-
-    found = _trace(duck, PARENT_PICK, [_group(1)], levels=1, manifest=manifest)[
-        trace.item_key(_group(1))
-    ]
-
-    assert not found.proven and not found.steps
-    assert (
-        "a row pick follows fact3/main: keep; another row could stand in"
-        in found.evidence()[-1]
-    )
-
-    # 1 candidate: student 1's only row fails `keep`, so `keep` is the cause.
-    duck.table("raw3", RAW3, [(1, "a", "X", 1, False)])
-    duck.table("fact3", RAW3.replace(", keep BOOLEAN", ""), [])
-
-    found = _trace(duck, PARENT_PICK, [_group(1)], levels=1, manifest=manifest)[
-        trace.item_key(_group(1))
-    ]
-
-    assert found.proven
-    assert [c["label"] for c in found.cause()] == ["fact3/main: keep"]
 
 
 def test_a_row_only_a_row_pick_drops_says_so(duck):
@@ -940,7 +814,7 @@ def test_masked_cells_of_a_breakdown_hold_10_or_more_together():
     found.labels["a"] = "main: a"
     found.many = 25
     found.many_labels = ("main: b", "main: c")
-    found.pairs_many = 3
+    found.picked["the dashboard SQL"] = 3
     found.none = 2
 
     lines = found.evidence(posted=True)
@@ -949,77 +823,16 @@ def test_masked_cells_of_a_breakdown_hold_10_or_more_together():
     assert lines[0] == "main: a: 10 rows"
     assert lines[1] == (
         "30 rows unattributed: masked recovered by steps in 2 or more scopes "
-        "(main: b, main: c); <10 recovered by more than one pair of steps; "
-        "<10 recovered by no step"
+        "(main: b, main: c); <10 a row pick drops it; the row is in the tables "
+        "the dashboard SQL reads; <10 recovered by no step"
     )
 
 
-# --- a pair search too complex to plan, and per-bucket stops -----------------------
-
-PAIR_ID = re.compile(r"'[^']+\+[^']+' AS step_id")
-FACT_OK3 = f"{FACT}, ok3 BOOLEAN"
-FLAT_OK3 = FLAT + " AND f.ok3"
+# --- per-bucket stops ------------------------------------------------------------
 
 
-def _too_complex():
+def _refused():
     return BadRequest("too big", errors=[{"reason": "resourcesExceeded"}])
-
-
-def test_a_pair_search_too_complex_to_plan_skips_only_its_rows(duck):
-    # (2, b) is present but needs ok1 and ok2 together: only a pair explains it.
-    _cube_rows(duck, [(2, "b", "X")])
-    duck.table("fact", FACT, [(2, "b", "X", False, False)])
-    wh = DuckWarehouse(duck)
-
-    def estimate(sql):
-        if PAIR_ID.search(sql):
-            raise _too_complex()
-        return 0.0
-
-    wh.estimate = estimate
-
-    found = _trace(duck, FLAT, [_group(1)], wh=wh)[trace.item_key(_group(1))]
-
-    assert found.skipped == {"query too complex": 1}
-    assert not found.stopped and not found.unknown
-    assert "pair search skipped: query too complex" in found.evidence()[-1]
-
-
-def test_pair_batches_stay_under_the_pair_query_cap(duck, monkeypatch):
-    # (2, b) fails ok1 and ok2: 3 pairs of 1 scope, each its own batch.
-    _cube_rows(duck, [(2, "b", "X")])
-    duck.table("fact", FACT_OK3, [(2, "b", "X", False, False, True)])
-    side = _side(FLAT_OK3)
-    q = trace.Query(FLAT_OK3, frozenset(side.grain()), side.grain()[0])
-    a, b = q.steps("dashboard")[:2]
-    one = [(f"{a.id}+{b.id}", q.relaxed_many([a, b]))]
-    monkeypatch.setattr(
-        trace, "MAX_PAIR_QUERY_CHARS", len(side.query(one, [], False)) + 200
-    )
-    wh = DuckWarehouse(duck)
-    priced = []
-
-    def estimate(sql):
-        if PAIR_ID.search(sql):
-            priced.append(sql)
-        return 0.0
-
-    wh.estimate = estimate
-
-    found = _trace(duck, FLAT_OK3, [_group(1)], wh=wh)[trace.item_key(_group(1))]
-
-    # A batch past the cap holds 1 pair alone: the cap splits, never drops.
-    assert len(priced) >= 2
-    assert all(
-        len(sql) <= trace.MAX_PAIR_QUERY_CHARS or len(PAIR_ID.findall(sql)) == 1
-        for sql in priced
-    )
-    assert found.proven and list(found.labels.values()) == ["main: f.ok1 + main: f.ok2"]
-
-
-def test_the_pair_query_cap_holds_4_copies_of_the_56k_side_sql():
-    # A 56K-character side SQL copied about 15 times was refused at planning.
-    assert 4 * 56_000 <= trace.MAX_PAIR_QUERY_CHARS < 6 * 56_000
 
 
 def test_a_stop_in_one_bucket_never_stops_the_other(monkeypatch):
@@ -1074,7 +887,7 @@ def test_a_level_zero_dry_run_error_stops_only_its_bucket(monkeypatch):
     class Failing(FakeWarehouse):
         def estimate(self, sql):
             if "bucket = 'cube_only'" in sql:
-                raise _too_complex()
+                raise _refused()
             return 0.0
 
     wh = Failing(lambda sql: [])
