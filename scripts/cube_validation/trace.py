@@ -27,6 +27,7 @@ person proves a cause (`confirm.py`).
 from __future__ import annotations
 
 import json
+import re
 import time
 from collections import Counter
 from collections.abc import Iterable
@@ -54,13 +55,14 @@ from .cube_client import Cube, network_schools
 from .moment import Build, changed_between
 from .report import SUPPRESSED, RunResult, shown_counts
 from .sqlsteps import Query, Step, TableRef
-from .timetravel import PROJECT, repin
+from .timetravel import PROJECT, repin, strip_comments
 
 MAX_LEVELS = 3
 # Older sqlglot cannot parse BigQuery time travel after a table alias.
 SQLGLOT_MAJOR = 30
 # BigQuery refuses a query longer than 1,024K characters.
 MAX_QUERY_CHARS = 900_000
+_RECURSIVE = re.compile(r"\bwith\s+recursive\b", re.IGNORECASE)
 # Dry runs in flight at once; each waits on BigQuery's planner, not the CPU.
 DRY_RUN_WORKERS = 8
 # A relaxed variant can multiply rows; BigQuery stops a query past this.
@@ -527,14 +529,23 @@ class _Runner:
         first = variants[0] if variants else ("", "")
         extra = len(self.side.query([first], exclude, False, include)) - base
         extra -= len(first[1])
+        if base > MAX_QUERY_CHARS:
+            raise Stopped(f"the {self.side.side} SQL alone is too long to run")
         batches: list[list[tuple[str, str]]] = [[]]
         size = base
         for v in variants:
-            if batches[-1] and size + len(v[1]) + extra > MAX_QUERY_CHARS:
+            cost = len(v[1]) + extra + len(v[0])
+            if base + cost > MAX_QUERY_CHARS:
+                # Alone it is past BigQuery's limit: its rows stay unattributed.
+                note = f"relaxing step {v[0]} makes a query too long to run"
+                print(f"Trace {self.label}: {note}")
+                self.failures.append(note)
+                continue
+            if batches[-1] and size + cost > MAX_QUERY_CHARS:
                 batches.append([])
                 size = base
             batches[-1].append(v)
-            size += len(v[1]) + extra + len(v[0])
+            size += cost
         return [self.side.query(b, exclude, False, include) for b in batches], False
 
     def level(
@@ -682,6 +693,12 @@ class _Bucket:
             node = self.manifest.model(ref.dataset, ref.name) if self.manifest else None
             if node is None or not node.get("compiled_code"):
                 continue
+            if _RECURSIVE.search(strip_comments(node["compiled_code"])):
+                # Its SQL runs only at the top of a query, never inside the
+                # trace's: the table is read as built, at the moment.
+                print(f"Trace reads {ref.name} as built: it is a WITH RECURSIVE model")
+                self.blocked.add(ref.name)
+                continue
             try:
                 at = pipeline._as_of(node["compiled_code"], side.build.start, self.wh)
                 sql = _one_moment(at, self.end_tables, self.moved, side.build, self.wh)
@@ -694,6 +711,10 @@ class _Bucket:
                 check = side.rows(child.full(child.query.sql()))
             except (pipeline.Refusal, SqlglotError) as exc:
                 print(f"Trace cannot descend into {ref.name}: {type(exc).__name__}")
+                self.blocked.add(ref.name)
+                continue
+            if len(check) > MAX_QUERY_CHARS:
+                print(f"Trace cannot descend into {ref.name}: its SQL is too long")
                 self.blocked.add(ref.name)
                 continue
             ready.append((ref, child, check))

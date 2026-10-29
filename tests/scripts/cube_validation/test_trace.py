@@ -947,3 +947,75 @@ def test_dry_runs_run_at_once_and_keep_each_error_in_order():
     with pytest.raises(BadRequest):
         gate.reset()
         trace._priced(Wh(), ["a", "b", "c"])
+
+
+# --- refused before BigQuery: too long, or not runnable inside a query -----------
+
+
+def test_a_with_recursive_model_is_read_as_built_without_a_dry_run(tmp_path):
+    seen = []
+
+    class Wh(FakeWarehouse):
+        def estimate(self, sql):
+            seen.append(sql)
+            return 0.0
+
+    manifest = _manifest(
+        tmp_path,
+        {"fact": ("WITH RECURSIVE r AS (SELECT 1 AS n) SELECT * FROM r", [])},
+    )
+
+    found = _canned(
+        wh=Wh(lambda sql: [_answer_row("", 5)]), levels=1, manifest=manifest
+    ).run()[trace.item_key(_group(5))]
+
+    assert found.below == ("fact",)
+    assert not any("recursive" in s.lower() for s in seen)
+
+
+def test_a_child_whose_check_is_too_long_is_skipped_without_a_dry_run(
+    tmp_path, monkeypatch
+):
+    seen = []
+
+    class Wh(FakeWarehouse):
+        def estimate(self, sql):
+            seen.append(len(sql))
+            return 0.0
+
+    monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 50_000)
+    long = "x" * 60_000
+    manifest = _manifest(
+        tmp_path,
+        {
+            "fact": (
+                f"SELECT * FROM `teamster-332318`.`d`.`raw` WHERE '{long}' <> ''",
+                [],
+            )
+        },
+    )
+
+    found = _canned(
+        wh=Wh(lambda sql: [_answer_row("", 5)]), levels=1, manifest=manifest
+    ).run()[trace.item_key(_group(5))]
+
+    assert found.below == ("fact",)
+    assert max(seen) <= 50_000
+
+
+def test_a_step_too_long_alone_is_left_out_and_noted(monkeypatch):
+    side = _side(FLAT)
+    runner = trace._Runner(FakeWarehouse(lambda sql: []), side, trace._Meter(None))
+    base = len(side.query([], [], False, []))
+    monkeypatch.setattr(trace, "MAX_QUERY_CHARS", base + 2_000)
+    variants = [("a", "SELECT 1 AS keep_me"), ("big", "SELECT '" + "y" * 5_000 + "'")]
+
+    queries, whole = runner.plan(variants, [], [])
+
+    assert not whole and len(queries) == 1
+    assert "keep_me" in queries[0] and "yyyy" not in queries[0]
+    assert runner.failures == ["relaxing step big makes a query too long to run"]
+
+    monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 10)
+    with pytest.raises(trace.Stopped, match="alone is too long"):
+        runner.plan(variants, [], [])
