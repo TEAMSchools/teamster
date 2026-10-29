@@ -113,8 +113,9 @@ select
        PowerSchool holds no Miami AY2026 row, so the same-year psy join
        naturally returns null there, and the hybrid ages out on its own as
        PowerSchool years fall off the two-year window. advisor_lastfirst and
-       gpa_cumulative/gpa_y1 go null for Focus-era years pending #4795
-       (advisor) and #4796 (GPA replacement). */
+       gpa_cumulative/gpa_y1 go null for Focus-era years. Focus has no grade
+       7-8 advisory to source the advisor from; the GPA replacement is
+       #4796. */
     psy.advisor_lastfirst,
 
     if(px.ps_student_number is not null, e.student_number - 8400000000, null) as ps_id,

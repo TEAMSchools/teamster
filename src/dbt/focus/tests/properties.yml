@@ -136,3 +136,21 @@ data_tests:
           ref:
             name: int_focus__schedule
             package: focus
+
+  - name: int_focus__student_enrollment_roster__no_skipped_grade
+    description: >-
+      A Focus high school student (grade 9 to 12) whose grade rose by more than
+      1 between consecutive school years. Each year is the student's
+      highest-grade stint, with no-shows excluded. A skipped grade puts the
+      student ahead of the cohort they entered with, which matters for the
+      4-year graduation cohort. Fix the grade level on the enrollment, or move
+      the enrollment to the right school year, in Focus. New Jersey's version is
+      int_powerschool__ps_enrollment_all__no_skipped_grade in the powerschool
+      package.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_focus__student_enrollment_roster
+            package: focus

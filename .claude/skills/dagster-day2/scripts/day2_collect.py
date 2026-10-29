@@ -4,7 +4,7 @@
 # ///
 """Day-2 ops data collector — replaces Phase 1 of the /dagster-day2 skill.
 
-Issues 15 queries against Dagster Cloud GraphQL and GCP REST APIs (Cloud
+Runs 17 steps against Dagster Cloud GraphQL and GCP REST APIs (Cloud
 Logging, Service Health, Error Reporting, Cloud Monitoring). Writes a single
 artifact to .claude/scratch/day2.json keyed by step.
 
@@ -36,8 +36,10 @@ import os
 import re
 import subprocess
 import sys
+from collections import Counter
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
+from time import sleep
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -71,6 +73,16 @@ CATEGORY_RULES: list[tuple[str, list[str]]] = [
         "Step preempt-hang",
         ["Exiting to prevent re-running", "completed without a step result"],
     ),
+    # BigQuery failed the job itself; dbt never resubmits one (job_retries
+    # covers only the submit and poll API calls), so only a Dagster retry helps.
+    (
+        "BigQuery transient",
+        [
+            "reason: internalError",
+            "reason: backendError",
+            "This is usually caused by a transient issue",
+        ],
+    ),
     (
         "Network/SSH",
         [
@@ -94,6 +106,16 @@ def classify(message: str) -> str:
     return "Unclassified"
 
 
+ET = ZoneInfo("America/New_York")
+
+
+def to_et(epoch: float | None) -> str | None:
+    """Float-seconds epoch as an ET wall-clock string."""
+    if epoch is None:
+        return None
+    return datetime.fromtimestamp(epoch, ET).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+
 def get_token() -> str:
     if env := os.environ.get("DAGSTER_CLOUD_API_TOKEN"):
         return env
@@ -114,19 +136,18 @@ def get_token() -> str:
 
 def compute_window(args: argparse.Namespace) -> tuple[float, str, str]:
     """Returns (epoch_start, utc_start_iso, utc_end_iso)."""
-    et = ZoneInfo("America/New_York")
     now_utc = datetime.now(UTC)
     if args.hours:
         start = now_utc - timedelta(hours=args.hours)
     elif args.since:
         date = datetime.strptime(args.since, "%Y-%m-%d").date()
-        start = datetime.combine(date, time(17, 0), tzinfo=et).astimezone(UTC)
+        start = datetime.combine(date, time(17, 0), tzinfo=ET).astimezone(UTC)
     else:
         # Default: 5pm ET previous business day.
-        today_et = now_utc.astimezone(et).date()
+        today_et = now_utc.astimezone(ET).date()
         offset = {0: 3, 6: 2}.get(today_et.weekday(), 1)  # Mon→Fri, Sun→Fri
         prev = today_et - timedelta(days=offset)
-        start = datetime.combine(prev, time(17, 0), tzinfo=et).astimezone(UTC)
+        start = datetime.combine(prev, time(17, 0), tzinfo=ET).astimezone(UTC)
     return (
         start.timestamp(),
         start.isoformat().replace("+00:00", "Z"),
@@ -193,7 +214,8 @@ query RunEvents($runId: ID!) {
         __typename
         ... on MessageEvent { message }
         ... on RunFailureEvent { error { message className } }
-        ... on ExecutionStepFailureEvent { error { message className } }
+        ... on ExecutionStepFailureEvent { stepKey error { message className } }
+        ... on LogsCapturedEvent { stepKeys }
       }
     }
     ... on PythonError { message }
@@ -247,6 +269,8 @@ async def fetch_failure_detail(gql: GraphQL, run: dict) -> dict:
     error_class = ""
     error_detail = ""
     engine_match = ""
+    failed_step = ""
+    captured_steps: set[str] = set()
     for ev in events:
         t = ev.get("__typename")
         msg = ev.get("message") or ""
@@ -257,6 +281,9 @@ async def fetch_failure_detail(gql: GraphQL, run: dict) -> dict:
         elif t == "ExecutionStepFailureEvent":
             error_class = error_class or (err.get("className") or "")
             error_detail = error_detail or (err.get("message") or "")
+            failed_step = failed_step or (ev.get("stepKey") or "")
+        elif t == "LogsCapturedEvent":
+            captured_steps.update(ev.get("stepKeys") or [])
         elif (
             t == "EngineEvent"
             and not engine_match
@@ -266,7 +293,14 @@ async def fetch_failure_detail(gql: GraphQL, run: dict) -> dict:
     tags = {t["key"]: t["value"] for t in run.get("tags", [])}
     haystack = " ".join([run_failure_msg, error_class, error_detail, engine_match])
     category = classify(haystack)
-    if category == "Unclassified" and error_detail:
+    if (
+        category == "Unclassified"
+        and "Discovered failed Kubernetes job" in error_detail
+        and failed_step not in captured_steps
+    ):
+        # No captured logs for the step: its container never ran user code.
+        category = "K8s pre-start kill"
+    elif category == "Unclassified" and error_detail:
         # Step-level Python exception with no infra signals → user code error.
         category = "Code error"
     return {
@@ -275,6 +309,8 @@ async def fetch_failure_detail(gql: GraphQL, run: dict) -> dict:
         "codeLocation": tags.get("dagster/code_location"),
         "startTime": run.get("startTime"),
         "endTime": run.get("endTime"),
+        "startTimeEt": to_et(run.get("startTime")),
+        "endTimeEt": to_et(run.get("endTime")),
         "willRetry": tags.get("dagster/will_retry"),
         "autoRetryRunId": tags.get("dagster/auto_retry_run_id"),
         "runFailureMessage": run_failure_msg,
@@ -554,13 +590,26 @@ query AssetsLatest($keys: [AssetKeyInput!]!) {
 }
 """
 
+ASSET_MATERIALIZATION_TYPE_QUERY = """
+query AssetMaterializationType($keys: [AssetKeyInput!]!) {
+  assetNodes(assetKeys: $keys) {
+    assetKey { path }
+    metadataEntries { label ... on TextMetadataEntry { text } }
+  }
+}
+"""
 
-async def step_17_degraded_assets(gql: GraphQL, _after_epoch: float) -> dict:
+
+async def step_17_degraded_assets(gql: GraphQL, after_epoch: float) -> dict:
     """Assets whose latest run failed.
 
     Caveat: dbt failures are run-level, not step-level, so an asset can be
     flagged here even though its own materialization step succeeded mid-run.
     Use this list as a starting point and verify per-asset.
+
+    `materializationType` is the dbt materialization (view/table/...) or null
+    for non-dbt assets. A plain dbt view only re-runs on a code change, so a
+    failed view run stays flagged until someone materializes it by hand.
     """
     nodes = (await gql.query(ASSETS_QUERY)).get("assetNodes") or []
     keys = [{"path": n["assetKey"]["path"]} for n in nodes]
@@ -582,29 +631,50 @@ async def step_17_degraded_assets(gql: GraphQL, _after_epoch: float) -> dict:
                 }
             )
 
-    by_run: dict[str, list[str]] = {}
+    mat_type: dict[str, str | None] = {}
+    degraded_keys = [{"path": d["asset"].split("/")} for d in degraded]
+    for i in range(0, len(degraded_keys), chunk):
+        data = await gql.query(
+            ASSET_MATERIALIZATION_TYPE_QUERY, {"keys": degraded_keys[i : i + chunk]}
+        )
+        for node in data.get("assetNodes") or []:
+            mat_type["/".join(node["assetKey"]["path"])] = next(
+                (
+                    e.get("text")
+                    for e in node.get("metadataEntries") or []
+                    if e.get("label") == "dagster-dbt/materialization_type"
+                ),
+                None,
+            )
     for d in degraded:
-        by_run.setdefault(d["latestRunId"] or "", []).append(d["asset"])
+        d["materializationType"] = mat_type.get(d["asset"])
+
+    by_run: dict[str, list[dict]] = {}
+    for d in degraded:
+        by_run.setdefault(d["latestRunId"] or "", []).append(d)
+    clusters = []
+    for rid, items in sorted(by_run.items(), key=lambda x: -len(x[1])):
+        end = items[0]["latestRunEndTime"]
+        clusters.append(
+            {
+                "runId": rid,
+                "endTime": end,
+                "endTimeEt": to_et(end),
+                "inWindow": end is not None and end >= after_epoch,
+                "count": len(items),
+                "byMaterializationType": dict(
+                    Counter(d["materializationType"] or "non-dbt" for d in items)
+                ),
+                "assets": [d["asset"] for d in items],
+            }
+        )
     return {
         "totalAssets": len(keys),
         "degradedCount": len(degraded),
+        "inWindowCount": sum(c["count"] for c in clusters if c["inWindow"]),
+        "staleCount": sum(c["count"] for c in clusters if not c["inWindow"]),
         "degraded": degraded,
-        "byRun": [
-            {
-                "runId": rid,
-                "endTime": next(
-                    (
-                        d["latestRunEndTime"]
-                        for d in degraded
-                        if d["latestRunId"] == rid
-                    ),
-                    None,
-                ),
-                "count": len(assets),
-                "assets": assets,
-            }
-            for rid, assets in sorted(by_run.items(), key=lambda x: -len(x[1]))
-        ],
+        "byRun": clusters,
     }
 
 
@@ -910,24 +980,44 @@ def gcp_token() -> str:
     return credentials.token
 
 
+LOG_MAX_PAGES = 10
+
+
 def logging_read(
     query: str, utc_start: str, utc_end: str, limit: int = 100
 ) -> list[dict]:
+    # Pages newest-first; a single page would drop the oldest events of a burst.
     full = f'({query}) AND timestamp >= "{utc_start}" AND timestamp <= "{utc_end}"'
-    resp = httpx.post(
-        "https://logging.googleapis.com/v2/entries:list",
-        headers={"Authorization": f"Bearer {gcp_token()}"},
-        json={
+    entries: list[dict] = []
+    token = None
+    for _ in range(LOG_MAX_PAGES):
+        body = {
             "resourceNames": [f"projects/{PROJECT_ID}"],
             "filter": full,
             "orderBy": "timestamp desc",
             "pageSize": limit,
-        },
-        timeout=60.0,
-    )
-    if resp.status_code >= 400:
-        raise RuntimeError(f"logging HTTP {resp.status_code}: {resp.text[:300]}")
-    return resp.json().get("entries", [])
+        }
+        if token:
+            body["pageToken"] = token
+        # The read quota is per minute and shared project-wide; wait it out.
+        for wait in (0, 20, 40, 60):
+            sleep(wait)
+            resp = httpx.post(
+                "https://logging.googleapis.com/v2/entries:list",
+                headers={"Authorization": f"Bearer {gcp_token()}"},
+                json=body,
+                timeout=60.0,
+            )
+            if resp.status_code != 429:
+                break
+        if resp.status_code >= 400:
+            raise RuntimeError(f"logging HTTP {resp.status_code}: {resp.text[:300]}")
+        data = resp.json()
+        entries.extend(data.get("entries", []))
+        token = data.get("nextPageToken")
+        if not token:
+            break
+    return entries
 
 
 # ─── Step 8: Agent pod churn ──────────────────────────────────────────────
@@ -970,19 +1060,50 @@ DAGSTER_RUN_POD_RE = re.compile(
 
 
 def _attribute_pod_event(
-    pod_name: str | None, failed_ids: set[str], success_ids: set[str]
+    pod_name: str | None,
+    failed_ids: set[str],
+    success_ids: set[str],
+    step_run_ids: dict[str, str] | None = None,
 ) -> tuple[str | None, str]:
     if not pod_name:
         return None, "UNKNOWN"
     m = DAGSTER_RUN_POD_RE.match(pod_name)
-    if not m:
+    run_id = m.group(1) if m else (step_run_ids or {}).get(pod_name)
+    if not run_id:
         return None, "UNKNOWN"
-    run_id = m.group(1)
     if run_id in success_ids:
         return run_id, "SUCCESS"
     if run_id in failed_ids:
         return run_id, "FAILURE"
     return run_id, "UNKNOWN"
+
+
+def _step_pod_labels(
+    pod_names: list[str], utc_start: str, utc_end: str
+) -> dict[str, dict]:
+    """Dagster labels of each step pod, from the audit log entry that created it.
+
+    A step pod's name hashes its run id, so the pod event alone cannot name the
+    run. Pods can be created before the window opens, so the search starts 12h
+    earlier.
+    """
+    lead = (
+        datetime.fromisoformat(utc_start.replace("Z", "+00:00")) - timedelta(hours=12)
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    names = sorted(set(pod_names))
+    labels: dict[str, dict] = {}
+    for i in range(0, len(names), 50):
+        quoted = " OR ".join(f'"{n}"' for n in names[i : i + 50])
+        query = (
+            f'logName="projects/{PROJECT_ID}/logs/cloudaudit.googleapis.com%2Factivity" '
+            'AND protoPayload.methodName="io.k8s.core.v1.pods.create" '
+            f"AND protoPayload.response.metadata.name=({quoted})"
+        )
+        for e in logging_read(query, lead, utc_end):
+            md = e.get("protoPayload", {}).get("response", {}).get("metadata", {})
+            if md.get("name"):
+                labels[md["name"]] = md.get("labels") or {}
+    return labels
 
 
 def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
@@ -1005,21 +1126,54 @@ def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
     pod = logging_read(pod_query, utc_start, utc_end)
     failed_ids = {f.get("runId") for f in step_01.get("failures", []) if f.get("runId")}
     success_ids = set(step_01.get("successRunIds", []) or [])
+    step_pods = [
+        n
+        for e in pod
+        if (
+            n := e.get("resource", {}).get("labels", {}).get("pod_name") or ""
+        ).startswith("dagster-step-")
+    ]
+    step_labels: dict[str, dict] = {}
+    step_lookup_error = None
+    if step_pods:
+        # Enrichment only: a failed lookup leaves step pods unattributed.
+        try:
+            step_labels = _step_pod_labels(step_pods, utc_start, utc_end)
+        except (RuntimeError, httpx.HTTPError) as exc:
+            step_lookup_error = str(exc)[:300]
+    step_run_ids = {
+        n: lb["dagster/run-id"]
+        for n, lb in step_labels.items()
+        if "dagster/run-id" in lb
+    }
     pod_events = []
     for e in pod:
         pod_name = e.get("resource", {}).get("labels", {}).get("pod_name")
-        run_id, run_status = _attribute_pod_event(pod_name, failed_ids, success_ids)
+        run_id, run_status = _attribute_pod_event(
+            pod_name, failed_ids, success_ids, step_run_ids
+        )
         pod_events.append(
             {
                 "timestamp": e["timestamp"],
+                "timestampEt": to_et(
+                    datetime.fromisoformat(
+                        e["timestamp"].replace("Z", "+00:00")
+                    ).timestamp()
+                ),
                 "podName": pod_name,
                 "reason": e.get("jsonPayload", {}).get("reason"),
                 "message": e.get("jsonPayload", {}).get("message"),
                 "runId": run_id,
                 "runStatus": run_status,
+                "stepKey": step_labels.get(pod_name or "", {}).get("dagster/op"),
             }
         )
     return {
+        "stepPodLookupError": step_lookup_error,
+        # Step pods the audit lookup did not find; they stay UNKNOWN.
+        "stepPodsUnmatched": len(set(step_pods) - set(step_labels)),
+        # At the page cap, the oldest events of the window are missing.
+        "podEventsTruncated": len(pod) >= 100 * LOG_MAX_PAGES,
         "clusterEvents": [
             {
                 "timestamp": e["timestamp"],
@@ -1116,7 +1270,8 @@ def _resolve_exception_line(pod_name: str, last_seen: str) -> str | None:
     except (RuntimeError, httpx.HTTPError):
         return None
     candidates: list[str] = []
-    for e in entries:
+    # Entries arrive newest-first; walk oldest-first so the last match is newest.
+    for e in reversed(entries):
         text = e.get("textPayload") or e.get("jsonPayload", {}).get("message") or ""
         for line in text.splitlines():
             stripped = line.strip()
@@ -1128,7 +1283,7 @@ def _resolve_exception_line(pod_name: str, last_seen: str) -> str | None:
 def _correlate_pod_event(
     pod_names: list[str], last_seen: str, pod_events: list[dict]
 ) -> dict | None:
-    """Find a Preempted/Evicted/OOMKilling event on the same pod within ±10s."""
+    """Find a preemption, eviction, or OOM event on the same pod within ±10s."""
     if not pod_names or not last_seen or not pod_events:
         return None
     try:
@@ -1136,7 +1291,7 @@ def _correlate_pod_event(
     except ValueError:
         return None
     target_pods = set(pod_names)
-    benign_reasons = {"Preempted", "Evicted", "OOMKilling"}
+    benign_reasons = {"Preempted", "Preempting", "Evicted", "OOMKilling"}
     for ev in pod_events:
         if ev.get("podName") not in target_pods:
             continue

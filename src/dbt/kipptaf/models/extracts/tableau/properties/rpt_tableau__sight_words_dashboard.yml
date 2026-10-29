@@ -4,7 +4,9 @@ models:
       Illuminate Sight Words Quiz results for the sight words Tableau dashboard,
       one row per quiz, sight word and student, except where a quiz repository
       carries the same sight word label on more than one field, which repeats
-      the row. Paterson is excluded.
+      the row. The source test
+      stg_illuminate__dna_repositories__repository_fields__sight_words_unique_label
+      flags those repositories. Paterson is excluded.
 
       Two UNION ALL branches. The first crosses every quiz with every student
       enrolled in the quiz's grade level that year, withdrawn students included,
@@ -16,7 +18,8 @@ models:
       meta:
         contains_pii: true
     data_tests:
-      # TODO(#5700): placeholder TBD word fields in Illuminate repeat sight_word
+      # TODO(#6146): fails until the Illuminate repositories flagged by the
+      # repository_fields sight-words test are fixed
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
