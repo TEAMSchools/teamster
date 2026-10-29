@@ -56,6 +56,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 
 import psycopg
@@ -111,6 +112,28 @@ class Canary:
     why: str = ""
 
 
+def _is_empty_cell(cell: object) -> bool:
+    # bool is an int subclass, so it is excluded by name: a False dimension
+    # value is data, not a zero count.
+    if cell is None:
+        return True
+    return (
+        isinstance(cell, int | float | Decimal)
+        and not isinstance(cell, bool)
+        and cell == 0
+    )
+
+
+def has_data(rows: list[tuple]) -> bool:
+    """Whether a result carries anything beyond nulls and zero aggregates.
+
+    A canary query is an aggregate, and `SELECT count(*)` returns one row even
+    when nothing matched. Judging by row count made a ROWS canary pass on a
+    viewer whose scope matched nobody, so the cells decide instead.
+    """
+    return any(not _is_empty_cell(cell) for row in rows for cell in row)
+
+
 def expectation_met(expect: str, rows: list[tuple], error: str | None) -> bool:
     """Whether one viewer's result matches its declared expectation.
 
@@ -125,9 +148,9 @@ def expectation_met(expect: str, rows: list[tuple], error: str | None) -> bool:
         case "BLOCKED":
             return error is not None and bool(_DENIED.search(error))
         case "ZERO":
-            return error is None and not rows
+            return error is None and not has_data(rows)
         case "ROWS":
-            return error is None and bool(rows)
+            return error is None and has_data(rows)
         case _:
             raise ValueError(f"unknown expectation {expect!r}")
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -234,6 +235,35 @@ def test_rows_and_zero_are_failures_when_the_query_errored() -> None:
     mod = _load_script()
     assert not mod.expectation_met("ROWS", rows=[("a",)], error="boom")
     assert not mod.expectation_met("ZERO", rows=[], error="boom")
+
+
+def test_a_zero_count_is_not_rows() -> None:
+    mod = _load_script()
+    # Every canary is `SELECT count(*) FROM <view>`, which returns one row even
+    # when nothing matched. Counting rows made ROWS unfailable: a viewer whose
+    # scope matched nobody still passed.
+    assert not mod.expectation_met("ROWS", rows=[(0,)], error=None)
+    assert not mod.expectation_met("ROWS", rows=[(None,)], error=None)
+    assert not mod.expectation_met("ROWS", rows=[(Decimal("0"),)], error=None)
+    assert mod.expectation_met("ROWS", rows=[(17,)], error=None)
+    assert mod.expectation_met(
+        "ROWS", rows=[("Region A", 0), ("Region B", 3)], error=None
+    )
+
+
+def test_a_zero_count_is_zero() -> None:
+    mod = _load_script()
+    # The mirror of the above: a ZERO canary written as a count could never
+    # pass while it was judged by row count.
+    assert mod.expectation_met("ZERO", rows=[(0,)], error=None)
+    assert not mod.expectation_met("ZERO", rows=[(3,)], error=None)
+
+
+def test_a_false_dimension_is_still_data() -> None:
+    mod = _load_script()
+    # bool is an int subclass, so a naive `== 0` would read a False dimension
+    # value as an empty result.
+    assert mod.expectation_met("ROWS", rows=[(False,)], error=None)
 
 
 def test_an_unknown_expectation_raises() -> None:
