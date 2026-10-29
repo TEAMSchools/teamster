@@ -457,6 +457,37 @@ def test_check_sql_lets_a_model_predicate_be_copied_literally():
     )
 
 
+def test_check_sql_lets_a_literal_meet_an_id_that_names_no_one():
+    # DDI's C3 names one assessment by its id.
+    assert confirm.check_sql(
+        "SELECT u.__row, CASE WHEN r.assessment_id = 189131 THEN 'C3' "
+        "WHEN r.assessment_id IN (189132, 189133) THEN 'C4' "
+        "ELSE 'UNEXPLAINED' END AS cause FROM {unmatched} AS u "
+        "LEFT JOIN `teamster-332318`.`ds`.`r` AS r ON r.student = u.lea",
+        GRAIN,
+        STUDENT,
+    ) == {"C3", "C4", "UNEXPLAINED"}
+
+
+@pytest.mark.parametrize(
+    "where",
+    [
+        "r.staff_number = 7",
+        "r.teacher_name = 'C1'",
+        "r.contact_email = 'C1'",
+        "r.student_key = 7",
+        "r.powerschool_student_id = 7",
+    ],
+)
+def test_check_sql_refuses_a_literal_on_a_column_that_names_a_person(where):
+    with pytest.raises(pipeline.Refusal, match="identifying column with a literal"):
+        confirm.check_sql(
+            f"SELECT u.__row, 'C1' AS cause FROM {{unmatched}} AS u, r WHERE {where}",
+            GRAIN,
+            STUDENT,
+        )
+
+
 @pytest.mark.parametrize(
     ("flag", "why"),
     [

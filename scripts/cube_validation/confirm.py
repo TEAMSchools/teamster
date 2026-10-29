@@ -212,8 +212,23 @@ def identifying(comparison: Comparison) -> set[str]:
 
 
 def _identifies(column: str, student: set[str]) -> bool:
+    """A column whose value can name a student or staff member.
+
+    The student grain column, a name, number or email column, or a student
+    id or key. Another id (`assessment_id`) names no one, so a proof may
+    compare it with a literal.
+    """
     name = column.lower()
-    return name in student or name.endswith(triage._ID_SUFFIXES)
+    return (
+        name in student
+        or name.endswith(("_number", "_name", "_email"))
+        or ("student" in name and name.endswith(("_id", "_key")))
+    )
+
+
+def _id_like(column: str, student: set[str]) -> bool:
+    """A column a cause may not select: any identifier, not only a person's."""
+    return _identifies(column, student) or column.lower().endswith(triage._ID_SUFFIXES)
 
 
 _STOP = (exp.Predicate, exp.Connector, exp.Not, exp.Subquery, exp.AggFunc, exp.Exists)
@@ -287,9 +302,9 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
     Args:
         body: The proof's SQL, without its `-- cause` block.
         grain: Every grain column name, lowercased.
-        student: The student column's names, lowercased; with every column
-            named like an identifier (`_number`, `_id`, `_name`, `_email`),
-            no literal may be compared with it.
+        student: The student column's names, lowercased. No literal may be
+            compared with them, nor with a column `_identifies` names a
+            person by; `cause` may select no identifier column at all.
 
     Returns:
         The proof's string literals: the only values a `cause` may take.
@@ -331,7 +346,7 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
                     f"the proof's __row must be {PLACEHOLDER}'s own __row"
                 )
             if name == "cause" and any(
-                c in grain or _identifies(c, student) for c in _selected(value)
+                c in grain or _id_like(c, student) for c in _selected(value)
             ):
                 raise pipeline.Refusal(
                     "the proof's cause selects a grain or identifying column; "
