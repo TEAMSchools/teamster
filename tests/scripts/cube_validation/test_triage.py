@@ -152,8 +152,9 @@ def test_an_item_no_filter_evidence_answers_goes_to_investigate():
     assert s.evidence == (NOT_TRACED,)
 
 
-def test_member_docs_are_evidence_and_never_decide_the_pile():
-    # A description naming the group's column still proves no cause.
+def test_member_docs_are_never_evidence_on_a_group_or_cell_set():
+    # A description naming the group's column has never explained a missing
+    # row; the comparison's model doc is the lead instead.
     docs = {
         "student_count": _measure_doc("Counts students; grade level is as of entry."),
         "grade_level": _doc("grade_level", ai_context="Use for the grade filter."),
@@ -161,18 +162,18 @@ def test_member_docs_are_evidence_and_never_decide_the_pile():
     group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
     cfg = _cfg(restricting_filters=["Enroll Status"])
     gap_docs = {"student_count": _measure_doc(ai_context="Excludes enroll status X.")}
+    lead = {"enrollment": "lead: read docs/models/x.md (mentions rpt_x)"}
 
-    [s] = suggest(cfg, _run(groups=[group]), docs)
-    [gap] = suggest(cfg, _run(gaps=[_gap("Enroll Status")]), gap_docs)
-    [cells] = suggest(cfg, _run(cells=[CellDiff("enrollment", {"differs": 3})]), docs)
+    [s] = suggest(cfg, _run(groups=[group]), docs, leads=lead)
+    [gap] = suggest(cfg, _run(gaps=[_gap("Enroll Status")]), gap_docs, leads=lead)
+    [cells] = suggest(
+        cfg, _run(cells=[CellDiff("enrollment", {"differs": 3})]), docs, leads=lead
+    )
 
     assert s.suggestion == cells.suggestion == "investigate"
     assert gap.suggestion == "cause"
-    assert s.evidence == (
-        NOT_TRACED,
-        "student_count: Counts students; grade level is as of entry.",
-        "grade_level: Use for the grade filter.",
-    )
+    assert s.evidence == (NOT_TRACED, lead["enrollment"])
+    assert cells.evidence == (lead["enrollment"],)
     assert gap.evidence == ("Roster carries it; Cube has no member for it",)
 
 
@@ -446,7 +447,6 @@ def test_a_group_with_an_unattributed_row_stays_in_investigate():
     assert s.evidence == (
         "lead: relaxing wpp brings back 39 of 40 rows",
         "1 rows unattributed: 1 recovered by no step",
-        "student_count: Counts students.",
     )
     assert ": 40 rows, " in s.item.label
 
@@ -717,8 +717,8 @@ def _proof_file(tmp_path, text="SELECT 1"):
             "fingerprint": confirm.file_fingerprint(path)}  # fmt: skip
 
 
-def _item(item_id, proof, *causes):
-    return {"id": item_id, "kind": "group", "comparison": "enrollment",
+def _item(it, proof, *causes):
+    return {"id": it.id, "key": it.key, "kind": "group", "comparison": "enrollment",
             "label": "l", "stub": {"comparison": "enrollment",
                                    "group": {"column": "region", "values": ["x"]}},
             "suggestion": "cause", "evidence": ["proof line"],
@@ -737,7 +737,7 @@ def _cause_decision(id, label, side="cube", call="domain_owner", proof=None, **k
 
 def test_a_split_group_stays_undecided_until_both_causes_are_decided(tmp_path):
     run = _fp_run(_groups("Newark"))
-    (key,) = [i.id for i in open_items(run)]
+    (key,) = open_items(run)
     proof = _proof_file(tmp_path)
     item = _item(key, proof, ("cube", NO_SECTION, 20), ("dashboard", LATE, 10))
     a = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"])
@@ -754,7 +754,7 @@ def test_a_split_group_stays_undecided_until_both_causes_are_decided(tmp_path):
 
 def test_a_changed_proof_file_re_opens_the_decision(tmp_path):
     run = _fp_run(_groups("Newark"))
-    (key,) = [i.id for i in open_items(run)]
+    (key,) = open_items(run)
     old = _proof_file(tmp_path, "SELECT 1")
     new = _proof_file(tmp_path, "SELECT 2")
     decision = _cause_decision("a", NO_SECTION, proof=old["fingerprint"])
@@ -772,7 +772,7 @@ def test_a_changed_proof_file_re_opens_the_decision(tmp_path):
 
 def test_a_cause_decision_on_other_sql_does_not_decide(tmp_path):
     run = _fp_run(_groups("Newark"))
-    (key,) = [i.id for i in open_items(run)]
+    (key,) = open_items(run)
     proof = _proof_file(tmp_path)
     stale = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"],
                             fps={"cube": "old"})  # fmt: skip
@@ -792,7 +792,7 @@ def _group_decision(call, fps=FPS):
 
 def test_a_cause_decision_agreeing_with_a_group_decision_is_redundant(tmp_path):
     run = _fp_run(_groups("Newark"))
-    (key,) = [i.id for i in open_items(run)]
+    (key,) = open_items(run)
     proof = _proof_file(tmp_path)
     item = _item(key, proof, ("cube", NO_SECTION, 30))
     cause = _cause_decision(
@@ -807,7 +807,7 @@ def test_a_cause_decision_agreeing_with_a_group_decision_is_redundant(tmp_path):
 @pytest.mark.parametrize("fps", [FPS, {"cube": "stale", "dashboard": "stale"}])
 def test_a_cause_decision_disagreeing_with_a_group_decision_refuses(tmp_path, fps):
     run = _fp_run(_groups("Newark"))
-    (key,) = [i.id for i in open_items(run)]
+    (key,) = open_items(run)
     proof = _proof_file(tmp_path)
     item = _item(key, proof, ("cube", NO_SECTION, 30))
     cause = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"])
@@ -823,7 +823,7 @@ def test_a_cause_decision_disagreeing_with_a_group_decision_refuses(tmp_path, fp
 
 def test_cause_asks_count_only_each_causes_own_rows(tmp_path):
     run = _fp_run(_groups("Newark", "Camden"))
-    newark, camden = [i.id for i in open_items(run)]
+    newark, camden = open_items(run)
     proof = _proof_file(tmp_path)
     fp = proof["fingerprint"]
     items = [
@@ -853,7 +853,7 @@ def _write_run_triage(tmp_path, run, items):
 
 def test_the_gate_refuses_a_proven_group_or_cell_set_with_no_proof(tmp_path):
     run = _fp_run(_groups("Newark"))
-    (key,) = [i.id for i in open_items(run)]
+    (key,) = open_items(run)
     item = {**_item(key, None, ("cube", NO_SECTION, 30))}
 
     with pytest.raises(pipeline.Refusal, match="1 `cause` item rests on no proof"):
@@ -866,10 +866,10 @@ def test_the_gate_refuses_a_proven_group_or_cell_set_with_no_proof(tmp_path):
 def test_the_gate_takes_a_reconcile_or_workbook_proof_and_no_bare_cause(tmp_path):
     run = _fp_run(_groups("Newark", bucket="dashboard_filtered"))
     run.applied.open_gaps = [_gap()]
-    (key, gap_id) = [i.id for i in open_items(run)]
+    (key, gap) = open_items(run)
     items = [
         _item(key, {"kind": "reconcile"}, ("dashboard", "dashboard filter", 30)),
-        {"id": gap_id, "kind": "gap", "comparison": "", "suggestion": "cause",
+        {"id": gap.id, "kind": "gap", "comparison": "", "suggestion": "cause",
          "cause": [{"side": "dashboard", "label": "sheet filter x"}],
          "proof": {"kind": "workbook"}},
     ]  # fmt: skip
@@ -879,3 +879,115 @@ def test_the_gate_takes_a_reconcile_or_workbook_proof_and_no_bare_cause(tmp_path
     items[1]["proof"] = None
     with pytest.raises(pipeline.Refusal, match="1 `cause` item rests on no proof"):
         proven_triage(run, _write_run_triage(tmp_path, run, items))
+
+
+# --- T20: model docs as leads ------------------------------------------------
+
+from cube_validation.triage import (  # noqa: E402
+    _as_json,
+    _from_json,
+    doc_leads,
+)
+
+
+def test_doc_leads_name_the_model_docs_of_a_comparison(tmp_path):
+    docs = tmp_path / "docs" / "models"
+    docs.mkdir(parents=True)
+    (docs / "a-data-model.md").write_text("Reads `rpt_tableau__x` and fct_f.\n")
+    (docs / "b-data-model.md").write_text("Only fct_f here.\n")
+    # A longer name that merely starts with the model's is not a mention.
+    (docs / "c-data-model.md").write_text("rpt_tableau__x_archive\n")
+    cfg = ViewConfig(
+        view="v",
+        fact="kipptaf_marts.fct_f",
+        comparisons=[
+            Comparison(
+                id="one", measure="m", dashboard_view="kipptaf_tableau.rpt_tableau__x"
+            ),
+            Comparison(id="two", measure="m", dashboard_view="kipptaf_tableau.rpt_y"),
+        ],
+    )
+
+    leads = doc_leads(cfg, docs)
+
+    assert leads["one"] == (
+        "lead: read docs/models/a-data-model.md (mentions rpt_tableau__x, fct_f), "
+        "docs/models/b-data-model.md (mentions fct_f)"
+    )
+    assert leads["two"] == (
+        "lead: read docs/models/a-data-model.md (mentions fct_f), "
+        "docs/models/b-data-model.md (mentions fct_f)"
+    )
+    assert doc_leads(cfg, tmp_path / "none") == {}
+
+
+def test_the_repo_s_ddi_doc_is_a_lead_for_its_dashboard():
+    cfg = ViewConfig(
+        view="v",
+        fact="kipptaf_marts.fct_nothing_here",
+        comparisons=[
+            Comparison(
+                id="ddi",
+                measure="m",
+                dashboard_view="kipptaf_tableau.rpt_tableau__ddi_dashboard",
+            )
+        ],
+    )
+
+    assert doc_leads(cfg)["ddi"] == (
+        "lead: read docs/models/ddi-stack-data-model.md "
+        "(mentions rpt_tableau__ddi_dashboard)"
+    )
+
+
+# --- T17 leftovers ------------------------------------------------------------
+
+
+def test_closing_a_masked_sibling_moves_no_other_items_counts(tmp_path):
+    # P and Q share a masked id: `#2` goes by raw dims, so P is `B#2`.
+    p = Group("enrollment", (("region", "Paterson"),), "dashboard_only", 30, 4)
+    q = Group("enrollment", (("region", "Camden"),), "dashboard_only", 20, 4)
+    run = _fp_run([p, q])
+    by_dims = {g.dims: it for it, g in zip(open_items(run), [p, q], strict=True)}
+    proof = _proof_file(tmp_path)
+    fp = proof["fingerprint"]
+    item = _item(by_dims[p.dims], proof, ("cube", NO_SECTION, 30))
+    recorded = [_cause_decision("a", NO_SECTION, proof=fp)]
+    assert item["id"].endswith("#2")
+
+    # A `group` decision closes Q; P's id would now be the bare masked one.
+    run.applied.open = [p]
+    assert [i.id for i in open_items(run)] == [item["id"].removesuffix("#2")]
+    mark_decided(run, [item], recorded)
+    (ask,) = cause_asks(run, {"items": [item]}, recorded)
+
+    assert item["decided"] is True
+    assert ask.groups == [p] and ask.rows == 30
+
+
+def test_a_quieted_dashboard_filtered_group_passes_the_proof_gate(tmp_path):
+    group = _groups("Newark", bucket="dashboard_filtered")[0]
+    run = _fp_run([group])
+    (it,) = open_items(run)
+    item = _item(it, {"kind": "reconcile"}, ("dashboard", "dashboard filter", 30))
+    # A `group` decision closed it after triage: it is no longer open.
+    run.applied.open = []
+    run_json = _write_run_triage(tmp_path, run, [item])
+
+    assert proven_triage(run, run_json)["items"] == [item]
+
+
+def test_decided_marks_round_trip_through_triage_json(tmp_path):
+    run = _fp_run(_groups("Newark"))
+    (it,) = open_items(run)
+    proof = _proof_file(tmp_path)
+    item = _item(it, proof, ("cube", NO_SECTION, 30))
+    item.update(evidence=["proof line"], evidence_posted=["proof line"])
+    mark_decided(
+        run, [item], [_cause_decision("a", NO_SECTION, proof=proof["fingerprint"])]
+    )
+
+    back = _as_json(_from_json(item))
+
+    assert (back["decided"], back["decisions"]) == (True, {f"cube: {NO_SECTION}": "a"})
+    assert back["key"] == it.key and back == item

@@ -1007,6 +1007,9 @@ def _write_triage(run_json, items=(), open_keys=None):
     `open_keys` defaults to every open item of that run.
     """
     run = pipeline._run_from_json(json.loads(run_json.read_text()))
+    # Each item of an open group carries its stable key, as `triage` writes.
+    keys = {i.id: i.key for i in triage.open_items(run)}
+    items = [{"key": keys.get(i["id"], ""), **i} for i in items]
     (run_json.parent / "triage.json").write_text(
         json.dumps(
             {
@@ -2361,10 +2364,12 @@ def test_triage_proves_first_and_traces_only_what_no_proof_explains(
 
     monkeypatch.setattr(confirm, "run_stored", stored)
     monkeypatch.setattr(trace, "trace_run", traced)
+    monkeypatch.setattr(trace, "check_ready", lambda *a, **k: order.append("ready"))
 
     assert cli.main(["triage", str(path)]) == 0
 
-    assert order == ["proofs", "trace"]
+    # The trace's own refusals come before any proof spends.
+    assert order == ["ready", "proofs", "trace"]
     items = json.loads((saved.parent / "triage.json").read_text())["items"]
     (item,) = [i for i in items if i["kind"] == "group"]
     assert item["suggestion"] == "cause"
@@ -2414,7 +2419,7 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
     assert set(item) == {
         "id", "kind", "comparison", "label", "stub",
         "suggestion", "evidence", "evidence_posted", "candidates", "cause",
-        "proof",
+        "proof", "key", "decisions", "decided",
     }  # fmt: skip
     assert item["stub"]["group"]["values"] == ["Miami"]
     assert (item["suggestion"], item["cause"]) == ("investigate", None)
@@ -2505,6 +2510,7 @@ def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch)
         return trace.TraceResult(found)
 
     monkeypatch.setattr(trace, "trace_run", traced)
+    monkeypatch.setattr(trace, "check_ready", lambda *a, **k: None)
     manifest = tmp_path / "m.json"
     capsys.readouterr()
 
@@ -3311,3 +3317,21 @@ def test_an_answered_cause_decision_is_never_re_approved_on_a_changed_proof(
 
     assert "owner answered 'a'" in capsys.readouterr().err
     assert path.read_text() == before
+
+
+def test_a_trace_refusal_comes_before_any_proof_runs(
+    fakes, tmp_path, monkeypatch, capsys
+):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+
+    def refuse(*a, **k):
+        raise pipeline.Refusal("no dbt manifest")
+
+    monkeypatch.setattr(trace, "check_ready", refuse)
+    monkeypatch.setattr(
+        confirm, "run_stored", lambda *a, **k: pytest.fail("a proof ran first")
+    )
+
+    assert cli.main(["triage", str(path)]) == 1
+    assert "no dbt manifest" in capsys.readouterr().err

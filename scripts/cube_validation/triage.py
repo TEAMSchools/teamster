@@ -64,14 +64,17 @@ class Item:
     comparison: str
     label: str
     stub: dict
+    # `_open_key`: what the item is, whichever siblings are open. An id's
+    # `#n` can move when a sibling closes; this cannot.
+    key: str = ""
 
 
 @dataclass(frozen=True)
 class Suggestion:
     """The pile one item lands in, with what it rests on.
 
-    `evidence` is the quoted note, verdict or member doc text; doc text is
-    evidence only and never picks the pile. `candidates` are the Cube members a
+    `evidence` is the quoted note, verdict, trace lead or model-doc lead;
+    a lead never picks the pile. `candidates` are the Cube members a
     missing filter or cut may map to. `cause` is, for a `cause` item, its
     causes, each `{side, step, label, n_rows}`; it is None until one is
     proven. `proof` is, for an item `triage confirm` proved, what a re-run
@@ -87,6 +90,10 @@ class Suggestion:
     cause: list[dict] | None = None
     proof: dict | None = None
     posted: tuple[str, ...] | None = None
+    # `mark_decided`'s marks: each cause's deciding decision id, and whether
+    # every cause has one. None on an item no cause decision decides.
+    decisions: dict[str, str | None] | None = None
+    decided: bool | None = None
 
 
 def _stub_dim(g: Group, open_groups: list[Group]) -> tuple[str, str]:
@@ -188,7 +195,7 @@ def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
             stub={"comparison": diff.comparison_id, "cells": True},
         )
         out.append((item, diff))
-    return out
+    return [(dataclasses.replace(i, key=_open_key(src)), src) for i, src in out]
 
 
 def open_items(run: RunResult) -> list[Item]:
@@ -380,6 +387,11 @@ def cause_decision(
     )
 
 
+def _groups_by_key(run: RunResult) -> dict[str, Group]:
+    """The run's open groups by `_open_key`, which no sibling's closing moves."""
+    return {i.key: g for i, g in _entries(run) if isinstance(g, Group)}
+
+
 def mark_decided(
     run: RunResult,
     items: list[dict],
@@ -410,7 +422,7 @@ def mark_decided(
     Raises:
         pipeline.Refusal: With `refuse`, a disagreement.
     """
-    groups = {i.id: g for i, g in _entries(run) if isinstance(g, Group)}
+    groups = _groups_by_key(run)
     by_group = [d for d in recorded if d.group and not d.cause]
     for item in items:
         if not decidable(item):
@@ -431,7 +443,7 @@ def mark_decided(
                 lines.append(f"decision {d.id}: {_STALE[state]}")
         item["decisions"] = found
         item["decided"] = all(found.values())
-        g = groups.get(item["id"])
+        g = groups.get(item.get("key", ""))
         covering = [o for o in by_group if g is not None and _covers_group(o, g)]
         for other in covering:
             for d in held:
@@ -470,14 +482,14 @@ def cause_asks(
     proof attributes to it, so a group split across causes counts in each
     question only by its own share.
     """
-    groups = {i.id: g for i, g in _entries(run) if isinstance(g, Group)}
+    groups = _groups_by_key(run)
     out = []
     for d in recorded:
         if not d.cause or d.call != "domain_owner" or d.answer:
             continue
         mine, rows = [], 0
         for item in loaded.get("items", []):
-            if not decidable(item) or item["id"] not in groups:
+            if not decidable(item) or item.get("key", "") not in groups:
                 continue
             marks = item.get("decisions") or {}
             n = [
@@ -486,7 +498,7 @@ def cause_asks(
                 if marks.get(cause_key(c["side"], c["label"])) == d.id
             ]
             if n:
-                mine.append(groups[item["id"]])
+                mine.append(groups[item["key"]])
                 rows += sum(n)
         if mine:
             out.append(CauseAsk(d, mine, rows))
@@ -539,15 +551,38 @@ def _candidates(caption: str, docs: dict[str, MemberDoc]) -> tuple[str, ...]:
     )
 
 
-def _doc_evidence(members: list[str], docs: dict[str, MemberDoc]) -> tuple[str, ...]:
-    """Quote each member's description and ai_context as `<member>: <text>`."""
-    out = []
-    for name in dict.fromkeys(members):
-        d = docs.get(name)
-        if d is None:
-            continue
-        out += [f"{name}: {t}" for t in (d.description, d.ai_context) if t.strip()]
-    return tuple(out)
+# The model reference docs a lead names (`doc_leads`).
+DOCS_DIR = Path(__file__).resolve().parents[2] / "docs" / "models"
+
+
+def _bare(table: str | None) -> str:
+    return (table or "").rsplit(".", 1)[-1]
+
+
+def doc_leads(cfg: ViewConfig, docs_dir: Path = DOCS_DIR) -> dict[str, str]:
+    """Per comparison, 1 lead naming the model docs on its dashboard or fact.
+
+    A doc is a `docs_dir/*.md` file that names the comparison's dashboard
+    model or the view's Cube fact as a whole word. Such a doc states the
+    filters and joins a missing row passes through; a member description
+    never has. A comparison no doc names has no lead.
+    """
+    files = sorted(docs_dir.glob("*.md")) if docs_dir.is_dir() else []
+    texts = {f: f.read_text(encoding="utf-8") for f in files}
+    shown = f"{docs_dir.parent.name}/{docs_dir.name}"
+    out = {}
+    for c in cfg.comparisons:
+        names = list(
+            dict.fromkeys(n for n in (_bare(c.dashboard_view), _bare(cfg.fact)) if n)
+        )
+        found = []
+        for f, text in texts.items():
+            hit = [n for n in names if re.search(rf"(?<!\w){re.escape(n)}(?!\w)", text)]
+            if hit:
+                found.append(f"{shown}/{f.name} (mentions {', '.join(hit)})")
+        if found:
+            out[c.id] = f"lead: read {', '.join(found)}"
+    return out
 
 
 def _involved_docs(cfg: ViewConfig, docs: dict[str, MemberDoc]) -> dict[str, list]:
@@ -623,6 +658,7 @@ def suggest(
     docs: dict[str, MemberDoc],
     values: Callable[[str, str], str] | None = None,
     traces: dict[tuple, trace.ItemTrace] | None = None,
+    leads: dict[str, str] | None = None,
 ) -> list[Suggestion]:
     """Sort each open item into a pile, first matching rule wins.
 
@@ -630,11 +666,13 @@ def suggest(
         cfg: The view's config, for each comparison's measure, group-by
             columns and proof.
         run: One view's validation run.
-        docs: The view's members by bare name, from `member_docs`.
+        docs: The view's members by bare name, from `member_docs`, for a
+            missing filter's candidate members.
         values: `values(caption, member)` returns a value-check verdict;
             `None` skips value checks.
         traces: Each traced row group's trace, by `trace.item_key`; `None`
             when the trace was skipped.
+        leads: Per comparison, the line naming its model docs (`doc_leads`).
 
     Returns:
         One suggestion per open item, ordered by `SUGGESTIONS`. A missing
@@ -642,8 +680,9 @@ def suggest(
         member's, takes `filters_nothing` or `map_filters`; any other missing
         cut or filter is `cause`, a sheet step on the dashboard side, and so
         is a group the sheet's dashboard-only filter drops. Every other item
-        is `investigate`, with the trace's leads and its involved members'
-        docs as evidence.
+        is `investigate`, with the trace's leads and its comparison's doc lead
+        as evidence. Member descriptions are never evidence here: they have
+        not explained a missing row.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     entries = _entries(run)
@@ -652,7 +691,6 @@ def suggest(
         evidence: tuple[str, ...] = ()
         verdict_lines: tuple[str, ...] = ()
         candidates: tuple[str, ...] = ()
-        members: list[str] = []
         call = ""
         cause: list[dict] | None = None
         proof: dict | None = None
@@ -664,7 +702,6 @@ def suggest(
         if isinstance(source, Gap):
             gap = source
             caption = gap.field
-            members = [by_id[c].measure for c in gap.comparisons if c in by_id]
             # Only the sheets the gap sits on speak for it; a proof that
             # predates `restricting_filters` leaves the answer unknown.
             proofs: list[Proof] = [
@@ -707,11 +744,6 @@ def suggest(
                     )
         else:
             comparison = by_id.get(item.comparison)
-            if comparison:
-                members = [comparison.measure]
-                if isinstance(source, Group):
-                    to_cube = {p.dashboard: p.cube for p in comparison.dims}
-                    members += [to_cube.get(c, c) for c, _ in source.dims]
             if isinstance(source, Group):
                 traced = (traces or {}).get(trace.item_key(source))
                 if source.bucket == "dashboard_filtered":
@@ -736,7 +768,10 @@ def suggest(
 
         if not call:
             call = "investigate"
-            rest = verdict_lines + _doc_evidence(members, docs)
+            lead = (leads or {}).get(item.comparison)
+            rest = verdict_lines + (
+                (lead,) if lead and not isinstance(source, Gap) else ()
+            )
             evidence = found + rest
             posted = (posted_found if posted_found is not None else found) + rest
         if posted is None:
@@ -822,18 +857,24 @@ def _as_json(s: Suggestion) -> dict:
         "candidates": list(s.candidates),
         "cause": s.cause,
         "proof": s.proof,
+        "decisions": s.decisions,
+        "decided": s.decided,
     }
 
 
 def _from_json(d: dict) -> Suggestion:
     return Suggestion(
-        Item(d["id"], d["kind"], d["comparison"], d["label"], d["stub"]),
+        Item(
+            d["id"], d["kind"], d["comparison"], d["label"], d["stub"], d.get("key", "")
+        ),
         d["suggestion"],
         tuple(d["evidence"]),
         tuple(d["candidates"]),
         d["cause"],
         d.get("proof"),
         tuple(d["evidence_posted"]),
+        d.get("decisions"),
+        d.get("decided"),
     )
 
 
@@ -1008,6 +1049,11 @@ def run_triage(
     from . import confirm
 
     with wh.budget(max_usd):
+        if trace_rows:
+            # A trace refusal after the proofs ran would throw their spend away.
+            trace.check_ready(
+                cfg, run, wh=wh, cube=cube, manifest_path=manifest or trace.MANIFEST
+            )
         # Proofs first: they are the only path to `cause`, so a trace that
         # hits a cap never un-proves an item, and nothing they explain is
         # traced.
@@ -1029,7 +1075,9 @@ def run_triage(
             if trace_rows
             else None
         )
-        found = suggest(cfg, run, docs, values, traced.items if traced else None)
+        found = suggest(
+            cfg, run, docs, values, traced.items if traced else None, doc_leads(cfg)
+        )
         items = [_as_json(s) for s in found]
         if proofs is not None:
             confirm.apply_runs(run, items, ran, cfg)

@@ -28,22 +28,26 @@ CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "fix_source")
 TASK_KEYS = ("cube_fix", "dashboard_fix")
 # The side of a comparison whose SQL holds a cause decision's step.
 CAUSE_SIDES = ("dashboard", "cube")
-# A committed decision carries no ID or phone number: 5 or more digits whole
-# or split by spaces or dashes, or 7 or more split by any separator, as an
-# owner's note may not (`answers.NOTE_REFUSALS`). A list of grades passes.
-LONG_DIGITS = re.compile(r"\d{5,}")
-SPACED_DIGITS = re.compile(r"\d[\d\s-]*\d")
+# A committed decision carries no ID-shaped number: 5 or more digits, whole or
+# joined by single separators within one word (`973-555-1234`, `1,234,567`).
+# A school year or a date is not one, nor are small numbers apart (`9 10 11`).
+_ID_RUN = re.compile(r"\d+(?:[-.,/:]\d+)*")
+_YEAR_OR_DATE = re.compile(r"\d{4}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2}")
+# Digits split by spaces, dashes, commas or dots, for scrubbing free text
+# (`report._safe_reason`, `answers.NOTE_REFUSALS`).
 SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
 
 
 def mask_digits(text: str) -> str:
-    """Write each number `LONG_DIGITS` and its kin would refuse as `<n>`."""
-    for pattern, fewest in ((SEPARATED_DIGITS, 7), (SPACED_DIGITS, 5)):
-        text = pattern.sub(
-            lambda m, k=fewest: "<n>" if sum(c.isdigit() for c in m[0]) >= k else m[0],
-            text,
-        )
-    return LONG_DIGITS.sub("<n>", text)
+    """Write each ID-shaped number in `text` as `<n>`."""
+
+    def masked(m: re.Match) -> str:
+        run = m[0]
+        if _YEAR_OR_DATE.fullmatch(run) or sum(c.isdigit() for c in run) < 5:
+            return run
+        return "<n>"
+
+    return _ID_RUN.sub(masked, text)
 
 
 _TASK = re.compile(r"https://\S+|#\d+")

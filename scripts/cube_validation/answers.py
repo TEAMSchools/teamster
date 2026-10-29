@@ -645,8 +645,8 @@ def approved_decisions(
     """Turn an approved triage batch into decisions, in the file's key order.
 
     A row group a stored proof explains is decided on its causes, never on
-    itself: each cause (a pair `A + B` or a fallback `A / B` is one) with no
-    decision yet gets one, `{comparison, cause: {side, label}, call, reason,
+    itself: each cause (a bucket of its proof, named by the proof's words)
+    with no decision yet gets one, `{comparison, cause: {side, label}, call, reason,
     task, fingerprints}`, whose fingerprints are the comparison's and the
     proof file's. A cause already decided keeps its decision, which must have
     the entry's call. One whose SQL or proof changed since is re-approved on

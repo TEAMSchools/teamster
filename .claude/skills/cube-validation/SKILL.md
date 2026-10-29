@@ -247,9 +247,11 @@ cause, do not retry around it.
       (near-equal Cube-only and dashboard-only totals mean the grain fails to
       join, not lost rows), then the `investigate` groups counted by side and by
       each group-by column.
-   2. Read the domain doc (`docs/models/<domain>-data-model.md`) and search open
-      issues (`mcp__github__search_issues`) before any SQL. Then read the model
-      SQL along the lineage, both sides.
+   2. Before any SQL, read each doc an item's `lead: read docs/models/...` line
+      names (the docs that mention the comparison's dashboard model or Cube
+      fact), and search open issues (`mcp__github__search_issues`). Member
+      descriptions are not evidence: they have not explained a missing row. Then
+      read the model SQL along the lineage, both sides.
    3. For each cluster, first split its rows by which pieces exist on the other
       side, one aggregate query: is the student there, is the assessment (or the
       other key) there, is only a code different? Counts only. A whole key
@@ -269,7 +271,7 @@ cause, do not retry around it.
       cause: test the join first (or use `EXISTS`), and join a table at the
       row's grain, since a finer one repeats rows. Name tables
       `` `teamster-332318`.`<dataset>`.`<table>` ``; they are read as of the
-      run's moment.
+      run's moment. A proof may open with its own `WITH`.
 
       ```sql
       SELECT u.__row,
@@ -289,10 +291,12 @@ cause, do not retry around it.
       returns. The tool counts the rows itself, joining the proof back to
       `{unmatched}`, and refuses a row the proof drops or repeats, a cause that
       is no string literal of the proof, any column but `__row` and `cause`, a
-      grain or ID column as the cause, a literal compared with the student or an
-      ID column, and an ID-like number or email in a comment or string. These
-      checks catch the common mistakes, not every one: read the proof yourself.
-      It is priced and capped like any query. It saves the proof to
+      grain or ID column as the cause, a literal compared with a column that
+      names a person (the student column, a `_number`, `_name` or `_email`, a
+      student id or key; `assessment_id = 189131` is fine), and an ID-like
+      number or email in a comment or string. These checks catch the common
+      mistakes, not every one: read the proof yourself. It is priced and capped
+      like any query. It saves the proof to
       `src/cube/validation/proofs/<view>/<comparison>__<bucket>.sql`, under lint
       opt-outs and its `-- cause <bucket> = <side>: <words>` block, and moves
       each item it fully explains (no `UNEXPLAINED`) to `cause`. The rest stay,

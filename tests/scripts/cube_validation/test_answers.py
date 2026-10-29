@@ -604,8 +604,8 @@ def _cause_entry(label, side="cube", n_rows=20):
     return {"side": side, "step": "b", "label": label, "n_rows": n_rows}
 
 
-def _cause_item(item_id, *causes, proof=PROOF, decided=False):
-    return {"id": item_id, "kind": "group", "comparison": "enrollment", "label": "l",
+def _cause_item(item_id, *causes, proof=PROOF, decided=False, key=""):
+    return {"id": item_id, "key": key, "kind": "group", "comparison": "enrollment", "label": "l",
             "stub": {"comparison": "enrollment",
                      "group": {"column": "region", "values": ["raw"]}},
             "suggestion": "cause", "evidence": ["proof line"], "candidates": [],
@@ -742,11 +742,11 @@ def _ddi():
     ]  # fmt: skip
     run = _run([])
     run.applied = apply([], groups, CAUSE_FPS)
-    ids = [i.id for i in triage_mod.open_items(run)]
+    opened = triage_mod.open_items(run)
     items = [
-        _cause_item(key, _cause_entry(NO_SECTION if g.value_of("grade_level") == "7"
-                                      else LATE, n_rows=30))
-        for g, key in zip(groups, ids, strict=True)
+        _cause_item(it.id, _cause_entry(NO_SECTION if g.value_of("grade_level") == "7"
+                                        else LATE, n_rows=30), key=it.key)
+        for g, it in zip(groups, opened, strict=True)
     ]  # fmt: skip
     return groups, items
 
@@ -786,17 +786,17 @@ def test_a_split_group_shows_only_each_causes_own_rows():
     ]
     run = _run([])
     run.applied = apply([], groups, CAUSE_FPS)
-    newark, camden = [i.id for i in triage_mod.open_items(run)]
+    newark, camden = triage_mod.open_items(run)
     items = [
         # Newark's 30 rows split 27 and 3 across the 2 causes.
-        _cause_item(newark, _cause_entry(NO_SECTION, n_rows=27),
-                    _cause_entry(LATE, n_rows=3)),
-        _cause_item(camden, _cause_entry(NO_SECTION, n_rows=30)),
+        _cause_item(newark.id, _cause_entry(NO_SECTION, n_rows=27),
+                    _cause_entry(LATE, n_rows=3), key=newark.key),
+        _cause_item(camden.id, _cause_entry(NO_SECTION, n_rows=30), key=camden.key),
     ]  # fmt: skip
     decisions = [
         Decision(**d)
         for d in approved_decisions(
-            [_ok("x", newark), _ok("y", camden)], {"items": items}, CAUSE_FPS
+            [_ok("x", newark.id), _ok("y", camden.id)], {"items": items}, CAUSE_FPS
         )
     ]
 

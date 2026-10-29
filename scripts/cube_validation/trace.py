@@ -929,49 +929,23 @@ def _one_moment(
     return repin(at.sql, clash, build.start, build.end)
 
 
-def trace_run(
+def _plan(
     cfg: ViewConfig,
     run: RunResult,
+    open_groups: list[Group],
     *,
     wh: Warehouse,
     cube: Cube,
-    manifest_path: Path = MANIFEST,
-    levels: int = MAX_LEVELS,
-    max_minutes: float = TRACE_MAX_MINUTES,
-    skip: set[tuple] = frozenset(),
-) -> TraceResult:
-    """Trace every open row group of a run to the steps that drop its rows.
-
-    Call inside `wh.budget`. Every refusal (a comparison's SQL changed, a
-    manifest or compiled model missing) comes before the first priced trace
-    query. The level-0 total is printed before any trace query runs, and
-    each later query's price before it runs, with a running total. A cap, the
-    time limit or a failed dry run stops only the bucket it hits, keeping
-    what that bucket found; the next bucket still runs.
-
-    Args:
-        cfg: The view's config.
-        run: The run whose open groups to trace.
-        wh: The warehouse.
-        cube: Cube, to compile each comparison's rows query again.
-        manifest_path: The dbt manifest with compiled SQL for the tables the
-            trace descends into.
-        levels: How many tables deep to descend.
-        max_minutes: The whole trace's time limit.
-        skip: `item_key`s of groups not to trace.
-
-    Returns:
-        Per `item_key`, the trace of each traced group (the one-sided buckets
-        of comparisons with `rows`), and each
-        stopped bucket's reason.
+    manifest_path: Path,
+    levels: int,
+    meter: _Meter,
+) -> list[_Bucket]:
+    """One `_Bucket` per traced comparison bucket of `open_groups`.
 
     Raises:
         pipeline.Refusal: A comparison's SQL changed since the run, or the
             manifest or a model's compiled SQL is missing.
     """
-    # A group a stored proof explains needs no lead.
-    open_groups = [g for g in run.applied.open if item_key(g) not in skip]
-    out: dict[tuple, ItemTrace] = {}
     by_id = {c.id: c for c in cfg.comparisons}
     todo = [
         c
@@ -981,8 +955,7 @@ def trace_run(
         and any(g.comparison_id == c and g.bucket in TRACED for g in open_groups)
     ]
     if not todo:
-        return TraceResult(out)
-    meter = _Meter(time.monotonic() + max_minutes * 60 if max_minutes else None)
+        return []
     schools = network_schools(wh)
     moved: dict[str, bool] = {}
     plans = []
@@ -1026,6 +999,95 @@ def trace_run(
         manifest.require_compiled(roots, levels)
         for b in buckets:
             b.manifest = manifest
+    return buckets
+
+
+def check_ready(
+    cfg: ViewConfig,
+    run: RunResult,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    manifest_path: Path = MANIFEST,
+    levels: int = MAX_LEVELS,
+) -> None:
+    """Refuse now what `trace_run` would refuse, before anything is spent.
+
+    Checks every open row group, so it may ask for a model only a group a
+    proof later explains would have needed. Call inside `wh.budget`.
+
+    Raises:
+        pipeline.Refusal: A comparison's SQL changed since the run, or the
+            manifest or a model's compiled SQL is missing.
+    """
+    _plan(
+        cfg,
+        run,
+        list(run.applied.open),
+        wh=wh,
+        cube=cube,
+        manifest_path=manifest_path,
+        levels=levels,
+        meter=_Meter(None),
+    )
+
+
+def trace_run(
+    cfg: ViewConfig,
+    run: RunResult,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    manifest_path: Path = MANIFEST,
+    levels: int = MAX_LEVELS,
+    max_minutes: float = TRACE_MAX_MINUTES,
+    skip: set[tuple] = frozenset(),
+) -> TraceResult:
+    """Trace every open row group of a run to the steps that drop its rows.
+
+    Call inside `wh.budget`. Every refusal (a comparison's SQL changed, a
+    manifest or compiled model missing) comes before the first priced trace
+    query. The level-0 total is printed before any trace query runs, and
+    each later query's price before it runs, with a running total. A cap, the
+    time limit or a failed dry run stops only the bucket it hits, keeping
+    what that bucket found; the next bucket still runs.
+
+    Args:
+        cfg: The view's config.
+        run: The run whose open groups to trace.
+        wh: The warehouse.
+        cube: Cube, to compile each comparison's rows query again.
+        manifest_path: The dbt manifest with compiled SQL for the tables the
+            trace descends into.
+        levels: How many tables deep to descend.
+        max_minutes: The whole trace's time limit.
+        skip: `item_key`s of groups not to trace.
+
+    Returns:
+        Per `item_key`, the trace of each traced group (the one-sided buckets
+        of comparisons with `rows`), and each
+        stopped bucket's reason.
+
+    Raises:
+        pipeline.Refusal: A comparison's SQL changed since the run, or the
+            manifest or a model's compiled SQL is missing.
+    """
+    # A group a stored proof explains needs no lead.
+    open_groups = [g for g in run.applied.open if item_key(g) not in skip]
+    out: dict[tuple, ItemTrace] = {}
+    meter = _Meter(time.monotonic() + max_minutes * 60 if max_minutes else None)
+    buckets = _plan(
+        cfg,
+        run,
+        open_groups,
+        wh=wh,
+        cube=cube,
+        manifest_path=manifest_path,
+        levels=levels,
+        meter=meter,
+    )
+    if not buckets:
+        return TraceResult(out)
 
     # Each bucket is priced, and stops, on its own: one bucket's failure never
     # keeps another from being traced.

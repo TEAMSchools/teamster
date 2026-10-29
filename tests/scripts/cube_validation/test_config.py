@@ -955,7 +955,7 @@ LABEL_LINE = "      label: score has no section on the anchor date\n"
         ("side: cube", "side: both", r"cause\.side.*dashboard, cube"),
         (LABEL_LINE, "      label: ''\n", r"cause\.label.*words"),
         (LABEL_LINE, "      label: term 20250701\n", r"cause\.label.*5 or more.*<n>"),
-        (LABEL_LINE, "      label: id 1234 5678\n", r"cause\.label.*5 or more.*<n>"),
+        (LABEL_LINE, "      label: call 973-555-1234\n", r"cause\.label.*5 or more.*<n>"),
         (LABEL_LINE, LABEL_LINE + "      groups: [a]\n", r"cause\.groups.*side and label"),
         ("comparison: ada-y1-region\n    cause", "cause", r"comparison"),
         ("    call: domain_owner\n", "    call: domain_owner\n    answer: maybe\n",
@@ -1007,9 +1007,15 @@ def test_write_decision_round_trips_a_cause_decision(tmp_path):
     "text, want",
     [
         ("term 20250701", "term <n>"),
-        ("id 1234 5678 and 973-555-1234", "id <n> and <n>"),
+        ("call 973-555-1234 or 1,234,567", "call <n> or <n>"),
+        ("id 12.345", "id <n>"),
+        # Not ID-shaped: school years, a date, small numbers apart.
+        ("since 2024-25 and 2025-2026", "since 2024-25 and 2025-2026"),
+        ("after 2025-07-01", "after 2025-07-01"),
+        ("grades 9 10 11 12", "grades 9 10 11 12"),
         ("grades 9, 10, 11 since 2024", "grades 9, 10, 11 since 2024"),
+        ("1234 5678", "1234 5678"),
     ],
 )
-def test_mask_digits_masks_whole_and_split_numbers_of_5_or_more_digits(text, want):
+def test_mask_digits_masks_only_id_shaped_numbers(text, want):
     assert mask_digits(text) == want
