@@ -398,30 +398,40 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
 
 
 def _check_default(value: exp.Expression) -> None:
-    """Refuse a cause that is not a CASE ending in `ELSE 'UNEXPLAINED'`.
+    """Refuse a cause that is not one CASE of literals ending in `ELSE 'UNEXPLAINED'`.
 
     A catch-all cause would file the rows of a new cause, in a later run,
-    under an old one with no one looking.
+    under an old one with no one looking. Only literal branches rule that
+    out: an `IF()`, a nested CASE or a column carried from a CTE in a THEN
+    can hide a catch-all of its own. Conditions may use anything.
 
     Raises:
-        pipeline.Refusal: A bare cause, or a CASE (at any depth) with no ELSE
-            or another one.
+        pipeline.Refusal: The cause is not a CASE, a THEN is not a string
+            literal, or the ELSE is missing or another value.
     """
-    if not isinstance(value, exp.Case):
-        raise pipeline.Refusal(
-            f"the proof's cause must be a CASE ending in ELSE '{UNEXPLAINED}'"
+
+    def _is_text(node: exp.Expression | None, text: str | None = None) -> bool:
+        return (
+            isinstance(node, exp.Literal)
+            and node.is_string
+            and (text is None or node.this == text)
         )
-    for case in value.find_all(exp.Case):
-        default = case.args.get("default")
-        if not (
-            isinstance(default, exp.Literal)
-            and default.is_string
-            and default.this == UNEXPLAINED
-        ):
-            raise pipeline.Refusal(
-                f"every CASE of the proof's cause must end in ELSE '{UNEXPLAINED}', "
-                "so a row of a new cause is never filed under an old one"
-            )
+
+    if not isinstance(value, exp.Case) or value.this is not None:
+        raise pipeline.Refusal(
+            f"the proof's cause must be one CASE WHEN ... THEN '<cause>' ... "
+            f"ELSE '{UNEXPLAINED}' END"
+        )
+    if not all(_is_text(branch.args.get("true")) for branch in value.args["ifs"]):
+        raise pipeline.Refusal(
+            "every THEN of the proof's cause must be a quoted cause name: a "
+            "function, nested CASE or column there can hide a catch-all"
+        )
+    if not _is_text(value.args.get("default"), UNEXPLAINED):
+        raise pipeline.Refusal(
+            f"the proof's cause must end in ELSE '{UNEXPLAINED}', so a row of a "
+            "new cause is never filed under an old one"
+        )
 
 
 def _unpinned(tree: exp.Expression) -> list[str]:

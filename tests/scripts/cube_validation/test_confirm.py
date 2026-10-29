@@ -349,13 +349,14 @@ def test_confirm_refreshes_the_decision_marks(duck, tmp_path, monkeypatch, offli
             "CROSS JOIN (SELECT 'C1' AS x UNION ALL SELECT 'C2') AS t",
             "3 unmatched rows appear more than once",
         ),
-        # A cause computed from data, not written as a literal.
+        # A cause computed from data, not written as a literal: refused before
+        # it runs.
         (
             "SELECT u.__row, CASE WHEN TRUE THEN CAST(f.ok1 AS STRING) "
             "ELSE 'UNEXPLAINED' END AS cause FROM {unmatched} AS u "
             "LEFT JOIN `teamster-332318`.`d`.`fact` AS f ON f.student = u.lea "
             "WHERE 'C1' = 'C1'",
-            "3 rows got a cause that is no string literal",
+            "must be a quoted cause name",
         ),
     ],
 )
@@ -750,12 +751,28 @@ def test_the_gate_accepts_proven_items_until_their_proof_changes(
         "CASE WHEN TRUE THEN 'C1' ELSE 'C2' END",
         "CASE WHEN TRUE THEN CASE WHEN FALSE THEN 'C1' ELSE 'C2' END "
         "ELSE 'UNEXPLAINED' END",
+        "CASE WHEN TRUE THEN IF(u.aid = 1, 'C1', 'C2') ELSE 'UNEXPLAINED' END",
+        "CASE WHEN TRUE THEN COALESCE(u.aid, 'C1') ELSE 'UNEXPLAINED' END",
+        "CASE u.aid WHEN 1 THEN 'C1' ELSE 'UNEXPLAINED' END",
+        "IF(TRUE, 'C1', 'UNEXPLAINED')",
     ],
 )
 def test_check_sql_refuses_a_cause_that_can_file_a_new_row_under_an_old_cause(cause):
-    with pytest.raises(pipeline.Refusal, match="ELSE 'UNEXPLAINED'"):
+    with pytest.raises(pipeline.Refusal, match="the proof's cause"):
         confirm.check_sql(
             f"SELECT u.__row, {cause} AS cause FROM {{unmatched}} AS u", GRAIN, STUDENT
+        )
+
+
+def test_check_sql_refuses_a_cause_carried_from_a_cte():
+    with pytest.raises(pipeline.Refusal, match="quoted cause name"):
+        confirm.check_sql(
+            "WITH c AS (SELECT u.__row, CASE WHEN TRUE THEN 'C1' ELSE 'C9' END "
+            "AS cause FROM {unmatched} AS u) SELECT u.__row, CASE WHEN TRUE THEN "
+            "c.cause ELSE 'UNEXPLAINED' END AS cause FROM {unmatched} AS u "
+            "JOIN c ON c.__row = u.__row",
+            GRAIN,
+            STUDENT,
         )
 
 

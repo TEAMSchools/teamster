@@ -273,15 +273,15 @@ cause, do not retry around it.
       row. `{unmatched}` holds `__row`, `item_key`, `side`, the group-by
       columns, the grain under its Cube names, and `__rn` (past 1, a grain the
       other side holds twice). A `CASE` in lineage order names each row's first
-      failing predicate, copied literally from the model's SQL, as a string
-      literal, and every `CASE` ends in `ELSE 'UNEXPLAINED'`, never in a cause:
+      failing predicate, copied literally from the model's SQL. The cause is ONE
+      `CASE` whose every `THEN` is a quoted cause name (no `IF()`, nested `CASE`
+      or column there) and which ends in `ELSE 'UNEXPLAINED'`, never in a cause:
       a later run's rows of a new cause must not be filed under an old one. A
       row the join misses must fall to `'UNEXPLAINED'` too: test the join first
       (or use `EXISTS`), and join a table at the row's grain, since a finer one
       repeats rows. Name tables `` `teamster-332318`.`<dataset>`.`<table>` ``;
       they are read as of the run's moment; `confirm` warns of a table named
-      without them. A proof may open with its own `WITH`; it takes no `QUALIFY`
-      or `GROUP BY ALL`.
+      without them. A proof may open with its own `WITH`.
 
       ```sql
       SELECT u.__row,
@@ -300,10 +300,10 @@ cause, do not retry around it.
       (through the runner) needs a `--cause` for every cause literal the query
       returns. The tool counts the rows itself, joining the proof back to
       `{unmatched}`, and refuses a row the proof drops or repeats, a cause that
-      is no CASE ending in `ELSE 'UNEXPLAINED'` or no string literal of the
-      proof, any column but `__row` and `cause`, a grain or ID column as the
-      cause, a literal compared with a column that names a person (the student
-      column, a `_number`, `_name` or `_email`, a student id or key;
+      is not that one `CASE` of quoted names ending in `ELSE 'UNEXPLAINED'`, any
+      column but `__row` and `cause`, a grain or ID column as the cause, a
+      literal compared with a column that names a person (the student column, a
+      `_number`, `_name` or `_email`, a student id or key;
       `assessment_id = 189131` is fine), and an ID-like number or email in a
       comment or string. These checks catch the common mistakes, not every one:
       read the proof yourself. It is priced and capped like any query. It saves
