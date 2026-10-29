@@ -10,6 +10,7 @@ proven cause. Item ids and labels carry no value the review issue would hide.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import re
 from collections import Counter
@@ -35,8 +36,9 @@ from .report import (
 )
 from .timetravel import PROJECT
 
-# The order the analyst's batch shows the piles, `investigate` last.
-SUGGESTIONS = pipeline.PILES
+# The piles, in the order the analyst's batch shows them. Only a `cause` item
+# carries a proven cause; an `investigate` item has none yet.
+SUGGESTIONS = ("map_filters", "filters_nothing", "cause", "investigate")
 
 
 @dataclass(frozen=True)
@@ -180,6 +182,96 @@ def open_items(run: RunResult) -> list[Item]:
         Stubs carry real values.
     """
     return [item for item, _ in _entries(run)]
+
+
+def _open_key(source: Group | Gap | CellDiff) -> str:
+    """Name an open item by what it is, not by which other items are open.
+
+    An item's id and stub change as its siblings close; this does not.
+    """
+    if isinstance(source, Group):
+        raw = ["group", source.comparison_id, source.bucket, source.dims]
+    elif isinstance(source, Gap):
+        raw = ["gap", source.kind, source.field]
+    else:
+        raw = ["cells", source.comparison_id]
+    return hashlib.sha256(json.dumps(raw).encode()).hexdigest()[:16]
+
+
+def open_keys(run: RunResult) -> list[str]:
+    """The run's open items as `_open_key`s, sorted."""
+    return sorted({_open_key(source) for _, source in _entries(run)})
+
+
+def _moment(run: RunResult) -> dict:
+    return {
+        "start": run.moment.start.isoformat(),
+        "end": run.moment.end.isoformat(),
+        "job_id": run.moment.job_id,
+    }
+
+
+def proven_triage(run: RunResult, run_json: Path) -> dict:
+    """Read the triage of the view's latest run, refusing while any item is unproven.
+
+    Nothing is recorded or reviewed for a view until every one of its items has
+    left `investigate`. The gate is per view file: it reads only the triage
+    beside that view's latest `run.json`, so one view's open item blocks
+    `add-decisions` on that file and any `review` that includes it. Decisions
+    written since triage may close items; an item open in the run but absent
+    from the triage refuses.
+
+    Args:
+        run: The view's latest run (see `pipeline.latest_run`).
+        run_json: The `run.json` it came from.
+
+    Raises:
+        pipeline.Refusal: No triage sits beside the run, it is unreadable or of
+            another moment, the run has an open item the triage did not see,
+            an item sits in a pile this validator does not sort into (a triage
+            from an older validator), a `cause` item has no cause, or an item
+            is in `investigate`.
+    """
+    view, found = run.view, run_json.parent / "triage.json"
+    again = f"run `triage` for {run.moment.start:%Y-%m-%d %H:%M} UTC"
+    if not found.exists():
+        raise pipeline.Refusal(f"{view}: no triage of the latest run; {again}")
+    unreadable = pipeline.Refusal(f"{view}: triage.json is unreadable; re-run triage")
+    try:
+        loaded = json.loads(found.read_text())
+    except json.JSONDecodeError as exc:
+        raise unreadable from exc
+    if not isinstance(loaded, dict):
+        raise unreadable
+    if loaded.get("moment") != _moment(run):
+        raise pipeline.Refusal(f"{view}: triage.json is of another moment; {again}")
+    if unseen := len(set(open_keys(run)) - set(loaded.get("open") or [])):
+        were = "is" if unseen == 1 else "are"
+        raise pipeline.Refusal(
+            f"{view}: {unseen} open item{'' if unseen == 1 else 's'} of the "
+            f"latest run {were} not in its triage; {again}"
+        )
+    items = loaded.get("items", [])
+    piles = Counter(item.get("suggestion") for item in items)
+    if other := sorted(str(p) for p in set(piles) - set(SUGGESTIONS)):
+        raise pipeline.Refusal(
+            f"{view}: {found} has items in piles this validator does not sort "
+            f"into ({', '.join(other)}); re-run triage"
+        )
+    if bare := sum(
+        1 for i in items if i["suggestion"] == "cause" and not i.get("cause")
+    ):
+        raise pipeline.Refusal(
+            f"{view}: {bare} `cause` item{'' if bare == 1 else 's'} "
+            f"{'has' if bare == 1 else 'have'} no cause; re-run triage"
+        )
+    if n := piles["investigate"]:
+        raise pipeline.Refusal(
+            f"{view}: {n} triage item{'' if n == 1 else 's'} in `investigate`; "
+            "trace each to a proven cause (cube-validation skill, step 8), "
+            "then re-run `triage`"
+        )
+    return loaded
 
 
 def _candidates(caption: str, docs: dict[str, MemberDoc]) -> tuple[str, ...]:
@@ -474,7 +566,9 @@ def run_triage(
     """Sort each open item of the view's latest run into a pile and print them.
 
     Prints `batch_lines`. Writes every item to `triage.json` beside that run's
-    `run.json`: it stays in the local cache, and its stubs carry real values.
+    `run.json`, with the run's moment, decisions fingerprint and open items
+    (see `proven_triage`): it stays in the local cache, and its stubs carry
+    real values.
 
     Raises:
         pipeline.Refusal: The view has no usable saved run (see
@@ -499,12 +593,9 @@ def run_triage(
         json.dumps(
             {
                 "view": run.view,
-                "moment": {
-                    "start": run.moment.start.isoformat(),
-                    "end": run.moment.end.isoformat(),
-                    "job_id": run.moment.job_id,
-                },
+                "moment": _moment(run),
                 "decisions_fingerprint": run.decisions_fingerprint,
+                "open": open_keys(run),
                 "items": [
                     {
                         **dataclasses.asdict(s.item),

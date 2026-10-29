@@ -13,7 +13,7 @@ import pytest
 import tableauserverclient as TSC
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, pipeline, tableau
+from cube_validation import cli, pipeline, tableau, triage
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.bq import Warehouse
@@ -921,8 +921,8 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
     }
     item = {"id": "i", "kind": "group", "comparison": "ada-region", "label": "l",
             "stub": stub, "suggestion": "cause", "evidence": ["the fact drops them"],
-            "candidates": []}  # fmt: skip
-    (run_json.parent / "triage.json").write_text(json.dumps({"items": [item]}))
+            "candidates": [], "cause": [STEP]}  # fmt: skip
+    _write_triage(run_json, [item])
     capsys.readouterr()
 
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
@@ -935,20 +935,81 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
     assert '"stub"' not in out
 
 
+STEP = {"side": "dashboard", "step": "dashboard:main:1", "label": "x", "n_rows": 12}
+
+
 def _triage_item(evidence, suggestion="cause", item_id="i"):
     stub = {
         "comparison": "ada-region",
         "group": {"column": "regions_region_name", "values": ["Miami"]},
     }
+    cause = [STEP] if suggestion == "cause" else None
     return {"id": item_id, "kind": "group", "comparison": "ada-region",
             "label": "l", "stub": stub, "suggestion": suggestion,
-            "evidence": [evidence], "candidates": []}  # fmt: skip
+            "evidence": [evidence], "candidates": [], "cause": cause}  # fmt: skip
+
+
+def _write_triage(run_json, items=(), open_keys=None):
+    """Write the triage `triage` would write beside `run_json`, holding `items`.
+
+    `open_keys` defaults to every open item of that run.
+    """
+    run = pipeline._run_from_json(json.loads(run_json.read_text()))
+    (run_json.parent / "triage.json").write_text(
+        json.dumps(
+            {
+                "view": run.view,
+                "moment": {
+                    "start": run.moment.start.isoformat(),
+                    "end": run.moment.end.isoformat(),
+                    "job_id": run.moment.job_id,
+                },
+                "decisions_fingerprint": run.decisions_fingerprint,
+                "open": triage.open_keys(run) if open_keys is None else open_keys,
+                "items": list(items),
+            }
+        )
+    )
 
 
 def _triage_everything(tmp_path, items=()):
     """Write a triage holding `items` beside every saved run of view `v`."""
     for run_json in (tmp_path / "cache" / "v").glob("*/run.json"):
-        (run_json.parent / "triage.json").write_text(json.dumps({"items": list(items)}))
+        _write_triage(run_json, items)
+
+
+def test_review_refuses_a_triage_missing_an_open_item_of_the_run(
+    fakes, tmp_path, capsys
+):
+    # Same moment, but the run was re-run after triage: its open groups are new.
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    _write_triage(run_json, [_triage_item("e")], open_keys=[])
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
+
+    err = capsys.readouterr().err
+    assert "v: 1 open item of the latest run is not in its triage" in err
+    assert "run `triage` for" in err
+
+
+def test_add_decisions_refuses_a_cause_item_with_no_cause(fakes, tmp_path, capsys):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    for empty in (None, []):
+        _write_triage(run_json, [{**_triage_item("e"), "cause": empty}])
+        approved = _approved(
+            tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": "i"}]
+        )
+        capsys.readouterr()
+
+        assert cli.main(["add-decisions", str(path), str(approved)]) == 1
+
+        assert "v: 1 `cause` item has no cause" in capsys.readouterr().err
+    assert load_view_config(path).decisions == []
 
 
 def test_review_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
@@ -960,7 +1021,8 @@ def test_review_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
 
     captured = capsys.readouterr()
-    assert "v: no triage.json; run `triage` first" in captured.err
+    assert "v: no triage of the latest run" in captured.err
+    assert "run `triage` for" in captured.err
     assert captured.out == ""
 
 
@@ -1000,25 +1062,39 @@ def test_review_refuses_a_triage_from_before_the_investigate_pile(
     assert "re-run triage" in capsys.readouterr().err
 
 
-def test_review_reads_triage_from_an_older_moment(fakes, tmp_path, capsys):
-    # Triage ran on the earlier build; the decision's run lands on a later one.
+def test_review_refuses_a_triage_from_an_older_moment(fakes, tmp_path, capsys):
+    # Triage ran on the earlier build; the latest run lands on a later one.
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     (earlier,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    (earlier.parent / "triage.json").write_text(
-        json.dumps({"items": [_triage_item("from the earlier build")]})
-    )
+    _write_triage(earlier, [_triage_item("from the earlier build")])
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     fakes.bq.build = (START + timedelta(hours=3), END + timedelta(hours=3))
     assert cli.main(["run", str(path)]) == 0
     assert len(list((tmp_path / "cache" / "v").glob("*/run.json"))) == 2
     capsys.readouterr()
 
-    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
+    assert cli.main(["add-decisions", str(path), str(_approved(tmp_path, []))]) == 1
 
     captured = capsys.readouterr()
-    block = captured.out.split("```json\n", 1)[1].split("\n```", 1)[0]
-    assert json.loads(block)[0]["evidence"] == ["from the earlier build"]
-    assert "no triage evidence" not in captured.err
+    assert captured.err.count("v: no triage of the latest run") == 2
+    assert "run `triage` for" in captured.err and captured.out == ""
+
+
+def test_review_refuses_a_triage_whose_moment_is_not_the_runs(fakes, tmp_path, capsys):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    _write_triage(run_json, [_triage_item("e")])
+    saved = json.loads((run_json.parent / "triage.json").read_text())
+    saved["moment"]["job_id"] = "another-build"
+    (run_json.parent / "triage.json").write_text(json.dumps(saved))
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
+
+    err = capsys.readouterr().err
+    assert "v: triage.json is of another moment" in err and "run `triage` for" in err
 
 
 def test_review_names_questions_left_without_evidence(fakes, tmp_path, capsys):
@@ -2201,6 +2277,8 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
         == json.loads(saved.read_text())["decisions_fingerprint"]
     )
     assert set(written["moment"]) == {"start", "end", "job_id"}
+    run = pipeline._run_from_json(json.loads(saved.read_text()))
+    assert written["open"] == triage.open_keys(run) and written["open"]
     item = written["items"][0]
     assert set(item) == {
         "id", "kind", "comparison", "label", "stub",
@@ -2284,9 +2362,7 @@ def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
     path = _file(tmp_path)
     assert cli.main(["run", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    (run_json.parent / "triage.json").write_text(
-        json.dumps({"items": [_triage_item("e"), _gap_triage_item()]})
-    )
+    _write_triage(run_json, [_triage_item("e"), _gap_triage_item()])
     approved = _approved(
         tmp_path,
         [
@@ -2336,9 +2412,7 @@ def test_add_decisions_re_applies_to_the_saved_run_offline(
     path = _file(tmp_path)
     assert cli.main(["run", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    (run_json.parent / "triage.json").write_text(
-        json.dumps({"items": [_triage_item("e")]})
-    )
+    _write_triage(run_json, [_triage_item("e")])
     approved = _approved(
         tmp_path,
         [{"id": "miami-scope", "call": "deliberate", "reason": "r", "item": "i"}],
@@ -2364,9 +2438,7 @@ def _triaged_run(path, tmp_path):
     saved = sorted(
         (tmp_path / "cache" / "v").glob("*/run.json"), key=lambda p: p.stat().st_mtime
     )
-    (saved[-1].parent / "triage.json").write_text(
-        json.dumps({"items": [_triage_item("e")]})
-    )
+    _write_triage(saved[-1], [_triage_item("e")])
 
 
 def test_add_decisions_refuses_a_decision_overlapping_one_in_the_file(
@@ -2439,9 +2511,7 @@ def test_add_decisions_refuses_an_unknown_item_and_writes_nothing(
     path = _file(tmp_path)
     assert cli.main(["run", str(path)]) == 0
     (run_json,) = (tmp_path / "cache" / "v").glob("*/run.json")
-    (run_json.parent / "triage.json").write_text(
-        json.dumps({"items": [_triage_item("e")]})
-    )
+    _write_triage(run_json, [_triage_item("e")])
     approved = _approved(
         tmp_path,
         [

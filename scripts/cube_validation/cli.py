@@ -242,7 +242,7 @@ def _parser() -> argparse.ArgumentParser:
     email(p)
     max_usd(p)
 
-    p = sub.add_parser("triage", help="suggest a call for each open item of a run")
+    p = sub.add_parser("triage", help="sort each open item of a run into a pile")
     view_file(p)
     fact_dataset(p)
     email(p)
@@ -499,12 +499,12 @@ def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     """Write an approved triage batch into the view's `decisions:`.
 
     Stubs come from the triage beside the latest run and fingerprints from that
-    run. Refuses while that triage holds an `investigate` item (see
-    `pipeline.proven_triage`). The whole batch is written or none of it.
+    run. Refuses while that triage is stale or holds an unproven item (see
+    `triage.proven_triage`). The whole batch is written or none of it.
     """
     approved = _read_json(approved_path, "approved")
     run, run_json = pipeline.latest_run(cfg, cache_root())
-    saved = pipeline.proven_triage(cfg.view, run_json, cache_root() / cfg.view)
+    saved = triage.proven_triage(run, run_json)
 
     decisions = answers.approved_decisions(approved, saved, run.fingerprints)
     taken = {d.id for d in cfg.decisions} & {d["id"] for d in decisions}

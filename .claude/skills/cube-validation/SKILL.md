@@ -209,7 +209,10 @@ cause, do not retry around it.
    cuts and filters) into one pile: `map_filters`, `filters_nothing`, `cause`,
    then `investigate`, each with a masked label and its evidence. Start from the
    summary it prints first; a flood in one bucket means fix the grain. It lists
-   25 items per pile; `triage.json` holds them all.
+   25 items per pile; `triage.json` holds them all. Run `triage` after every
+   `run`: `add-decisions` and `review` read only the triage beside the latest
+   run and refuse one of another moment or one missing any of the run's open
+   items.
 
    Every item must reach a proven cause before anything is recorded: a step (a
    filter, join or rule in either side's SQL, or in a model it reads) shown row

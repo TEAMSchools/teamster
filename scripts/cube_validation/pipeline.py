@@ -29,7 +29,7 @@ import tableauserverclient as TSC
 
 from . import answers, checks, compare, decisions
 from . import discover as finder
-from . import report, tableau
+from . import report, tableau, triage
 from .bq import Warehouse
 from .checks import CheckResult, Finding
 from .compare import CellDiff, Gap, Group
@@ -1485,62 +1485,6 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
 BODY_WARN_CHARS = 60_000
 
 
-def _triage_file(run_json: Path, view_root: Path) -> Path | None:
-    """The `triage.json` beside the run, else the newest in any moment folder.
-
-    Triage runs before the analyst records decisions, and the re-run that
-    applies them often lands on a newer build, in a new moment folder.
-    """
-    beside = run_json.parent / "triage.json"
-    if beside.exists():
-        return beside
-    found = sorted(view_root.glob("*/triage.json"), key=lambda p: p.stat().st_mtime)
-    return found[-1] if found else None
-
-
-# The piles `triage` sorts open items into, in batch order. Only a `cause` item
-# carries a proven cause; an `investigate` item has none yet.
-PILES = ("map_filters", "filters_nothing", "cause", "investigate")
-
-
-def proven_triage(view: str, run_json: Path, view_root: Path) -> dict:
-    """Read the view's triage (see `_triage_file`), refusing while any item is unproven.
-
-    Nothing is recorded or reviewed for a view until every one of its items has
-    left `investigate`. The gate is per view file: it reads only that view's
-    triage, so one view's open item blocks `add-decisions` on that file and any
-    `review` that includes it.
-
-    Raises:
-        Refusal: The view has no triage, it is not a JSON object, an item sits
-            in a pile this validator does not sort into (a triage from an
-            older validator), or an item is in `investigate`.
-    """
-    found = _triage_file(run_json, view_root)
-    if found is None:
-        raise Refusal(f"{view}: no triage.json; run `triage` first")
-    unreadable = Refusal(f"{view}: triage.json is unreadable; re-run triage")
-    try:
-        loaded = json.loads(found.read_text())
-    except json.JSONDecodeError as exc:
-        raise unreadable from exc
-    if not isinstance(loaded, dict):
-        raise unreadable
-    piles = Counter(item.get("suggestion") for item in loaded.get("items", []))
-    if other := sorted(str(p) for p in set(piles) - set(PILES)):
-        raise Refusal(
-            f"{view}: {found} has items in piles this validator does not sort "
-            f"into ({', '.join(other)}); re-run triage"
-        )
-    if n := piles["investigate"]:
-        raise Refusal(
-            f"{view}: {n} triage item{'' if n == 1 else 's'} in `investigate`; "
-            "trace each to a proven cause (cube-validation skill, step 8), "
-            "then re-run `triage`"
-        )
-    return loaded
-
-
 def review(
     configs: list[ViewConfig],
     domain: str,
@@ -1549,10 +1493,10 @@ def review(
 ) -> str:
     """Return the review-issue body from each view's latest saved run.
 
-    Reads only the local cache: each run and its triage (see `proven_triage`),
-    matching triage items to decisions by their stubs. Nothing is posted; a
-    question with no triage evidence, and a body near GitHub's cap, are named
-    on stderr.
+    Reads only the local cache: each run and its triage (see
+    `triage.proven_triage`), matching triage items to decisions by their stubs.
+    Nothing is posted; a question with no triage evidence, and a body near
+    GitHub's cap, are named on stderr.
 
     Args:
         configs: The views to review.
@@ -1563,21 +1507,18 @@ def review(
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
-            triage is missing, unreadable or holds an unproven item (see
-            `proven_triage`).
+            triage is missing, stale, unreadable or holds an unproven item
+            (see `triage.proven_triage`).
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
-    triage = {
-        run.view: proven_triage(run.view, run_json, cache_root / run.view)
-        for run, run_json in saved
-    }
+    found = {run.view: triage.proven_triage(run, run_json) for run, run_json in saved}
     definitions = {
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs
     }
     questions = answers.questions_json(
-        runs, configs, definitions, triage, now or datetime.now(timezone.utc)
+        runs, configs, definitions, found, now or datetime.now(timezone.utc)
     )
     body = report.render_review_issue(domain, runs, definitions, questions)
     if len(body) > BODY_WARN_CHARS:
