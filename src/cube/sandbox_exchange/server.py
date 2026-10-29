@@ -188,7 +188,8 @@ def create_app(
         )
 
     def http_error(_request: Request, exc: Exception) -> JSONResponse:
-        assert isinstance(exc, HTTPException)
+        if not isinstance(exc, HTTPException):
+            raise exc
         if exc.status_code == 404 and exc.detail == "Not Found":
             reason = "No such route. See GET /personas."
         elif exc.status_code == 405:
@@ -200,7 +201,8 @@ def create_app(
         )
 
     def rejected(_request: Request, exc: Exception) -> JSONResponse:
-        assert isinstance(exc, Rejected)
+        if not isinstance(exc, Rejected):
+            raise exc
         return JSONResponse({"error": exc.reason}, status_code=exc.status)
 
     post = ["POST"]
