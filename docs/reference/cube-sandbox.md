@@ -340,10 +340,10 @@ uv run python -m teamster.cube_sandbox.checks
 uv run python -m teamster.cube_sandbox.generate --scale tiny
 uv run python -m teamster.cube_sandbox.coverage --avro-dir build/cube_sandbox/tiny
 
-# 4. Production scale, then the load: GCS upload, CREATE OR REPLACE TABLE from
-#    the pinned snapshot, load, and a column-and-type check against it.
-uv run python -m teamster.cube_sandbox.generate --scale full
-uv run python -m teamster.cube_sandbox.load --avro-dir build/cube_sandbox/full
+# 4. The realistic profile, then the load: GCS upload, CREATE OR REPLACE TABLE
+#    from the pinned snapshot, load, and a column-and-type check against it.
+uv run python -m teamster.cube_sandbox.generate --scale realistic
+uv run python -m teamster.cube_sandbox.load --avro-dir build/cube_sandbox/realistic
 
 # 5. Assert the result.
 uv run python -m teamster.cube_sandbox.sentinel

@@ -208,8 +208,8 @@ call.)
   Identity Federation setup. The workflow also takes `workflow_dispatch`, so the
   first deploy can run from the implementation branch and verification step 3
   happens before merge, not after. (My call.)
-- The implementation ships in its own PR, after this design merges with PR
-  #5267. (My call.)
+- The implementation ships in PR #5267 with this design, so the sandbox and its
+  sign-in path go live together.
 
 ## Cloud setup (decided: Charlie Bini)
 

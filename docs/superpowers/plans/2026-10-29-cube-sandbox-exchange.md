@@ -21,9 +21,10 @@ Workload Identity Federation.
 
 **Spec:** `docs/superpowers/specs/2026-10-29-cube-sandbox-exchange-design.md`
 
-**Branch:** its own branch from `origin/main` after PR #5267 merges (this plan
-needs `src/cube/sandbox/personas.yml` and `teamster.cube_sandbox.personas`,
-which land with #5267). Body: `Refs #5523`.
+**Branch:** `cristinabaldor/feat/claude-cube-sandbox-build`, PR #5267, in the
+worktree
+`/workspaces/teamster/.worktrees/cristinabaldor/feat/claude-cube-sandbox-build`.
+The exchange ships with the sandbox it serves.
 
 ## Global Constraints
 
@@ -73,8 +74,9 @@ which land with #5267). Body: `Refs #5523`.
 ### Task 1: Confirm the AuthKit session token's shape (gate)
 
 The spec rests on 3 facts from WorkOS's documentation. Confirm them on a real
-token before anything depends on them. If any differs, stop and report to the
-user; do not adapt the code.
+token before Task 4, the first task that depends on them. Tasks 2 and 3 may run
+while the token is pending. If any fact differs, stop and report to the user; do
+not adapt the code.
 
 **Files:** none committed. Script in the session scratchpad.
 
@@ -431,8 +433,9 @@ project-wide grant the spec allows.
       from `cube-sandbox.md`.
 - [ ] **Step 4: Commit**
       `ci(cube): deploy the sandbox token exchange to teamster-cube-sandbox`.
-- [ ] **Step 5: Push and open the PR** (template body, `Refs #5523`). Hand the
-      runbook to the user to pass to Charlie.
+- [ ] **Step 5: Push, and add the exchange to PR #5267's body.** Hand the
+      runbook to the user to pass to Charlie. Charlie's setup must finish before
+      #5267 merges: the merge triggers the deploy workflow.
 
 ### Task 7: First deploy and live verification
 
