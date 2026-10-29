@@ -248,53 +248,71 @@ cause, do not retry around it.
    2. Read the domain doc (`docs/models/<domain>-data-model.md`) and search open
       issues (`mcp__github__search_issues`) before any SQL. Then read the model
       SQL along the lineage, both sides.
-   3. For each cluster, propose one hypothesis: its lead, the model predicate it
+   3. For each cluster, first split its rows by which pieces exist on the other
+      side, one aggregate query: is the student there, is the assessment (or the
+      other key) there, is only a code different? Counts only. A whole key
+      missing points straight at a cause (C3 below).
+   4. Then propose one hypothesis per cluster: its lead, the model predicate it
       names, and the one aggregate query that tests it. Run it once the analyst
       agrees. Queries return counts only; rows stay in BigQuery.
-   4. After 2 failed hypotheses on one cluster, or about $0.50 spent, stop and
+   5. After 2 failed hypotheses on one cluster, or about $0.50 spent, stop and
       ask the analyst for context.
-   5. Write the proof: one query per comparison and bucket that reads
-      `{unmatched}` (every unmatched row of that bucket: `item_key`, the grain
-      under its Cube names, the group-by columns) and returns only
-      `item_key, cause, n`. A `CASE` in lineage order names each row's first
-      failing predicate, each copied literally from the model's SQL; rows no
-      step explains fall to `'UNEXPLAINED'`:
+   6. Write the proof: one query per comparison and bucket that reads
+      `{unmatched}` and returns exactly `__row, cause`, one row per unmatched
+      row. `{unmatched}` holds `__row`, `item_key`, `side`, the group-by
+      columns, the grain under its Cube names, and `__rn` (past 1, a grain the
+      other side holds twice). A `CASE` in lineage order names each row's first
+      failing predicate, copied literally from the model's SQL, as a string
+      literal. A row the join misses must fall to `'UNEXPLAINED'`, never into a
+      cause: test the join first (or use `EXISTS`), and join a table at the
+      row's grain, since a finer one repeats rows. Name tables
+      `` `teamster-332318`.`<dataset>`.`<table>` ``; they are read as of the
+      run's moment.
 
       ```sql
-      SELECT u.item_key,
+      SELECT u.__row,
         CASE
+          WHEN r.assessment_id IS NULL THEN 'UNEXPLAINED'
           WHEN r.module_type = 'WPP' THEN 'C1'
-          WHEN r.module_type IS NULL THEN 'C2'
+          WHEN r.module_type IS NULL AND r.source = 'apex' THEN 'C2'
           ELSE 'UNEXPLAINED'
-        END AS cause,
-        COUNT(*) AS n
+        END AS cause
       FROM {unmatched} AS u
-      LEFT JOIN `teamster-332318.kipptaf_marts.<table>` AS r USING (<keys>)
-      GROUP BY 1, 2
+      LEFT JOIN `teamster-332318`.`kipptaf_marts`.`dim_assessments` AS r
+        ON r.assessment_id = u.assessment_id
       ```
 
-   6. `triage confirm <file> --comparison <id> --bucket <cube_only|dashboard_only> --sql <draft.sql> --cause C1=dashboard:<plain words> ...`
-      (through the runner) needs a `--cause` for every bucket the query returns.
-      It refuses any other column, a grain column selected or compared with a
-      literal, or a result that is not counts; it is priced and capped like any
-      query. It saves the proof to
-      `src/cube/validation/proofs/<view>/<comparison>__<bucket>.sql`, with the
-      `--cause` map as its leading `-- cause <bucket> = <side>: <words>` block,
-      and moves each item it fully explains (no `UNEXPLAINED`, counts summing to
-      its rows) to `cause`. The rest stay, with "proof <file> leaves N rows
-      unexplained". `--items <ids>` narrows the printout only. After an edit,
-      run it again without `--sql`. `--cells --comparison <id>` confirms a cell
-      set or refuses with the count of cells outside proven groups.
-   7. Proven means 2 things: `UNEXPLAINED` is 0 for the item, and each bucket's
+   7. `triage confirm <file> --comparison <id> --bucket <cube_only|dashboard_only> --sql <draft.sql> --cause C1=dashboard:<plain words> ...`
+      (through the runner) needs a `--cause` for every cause literal the query
+      returns. The tool counts the rows itself, joining the proof back to
+      `{unmatched}`, and refuses a row the proof drops or repeats, a cause that
+      is no string literal of the proof, any column but `__row` and `cause`, a
+      grain or ID column as the cause, a literal compared with the student or an
+      ID column, and an ID-like number or email in a comment or string. These
+      checks catch the common mistakes, not every one: read the proof yourself.
+      It is priced and capped like any query. It saves the proof to
+      `src/cube/validation/proofs/<view>/<comparison>__<bucket>.sql`, under lint
+      opt-outs and its `-- cause <bucket> = <side>: <words>` block, and moves
+      each item it fully explains (no `UNEXPLAINED`) to `cause`. The rest stay,
+      with "proof <file> leaves N rows unexplained". `--items <ids>` narrows the
+      printout only. After an edit, run it again without `--sql`.
+      `--cells --comparison <id>` confirms a cell set, or refuses with the count
+      of cells outside proven groups and, for a count, the gap between the
+      cells' differences and the proven rows.
+   8. Show the analyst the proof file and the per-cause counts `confirm`
+      printed, and wait for an OK before the file is kept for commit. On a no,
+      delete the file and run `triage` again.
+   9. Proven means 2 things: `UNEXPLAINED` is 0 for the item, and each bucket's
       rule is a literal model predicate, not a paraphrase of a doc. For the rows
       a predicate drops, a second aggregate shows the value (the date, the flag,
       the missing key).
 
-   Every `triage` re-runs every stored proof on the new run's rows, priced and
-   capped (`--no-proofs` skips them); an item with rows a proof no longer
-   explains returns to `investigate`. The proof files are the durable record:
-   commit them with the decisions, in the validation-file commit. They hold SQL
-   only: no values, no names.
+   Every `triage` re-runs every stored proof on the new run's rows first, priced
+   and capped (`--no-proofs` skips them), then traces only what no proof
+   explains; an item with rows a proof no longer explains returns to
+   `investigate`. The proof files are the durable record: commit them with the
+   decisions, in the validation-file commit. They hold SQL only: no values, no
+   names. A formatting-only edit to one re-opens nothing.
 
    Worked example (DDI). Cube-only rows were classified through the dashboard's
    `responses` CTE, dashboard-only rows through Cube's fact:
@@ -302,7 +320,7 @@ cause, do not retry around it.
    | Bucket | Side      | Model predicate                                                               | Found through                                     |
    | ------ | --------- | ----------------------------------------------------------------------------- | ------------------------------------------------- |
    | C1     | dashboard | `r.module_type != 'WPP'`                                                      | The domain doc and a `TODO: Remove SY26` comment  |
-   | C2     | dashboard | the same `!=`, which drops a NULL `module_type` (untagged Focus tests)        | The doc's "untagged assessments never appear"     |
+   | C2     | dashboard | `module_type is null and source = 'apex'`: the `!=` drops a NULL              | The doc's "untagged assessments never appear"     |
    | C3     | dashboard | the rollup's `academic_year`: the administration date sits a year early       | Comparing `date_taken`, the canonical date, title |
    | C4     | dashboard | the join to a week row covering `administered_at`                             | One date before the first enrollment week         |
    | C5     | dashboard | `is_enrolled_week_end`, `enroll_status`, `not is_out_of_district`             | Testing each flag of the `where` alone            |
@@ -355,16 +373,18 @@ cause, do not retry around it.
      from step 10, filled in after it is posted.
 
    Draft a reason for every item, so the analyst edits rather than writes: a
-   close quotes the evidence or names the issue; an owner item names the proven
-   step and the question it leaves, which his session shows him. Show the
-   analyst one batch, numbered across piles in the order above, owner items
-   last; each line has the label, the evidence, the call and the drafted reason.
-   On "approve all" or "approve all but 2 and 6", the excluded items stay
-   unrecorded until the analyst says where they go. Write the approved items,
-   owner items included, to `approved.json` in the session scratchpad: a JSON
-   list of `{"id", "call", "reason", "task", "item"}`, where `item` is the
-   triage item id, `id` a new decision id not already in the file, and `task`
-   empty for `deliberate` and `domain_owner`. Map items are not in it. Then
+   close quotes the item's `evidence_posted` in `triage.json` (masked), never
+   the terminal's exact counts, since the reason is committed, or names the
+   issue; an owner item names the proven step and the question it leaves, which
+   his session shows him. Show the analyst one batch, numbered across piles in
+   the order above, owner items last; each line has the label, the evidence, the
+   call and the drafted reason. On "approve all" or "approve all but 2 and 6",
+   the excluded items stay unrecorded until the analyst says where they go.
+   Write the approved items, owner items included, to `approved.json` in the
+   session scratchpad: a JSON list of
+   `{"id", "call", "reason", "task", "item"}`, where `item` is the triage item
+   id, `id` a new decision id not already in the file, and `task` empty for
+   `deliberate` and `domain_owner`. Map items are not in it. Then
    `add-decisions <file> <approved.json>`: a row group a stored proof explains
    becomes one `cause:` decision per cause that has none yet; a cause already
    decided keeps its decision, so give every item of one cause the same call. A
