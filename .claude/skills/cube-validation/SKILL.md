@@ -77,11 +77,11 @@ copy:
 2. Run `uv run pytest tests/test_zz_cube_validation.py -s --tb=short`, then
    delete the file.
 
-`review`, `add-decisions`, `reapply`, `record-answers` and `preflight --twb`
-need no credentials: run them from the checkout that holds the validation files
-with `uv run python -m scripts.cube_validation <command> ...`. Exit 0 is done, 1
-is a refusal (stderr says why), 2 is a usage error. A refusal is an answer: fix
-its cause, do not retry around it.
+`review`, `add-decisions`, `reapply`, `record-answers` and `preflight` need no
+credentials: run them from the checkout that holds the validation files with
+`uv run python -m scripts.cube_validation <command> ...`. Exit 0 is done, 1 is a
+refusal (stderr says why), 2 is a usage error. A refusal is an answer: fix its
+cause, do not retry around it.
 
 ## Runbook
 
@@ -106,13 +106,23 @@ its cause, do not retry around it.
    before the first proof.
 
    Then `preflight <file> --twb <path> --sheet <sheet>` reads the chosen sheet
-   offline (it needs `members.json` from `members`, and prints no filter value):
-   each shelf field and its Cube member, table calcs and what they run along,
-   every filter's kind (context, code group, relative date, parameter-driven)
-   and whether other sheets share it through `filter-group`, the parameters the
-   sheet reads, and whether `sheet_field` is on the sheet. Use it instead of
-   reading the workbook XML by hand. Without `--sheet` it checks every
-   comparison's sheet; without `--twb` it downloads each workbook.
+   offline (it needs `members.json` from `members`, and prints no filter or
+   parameter value): each shelf field and its Cube member, table calcs and what
+   they run along, every filter's kind (context, code group, relative date,
+   parameter-driven) and whether other sheets share it through `filter-group`,
+   the parameters the sheet reads, and whether `sheet_field` is on the sheet.
+   Use it instead of reading the workbook XML by hand. Without `--sheet` it
+   checks every comparison's sheet. `--twb` is required, since preflight never
+   signs in to Tableau: download the workbook once through the runner, with this
+   in place of its `cli.main` call, and reuse that file:
+
+   ```python
+   import pathlib
+
+   with cli.tableau_session() as tbl:
+       twb = tbl.download_twb("<workbook luid>")
+   pathlib.Path("<scratchpad>/<name>.twb").write_text(twb, encoding="utf-8")
+   ```
 
 3. Write the comparison into the view file with `confirmed: true` and
    `proof: null`. Required: `workbook`, `sheet`, `dashboard_view`, `probe` (or

@@ -201,9 +201,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     view_file(p)
     p.add_argument(
-        "--twb",
-        type=Path,
-        help="read this local .twb instead of downloading; no Tableau sign-in",
+        "--twb", type=Path, help="the local .twb to read (required); no Tableau sign-in"
     )
     p.add_argument(
         "--sheet",
@@ -625,34 +623,21 @@ def _saved_members() -> list[builder.Member]:
 
 
 def _preflight(cfg: ViewConfig, twb: Path | None, sheets: list[str]) -> int:
-    """Print each sheet's preflight checklist.
+    """Print each sheet's preflight checklist from a local `twb`.
 
-    A local `twb` stands in for every comparison's workbook and needs no
-    Tableau sign-in; without it each workbook is downloaded once.
+    It never signs in to Tableau: a second sign-in with the shared token can
+    end another session's.
     """
-    members = _saved_members()
-    if twb is not None:
-        if not twb.is_file():
-            raise pipeline.Refusal(f"{twb}: no such workbook file")
-        text = twb.read_text(encoding="utf-8")
-        print(preflight.report(cfg, lambda _: (twb.name, text), members, sheets))
-        return 0
-    named = {c.sheet for c in cfg.comparisons}
-    if unnamed := [s for s in sheets if s not in named]:
+    if twb is None:
         raise pipeline.Refusal(
-            f"no comparison names the sheet {', '.join(unnamed)}; pass --twb"
+            "pass --twb <path>: preflight reads only a local workbook; download the "
+            ".twb once (the cube-validation runbook) and reuse it"
         )
-    with tableau_session() as tbl:
-        downloads: dict[str, str] = {}
-
-        def workbook(luid: str | None) -> tuple[str, str]:
-            if not luid:
-                raise pipeline.Refusal("a comparison has no workbook; pass --twb")
-            if luid not in downloads:
-                downloads[luid] = tbl.download_twb(luid)
-            return luid, downloads[luid]
-
-        print(preflight.report(cfg, workbook, members, sheets))
+    if not twb.is_file():
+        raise pipeline.Refusal(f"{twb}: no such workbook file")
+    members = _saved_members()
+    text = twb.read_text(encoding="utf-8")
+    print(preflight.report(cfg, lambda _: (twb.name, text), members, sheets))
     return 0
 
 

@@ -883,3 +883,47 @@ def test_set_shelves_names_the_table_calcs_it_removes_and_recomputes():
 
     assert reshaped.recomputed == {"rows": ("Difference in Avg. Is Mastery Int",)}
     assert set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["School"]}).removed == ()
+
+
+def test_set_shelves_names_a_table_or_pane_calc_on_any_changed_shelf():
+    src = DKI_TWB.replace(
+        "ordering-type='Rows' type='Difference'",
+        "ordering-type='Table' type='Difference'",
+    )
+    assert src != DKI_TWB
+
+    dropped = set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]})
+
+    assert dropped.recomputed == {"columns": ("Difference in Avg. Is Mastery Int",)}
+
+
+def test_set_shelves_names_a_field_calc_whose_partition_gains_a_field():
+    added = set_shelves(DKI_TWB, "Mastery Grid", {"add": {"rows": ["Subject Area"]}})
+
+    # Both calcs share a caption: the Field one (partition gains Subject Area)
+    # and the Rows one (its rows changed); the caption is named once.
+    assert added.removed == ()
+    assert added.recomputed == {"rows": ("Difference in Avg. Is Mastery Int",)}
+    field_only = DKI_TWB.replace(
+        "ordering-type='Rows' type='Difference'",
+        "ordering-type='Field' type='Difference'",
+    )
+    added = set_shelves(field_only, "Mastery Grid", {"add": {"rows": ["Subject Area"]}})
+    assert added.recomputed == {"rows": ("Difference in Avg. Is Mastery Int",)}
+
+
+def test_set_shelves_drop_removes_a_rule_it_empties_beside_one_already_empty():
+    src = DKI_TWB.replace(
+        "<style-rule element='cell'>",
+        "<style-rule element='axis'>\n          </style-rule>\n"
+        "          <style-rule element='cell'>",
+        1,
+    )
+
+    grid = _worksheets(
+        set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
+    )["Mastery Grid"]
+
+    assert "<style-rule element='axis'>\n          </style-rule>" in grid
+    assert "<style-rule element='mark'>" not in grid
+    assert "<style-rule element='header'>" not in grid

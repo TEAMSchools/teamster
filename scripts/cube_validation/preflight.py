@@ -5,7 +5,7 @@ meet: the shelf fields and the Cube member each maps to, table calculations,
 filters (context, code group, relative date, parameter-driven), the parameters
 the sheet reads, and whether `sheet_field` is on the sheet. It ends with the
 items to settle before `prove`. It reads a local `.twb` and the `members`
-cache, and prints no filter value.
+cache, and prints no filter or parameter value.
 """
 
 from __future__ import annotations
@@ -49,7 +49,9 @@ class ShelfField:
 class SheetFilter:
     """One filter. `kinds` holds `context`, `code group`, `relative date` and
     `parameter-driven`, or `regular` alone; `formula` reads a relative date's
-    calculation with captions; `source` is a code group's grouped column."""
+    calculation with captions; `source` is a code group's grouped column;
+    `columns` the field and every datasource column its calculations read;
+    `parameters` the captions of the parameters they read."""
 
     caption: str
     name: str
@@ -59,13 +61,17 @@ class SheetFilter:
     group: str
     shared_with: tuple[str, ...]
     source: str
+    columns: tuple[str, ...] = ()
+    parameters: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
 class Parameter:
+    """A parameter the sheet reads. Its current value is a member value, so
+    preflight never reads it."""
+
     name: str
     caption: str
-    value: str
 
 
 @dataclass(frozen=True)
@@ -154,6 +160,16 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
                     other.get("name") or ""
                 )
 
+    params = {
+        finder._bare(col.get("name") or ""): col
+        for ds in root.iter("datasource")
+        if ds.get("name") == "Parameters"
+        for col in ds.findall("column")
+    }
+
+    def param_caption(name: str) -> str:
+        return (params[name].get("caption") if name in params else None) or name
+
     filters = []
     for el in ws.iter("filter"):
         column = el.get("column") or ""
@@ -184,22 +200,35 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
                 caption=caption.get(name, name).lstrip(":"),
                 name=name,
                 kinds=tuple(kinds) or ("regular",),
-                restricting=finder.restricts(el),
+                # A relative-date filter has no members or range to read; it
+                # always narrows the sheet to a window.
+                restricting=finder.restricts(el) or el.get("class") == "relative-date",
                 formula=formula,
                 group=group,
                 shared_with=tuple(
                     dict.fromkeys(s for s in filter_groups.get(group, []) if s != sheet)
                 ),
                 source=_group_source(root, name) if name in groups else "",
+                columns=tuple(
+                    dict.fromkeys(
+                        [name]
+                        + [
+                            r
+                            for n in chain
+                            for r in _BRACKETED.findall(formulas.get(n, ""))
+                            if r not in formulas and r != "Parameters"
+                        ]
+                    )
+                ),
+                parameters=tuple(
+                    dict.fromkeys(
+                        param_caption(p)
+                        for n in chain
+                        for p in _PARAMETER.findall(formulas.get(n, ""))
+                    )
+                ),
             )
         )
-
-    params = {
-        finder._bare(col.get("name") or ""): col
-        for ds in root.iter("datasource")
-        if ds.get("name") == "Parameters"
-        for col in ds.findall("column")
-    }
     read = [
         finder._bare(col.get("name") or "")
         for deps in ws.iter("datasource-dependencies")
@@ -210,11 +239,7 @@ def read_sheet(twb_xml: str, sheet: str) -> Sheet:
         for n in reads(name):
             read += _PARAMETER.findall(formulas.get(n, ""))
     parameters = [
-        Parameter(
-            name,
-            params[name].get("caption") or name,
-            finder._unquote(params[name].get("value")),
-        )
+        Parameter(name, param_caption(name))
         for name in dict.fromkeys(read)
         if name in params
     ]
@@ -283,15 +308,20 @@ def _shelf_lines(
     on_view = _members_on(view, members)
     known = {m.name for m in members}
     dims = {p.dashboard: p.cube for p in comparison.dims} if comparison else {}
-    # Fields the file maps outside `dims`: a filter (by column or caption) or
-    # a row grain column.
+    # A row-level comparison compares at its `rows:` grain, so a shelf field
+    # mapped there needs no dim.
+    rows = (
+        {p.dashboard: p.cube for p in [*comparison.rows.grain, *comparison.rows.values]}
+        if comparison and comparison.rows
+        else {}
+    )
+    # Fields the file maps outside `dims` and `rows:`: a filter, by column or
+    # caption.
     elsewhere: dict[str, str] = {}
     if comparison:
         for caption, pair in comparison.filters.items():
             elsewhere.setdefault(pair.dashboard, pair.cube)
             elsewhere.setdefault(caption, pair.cube)
-        for pair in comparison.rows.grain if comparison.rows else []:
-            elsewhere.setdefault(pair.dashboard, pair.cube)
     kept = {(f.name, f.shelf) for f in (shaped or facts).shelf_fields}
     original = {(f.name, f.shelf) for f in facts.shelf_fields}
     added = [
@@ -308,6 +338,8 @@ def _shelf_lines(
         head = f"    - {f.caption} ({where}): "
         if f.name in dims:
             member = f"{view}.{dims[f.name]}"
+        elif f.name in rows:
+            member = f"{view}.{rows[f.name]}"
         elif f.name in elsewhere or f.caption in elsewhere:
             member = f"{view}.{elsewhere.get(f.name) or elsewhere[f.caption]}"
         else:
@@ -322,6 +354,8 @@ def _shelf_lines(
             )
         elif f.name in dims:
             out.add(head + member)
+        elif f.name in rows:
+            out.add(head + f"{member} (rows:)")
         elif member:
             out.add(
                 head + f"{member}, not under dims",
@@ -346,14 +380,17 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
         if comparison
         else set()
     )
-    on_dashboard = {
-        str(e.get("dashboard"))
-        for e in (comparison.dashboard_filters if comparison else [])
-    }
-    week_end = comparison is not None and any(
-        "days_from_week_end" in e for e in comparison.dashboard_filters
-    )
-    in_probe = comparison is not None and "CURRENT_DATE" in (comparison.probe_sql or "")
+    entries = comparison.dashboard_filters if comparison else []
+    on_dashboard = {str(e.get("dashboard")) for e in entries}
+    # The columns a week-end dashboard filter compares; one handles only a
+    # relative-date filter that reads its column.
+    week_end = {str(e.get("dashboard")) for e in entries if "days_from_week_end" in e}
+    probe_sql = (comparison.probe_sql or "") if comparison else ""
+    set_here = set(comparison.parameters) if comparison else set()
+
+    def in_probe(columns: tuple[str, ...]) -> bool:
+        return any(re.search(rf"\b{re.escape(c)}\b", probe_sql) for c in columns)
+
     # A code group's source column, defaulted through its `filters:` caption.
     defaulted = (
         {
@@ -373,10 +410,10 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
         elif f.name in mapped or f.caption in mapped:
             lines.append((f"{f.caption}: mapped", ""))
         elif "relative date" in f.kinds:
-            if week_end:
+            if week_end & set(f.columns):
                 lines.append((f"{f.caption}: dashboard_filters days_from_week_end", ""))
-            elif in_probe:
-                lines.append((f"{f.caption}: in probe_sql (CURRENT_DATE)", ""))
+            elif in_probe(f.columns):
+                lines.append((f"{f.caption}: in probe_sql", ""))
             else:
                 need = (
                     f"{f.caption}: relative date; needs dashboard_filters with "
@@ -394,6 +431,8 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
                 lines.append((need, need))
         elif f.name in on_dashboard:
             lines.append((f"{f.caption}: dashboard_filters", ""))
+        elif "parameter-driven" in f.kinds and set(f.parameters) <= set_here:
+            lines.append((f"{f.caption}: its parameter is set under parameters:", ""))
         elif "parameter-driven" in f.kinds:
             need = (
                 f"{f.caption}: driven by a parameter; set it under parameters: or "
@@ -473,9 +512,7 @@ def _sheet_lines(label: str, sheet: str, facts: Sheet) -> list[str]:
         lines[-1] = "  Filters: none"
     if facts.parameters:
         lines.append("  Parameters:")
-        lines += [
-            f"    - {p.caption} ({p.name}): now {p.value}" for p in facts.parameters
-        ]
+        lines += [f"    - {p.caption} ({p.name})" for p in facts.parameters]
     else:
         lines.append("  Parameters: none")
     return lines
@@ -516,8 +553,15 @@ def check(
     set_here = comparison.parameters if comparison else {}
     for p in facts.parameters:
         state = "set under parameters:" if p.caption in set_here else "not set"
-        inner.add(f"  Parameter {p.caption}: {state} (now {p.value})")
+        inner.add(f"  Parameter {p.caption}: {state}")
     _measure_line(inner, comparison, shaped or facts)
+    wanted = comparison.sheet_field if comparison else None
+    for shelf, captions in (reshaped.recomputed if reshaped else {}).items():
+        if wanted and _export_name(wanted) in {c.lower() for c in captions}:
+            inner.before.append(
+                f"sheet_field {wanted!r}: recomputes along the new {shelf} on the "
+                "reshaped copy, a number the dashboard never shows"
+            )
     out.lines += ["  " + line for line in inner.lines]
     return out.lines, out.before
 

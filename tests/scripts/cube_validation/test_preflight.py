@@ -11,7 +11,7 @@ from cube_validation import cli, preflight
 from cube_validation.builder import Member
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.config import ColumnPair, Comparison
+from cube_validation.config import ColumnPair, Comparison, RowSpec
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TWB = (FIXTURES / "preflight.twb").read_text()
@@ -189,13 +189,29 @@ def test_restricting_filters_block_until_the_comparison_handles_them():
 
 def test_parameters_say_whether_the_comparison_sets_them():
     facts = preflight.read_sheet(TWB, "Grid")
-    assert facts.parameters == [preflight.Parameter("Parameter 1", "Metric", "Mastery")]
+    assert facts.parameters == [preflight.Parameter("Parameter 1", "Metric")]
 
-    assert "Parameter Metric: not set (now Mastery)" in _check(_comparison())[0]
-    text, before = _check(_comparison(parameters={"Metric": "Mastery"}))
-    assert "Parameter Metric: set under parameters: (now Mastery)" in text
-    # The switch it drives still needs a call.
+    text, before = _check(_comparison())
+    assert "Parameter Metric: not set" in text
     assert any(b.startswith("Metric Switch: driven by a parameter") for b in before)
+    text, before = _check(_comparison(parameters={"Metric": "Mastery"}))
+    assert "Parameter Metric: set under parameters:" in text
+    # The comparison sets the parameter the switch reads: nothing to decide.
+    assert "- Metric Switch: its parameter is set under parameters:" in text
+    assert not [b for b in before if b.startswith("Metric Switch")]
+
+
+def test_no_parameter_value_prints():
+    sheet = "\n".join(
+        preflight._sheet_lines("w.twb", "Grid", preflight.read_sheet(TWB, "Grid"))
+    )
+    text, _ = _check(_comparison(parameters={"Metric": "Mastery"}))
+    lines = text.splitlines()
+
+    assert "    - Metric (Parameter 1)" in sheet.splitlines()
+    assert "    Parameter Metric: set under parameters:" in lines
+    # The parameter's current value is a member value: it never prints.
+    assert not [line for line in sheet.splitlines() + lines if "now" in line]
 
 
 def test_measure_found_or_not():
@@ -286,8 +302,17 @@ def test_preflight_command_refuses_without_members_or_a_workbook(tmp_path, capsy
 
     _save_members()
     assert cli.main(["preflight", str(view), "--twb", str(tmp_path / "none")]) == 1
-    assert cli.main(["preflight", str(view), "--sheet", "Other"]) == 1
-    assert "no comparison names the sheet Other; pass --twb" in capsys.readouterr().err
+
+
+def test_preflight_command_never_signs_in_to_tableau(tmp_path, capsys, monkeypatch):
+    def no_tableau():
+        raise AssertionError("preflight signs in to no Tableau")
+
+    monkeypatch.setattr(cli, "tableau_session", no_tableau)
+    view, _ = _files(tmp_path)
+
+    assert cli.main(["preflight", str(view)]) == 1
+    assert "pass --twb <path>" in capsys.readouterr().err
 
 
 @pytest.mark.skipif(not DDI_TWB.is_file(), reason="the DDI workbook is not on disk")
@@ -319,3 +344,92 @@ def test_preflight_reads_the_dki_grid_offline():
     assert by["Discipline"].kinds == ("code group",)
     assert by["Discipline"].group == "94" and by["Discipline"].shared_with
     assert "Discipline: code group; restricting" in sheet_text
+
+
+# A relative-date filter as Tableau writes one: no groupfilter, no min or max.
+_RELATIVE = (
+    "<filter class='relative-date' column='[federated.0pf].[none:week_start_monday:ok]' "
+    "first-period='-1' include-future='true' include-null='false' last-period='0' "
+    "period-type='week' />\n          "
+)
+_ANCHOR = "<filter class='categorical' column='[federated.0pf].[none:school:nk]'"
+
+
+def _with_relative():
+    assert TWB.count(_ANCHOR) == 1
+    return TWB.replace(_ANCHOR, _RELATIVE + _ANCHOR)
+
+
+def test_a_relative_date_filter_restricts_and_blocks():
+    xml = _with_relative()
+    by = {f.caption: f for f in preflight.read_sheet(xml, "Grid").filters}
+
+    assert by["Week Start Monday"].kinds == ("relative date",)
+    assert by["Week Start Monday"].restricting
+    _, before = preflight.check("v", xml, "Grid", _comparison(), MEMBERS)
+    assert any(b.startswith("Week Start Monday: relative date") for b in before)
+
+
+def test_a_week_end_dashboard_filter_handles_only_the_column_it_names():
+    xml = _with_relative()
+    comparison = _comparison(
+        dashboard_filters=[
+            {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0}
+        ]
+    )
+
+    lines, before = preflight.check("v", xml, "Grid", comparison, MEMBERS)
+
+    # Exclude Future Assessments reads administered_at; the week filter does not.
+    assert "- Exclude Future Assessments: dashboard_filters days_from_week_end" in (
+        "\n".join(lines)
+    )
+    assert any(b.startswith("Week Start Monday: relative date") for b in before)
+
+
+def test_a_probe_handles_only_the_relative_dates_whose_column_it_names():
+    probe = (
+        "SELECT {dims}, AVG(is_mastery_int) AS value FROM ({rows}) WHERE {where} "
+        "AND administered_at <= CURRENT_DATE('America/New_York') GROUP BY {dims}"
+    )
+    xml = _with_relative()
+
+    lines, before = preflight.check(
+        "v", xml, "Grid", _comparison(probe_sql=probe), MEMBERS
+    )
+
+    assert "- Exclude Future Assessments: in probe_sql" in "\n".join(lines)
+    assert not [b for b in before if b.startswith("Exclude Future")]
+    assert any(b.startswith("Week Start Monday: relative date") for b in before)
+
+
+def test_a_sheet_field_the_reshape_recomputes_blocks():
+    comparison = _comparison(
+        shelves=RESHAPE,
+        sheet_field="Difference in Avg. Is Mastery Int",
+        dims=[
+            ColumnPair("school", "abbreviation"),
+            ColumnPair("grade_level", "grade_level"),
+        ],
+    )
+
+    _, before = _check(comparison)
+
+    assert (
+        "sheet_field 'Difference in Avg. Is Mastery Int': recomputes along the new "
+        "rows on the reshaped copy, a number the dashboard never shows"
+    ) in before
+
+
+def test_a_rows_grain_field_on_the_shelves_is_mapped():
+    comparison = _comparison(
+        rows=RowSpec(
+            grain=[ColumnPair("week_start_monday", "assessment_week")],
+            values=[ColumnPair("is_mastery_int", "is_mastery")],
+        )
+    )
+
+    text, before = _check(comparison)
+
+    assert "- Week Start Monday (columns): v.assessment_week (rows:)" in text
+    assert not [b for b in before if b.startswith("Week Start Monday")]

@@ -611,9 +611,11 @@ class Reshaped:
     """A workbook with one worksheet reshaped.
 
     `removed` labels the table calculations the drop took out (see
-    `TableCalc.label`); `recomputed` captions, by shelf (`rows`, `columns`),
-    the kept ones that run down or across a shelf the reshape changed, since
-    they now compute along other fields.
+    `TableCalc.label`); `recomputed` captions, by shelf (`rows`, `columns`, or
+    `rows and columns`), the kept ones whose numbers the reshape changes: one
+    that runs down or across a changed shelf, one along the table or pane when
+    any shelf changed, and one along named fields whose partition gains an
+    added field.
     """
 
     xml: str
@@ -621,8 +623,9 @@ class Reshaped:
     recomputed: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
 
-# The shelf a table calculation runs along, by its `ordering-type`.
-_ORDERING_SHELF = {"Rows": "rows", "Columns": "cols"}
+# The shelf a table calculation runs along, by its `ordering-type`. Any other
+# ordering but `Field` (table, pane, cell) runs along both.
+_ORDERING_SHELF = {"Rows": ("rows",), "Columns": ("cols",)}
 
 
 def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
@@ -791,12 +794,25 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     ET.fromstring(out)
     changed = {tag for tag in trees if trees[tag] != original[tag]}
+    added_columns = {
+        tag: {_ref_column(r) for r in _shelf_leaves(trees[tag])}
+        - {_ref_column(r) for r in _shelf_leaves(original[tag])}
+        for tag in trees
+    }
     recomputed: dict[str, tuple[str, ...]] = {}
     for c in on_sheet:
-        along = _ORDERING_SHELF.get(c.ordering)
-        if along is not None and along in changed and c.ref not in calcs:
-            shelf_name = SHELF_NAMES[along]
-            recomputed[shelf_name] = (*recomputed.get(shelf_name, ()), c.caption)
+        if c.ref in calcs:
+            continue
+        if c.ordering == "Field":
+            # A field added outside its ordering joins its partition.
+            hit = [t for t, cols in added_columns.items() if cols - c.columns]
+        else:
+            along = _ORDERING_SHELF.get(c.ordering, ("rows", "cols"))
+            hit = [t for t in along if t in changed]
+        if hit:
+            key = " and ".join(SHELF_NAMES[t] for t in ("rows", "cols") if t in hit)
+            if c.caption not in recomputed.get(key, ()):
+                recomputed[key] = (*recomputed.get(key, ()), c.caption)
     removed = tuple(dict.fromkeys(c.label for c in on_sheet if c.ref in calcs))
     return Reshaped(out, removed, recomputed)
 
@@ -882,18 +898,26 @@ def _strip_dropped(text: str, dropped: set[str], calcs: set[str]) -> str:
         content = html.unescape(m[0])
         return "" if any(ref in content for ref in calcs) else m[0]
 
+    # A container the sheet already had empty is set aside, so only one this
+    # edit empties goes.
+    kept_empty: list[str] = []
+
+    def set_aside(m: re.Match) -> str:
+        kept_empty.append(m[0])
+        return f"\x00{len(kept_empty) - 1}\x00"
+
+    for tag in _EMPTIABLE:
+        text = _emptied(tag).sub(set_aside, text)
+
     out = _DEPENDENCIES.sub(dependencies, text)
     out = _EMPTY_ELEMENT.sub(empty, out)
     for tag in ("format", "sort", "filter"):
         out = _element(tag).sub(body, out)
     out = _element("run").sub(run, out)
     out = _SLICE.sub(lambda m: "" if html.unescape(m[1]) in calcs else m[0], out)
-    # Only a container this edit emptied goes; one the sheet had empty stays.
     for tag in _EMPTIABLE:
-        pattern = _emptied(tag)
-        if not pattern.search(text):
-            out = pattern.sub("", out)
-    return out
+        out = _emptied(tag).sub("", out)
+    return re.sub(r"\x00(\d+)\x00", lambda m: kept_empty[int(m[1])], out)
 
 
 def _clear_filter(
