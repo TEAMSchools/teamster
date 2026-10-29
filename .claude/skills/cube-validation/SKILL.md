@@ -279,9 +279,14 @@ cause, do not retry around it.
       a later run's rows of a new cause must not be filed under an old one. A
       row the join misses must fall to `'UNEXPLAINED'` too: test the join first
       (or use `EXISTS`), and join a table at the row's grain, since a finer one
-      repeats rows. Name tables `` `teamster-332318`.`<dataset>`.`<table>` ``;
-      they are read as of the run's moment; `confirm` warns of a table named
-      without them. A proof may open with its own `WITH`.
+      repeats rows. Name each table as dbt compiles it, every part in its own
+      backticks: `` `teamster-332318`.`kipptaf_marts`.`dim_assessments` ``.
+      `` `teamster-332318`.kipptaf_marts.dim_assessments `` and
+      `` `teamster-332318.kipptaf_marts.dim_assessments` `` are refused, and
+      `confirm` warns of a table named with no project and dataset. Tables are
+      read as of the run's moment: the build start, or the build end for a table
+      only the Cube side reads, which is refused if it changed during the build.
+      A proof may open with its own `WITH`.
 
       ```sql
       SELECT u.__row,

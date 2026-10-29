@@ -280,6 +280,22 @@ def test_unaliased_cube_style_ref_is_refused():
         as_of("select 1 from a join d.t on true", TS, catalog)
 
 
+@pytest.mark.parametrize(
+    "ref",
+    [
+        "`teamster-332318`.kipptaf_marts.dim_assessments",
+        "`teamster-332318.kipptaf_marts.dim_assessments`",
+    ],
+)
+def test_a_refused_ref_names_the_form_that_is_read(ref):
+    catalog = FakeCatalog({"kipptaf_marts.dim_assessments": TableInfo("TABLE", None)})
+
+    with pytest.raises(ValueError, match="each part in its own backticks") as err:
+        as_of(f"select 1 from {ref} as r", TS, catalog)
+
+    assert "`teamster-332318`.`<dataset>`.`<table>`" in str(err.value)
+
+
 def test_extract_from_is_not_a_table_ref():
     catalog = FakeCatalog({})
 

@@ -317,7 +317,11 @@ def _refuse_unmatched(text: str) -> None:
         if _NOT_A_TABLE.search(text[: cand.start()]):
             continue
 
-        raise ValueError(f"table reference not recognized: {cand['tok']!r}")
+        raise ValueError(
+            f"table reference not recognized: {cand['tok']!r}; write it as dbt "
+            f"compiles it, each part in its own backticks: `{PROJECT}`.`<dataset>`"
+            ".`<table>`"
+        )
 
     for _, end in covered:
         # `, unnest(...)` reads an array of the row, not another table.
