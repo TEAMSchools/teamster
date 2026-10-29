@@ -40,25 +40,32 @@ from sqlglot.tokens import TokenType
 from . import compare, decisions, pipeline, trace, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .compare import Group
-from .config import Comparison, ViewConfig
+from .config import Comparison, ViewConfig, id_like
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build
 from .report import RunResult, shown_counts
 from .trace import TIMEOUT_S, TRACED, _failure
+
+# The buckets a stored proof classifies: the one-sided rows the trace leads on,
+# and rows both sides hold whose values differ.
+PROVABLE = (*TRACED, "value_differs")
 
 PLACEHOLDER = "{unmatched}"
 UNEXPLAINED = "UNEXPLAINED"
 COLUMNS = ("__row", "cause")
 SIDES = ("cube", "dashboard")
 # Trunk lints and formats every committed `.sql` file; a proof is not dbt SQL,
-# and a reformat would only churn it.
-HEADER = ("-- trunk-ignore-all(sqlfluff)", "-- fmt: off")
+# and a reformat would only churn it. A proof with no QUALIFY or GROUP BY ALL
+# gets a non-blocking `ignore-does-nothing` note for the second line.
+HEADER = (
+    "-- trunk-ignore-all(sqlfluff)",
+    "-- trunk-ignore-all(sql-banned-syntax)",
+    "-- fmt: off",
+)
 _BUCKET = re.compile(r"[A-Za-z][A-Za-z0-9_]{0,63}")
 _BLOCK = re.compile(
     r"--\s*cause\s+(?P<bucket>\S+)\s*=\s*(?P<side>\S+?)\s*:\s*(?P<words>.*\S)\s*"
 )
-# A committed proof names no person: no email, no ID-like number.
-_ID_LIKE = re.compile(r"\d{5,}|@")
 _STRINGS = (
     TokenType.STRING,
     TokenType.RAW_STRING,
@@ -168,7 +175,7 @@ def _checked(bucket: str, side: str, words: str) -> tuple[str, str, str]:
     words = " ".join(words.split())
     if not words:
         raise pipeline.Refusal(f"bucket {bucket}: say what the cause is in words")
-    if _ID_LIKE.search(words):
+    if id_like(words):
         raise pipeline.Refusal(
             f"bucket {bucket}: the words hold an email or an ID-like number; "
             "a proof is committed, so name no student or staff member"
@@ -188,9 +195,9 @@ def parse_cause_flag(flag: str) -> tuple[str, str, str]:
 def read_proof(path: Path) -> Proof:
     """A stored proof, named `<comparison>__<bucket>.sql`."""
     comparison, sep, bucket = path.stem.rpartition("__")
-    if not sep or bucket not in TRACED:
+    if not sep or bucket not in PROVABLE:
         raise pipeline.Refusal(
-            f"{path.name}: name a proof <comparison>__<cube_only|dashboard_only>.sql"
+            f"{path.name}: name a proof <comparison>__<{'|'.join(PROVABLE)}>.sql"
         )
     causes, body = split_block(path.read_text())
     return Proof(path, comparison, bucket, causes, body)
@@ -289,7 +296,7 @@ def _scan_text(body: str) -> None:
         texts = list(token.comments)
         if token.token_type in _STRINGS:
             texts.append(token.text)
-        if any(_ID_LIKE.search(t) for t in texts):
+        if any(id_like(t) for t in texts):
             raise pipeline.Refusal(
                 "the proof holds an email or an ID-like number in a comment or "
                 "a string; a proof is committed, so name no student or staff member"
@@ -326,6 +333,7 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
             f"the proof does not parse as BigQuery SQL: {type(exc).__name__}"
         ) from exc
     selects = list(_outer_selects(tree))
+    causes: list[exp.Expression] = []
     if not selects:
         raise pipeline.Refusal("the proof is not a SELECT")
     for select in selects:
@@ -345,6 +353,8 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
                 raise pipeline.Refusal(
                     f"the proof's __row must be {PLACEHOLDER}'s own __row"
                 )
+            if name == "cause":
+                causes.append(value)
             if name == "cause" and any(
                 c in grain or _id_like(c, student) for c in _selected(value)
             ):
@@ -373,7 +383,54 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
         raise pipeline.Refusal(
             "the proof has no string literal; name each cause with one"
         )
+    for value in causes:
+        _check_default(value)
+    for table in _unpinned(tree):
+        print(
+            f"warning: the proof reads {table} with no project and dataset, so it "
+            "reads the table as it is now, not as of the run; write it "
+            "`teamster-332318`.`<dataset>`.`<table>`"
+        )
     return literals
+
+
+def _check_default(value: exp.Expression) -> None:
+    """Refuse a cause that is not a CASE ending in `ELSE 'UNEXPLAINED'`.
+
+    A catch-all cause would file the rows of a new cause, in a later run,
+    under an old one with no one looking.
+
+    Raises:
+        pipeline.Refusal: A bare cause, or a CASE (at any depth) with no ELSE
+            or another one.
+    """
+    if not isinstance(value, exp.Case):
+        raise pipeline.Refusal(
+            f"the proof's cause must be a CASE ending in ELSE '{UNEXPLAINED}'"
+        )
+    for case in value.find_all(exp.Case):
+        default = case.args.get("default")
+        if not (
+            isinstance(default, exp.Literal)
+            and default.is_string
+            and default.this == UNEXPLAINED
+        ):
+            raise pipeline.Refusal(
+                f"every CASE of the proof's cause must end in ELSE '{UNEXPLAINED}', "
+                "so a row of a new cause is never filed under an old one"
+            )
+
+
+def _unpinned(tree: exp.Expression) -> list[str]:
+    """Tables the proof names without a project and dataset, CTEs aside."""
+    ctes = {c.alias_or_name.lower() for c in tree.find_all(exp.CTE)}
+    out = []
+    for t in tree.find_all(exp.Table):
+        name = t.name.lower()
+        if name == "__u" or name in ctes or (t.catalog and t.db):
+            continue
+        out.append(t.sql(dialect="bigquery"))
+    return list(dict.fromkeys(out))
 
 
 # --- the rows it reads ------------------------------------------------------------
@@ -394,11 +451,13 @@ def unmatched_sql(
         (the triage item id of the row's group, NULL for a row no open group
         holds), `side` (the side holding the row), the group-by columns as
         text, the grain under its Cube names (as the side holding the row
-        types it), and `__rn`.
+        types it), and `__rn`. A `value_differs` row's side reads `both`.
     """
     if comparison.rows is None:
         raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to prove")
-    side = "c" if bucket == "cube_only" else "d"
+    # A value-differing row is on both sides; its grain is read as Cube types it.
+    side = "d" if bucket == "dashboard_only" else "c"
+    held = {"cube_only": "cube", "dashboard_only": "dashboard"}.get(bucket, "both")
     grain = comparison.rows.grain
     extra = [
         f"{side}.{p.cube if side == 'c' else p.dashboard} AS __g{i}"
@@ -435,7 +494,7 @@ def unmatched_sql(
     columns = [
         f"FARM_FINGERPRINT(TO_JSON_STRING(STRUCT({keys}, __rn))) AS __row",
         f"{key} AS item_key",
-        f"'{'cube' if side == 'c' else 'dashboard'}' AS side",
+        f"'{held}' AS side",
         *(p.cube for p in dims),
         *(f"__g{i} AS {p.cube}" for i, p in enumerate(grain)),
         "__rn",
@@ -907,19 +966,6 @@ def apply_runs(
     link_cells(run, items, cfg=cfg)
 
 
-def reprove(
-    cfg: ViewConfig,
-    run: RunResult,
-    items: list[dict],
-    directory: Path,
-    *,
-    wh: Warehouse,
-    cube: Cube,
-) -> None:
-    """Re-run every stored proof of the view on the run's rows, then link cells."""
-    apply_runs(run, items, run_stored(cfg, run, directory, wh=wh, cube=cube), cfg)
-
-
 # --- the command -------------------------------------------------------------------
 
 
@@ -1048,8 +1094,8 @@ def run_confirm(
         print(f"Saved {path}")
         return 0
 
-    if bucket not in TRACED:
-        raise pipeline.Refusal(f"--bucket must be one of {', '.join(TRACED)}")
+    if bucket not in PROVABLE:
+        raise pipeline.Refusal(f"--bucket must be one of {', '.join(PROVABLE)}")
     stored = proof_path(proofs_dir(view_file, cfg.view), comparison, bucket)
     source = sql or stored
     if not source.is_file():

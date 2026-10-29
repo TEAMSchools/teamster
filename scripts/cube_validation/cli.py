@@ -296,7 +296,7 @@ def _parser() -> argparse.ArgumentParser:
     max_usd(p)
     p.add_argument("--comparison", required=True, help="the comparison it proves")
     p.add_argument(
-        "--bucket", choices=trace.TRACED, help="the unmatched rows it classifies"
+        "--bucket", choices=confirm.PROVABLE, help="the unmatched rows it classifies"
     )
     p.add_argument(
         "--sql",

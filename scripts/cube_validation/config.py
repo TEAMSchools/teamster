@@ -38,6 +38,11 @@ _YEAR_OR_DATE = re.compile(r"\d{4}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2}")
 SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
 
 
+def id_like(text: str) -> bool:
+    """Text that could name a person: an email, or an ID-shaped number."""
+    return "@" in text or mask_digits(text) != text
+
+
 def mask_digits(text: str) -> str:
     """Write each ID-shaped number in `text` as `<n>`."""
 

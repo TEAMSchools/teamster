@@ -152,10 +152,16 @@ def _by_id(items):
     return {i["id"]: i for i in items}
 
 
+def _stored(run, items, directory, wh, cfg=CFG):
+    """What every `triage` does: run the stored proofs, then sort by them."""
+    ran = confirm.run_stored(cfg, run, directory, wh=wh, cube=None)
+    confirm.apply_runs(run, items, ran, cfg)
+
+
 def _reprove(duck, tmp_path, run, body=PROOF, causes=None, wh=None):
     items = _items(run)
     directory, _ = _proof(tmp_path, body, causes)
-    confirm.reprove(CFG, run, items, directory, wh=wh or Wh(duck), cube=None)
+    _stored(run, items, directory, wh or Wh(duck))
     return items
 
 
@@ -263,7 +269,7 @@ def test_a_cube_error_notes_the_items_and_a_comparison_is_rebuilt_once(
         confirm.compose(CAUSES, PROOF)
     )
 
-    confirm.reprove(CFG, run, items, directory, wh=Wh(duck), cube=None)
+    _stored(run, items, directory, Wh(duck))
 
     assert {i["suggestion"] for i in items} == {"investigate"}
     assert all("not run: Cube answered 502" in i["evidence"][0] for i in items)
@@ -282,7 +288,7 @@ def test_both_buckets_of_a_comparison_share_one_rebuild(duck, tmp_path, offline,
         confirm.compose(CAUSES, PROOF)
     )
 
-    confirm.reprove(CFG, run, _items(run), directory, wh=Wh(duck), cube=None)
+    _stored(run, _items(run), directory, Wh(duck))
 
     assert len(calls) == 1
 
@@ -330,20 +336,23 @@ def test_confirm_refreshes_the_decision_marks(duck, tmp_path, monkeypatch, offli
     [
         # An INNER JOIN drops (3, c), whose fact row is gone.
         (
-            "SELECT u.__row, CASE WHEN NOT f.ok1 THEN 'C1' ELSE 'C2' END AS cause "
+            "SELECT u.__row, CASE WHEN NOT f.ok1 THEN 'C1' WHEN f.ok1 THEN 'C2' "
+            "ELSE 'UNEXPLAINED' END AS cause "
             "FROM {unmatched} AS u JOIN `teamster-332318`.`d`.`fact` AS f "
             "ON f.student = u.lea AND f.item = u.aid AND (f.ok1 OR f.ok2)",
             "1 unmatched rows have no row in its output",
         ),
         # A join to a finer table repeats every row.
         (
-            "SELECT u.__row, 'C1' AS cause FROM {unmatched} AS u "
+            "SELECT u.__row, CASE WHEN TRUE THEN 'C1' ELSE 'UNEXPLAINED' END AS cause "
+            "FROM {unmatched} AS u "
             "CROSS JOIN (SELECT 'C1' AS x UNION ALL SELECT 'C2') AS t",
             "3 unmatched rows appear more than once",
         ),
         # A cause computed from data, not written as a literal.
         (
-            "SELECT u.__row, CAST(f.ok1 AS STRING) AS cause FROM {unmatched} AS u "
+            "SELECT u.__row, CASE WHEN TRUE THEN CAST(f.ok1 AS STRING) "
+            "ELSE 'UNEXPLAINED' END AS cause FROM {unmatched} AS u "
             "LEFT JOIN `teamster-332318`.`d`.`fact` AS f ON f.student = u.lea "
             "WHERE 'C1' = 'C1'",
             "3 rows got a cause that is no string literal",
@@ -511,7 +520,8 @@ def test_a_proof_file_opts_out_of_trunk_and_keeps_its_bucket_map():
     text = confirm.compose(CAUSES, PROOF)
 
     assert text.startswith(
-        "-- trunk-ignore-all(sqlfluff)\n-- fmt: off\n"
+        "-- trunk-ignore-all(sqlfluff)\n-- trunk-ignore-all(sql-banned-syntax)\n"
+        "-- fmt: off\n"
         f"-- cause C1 = dashboard: {CAUSES['C1'][1]}\n"
     )
     assert confirm.split_block(text) == (CAUSES, PROOF.strip())
@@ -714,7 +724,7 @@ def test_the_gate_accepts_proven_items_until_their_proof_changes(
     path = _saved(tmp_path, monkeypatch, run)
     directory, proof = _proof(tmp_path)
     saved = json.loads(path.read_text())
-    confirm.reprove(CFG, run, saved["items"], directory, wh=Wh(duck), cube=None)
+    _stored(run, saved["items"], directory, Wh(duck))
     path.write_text(json.dumps(saved))
 
     assert triage.proven_triage(run, path.parent / "run.json", base=tmp_path)["items"]
@@ -728,3 +738,72 @@ def test_the_gate_accepts_proven_items_until_their_proof_changes(
     proof.write_text(proof.read_text().replace("NOT f.ok2", "f.ok2"))
     with pytest.raises(pipeline.Refusal, match="proof file changed since triage"):
         triage.proven_triage(run, path.parent / "run.json", base=tmp_path)
+
+
+# --- the cause's default, unpinned tables, value differences ---------------------------
+
+
+@pytest.mark.parametrize(
+    "cause",
+    [
+        "'C1'",
+        "CASE WHEN TRUE THEN 'C1' END",
+        "CASE WHEN TRUE THEN 'C1' ELSE 'C2' END",
+        "CASE WHEN TRUE THEN CASE WHEN FALSE THEN 'C1' ELSE 'C2' END "
+        "ELSE 'UNEXPLAINED' END",
+    ],
+)
+def test_check_sql_refuses_a_cause_that_can_file_a_new_row_under_an_old_cause(cause):
+    with pytest.raises(pipeline.Refusal, match="ELSE 'UNEXPLAINED'"):
+        confirm.check_sql(
+            f"SELECT u.__row, {cause} AS cause FROM {{unmatched}} AS u", GRAIN, STUDENT
+        )
+
+
+def test_check_sql_warns_of_a_table_read_live(capsys):
+    confirm.check_sql(
+        "WITH w AS (SELECT 1 AS k) SELECT u.__row, CASE WHEN r.k IS NULL THEN "
+        "'C1' ELSE 'UNEXPLAINED' END AS cause FROM {unmatched} AS u "
+        "LEFT JOIN kipptaf_marts.dim_x AS r ON r.k = u.aid "
+        "LEFT JOIN `teamster-332318`.`d`.`fact` AS f ON f.item = u.aid "
+        "LEFT JOIN w ON w.k = 1",
+        GRAIN,
+        STUDENT,
+    )
+
+    out = capsys.readouterr().out
+    assert "kipptaf_marts.dim_x" in out and "not as of the run" in out
+    assert "fact" not in out and " w " not in out
+
+
+def test_a_proof_classifies_value_differing_rows(duck, tmp_path, offline, monkeypatch):
+    # Both sides hold every row; the dashboard's school differs for all 3.
+    _tables(duck, fact_rows=[(1, "a", "Y", False, True), (2, "b", "Y", True, False),
+                             (3, "c", "Y", False, False)])  # fmt: skip
+    dash = "SELECT f.student, f.item, f.school FROM `teamster-332318.d.fact` AS f"
+    both = pipeline.RowSides(
+        cube=SIDES.cube,
+        dashboard=AsOf(dash, frozenset(), frozenset()),
+        cube_rows_sql=CUBE,
+        columns=SIDES.columns,
+    )
+    values = RowSpec(grain=ROWS.grain, values=[ColumnPair("school", "abbreviation")])
+    comparison = Comparison(id="mastery", measure="pct", dims=[], rows=values)
+    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[comparison])
+    group = Group("mastery", (), "value_differs", 3, 3)
+    run = _run([group])
+    items = [triage._as_json(s) for s in triage.suggest(cfg, run, {}, traces={})]
+    directory = tmp_path / "proofs" / "v"
+    directory.mkdir(parents=True)
+    path = confirm.proof_path(directory, "mastery", "value_differs")
+    path.write_text(confirm.compose({"C1": ("dashboard", "the sheet reads another school")},
+        "SELECT u.__row, CASE WHEN u.side = 'both' THEN 'C1' ELSE 'UNEXPLAINED' END "
+        "AS cause FROM {unmatched} AS u"))  # fmt: skip
+
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: both)
+
+    _stored(run, items, directory, Wh(duck), cfg)
+
+    (item,) = items
+    assert item["suggestion"] == "cause", item["evidence"]
+    assert item["cause"][0]["n_rows"] == 3

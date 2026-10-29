@@ -648,7 +648,10 @@ def _filter_cause(
     )
 
 
-NO_ROWS = "no rows to trace: values differ on rows both sides have"
+NO_ROWS = (
+    "values differ on rows both sides have: no trace; prove them with "
+    "`triage confirm --bucket value_differs`"
+)
 NO_GRAIN = "not traced: the comparison has no `rows` grain"
 
 
