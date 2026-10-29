@@ -924,3 +924,26 @@ def test_check_ready_s_plan_is_reused_by_the_trace(monkeypatch):
     trace.trace_run(CFG, run, wh=wh, cube=None, levels=0, prepared=prepared)
 
     assert calls == ["s", "r"]
+
+
+def test_dry_runs_run_at_once_and_keep_each_error_in_order():
+    import threading
+
+    seen = set()
+    gate = threading.Barrier(3, timeout=5)
+
+    class Wh:
+        def estimate(self, sql):
+            seen.add(threading.get_ident())
+            gate.wait()  # all 3 in flight at once, or this times out
+            if sql == "b":
+                raise BadRequest("x", errors=[{"reason": "invalidQuery"}])
+            return 1.0
+
+    got = trace._dry_runs(Wh(), ["a", "b", "c"])
+
+    assert got[0] == 1.0 and got[2] == 1.0 and isinstance(got[1], BadRequest)
+    assert len(seen) == 3
+    with pytest.raises(BadRequest):
+        gate.reset()
+        trace._priced(Wh(), ["a", "b", "c"])

@@ -30,6 +30,7 @@ import json
 import time
 from collections import Counter
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -60,6 +61,8 @@ MAX_LEVELS = 3
 SQLGLOT_MAJOR = 30
 # BigQuery refuses a query longer than 1,024K characters.
 MAX_QUERY_CHARS = 900_000
+# Dry runs in flight at once; each waits on BigQuery's planner, not the CPU.
+DRY_RUN_WORKERS = 8
 # A relaxed variant can multiply rows; BigQuery stops a query past this.
 TIMEOUT_S = 1800
 TRACE_MAX_MINUTES = 120
@@ -415,6 +418,36 @@ def _failure(exc: GoogleAPIError) -> str:
     return f"job {getattr(exc, JOB_ID, '') or '?'}, {reason}"
 
 
+def _dry_runs(wh: Warehouse, queries: list[str]) -> list[float | GoogleAPIError]:
+    """Dry-run `queries` at once: each one's price, or the error it raised.
+
+    A dry run is free and spends its time waiting on BigQuery's planner.
+    """
+
+    def one(q: str) -> float | GoogleAPIError:
+        try:
+            return wh.estimate(q)
+        except GoogleAPIError as exc:
+            return exc
+
+    if len(queries) <= 1:
+        return [one(q) for q in queries]
+    with ThreadPoolExecutor(max_workers=min(DRY_RUN_WORKERS, len(queries))) as pool:
+        return list(pool.map(one, queries))
+
+
+def _priced(wh: Warehouse, queries: list[str]) -> float:
+    """The summed dry-run price of `queries`, run at once.
+
+    Raises:
+        GoogleAPIError: The first query, in order, whose dry run failed.
+    """
+    got = _dry_runs(wh, queries)
+    if errors := [g for g in got if isinstance(g, GoogleAPIError)]:
+        raise errors[0]
+    return sum(g for g in got if not isinstance(g, GoogleAPIError))
+
+
 class _Meter:
     """The whole trace's dry-run running total and its time limit."""
 
@@ -441,7 +474,7 @@ class _Runner:
         """Run `queries`, or return None when one fails at run time."""
         self.meter.check()
         try:
-            usd = sum(self.wh.estimate(q) for q in queries)
+            usd = _priced(self.wh, queries)
         except GoogleAPIError as exc:
             # After paid queries, a dry run that fails stops the bucket like
             # a cap, keeping what it found.
@@ -644,7 +677,7 @@ class _Bucket:
         """The materialized tables `frame` reads, each as the next frame down."""
         if id(frame) in self.kids:
             return self.kids[id(frame)]
-        side, found = self.side, []
+        side, ready = self.side, []
         for ref in frame.query.tables():
             node = self.manifest.model(ref.dataset, ref.name) if self.manifest else None
             if node is None or not node.get("compiled_code"):
@@ -658,17 +691,22 @@ class _Bucket:
                     frame,
                     frame.level + 1,
                 )
-                # Free, and it must run read in place: compiled SQL from
-                # another checkout can name a column the table lacks, and a
-                # WITH RECURSIVE runs only at the top of a query.
-                self.wh.estimate(side.rows(child.full(child.query.sql())))
+                check = side.rows(child.full(child.query.sql()))
             except (pipeline.Refusal, SqlglotError) as exc:
                 print(f"Trace cannot descend into {ref.name}: {type(exc).__name__}")
                 self.blocked.add(ref.name)
                 continue
-            except GoogleAPIError as exc:
-                errors = getattr(exc, "errors", None) or [{}]
-                reason = errors[0].get("reason") or type(exc).__name__
+            ready.append((ref, child, check))
+        # Free, and each must run read in place: compiled SQL from another
+        # checkout can name a column the table lacks, and a WITH RECURSIVE
+        # runs only at the top of a query.
+        found = []
+        for (ref, child, _), got in zip(
+            ready, _dry_runs(self.wh, [c for _, _, c in ready]), strict=True
+        ):
+            if isinstance(got, GoogleAPIError):
+                errors = getattr(got, "errors", None) or [{}]
+                reason = errors[0].get("reason") or type(got).__name__
                 print(f"Trace cannot descend into {ref.name}: {reason}")
                 self.blocked.add(ref.name)
                 continue
@@ -1114,9 +1152,14 @@ def trace_run(
     # Each bucket is priced, and stops, on its own: one bucket's failure never
     # keeps another from being traced.
     usd, ready = 0.0, []
-    for b in buckets:
+    firsts = [b.first_queries() for b in buckets]
+    priced = iter(_dry_runs(wh, [q for qs in firsts for q in qs]))
+    for b, qs in zip(buckets, firsts, strict=True):
+        got = [next(priced) for _ in qs]
         try:
-            usd += sum(wh.estimate(q) for q in b.first_queries())
+            if errors := [g for g in got if isinstance(g, GoogleAPIError)]:
+                raise errors[0]
+            usd += sum(g for g in got if not isinstance(g, GoogleAPIError))
         except GoogleAPIError as exc:
             reason = f"level 0: the dry run failed ({_failure(exc)})"
             print(f"Trace {b.runner.label} stopped: {reason}")
