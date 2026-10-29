@@ -2577,6 +2577,7 @@ def test_triage_writes_its_batch_when_the_trace_stops(
     stopped = trace.ItemTrace("dashboard", open_group.n_rows)
     stopped.unknown = open_group.n_rows
     stopped.stopped = "the trace passed its time limit"
+    monkeypatch.setattr(trace, "check_ready", lambda *a, **k: None)
     monkeypatch.setattr(
         trace,
         "trace_run",
