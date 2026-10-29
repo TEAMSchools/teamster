@@ -25,7 +25,8 @@ source "${HOME}/.local/bin/env"
 if [[ ${1-} == --all ]]; then
 	changed="*"
 else
-	changed="$(git diff --name-only ORIG_HEAD HEAD 2>/dev/null)" || changed="*"
+	# --no-renames lists a moved file's old path too, so its source project re-parses
+	changed="$(git diff --name-only --no-renames ORIG_HEAD HEAD 2>/dev/null)" || changed="*"
 fi
 
 needs_parse() {
@@ -34,7 +35,7 @@ needs_parse() {
 	[[ -f "src/dbt/${project}/target/prod/manifest.json" ]] || return 0
 	# the dbt version and profiles feed every project
 	grep -qE '^(uv\.lock|\.dbt/)' <<<"${changed}" && return 0
-	for dir in "${project}" $(sed -n 's|^ *- local: \.\./||p' "src/dbt/${project}/packages.yml"); do
+	for dir in "${project}" $(sed -n 's|^ *- local: \.\./\([^ #]*\).*|\1|p' "src/dbt/${project}/packages.yml"); do
 		grep -q "^src/dbt/${dir}/" <<<"${changed}" && return 0
 	done
 	return 1
