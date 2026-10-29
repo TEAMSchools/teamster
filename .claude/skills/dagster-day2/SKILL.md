@@ -2,18 +2,18 @@
 name: dagster-day2
 disable-model-invocation: true
 description: >-
-  Diagnose Dagster overnight health: gather Dagster GraphQL, GCP audit, and GKE
-  signals into one artifact, then reach root cause via the systematic-debugging
-  skill. Outputs a structured incident report.
+  Use when checking Dagster health after an overnight window, or when runs,
+  sensor or schedule ticks, code locations, or agents failed overnight and need
+  a root cause and an incident report.
 ---
 
 # Day-2 Operations Check
 
 ## Phase 1: Collect data
 
-Run [`scripts/day2_collect.py`](scripts/day2_collect.py) — it issues all 15
-queries (Dagster GraphQL + GCP REST, authenticated with ADC) and writes a single
-artifact to `.claude/scratch/day2.json`. No subagent dispatch.
+Run [`scripts/day2_collect.py`](scripts/day2_collect.py) — it runs all 17 steps
+(Dagster GraphQL with a 1Password-issued token, GCP REST with ADC) and writes a
+single artifact to `.claude/scratch/day2.json`. No subagent dispatch.
 
 ```bash
 uv run .claude/skills/dagster-day2/scripts/day2_collect.py              # default: 5 PM ET prev biz day → now
@@ -26,7 +26,7 @@ Output shape:
 ```json
 {
   "window": {"epoch": ..., "utc_start": "...Z", "utc_end": "...Z"},
-  "step_01_failed_runs": {"failureCount": N, "failures": [...], "successCount": N, "canceledCount": N, "successRunIds": [...]},
+  "step_01_failed_runs": {"failureCount": N, "failures": [{"runId":..., "startTime":..., "endTime":..., "startTimeEt":"...", "endTimeEt":"...", "category":..., ...}], "successCount": N, "canceledCount": N, "successRunIds": [...]},
   "step_02_retries":     {"retries": [{"parentRunId":..., "retryRunId":..., "retryStatus":"SUCCESS|FAILURE"}]},
   "step_03_sensor_ticks":{"<location>": {"<sensor>": {"failureCount": N, "ticks": [{"tickId": "<str>", "timestamp": <float-seconds>, "error": "<str>", "errorChainTop": "<str>"}]}}},
   "step_04_freshness":   {"flaggedAssets": [...], "policyCount": N},
@@ -35,14 +35,14 @@ Output shape:
   "step_07_agents":      {"agents": [...], "agentCount": N},
   "step_08_agent_pod_churn": {"events": [...], "skipped": bool},
   "step_09_daemons":     {"daemons": [...], "allHealthy": bool},
-  "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [{"timestamp":..., "podName":..., "reason":..., "message":..., "runId": "<uuid|null>", "runStatus": "SUCCESS|FAILURE|UNKNOWN"}]},
+  "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [{"timestamp":..., "timestampEt":"...", "podName":..., "reason":..., "message":..., "runId": "<uuid|null>", "runStatus": "SUCCESS|FAILURE|UNKNOWN"}]},
   "step_11_alerts":      {"alerts": [...]},
   "step_12_error_groups":{"groups": [{"groupId":..., "exception":..., "affectedServices":[{"service":...,"version":"<pod>"}], "exceptionLine":"<bottom-of-traceback or null>", "correlatedPodEvent":{"reason":"Preempted|Evicted|OOMKilling", "timestamp":..., "podName":...} | null, "category":"sigterm_during_import|preemption_artifact|unclassified"}], "buckets": {"inWindow":[], "staleOpen":[]}},
   "step_13_oom_metrics": {"oomRuns": [...], "skipped": bool},
   "step_14_queued_runs": {"runs": [...], "stuckCount": N},
   "step_15_backfills":   {"requested": [...], "failed": [...]},
   "step_16_asset_checks":{"totalChecks": N, "failedCount": N, "inWindow_error": [...], "inWindow_warn": [...], "stale_error": [...], "stale_warn": [...]},
-  "step_17_degraded_assets":{"totalAssets": N, "degradedCount": N, "degraded": [{"asset":..., "latestRunId":..., "latestRunEndTime":...}], "byRun": [{"runId":..., "endTime":..., "count":N, "assets":[...]}]}
+  "step_17_degraded_assets":{"totalAssets": N, "degradedCount": N, "inWindowCount": N, "staleCount": N, "degraded": [{"asset":..., "latestRunId":..., "latestRunEndTime":..., "materializationType":"view|table|...|null"}], "byRun": [{"runId":..., "endTime":..., "endTimeEt":"...", "inWindow": bool, "count":N, "byMaterializationType":{"view": N, "non-dbt": N}, "assets":[...]}]}
 }
 ```
 
@@ -61,6 +61,11 @@ then cross-reference `step_01_failed_runs.failures` for the run-level root
 cause. Step-level recovery (e.g. auto-mat retry within minutes) leaves the prior
 run's overall status as FAILURE, so a "degraded" asset whose last-mat timestamp
 is later than its `latestRunEndTime` was actually recovered — read both fields.
+`materializationType` is the dbt materialization, null for non-dbt assets
+(counted as `non-dbt` in `byMaterializationType`). A plain dbt view re-runs only
+on a code change (a `union_relations` view also re-runs after a parent's code
+change), so a view in a stale cluster stays flagged until someone materializes
+it by hand, even when its view in BigQuery works.
 
 Per-step error: if a step fails, its key holds `{"error": "..."}` instead of the
 normal payload. Other steps still complete. Re-run the script if a key finding
@@ -68,60 +73,98 @@ depends on a failed step.
 
 Run classification (`step_01_failed_runs.failures[].category`) is one of:
 `Preemption/Interrupt`, `Node OOM/eviction`, `Scheduling failure`,
-`K8s API failure`, `Backoff limit`, `Step preempt-hang`, `Network/SSH`,
-`Connection failure`, `Code error`, `Infra timeout`, `Unclassified`. Phase 2 may
-reclassify based on cross-signal context — see the reclassify table below.
+`K8s API failure`, `Backoff limit`, `Step preempt-hang`, `BigQuery transient`,
+`Network/SSH`, `Connection failure`, `Infra timeout`, `K8s pre-start kill`,
+`Code error`, `Unclassified`. Phase 2 may reclassify based on cross-signal
+context; see _Reclassify_ in Phase 2.
+
+- `BigQuery transient`: BigQuery failed the job itself (`internalError`,
+  `backendError`). dbt never resubmits a failed job, since `job_retries` covers
+  only the submit and poll API calls, so the Dagster run retry is the only
+  recovery. Not a code bug, unless the auto-retry fails the same way: then treat
+  it as a query or code issue.
+- `K8s pre-start kill`: `Discovered failed Kubernetes job` with no
+  `LogsCapturedEvent` for the failing step, so the pod died at the K8s layer
+  (FailedScheduling exhaustion, eviction after Scheduled, image pull) before
+  step code ran. Same root cause as `Step preempt-hang`, different surface;
+  retry typically succeeds once Autopilot stabilizes. Confirm with audit log
+  `io.k8s.batch.v1.jobs.create` plus pod events for `dagster-step-<hash>-.*`.
+  The check matches step keys, not attempts: a step with a `RetryPolicy` whose
+  first attempt captured logs and whose retry pod died before starting lands in
+  `Code error`, so check the attempts on a retried step's `Code error`.
 
 ## Phase 2: Correlate and report
 
-**Required: invoke `superpowers:systematic-debugging` before drawing
-conclusions.** Phase 1 surfaces signals; Phase 2 must reach root cause, not stop
-at symptoms.
+Work in this order:
 
-The collector's queries are proxies, not ground truth — verify before reporting:
+1. Run the summary and pass its error gate (below).
+2. Invoke `superpowers:systematic-debugging`. Phase 1 surfaces signals; Phase 2
+   reaches root cause, not symptoms.
+3. Reclassify runs with cross-signal context (below).
+4. Correlate signals across steps, passing the temporal overlap gate.
+5. Write the report in the format below.
 
-- Step 17 `latestRun.status` is RUN-level, not step-level (caveat at top).
-- Step 16 reflects the CURRENT workspace's checks; renamed/removed checks stop
-  appearing (their prior FAILED state is no longer the truth).
-- Step 04 freshness flags policy presence, not violation state.
-
-After investigation, run
-[`scripts/day2_summarize.py`](scripts/day2_summarize.py) with `--details` to
-print per-step counts, the error gate, and the failure / retry / GKE event /
+[`scripts/day2_summarize.py`](scripts/day2_summarize.py) with `--details` prints
+per-step counts, the error gate, and the failure / retry / GKE event /
 error-group / asset-check / degraded-asset dump in one call. Drop `--details`
-for the gate alone; fall back to reading `.claude/scratch/day2.json` directly
-for fields the dump omits.
+for the gate alone; read `.claude/scratch/day2.json` directly for fields the
+dump omits.
 
 ```bash
 uv run .claude/skills/dagster-day2/scripts/day2_summarize.py --details   # gate + details
 uv run .claude/skills/dagster-day2/scripts/day2_summarize.py             # gate only
 ```
 
-**Error gate**: The summarize script flags any `step_NN_*` key with an `"error"`
-field and exits non-zero. If any step the analysis depends on errored, re-run
-the collector (`uv run .claude/skills/dagster-day2/scripts/day2_collect.py`)
-before drawing conclusions — partial data produces wrong findings.
+**Error gate**: the summarize script flags any `step_NN_*` key with an `"error"`
+field and exits non-zero. If a step the analysis depends on errored, re-run the
+collector before drawing conclusions; partial data produces wrong findings. Name
+any step still errored in the report, since its signals are missing from the
+timeline.
+
+The collector's queries are proxies, not ground truth:
+
+- Step 17 `latestRun.status` is run-level, not step-level (caveat in Phase 1).
+- Step 16 reflects the current workspace's checks; renamed or removed checks
+  stop appearing, so their prior FAILED state is no longer the truth.
+- Step 04 freshness flags policy presence, not violation state.
 
 **Temporal overlap gate**: Before linking signals as cause/effect, verify
 `max(start_A, start_B) < min(end_A, end_B)`. If false → independent findings.
 
 **Reclassify** runs using cross-signal context:
 
-| From                              | To                       | Trigger signal                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| --------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unclassified / Connection failure | Agent API timeout        | Agent `errors` array contains `ReadTimeout` + `*.agent.dagster.cloud` in same window (not visible in GKE logs)                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Code error                        | K8s API timeout          | Error class is actually `DagsterK8sUnrecoverableAPIError` — stack-trace match alone is insufficient                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Unclassified                      | Node OOM/eviction        | GKE pod event `OOMKilling` or `Evicted` for run's pod — then run step 13 drill-down                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Infra timeout                     | Step preempt-hang        | `errorDetail` contains `completed without a step result`, or (runs launched before `zombie_aware_k8s_job_executor` shipped) `runFailureMessage: Exceeded maximum runtime`; either way `engineEventMatch` contains `Exiting to prevent re-running`. Step pod was preempted, replacement bailed via `verify_step` exit-0, K8s Job marked `Complete`; the executor fails the step `ZOMBIE_JOB_GRACE_SECONDS` later (an op with a `RetryPolicy` retries in-run). Self-heals via `dagster/will_retry`. Upstream: dagster-io/dagster#33728. Do not chase as control-plane / PowerSchool / network. |
-| Unclassified / Infra timeout      | Slow-query timeout (dbt) | `runFailureMessage: Exceeded maximum runtime` WITHOUT `Exiting to prevent re-running`, AND the step materialized assets (`MaterializationEvent` / `LogsCapturedEvent` present) — the run did real work, so NOT FailedScheduling/preemption. One model ran long: diff `AssetMaterializationPlannedEvent` vs `MaterializationEvent` to find the unmaterialized asset, then `JOBS_BY_PROJECT` for that model's job (same `total_bytes_processed` + N× `total_slot_ms` across runs = transient BQ straggler, self-heals on retry).                                                               |
-| Code error                        | K8s pre-start kill       | `errorDetail` matches `Step ... failed health check: Discovered failed Kubernetes job` AND no `LogsCapturedEvent` for the failing step in `get_run_logs`. Pod was killed at the K8s layer (FailedScheduling exhaustion, eviction post-Scheduled, image-pull) before Dagster step code ran. Confirm via audit log `io.k8s.batch.v1.jobs.create` + pod events for `dagster-step-<hash>-.*`. Retry typically succeeds once Autopilot stabilizes — same root cause as Step preempt-hang, different surface.                                                                                      |
+- **Unclassified / Connection failure → Agent API timeout**: the agent `errors`
+  array has `ReadTimeout` to `*.agent.dagster.cloud` in the same window. Not
+  visible in GKE logs.
+- **Code error → K8s API timeout**: the error class is
+  `DagsterK8sUnrecoverableAPIError`. A stack-trace match alone is not enough.
+- **Unclassified → Node OOM/eviction**: a GKE pod event `OOMKilling` or
+  `Evicted` for the run's pod. Then drill down with step 13.
+- **Infra timeout → Step preempt-hang**: `errorDetail` contains
+  `completed without a step result` and `engineEventMatch` contains
+  `Exiting to prevent re-running`. The step pod was preempted, its replacement
+  exited 0 through `verify_step`, and K8s marked the Job `Complete`; the
+  executor fails the step `ZOMBIE_JOB_GRACE_SECONDS` later (an op with a
+  `RetryPolicy` retries in-run). Self-heals via `dagster/will_retry`. Upstream:
+  dagster-io/dagster#33755. Do not chase it as control-plane, PowerSchool, or
+  network.
+- **Unclassified / Infra timeout → Slow-query timeout (dbt)**:
+  `runFailureMessage: Exceeded maximum runtime` without
+  `Exiting to prevent re-running`, and the step materialized assets
+  (`MaterializationEvent` or `LogsCapturedEvent` present), so the run did real
+  work. One model ran long: diff `AssetMaterializationPlannedEvent` against
+  `MaterializationEvent` to find it, then check that model's job in
+  `JOBS_BY_PROJECT`. The same `total_bytes_processed` with several times the
+  `total_slot_ms` across runs is a transient BigQuery straggler that self-heals
+  on retry.
 
-**`LogsCapturedEvent` presence is the K8s-vs-user-code discriminator.** Before
-chasing user-code or PowerSchool/ADP/etc. theories for a step failure, fetch
-`get_run_logs(run_id, filter_types=["LogsCapturedEvent"])`. If no event exists
-for the failing step, the container never started — root cause is at the K8s
-layer (see Reclassify row above). Step pod logs are not in `k8s_container` logs;
-see `.claude/context/dagster.md` for where they are.
+**`LogsCapturedEvent` presence is the K8s-vs-user-code discriminator.** The
+collector applies it to health-check failures (`K8s pre-start kill`). For any
+other step failure, before chasing user-code or PowerSchool/ADP/etc. theories,
+page `mcp__dagster-plus__get_run_logs` for the run and look for a
+`LOGS_CAPTURED` event naming the failing step. If none exists, the container
+never started and the root cause is at the K8s layer. Step pod logs are not in
+`k8s_container` logs; see `.claude/context/dagster.md` for where they are.
 
 **Pod-event run attribution (`step_10_gke_events.podEvents`):** for any
 `dagster-run-*` Evicted/Preempted event, the collector parses the runId from the
@@ -154,12 +197,12 @@ root cause until you've worked through that procedure — Service churn and pod
 preemption look identical from the tick log alone, but imply different fixes
 (agent-side vs cluster-side).
 
-**Agent topology**: Steady state matches the `dagsterCloudAgent.replicas`
-setting (currently 1 in `.k8s/dagster/values-override.yaml`). Flag deviations.
-Cross-reference step 10 pod events filtered to
-`user-cloud-dagster-cloud-agent-agent` for cause (Preempted/Evicted/OOMKilling).
-Step 8 churn: at replicas=1 with maxSurge=200%, normal Helm upgrade = 2 creates.
-3-4 creates = a rollout retry; >>4 = sustained storm.
+**Agent topology**: Steady state matches `dagsterCloudAgent.replicas` in
+`.k8s/dagster/values-override.yaml`. Flag deviations. Cross-reference step 10
+pod events filtered to `user-cloud-dagster-cloud-agent-agent` for cause
+(Preempted/Evicted/OOMKilling). Step 8 churn: at replicas=1 with maxSurge=200%,
+normal Helm upgrade = 2 creates. 3-4 creates = a rollout retry; >>4 = sustained
+storm.
 
 In this codebase, agent pods run at priority 1000 (`dagster-agent`
 PriorityClass) — above run/step and code server pods (0), so they CANNOT be
@@ -261,13 +304,10 @@ auto-mute and timeline-dedupe rules. `staleOpen` entries are cleanup candidates
 - Surface the **`byRun` aggregation**, not the flat `degraded` list — one
   failing run typically marks 5–15 downstream assets as degraded; reporting
   per-asset overcounts the incident.
-- **Verify each cluster is real before listing it.** For each `byRun` entry,
-  read the run's actual failures from `step_01` — the run-level FAILURE may be
-  due to a single failing model while every other selected model in the same run
-  materialized successfully. In that case the "degraded" assets except the
-  genuinely-failed one are noise.
-- Clusters with `endTime` older than the day-2 window are stale candidates; they
-  belong in Emerging Issues, not Impact.
+- Verify each cluster against its run's `step_01` failures before listing it
+  (the run-level caveat in Phase 1): only the genuinely failed model counts.
+- `inWindow: false` clusters are stale candidates; they belong in Emerging
+  Issues, not Impact.
 
 **Actions**: No action (transient + retry success), Monitor
 (recurring/emerging), Investigate (retry failure), Escalate (sustained platform
@@ -276,21 +316,15 @@ issue).
 **Known self-resolving alerts**: kipptaf `dagster-step-*` CPU alerts (1000m
 during import) self-resolve ~60s. Action: No action.
 
-Flag any step with an `"error"` field — those signals are missing from the
-timeline.
-
 Reference `.k8s/CLAUDE.md` for scheduling, topology, security, config.
 
 Write report to `.claude/scratch/day2-report-<YYYY-MM-DD>.md`, where the date is
 the window end (`window.utc_end` from `day2.json`) converted to ET.
 
-**Verify epoch conversions before drawing conclusions.** Dagster
-`creationTime`/`startTime`/`endTime` are float seconds. Sanity-check every
-conversion against the window's `utc_start`/`utc_end` in `day2.json` before
-writing narrative — a single-hour math error can flip a "stale orphan pod" into
-a "first scheduling attempt" (or vice-versa) and rewrite the entire root-cause
-story. If a GKE event's UTC timestamp looks far from the run's computed UTC,
-recompute before continuing.
+**Use the collector's `*Et` fields for times.** Any time you convert yourself
+(Dagster epochs are float seconds; GKE timestamps are UTC), check against the
+window's `utc_start`/`utc_end` first: a one-hour error can flip a stale orphan
+pod into a first scheduling attempt and rewrite the root cause.
 
 **Run-never-started timestamps**: When a run times out before starting
 (`Run timed out due to taking longer than N seconds to start`), `startTime` and

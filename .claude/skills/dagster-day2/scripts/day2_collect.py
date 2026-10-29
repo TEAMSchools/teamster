@@ -4,7 +4,7 @@
 # ///
 """Day-2 ops data collector — replaces Phase 1 of the /dagster-day2 skill.
 
-Issues 15 queries against Dagster Cloud GraphQL and GCP REST APIs (Cloud
+Runs 17 steps against Dagster Cloud GraphQL and GCP REST APIs (Cloud
 Logging, Service Health, Error Reporting, Cloud Monitoring). Writes a single
 artifact to .claude/scratch/day2.json keyed by step.
 
@@ -36,6 +36,7 @@ import os
 import re
 import subprocess
 import sys
+from collections import Counter
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
@@ -71,6 +72,16 @@ CATEGORY_RULES: list[tuple[str, list[str]]] = [
         "Step preempt-hang",
         ["Exiting to prevent re-running", "completed without a step result"],
     ),
+    # BigQuery failed the job itself; dbt never resubmits one (job_retries
+    # covers only the submit and poll API calls), so only a Dagster retry helps.
+    (
+        "BigQuery transient",
+        [
+            "reason: internalError",
+            "reason: backendError",
+            "This is usually caused by a transient issue",
+        ],
+    ),
     (
         "Network/SSH",
         [
@@ -94,6 +105,16 @@ def classify(message: str) -> str:
     return "Unclassified"
 
 
+ET = ZoneInfo("America/New_York")
+
+
+def to_et(epoch: float | None) -> str | None:
+    """Float-seconds epoch as an ET wall-clock string."""
+    if epoch is None:
+        return None
+    return datetime.fromtimestamp(epoch, ET).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+
 def get_token() -> str:
     if env := os.environ.get("DAGSTER_CLOUD_API_TOKEN"):
         return env
@@ -114,19 +135,18 @@ def get_token() -> str:
 
 def compute_window(args: argparse.Namespace) -> tuple[float, str, str]:
     """Returns (epoch_start, utc_start_iso, utc_end_iso)."""
-    et = ZoneInfo("America/New_York")
     now_utc = datetime.now(UTC)
     if args.hours:
         start = now_utc - timedelta(hours=args.hours)
     elif args.since:
         date = datetime.strptime(args.since, "%Y-%m-%d").date()
-        start = datetime.combine(date, time(17, 0), tzinfo=et).astimezone(UTC)
+        start = datetime.combine(date, time(17, 0), tzinfo=ET).astimezone(UTC)
     else:
         # Default: 5pm ET previous business day.
-        today_et = now_utc.astimezone(et).date()
+        today_et = now_utc.astimezone(ET).date()
         offset = {0: 3, 6: 2}.get(today_et.weekday(), 1)  # Mon→Fri, Sun→Fri
         prev = today_et - timedelta(days=offset)
-        start = datetime.combine(prev, time(17, 0), tzinfo=et).astimezone(UTC)
+        start = datetime.combine(prev, time(17, 0), tzinfo=ET).astimezone(UTC)
     return (
         start.timestamp(),
         start.isoformat().replace("+00:00", "Z"),
@@ -193,7 +213,8 @@ query RunEvents($runId: ID!) {
         __typename
         ... on MessageEvent { message }
         ... on RunFailureEvent { error { message className } }
-        ... on ExecutionStepFailureEvent { error { message className } }
+        ... on ExecutionStepFailureEvent { stepKey error { message className } }
+        ... on LogsCapturedEvent { stepKeys }
       }
     }
     ... on PythonError { message }
@@ -247,6 +268,8 @@ async def fetch_failure_detail(gql: GraphQL, run: dict) -> dict:
     error_class = ""
     error_detail = ""
     engine_match = ""
+    failed_step = ""
+    captured_steps: set[str] = set()
     for ev in events:
         t = ev.get("__typename")
         msg = ev.get("message") or ""
@@ -257,6 +280,9 @@ async def fetch_failure_detail(gql: GraphQL, run: dict) -> dict:
         elif t == "ExecutionStepFailureEvent":
             error_class = error_class or (err.get("className") or "")
             error_detail = error_detail or (err.get("message") or "")
+            failed_step = failed_step or (ev.get("stepKey") or "")
+        elif t == "LogsCapturedEvent":
+            captured_steps.update(ev.get("stepKeys") or [])
         elif (
             t == "EngineEvent"
             and not engine_match
@@ -266,7 +292,14 @@ async def fetch_failure_detail(gql: GraphQL, run: dict) -> dict:
     tags = {t["key"]: t["value"] for t in run.get("tags", [])}
     haystack = " ".join([run_failure_msg, error_class, error_detail, engine_match])
     category = classify(haystack)
-    if category == "Unclassified" and error_detail:
+    if (
+        category == "Unclassified"
+        and "Discovered failed Kubernetes job" in error_detail
+        and failed_step not in captured_steps
+    ):
+        # No captured logs for the step: its container never ran user code.
+        category = "K8s pre-start kill"
+    elif category == "Unclassified" and error_detail:
         # Step-level Python exception with no infra signals → user code error.
         category = "Code error"
     return {
@@ -275,6 +308,8 @@ async def fetch_failure_detail(gql: GraphQL, run: dict) -> dict:
         "codeLocation": tags.get("dagster/code_location"),
         "startTime": run.get("startTime"),
         "endTime": run.get("endTime"),
+        "startTimeEt": to_et(run.get("startTime")),
+        "endTimeEt": to_et(run.get("endTime")),
         "willRetry": tags.get("dagster/will_retry"),
         "autoRetryRunId": tags.get("dagster/auto_retry_run_id"),
         "runFailureMessage": run_failure_msg,
@@ -554,13 +589,26 @@ query AssetsLatest($keys: [AssetKeyInput!]!) {
 }
 """
 
+ASSET_MATERIALIZATION_TYPE_QUERY = """
+query AssetMaterializationType($keys: [AssetKeyInput!]!) {
+  assetNodes(assetKeys: $keys) {
+    assetKey { path }
+    metadataEntries { label ... on TextMetadataEntry { text } }
+  }
+}
+"""
 
-async def step_17_degraded_assets(gql: GraphQL, _after_epoch: float) -> dict:
+
+async def step_17_degraded_assets(gql: GraphQL, after_epoch: float) -> dict:
     """Assets whose latest run failed.
 
     Caveat: dbt failures are run-level, not step-level, so an asset can be
     flagged here even though its own materialization step succeeded mid-run.
     Use this list as a starting point and verify per-asset.
+
+    `materializationType` is the dbt materialization (view/table/...) or null
+    for non-dbt assets. A plain dbt view only re-runs on a code change, so a
+    failed view run stays flagged until someone materializes it by hand.
     """
     nodes = (await gql.query(ASSETS_QUERY)).get("assetNodes") or []
     keys = [{"path": n["assetKey"]["path"]} for n in nodes]
@@ -582,29 +630,50 @@ async def step_17_degraded_assets(gql: GraphQL, _after_epoch: float) -> dict:
                 }
             )
 
-    by_run: dict[str, list[str]] = {}
+    mat_type: dict[str, str | None] = {}
+    degraded_keys = [{"path": d["asset"].split("/")} for d in degraded]
+    for i in range(0, len(degraded_keys), chunk):
+        data = await gql.query(
+            ASSET_MATERIALIZATION_TYPE_QUERY, {"keys": degraded_keys[i : i + chunk]}
+        )
+        for node in data.get("assetNodes") or []:
+            mat_type["/".join(node["assetKey"]["path"])] = next(
+                (
+                    e.get("text")
+                    for e in node.get("metadataEntries") or []
+                    if e.get("label") == "dagster-dbt/materialization_type"
+                ),
+                None,
+            )
     for d in degraded:
-        by_run.setdefault(d["latestRunId"] or "", []).append(d["asset"])
+        d["materializationType"] = mat_type.get(d["asset"])
+
+    by_run: dict[str, list[dict]] = {}
+    for d in degraded:
+        by_run.setdefault(d["latestRunId"] or "", []).append(d)
+    clusters = []
+    for rid, items in sorted(by_run.items(), key=lambda x: -len(x[1])):
+        end = items[0]["latestRunEndTime"]
+        clusters.append(
+            {
+                "runId": rid,
+                "endTime": end,
+                "endTimeEt": to_et(end),
+                "inWindow": end is not None and end >= after_epoch,
+                "count": len(items),
+                "byMaterializationType": dict(
+                    Counter(d["materializationType"] or "non-dbt" for d in items)
+                ),
+                "assets": [d["asset"] for d in items],
+            }
+        )
     return {
         "totalAssets": len(keys),
         "degradedCount": len(degraded),
+        "inWindowCount": sum(c["count"] for c in clusters if c["inWindow"]),
+        "staleCount": sum(c["count"] for c in clusters if not c["inWindow"]),
         "degraded": degraded,
-        "byRun": [
-            {
-                "runId": rid,
-                "endTime": next(
-                    (
-                        d["latestRunEndTime"]
-                        for d in degraded
-                        if d["latestRunId"] == rid
-                    ),
-                    None,
-                ),
-                "count": len(assets),
-                "assets": assets,
-            }
-            for rid, assets in sorted(by_run.items(), key=lambda x: -len(x[1]))
-        ],
+        "byRun": clusters,
     }
 
 
@@ -1012,6 +1081,11 @@ def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
         pod_events.append(
             {
                 "timestamp": e["timestamp"],
+                "timestampEt": to_et(
+                    datetime.fromisoformat(
+                        e["timestamp"].replace("Z", "+00:00")
+                    ).timestamp()
+                ),
                 "podName": pod_name,
                 "reason": e.get("jsonPayload", {}).get("reason"),
                 "message": e.get("jsonPayload", {}).get("message"),
