@@ -51,6 +51,9 @@ class Warehouse:
         self._cap: float | None = None
         self._spent = 0.0
         self._views: dict[tuple[str, str], list[tuple[datetime, datetime, str]]] = {}
+        # A relation's kind and current definition, looked up once per process:
+        # `view_sql_as_of` reads a past moment, which a later change cannot alter.
+        self._tables: dict[tuple[str, str], bigquery.Table] = {}
         self._cache_dir: Path | None = None
         self._ledger_dir: Path | None = None
         self._daily_cap: float | None = None
@@ -77,9 +80,15 @@ class Warehouse:
                 for a, b, body in spans
             ]
 
+    def _get_table(self, dataset: str, name: str) -> bigquery.Table:
+        key = (dataset, name)
+        if key not in self._tables:
+            self._tables[key] = self._client.get_table(f"{PROJECT}.{dataset}.{name}")
+        return self._tables[key]
+
     def table(self, dataset: str, name: str) -> TableInfo:
-        """Return the kind of `dataset.name` and, for a view, its current SQL."""
-        t = self._client.get_table(f"{PROJECT}.{dataset}.{name}")
+        """Return the kind of `dataset.name` and, for a view, its SQL when first read."""
+        t = self._get_table(dataset, name)
 
         if t.table_type == "VIEW":
             return TableInfo("VIEW", t.view_query)
@@ -104,7 +113,7 @@ class Warehouse:
             if since < ts <= at:
                 return body
 
-        t = self._client.get_table(f"{PROJECT}.{dataset}.{name}")
+        t = self._get_table(dataset, name)
 
         if t.modified is not None and t.modified <= ts:
             return (t.view_query or "").strip().rstrip(";").rstrip()
@@ -267,32 +276,61 @@ class Warehouse:
     def rows(self, sql: str, timeout_s: float | None = None) -> list[dict]:
         """Run `sql` and return its rows.
 
-        It is priced first when a run or daily cap is set; once it runs, the
-        bytes BigQuery billed replace that estimate in both totals. With
+        With a run or daily cap set, BigQuery is told the most it may bill
+        (`maximum_bytes_billed`, what is left under the tighter cap) and
+        refuses a query that would bill more before it runs, at no charge; no
+        dry run is needed. The bytes it billed count in both totals. With
         `timeout_s`, BigQuery stops the job after that many seconds and the
         call raises.
-        """
-        estimate = 0.0
-        if self._cap is not None or self._daily_cap is not None:
-            estimate = self.price(sql)
 
-        if timeout_s is None:
-            job = self._client.query(sql)
-        else:
-            config = bigquery.QueryJobConfig(job_timeout_ms=int(timeout_s * 1000))
-            job = self._client.query(sql, job_config=config)
+        Raises:
+            CostCapError: Nothing is left under a cap, or BigQuery refused the
+                query as billing more than what is left.
+        """
+        left = self._left()
+        settings: dict = {}
+        if timeout_s is not None:
+            settings["job_timeout_ms"] = int(timeout_s * 1000)
+        if left is not None:
+            usd, which = left
+            if usd <= 0:
+                raise CostCapError(f"nothing is left under {which}")
+            settings["maximum_bytes_billed"] = int(usd / USD_PER_TIB * _TIB)
+        config = bigquery.QueryJobConfig(**settings) if settings else None
+        job = self._client.query(sql, job_config=config)
         try:
             out = [dict(r.items()) for r in job.result()]
         except GoogleAPIError as exc:
+            errors = getattr(exc, "errors", None) or [{}]
+            if left is not None and errors[0].get("reason") == _OVER_LIMIT:
+                raise CostCapError(
+                    f"this query would bill more than the ${left[0]:.2f} left under "
+                    f"{left[1]}"
+                ) from exc
             # The id finds the job's own record; the message can quote values.
             setattr(exc, JOB_ID, getattr(job, "job_id", ""))
             raise
         billed = getattr(job, "total_bytes_billed", None)
         if isinstance(billed, int):
-            delta = billed / _TIB * USD_PER_TIB - estimate
-            self._spent += delta
-            self._record(delta)
+            usd = billed / _TIB * USD_PER_TIB
+            self._spent += usd
+            self._record(usd)
         return out
+
+    def _left(self) -> tuple[float, str] | None:
+        """USD left under the tighter of the run's and the day's caps, and its name."""
+        left = []
+        if self._cap is not None:
+            left.append((self._cap - self._spent, f"the ${self._cap:.2f} cap"))
+        if self._daily_cap is not None:
+            left.append(
+                (
+                    self._daily_cap - self.spent_today(),
+                    f"the ${self._daily_cap:.2f} daily cap (UTC day); wait for "
+                    "tomorrow or raise --max-usd-per-day",
+                )
+            )
+        return min(left, key=lambda pair: pair[0]) if left else None
 
     @contextmanager
     def budget(self, max_usd: float) -> Iterator[None]:
@@ -306,6 +344,8 @@ class Warehouse:
 
 
 _VIEWS_FILE = "view-history.json"
+# BigQuery's reason for a query over its `maximum_bytes_billed`.
+_OVER_LIMIT = "bytesBilledLimitExceeded"
 _SPEND_FILE = "spend.json"
 # The attribute `rows` sets on a query's error: its BigQuery job id.
 JOB_ID = "job_id"
