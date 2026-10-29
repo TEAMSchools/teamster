@@ -476,3 +476,127 @@ def test_no_persona_access_row_carries_a_placeholder_scope(
                 f"{row['google_email']} carries the placeholder "
                 f"{row[column]!r} in {column}"
             )
+
+
+# -- region shape -----------------------------------------------------------
+#
+# Production has four school regions of very different sizes plus a network
+# office region that enrolls no students. A sandbox with one school per
+# region made "region scope" mean "one school", which hid a canary that could
+# not pass and would hide the same mistake in any kit screen built for a
+# region-level viewer.
+
+_NAMED_REGIONS = {
+    "Newark Region",
+    "Miami Region",
+    "Camden Region",
+    "Paterson Region",
+    "Network Office",
+}
+
+
+def _region_by_key(tiny: dict[str, list[dict]]) -> dict[str, dict]:
+    return {row["region_key"]: row for row in tiny["dim_regions"]}
+
+
+def _locations_per_region(tiny: dict[str, list[dict]]) -> dict[str, int]:
+    regions = _region_by_key(tiny)
+    counts: dict[str, int] = {}
+    for row in tiny["dim_locations"]:
+        region = regions.get(row["region_key"])
+        if region is not None and region["name"] is not None:
+            counts[region["name"]] = counts.get(region["name"], 0) + 1
+    return counts
+
+
+def test_regions_mirror_production_shape(tiny: dict[str, list[dict]]) -> None:
+    names = [row["name"] for row in tiny["dim_regions"]]
+    assert _NAMED_REGIONS <= set(names)
+    # One nameless region carries the manifest's null cells, so the five a
+    # kit actually shows are never the ones with a missing name.
+    assert names.count(None) == 1
+
+
+def test_schools_spread_across_regions_by_size(tiny: dict[str, list[dict]]) -> None:
+    counts = _locations_per_region(tiny)
+    assert counts["Network Office"] == 1
+    assert (
+        counts["Newark Region"]
+        > counts["Miami Region"]
+        > counts["Camden Region"]
+        > counts["Paterson Region"]
+        >= 2
+    )
+
+
+def test_the_network_office_enrolls_no_students(tiny: dict[str, list[dict]]) -> None:
+    regions = _region_by_key(tiny)
+    office = {
+        row["location_key"]
+        for row in tiny["dim_locations"]
+        if regions.get(row["region_key"], {}).get("name") == "Network Office"
+    }
+    assert office
+    for table in (
+        "dim_student_enrollments",
+        "fct_student_attendance_enrollment_daily",
+        "dim_course_sections",
+        "dim_school_calendars",
+        "dim_terms",
+    ):
+        assert not {row["location_key"] for row in tiny[table]} & office, table
+
+
+def test_every_persona_school_sits_in_its_region(tiny: dict[str, list[dict]]) -> None:
+    region_of = {
+        row["abbreviation"]: row["region_key"] for row in tiny["dim_locations"]
+    }
+    for person in personas.load(generate.PERSONAS_PATH):
+        row = next(
+            r
+            for r in tiny["dim_staff_cube_access"]
+            if r["google_email"] == person.email
+        )
+        assert (
+            region_of[row["location_abbreviation"]] == row["legal_entity_region_key"]
+        ), person.email
+
+
+def test_a_region_scoped_teaching_staff_persona_sees_a_teacher(
+    tiny: dict[str, list[dict]],
+) -> None:
+    """Mirror of the staff-pii-teaching_staff policy, evaluated on the rows.
+
+    The policy keeps a work-history row when its location is in the viewer's
+    region, its staff member's department group is in the viewer's remit,
+    and that staff member's job function is TEACH or TIR. The ROWS canary
+    asserts the same thing live; this catches it before a load.
+    """
+    access_by_staff = {row["staff_key"]: row for row in tiny["dim_staff_cube_access"]}
+    location_by_key = {row["location_key"]: row for row in tiny["dim_locations"]}
+    checked = 0
+    for person in personas.load(generate.PERSONAS_PATH):
+        if (
+            person.scopes.get("staff_location_scope") != "region"
+            or person.scopes.get("staff_pii_scope") != "teaching_staff"
+        ):
+            continue
+        checked += 1
+        me = access_by_staff[
+            next(
+                r["staff_key"]
+                for r in tiny["dim_staff_cube_access"]
+                if r["google_email"] == person.email
+            )
+        ]
+        visible = [
+            row
+            for row in tiny["dim_staff_work_history"]
+            if (location := location_by_key.get(row["work_location_key"]))
+            and location["region_key"] == me["legal_entity_region_key"]
+            and (staff := access_by_staff.get(row["staff_key"]))
+            and staff["department_group"] is not None
+            and staff["job_function_code"] in ("TEACH", "TIR")
+        ]
+        assert visible, person.email
+    assert checked, "no persona exercises region-scoped teaching_staff"

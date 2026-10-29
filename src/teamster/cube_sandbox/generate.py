@@ -244,12 +244,58 @@ def birth_date_for_grade(grade: int, academic_year: int, rng: random.Random) -> 
     return dt.date(year, month, rng.randint(1, calendar.monthrange(year, month)[1]))
 
 
+# Production's shape: four school regions of very different sizes, and a
+# network office region that enrolls no students. Order matters — personas
+# take their region from the first four by index, and the office is index 4.
+_REGIONS: list[dict[str, str]] = [
+    {"name": "Newark Region", "legal_entity": "Newark Sandbox Charter School"},
+    {"name": "Miami Region", "legal_entity": "Miami Sandbox Charter School"},
+    {"name": "Camden Region", "legal_entity": "Camden Sandbox Charter School"},
+    {"name": "Paterson Region", "legal_entity": "Paterson Sandbox Charter School"},
+    {"name": "Network Office", "legal_entity": "Sandbox Network Office Inc."},
+]
+_SCHOOL_REGIONS = 4
+_OFFICE_REGION = 4
+# Relative school counts for the four school regions, after production's.
+_SCHOOL_REGION_WEIGHTS = [11, 6, 4, 2]
+# Row 0 of dim_locations carries the planted orphan, so the office is row 1.
+_OFFICE_LOCATION = 1
+
+# Reference tables whose size is part of their meaning. A region count that
+# scales with the profile turns "region scope" into "one school".
+_FIXED_ROWS = {
+    # The five named regions, one nameless region that carries the manifest's
+    # null cells, and the final row every child is withheld from.
+    "dim_regions": len(_REGIONS) + 2,
+    "dim_locations": MANIFEST_FLOOR,
+}
+
+
+def weighted_cycle(weights: list[int], count: int) -> list[int]:
+    """Indexes into `weights`, interleaved in proportion to them.
+
+    Smooth weighted round-robin: deterministic, and the small buckets appear
+    early instead of all at the end, so even a short run reaches every one.
+    """
+    current = [0] * len(weights)
+    total = sum(weights)
+    picks = []
+    for _ in range(count):
+        current = [c + w for c, w in zip(current, weights, strict=True)]
+        best = max(range(len(weights)), key=lambda i: current[i])
+        current[best] -= total
+        picks.append(best)
+    return picks
+
+
 def row_target(table: str, scale: str) -> int:
     """Rows to generate for one table under a named profile."""
     if scale not in ("tiny", "full"):
         raise ValueError(f"unknown scale {scale!r}")
     if table == "dim_dates":
         return DATE_SPINE_MAX
+    if table in _FIXED_ROWS:
+        return _FIXED_ROWS[table]
     if scale == "tiny":
         return MANIFEST_FLOOR
     return _PRODUCTION_ROWS.get(table, MANIFEST_FLOOR * 100)
@@ -636,6 +682,19 @@ class _Fabricator:
                 self.persona_key[person.email] for person in people
             },
         }
+        # The network office enrolls no students, as in production. Its staff
+        # are network-scoped on student data precisely because their own
+        # location resolves to no school, so a student row there would
+        # describe an organisation that does not exist.
+        office = surrogate_key("dim_locations.location_key", _OFFICE_LOCATION)
+        for table in (
+            "dim_student_enrollments",
+            "fct_student_attendance_enrollment_daily",
+            "dim_course_sections",
+            "dim_school_calendars",
+            "dim_terms",
+        ):
+            self.column_forbidden[(table, "location_key")] = {office}
 
         self.unique_fk: set[tuple[str, str]] = UNIQUE_FK
 
@@ -748,7 +807,59 @@ class _Fabricator:
                 after(rows, rng)
             self._plant_nulls(table, rows)
             self.rows[table] = rows
+        self._place_region_teachers()
         return self.rows
+
+    def _place_region_teachers(self) -> None:
+        """Give every region-scoped persona a teacher inside its region.
+
+        The teaching_staff policy keeps a staff row only when its location is
+        in the viewer's region AND that staff member is coded TEACH or TIR.
+        Nothing else guarantees both land together, and without them the
+        persona's ROWS canary has nothing to find. Runs after null planting so
+        no later pass can undo it.
+        """
+        access = {row["staff_key"]: row for row in self.rows["dim_staff_cube_access"]}
+        locations = {row["location_key"]: row for row in self.rows["dim_locations"]}
+        history = self.rows["dim_staff_work_history"]
+        persona_keys = set(self.persona_key.values())
+        head = self._head("dim_staff_work_history")
+
+        def teaches(row: dict[str, Any]) -> bool:
+            staff = access.get(row["staff_key"])
+            return (
+                staff is not None
+                and staff["department_group"] is not None
+                and staff["job_function_code"] in ("TEACH", "TIR")
+            )
+
+        for index, person in enumerate(self.people):
+            if person.scopes.get("staff_location_scope") != "region":
+                continue
+            school = self._persona_school(index)
+            region_key = school["region_key"]
+            if any(
+                teaches(row)
+                and (loc := locations.get(row["work_location_key"]))
+                and loc["region_key"] == region_key
+                for row in history
+            ):
+                continue
+            # Move one filler teacher. Skip the reserved rows and anyone whose
+            # location is the null the manifest asked for.
+            for row in history[head + 1 :]:
+                if (
+                    row["staff_key"] not in persona_keys
+                    and row["staff_key"] not in self.excluded
+                    and row["work_location_key"] is not None
+                    and teaches(row)
+                ):
+                    row["work_location_key"] = school["location_key"]
+                    break
+            else:
+                raise ValueError(
+                    f"no filler teacher to place in {person.email}'s region"
+                )
 
     def _base_rows(
         self, table: str, count: int, rng: random.Random
@@ -885,21 +996,71 @@ class _Fabricator:
         }
 
     def _special_dim_regions(self, index: int, rng: random.Random) -> dict[str, Any]:
-        cities = ["Newark", "Camden", "Miami", "Paterson"]
-        city = cities[index % len(cities)]
-        return {
-            "name": f"{city} Region {index // len(cities) + 1}",
-            "state": "FL" if city == "Miami" else "NJ",
-            "timezone": "America/New_York",
-        }
+        if index < len(_REGIONS):
+            region = _REGIONS[index]
+            return {
+                **region,
+                "state": "FL" if region["name"].startswith("Miami") else "NJ",
+                "timezone": "America/New_York",
+            }
+        if index == len(_REGIONS):
+            # The manifest wants a null in each of these. Putting all of them
+            # on one extra region keeps the five a kit shows fully named.
+            return {"name": None, "state": None, "timezone": None}
+        return {"name": "Unreferenced Region", "legal_entity": "Unreferenced"}
+
+    def _location_region(self, index: int) -> int:
+        """Which region a location row belongs to.
+
+        One office row, and every other row spread over the school regions by
+        `_SCHOOL_REGION_WEIGHTS`, so a region-scoped viewer sees several
+        schools and the regions differ in size the way production's do.
+        """
+        if index == _OFFICE_LOCATION:
+            return _OFFICE_REGION
+        layout = getattr(self, "_school_layout", None)
+        if layout is None:
+            layout = weighted_cycle(
+                _SCHOOL_REGION_WEIGHTS, row_target("dim_locations", self.scale)
+            )
+            self._school_layout = layout
+        return layout[index]
+
+    def _is_campus_row(self, index: int) -> bool:
+        return index == _OFFICE_LOCATION or index % 8 == 0
 
     def _special_dim_locations(self, index: int, rng: random.Random) -> dict[str, Any]:
+        region = self.rows["dim_regions"][self._location_region(index)]
+        campus = self._is_campus_row(index)
         return {
             "abbreviation": f"SBX{index:03d}",
-            "name": f"Sandbox School {index:03d}",
+            "name": (
+                "Sandbox Network Office"
+                if index == _OFFICE_LOCATION
+                else f"Sandbox {'Campus' if campus else 'School'} {index:03d}"
+            ),
             "postal_code": f"0{7000 + index:04d}",
             "address": f"{100 + index} Fabricated Way",
+            "region_key": region["region_key"],
+            "is_campus": campus,
+            "grade_band": None if campus else ["ES", "MS", "HS"][index % 3],
         }
+
+    def _school_in_region(self, region_index: int, nth: int) -> dict[str, Any]:
+        """A school (not a campus, office, or reserved row) in one region."""
+        region_key = self.rows["dim_regions"][region_index]["region_key"]
+        referenceable = self._referenceable("dim_locations")
+        schools = [
+            row
+            for index, row in enumerate(referenceable)
+            if index > 0
+            and not self._is_campus_row(index)
+            and row["region_key"] == region_key
+            and row["abbreviation"] is not None
+        ]
+        if not schools:
+            raise ValueError(f"region {region_index} has no school to place anyone in")
+        return schools[nth % len(schools)]
 
     def _special_dim_staff(self, index: int, rng: random.Random) -> dict[str, Any]:
         people = self.people
@@ -969,13 +1130,22 @@ class _Fabricator:
                 "— buildGroups would emit no staff-pii group and the persona "
                 "would silently default-deny"
             )
+        school = self._persona_school(index)
         return {
             "google_email": person.email,
             "staff_key": self.persona_key[person.email],
             **person.scopes,
+            # Region and school agree, as they do for a real employee: a
+            # region-scoped persona whose school sat in another region would
+            # test a person who cannot exist.
+            "legal_entity_region_key": school["region_key"],
+            "location_abbreviation": school["abbreviation"],
             "job_function_code": "TEACH" if index % 2 else "LEAD",
             "job_function_level": 3 + index % 4,
         }
+
+    def _persona_school(self, index: int) -> dict[str, Any]:
+        return self._school_in_region(index % _SCHOOL_REGIONS, index // _SCHOOL_REGIONS)
 
     def _special_dim_staff_reporting_chain(
         self, index: int, rng: random.Random
@@ -1012,6 +1182,7 @@ class _Fabricator:
             "effective_end_date": dt.date(TARGET_ACADEMIC_YEAR + 1, 6, 30),
             "job_code": "TEACH" if index % 2 else "LEAD",
             "full_time_equivalency": 1.0,
+            "work_location_key": self._persona_school(index)["location_key"],
         }
 
     def _special_dim_students(self, index: int, rng: random.Random) -> dict[str, Any]:
