@@ -633,7 +633,8 @@ def _neutralize(raw: _Raw) -> None:
         if cond is None:
             raw.node.replace(exp.true())
         else:
-            raw.node.replace(exp.or_(exp.paren(raw.node.copy()), cond))
+            # Parenthesized, or the OR swallows the AND chain it sits in.
+            raw.node.replace(exp.paren(exp.or_(exp.paren(raw.node.copy()), cond)))
         return
 
     # A join: the rows its table is missing from pass every requirement that
@@ -664,6 +665,8 @@ def _neutralize(raw: _Raw) -> None:
                 cond = exp.or_(cond, exp.paren(missing.copy()))
             added.append(cond)
         elif x.alias in chain:
-            req.replace(exp.or_(exp.paren(req.copy()), exp.paren(missing.copy())))
+            req.replace(
+                exp.paren(exp.or_(exp.paren(req.copy()), exp.paren(missing.copy())))
+            )
     for cond in added:
         s.where(cond, copy=False)

@@ -102,7 +102,11 @@ def test_a_conjunct_on_a_left_joined_table_holds_only_where_that_table_is_presen
 
     out = _flat(q.relaxed(_step(q, "module_type")))
 
-    assert "(r.module_type <> 'WPP') OR NOT r.student_number IS NULL" in out
+    # Parenthesized: an OR spliced into an AND chain must not swallow it.
+    assert (
+        "WHERE co.is_enrolled_week_end AND "
+        "((r.module_type <> 'WPP') OR NOT r.student_number IS NULL)"
+    ) in out
 
 
 def test_a_required_left_join_keeps_only_rows_its_table_misses():
@@ -110,8 +114,10 @@ def test_a_required_left_join_keeps_only_rows_its_table_misses():
 
     out = _flat(q.relaxed(_step(q, "LEFT JOIN kipptaf_assessments")))
 
-    assert "(r.module_type <> 'WPP') OR (r.student_number IS NULL)" in out
-    assert "WHERE co.is_enrolled_week_end AND" in out
+    assert (
+        "WHERE co.is_enrolled_week_end AND "
+        "((r.module_type <> 'WPP') OR (r.student_number IS NULL))"
+    ) in out
 
 
 def test_an_inner_join_becomes_a_left_join():
