@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 DEFAULT_PATH = Path(".claude/scratch/day2.json")
@@ -129,6 +130,7 @@ def main() -> int:
     )
     print(
         f"step_17 degraded:    total={s17.get('totalAssets')} degraded={s17.get('degradedCount')}"
+        f"  (inWindow={s17.get('inWindowCount')} stale={s17.get('staleCount')})"
         f"  across {_len(s17.get('byRun'))} failing runs"
     )
     print()
@@ -151,6 +153,15 @@ def _trunc(s: object, n: int = 200) -> str:
     return text if len(text) <= n else text[: n - 1] + "…"
 
 
+def _pod_kind(pod_name: str | None) -> str:
+    name = pod_name or ""
+    if name.startswith("dagster-run-"):
+        return "run"
+    if name.startswith("dagster-step-"):
+        return "step"
+    return "other"
+
+
 def _print_details(data: dict) -> None:
     print()
     print("=" * 72)
@@ -162,8 +173,9 @@ def _print_details(data: dict) -> None:
     for f in failures:
         run_id = f.get("runId") or "?"
         print(
-            f"  {run_id} job={f.get('jobName')} loc={f.get('locationName')} "
-            f"cat={f.get('category')} start={f.get('startTime')} end={f.get('endTime')}"
+            f"  {run_id} job={f.get('jobName')} loc={f.get('codeLocation')} "
+            f"cat={f.get('category')} start={f.get('startTimeEt') or f.get('startTime')}"
+            f" end={f.get('endTimeEt') or f.get('endTime')}"
         )
         msg = f.get("runFailureMessage")
         if msg:
@@ -199,8 +211,27 @@ def _print_details(data: dict) -> None:
     print(f"\n[step_10] GKE cluster events ({len(cluster)}), pod events ({len(pods)}):")
     for e in cluster:
         print(f"  cluster: {_trunc(e, 240)}")
+    # Bursts run to dozens of identical events; count per ET minute and reason,
+    # and list individually only the ones tied to a failed run.
+    pod_counts: Counter[tuple[str, str, str]] = Counter(
+        (
+            (e.get("timestampEt") or e.get("timestamp") or "?")[:16],
+            e.get("reason") or "?",
+            _pod_kind(e.get("podName")),
+        )
+        for e in pods
+    )
+    for (minute, reason, kind), n in sorted(pod_counts.items()):
+        print(f"  {minute}  {reason:<10} {kind:<5} x{n}")
     for e in pods:
-        print(f"  pod:     {_trunc(e, 240)}")
+        if e.get("runStatus") == "FAILURE":
+            print(
+                f"  failed-run pod: {e.get('timestampEt') or e.get('timestamp')} "
+                f"{e.get('reason')} run={e.get('runId')}"
+            )
+    for e in pods:
+        if _pod_kind(e.get("podName")) == "other":
+            print(f"  infra pod: {_trunc(e, 240)}")
 
     alerts = data.get("step_11_alerts", {}).get("alerts", [])
     if alerts:
@@ -280,13 +311,16 @@ def _print_details(data: dict) -> None:
         by_run = s17.get("byRun") or []
         if by_run:
             print(
-                f"\n[step_17] degraded assets ({s17.get('degradedCount')}) "
+                f"\n[step_17] degraded assets ({s17.get('degradedCount')}: "
+                f"inWindow={s17.get('inWindowCount')} stale={s17.get('staleCount')}) "
                 f"across {len(by_run)} failing runs:"
             )
             for entry in by_run:
                 rid = entry.get("runId") or "?"
+                label = "inWindow" if entry.get("inWindow") else "stale"
                 print(
-                    f"  run={rid} endTime={entry.get('endTime')} count={entry.get('count')}"
+                    f"  [{label}] run={rid} end={entry.get('endTimeEt') or entry.get('endTime')}"
+                    f" count={entry.get('count')} types={entry.get('byMaterializationType')}"
                 )
                 for a in (entry.get("assets") or [])[:5]:
                     print(f"    - {a}")

@@ -26,7 +26,7 @@ Output shape:
 ```json
 {
   "window": {"epoch": ..., "utc_start": "...Z", "utc_end": "...Z"},
-  "step_01_failed_runs": {"failureCount": N, "failures": [...], "successCount": N, "canceledCount": N, "successRunIds": [...]},
+  "step_01_failed_runs": {"failureCount": N, "failures": [{"runId":..., "startTime":..., "endTime":..., "startTimeEt":"...", "endTimeEt":"...", "category":..., ...}], "successCount": N, "canceledCount": N, "successRunIds": [...]},
   "step_02_retries":     {"retries": [{"parentRunId":..., "retryRunId":..., "retryStatus":"SUCCESS|FAILURE"}]},
   "step_03_sensor_ticks":{"<location>": {"<sensor>": {"failureCount": N, "ticks": [{"tickId": "<str>", "timestamp": <float-seconds>, "error": "<str>", "errorChainTop": "<str>"}]}}},
   "step_04_freshness":   {"flaggedAssets": [...], "policyCount": N},
@@ -35,14 +35,14 @@ Output shape:
   "step_07_agents":      {"agents": [...], "agentCount": N},
   "step_08_agent_pod_churn": {"events": [...], "skipped": bool},
   "step_09_daemons":     {"daemons": [...], "allHealthy": bool},
-  "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [{"timestamp":..., "podName":..., "reason":..., "message":..., "runId": "<uuid|null>", "runStatus": "SUCCESS|FAILURE|UNKNOWN"}]},
+  "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [{"timestamp":..., "timestampEt":"...", "podName":..., "reason":..., "message":..., "runId": "<uuid|null>", "runStatus": "SUCCESS|FAILURE|UNKNOWN"}]},
   "step_11_alerts":      {"alerts": [...]},
   "step_12_error_groups":{"groups": [{"groupId":..., "exception":..., "affectedServices":[{"service":...,"version":"<pod>"}], "exceptionLine":"<bottom-of-traceback or null>", "correlatedPodEvent":{"reason":"Preempted|Evicted|OOMKilling", "timestamp":..., "podName":...} | null, "category":"sigterm_during_import|preemption_artifact|unclassified"}], "buckets": {"inWindow":[], "staleOpen":[]}},
   "step_13_oom_metrics": {"oomRuns": [...], "skipped": bool},
   "step_14_queued_runs": {"runs": [...], "stuckCount": N},
   "step_15_backfills":   {"requested": [...], "failed": [...]},
   "step_16_asset_checks":{"totalChecks": N, "failedCount": N, "inWindow_error": [...], "inWindow_warn": [...], "stale_error": [...], "stale_warn": [...]},
-  "step_17_degraded_assets":{"totalAssets": N, "degradedCount": N, "degraded": [{"asset":..., "latestRunId":..., "latestRunEndTime":...}], "byRun": [{"runId":..., "endTime":..., "count":N, "assets":[...]}]}
+  "step_17_degraded_assets":{"totalAssets": N, "degradedCount": N, "inWindowCount": N, "staleCount": N, "degraded": [{"asset":..., "latestRunId":..., "latestRunEndTime":..., "materializationType":"view|table|...|null"}], "byRun": [{"runId":..., "endTime":..., "endTimeEt":"...", "inWindow": bool, "count":N, "byMaterializationType":{"view": N}, "assets":[...]}]}
 }
 ```
 
@@ -61,6 +61,9 @@ then cross-reference `step_01_failed_runs.failures` for the run-level root
 cause. Step-level recovery (e.g. auto-mat retry within minutes) leaves the prior
 run's overall status as FAILURE, so a "degraded" asset whose last-mat timestamp
 is later than its `latestRunEndTime` was actually recovered — read both fields.
+`materializationType` is the dbt materialization, null for non-dbt assets. A dbt
+view re-runs only on a code change, so a view in a stale cluster stays flagged
+until someone materializes it by hand, even when its view in BigQuery works.
 
 Per-step error: if a step fails, its key holds `{"error": "..."}` instead of the
 normal payload. Other steps still complete. Re-run the script if a key finding
@@ -68,9 +71,23 @@ depends on a failed step.
 
 Run classification (`step_01_failed_runs.failures[].category`) is one of:
 `Preemption/Interrupt`, `Node OOM/eviction`, `Scheduling failure`,
-`K8s API failure`, `Backoff limit`, `Step preempt-hang`, `Network/SSH`,
-`Connection failure`, `Code error`, `Infra timeout`, `Unclassified`. Phase 2 may
-reclassify based on cross-signal context — see the reclassify table below.
+`K8s API failure`, `Backoff limit`, `Step preempt-hang`, `BigQuery transient`,
+`Network/SSH`, `Connection failure`, `Infra timeout`, `K8s pre-start kill`,
+`Code error`, `Unclassified`. Phase 2 may reclassify based on cross-signal
+context — see the reclassify table below.
+
+- `BigQuery transient`: BigQuery failed the job itself (`internalError`,
+  `backendError`). dbt never resubmits a failed job, since `job_retries` covers
+  only the submit and poll API calls, so the Dagster run retry is the only
+  recovery. Not a code bug.
+- `K8s pre-start kill`: `Discovered failed Kubernetes job` with no
+  `LogsCapturedEvent` for the failing step, so the pod died at the K8s layer
+  (FailedScheduling exhaustion, eviction after Scheduled, image pull) before
+  step code ran. Same root cause as `Step preempt-hang`, different surface;
+  retry typically succeeds once Autopilot stabilizes. Confirm with audit log
+  `io.k8s.batch.v1.jobs.create` plus pod events for `dagster-step-<hash>-.*`.
+  The check reads `logsForRun` with a 500-event limit, so a long run whose
+  captured-logs event falls past it lands in `Code error` instead.
 
 ## Phase 2: Correlate and report
 
@@ -112,15 +129,15 @@ before drawing conclusions — partial data produces wrong findings.
 | Unclassified / Connection failure | Agent API timeout        | Agent `errors` array contains `ReadTimeout` + `*.agent.dagster.cloud` in same window (not visible in GKE logs)                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Code error                        | K8s API timeout          | Error class is actually `DagsterK8sUnrecoverableAPIError` — stack-trace match alone is insufficient                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Unclassified                      | Node OOM/eviction        | GKE pod event `OOMKilling` or `Evicted` for run's pod — then run step 13 drill-down                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Infra timeout                     | Step preempt-hang        | `errorDetail` contains `completed without a step result`, or (runs launched before `zombie_aware_k8s_job_executor` shipped) `runFailureMessage: Exceeded maximum runtime`; either way `engineEventMatch` contains `Exiting to prevent re-running`. Step pod was preempted, replacement bailed via `verify_step` exit-0, K8s Job marked `Complete`; the executor fails the step `ZOMBIE_JOB_GRACE_SECONDS` later (an op with a `RetryPolicy` retries in-run). Self-heals via `dagster/will_retry`. Upstream: dagster-io/dagster#33728. Do not chase as control-plane / PowerSchool / network. |
+| Infra timeout                     | Step preempt-hang        | `errorDetail` contains `completed without a step result`, or (runs launched before `zombie_aware_k8s_job_executor` shipped) `runFailureMessage: Exceeded maximum runtime`; either way `engineEventMatch` contains `Exiting to prevent re-running`. Step pod was preempted, replacement bailed via `verify_step` exit-0, K8s Job marked `Complete`; the executor fails the step `ZOMBIE_JOB_GRACE_SECONDS` later (an op with a `RetryPolicy` retries in-run). Self-heals via `dagster/will_retry`. Upstream: dagster-io/dagster#33755. Do not chase as control-plane / PowerSchool / network. |
 | Unclassified / Infra timeout      | Slow-query timeout (dbt) | `runFailureMessage: Exceeded maximum runtime` WITHOUT `Exiting to prevent re-running`, AND the step materialized assets (`MaterializationEvent` / `LogsCapturedEvent` present) — the run did real work, so NOT FailedScheduling/preemption. One model ran long: diff `AssetMaterializationPlannedEvent` vs `MaterializationEvent` to find the unmaterialized asset, then `JOBS_BY_PROJECT` for that model's job (same `total_bytes_processed` + N× `total_slot_ms` across runs = transient BQ straggler, self-heals on retry).                                                               |
-| Code error                        | K8s pre-start kill       | `errorDetail` matches `Step ... failed health check: Discovered failed Kubernetes job` AND no `LogsCapturedEvent` for the failing step in `get_run_logs`. Pod was killed at the K8s layer (FailedScheduling exhaustion, eviction post-Scheduled, image-pull) before Dagster step code ran. Confirm via audit log `io.k8s.batch.v1.jobs.create` + pod events for `dagster-step-<hash>-.*`. Retry typically succeeds once Autopilot stabilizes — same root cause as Step preempt-hang, different surface.                                                                                      |
 
 **`LogsCapturedEvent` presence is the K8s-vs-user-code discriminator.** Before
 chasing user-code or PowerSchool/ADP/etc. theories for a step failure, fetch
 `get_run_logs(run_id, filter_types=["LogsCapturedEvent"])`. If no event exists
 for the failing step, the container never started — root cause is at the K8s
-layer (see Reclassify row above). Step pod logs are not in `k8s_container` logs;
+layer (see `K8s pre-start kill` above; the collector applies this check to
+health-check failures itself). Step pod logs are not in `k8s_container` logs;
 see `.claude/context/dagster.md` for where they are.
 
 **Pod-event run attribution (`step_10_gke_events.podEvents`):** for any
