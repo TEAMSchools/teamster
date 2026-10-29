@@ -1,5 +1,6 @@
 import dataclasses
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
@@ -8,6 +9,9 @@ from cube_validation import pipeline
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.discover import sheet_shape
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.timetravel import pin_clock
@@ -470,3 +474,32 @@ def test_sheet_gaps_copy_note_uses_the_sheet_caption_for_a_dim():
     )
     gaps = pipeline.sheet_gaps(NOTES_TWB, comparison)
     assert gaps.notes["Grade Copy"] == "copy of Grade"
+
+
+DKI_TWB = (Path(__file__).parent / "fixtures" / "dki_grid.twb").read_text()
+
+
+def test_sheet_shape_and_gaps_list_a_filter_on_a_code_group():
+    # Discipline is a categorical bin over subject_area; its filter column has
+    # no derivation prefix.
+    shape = sheet_shape(DKI_TWB, "Mastery Grid")
+    assert (
+        "Discipline: chosen values hidden (narrows the sheet); decide whether "
+        "the probe needs it"
+    ) in shape.filters
+    assert not any("ELA" in f for f in shape.filters)
+
+    gaps = pipeline.sheet_gaps(
+        DKI_TWB, dataclasses.replace(_comparison(), sheet="Mastery Grid")
+    )
+    assert "Discipline" in gaps.filters and "Discipline" in gaps.restricting
+    # A group is no datasource column, so triage gets none to value-check.
+    assert "Discipline" not in gaps.columns
+
+
+def test_sheet_shape_lists_an_all_members_group_filter_as_all():
+    twb = DKI_TWB.replace(
+        "<groupfilter function='member' level='[Discipline]' member='&quot;ELA&quot;'",
+        "<groupfilter function='level-members' level='[Discipline]'",
+    )
+    assert "Discipline: All" in sheet_shape(twb, "Mastery Grid").filters

@@ -1804,13 +1804,13 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     mapped = {p.dashboard for p in pairs}
     mapped_captions = set(comparison.filters)
     caption, personal = finder.sheet_fields(ws)
+    groups = finder.group_fields(ws)
     mapped_caption_of = {p.dashboard: c for c, p in comparison.filters.items()}
 
     def field_of(ref: str) -> str | None:
-        m = finder.FIELD_REF.search(ref)
-        if m is None or finder.is_value(m):
+        name = finder.filter_field(ref, groups)
+        if name is None:
             return None
-        name = m["name"]
         if name in mapped or name in personal or caption.get(name) in mapped_captions:
             return None
         return name
@@ -1839,7 +1839,8 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     columns: dict[str, str] = {}
     for name in cuts | filters:
         formula = (calcs.get(name) or "").strip()
-        if name not in calcs:
+        # A group or bin is no datasource column: triage cannot value-check it.
+        if name not in calcs and name not in groups:
             columns[caption.get(name, name)] = name
         elif (param := _parameter_only(formula)) is not None:
             notes[caption.get(name, name)] = (

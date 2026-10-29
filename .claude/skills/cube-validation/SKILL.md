@@ -94,11 +94,13 @@ cause, do not retry around it.
    group prints its codes. Each listed sheet's shape follows: shelves, long or
    wide export, displayed decimals, and filters. A filter on any field outside
    the reference columns prints "chosen values hidden": decide with the analyst
-   whether the probe needs it, and never look up or copy its values. Show the
-   analyst the candidates. A name-alike field can mean something else, so no
-   comparison is written until the analyst confirms it. With the workbook
-   already on disk, `--twb <path>` reads it instead of downloading and signs in
-   to no Tableau (Cube still compiles the measure); `prove` always exports.
+   whether the probe needs it, and never look up or copy its values. A filter on
+   a code group (a bin such as Discipline) is listed the same way; the probe
+   applies it, or `shelves: {clear_filters: [...]}` clears it. Show the analyst
+   the candidates. A name-alike field can mean something else, so no comparison
+   is written until the analyst confirms it. With the workbook already on disk,
+   `--twb <path>` reads it instead of downloading and signs in to no Tableau
+   (Cube still compiles the measure); `prove` always exports.
    `prove <file> --comparison <id> --headers` prints each cut's export headers
    (and a long export's field names) without probing, to find `sheet_field`
    before the first proof.
