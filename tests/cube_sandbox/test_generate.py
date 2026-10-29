@@ -257,7 +257,8 @@ def test_has_remit_and_has_chain_each_resolve_both_ways(
 
     `personas.yml` declares the two remit scopes, but hasRemit also depends
     on rows the generator supplies — the locations universe, and this row's
-    own region_key / location_abbreviation / department_group — and the chain
+    own legal_entity_region_key / location_abbreviation / department_group —
+    and the chain
     is declared as reportees rather than as chain rows. Both states have to
     come out true for some persona and false for another, or the branch
     production cannot reach (reporting_chain with an empty chain) is not in
@@ -278,7 +279,11 @@ def test_has_remit_and_has_chain_each_resolve_both_ways(
         row = by_email[person.email]
         allowed_abbreviations = {
             "network": abbreviations,
-            "region": {row["location_abbreviation"]} if row["region_key"] else set(),
+            "region": (
+                {row["location_abbreviation"]}
+                if row["legal_entity_region_key"]
+                else set()
+            ),
             "school": {row["location_abbreviation"]},
         }.get(row["staff_location_scope"], set())
         allowed_departments = {

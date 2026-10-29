@@ -72,7 +72,8 @@ def test_scope_values_cover_every_snapshot_scope_column() -> None:
 # mirrored instead — but the legal VALUES are read from access.js via
 # model.scope_values rather than copied, so only the shape of the rule lives
 # here. The mirror assumes the identity columns the helpers also read
-# (region_key, location_abbreviation, department_group) are non-null on a
+# (legal_entity_region_key, location_abbreviation, department_group) are
+# non-null on a
 # persona row; tests/cube_sandbox/test_generate.py asserts that against the
 # generated rows.
 def _has_remit(person: personas.Persona, scopes: dict[str, set[str]]) -> bool:

@@ -422,9 +422,12 @@ _EXTRA_FOREIGN_KEYS: dict[tuple[str, str], tuple[str, str]] = {
     # the directory has never heard of.
     ("dim_staff_cube_access", "staff_key"): ("dim_staff", "staff_key"),
     # computeAllowedAbbreviations matches these against the locations
-    # universe. A region_key or abbreviation that matches no location resolves
-    # to an empty remit, which is a silent default-deny.
-    ("dim_staff_cube_access", "region_key"): ("dim_regions", "region_key"),
+    # universe. A legal_entity_region_key or abbreviation that matches no
+    # location resolves to an empty remit, which is a silent default-deny.
+    ("dim_staff_cube_access", "legal_entity_region_key"): (
+        "dim_regions",
+        "region_key",
+    ),
     ("dim_staff_cube_access", "location_abbreviation"): (
         "dim_locations",
         "abbreviation",

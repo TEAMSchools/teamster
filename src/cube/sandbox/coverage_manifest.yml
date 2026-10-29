@@ -674,15 +674,15 @@ cells:
     column: entity
     detail: at least one non-null row
     status: uncovered
-  - kind: "null"
-    table: dim_staff_cube_access
-    column: entity
-    detail: at least one null row
-    status: uncovered
   - kind: non_null
     table: dim_staff_cube_access
     column: google_email
     detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_cube_access
+    column: google_email
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_staff_cube_access
@@ -706,22 +706,22 @@ cells:
     status: uncovered
   - kind: non_null
     table: dim_staff_cube_access
-    column: location_abbreviation
+    column: legal_entity_region_key
     detail: at least one non-null row
     status: uncovered
   - kind: "null"
     table: dim_staff_cube_access
-    column: location_abbreviation
+    column: legal_entity_region_key
     detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_staff_cube_access
-    column: region_key
+    column: location_abbreviation
     detail: at least one non-null row
     status: uncovered
   - kind: "null"
     table: dim_staff_cube_access
-    column: region_key
+    column: location_abbreviation
     detail: at least one null row
     status: uncovered
   - kind: non_null
@@ -1426,6 +1426,11 @@ cells:
     status: uncovered
   - kind: non_null
     table: fct_assessment_scores_enrollment_scoped
+    column: assessment_date_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
     column: assessment_score_key
     detail: at least one non-null row
     status: uncovered
@@ -1692,6 +1697,16 @@ cells:
   - kind: "null"
     table: fct_student_attendance_enrollment_daily
     column: membership_value
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: n_absent_days_rolling_90
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: n_absent_days_rolling_90
     detail: at least one null row
     status: uncovered
   - kind: non_null

@@ -263,7 +263,12 @@ def test_cube_js_columns_cover_the_key_resolve_access_matches() -> None:
     assert {
         c for c in _snap_tables()["dim_staff_cube_access"] if c.endswith("_scope")
     } <= columns
-    assert {"entity", "region_key", "location_abbreviation", "staff_key"} <= columns
+    assert {
+        "entity",
+        "legal_entity_region_key",
+        "location_abbreviation",
+        "staff_key",
+    } <= columns
 
 
 def test_cube_js_columns_carries_no_star_sentinel() -> None:
