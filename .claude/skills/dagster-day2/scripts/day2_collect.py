@@ -4,7 +4,7 @@
 # ///
 """Day-2 ops data collector — replaces Phase 1 of the /dagster-day2 skill.
 
-Issues 15 queries against Dagster Cloud GraphQL and GCP REST APIs (Cloud
+Runs 17 steps against Dagster Cloud GraphQL and GCP REST APIs (Cloud
 Logging, Service Health, Error Reporting, Cloud Monitoring). Writes a single
 artifact to .claude/scratch/day2.json keyed by step.
 
