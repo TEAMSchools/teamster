@@ -871,3 +871,15 @@ def test_inventory_notes_different_short_names_matching_one_title():
 
     assert row.member == ""
     assert "several cubes" in row.disagreement
+
+
+def test_inventory_lists_a_code_group_used_only_as_a_filter():
+    from pathlib import Path
+
+    xml = (Path(__file__).parent / "fixtures" / "dki_grid.twb").read_text()
+
+    by = _by_name(builder.workbook_inventory(xml))
+
+    assert by["Discipline"].role == "filter"
+    assert by["Discipline"].sheets == ("Mastery Grid", "Mastery by Week")
+    assert by["Discipline"].formula == "ELA = English 100, Text Study; Math = Algebra I"

@@ -656,7 +656,7 @@ def _worksheets(xml: str) -> dict[str, str]:
 
 def test_set_shelves_reshapes_one_sheet_only():
     for src in (SHELVES_TWB, SHELVES_TWB.replace("\n", "\r\n")):
-        out = set_shelves(src, "Mastery Grid", RESHAPE)
+        out = set_shelves(src, "Mastery Grid", RESHAPE).xml
 
         ET.fromstring(out)
         shape = sheet_shape(out, "Mastery Grid")
@@ -686,7 +686,7 @@ def test_set_shelves_fills_an_empty_shelf_and_keeps_its_attributes():
         "[federated.0ddi (copy)].[none:school:nk])</cols>",
         "<cols onLeft='true' />",
     )
-    out = set_shelves(src, "Mastery Grid", {"add": {"cols": ["School"]}})
+    out = set_shelves(src, "Mastery Grid", {"add": {"cols": ["School"]}}).xml
 
     assert "<cols onLeft='true'>[federated.0ddi (copy)].[none:school:nk]</cols>" in out
 
@@ -712,7 +712,7 @@ DKI_DS = "[federated.0dki (copy)]"
 
 
 def test_set_shelves_drop_takes_the_sorts_formats_and_table_calcs_along_it():
-    out = set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["Week Start Monday"]})
+    out = set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
 
     ET.fromstring(out)
     before, after = _worksheets(DKI_TWB), _worksheets(out)
@@ -740,7 +740,7 @@ def test_set_shelves_drop_takes_the_sorts_formats_and_table_calcs_along_it():
 
 
 def test_set_shelves_drop_keeps_a_table_calc_along_kept_fields():
-    out = set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["School"]})
+    out = set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["School"]}).xml
 
     grid = _worksheets(out)["Mastery Grid"]
     assert grid.count("diff:avg:is_mastery_int:qk:2") == DKI_TWB.count(
@@ -756,7 +756,7 @@ def test_set_shelves_clears_a_filter_on_one_sheet_only():
             src,
             "Mastery Grid",
             {"drop": ["Week Start Monday"], "clear_filters": ["Discipline"]},
-        )
+        ).xml
 
         ET.fromstring(out)
         before, after = _worksheets(src), _worksheets(out)
@@ -769,8 +769,10 @@ def test_set_shelves_clears_a_filter_on_one_sheet_only():
             f"user:ui-marker='enumerate' />{nl}          </filter>"
         ) in grid
         assert "&quot;ELA&quot;' user:ui-domain" not in grid
-        # The year filter still narrows; the other sheet keeps its own.
+        # The year filter still narrows; the other sheet keeps its own, though
+        # it shares the cleared filter's filter-group.
         assert "member='2026'" in grid
+        assert "[Discipline]' filter-group='94'>" in before["Mastery by Week"]
         assert after["Mastery by Week"] == before["Mastery by Week"]
 
 
@@ -783,3 +785,145 @@ def test_set_shelves_refuses_to_clear_a_missing_or_range_filter():
     )
     with pytest.raises(ValueError, match="'Academic Year' .* is not on members"):
         set_shelves(ranged, "Mastery Grid", {"clear_filters": ["Academic Year"]})
+
+
+WEEK_CALC = f"{DKI_DS}.[diff:avg:is_mastery_int:qk:2]"
+_NATURAL_SORT = (
+    f"<natural-sort column='{DKI_DS}.[none:week_start_monday:ok]' direction='DESC' />"
+)
+
+
+def _grid_with(extra: str) -> str:
+    """The DKI fixture with `extra` added after the grid's natural sort."""
+    assert DKI_TWB.count(_NATURAL_SORT) == 2
+    return DKI_TWB.replace(_NATURAL_SORT, _NATURAL_SORT + extra, 1)
+
+
+def test_set_shelves_drop_removes_every_attribute_naming_a_removed_calc():
+    src = _grid_with(
+        f"\n          <sort class='computed' column='{DKI_DS}.[none:module_code:nk]' "
+        f"direction='DESC' using='{WEEK_CALC}' />"
+        f"\n          <filter class='categorical' column='{DKI_DS}.[:Measure Names]'>"
+        "\n            <groupfilter function='union' user:op='manual'>"
+        "\n              <groupfilter function='member' level='[:Measure Names]' "
+        f"member='&quot;{DKI_DS}.[avg:is_mastery_int:qk]&quot;' />"
+        "\n              <groupfilter function='member' level='[:Measure Names]' "
+        f"member='&quot;{WEEK_CALC}&quot;' />"
+        "\n            </groupfilter>"
+        "\n          </filter>"
+    )
+
+    grid = _worksheets(
+        set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
+    )["Mastery Grid"]
+
+    assert "diff:avg:is_mastery_int:qk:2" not in grid
+    assert "<sort class='computed'" not in grid
+    assert f"member='&quot;{DKI_DS}.[avg:is_mastery_int:qk]&quot;'" in grid
+
+
+def test_set_shelves_drop_removes_a_manual_sort_on_the_dropped_field():
+    src = _grid_with(
+        f"\n          <sort class='manual' column='{DKI_DS}.[none:week_start_monday:ok]' "
+        "direction='ASC'>\n            <dictionary>\n              "
+        "<bucket>#2026-01-05#</bucket>\n            </dictionary>\n          </sort>"
+        f"\n          <sort class='manual' column='{DKI_DS}.[none:school:nk]' "
+        "direction='ASC'>\n            <dictionary>\n              "
+        "<bucket>&quot;A&quot;</bucket>\n            </dictionary>\n          </sort>"
+    )
+
+    out = set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
+
+    ET.fromstring(out)
+    grid = _worksheets(out)["Mastery Grid"]
+    assert "#2026-01-05#" not in grid
+    assert f"<sort class='manual' column='{DKI_DS}.[none:school:nk]'" in grid
+
+
+def test_set_shelves_drop_removes_a_label_and_encodings_it_emptied():
+    grid = _worksheets(DKI_TWB)["Mastery Grid"]
+    only_calc = grid.replace(
+        f"<tooltip column='{DKI_DS}.[diff:avg:is_mastery_int:qk]' />\n"
+        "              <text column='"
+        f"{DKI_DS}.[avg:is_mastery_int:qk]' />\n              ",
+        "",
+    ).replace(
+        "<run fontsize='12'><![CDATA[<"
+        f"{DKI_DS}.[avg:is_mastery_int:qk]>]]></run>\n"
+        "                <run>Æ&#10;</run>\n                ",
+        "",
+    )
+    assert only_calc.count("<text column=") == 1 and only_calc.count("<run") == 1
+    src = DKI_TWB.replace(grid, only_calc)
+
+    out = set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
+
+    ET.fromstring(out)
+    after = _worksheets(out)["Mastery Grid"]
+    assert "<encodings>" not in after
+    assert "<formatted-text>" not in after
+    assert "<customized-label>" not in after
+    assert "<mark class='Square' />" in after
+
+
+def test_set_shelves_names_the_table_calcs_it_removes_and_recomputes():
+    dropped = set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["Week Start Monday"]})
+
+    assert dropped.removed == (
+        "Difference in Avg. Is Mastery Int (along Week Start Monday, Module Code)",
+    )
+    # Only the columns changed; the kept calc runs down the rows.
+    assert dropped.recomputed == {}
+
+    reshaped = set_shelves(
+        DKI_TWB,
+        "Mastery Grid",
+        {"drop": ["Week Start Monday"], "add": {"rows": ["Subject Area"]}},
+    )
+
+    assert reshaped.recomputed == {"rows": ("Difference in Avg. Is Mastery Int",)}
+    assert set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["School"]}).removed == ()
+
+
+def test_set_shelves_names_a_table_or_pane_calc_on_any_changed_shelf():
+    src = DKI_TWB.replace(
+        "ordering-type='Rows' type='Difference'",
+        "ordering-type='Table' type='Difference'",
+    )
+    assert src != DKI_TWB
+
+    dropped = set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]})
+
+    assert dropped.recomputed == {"columns": ("Difference in Avg. Is Mastery Int",)}
+
+
+def test_set_shelves_names_a_field_calc_whose_partition_gains_a_field():
+    added = set_shelves(DKI_TWB, "Mastery Grid", {"add": {"rows": ["Subject Area"]}})
+
+    # Both calcs share a caption: the Field one (partition gains Subject Area)
+    # and the Rows one (its rows changed); the caption is named once.
+    assert added.removed == ()
+    assert added.recomputed == {"rows": ("Difference in Avg. Is Mastery Int",)}
+    field_only = DKI_TWB.replace(
+        "ordering-type='Rows' type='Difference'",
+        "ordering-type='Field' type='Difference'",
+    )
+    added = set_shelves(field_only, "Mastery Grid", {"add": {"rows": ["Subject Area"]}})
+    assert added.recomputed == {"rows": ("Difference in Avg. Is Mastery Int",)}
+
+
+def test_set_shelves_drop_removes_a_rule_it_empties_beside_one_already_empty():
+    src = DKI_TWB.replace(
+        "<style-rule element='cell'>",
+        "<style-rule element='axis'>\n          </style-rule>\n"
+        "          <style-rule element='cell'>",
+        1,
+    )
+
+    grid = _worksheets(
+        set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
+    )["Mastery Grid"]
+
+    assert "<style-rule element='axis'>\n          </style-rule>" in grid
+    assert "<style-rule element='mark'>" not in grid
+    assert "<style-rule element='header'>" not in grid

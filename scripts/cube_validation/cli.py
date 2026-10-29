@@ -1,8 +1,8 @@
 """Command line: `uv run python -m scripts.cube_validation <command> ...`.
 
-Commands: `discover`, `prove`, `check-api`, `run`, `triage`, `add-decisions`,
-`reapply`, `review`, `record-answers`, `members`, `inventory-workbook`,
-`inventory`. Exit
+Commands: `discover`, `preflight`, `prove`, `check-api`, `run`, `triage`,
+`add-decisions`, `reapply`, `review`, `record-answers`, `members`,
+`inventory-workbook`, `inventory`. Exit
 codes: 0 done, 1 refused (the message says why), 2 usage error. This module parses
 arguments and builds the clients; `pipeline.py` does the work. Tests replace
 `make_warehouse`, `make_cube`, `tableau_session`, `utcnow` and `cache_root`.
@@ -28,7 +28,7 @@ from pathlib import Path
 import tableauserverclient as TSC
 import yaml
 
-from . import answers, builder, pipeline, report, tableau, triage
+from . import answers, builder, pipeline, preflight, report, tableau, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import (
     ConfigError,
@@ -196,6 +196,20 @@ def _parser() -> argparse.ArgumentParser:
             "build",
         )
 
+    p = sub.add_parser(
+        "preflight", help="list what each sheet needs before prove, offline"
+    )
+    view_file(p)
+    p.add_argument(
+        "--twb", type=Path, help="the local .twb to read (required); no Tableau sign-in"
+    )
+    p.add_argument(
+        "--sheet",
+        action="append",
+        default=[],
+        help="check this sheet instead of the comparisons' sheets; repeat it",
+    )
+
     p = sub.add_parser("prove", help="prove a probe against its sheet once")
     view_file(p)
     fact_dataset(p)
@@ -349,6 +363,9 @@ def _dispatch(args: argparse.Namespace) -> int:
             cfg, wh=_warehouse(args), cube=cube, clock=utcnow, max_usd=args.max_usd
         )
         return 0
+
+    if args.command == "preflight":
+        return _preflight(cfg, args.twb, args.sheet)
 
     if args.command == "discover":
         cube = _cube(args)
@@ -591,6 +608,39 @@ def _members(cube: Cube) -> int:
     return 0
 
 
+def _saved_members() -> list[builder.Member]:
+    """The members `members` saved, or a refusal to run it first."""
+    saved = cache_root() / "members.json"
+    if not saved.is_file():
+        raise pipeline.Refusal(f"{saved}: missing; run `members` first")
+    try:
+        return [
+            builder.Member(**m)
+            for m in json.loads(saved.read_text(encoding="utf-8"))["members"]
+        ]
+    except (TypeError, KeyError, json.JSONDecodeError) as exc:
+        raise pipeline.Refusal(f"{saved}: unreadable ({exc!r}); run `members`") from exc
+
+
+def _preflight(cfg: ViewConfig, twb: Path | None, sheets: list[str]) -> int:
+    """Print each sheet's preflight checklist from a local `twb`.
+
+    It never signs in to Tableau: a second sign-in with the shared token can
+    end another session's.
+    """
+    if twb is None:
+        raise pipeline.Refusal(
+            "pass --twb <path>: preflight reads only a local workbook; download the "
+            ".twb once (the cube-validation runbook) and reuse it"
+        )
+    if not twb.is_file():
+        raise pipeline.Refusal(f"{twb}: no such workbook file")
+    members = _saved_members()
+    text = twb.read_text(encoding="utf-8")
+    print(preflight.report(cfg, lambda _: (twb.name, text), members, sheets))
+    return 0
+
+
 def _inventory_workbook(path: Path) -> int:
     """Print the fields a local `.twb` uses, as JSON."""
     if not path.is_file():
@@ -620,15 +670,9 @@ def _inventory(catalog: Path, slug: str, review: Path, asana: Path) -> int:
     """Print a dashboard's fields from 3 sources as a markdown table, then JSON."""
     if not catalog.is_file():
         raise pipeline.Refusal(f"{catalog}: no such catalog file")
-    saved = cache_root() / "members.json"
-    if not saved.is_file():
-        raise pipeline.Refusal(f"{saved}: missing; run `members` first")
+    found = _saved_members()
 
     try:
-        found = [
-            builder.Member(**m)
-            for m in json.loads(saved.read_text(encoding="utf-8"))["members"]
-        ]
         uses = [
             builder.FieldUse(**{**u, "sheets": tuple(u["sheets"])})
             for u in _read_json(review, "review")

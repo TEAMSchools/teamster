@@ -145,7 +145,7 @@
             <column caption='Week Start Monday' datatype='date' name='[week_start_monday]' role='dimension' type='ordinal' />
             <column-instance column='[week_start_monday]' derivation='None' name='[none:week_start_monday:ok]' pivot='key' type='ordinal' />
           </datasource-dependencies>
-          <filter class='categorical' column='[federated.0dki (copy)].[Discipline]'>
+          <filter class='categorical' column='[federated.0dki (copy)].[Discipline]' filter-group='94'>
             <groupfilter function='member' level='[Discipline]' member='&quot;Math&quot;' />
           </filter>
           <natural-sort column='[federated.0dki (copy)].[none:week_start_monday:ok]' direction='DESC' />

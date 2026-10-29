@@ -142,9 +142,11 @@ class FieldUse:
 _ROLE_ORDER = ("parameter", "measure", "cut", "filter")
 
 
-def _sheet_uses(ws: ET.Element) -> dict[tuple[str, str], str]:
+def _sheet_uses(ws: ET.Element, groups: set[str]) -> dict[tuple[str, str], str]:
     """A worksheet's fields as `(aggregation, bare name)`, each with the role the
     sheet gives it. The aggregation is `""` unless a raw field is aggregated.
+    `groups` names the workbook's group and bin fields, which a filter names
+    with no derivation prefix.
 
     A cut wins over a filter on the same field, and a measure over both.
     """
@@ -165,7 +167,8 @@ def _sheet_uses(ws: ET.Element) -> dict[tuple[str, str], str]:
     def field_of(ref: str) -> tuple[tuple[str, str], str] | None:
         m = finder.FIELD_REF.search(ref)
         if m is None:
-            return None
+            name = finder.filter_field(ref, groups)
+            return (("", name), "cut") if name else None
         if m["deriv"] in finder._AGG_PREFIXES:
             return (finder._AGG_PREFIXES[m["deriv"]], m["name"]), "measure"
         if m["deriv"] == "usr":
@@ -198,7 +201,8 @@ def workbook_inventory(twb_xml: str) -> list[FieldUse]:
     """Every field each worksheet uses, one entry per field, sheets merged.
 
     Fields are read the way `sheet_gaps` reads a sheet: shelves and encodings
-    for measures and cuts, `filter` elements for filters, and a datasource
+    for measures and cuts, `filter` elements for filters (a code group's
+    included, which a filter names with no derivation), and a datasource
     column with `param-domain-type` for a parameter. A field used in more than
     one role takes the first of parameter, measure, cut, filter. A worksheet
     without a name is read as `""`.
@@ -214,6 +218,8 @@ def workbook_inventory(twb_xml: str) -> list[FieldUse]:
         for c in finder.aggregated_fields(twb_xml)
     }
     found_bins = finder.bins(twb_xml)
+    # A sheet can filter on a group it does not list among its own columns.
+    groups = finder.group_fields(root)
 
     def formula_of(agg: str, bare: str) -> str:
         if agg and bare in calcs:
@@ -226,7 +232,7 @@ def workbook_inventory(twb_xml: str) -> list[FieldUse]:
     for ws in root.iter("worksheet"):
         sheet = ws.get("name") or ""
         caption, personal = finder.sheet_fields(ws)
-        for (agg, bare), role in _sheet_uses(ws).items():
+        for (agg, bare), role in _sheet_uses(ws, groups).items():
             shown = caption.get(bare, bare)
             entry = merged.setdefault(
                 (agg, bare),

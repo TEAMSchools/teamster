@@ -209,7 +209,50 @@ def test_reconcile_sql_grain_keys_join_across_numeric_types():
 
     key_c = "COALESCE(CAST(SAFE_CAST(CAST(c.lea_student_identifier AS STRING) AS FLOAT64) AS STRING), CAST(c.lea_student_identifier AS STRING))"
     key_d = "COALESCE(CAST(SAFE_CAST(CAST(d.student_number AS STRING) AS FLOAT64) AS STRING), CAST(d.student_number AS STRING))"
-    assert f"{key_c} = {key_d}" in join
+    assert f"\n    AND {key_c} = {key_d}" in join
+
+
+def _null_safe(col: str) -> str:
+    return f"IFNULL(CONCAT('=', COALESCE(CAST(SAFE_CAST(CAST({col} AS STRING)"
+
+
+def _plain(col: str) -> str:
+    return f"COALESCE(CAST(SAFE_CAST(CAST({col} AS STRING)"
+
+
+def test_reconcile_sql_later_null_grain_matches_null_but_no_value():
+    # A NULL keys as '' and any value, the empty string included, as '=<v>':
+    # NULL meets NULL, never a value. Still an equality, so the join hashes.
+    on = _sql().split("FULL OUTER JOIN", 1)[1].split("-- outer")[0].split("ON", 1)[1]
+    for col in ("c.attendance_date", "d.calendardate"):
+        assert _null_safe(col) in on
+    assert " OR " not in on
+    assert "IS NULL" not in on
+
+
+def test_reconcile_sql_null_student_never_matches():
+    # Rows with no student id would otherwise pair up by value order and read
+    # as matches; a plain key leaves NULL = NULL unknown, so they stay one-sided.
+    on = _sql().split("FULL OUTER JOIN", 1)[1].split("-- outer")[0].split("ON", 1)[1]
+    for col in ("c.lea_student_identifier", "d.student_number"):
+        assert _plain(col) in on
+        assert _null_safe(col) not in on
+
+
+def test_reconcile_sql_numbers_duplicates_on_the_join_keys():
+    # Each side partitions by the keys it joins on, so NULLs and 1 vs 1.0
+    # number alike on both sides.
+    sql = _sql()
+    c_part = sql.split("c AS (", 1)[1].split("d AS (", 1)[0]
+    d_part = sql.split("d AS (", 1)[1].split("joined AS (", 1)[0]
+    for part, student, later in (
+        (c_part, "lea_student_identifier", "attendance_date"),
+        (d_part, "student_number", "calendardate"),
+    ):
+        partition = part.split("PARTITION BY", 1)[1].split("ORDER BY", 1)[0]
+        assert partition.startswith(f" {_plain(student)}")
+        assert _null_safe(student) not in partition
+        assert _null_safe(later) in partition
 
 
 def test_groups_from_keeps_one_group_per_two_dim_row():

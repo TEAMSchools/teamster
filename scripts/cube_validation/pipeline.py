@@ -146,7 +146,10 @@ _SCOPE_WORDS = {"equals": "in", "notEquals": "not in", **_SQL_COMPARE}
 
 
 # The coming Sunday in New York, as Tableau's `TODAY() + 8 - weekday` (Sunday is
-# 1 in both). `pin_clock` pins CURRENT_DATE to the run's moment.
+# 1 in both). `pin_clock` pins CURRENT_DATE to the run's moment. This assumes
+# Tableau Server's TODAY() is Eastern; if its clock is not, the two disagree on
+# the week from 8 pm ET Saturday to midnight, so the runbook says not to start a
+# run then.
 _TODAY = "CURRENT_DATE('America/New_York')"
 _WEEK_END = f"8 - EXTRACT(DAYOFWEEK FROM {_TODAY})"
 
@@ -559,6 +562,16 @@ def candidate_causes(
     return out
 
 
+def row_group_cause(n_groups: int) -> str:
+    """The cause line a row-level comparison adds: its row groups, or none."""
+    return (
+        f"{n_groups} row groups on this comparison (see Triage) may explain part of it"
+        if n_groups
+        else "every row matches on the grain and values, so the 2 definitions or "
+        "their filters differ"
+    )
+
+
 def _cell_diffs(
     cfg: ViewConfig, comparisons: list[Comparison], sides: "_Sides", cube: Cube
 ) -> list[CellDiff]:
@@ -578,13 +591,7 @@ def _cell_diffs(
         causes = candidate_causes(comparison, differing, comparison.decimals or 0, expr)
         if comparison.rows is not None:
             groups = [g for g in sides.groups if g.comparison_id == comparison.id]
-            causes.append(
-                f"{len(groups)} row groups on this comparison (see Triage) may "
-                "explain part of it"
-                if groups
-                else "every row matches on the grain and values, so the 2 "
-                "definitions or their filters differ"
-            )
+            causes.append(row_group_cause(len(groups)))
         out.append(
             CellDiff(
                 comparison.id,
@@ -1013,9 +1020,12 @@ def _unproven_totals(comparisons: list[Comparison]) -> list[str]:
     return out
 
 
-def reshape_text(shelves: dict[str, Any]) -> str:
+def reshape_text(
+    shelves: dict[str, Any], reshaped: tableau.Reshaped | None = None
+) -> str:
     """`dropped A; added C to rows, D to columns; cleared the filters on E`,
-    for a `shelves:` key.
+    for a `shelves:` key. With the `reshaped` copy, also the table calcs the
+    drop removed and the kept ones that recompute along a changed shelf.
     """
     parts = []
     if shelves.get("drop"):
@@ -1028,6 +1038,13 @@ def reshape_text(shelves: dict[str, Any]) -> str:
         parts.append(f"added {', '.join(added)}")
     if shelves.get("clear_filters"):
         parts.append(f"cleared the filters on {', '.join(shelves['clear_filters'])}")
+    if reshaped is not None:
+        if reshaped.removed:
+            parts.append(f"removed the table calcs {', '.join(reshaped.removed)}")
+        parts += [
+            f"recomputes along the new {shelf}: {', '.join(captions)}"
+            for shelf, captions in reshaped.recomputed.items()
+        ]
     return "; ".join(parts)
 
 
@@ -1961,7 +1978,7 @@ def _capture(
     try:
         if parameters:
             tableau.set_parameters(twb, parameters)
-        shaped = tableau.set_shelves(twb, sheet, shelves) if shelves else twb
+        shaped = tableau.set_shelves(twb, sheet, shelves).xml if shelves else twb
     except ValueError as exc:
         raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
     columns = _sheet_columns(shaped, sheet)
@@ -1975,7 +1992,7 @@ def _capture(
 
     def edit(x: str) -> str:
         # The reshape goes first, so the format drop sees any column it copied.
-        x = tableau.set_shelves(x, sheet, shelves) if shelves else x
+        x = tableau.set_shelves(x, sheet, shelves).xml if shelves else x
         x = tableau.expose_sheet(tableau.drop_number_formats(x, measures), sheet)
         # A field shown only behind a parameter value exports once the copy
         # carries that value.
@@ -2009,12 +2026,16 @@ def prove_headers(
     prints the copy's rows and columns.
     """
     comparison = _comparison_by_id(cfg, path, comparison_id)
-    _, shaped, _, exportable, _, snap = _capture(comparison, tbl, captures)
+    twb, shaped, _, exportable, _, snap = _capture(comparison, tbl, captures)
     if comparison.shelves:
-        shape = finder.sheet_shape(shaped, comparison.sheet or "")
+        sheet = comparison.sheet or ""
+        shape = finder.sheet_shape(shaped, sheet)
+        reshaped = tableau.set_shelves(twb, sheet, comparison.shelves)
+        calcs = reshape_text({}, reshaped)
         print(
             f"{comparison.id} reshaped: rows {', '.join(shape.rows) or 'none'}; "
             f"columns {', '.join(shape.cols) or 'none'}"
+            + (f"; {calcs}" if calcs else "")
         )
     for cut, rows in zip(exportable, snap.exports, strict=True):
         headers = list(rows[0]) if rows else []

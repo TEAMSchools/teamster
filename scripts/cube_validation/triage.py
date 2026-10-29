@@ -11,6 +11,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import re
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,6 +38,25 @@ from .timetravel import PROJECT
 SUGGESTIONS = ("map_filters", "filters_nothing", "docs", "owner")
 
 NO_ANSWER = "no description or ai_context answers it"
+
+# The fixed words of `pipeline.candidate_causes` and `pipeline._cell_diffs`:
+# they read the same on every cell set, so they never tie a doc to one.
+_CAUSE_WORDS = frozenset(
+    _tokens(
+        "cell cells Cube is blank where the dashboard shows 0 a value display "
+        "unit apart at decimals values differ beyond rounding of in cut have row "
+        "groups on this comparison see Triage may explain part it every matches "
+        "grain and so definitions or their filters"
+    )
+)
+# Cause lines that restate the measure's definitions, not the cells.
+_DEFINITION_CAUSES = ("Cube computes ", "Recorded definitions:")
+# Words any column name or description carries, which tie a doc to nothing.
+_GENERIC_WORDS = frozenset(
+    {"name", "code", "type", "level", "id", "number", "date", "key", "label"}
+    | {"value", "the", "for", "per", "each", "with", "this", "and", "from"}
+    | {"that", "any"}
+)
 
 
 @dataclass(frozen=True)
@@ -204,6 +224,50 @@ def _doc_evidence(members: list[str], docs: dict[str, MemberDoc]) -> tuple[str, 
     return tuple(out)
 
 
+def _group_topic(
+    g: Group, to_cube: dict[str, str], docs: dict[str, MemberDoc]
+) -> dict[str, set[str]]:
+    """Words naming a group's columns, keyed by the member each column is.
+
+    Each column gives its name, its member's and the member's title. A
+    dashboard-only filter's dim names the filter's column in its value and
+    belongs to no member (key `""`).
+    """
+    out: dict[str, set[str]] = {}
+    for column, value in g.dims:
+        if column == "dashboard_filter":
+            out.setdefault("", set()).update(_tokens(value))
+            continue
+        member = to_cube.get(column, column)
+        title = docs[member].title if member in docs else ""
+        out.setdefault(member, set()).update(_tokens(f"{column} {member} {title}"))
+    return {k: w - _GENERIC_WORDS for k, w in out.items()}
+
+
+def _cells_topic(diff: CellDiff) -> set[str]:
+    """Words of a cell set's candidate causes, past their fixed wording, counts and the definitions."""
+    words = set().union(
+        *(_tokens(c) for c in diff.causes if not c.startswith(_DEFINITION_CAUSES))
+    )
+    return {w for w in words - _CAUSE_WORDS - _GENERIC_WORDS if not w.isdigit()}
+
+
+def _speaks_to(
+    members: list[str], topics: dict[str, set[str]], docs: dict[str, MemberDoc]
+) -> bool:
+    """Whether a member's description or ai_context names a word of the item.
+
+    A member's own words never count for it: every column's description names
+    the column, so it says nothing about why that column's rows differ.
+    """
+    return any(
+        _tokens(text) & set().union(*(w for k, w in topics.items() if k != name))
+        for name in members
+        if (d := docs.get(name))
+        for text in (d.description, d.ai_context)
+    )
+
+
 def suggest(
     cfg: ViewConfig,
     run: RunResult,
@@ -222,6 +286,12 @@ def suggest(
 
     Returns:
         One suggestion per open item, ordered by `SUGGESTIONS`, owner last.
+        `docs` needs a description or ai_context of an involved member to name
+        the item: its group's column or that member's title, the gap's
+        caption, or a word of the cell set's candidate causes. A member's
+        docs never count for its own column, and the measure's name and title
+        never count, since its description is always there. Docs that name
+        nothing are still quoted on an `owner` item.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     entries = _entries(run)
@@ -231,12 +301,16 @@ def suggest(
         verdict_lines: tuple[str, ...] = ()
         candidates: tuple[str, ...] = ()
         members: list[str] = []
+        measures: list[str] = []
+        topics: dict[str, set[str]] = {}
         call = ""
 
         if isinstance(source, Gap):
             gap = source
             caption = gap.field
-            members = [by_id[c].measure for c in gap.comparisons if c in by_id]
+            measures = [by_id[c].measure for c in gap.comparisons if c in by_id]
+            members = list(measures)
+            topics = {"": _tokens(caption) - _GENERIC_WORDS}
             # Only the sheets the gap sits on speak for it; a proof that
             # predates `restricting_filters` leaves the answer unknown.
             proofs: list[Proof] = [
@@ -263,15 +337,24 @@ def suggest(
         else:
             comparison = by_id.get(item.comparison)
             if comparison:
-                members = [comparison.measure]
+                measures = [comparison.measure]
+                members = list(measures)
                 if isinstance(source, Group):
                     to_cube = {p.dashboard: p.cube for p in comparison.dims}
                     members += [to_cube.get(c, c) for c, _ in source.dims]
+                    topics = _group_topic(source, to_cube, docs)
+                elif isinstance(source, CellDiff):
+                    topics = {"": _cells_topic(source)}
 
         if not call:
+            for m in measures:
+                own = _tokens(f"{m} {docs[m].title if m in docs else ''}")
+                topics = {k: w - own for k, w in topics.items()}
             quoted = _doc_evidence(members, docs)
-            call = "docs" if quoted else "owner"
-            evidence = verdict_lines + (quoted or (NO_ANSWER,))
+            if _speaks_to(members, topics, docs):
+                call, evidence = "docs", verdict_lines + quoted
+            else:
+                call, evidence = "owner", verdict_lines + quoted + (NO_ANSWER,)
 
         if isinstance(source, Group) and source.dims:
             stub_group = item.stub["group"]
@@ -290,6 +373,56 @@ def suggest(
         out.append(Suggestion(item, call, evidence, candidates))
 
     return sorted(out, key=lambda s: SUGGESTIONS.index(s.suggestion))
+
+
+# --- the printed batch -------------------------------------------------------
+
+# Items listed per suggestion; `triage.json` keeps them all.
+BATCH_CAP = 25
+
+
+def _counts(counter: Counter, order: tuple[str, ...] = ()) -> str:
+    """`k n` pairs in `order`, then by name."""
+    rank = {k: i for i, k in enumerate(order)}
+    keys = sorted(counter, key=lambda k: (rank.get(k, len(order)), k))
+    return ", ".join(f"{k} {counter[k]:,}" for k in keys)
+
+
+def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
+    """The lines `triage` prints: a summary, a blank line, then the items.
+
+    The summary counts each comparison's items by suggestion and by kind, and
+    its row groups by bucket. Each suggestion then lists its first
+    `BATCH_CAP` items with their evidence and says how many more
+    `triage.json` holds.
+    """
+    buckets = {i.id: g.bucket for i, g in _entries(run) if isinstance(g, Group)}
+    lines = ["Summary"]
+    for comparison in dict.fromkeys(s.item.comparison for s in found):
+        mine = [s for s in found if s.item.comparison == comparison]
+        lines.append(f"  {comparison or '(no comparison)'}: {len(mine):,} items")
+        lines.append(
+            f"    by suggestion: {_counts(Counter(s.suggestion for s in mine), SUGGESTIONS)}"
+        )
+        lines.append(f"    by kind: {_counts(Counter(s.item.kind for s in mine))}")
+        in_buckets = Counter(buckets[s.item.id] for s in mine if s.item.id in buckets)
+        if in_buckets:
+            lines.append(f"    groups by bucket: {_counts(in_buckets)}")
+    lines.append("")
+
+    for call in SUGGESTIONS:
+        group = [s for s in found if s.suggestion == call]
+        if not group:
+            continue
+        lines.append(f"{call} ({len(group)})")
+        for s in group[:BATCH_CAP]:
+            lines.append(f"- {s.item.label}")
+            lines += [f"    {line}" for line in s.evidence]
+            if s.candidates:
+                lines.append(f"    candidates: {', '.join(s.candidates)}")
+        if len(group) > BATCH_CAP:
+            lines.append(f"  … {len(group) - BATCH_CAP:,} more in triage.json")
+    return lines
 
 
 # --- value checks and the command --------------------------------------------
@@ -417,8 +550,8 @@ def run_triage(
 ) -> list[Suggestion]:
     """Suggest a call for each open item of the view's latest run and print them.
 
-    Writes `triage.json` beside that run's `run.json`: it stays in the local
-    cache, and its stubs carry real values.
+    Prints `batch_lines`. Writes every item to `triage.json` beside that run's
+    `run.json`: it stays in the local cache, and its stubs carry real values.
 
     Raises:
         pipeline.Refusal: The view has no usable saved run (see
@@ -463,16 +596,6 @@ def run_triage(
         )
     )
 
-    for call in SUGGESTIONS:
-        group = [s for s in found if s.suggestion == call]
-        if not group:
-            continue
-        print(f"{call} ({len(group)})")
-        for s in group:
-            print(f"- {s.item.label}")
-            for line in s.evidence:
-                print(f"    {line}")
-            if s.candidates:
-                print(f"    candidates: {', '.join(s.candidates)}")
+    print("\n".join(batch_lines(run, found)))
     print(f"Saved {out}")
     return found
