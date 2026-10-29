@@ -42,7 +42,7 @@ Output shape:
   "step_14_queued_runs": {"runs": [...], "stuckCount": N},
   "step_15_backfills":   {"requested": [...], "failed": [...]},
   "step_16_asset_checks":{"totalChecks": N, "failedCount": N, "inWindow_error": [...], "inWindow_warn": [...], "stale_error": [...], "stale_warn": [...]},
-  "step_17_degraded_assets":{"totalAssets": N, "degradedCount": N, "inWindowCount": N, "staleCount": N, "degraded": [{"asset":..., "latestRunId":..., "latestRunEndTime":..., "materializationType":"view|table|...|null"}], "byRun": [{"runId":..., "endTime":..., "endTimeEt":"...", "inWindow": bool, "count":N, "byMaterializationType":{"view": N}, "assets":[...]}]}
+  "step_17_degraded_assets":{"totalAssets": N, "degradedCount": N, "inWindowCount": N, "staleCount": N, "degraded": [{"asset":..., "latestRunId":..., "latestRunEndTime":..., "materializationType":"view|table|...|null"}], "byRun": [{"runId":..., "endTime":..., "endTimeEt":"...", "inWindow": bool, "count":N, "byMaterializationType":{"view": N, "non-dbt": N}, "assets":[...]}]}
 }
 ```
 
@@ -61,9 +61,11 @@ then cross-reference `step_01_failed_runs.failures` for the run-level root
 cause. Step-level recovery (e.g. auto-mat retry within minutes) leaves the prior
 run's overall status as FAILURE, so a "degraded" asset whose last-mat timestamp
 is later than its `latestRunEndTime` was actually recovered — read both fields.
-`materializationType` is the dbt materialization, null for non-dbt assets. A dbt
-view re-runs only on a code change, so a view in a stale cluster stays flagged
-until someone materializes it by hand, even when its view in BigQuery works.
+`materializationType` is the dbt materialization, null for non-dbt assets
+(counted as `non-dbt` in `byMaterializationType`). A plain dbt view re-runs only
+on a code change (a `union_relations` view also re-runs after a parent's code
+change), so a view in a stale cluster stays flagged until someone materializes
+it by hand, even when its view in BigQuery works.
 
 Per-step error: if a step fails, its key holds `{"error": "..."}` instead of the
 normal payload. Other steps still complete. Re-run the script if a key finding
@@ -79,15 +81,17 @@ context — see the reclassify table below.
 - `BigQuery transient`: BigQuery failed the job itself (`internalError`,
   `backendError`). dbt never resubmits a failed job, since `job_retries` covers
   only the submit and poll API calls, so the Dagster run retry is the only
-  recovery. Not a code bug.
+  recovery. Not a code bug, unless the auto-retry fails the same way: then treat
+  it as a query or code issue.
 - `K8s pre-start kill`: `Discovered failed Kubernetes job` with no
   `LogsCapturedEvent` for the failing step, so the pod died at the K8s layer
   (FailedScheduling exhaustion, eviction after Scheduled, image pull) before
   step code ran. Same root cause as `Step preempt-hang`, different surface;
   retry typically succeeds once Autopilot stabilizes. Confirm with audit log
   `io.k8s.batch.v1.jobs.create` plus pod events for `dagster-step-<hash>-.*`.
-  The check reads `logsForRun` with a 500-event limit, so a long run whose
-  captured-logs event falls past it lands in `Code error` instead.
+  The check matches step keys, not attempts: a step with a `RetryPolicy` whose
+  first attempt captured logs and whose retry pod died before starting lands in
+  `Code error`, so check the attempts on a retried step's `Code error`.
 
 ## Phase 2: Correlate and report
 

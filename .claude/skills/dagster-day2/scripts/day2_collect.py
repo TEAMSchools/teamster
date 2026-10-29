@@ -109,7 +109,7 @@ ET = ZoneInfo("America/New_York")
 
 
 def to_et(epoch: float | None) -> str | None:
-    """Dagster float-seconds epoch as an ET wall-clock string."""
+    """Float-seconds epoch as an ET wall-clock string."""
     if epoch is None:
         return None
     return datetime.fromtimestamp(epoch, ET).strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -135,19 +135,18 @@ def get_token() -> str:
 
 def compute_window(args: argparse.Namespace) -> tuple[float, str, str]:
     """Returns (epoch_start, utc_start_iso, utc_end_iso)."""
-    et = ZoneInfo("America/New_York")
     now_utc = datetime.now(UTC)
     if args.hours:
         start = now_utc - timedelta(hours=args.hours)
     elif args.since:
         date = datetime.strptime(args.since, "%Y-%m-%d").date()
-        start = datetime.combine(date, time(17, 0), tzinfo=et).astimezone(UTC)
+        start = datetime.combine(date, time(17, 0), tzinfo=ET).astimezone(UTC)
     else:
         # Default: 5pm ET previous business day.
-        today_et = now_utc.astimezone(et).date()
+        today_et = now_utc.astimezone(ET).date()
         offset = {0: 3, 6: 2}.get(today_et.weekday(), 1)  # Mon→Fri, Sun→Fri
         prev = today_et - timedelta(days=offset)
-        start = datetime.combine(prev, time(17, 0), tzinfo=et).astimezone(UTC)
+        start = datetime.combine(prev, time(17, 0), tzinfo=ET).astimezone(UTC)
     return (
         start.timestamp(),
         start.isoformat().replace("+00:00", "Z"),
@@ -608,8 +607,8 @@ async def step_17_degraded_assets(gql: GraphQL, after_epoch: float) -> dict:
     Use this list as a starting point and verify per-asset.
 
     `materializationType` is the dbt materialization (view/table/...) or null
-    for non-dbt assets. A dbt view only re-runs on a code change, so a failed
-    view run stays flagged until someone materializes it by hand.
+    for non-dbt assets. A plain dbt view only re-runs on a code change, so a
+    failed view run stays flagged until someone materializes it by hand.
     """
     nodes = (await gql.query(ASSETS_QUERY)).get("assetNodes") or []
     keys = [{"path": n["assetKey"]["path"]} for n in nodes]
@@ -663,7 +662,7 @@ async def step_17_degraded_assets(gql: GraphQL, after_epoch: float) -> dict:
                 "inWindow": end is not None and end >= after_epoch,
                 "count": len(items),
                 "byMaterializationType": dict(
-                    Counter(str(d["materializationType"]) for d in items)
+                    Counter(d["materializationType"] or "non-dbt" for d in items)
                 ),
                 "assets": [d["asset"] for d in items],
             }
@@ -1082,9 +1081,11 @@ def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
         pod_events.append(
             {
                 "timestamp": e["timestamp"],
-                "timestampEt": datetime.fromisoformat(e["timestamp"])
-                .astimezone(ET)
-                .strftime("%Y-%m-%d %H:%M:%S %Z"),
+                "timestampEt": to_et(
+                    datetime.fromisoformat(
+                        e["timestamp"].replace("Z", "+00:00")
+                    ).timestamp()
+                ),
                 "podName": pod_name,
                 "reason": e.get("jsonPayload", {}).get("reason"),
                 "message": e.get("jsonPayload", {}).get("message"),
