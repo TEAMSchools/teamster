@@ -8,10 +8,12 @@ row through Cube's (`sqlsteps` finds the steps). At each level:
    them as one cause (`A / B`: either alone lets it through); across scopes
    it stays unattributed.
 2. The rest are checked for presence: the level's SQL with every one of its
-   own steps neutralized, its tables unchanged. A row that brings back is in
-   the tables and dropped by several steps here; a pair of steps in one
-   scope that alone brings it back is its cause (`A + B`), else it stays
-   unattributed. It never descends.
+   own steps neutralized, its tables unchanged, with the row picks kept and
+   then, for the rows still missing, dropped too. A row the first brings
+   back is in the tables and dropped by several steps here; a pair of steps
+   in one scope that alone brings it back is its cause (`A + B`), else it
+   stays unattributed. A row only the second brings back is dropped by a
+   row pick, here or above. Neither descends.
 3. Only a row presence does not bring back is missing from a table this level
    reads. The trace then inlines that table's dbt compiled SQL, as of the
    moment, and repeats, at most `MAX_LEVELS` tables deep, into a table whose
@@ -109,8 +111,10 @@ class ItemTrace:
     together (`a+b`). The rest are unattributed: `many` recovered by steps of
     several scopes, `pairs_many` by several pairs, `needs_more` present but
     recovered by no single step or pair, `skipped` present but with more
-    pairs than `MAX_PAIRS` to search, `stand_in` recovered only where a row
-    pick after the step held another row that could stand in, `unreproduced`
+    pairs than `MAX_PAIRS` to search, `picked` present once every step is
+    neutralized but dropped by a row pick here or above, `stand_in` recovered
+    only where a row pick after the step held another row that could stand
+    in, `unreproduced`
     already returned by
     the unrelaxed SQL, `duplicates` a grain the other side holds twice,
     `unknown` behind a query that failed or a stop, and `none` missing below
@@ -127,6 +131,7 @@ class ItemTrace:
     pairs_many: int = 0
     needs_more: Counter = field(default_factory=Counter)
     skipped: Counter = field(default_factory=Counter)
+    picked: Counter = field(default_factory=Counter)
     stand_in: Counter = field(default_factory=Counter)
     unreproduced: Counter = field(default_factory=Counter)
     duplicates: int = 0
@@ -160,6 +165,10 @@ class ItemTrace:
         out += [
             (f"pair search skipped: {why}", n)
             for why, n in sorted(self.skipped.items())
+        ]
+        out += [
+            (f"a row pick drops it; the row is in the tables {at} reads", n)
+            for at, n in sorted(self.picked.items())
         ]
         out += [
             (f"a row pick follows {at}; another row could stand in", n)
@@ -761,6 +770,10 @@ class _Bucket:
         """A step's or a pair's (`a+b`) label."""
         return self._label(step_id.split("+"), " + ")
 
+    def _where(self, frame: _Frame) -> str:
+        """A frame as the reasons name it: its table, or the side's own SQL."""
+        return frame.name or f"the {self.side.side} SQL"
+
     def _fail(self, in_play: dict[tuple, int]) -> dict[tuple, int]:
         for key, n in in_play.items():
             self.out[key].unknown += n
@@ -851,10 +864,13 @@ class _Bucket:
             if not in_play:
                 return self._end({})
             # Every step of this frame and of every frame above it is
-            # neutralized, row picks included: the check asks only whether
-            # the row is in the tables this frame reads.
+            # neutralized, the row picks kept, the tables unchanged: a row
+            # this brings back is in the tables and dropped by several steps.
             gates = [
-                (f"{PRESENT}{i}", side.rows(f.full_relaxed(f.query.relaxed_all())))
+                (
+                    f"{PRESENT}{i}",
+                    side.rows(f.full_relaxed(f.query.relaxed_all(picks=False), False)),
+                )
                 for i, f in enumerate(frames)
             ]
             got = self.runner.level(gates, exclude, f"{depth}, presence")
@@ -874,6 +890,30 @@ class _Bucket:
             for i, rows in present.items():
                 self._search_pairs(frames[i], gates[i][1], rows, exclude, depth)
             exclude = exclude + [sql for _, sql in gates]
+
+            # Then with the row picks dropped too: a row this brings back is
+            # in the tables and dropped by a row pick, here or above.
+            in_play = {k: n for k, n in missing.items() if n}
+            if not in_play:
+                return self._end({})
+            picked = [
+                (f"{PRESENT}{i}", side.rows(f.full_relaxed(f.query.relaxed_all())))
+                for i, f in enumerate(frames)
+            ]
+            got = self.runner.level(picked, exclude, f"{depth}, row picks")
+            if got is None:
+                return self._end(self._fail(in_play))
+            found, _ = got
+            missing = {}
+            for key, counts in found.items():
+                if key not in out:
+                    continue
+                for step_id, n in counts.items():
+                    if step_id == NONE:
+                        missing[key] = n
+                    elif step_id.startswith(PRESENT):
+                        out[key].picked[self._where(frames[int(step_id[1:])])] += n
+            exclude = exclude + [sql for _, sql in picked]
 
             in_play = {k: n for k, n in missing.items() if n}
             if not in_play or self.manifest is None:
@@ -900,7 +940,7 @@ class _Bucket:
         depth: str,
     ) -> None:
         """Attribute rows present at `frame` to the one same-scope pair recovering them."""
-        where = frame.name or f"the {self.side.side} SQL"
+        where = self._where(frame)
         steps = frame.query.steps(self.side.side, frame.name)
         pairs = _pairs(steps)
         if len(pairs) > MAX_PAIRS:

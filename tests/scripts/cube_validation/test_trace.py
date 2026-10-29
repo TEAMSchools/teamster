@@ -931,3 +931,18 @@ def test_a_pick_in_the_level_above_guards_a_step_below(duck, tmp_path):
 
     assert found.proven
     assert [c["label"] for c in found.cause()] == ["fact3/main: keep"]
+
+
+def test_a_row_only_a_row_pick_drops_says_so(duck):
+    # M-new-1: (1, a) passes `x`; the pick keeps b. The reason must not point
+    # at steps, and no pair search is needed.
+    _cube_rows(duck, [(1, "a", "X")])
+    duck.table("src", SRC, [(1, "a", "X", 1, True), (1, "b", "X", 2, True)])
+
+    found = _trace(duck, PICKED, [_group(1)])[trace.item_key(_group(1))]
+
+    assert not found.proven and not found.steps and not found.needs_more
+    assert found.evidence()[-1] == (
+        "<10 rows unattributed: <10 a row pick drops it; the row is in the "
+        "tables the dashboard SQL reads"
+    )

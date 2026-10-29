@@ -232,16 +232,21 @@ cause, do not retry around it.
      one scope each bring back is attributed to them as one cause (`A / B`);
      across scopes it stays unattributed.
    - The rest are checked for presence: every step of the level and of every
-     level above neutralized, row picks too, its tables unchanged. A present row
-     is attributed to the 1 pair of steps in one scope that brings it back
-     (`A + B`); 3 or more steps, steps in 2 or more scopes, or a row pick stay
-     unattributed. A present row never descends.
+     level above neutralized, its tables unchanged, with the row picks kept and
+     then dropped too. A row present with the picks kept is attributed to the 1
+     pair of steps in one scope that brings it back (`A + B`); 3 or more steps,
+     or steps in 2 or more scopes, stay unattributed. A row present only with
+     the picks dropped reads "a row pick drops it". A present row never
+     descends.
    - Only a row missing from a table descends into it, through the table's dbt
      compiled SQL as of the run's moment, 3 tables deep.
    - A grain the other side holds twice is never attributed.
-   - A step (or pair, or fallback) ahead of a row pick counts only for rows
-     whose pick partition held 1 candidate once the step is neutralized;
-     otherwise another row could stand in, and the row stays unattributed.
+   - A step (or pair, or fallback) ahead of a row pick, in its level or any
+     level above, counts only for rows whose pick partition held 1 candidate
+     once the step is neutralized; otherwise another row could stand in, and the
+     row stays unattributed. So do all of its rows where the candidates cannot
+     be counted: a UNION branch computes the pick column without a window, or
+     the count would cross an EXCEPT, INTERSECT, UNION DISTINCT or an aggregate.
 
    A group whose rows are all attributed lands in `cause` with each cause and
    its rows; otherwise it stays in `investigate` with the counts and why the
