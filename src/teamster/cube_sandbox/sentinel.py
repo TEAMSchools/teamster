@@ -44,6 +44,14 @@ _SCHOOL = re.compile(r"^SBX\d{3}$")
 _POLL_SECONDS = 120
 
 
+def _redact_email(value: object) -> str:
+    # This check fails exactly when real records are being served, so the
+    # offending value is likely a real person's address. Keep the domain,
+    # which is what proves the leak, and drop the person.
+    _, at, domain = str(value).rpartition("@")
+    return f"***@{domain}" if at else "***"
+
+
 def violations(seen: dict[str, list[Any]]) -> list[str]:
     """Every value outside the fabricated shapes, and every empty member."""
     found = []
@@ -54,8 +62,11 @@ def violations(seen: dict[str, list[Any]]) -> list[str]:
             continue
         for value in present:
             if member in EMAIL_MEMBERS and not str(value).endswith(".invalid"):
-                found.append(f"{member}: {value!r} is not on a .invalid domain")
+                found.append(
+                    f"{member}: {_redact_email(value)!r} is not on a .invalid domain"
+                )
             elif member in SCHOOL_MEMBERS and not _SCHOOL.match(str(value)):
+                # School abbreviations are public reference data, not PII.
                 found.append(f"{member}: {value!r} is not a sandbox school")
     return found
 
@@ -90,7 +101,10 @@ def fetch_values(url: str, secret: str, member: str, viewer: str) -> list[Any]:
             time.sleep(1)
             continue
         if not response.ok or "data" not in payload:
-            raise SystemExit(f"{member}: HTTP {response.status_code} {payload}")
+            # The error field only: a body that carries rows may carry people.
+            raise SystemExit(
+                f"{member}: HTTP {response.status_code} {payload.get('error')}"
+            )
         return [row.get(member) for row in payload["data"]]
 
 

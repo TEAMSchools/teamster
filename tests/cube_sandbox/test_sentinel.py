@@ -13,10 +13,12 @@ def test_fabricated_values_pass() -> None:
     assert sentinel.violations(seen) == []
 
 
-def test_a_real_looking_email_is_a_violation() -> None:
+def test_a_real_looking_email_is_a_violation_and_is_redacted() -> None:
+    # The check fails exactly when real people are being served, so it must
+    # not print who they are.
     seen = {"staff_directory.work_email": ["someone@apps.teamschools.org"]}
     assert sentinel.violations(seen) == [
-        "staff_directory.work_email: 'someone@apps.teamschools.org' is not "
+        "staff_directory.work_email: '***@apps.teamschools.org' is not "
         "on a .invalid domain"
     ]
 
