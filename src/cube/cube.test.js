@@ -74,10 +74,39 @@ test("checkAuth: a fresh token resolves via the CUBE_GROUP_MAP dev bypass", asyn
   assert.deepEqual(req.securityContext.groups, ["staff-directory"]);
 });
 
-test("checkAuth: no Authorization token resolves to the default-deny context", async () => {
-  const req = {};
-  await cube.checkAuth(req, undefined);
-  assert.deepEqual(req.securityContext.groups, []);
+test("checkAuth: no Authorization token is rejected with 401", async () => {
+  // Resolving it to the default-deny context instead surfaced to the caller as
+  // a 500 "You requested hidden member" on every view, which reads as an outage
+  // and tells the caller to edit the model.
+  for (const auth of [undefined, ""]) {
+    const req = {};
+    await assert.rejects(
+      () => cube.checkAuth(req, auth),
+      (err) => {
+        assert.equal(err.status, 401);
+        assert.match(err.message, /Authorization/);
+        return true;
+      },
+    );
+    assert.equal(req.securityContext, undefined);
+  }
+});
+
+test("checkAuth: a too-old token's message tells an API caller what to do", async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "stale@apps.teamschools.org",
+    iat: now - 13 * 60 * 60,
+    exp: now + 300,
+  });
+  await assert.rejects(
+    () => cube.checkAuth({}, token),
+    (err) => {
+      assert.match(err.message, /mint a new token/i);
+      assert.doesNotMatch(err.message, /Playground|localhost/);
+      return true;
+    },
+  );
 });
 
 test("checkAuth: a token past the 12h maxAge is rejected even when exp is still valid", async () => {
