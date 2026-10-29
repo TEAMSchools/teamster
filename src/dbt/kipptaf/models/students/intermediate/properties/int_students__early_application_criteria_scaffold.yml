@@ -1,0 +1,315 @@
+models:
+  - name: int_students__early_application_criteria_scaffold
+    description: One row per current senior at the 3 KIPP high schools (flagged
+      or not) and each early-application goal for their GPA band. 3.75+ seniors
+      get 1 ED college at 80%+ URM that meets full need, and 2 EA colleges at
+      78%+ URM. 3.50-3.74 seniors get 1 ED or EA college at 80%+ URM that meets
+      full need, and 2 additional early colleges at 68%+ URM, where the
+      alphabetically first full-need 80%+ college is set aside and not counted
+      again. 3.00-3.49 seniors get 3 early colleges at 68%+ URM. Seniors below
+      3.00 or with no GPA get no rows. Only submitted applications count, and
+      counts are distinct colleges.
+
+
+      A near-bar college is a submitted application of the type the goal needs
+      with a URM rate under the bar by 5 points or less. A goal that is not met
+      is a near miss when it needs 1 college and the senior has a near-bar
+      college, or when it needs 2 or 3 colleges and the senior is 1 college
+      short or has enough near-bar colleges to close the gap.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - overgrad_student_id
+              - criterion_code
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location the Overgrad record came from.
+      - name: overgrad_student_id
+        data_type: int64
+        description: Overgrad student id.
+      - name: gpa_band
+        data_type: string
+        description: The senior's early-application goal band.
+        config:
+          meta:
+            contains_pii: true
+      - name: criterion_code
+        data_type: string
+        description:
+          Goal code — ed_80_full_need, ea_78, early_80_full_need, additional_68,
+          or early_68.
+      - name: criterion_sort
+        data_type: int64
+        description: Display order of the goal, 1 to 5.
+      - name: criterion_label
+        data_type: string
+        description: Readable goal name for the tracker.
+      - name: required_count
+        data_type: int64
+        description: Number of qualifying colleges the goal needs.
+      - name: urm_bar
+        data_type: int64
+        description:
+          Minimum URM graduation rate, 0 to 100, a college needs to qualify.
+      - name: qualifying_count
+        data_type: int64
+        description:
+          Distinct submitted colleges of the right type at or above the bar,
+          after the set-aside college for the additional goal.
+        config:
+          meta:
+            contains_pii: true
+      - name: near_bar_count
+        data_type: int64
+        description:
+          Distinct submitted colleges of the right type up to 5 points under the
+          bar.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_met
+        data_type: boolean
+        description: True when qualifying_count reaches required_count.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_near_miss
+        data_type: boolean
+        description:
+          True when the goal is not met but is a near miss, as defined above.
+        config:
+          meta:
+            contains_pii: true
+      - name: qualifying_colleges
+        data_type: string
+        description:
+          Qualifying colleges as "College (ED) 95.8%", alphabetical and
+          comma-separated. Null when none.
+        config:
+          meta:
+            contains_pii: true
+      - name: near_bar_colleges
+        data_type: string
+        description: Near-bar colleges in the same format. Null when none.
+        config:
+          meta:
+            contains_pii: true
+      - name: what_they_have
+        data_type: string
+        description:
+          Qualifying and near-bar colleges as "Qualifying — ...; Near the bar —
+          ...", leaving out an empty part. Null when the senior has neither.
+        config:
+          meta:
+            contains_pii: true
+      - name: what_would_close_it
+        data_type: string
+        description:
+          For a near miss only, what would meet the goal. A 1-college goal names
+          the closest near-bar college and how many points short it is; a 2- or
+          3-college goal says how many more colleges at the bar are needed.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_int_students__early_application_criteria_scaffold_3_75_band
+    model: int_students__early_application_criteria_scaffold
+    description:
+      A 3.75+ senior with an 80%+ ED college and 2 EA colleges at 78%+ meets
+      both goals. A senior with a 78.2% ED college and 1 EA college at 78%+
+      misses both, and both are near misses.
+    given:
+      - input: ref("int_students__early_applications_rollup")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, '3.75+' as gpa_band
+          union all
+          select 'kippcamden', 2, '3.75+'
+      - input: ref("int_students__early_applications")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'ED' as application_type, true as is_submitted, cast(95.8 as numeric) as urm_graduation_rate, true as is_full_need
+          union all
+          select 'kippcamden', 1, 102, 'Example College B', 'EA', true, cast(79.1 as numeric), true
+          union all
+          select 'kippcamden', 1, 103, 'Example College C', 'EA', true, cast(88.8 as numeric), true
+          union all
+          select 'kippcamden', 2, 104, 'Example College D', 'ED', true, cast(78.2 as numeric), true
+          union all
+          select 'kippcamden', 2, 102, 'Example College B', 'EA', true, cast(79.1 as numeric), true
+          union all
+          select 'kippcamden', 2, 105, 'Example College E', 'EA', true, cast(73.6 as numeric), true
+    expect:
+      rows:
+        - overgrad_student_id: 1
+          criterion_code: ed_80_full_need
+          is_met: true
+          is_near_miss: false
+          qualifying_count: 1
+          near_bar_count: 0
+          what_they_have: "Qualifying: Example College A (ED) 95.8%"
+          what_would_close_it: null
+        - overgrad_student_id: 1
+          criterion_code: ea_78
+          is_met: true
+          is_near_miss: false
+          qualifying_count: 2
+          near_bar_count: 0
+          what_they_have:
+            "Qualifying: Example College B (EA) 79.1%, Example College C (EA)
+            88.8%"
+          what_would_close_it: null
+        - overgrad_student_id: 2
+          criterion_code: ed_80_full_need
+          is_met: false
+          is_near_miss: true
+          qualifying_count: 0
+          near_bar_count: 1
+          what_they_have: "Near the bar: Example College D (ED) 78.2%"
+          what_would_close_it:
+            "An ED college at 80%+ (closest: Example College D at 78.2%, 1.8
+            points short)"
+        - overgrad_student_id: 2
+          criterion_code: ea_78
+          is_met: false
+          is_near_miss: true
+          qualifying_count: 1
+          near_bar_count: 1
+          what_they_have:
+            "Qualifying: Example College B (EA) 79.1%; Near the bar: Example
+            College E (EA) 73.6%"
+          what_would_close_it: 1 more EA college at 78%+
+
+  - name: test_int_students__early_application_criteria_scaffold_narrow_near_miss
+    model: int_students__early_application_criteria_scaffold
+    description:
+      On the 3-college goal, a near-bar college counts toward a near miss only
+      when it would close the gap.
+    given:
+      - input: ref("int_students__early_applications_rollup")
+        format: sql
+        rows: |
+          select 'kippnewark' as _dbt_source_project, 3 as overgrad_student_id, '3.00-3.49' as gpa_band
+          union all
+          select 'kippnewark', 4, '3.00-3.49'
+      - input: ref("int_students__early_applications")
+        format: sql
+        rows: |
+          select 'kippnewark' as _dbt_source_project, 3 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'EA' as application_type, true as is_submitted, cast(65.0 as numeric) as urm_graduation_rate, true as is_full_need
+          union all
+          select 'kippnewark', 4, 102, 'Example College B', 'EA', true, cast(70.0 as numeric), true
+          union all
+          select 'kippnewark', 4, 103, 'Example College C', 'ED', true, cast(72.0 as numeric), true
+          union all
+          select 'kippnewark', 4, 104, 'Example College D', 'EA', true, cast(63.0 as numeric), true
+    expect:
+      rows:
+        - overgrad_student_id: 3
+          criterion_code: early_68
+          is_met: false
+          is_near_miss: false
+          qualifying_count: 0
+          near_bar_count: 1
+          what_would_close_it: null
+        - overgrad_student_id: 4
+          criterion_code: early_68
+          is_met: false
+          is_near_miss: true
+          qualifying_count: 2
+          near_bar_count: 1
+          what_would_close_it: 1 more early college at 68%+
+
+  - name: test_int_students__early_application_criteria_scaffold_additional
+    model: int_students__early_application_criteria_scaffold
+    description:
+      For 3.50-3.74, the alphabetically first full-need 80%+ college is set
+      aside, and a second full-need college counts as additional.
+    given:
+      - input: ref("int_students__early_applications_rollup")
+        format: sql
+        rows: |
+          select 'kippnewark' as _dbt_source_project, 5 as overgrad_student_id, '3.50-3.74' as gpa_band
+      - input: ref("int_students__early_applications")
+        format: sql
+        rows: |
+          select 'kippnewark' as _dbt_source_project, 5 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'EA' as application_type, true as is_submitted, cast(92.0 as numeric) as urm_graduation_rate, true as is_full_need
+          union all
+          select 'kippnewark', 5, 102, 'Example College B', 'ED', true, cast(88.0 as numeric), true
+          union all
+          select 'kippnewark', 5, 103, 'Example College C', 'EA', true, cast(70.0 as numeric), true
+    expect:
+      rows:
+        - overgrad_student_id: 5
+          criterion_code: early_80_full_need
+          is_met: true
+          qualifying_count: 2
+          qualifying_colleges:
+            Example College A (EA) 92.0%, Example College B (ED) 88.0%
+        - overgrad_student_id: 5
+          criterion_code: additional_68
+          is_met: true
+          qualifying_count: 2
+          qualifying_colleges:
+            Example College B (ED) 88.0%, Example College C (EA) 70.0%
+
+  - name: test_int_students__early_application_criteria_scaffold_edges
+    model: int_students__early_application_criteria_scaffold
+    description:
+      A rate exactly on the bar qualifies, exactly 5 under is near the bar, 5.1
+      under is neither, a college with no rate never counts, and a senior with
+      no GPA gets no rows.
+    given:
+      - input: ref("int_students__early_applications_rollup")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 6 as overgrad_student_id, '3.75+' as gpa_band
+          union all
+          select 'kippcamden', 7, '3.75+'
+          union all
+          select 'kippcamden', 8, '3.75+'
+          union all
+          select 'kippcamden', 9, 'No GPA'
+      - input: ref("int_students__early_applications")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 6 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'ED' as application_type, true as is_submitted, cast(80.0 as numeric) as urm_graduation_rate, true as is_full_need
+          union all
+          select 'kippcamden', 7, 102, 'Example College B', 'ED', true, cast(75.0 as numeric), true
+          union all
+          select 'kippcamden', 7, 103, 'Example College C', 'EA', true, cast(null as numeric), true
+          union all
+          select 'kippcamden', 8, 104, 'Example College D', 'ED', true, cast(74.9 as numeric), true
+          union all
+          select 'kippcamden', 9, 105, 'Example College E', 'ED', true, cast(90.0 as numeric), true
+    expect:
+      rows:
+        - overgrad_student_id: 6
+          criterion_code: ed_80_full_need
+          is_met: true
+          is_near_miss: false
+        - overgrad_student_id: 6
+          criterion_code: ea_78
+          is_met: false
+          is_near_miss: false
+        - overgrad_student_id: 7
+          criterion_code: ed_80_full_need
+          is_met: false
+          is_near_miss: true
+        - overgrad_student_id: 7
+          criterion_code: ea_78
+          is_met: false
+          is_near_miss: false
+        - overgrad_student_id: 8
+          criterion_code: ed_80_full_need
+          is_met: false
+          is_near_miss: false
+        - overgrad_student_id: 8
+          criterion_code: ea_78
+          is_met: false
+          is_near_miss: false
