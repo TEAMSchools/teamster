@@ -207,12 +207,10 @@ cause, do not retry around it.
 8. `triage <file>` reads the latest run and writes `triage.json` beside its
    `run.json`. It sorts every open item (row groups, cell differences, missing
    cuts and filters) under one suggestion: `map_filters`, `filters_nothing`,
-   `docs`, then `owner`, each with a masked label and its evidence. Start the
-   batch from the summary it prints first (each comparison's items by
-   suggestion, kind and row-group bucket): thousands of groups in one bucket
-   point at the comparison's grain or config, not at items to sort one by one.
-   It then lists 25 items per suggestion; `triage.json` holds them all. Sort
-   every item into one of 5 piles (step 9 lists the calls):
+   `docs`, then `owner`, each with a masked label and its evidence. Start from
+   the summary it prints first; a flood in one bucket means fix the grain. It
+   lists 25 items per suggestion; `triage.json` holds them all. Sort every item
+   into one of 5 piles (step 9 lists the calls):
    - Map under `filters:`: a `same values: map it under filters:` verdict. Once
      the analyst approves the batch, map the field under the comparison's
      `filters:` instead of recording a decision, then re-prove the comparisons

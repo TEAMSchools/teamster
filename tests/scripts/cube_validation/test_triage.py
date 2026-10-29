@@ -9,6 +9,7 @@ from cube_validation.config import ColumnPair, Comparison, Proof, ViewConfig
 from cube_validation.cube_client import MemberDoc
 from cube_validation.decisions import Applied
 from cube_validation.moment import Build
+from cube_validation.pipeline import Cell, candidate_causes, cut_label, row_group_cause
 from cube_validation.report import RunResult
 from cube_validation.triage import (
     BATCH_CAP,
@@ -16,6 +17,7 @@ from cube_validation.triage import (
     SUGGESTIONS,
     Item,
     Suggestion,
+    _cells_topic,
     batch_lines,
     open_items,
     pii_members,
@@ -307,6 +309,62 @@ def test_cell_causes_that_a_description_names_suggest_docs():
     assert s.suggestion == "docs"
 
 
+def test_a_shared_column_suffix_does_not_explain_a_group():
+    docs = {
+        "region_name": _doc("region_name", description="Region name (Camden, Newark)."),
+    }
+    group = Group(
+        "enrollment",
+        (("region_name", "Camden"), ("school_name", "A")),
+        "cube_only",
+        40,
+        38,
+    )
+
+    [s] = suggest(_cfg(), _run(groups=[group]), docs)
+
+    assert s.suggestion == "owner"
+
+
+def test_a_specific_measure_statement_still_explains_a_group():
+    docs = {"student_count": _measure_doc("Excludes Miami grade 9 retakes.")}
+    group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
+
+    [s] = suggest(_cfg(), _run(groups=[group]), docs)
+
+    assert s.suggestion == "docs"
+
+
+def test_cell_cause_counts_do_not_explain_cells():
+    docs = {"student_count": _measure_doc("Counts 12 grades from 2019.")}
+    diff = CellDiff("enrollment", {"differs": 12}, ("12 of 2019 have x = 12",))
+
+    [s] = suggest(_cfg(), _run(cells=[diff]), docs)
+
+    assert s.suggestion == "owner"
+
+
+def test_cause_templates_leave_no_topic():
+    # Fails when a template in pipeline.candidate_causes or row_group_cause
+    # gains a word `_CAUSE_WORDS` lacks: add the word there.
+    comparison = Comparison(id="c", measure="m", probe="SELECT 1")
+    cells = [
+        Cell("c", cut_label({}), "k", d, c, v)
+        for d, c, v in [
+            (0.0, None, "dashboard_only"),
+            (5.0, None, "dashboard_only"),
+            (None, 0.0, "cube_only"),
+            (None, 5.0, "cube_only"),
+            (1.0, 2.0, "differs"),
+            (1.0, 9.0, "differs"),
+        ]
+    ]
+    causes = candidate_causes(comparison, cells, 0, "SUM(x)")
+    causes += [row_group_cause(3), row_group_cause(0)]
+
+    assert _cells_topic(CellDiff("c", {"differs": 6}, tuple(causes))) == set()
+
+
 def test_nothing_found_goes_to_owner_last():
     cfg = _cfg(restricting_filters=["Odd Field"])
     cells = CellDiff("enrollment", {"differs": 3})
@@ -387,7 +445,7 @@ def test_colliding_masked_ids_get_a_stable_suffix():
 
 def test_colliding_ids_keep_their_own_docs_evidence():
     cfg = _cfg()
-    docs = {"student_count": _measure_doc("Counts each student number once.")}
+    docs = {"student_count": _measure_doc("Excludes grade 9 retakes.")}
     a = Group("enrollment", (("student_number", "222"),), "cube_only", 2, 2)
     b = Group("enrollment", (("grade_level", "9"),), "value_differs", 2, 2)
     c = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
@@ -395,9 +453,9 @@ def test_colliding_ids_keep_their_own_docs_evidence():
     result = suggest(cfg, _run(groups=[a, b, c]), docs)
 
     by_id = {s.item.id: s for s in result}
-    assert by_id["enrollment:student_number=<redacted>"].suggestion == "docs"
-    assert by_id["enrollment:grade_level=<redacted>"].suggestion == "owner"
-    assert by_id["enrollment:grade_level=9"].suggestion == "owner"
+    assert by_id["enrollment:student_number=<redacted>"].suggestion == "owner"
+    assert by_id["enrollment:grade_level=<redacted>"].suggestion == "docs"
+    assert by_id["enrollment:grade_level=9"].suggestion == "docs"
 
 
 def test_stub_takes_the_first_column_no_sibling_shares():
@@ -625,6 +683,18 @@ def test_batch_starts_with_a_summary_per_comparison():
         "    groups by bucket: cube_only 1, dashboard_only 1",
     ]
     assert "filters_nothing (1)" in lines and "owner (2)" in lines
+
+
+def test_batch_summary_orders_suggestions_as_the_batch_does():
+    found = [
+        _suggestion("a", "docs"),
+        _suggestion("b", "map_filters", "gap"),
+        _suggestion("c", "filters_nothing", "gap"),
+    ]
+
+    lines = batch_lines(_run(), found)
+
+    assert "    by suggestion: map_filters 1, filters_nothing 1, docs 1" in lines
 
 
 def test_batch_lists_at_most_the_cap_per_suggestion():

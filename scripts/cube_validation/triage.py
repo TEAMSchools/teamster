@@ -51,6 +51,12 @@ _CAUSE_WORDS = frozenset(
 )
 # Cause lines that restate the measure's definitions, not the cells.
 _DEFINITION_CAUSES = ("Cube computes ", "Recorded definitions:")
+# Words any column name or description carries, which tie a doc to nothing.
+_GENERIC_WORDS = frozenset(
+    {"name", "code", "type", "level", "id", "number", "date", "key", "label"}
+    | {"value", "the", "for", "per", "each", "with", "this", "and", "from"}
+    | {"that", "any"}
+)
 
 
 @dataclass(frozen=True)
@@ -235,15 +241,15 @@ def _group_topic(
         member = to_cube.get(column, column)
         title = docs[member].title if member in docs else ""
         out.setdefault(member, set()).update(_tokens(f"{column} {member} {title}"))
-    return out
+    return {k: w - _GENERIC_WORDS for k, w in out.items()}
 
 
 def _cells_topic(diff: CellDiff) -> set[str]:
-    """Words of a cell set's candidate causes, past their fixed wording and the definitions."""
+    """Words of a cell set's candidate causes, past their fixed wording, counts and the definitions."""
     words = set().union(
         *(_tokens(c) for c in diff.causes if not c.startswith(_DEFINITION_CAUSES))
     )
-    return words - _CAUSE_WORDS
+    return {w for w in words - _CAUSE_WORDS - _GENERIC_WORDS if not w.isdigit()}
 
 
 def _speaks_to(
@@ -304,7 +310,7 @@ def suggest(
             caption = gap.field
             measures = [by_id[c].measure for c in gap.comparisons if c in by_id]
             members = list(measures)
-            topics = {"": _tokens(caption)}
+            topics = {"": _tokens(caption) - _GENERIC_WORDS}
             # Only the sheets the gap sits on speak for it; a proof that
             # predates `restricting_filters` leaves the answer unknown.
             proofs: list[Proof] = [
@@ -375,8 +381,11 @@ def suggest(
 BATCH_CAP = 25
 
 
-def _counts(counter: Counter) -> str:
-    return ", ".join(f"{k} {n:,}" for k, n in sorted(counter.items()))
+def _counts(counter: Counter, order: tuple[str, ...] = ()) -> str:
+    """`k n` pairs in `order`, then by name."""
+    rank = {k: i for i, k in enumerate(order)}
+    keys = sorted(counter, key=lambda k: (rank.get(k, len(order)), k))
+    return ", ".join(f"{k} {counter[k]:,}" for k in keys)
 
 
 def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
@@ -393,7 +402,7 @@ def batch_lines(run: RunResult, found: list[Suggestion]) -> list[str]:
         mine = [s for s in found if s.item.comparison == comparison]
         lines.append(f"  {comparison or '(no comparison)'}: {len(mine):,} items")
         lines.append(
-            f"    by suggestion: {_counts(Counter(s.suggestion for s in mine))}"
+            f"    by suggestion: {_counts(Counter(s.suggestion for s in mine), SUGGESTIONS)}"
         )
         lines.append(f"    by kind: {_counts(Counter(s.item.kind for s in mine))}")
         in_buckets = Counter(buckets[s.item.id] for s in mine if s.item.id in buckets)

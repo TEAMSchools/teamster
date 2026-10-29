@@ -562,6 +562,16 @@ def candidate_causes(
     return out
 
 
+def row_group_cause(n_groups: int) -> str:
+    """The cause line a row-level comparison adds: its row groups, or none."""
+    return (
+        f"{n_groups} row groups on this comparison (see Triage) may explain part of it"
+        if n_groups
+        else "every row matches on the grain and values, so the 2 definitions or "
+        "their filters differ"
+    )
+
+
 def _cell_diffs(
     cfg: ViewConfig, comparisons: list[Comparison], sides: "_Sides", cube: Cube
 ) -> list[CellDiff]:
@@ -581,13 +591,7 @@ def _cell_diffs(
         causes = candidate_causes(comparison, differing, comparison.decimals or 0, expr)
         if comparison.rows is not None:
             groups = [g for g in sides.groups if g.comparison_id == comparison.id]
-            causes.append(
-                f"{len(groups)} row groups on this comparison (see Triage) may "
-                "explain part of it"
-                if groups
-                else "every row matches on the grain and values, so the 2 "
-                "definitions or their filters differ"
-            )
+            causes.append(row_group_cause(len(groups)))
         out.append(
             CellDiff(
                 comparison.id,
