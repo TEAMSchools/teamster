@@ -51,7 +51,7 @@ with
 
             university_name || ' (' || application_type || ')' as application_label,
 
-            cast(round(urm_graduation_rate) as int64) as urm_rounded,
+            coalesce(format('%.1f%%', urm_graduation_rate), 'no rate') as urm_text,
         from {{ ref("int_students__early_applications") }}
     ),
 
@@ -61,9 +61,7 @@ with
             overgrad_student_id,
             university_id,
 
-            application_label
-            || ' '
-            || coalesce(format('%d%%', urm_rounded), 'no rate') as submitted_label,
+            application_label || ' ' || urm_text as submitted_label,
         from application_labels
         where is_submitted
     ),

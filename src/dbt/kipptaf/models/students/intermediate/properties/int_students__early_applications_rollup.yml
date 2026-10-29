@@ -68,9 +68,10 @@ models:
       - name: submitted_early_applications
         data_type: string
         description:
-          Submitted early applications as "College (ED) 77%", alphabetical and
-          comma-separated. The percent is the URM graduation rate rounded to a
-          whole number, or "no rate" when the college has none. Null when none.
+          Submitted early applications as "College (ED) 77.4%", alphabetical and
+          comma-separated. The percent is the URM graduation rate to 1 decimal,
+          so a rate just under a bar never displays as the bar itself, or "no
+          rate" when the college has none. Null when none.
         config:
           meta:
             contains_pii: true
@@ -192,7 +193,7 @@ unit_tests:
           is_ed_ea_flagged: true
           submitted_early_count: 2
           submitted_early_applications:
-            Example College A (ED) 96%, Example College B (EA) 79%
+            Example College A (ED) 95.8%, Example College B (EA) 79.1%
           will_apply_early_applications: null
           earliest_will_apply_due_date: null
           latest_overgrad_updated_at: 2026-10-28 13:00:00
@@ -220,7 +221,7 @@ unit_tests:
           unweighted_gpa: 3.50
           is_ed_ea_flagged: false
           submitted_early_count: 1
-          submitted_early_applications: Example College F (EA) 70%
+          submitted_early_applications: Example College F (EA) 70.0%
           will_apply_early_applications: null
           earliest_will_apply_due_date: null
           latest_overgrad_updated_at: 2026-10-20 00:00:00
@@ -263,4 +264,4 @@ unit_tests:
       rows:
         - overgrad_student_id: 1
           submitted_early_count: 1
-          submitted_early_applications: Example College A (EA) 70%
+          submitted_early_applications: Example College A (EA) 70.0%
