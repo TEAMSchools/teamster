@@ -1,0 +1,450 @@
+# Cube never loads this folder (it reads src/cube/model/ only). Network-grant
+# email: pass --email or set CUBE_VALIDATION_EMAIL; never write it here.
+view: student_assessment_scores_view
+fact: kipptaf_marts.fct_assessment_scores_enrollment_scoped
+time_dimension: assessment_date
+shared:
+  # DKI - Assessment Mastery Grid shows Grade/Subject (a calc) by Week Start
+  # Monday, Module Code and School. Neither the calc nor the week has a Cube
+  # member, so the proof copy drops both and shows Grade Level and Subject Area
+  # instead; Tableau recomputes the average at that grain. The sheet's
+  # Discipline filter (ELA only) is cleared, to validate every subject.
+  dki: &dki
+    confirmed: true
+    workbook: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
+    sheet: DKI - Assessment Mastery Grid
+    dashboard_view: kipptaf_tableau.rpt_tableau__ddi_dashboard
+    decimals: 2
+    filters:
+      Academic Year: { dashboard: academic_year, cube: academic_year }
+      Response Type: { dashboard: response_type, cube: response_type }
+      Region: { dashboard: region, cube: region_name }
+      School: { dashboard: school, cube: abbreviation }
+      Grade Level: { dashboard: grade_level, cube: grade_level }
+      Subject Area: { dashboard: subject_area, cube: academic_subject }
+      Module Code: { dashboard: module_code, cube: module_code }
+    defaults: { Academic Year: "2026" }
+    cuts: [{ Response Type: overall }, { Response Type: standard }]
+    # The DDI datasource holds only assessments tagged into the stack
+    # (Illuminate and Focus Assessments).
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+    # Exclude Future Assessments: administered_at on or before the coming
+    # Sunday. Cube has no such member.
+    dashboard_filters:
+      - { dashboard: administered_at, operator: lte, days_from_week_end: 0 }
+  school: &school
+    <<: *dki
+    dims:
+      - { dashboard: school, cube: abbreviation }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+      - { dashboard: module_code, cube: module_code }
+    # Every field on rows: with fields on columns too, Tableau's export fills
+    # the whole grid, empty cells included.
+    shelves:
+      drop: [Week Start Monday, Grade/Subject, Module Code, School]
+      add: { rows: [School, Module Code, Grade Level, Subject Area] }
+      clear_filters: [Discipline]
+  region: &region
+    <<: *dki
+    dims:
+      - { dashboard: region, cube: region_name }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+    shelves:
+      drop: [Week Start Monday, Grade/Subject, School, Module Code]
+      add: { rows: [Region, Grade Level, Subject Area] }
+      clear_filters: [Discipline]
+comparisons:
+  - id: mastery-dki-school
+    <<: *school
+    measure: pct_proficient
+    sheet_field: Avg. Is Mastery Int
+    probe: avg(is_mastery_int)
+    rows:
+      grain:
+        - { dashboard: student_number, cube: lea_student_identifier }
+        - { dashboard: assessment_id, cube: source_assessment_id }
+        - { dashboard: response_type, cube: response_type }
+        - { dashboard: response_type_code, cube: response_type_code }
+      values:
+        - { dashboard: is_mastery_int, cube: is_mastery }
+    proof:
+      fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
+      cells: 2320
+      proven_at: "2026-10-29T02:30:55.284159+00:00"
+      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      probe_fingerprint: 8cce34f2bea64e939a9602b9d87589092767700b09df9bfe33a340e2df35b104
+      cuts:
+        - '{"Response Type": "overall"}'
+        - '{"Response Type": "standard"}'
+      totals_skipped: 308
+      shelves:
+        drop:
+          - Week Start Monday
+          - Grade/Subject
+          - Module Code
+          - School
+        clear_filters:
+          - Discipline
+        add:
+          rows:
+            - School
+            - Module Code
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade/Subject
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - School Level
+        - Student Tier
+        - Term
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        Week Start Monday: week_start_monday
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        Head Of School: head_of_school
+        is_sipps: is_sipps
+        Student Tier: nj_student_tier
+        IEP Status: iep_status
+        Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        Term: term
+        state_test_proficiency: state_test_proficiency
+        School Level: school_level
+  - id: mastery-dki-region
+    <<: *region
+    measure: pct_proficient
+    sheet_field: Avg. Is Mastery Int
+    probe: avg(is_mastery_int)
+    proof:
+      fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
+      cells: 437
+      proven_at: "2026-10-29T02:21:22.542070+00:00"
+      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      probe_fingerprint: 169ffc2780ad5554bb33383ce97da9ce05e5b35e3a0cecd369af28f3e9e0ef8a
+      cuts:
+        - '{"Response Type": "overall"}'
+        - '{"Response Type": "standard"}'
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Week Start Monday
+          - Grade/Subject
+          - School
+          - Module Code
+        clear_filters:
+          - Discipline
+        add:
+          rows:
+            - Region
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade/Subject
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - School Level
+        - Student Tier
+        - Term
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        IEP Status: iep_status
+        is_sipps: is_sipps
+        Head Of School: head_of_school
+        Week Start Monday: week_start_monday
+        gifted_and_talented: gifted_and_talented
+        Student Tier: nj_student_tier
+        is_low_25_fl: is_low_25_fl
+        Ml Status: ml_status
+        state_test_proficiency: state_test_proficiency
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        School Level: school_level
+        Term: term
+  # Gen Ed is iep_status other than Has IEP; a blank iep_status counts in
+  # neither, as a null is_iep does in Cube.
+  - id: mastery-gened-dki-school
+    <<: *school
+    measure: pct_proficient
+    sheet_field: Is Mastery Int - Gen Ed
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: is_iep, values: [false] }
+    probe: avg(if(iep_status != 'Has IEP', is_mastery_int, null))
+    proof:
+      fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
+      cells: 2320
+      proven_at: "2026-10-29T02:32:32.786983+00:00"
+      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      probe_fingerprint: b73e3c91a61f6173c227c2a9dacdbc302d73de28b9cf92ae7a4ef86ef4d6aa37
+      cuts:
+        - '{"Response Type": "overall"}'
+        - '{"Response Type": "standard"}'
+      totals_skipped: 308
+      shelves:
+        drop:
+          - Week Start Monday
+          - Grade/Subject
+          - Module Code
+          - School
+        clear_filters:
+          - Discipline
+        add:
+          rows:
+            - School
+            - Module Code
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade/Subject
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - School Level
+        - Student Tier
+        - Term
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        Week Start Monday: week_start_monday
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        Head Of School: head_of_school
+        is_sipps: is_sipps
+        Student Tier: nj_student_tier
+        IEP Status: iep_status
+        Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        Term: term
+        state_test_proficiency: state_test_proficiency
+        School Level: school_level
+  - id: mastery-iep-dki-school
+    <<: *school
+    measure: pct_proficient
+    sheet_field: Is Mastery Int - IEP
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: is_iep, values: [true] }
+    probe: avg(if(iep_status = 'Has IEP', is_mastery_int, null))
+    proof:
+      fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
+      cells: 2320
+      proven_at: "2026-10-29T02:33:04.224121+00:00"
+      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      probe_fingerprint: edbb20c9ef90ad5c6787b32e5c3fb88a47ca984fab3fd7e6f2d682e88584a9e7
+      cuts:
+        - '{"Response Type": "overall"}'
+        - '{"Response Type": "standard"}'
+      totals_skipped: 308
+      shelves:
+        drop:
+          - Week Start Monday
+          - Grade/Subject
+          - Module Code
+          - School
+        clear_filters:
+          - Discipline
+        add:
+          rows:
+            - School
+            - Module Code
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade/Subject
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - School Level
+        - Student Tier
+        - Term
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        Week Start Monday: week_start_monday
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        is_low_25_fl: is_low_25_fl
+        Head Of School: head_of_school
+        is_sipps: is_sipps
+        Student Tier: nj_student_tier
+        IEP Status: iep_status
+        Ml Status: ml_status
+        gifted_and_talented: gifted_and_talented
+        Term: term
+        state_test_proficiency: state_test_proficiency
+        School Level: school_level
+  - id: mastery-gened-dki-region
+    <<: *region
+    measure: pct_proficient
+    sheet_field: Is Mastery Int - Gen Ed
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: is_iep, values: [false] }
+    probe: avg(if(iep_status != 'Has IEP', is_mastery_int, null))
+    proof:
+      fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
+      cells: 437
+      proven_at: "2026-10-29T02:26:51.750913+00:00"
+      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      probe_fingerprint: faa7892153b24abec7a0ac6bbe5f969153dddeb4f930d9de57118d050c2a3f25
+      cuts:
+        - '{"Response Type": "overall"}'
+        - '{"Response Type": "standard"}'
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Week Start Monday
+          - Grade/Subject
+          - School
+          - Module Code
+        clear_filters:
+          - Discipline
+        add:
+          rows:
+            - Region
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade/Subject
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - School Level
+        - Student Tier
+        - Term
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        IEP Status: iep_status
+        is_sipps: is_sipps
+        Head Of School: head_of_school
+        Week Start Monday: week_start_monday
+        gifted_and_talented: gifted_and_talented
+        Student Tier: nj_student_tier
+        is_low_25_fl: is_low_25_fl
+        Ml Status: ml_status
+        state_test_proficiency: state_test_proficiency
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        School Level: school_level
+        Term: term
+  - id: mastery-iep-dki-region
+    <<: *region
+    measure: pct_proficient
+    sheet_field: Is Mastery Int - IEP
+    scope:
+      - { cube: is_internal_assessment, values: [true] }
+      - { cube: is_iep, values: [true] }
+    probe: avg(if(iep_status = 'Has IEP', is_mastery_int, null))
+    proof:
+      fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
+      cells: 437
+      proven_at: "2026-10-29T02:28:37.419375+00:00"
+      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      probe_fingerprint: 1fda865df11b3a177d9d1c56514650b8c2cd479a56bdd3928cbbeb51b4a5b705
+      cuts:
+        - '{"Response Type": "overall"}'
+        - '{"Response Type": "standard"}'
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Week Start Monday
+          - Grade/Subject
+          - School
+          - Module Code
+        clear_filters:
+          - Discipline
+        add:
+          rows:
+            - Region
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Grade/Subject
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - School Level
+        - Student Tier
+        - Term
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        IEP Status: iep_status
+        is_sipps: is_sipps
+        Head Of School: head_of_school
+        Week Start Monday: week_start_monday
+        gifted_and_talented: gifted_and_talented
+        Student Tier: nj_student_tier
+        is_low_25_fl: is_low_25_fl
+        Ml Status: ml_status
+        state_test_proficiency: state_test_proficiency
+        Dibels Most Recent Composite: dibels_most_recent_composite
+        School Level: school_level
+        Term: term
