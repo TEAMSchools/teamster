@@ -163,6 +163,26 @@ models:
           Highest official SAT Math score across all sittings. Repeated on every
           row for the student.
         data_type: numeric
+      - name: nj_student_tier_ela
+        description: >-
+          The student's ELA bucket this year, from
+          int_students__college_assessment_buckets_pivot — Bucket 1, 2, 3 or 4,
+          or No Bucket Assigned for a senior with no stored bucket. Repeated on
+          every row for the student.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: nj_student_tier_math
+        description: >-
+          The student's Math bucket this year, from
+          int_students__college_assessment_buckets_pivot — Bucket 1, 2, 3 or 4,
+          or No Bucket Assigned for a senior with no stored bucket. Repeated on
+          every row for the student.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: expected_field_name_score_category
         description: >-
           expected_field_name and expected_score_category joined, the column the
