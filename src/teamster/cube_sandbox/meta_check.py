@@ -129,6 +129,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", type=Path, default=CATALOG_PATH)
     parser.add_argument("--viewer", default=DEFAULT_VIEWER)
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="replace the catalog with the deployed model instead of comparing; "
+        "run after deploying a bump, then commit the diff",
+    )
     args = parser.parse_args(argv)
 
     missing = [name for name in (REST_URL, API_SECRET) if not os.environ.get(name)]
@@ -140,6 +146,13 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     live = fetch_meta(os.environ[REST_URL], os.environ[API_SECRET], args.viewer)
+    if args.write:
+        # From the sandbox, as the widest persona: /meta hides what the
+        # caller's groups cannot see, so anyone narrower writes a partial
+        # catalog that looks complete.
+        args.catalog.write_text(json.dumps(live, indent=2) + "\n", encoding="utf-8")
+        print(f"wrote {args.catalog}: {len(_members(live))} members")
+        return 0
     diff = member_diff(live, load_catalog(args.catalog))
     print(describe(diff))
     return exit_code(diff)

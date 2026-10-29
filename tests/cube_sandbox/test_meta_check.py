@@ -194,3 +194,18 @@ def test_the_check_refuses_to_guess_a_deployment(
 
     with pytest.raises(SystemExit, match=meta_check.REST_URL):
         meta_check.main([])
+
+
+def test_write_replaces_the_catalog_with_the_deployed_model(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # The catalog is what the pinned sandbox serves, so a bump regenerates it
+    # from the deployment itself rather than from anyone's own view of
+    # production, which /meta filters by the caller's access.
+    monkeypatch.setenv(meta_check.REST_URL, "https://sandbox.example.invalid")
+    monkeypatch.setenv(meta_check.API_SECRET, FAKE_SECRET)
+    monkeypatch.setattr(meta_check, "fetch_meta", lambda url, secret, viewer: CATALOG)
+    out = tmp_path / "catalog.json"
+
+    assert meta_check.main(["--write", "--catalog", str(out)]) == 0
+    assert meta_check.load_catalog(out) == CATALOG

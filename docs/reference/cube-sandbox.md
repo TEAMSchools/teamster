@@ -257,6 +257,9 @@ Each bump, in order:
 
 1. Move the single pin — model, snapshot and catalog together.
 2. Regenerate the catalog and commit it, so the move is a reviewable diff.
+   `meta_check --write` reads it from the deployed sandbox as the widest
+   persona; `/meta` hides what the caller cannot see, so a catalog fetched as
+   anyone narrower is partial and looks complete.
 3. Tag the commit `sandbox-YYYY.MM.DD`.
 4. Take the member-level diff of additions, removals and retypes as the release
    note.
