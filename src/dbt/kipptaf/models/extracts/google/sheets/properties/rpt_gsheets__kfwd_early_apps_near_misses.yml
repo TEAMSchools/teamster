@@ -1,0 +1,103 @@
+models:
+  - name: rpt_gsheets__kfwd_early_apps_near_misses
+    description:
+      Near Misses tab of the KIPP Forward early apps tracker. One row per
+      flagged senior and early-application goal they did not meet but nearly
+      did, as defined in int_students__early_application_criteria_scaffold.
+      Counselors use it to find seniors who could still meet a goal and to see
+      why a senior they expected to meet a goal did not count.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - overgrad_student_id
+              - criterion_code
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          District code location the Overgrad record came from. Part of the
+          grain; left out of the sheet.
+      - name: overgrad_student_id
+        data_type: int64
+        description:
+          Overgrad student id. Part of the grain; left out of the sheet.
+      - name: criterion_code
+        data_type: string
+        description: Goal code. Part of the grain.
+      - name: criterion_sort
+        data_type: int64
+        description: Display order of the goal, 1 to 5.
+      - name: student_name
+        data_type: string
+        description: Student name as last name, first name.
+        config:
+          meta:
+            contains_pii: true
+      - name: high_school
+        data_type: string
+        description: High school name from Overgrad.
+      - name: counselor_name
+        data_type: string
+        description: Assigned Overgrad counselor.
+      - name: gpa_band
+        data_type: string
+        description: Early-application goal band.
+        config:
+          meta:
+            contains_pii: true
+      - name: criterion_label
+        data_type: string
+        description: Readable goal name.
+      - name: what_they_have
+        data_type: string
+        description:
+          The senior's qualifying and near-bar colleges with URM rates.
+        config:
+          meta:
+            contains_pii: true
+      - name: what_would_close_it
+        data_type: string
+        description: What would meet the goal.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_rpt_gsheets__kfwd_early_apps_near_misses
+    model: rpt_gsheets__kfwd_early_apps_near_misses
+    description:
+      Lists near-miss goals for flagged seniors only, and leaves out goals that
+      are met or not near misses.
+    given:
+      - input: ref("int_students__early_applications_rollup")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, 'A, Student' as student_name, 'KIPP Cooper Norcross High School' as high_school, 'Counselor One' as counselor_name, true as is_ed_ea_flagged
+          union all
+          select 'kippcamden', 2, 'B, Student', 'KIPP Cooper Norcross High School', 'Counselor One', true
+          union all
+          select 'kippnewark', 3, 'C, Student', 'KIPP Newark Lab High School', 'Counselor Two', false
+      - input: ref("int_students__early_application_criteria_scaffold")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, '3.75+' as gpa_band, 'ed_80_full_need' as criterion_code, 1 as criterion_sort, '1 ED, full need, 80%+ URM' as criterion_label, true as is_near_miss, 'Near the bar: Example College A (ED) 78.2%' as what_they_have, 'An ED college at 80%+ (closest: Example College A at 78.2%, 1.8 points short)' as what_would_close_it
+          union all
+          select 'kippcamden', 1, '3.75+', 'ea_78', 2, '2 EA, 78%+ URM', true, 'Qualifying: Example College B (EA) 79.1%', '1 more EA college at 78%+'
+          union all
+          select 'kippcamden', 2, '3.75+', 'ed_80_full_need', 1, '1 ED, full need, 80%+ URM', false, 'Qualifying: Example College C (ED) 92.0%', cast(null as string)
+          union all
+          select 'kippnewark', 3, '3.00-3.49', 'early_68', 5, '3 early, 68%+ URM', true, 'Qualifying: Example College D (EA) 70.0%', '1 more early college at 68%+'
+    expect:
+      rows:
+        - overgrad_student_id: 1
+          criterion_code: ed_80_full_need
+          what_would_close_it:
+            "An ED college at 80%+ (closest: Example College A at 78.2%, 1.8
+            points short)"
+        - overgrad_student_id: 1
+          criterion_code: ea_78
+          what_would_close_it: 1 more EA college at 78%+
