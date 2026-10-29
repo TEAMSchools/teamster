@@ -403,6 +403,20 @@ def test_a_probe_handles_only_the_relative_dates_whose_column_it_names():
     assert any(b.startswith("Week Start Monday: relative date") for b in before)
 
 
+def test_a_probe_with_a_fixed_date_does_not_clear_a_relative_date():
+    probe = (
+        "SELECT {dims}, AVG(is_mastery_int) AS value FROM ({rows}) WHERE {where} "
+        "AND administered_at >= '2025-07-01' GROUP BY {dims}"
+    )
+
+    _, before = _check(_comparison(probe_sql=probe))
+
+    # The column is named, but no rolling date bounds it.
+    assert any(
+        b.startswith("Exclude Future Assessments: relative date") for b in before
+    )
+
+
 def test_a_sheet_field_the_reshape_recomputes_blocks():
     comparison = _comparison(
         shelves=RESHAPE,

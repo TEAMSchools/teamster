@@ -389,7 +389,11 @@ def _filter_lines(out: _Checklist, comparison: Comparison | None, facts: Sheet) 
     set_here = set(comparison.parameters) if comparison else set()
 
     def in_probe(columns: tuple[str, ...]) -> bool:
-        return any(re.search(rf"\b{re.escape(c)}\b", probe_sql) for c in columns)
+        # The probe must name the column and a rolling date; a fixed bound on
+        # the column is not the sheet's window.
+        return "CURRENT_DATE" in probe_sql.upper() and any(
+            re.search(rf"\b{re.escape(c)}\b", probe_sql) for c in columns
+        )
 
     # A code group's source column, defaulted through its `filters:` caption.
     defaulted = (
