@@ -77,11 +77,11 @@ copy:
 2. Run `uv run pytest tests/test_zz_cube_validation.py -s --tb=short`, then
    delete the file.
 
-`review`, `add-decisions`, `reapply` and `record-answers` need no credentials:
-run them from the checkout that holds the validation files with
-`uv run python -m scripts.cube_validation <command> ...`. Exit 0 is done, 1 is a
-refusal (stderr says why), 2 is a usage error. A refusal is an answer: fix its
-cause, do not retry around it.
+`review`, `add-decisions`, `reapply`, `record-answers` and `preflight --twb`
+need no credentials: run them from the checkout that holds the validation files
+with `uv run python -m scripts.cube_validation <command> ...`. Exit 0 is done, 1
+is a refusal (stderr says why), 2 is a usage error. A refusal is an answer: fix
+its cause, do not retry around it.
 
 ## Runbook
 
@@ -104,6 +104,16 @@ cause, do not retry around it.
    `prove <file> --comparison <id> --headers` prints each cut's export headers
    (and a long export's field names) without probing, to find `sheet_field`
    before the first proof.
+
+   Then `preflight <file> --twb <path> --sheet <sheet>` reads the chosen sheet
+   offline (it needs `members.json` from `members`, and prints no filter value):
+   each shelf field and its Cube member, table calcs and what they run along,
+   every filter's kind (context, code group, relative date, parameter-driven)
+   and whether other sheets share it through `filter-group`, the parameters the
+   sheet reads, and whether `sheet_field` is on the sheet. Use it instead of
+   reading the workbook XML by hand. Without `--sheet` it checks every
+   comparison's sheet; without `--twb` it downloads each workbook.
+
 3. Write the comparison into the view file with `confirmed: true` and
    `proof: null`. Required: `workbook`, `sheet`, `dashboard_view`, `probe` (or
    `probe_sql`, never both), `decimals`, `dims`, `filters`, `defaults`, `cuts`,
@@ -123,9 +133,8 @@ cause, do not retry around it.
      `gt`, `gte`, `lt` and `lte` (exactly 1 number), or `set` (not null). A
      dashboard filter compares a date to the coming Sunday (Tableau's
      `TODAY() + 8 - weekday`) with `days_from_week_end: <days after it>` and a
-     compare operator in place of `values`; it runs at the run's moment. Do not
-     start a `run` between 8 pm and midnight ET on a Saturday: the week can
-     shift if Tableau Server's clock is not Eastern.
+     compare operator in place of `values`; it runs at the run's moment (see
+     _Gotchas_ for the Saturday-evening window).
    - `parameters: {<caption>: <member>}`: a field the sheet shows only behind a
      parameter value (Chronic Absenteeism under "Attendance Metric"). The proof
      copy carries that value, so the REST export shows the field. Put the
@@ -152,17 +161,19 @@ cause, do not retry around it.
    that differ. Identities take numbers as well as measures
    (`right: 1 - pct_ontime`).
 
-4. `prove <file> --comparison <id>` exports the sheet from a `TEMP-CB` copy and
-   writes `proof` when the probe reproduces every cell at `decimals`. Repeat
-   `--comparison` to prove several at once: comparisons on one sheet share one
-   export, and one refusal does not stop the rest. A failed proof (cells
-   mismatch) means the probe or the mapping is wrong: check the probe, then the
-   dims, cuts, filters, `sheet_field` and `split_rows`; never loosen `decimals`.
-   It prints a count per reason and 5 samples; the full list is in the local
-   cache. A "cannot export" or "7 days" refusal is not a failed proof: retry
-   after the refresh. The proof records the cuts its export covered, and the
-   sheet's cuts and filters with no Cube member (by caption; filter values are
-   never read).
+4. Run `preflight <file> --twb <path>` again and settle its "Before prove" list
+   with the analyst; prove only when it reads "nothing blocks" or each item left
+   is a decision the analyst made. `prove <file> --comparison <id>` exports the
+   sheet from a `TEMP-CB` copy and writes `proof` when the probe reproduces
+   every cell at `decimals`. Repeat `--comparison` to prove several at once:
+   comparisons on one sheet share one export, and one refusal does not stop the
+   rest. A failed proof (cells mismatch) means the probe or the mapping is
+   wrong: check the probe, then the dims, cuts, filters, `sheet_field` and
+   `split_rows`; never loosen `decimals`. It prints a count per reason and 5
+   samples; the full list is in the local cache. A "cannot export" or "7 days"
+   refusal is not a failed proof: retry after the refresh. The proof records the
+   cuts its export covered, and the sheet's cuts and filters with no Cube member
+   (by caption; filter values are never read).
 5. `check-api <file>` once per view, before the first `run`. A disagreement
    means Cube's API and its compiled SQL differ, so `run` results are not
    trustworthy until it is explained.
@@ -295,6 +306,18 @@ cause, do not retry around it.
     comment; never edit the saved body to make it pass. The validation issue
     closes when every question has a decision and every fix has its issue, PR or
     Asana task.
+
+## Gotchas
+
+What `preflight` cannot check:
+
+- Which rows a dashboard holds: confirm an assumption ("Illuminate only", "one
+  region") in the data, not by reading SQL. A dashboard's source can carry rows
+  its code never names.
+- A Cube member's `description:` can drift from its data; check the claim before
+  quoting it.
+- Do not start a `run` between 8 pm and midnight ET on a Saturday: the week can
+  shift if Tableau Server's clock is not Eastern.
 
 ## Results
 
