@@ -528,6 +528,7 @@ def proof_query(ctes: str, select: str, body: str, literals: set[str]) -> str:
     allowed = ", ".join(pipeline._lit(v) for v in sorted(literals))
     proof = body.replace(PLACEHOLDER, "__u")
     return (
+        # trunk-ignore(bandit/B608): the proof is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline._lit
         f"{ctes},\n__u AS (\n{select}\n),\n__p AS (\n{proof}\n),\n"
         "__per AS (\n  SELECT __row, COUNT(*) AS __times, "
         f"MIN(IF(cause IN ({allowed}), cause, NULL)) AS cause, "
