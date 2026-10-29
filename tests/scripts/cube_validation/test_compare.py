@@ -1,12 +1,15 @@
 import re
 
 from cube_validation.compare import (
+    MANY,
+    NONE,
     Group,
     cell_verdict,
     clauses_for,
     groups_from,
     reconcile_sql,
     scope_filters,
+    trace_sql,
 )
 from cube_validation.config import ColumnPair, Comparison, RowSpec
 
@@ -329,3 +332,69 @@ def test_groups_from_names_the_dropping_filter_only_on_its_rows():
               "dashboard_filtered", 50, 3),
         Group("c1", (("grade_level", "9"),), "cube_only", 2, 1),
     ]  # fmt: skip
+
+
+# --- trace_sql -----------------------------------------------------------------
+
+
+def _trace(**kw):
+    args = dict(
+        bucket="cube_only",
+        side="dashboard",
+        variants=[("dashboard:main:1", "SELECT 1 AS student_number")],
+    )
+    args.update(kw)
+    return trace_sql(
+        "SELECT 1 AS lea_student_identifier",
+        "SELECT 1 AS student_number",
+        ROWS,
+        GROUP_BY,
+        **args,
+    )
+
+
+def test_trace_sql_returns_group_columns_a_step_and_a_count_only():
+    for combine in (True, False):
+        outer = _trace(combine=combine).rsplit("-- outer", 1)[1]
+
+        select = outer.split("FROM", 1)[0]
+        assert (
+            select == "\nSELECT bucket, grade_level_cube, step_id, COUNT(*) AS n_rows\n"
+        )
+        for col in ("calendardate", "attendance_date", "student_number"):
+            assert col not in outer
+            assert "lea_student_identifier" not in outer
+
+
+def test_trace_sql_rebuilds_the_bucket_inside_the_query():
+    sql = _trace()
+
+    assert "FULL OUTER JOIN d" in sql
+    assert "FROM joined WHERE bucket = 'cube_only'" in sql
+    # Each variant is keyed the way the reconcile keys the grain.
+    assert "COALESCE(CAST(SAFE_CAST(CAST(student_number AS STRING)" in sql
+    assert "v0.__n >= p.__rn" in sql
+    assert "'dashboard:main:1' AS step_id" in sql
+
+
+def test_trace_sql_names_the_side_s_grain_columns():
+    sql = _trace(side="cube", bucket="dashboard_only")
+
+    assert "CAST(lea_student_identifier AS STRING)" in sql.split("v0 AS", 1)[1]
+    assert "bucket = 'dashboard_only'" in sql
+
+
+def test_trace_sql_leaves_out_rows_a_shallower_level_explained():
+    sql = _trace(exclude=["SELECT 2 AS student_number"])
+
+    assert "x0 AS (" in sql
+    assert "NOT EXISTS (SELECT 1 FROM x0 WHERE" in sql
+
+
+def test_trace_sql_counts_each_row_once_when_combined():
+    combined = _trace(combine=True)
+    apart = _trace(combine=False)
+
+    assert "COUNT(DISTINCT step_id) = 1" in combined
+    assert f"ELSE '{MANY}'" in combined and f"'{NONE}'" in combined
+    assert "per_row" not in apart and f"'{NONE}' AS step_id FROM p" in apart

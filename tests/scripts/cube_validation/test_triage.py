@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
-from cube_validation import pipeline
+from cube_validation import pipeline, trace
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Gap, Group
@@ -12,6 +12,9 @@ from cube_validation.moment import Build
 from cube_validation.report import RunResult
 from cube_validation.triage import (
     BATCH_CAP,
+    NO_GRAIN,
+    NO_ROWS,
+    NOT_TRACED,
     REFERENCE_MAX_VALUES,
     SUGGESTIONS,
     Item,
@@ -87,7 +90,8 @@ def test_caption_match_lists_candidates_without_value_check():
 
     [s] = suggest(cfg, _run(gaps=[_gap("Grade Level")]), docs)
 
-    assert s.suggestion == "investigate"
+    # The sheet carries the filter: that proves it; the owner decides on it.
+    assert s.suggestion == "cause"
     assert s.candidates == ("grade_level",)
 
 
@@ -119,7 +123,7 @@ def test_every_verdict_reaches_the_evidence_but_only_same_maps():
         lambda c, m: "same field, different coding",
     )
 
-    assert s.suggestion == "investigate"
+    assert s.suggestion == "cause"
     assert s.candidates == ("grade_level",)
     assert "grade_level: same field, different coding" in s.evidence
 
@@ -145,7 +149,7 @@ def test_an_item_no_filter_evidence_answers_goes_to_investigate():
 
     assert s.suggestion == "investigate"
     assert s.cause is None
-    assert s.evidence == ()
+    assert s.evidence == (NOT_TRACED,)
 
 
 def test_member_docs_are_evidence_and_never_decide_the_pile():
@@ -162,12 +166,14 @@ def test_member_docs_are_evidence_and_never_decide_the_pile():
     [gap] = suggest(cfg, _run(gaps=[_gap("Enroll Status")]), gap_docs)
     [cells] = suggest(cfg, _run(cells=[CellDiff("enrollment", {"differs": 3})]), docs)
 
-    assert s.suggestion == gap.suggestion == cells.suggestion == "investigate"
+    assert s.suggestion == cells.suggestion == "investigate"
+    assert gap.suggestion == "cause"
     assert s.evidence == (
+        NOT_TRACED,
         "student_count: Counts students; grade level is as of entry.",
         "grade_level: Use for the grade filter.",
     )
-    assert gap.evidence == ("student_count: Excludes enroll status X.",)
+    assert gap.evidence == ("Roster carries it; Cube has no member for it",)
 
 
 def test_piles_sort_in_batch_order_investigate_last():
@@ -178,7 +184,7 @@ def test_piles_sort_in_batch_order_investigate_last():
     )
 
     names = [s.suggestion for s in result]
-    assert names == ["filters_nothing", "investigate", "investigate"]
+    assert names == ["filters_nothing", "cause", "investigate"]
     assert names == sorted(names, key=SUGGESTIONS.index)
     assert SUGGESTIONS == ("map_filters", "filters_nothing", "cause", "investigate")
 
@@ -309,7 +315,7 @@ def test_unknown_proof_on_the_gap_sheet_is_not_filters_nothing():
 
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
 
-    assert s.suggestion == "investigate"
+    assert s.suggestion == "cause"
 
 
 def test_another_sheets_note_does_not_speak_for_the_gap():
@@ -328,6 +334,91 @@ def test_another_sheets_note_does_not_speak_for_the_gap():
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[other, mine])
 
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
+
+    assert s.suggestion == "cause"
+
+
+# --- the trace and the gap ruling --------------------------------------------
+
+
+def test_a_gap_the_sheet_carries_is_a_proven_dashboard_step():
+    cfg = _cfg(restricting_filters=["Enroll Status"])
+
+    [cut] = suggest(cfg, _run(gaps=[_gap("Week", "cut")]), {})
+    [flt] = suggest(cfg, _run(gaps=[_gap("Enroll Status")]), {})
+
+    assert cut.suggestion == flt.suggestion == "cause"
+    assert cut.cause == [
+        {"side": "dashboard", "step": "sheet cut Week", "label": "sheet cut Week",
+         "n_rows": None}
+    ]  # fmt: skip
+    assert flt.cause[0]["step"] == "sheet filter Enroll Status"
+
+
+def test_a_gap_that_maps_or_filters_nothing_keeps_its_pile():
+    cfg = _cfg(restricting_filters=[])
+
+    [s] = suggest(cfg, _run(gaps=[_gap()]), {})
+
+    assert s.suggestion == "filters_nothing" and s.cause is None
+
+
+def _traced(n_rows, **steps):
+    t = trace.ItemTrace("dashboard", n_rows)
+    for i, (label, n) in enumerate(steps.items()):
+        t.steps[f"dashboard:responses:{i}"] = n
+        t.labels[f"dashboard:responses:{i}"] = label
+    return t
+
+
+def test_a_group_whose_rows_are_all_attributed_is_cause():
+    group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
+    traces = {trace.item_key(group): _traced(40, wpp=30, week_end=10)}
+
+    [s] = suggest(_cfg(), _run(groups=[group]), {}, traces=traces)
+
+    assert s.suggestion == "cause"
+    assert s.cause == [
+        {"side": "dashboard", "step": "dashboard:responses:0", "label": "wpp",
+         "n_rows": 30},
+        {"side": "dashboard", "step": "dashboard:responses:1", "label": "week_end",
+         "n_rows": 10},
+    ]  # fmt: skip
+    assert s.evidence[:2] == ("wpp: 30 rows", "week_end: 10 rows")
+
+
+def test_a_group_with_an_unattributed_row_stays_in_investigate():
+    group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
+    found = _traced(40, wpp=39)
+    found.none = 1
+    docs = {"student_count": _measure_doc("Counts students.")}
+
+    [s] = suggest(
+        _cfg(), _run(groups=[group]), docs, traces={trace.item_key(group): found}
+    )
+
+    assert s.suggestion == "investigate" and s.cause is None
+    assert s.evidence == (
+        "wpp: 39 rows",
+        "<10 rows unattributed: <10 recovered by no step",
+        "student_count: Counts students.",
+    )
+
+
+def test_groups_the_trace_cannot_reach_say_why():
+    differs = Group("enrollment", (("grade_level", "9"),), "value_differs", 40, 38)
+    one_sided = Group("enrollment", (("grade_level", "10"),), "cube_only", 40, 38)
+
+    found = suggest(_cfg(), _run(groups=[differs, one_sided]), {}, traces={})
+
+    assert [s.evidence[0] for s in found] == [NO_ROWS, NO_GRAIN]
+    assert {s.suggestion for s in found} == {"investigate"}
+
+
+def test_cell_sets_stay_in_investigate_whatever_the_trace_found():
+    cells = CellDiff("enrollment", {"differs": 3})
+
+    [s] = suggest(_cfg(), _run(cells=[cells]), {}, traces={})
 
     assert s.suggestion == "investigate"
 

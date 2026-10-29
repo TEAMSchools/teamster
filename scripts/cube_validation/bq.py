@@ -212,6 +212,28 @@ class Warehouse:
         self._record(usd)
         return usd
 
+    def refuse_past_caps(self, usd: float) -> None:
+        """Refuse before running queries whose dry-run total is `usd`.
+
+        Counts nothing: each query is priced again as it runs.
+
+        Raises:
+            CostCapError: `usd` more would pass the run's cap or the day's.
+        """
+        if self._daily_cap is not None:
+            today = self.spent_today()
+            if today + usd > self._daily_cap:
+                raise CostCapError(
+                    f"today's validator spend is ${today:.2f}; these queries "
+                    f"(${usd:.2f}) would pass the ${self._daily_cap:.2f} daily cap "
+                    "(UTC day). Wait for tomorrow or raise --max-usd-per-day."
+                )
+        if self._cap is not None and self._spent + usd > self._cap:
+            raise CostCapError(
+                f"spent ${self._spent:.2f}; these queries (${usd:.2f}) would pass "
+                f"the ${self._cap:.2f} cap"
+            )
+
     def spent_today(self) -> float:
         """USD priced or billed today (UTC) by every run sharing this cache."""
         if self._cache_dir is None:

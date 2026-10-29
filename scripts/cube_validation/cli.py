@@ -28,7 +28,7 @@ from pathlib import Path
 import tableauserverclient as TSC
 import yaml
 
-from . import answers, builder, pipeline, preflight, report, tableau, triage
+from . import answers, builder, pipeline, preflight, report, tableau, trace, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .config import (
     ConfigError,
@@ -48,6 +48,8 @@ URL_VAR = "CUBE_REST_URL"
 # trunk-ignore(bandit/B105): environment variable name, not a value
 SECRET_VAR = "CUBE_API_SECRET"
 EMAIL_VAR = "CUBE_VALIDATION_EMAIL"
+# Points every command at another cache, such as a copy of a run to rework.
+CACHE_VAR = "CUBE_VALIDATION_CACHE"
 # Every run on this machine shares 1 daily BigQuery cap (UTC day).
 DAILY_MAX_USD = 3.0
 
@@ -112,7 +114,8 @@ def utcnow() -> datetime:
 
 
 def cache_root() -> Path:
-    return report.CACHE_ROOT
+    """The local cache: `CUBE_VALIDATION_CACHE` when set, else `report.CACHE_ROOT`."""
+    return Path(os.environ.get(CACHE_VAR) or report.CACHE_ROOT)
 
 
 def _cube(args: argparse.Namespace) -> Cube:
@@ -247,6 +250,17 @@ def _parser() -> argparse.ArgumentParser:
     fact_dataset(p)
     email(p)
     max_usd(p)
+    p.add_argument(
+        "--no-trace",
+        action="store_true",
+        help="skip tracing unmatched rows to the step that drops them",
+    )
+    p.add_argument(
+        "--manifest",
+        type=Path,
+        default=trace.MANIFEST,
+        help="dbt manifest with compiled SQL for the tables the trace descends into",
+    )
 
     p = sub.add_parser(
         "add-decisions", help="write an approved triage batch as decisions"
@@ -347,6 +361,8 @@ def _dispatch(args: argparse.Namespace) -> int:
             cube=_cube(args),
             max_usd=args.max_usd,
             cache_root=cache_root(),
+            trace_rows=not args.no_trace,
+            manifest=args.manifest,
         )
         return 0
 

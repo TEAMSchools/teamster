@@ -223,6 +223,52 @@ def test_comma_joined_from_list_is_refused():
         as_of("select 1 from d.t as `x`, d.u as `y`", TS, catalog)
 
 
+def test_a_dbt_ref_with_a_bare_alias_keeps_it_before_the_clause():
+    # `dbt_utils.deduplicate` writes `from <relation> original`.
+    catalog = FakeCatalog(
+        {"ds.t": TableInfo("TABLE", None), "ds.v": TableInfo("VIEW", "select 1 as x")}
+    )
+    sql = (
+        "select 1 from `teamster-332318`.`ds`.`t` original\n"
+        "where 1 = 1 union all select 1 from `teamster-332318`.`ds`.`v` original "
+        "join `teamster-332318`.`ds`.`t` on true"
+    )
+
+    result = as_of(sql, TS, catalog)
+
+    assert f"`teamster-332318.ds.t` original {CLAUSE}\nwhere" in result.sql
+    assert "(select 1 as x) original join" in result.sql
+    assert f"`teamster-332318.ds.t` {CLAUSE} on true" in result.sql
+
+
+def test_a_ref_in_a_comment_is_left_out_not_inlined():
+    # dbt keeps `-- depends_on: {{ ref(...) }}` lines in compiled SQL.
+    catalog = FakeCatalog(
+        {"ds.t": TableInfo("TABLE", None), "ds.v": TableInfo("VIEW", "select\n2")}
+    )
+    sql = (
+        "select '--x', \"/*y*/\" from `teamster-332318`.`ds`.`t`\n"
+        "-- depends_on: `teamster-332318`.`ds`.`v`\n"
+        "/* `teamster-332318`.`ds`.`v` */ where 1 = 1"
+    )
+
+    result = as_of(sql, TS, catalog)
+
+    assert "select '--x', \"/*y*/\" from `teamster-332318.ds.t`" in result.sql
+    assert "ds.v" not in result.sql and "select\n2" not in result.sql
+    assert result.sql.rstrip().endswith("where 1 = 1")
+
+
+def test_a_comma_before_unnest_is_not_a_second_table():
+    catalog = FakeCatalog({"ds.a": TableInfo("TABLE", None)})
+    sql = "select r from `teamster-332318`.`ds`.`a` as a,\n    unnest(a.regions) as r"
+
+    result = as_of(sql, TS, catalog)
+
+    assert f"`teamster-332318.ds.a` as a {CLAUSE},\n    unnest(a.regions)" in result.sql
+    assert result.tables == frozenset({"ds.a"})
+
+
 def test_unaliased_cube_style_ref_is_refused():
     catalog = FakeCatalog({"d.t": TableInfo("TABLE", None)})
 

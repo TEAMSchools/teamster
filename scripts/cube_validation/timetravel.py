@@ -17,11 +17,18 @@ from typing import Literal, Protocol
 PROJECT = "teamster-332318"
 MAX_VIEW_DEPTH = 12
 
+# A word after a table that starts the next clause, not an alias.
+_NOT_ALIAS = (
+    "where|join|left|right|inner|full|cross|natural|on|using|group|order|union|"
+    "intersect|except|limit|qualify|having|window|for|tablesample|pivot|unpivot|"
+    "select|from|with|and|or|when|then|else|end|is|in|not|as"
+)
 # dbt writes `project`.`dataset`.`table`; a leading quote means the ref sits in a
-# string literal (dbt's union_relations), which must stay untouched.
+# string literal (dbt's union_relations), which must stay untouched. The alias
+# may come without `as`, as `dbt_utils.deduplicate` writes it.
 _DBT_REF = re.compile(
     r"(?<!')`" + re.escape(PROJECT) + r"`\.`(?P<d_ds>\w+)`\.`(?P<d_t>\w+)`"
-    r"(?P<d_alias>\s+as\s+`?\w+`?)?",
+    r"(?P<d_alias>\s+as\s+`?\w+`?|\s+(?!(?:" + _NOT_ALIAS + r")\b)`?\w+`?)?",
     re.IGNORECASE,
 )
 # Cube writes `FROM dataset.table AS `alias``, with no project.
@@ -40,6 +47,7 @@ _CLOCK = re.compile(
 _REF_CANDIDATE = re.compile(
     r"\b(?:FROM|JOIN)\s+(?P<tok>[`\w-]+(?:\.[`\w-]+)+)", re.IGNORECASE
 )
+_UNNEST = re.compile(r",\s*unnest\s*\(", re.IGNORECASE)
 # `extract(day from d.col)` and `is distinct from d.col` are not table refs.
 _NOT_A_TABLE = re.compile(
     r"(?:extract\s*\(\s*\w+|distinct|trim\s*\([^()]*?'[^()]*?')\s+$", re.IGNORECASE
@@ -123,6 +131,41 @@ def pin_clock(sql: str, ts: datetime) -> str:
     return "".join(out)
 
 
+def strip_comments(sql: str) -> str:
+    """Drop `--` and `/* */` comments, leaving quoted text and line breaks alone."""
+    out: list[str] = []
+    quote, i = "", 0
+
+    while i < len(sql):
+        ch = sql[i]
+
+        if quote:
+            out.append(ch)
+            if ch == "\\" and i + 1 < len(sql):
+                out.append(sql[i + 1])
+                i += 1
+            elif ch == quote:
+                quote = ""
+        elif ch in "'\"`":
+            quote = ch
+            out.append(ch)
+        elif sql.startswith("--", i):
+            end = sql.find("\n", i)
+            i = len(sql) if end == -1 else end
+            continue
+        elif sql.startswith("/*", i):
+            end = sql.find("*/", i + 2)
+            i = len(sql) if end == -1 else end + 2
+            out.append(" ")
+            continue
+        else:
+            out.append(ch)
+
+        i += 1
+
+    return "".join(out)
+
+
 def closing_paren(sql: str, open_at: int) -> int:
     """Return the index of the `)` that closes the `(` at `open_at`.
 
@@ -179,6 +222,8 @@ def as_of(sql: str, ts: datetime, catalog: Catalog) -> AsOf:
         if depth > MAX_VIEW_DEPTH:
             raise ValueError(f"view depth exceeds {MAX_VIEW_DEPTH}")
 
+        # A ref in a comment (dbt's `-- depends_on:`) is read by nothing.
+        text = strip_comments(text)
         _refuse_unmatched(text)
 
         def replace(match: re.Match[str]) -> str:
@@ -275,7 +320,9 @@ def _refuse_unmatched(text: str) -> None:
         raise ValueError(f"table reference not recognized: {cand['tok']!r}")
 
     for _, end in covered:
-        if text[end:].lstrip().startswith(","):
+        # `, unnest(...)` reads an array of the row, not another table.
+        after = text[end:].lstrip()
+        if after.startswith(",") and not _UNNEST.match(after):
             raise ValueError(
                 "comma-joined FROM list is not supported; "
                 f"near: {text[max(end - 30, 0) : end + 30]!r}"

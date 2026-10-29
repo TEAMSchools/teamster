@@ -221,10 +221,41 @@ cause, do not retry around it.
    file. Never present a guess as a cause: a member description or a cell
    pattern is a lead to trace, not a cause.
 
-   - Investigate: no proven cause yet. Work it by tracing its unmatched rows
-     through the other side's SQL and the models it reads until one step
-     accounts for every row. It never goes to the owner, and it leaves
-     `investigate` only when `triage` files it under `cause`.
+   The trace proves row groups. Before sorting, `triage` traces each one-sided
+   row group of a comparison with `rows`: Cube-only rows through the dashboard
+   side's SQL, dashboard-only rows through Cube's. It neutralizes one step at a
+   time (a WHERE, HAVING or QUALIFY conjunct, an INNER JOIN or its ON filter, a
+   LEFT JOIN a later predicate requires) and attributes a row to a step only
+   when that step alone brings it back, by the grain. Rows no step recovers send
+   it into the materialized tables the side reads, through their dbt compiled
+   SQL as of the run's moment, 2 tables deep. A group whose rows are all
+   attributed lands in `cause` with each step and its rows; otherwise it stays
+   in `investigate`, with the per-step counts and why the rest are unattributed
+   (more than one step, no step, below a table, or a table's own SQL already
+   returns them).
+
+   - Cost: each level's queries are priced by dry run, printed, and refused past
+     `--max-usd` or the daily cap before they run. No row leaves BigQuery; each
+     query returns group columns, a step and a count. `--no-trace` skips it and
+     leaves every row group in `investigate`.
+   - Compiled SQL: the trace reads `src/dbt/kipptaf/target/prod/manifest.json`
+     in the checkout running the tool (`--manifest` for another). When a model
+     it may descend into has no compiled SQL, `triage` refuses and prints the
+     `dbt deps` and `dbt compile --target prod --target-path target/prod`
+     command that writes it; run that from the repository root, then `triage`
+     again. `--target prod` resolves every ref to a prod relation. Compile in a
+     checkout whose dbt code built the tables (`main` as of the run's moment): a
+     table whose compiled SQL no longer runs is skipped and named ("below"), and
+     rows its SQL returns unrelaxed are never attributed.
+   - Its SQL must be the run's: `triage` refuses when either side's SQL changed
+     since the run; `run` again first.
+   - `CUBE_VALIDATION_CACHE` points every command at another cache, such as a
+     copy of a run to rework without touching the live one.
+
+   - Investigate: no proven cause yet. Read what the trace found, then work the
+     unattributed rows by hand through the other side's SQL and the models it
+     reads until one step accounts for every row. It never goes to the owner,
+     and it leaves `investigate` only when `triage` files it under `cause`.
    - Map under `filters:`: a `same values: map it under filters:` verdict. Once
      the analyst approves the batch, map the field under the comparison's
      `filters:` instead of recording a decision, then re-prove the comparisons
@@ -243,14 +274,18 @@ cause, do not retry around it.
        `domain_owner` decision with an empty `task`, and only these reach
        `review`.
 
-   A missing cut or filter is a sheet field Cube has no member for. "Cell
-   differences" lists candidate causes (patterns, where they cluster, both
-   definitions): leads to check, not findings. Rows a `dashboard_filters` entry
-   drops read "dashboard filtered", not Cube-only, and the filter is triaged as
-   a missing filter. `not compared: identifier column` means values were not
-   compared, for privacy; never compare them by hand. `also covers:` lists the
-   sibling groups the same decision would close: approve the item only if its
-   cause is proven for each. Anchor differences are judged here too.
+   A missing cut or filter is a sheet field Cube has no member for. Unless it
+   maps or filters nothing, the workbook carrying it is the proof: it lands in
+   `cause` as the dashboard step `sheet filter <caption>` (or `sheet cut`), and
+   the owner decides whether Cube needs it. "Cell differences" lists candidate
+   causes (patterns, where they cluster, both definitions): leads to check, not
+   findings, and cell sets stay in `investigate`. Rows a `dashboard_filters`
+   entry drops read "dashboard filtered", not Cube-only: the reconcile proves
+   each row, so the group lands in `cause` under that filter.
+   `not compared: identifier column` means values were not compared, for
+   privacy; never compare them by hand. `also covers:` lists the sibling groups
+   the same decision would close: approve the item only if its cause is proven
+   for each. Anchor differences are judged here too.
 
 9. The calls:
    - `deliberate`: the difference is intended. Say what the Cube member counts

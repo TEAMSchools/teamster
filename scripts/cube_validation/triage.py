@@ -3,8 +3,11 @@
 An open item is a row group, a comparison's cell differences, or a missing cut
 or filter. A pile never applies a call: the analyst reads it and decides, and
 an item in `investigate` blocks every decision on the view until it reaches a
-proven cause. Item ids and labels carry no value the review issue would hide.
-`suggest` is pure; `value_check` and `run_triage` read the warehouse and Cube.
+proven cause. A row group reaches `cause` when the trace (`trace.py`)
+attributes every one of its unmatched rows to a step; a missing cut or filter
+the sheet carries is its own proof. Item ids and labels carry no value the
+review issue would hide. `suggest` is pure; `value_check` and `run_triage`
+read the warehouse and Cube.
 """
 
 from __future__ import annotations
@@ -18,7 +21,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import pipeline
+from . import pipeline, trace
 from .bq import Warehouse
 from .compare import CellDiff, Gap, Group
 from .config import Proof, ViewConfig
@@ -309,11 +312,17 @@ def _doc_evidence(members: list[str], docs: dict[str, MemberDoc]) -> tuple[str, 
     return tuple(out)
 
 
+NOT_TRACED = "not traced (`triage --no-trace`)"
+NO_ROWS = "no rows to trace: values differ on rows both sides have"
+NO_GRAIN = "not traced: the comparison has no `rows` grain"
+
+
 def suggest(
     cfg: ViewConfig,
     run: RunResult,
     docs: dict[str, MemberDoc],
     values: Callable[[str, str], str] | None = None,
+    traces: dict[tuple, trace.ItemTrace] | None = None,
 ) -> list[Suggestion]:
     """Sort each open item into a pile, first matching rule wins.
 
@@ -324,12 +333,17 @@ def suggest(
         docs: The view's members by bare name, from `member_docs`.
         values: `values(caption, member)` returns a value-check verdict;
             `None` skips value checks.
+        traces: Each traced row group's trace, by `trace.item_key`; `None`
+            when the trace was skipped.
 
     Returns:
         One suggestion per open item, ordered by `SUGGESTIONS`. A missing
         filter the proof shows filters nothing, or whose values match a Cube
-        member's, takes `filters_nothing` or `map_filters`; every other item
-        is `investigate`, quoting its involved members' docs as evidence.
+        member's, takes `filters_nothing` or `map_filters`; any other missing
+        cut or filter is `cause`, a sheet step on the dashboard side. A row
+        group whose rows the trace all attributes is `cause`, with the steps
+        and their row counts. Every other item is `investigate`, with what
+        the trace found and its involved members' docs as evidence.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     entries = _entries(run)
@@ -340,6 +354,8 @@ def suggest(
         candidates: tuple[str, ...] = ()
         members: list[str] = []
         call = ""
+        cause: list[dict] | None = None
+        found: tuple[str, ...] = ()
 
         if isinstance(source, Gap):
             gap = source
@@ -368,6 +384,23 @@ def suggest(
                 verdict_lines = tuple(f"{m}: {v}" for m, v in verdicts if v)
                 if any(v.startswith("same values") for _, v in verdicts):
                     call, evidence = "map_filters", verdict_lines
+                else:
+                    # The workbook carries it: that is the proof. Whether
+                    # Cube needs it is the owner's call on a proven step.
+                    step = f"sheet {gap.kind} {caption}"
+                    call = "cause"
+                    cause = [
+                        {
+                            "side": "dashboard",
+                            "step": step,
+                            "label": step,
+                            "n_rows": None,
+                        }
+                    ]
+                    evidence = (
+                        f"{', '.join(gap.sheets)} carries it; Cube has no member for it",
+                        *verdict_lines,
+                    )
         else:
             comparison = by_id.get(item.comparison)
             if comparison:
@@ -375,10 +408,22 @@ def suggest(
                 if isinstance(source, Group):
                     to_cube = {p.dashboard: p.cube for p in comparison.dims}
                     members += [to_cube.get(c, c) for c, _ in source.dims]
+            if isinstance(source, Group):
+                traced = (traces or {}).get(trace.item_key(source))
+                if traced is not None and traced.proven:
+                    call, cause, evidence = "cause", traced.cause(), traced.evidence()
+                elif traced is not None:
+                    found = traced.evidence()
+                elif traces is None:
+                    found = (NOT_TRACED,)
+                elif source.bucket == "value_differs":
+                    found = (NO_ROWS,)
+                else:
+                    found = (NO_GRAIN,)
 
         if not call:
             call = "investigate"
-            evidence = verdict_lines + _doc_evidence(members, docs)
+            evidence = found + verdict_lines + _doc_evidence(members, docs)
 
         if isinstance(source, Group) and source.dims:
             stub_group = item.stub["group"]
@@ -394,7 +439,7 @@ def suggest(
             ]
             if also:
                 evidence += (f"also covers: {', '.join(also)}",)
-        out.append(Suggestion(item, call, evidence, candidates))
+        out.append(Suggestion(item, call, evidence, candidates, cause))
 
     return sorted(out, key=lambda s: SUGGESTIONS.index(s.suggestion))
 
@@ -570,18 +615,29 @@ def _missing_column(cfg: ViewConfig, caption: str) -> str:
 
 
 def run_triage(
-    cfg: ViewConfig, *, wh: Warehouse, cube: Cube, max_usd: float, cache_root: Path
+    cfg: ViewConfig,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    max_usd: float,
+    cache_root: Path,
+    trace_rows: bool = True,
+    manifest: Path = trace.MANIFEST,
 ) -> list[Suggestion]:
     """Sort each open item of the view's latest run into a pile and print them.
 
-    Prints `batch_lines`. Writes every item to `triage.json` beside that run's
-    `run.json`, with the run's moment, decisions fingerprint and open items
-    (see `proven_triage`): it stays in the local cache, and its stubs carry
-    real values.
+    Traces the run's row groups first (`trace.trace_run`) unless `trace_rows`
+    is False; its queries count against `max_usd` and the daily cap with the
+    value checks. Prints `batch_lines`. Writes every item to `triage.json`
+    beside that run's `run.json`, with the run's moment, decisions
+    fingerprint and open items (see `proven_triage`): it stays in the local
+    cache, and its stubs and causes carry real values and exact counts.
 
     Raises:
         pipeline.Refusal: The view has no usable saved run (see
-            `pipeline.latest_run`).
+            `pipeline.latest_run`), its SQL changed since the run, or the
+            manifest lacks compiled SQL the trace needs.
+        CostCapError: The value checks or the trace would pass a cap.
     """
     run, run_json = pipeline.latest_run(cfg, cache_root)
     meta = cube.meta()
@@ -595,7 +651,12 @@ def run_triage(
         return value_check(wh, cube, cfg, column, member, run.moment, pii)
 
     with wh.budget(max_usd):
-        found = suggest(cfg, run, docs, values)
+        traces = (
+            trace.trace_run(cfg, run, wh=wh, cube=cube, manifest_path=manifest)
+            if trace_rows
+            else None
+        )
+        found = suggest(cfg, run, docs, values, traces)
 
     out = run_json.parent / "triage.json"
     out.write_text(

@@ -13,7 +13,7 @@ import pytest
 import tableauserverclient as TSC
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
-from cube_validation import cli, pipeline, tableau, triage
+from cube_validation import cli, pipeline, report, tableau, trace, triage
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.bq import Warehouse
@@ -2267,7 +2267,7 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
     (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
     capsys.readouterr()
 
-    assert cli.main(["triage", str(path)]) == 0
+    assert cli.main(["triage", str(path), "--no-trace"]) == 0
 
     out = capsys.readouterr().out
     written = json.loads((saved.parent / "triage.json").read_text())
@@ -2332,13 +2332,71 @@ def test_triage_runs_a_value_check_and_records_the_verdict(fakes, tmp_path, caps
     fakes.bq.ran.clear()
     capsys.readouterr()
 
-    assert cli.main(["triage", str(path)]) == 0, capsys.readouterr().err
+    assert cli.main(["triage", str(path), "--no-trace"]) == 0, capsys.readouterr().err
 
     assert any("DISTINCT CAST(school_level AS STRING)" in s for s in fakes.bq.ran)
     items = json.loads((saved.parent / "triage.json").read_text())["items"]
     (gap,) = [i for i in items if i["kind"] == "gap"]
     assert "school_level: same field, different coding" in gap["evidence"]
     assert "MS" not in json.dumps(items)
+
+
+def test_triage_no_trace_skips_the_trace(fakes, tmp_path, capsys, monkeypatch):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    monkeypatch.setattr(trace, "trace_run", lambda *a, **k: pytest.fail("traced"))
+
+    assert cli.main(["triage", str(path), "--no-trace"]) == 0
+
+    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    (group,) = [i for i in items if i["kind"] == "group"]
+    assert group["suggestion"] == "investigate"
+    assert group["evidence"][0] == triage.NOT_TRACED
+
+
+def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    run = pipeline._run_from_json(json.loads(saved.read_text()))
+    seen = {}
+
+    def traced(cfg, run_, *, wh, cube, manifest_path):
+        seen["manifest"] = manifest_path
+        found = {}
+        for g in run_.applied.open:
+            t = trace.ItemTrace("dashboard", g.n_rows)
+            t.steps["dashboard:main:1"] = g.n_rows
+            t.labels["dashboard:main:1"] = "main: region <> 'Miami'"
+            found[trace.item_key(g)] = t
+        return found
+
+    monkeypatch.setattr(trace, "trace_run", traced)
+    manifest = tmp_path / "m.json"
+    capsys.readouterr()
+
+    assert cli.main(["triage", str(path), "--manifest", str(manifest)]) == 0
+
+    assert seen["manifest"] == manifest
+    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    groups = [i for i in items if i["kind"] == "group"]
+    assert len(groups) == len(run.applied.open)
+    assert {i["suggestion"] for i in groups} == {"cause"}
+    assert groups[0]["cause"][0]["label"] == "main: region <> 'Miami'"
+    assert "cause (" in capsys.readouterr().out
+
+
+# The real one: `_cache_in_tmp` replaces it in every test.
+_CACHE_ROOT = cli.cache_root
+
+
+def test_cache_root_follows_the_environment(monkeypatch, tmp_path):
+    monkeypatch.setenv(cli.CACHE_VAR, str(tmp_path / "copy"))
+    assert _CACHE_ROOT() == tmp_path / "copy"
+
+    monkeypatch.delenv(cli.CACHE_VAR)
+    assert _CACHE_ROOT() == report.CACHE_ROOT
 
 
 # --- add-decisions and record-answers ----------------------------------------

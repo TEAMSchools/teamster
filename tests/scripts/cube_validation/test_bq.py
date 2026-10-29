@@ -319,3 +319,16 @@ def test_billed_bytes_replace_the_estimate_after_a_query_runs(tmp_path):
         wh.rows("select 1")
         assert wh.spent == pytest.approx(0.25, abs=0.001)
     assert wh.spent_today() == pytest.approx(0.25, abs=0.001)
+
+
+def test_refuse_past_caps_counts_nothing_and_names_the_cap(tmp_path):
+    wh = Warehouse(client=FakeClient())
+    with wh.budget(1.0):
+        wh.refuse_past_caps(0.9)
+        with pytest.raises(CostCapError, match=r"\$1\.00 cap"):
+            wh.refuse_past_caps(1.1)
+        assert wh.spent == 0.0
+
+    wh.configure_local(tmp_path, daily_cap=0.5)
+    with pytest.raises(CostCapError, match="daily cap"):
+        wh.refuse_past_caps(0.6)

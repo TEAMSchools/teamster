@@ -804,6 +804,99 @@ def _compare_one(
     }
 
 
+@dataclasses.dataclass(frozen=True)
+class RowSides:
+    """The row SQL a run reconciled for one comparison, rebuilt for a trace.
+
+    `cube_rows_sql` is Cube's rows read as of the build end, with the tables
+    both sides read moved to the build start, as `run` reconciled them;
+    `columns` are the Cube members `wrap_cube` names.
+    """
+
+    cube: AsOf
+    dashboard: AsOf
+    cube_rows_sql: str
+    columns: list[str]
+
+
+def row_sides(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    build: Build,
+    schools: set[str],
+    fingerprints: dict[str, str],
+) -> RowSides:
+    """Rebuild the row SQL a run reconciled, refusing when it is not the same SQL.
+
+    Args:
+        cfg: The view's config.
+        comparison: A comparison with `rows`.
+        wh: The warehouse, for view history.
+        cube: Cube, for the compiled SQL.
+        build: The run's moment.
+        schools: The network's school abbreviations (`network_schools`).
+        fingerprints: The run's `cube` and `dashboard` fingerprints for it.
+
+    Raises:
+        Refusal: The comparison has no rows, or either side's SQL (cells and
+            rows, expanded as of the moment) differs from what the run ran.
+    """
+    if comparison.rows is None:
+        raise Refusal(f"comparison {comparison.id!r} has no rows to trace")
+
+    def cube_sql(query: dict, rows: bool = False) -> str:
+        return _cube_sql(cfg, cube, query, schools, rows=rows)
+
+    cube_at = _as_of(cube_sql(row_query(cfg.view, comparison), True), build.end, wh)
+    dash_at = _as_of(dashboard_rows_sql(cfg, comparison), build.start, wh)
+    now = {
+        "cube": decisions.sql_fingerprint(
+            sort_school_filters(
+                "\n".join(
+                    [
+                        _masked(
+                            _as_of(
+                                cube_sql(cell_query(cfg.view, comparison, {})),
+                                build.end,
+                                wh,
+                            ),
+                            build.end,
+                        ),
+                        _masked(cube_at, build.end),
+                    ]
+                )
+            )
+        ),
+        "dashboard": decisions.sql_fingerprint(
+            "\n".join(
+                [
+                    _masked(
+                        _as_of(probe_sql(cfg, comparison, {}), build.start, wh),
+                        build.start,
+                    ),
+                    _masked(dash_at, build.start),
+                ]
+            )
+        ),
+    }
+    changed = sorted(k for k in now if now[k] != fingerprints.get(k))
+    if changed:
+        raise Refusal(
+            f"comparison {comparison.id!r}: the {' and '.join(changed)} SQL is not "
+            "the SQL the run reconciled; `run` again, then trace"
+        )
+    shared = sorted(cube_at.tables & dash_at.tables)
+    return RowSides(
+        cube=cube_at,
+        dashboard=dash_at,
+        cube_rows_sql=repin(cube_at.sql, shared, build.end, build.start),
+        columns=_unique(p.cube for p in _row_pairs(comparison)),
+    )
+
+
 def _clauses(comparison: Comparison, groups: list[Group], sides: _Sides) -> list[str]:
     if comparison.id not in sides.sql:
         return []
