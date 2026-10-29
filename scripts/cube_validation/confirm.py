@@ -673,7 +673,6 @@ def apply_outcomes(items: list[dict], proof: Proof, found: dict[str, Outcome]) -
         evidence = _kept(item.get("evidence") or [])
         posted = _kept(item.get("evidence_posted") or item.get("evidence") or [])
         if outcome.explained:
-            also = [line for line in evidence if line.startswith("also covers: ")]
             item.update(
                 suggestion="cause",
                 cause=[
@@ -690,8 +689,8 @@ def apply_outcomes(items: list[dict], proof: Proof, found: dict[str, Outcome]) -
                     "path": proof.recorded,
                     "fingerprint": proof.fingerprint,
                 },
-                evidence=_proof_lines(proof, outcome, False) + also,
-                evidence_posted=_proof_lines(proof, outcome, True) + also,
+                evidence=_proof_lines(proof, outcome, False),
+                evidence_posted=_proof_lines(proof, outcome, True),
             )
             continue
         # A bucket's groups reach `cause` only through its proof.

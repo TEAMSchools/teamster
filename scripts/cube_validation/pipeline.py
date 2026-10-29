@@ -1460,6 +1460,21 @@ def _older(cfg: ViewConfig, run_json: Path) -> Refusal:
     )
 
 
+def _require_nulls(data: dict) -> None:
+    """Refuse a run saved before groups recorded which values were NULL.
+
+    Such a run reads a NULL group-by value as empty text, so a proof finds
+    none of that group's rows: the run, not the proof, is at fault.
+    """
+    applied = data.get("applied") or {}
+    groups = [*applied.get("open", []), *(g for _, g in applied.get("quiet", []))]
+    if any("nulls" not in g for g in groups):
+        moment = (data.get("moment") or {}).get("start", "<moment>")
+        raise Refusal(
+            f"this run predates NULL-aware groups; run again (`run --moment {moment}`)"
+        )
+
+
 def _reapplicable(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
     """The latest saved run, refused when it lacks what re-applying reads."""
     data, run_json = _saved_run(cfg, cache_root)
@@ -1563,14 +1578,16 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
 
     Raises:
         Refusal: The view has no saved run, its saved run is in a shape this
-            validator cannot read, or its decisions changed since the run (a
-            run saved before runs recorded them counts as changed).
+            validator cannot read or predates NULL-aware groups, or its
+            decisions changed since the run (a run saved before runs recorded
+            them counts as changed).
     """
     data, run_json = _saved_run(cfg, cache_root)
     try:
         run_result = _run_from_json(data)
     except (KeyError, TypeError) as exc:
         raise _older(cfg, run_json) from exc
+    _require_nulls(data)
     if run_result.decisions_fingerprint != decisions.decisions_fingerprint(
         cfg.decisions
     ):
@@ -1626,7 +1643,9 @@ def review(
     found = {view: triage.posted_triage(loaded) for view, loaded in proven.items()}
     # One question per unanswered owner cause, over the groups it decides.
     causes = {
-        run.view: triage.cause_asks(run, proven[run.view], cfg.decisions)
+        run.view: triage.cause_asks(
+            run, proven[run.view], cfg.decisions, triage.doc_leads(cfg)
+        )
         for run, cfg in zip(runs, configs, strict=True)
     }
     definitions = {

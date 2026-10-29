@@ -77,8 +77,8 @@ class Suggestion:
     a lead never picks the pile. `candidates` are the Cube members a
     missing filter or cut may map to. `cause` is, for a `cause` item, its
     causes, each `{side, step, label, n_rows}`; it is None until one is
-    proven. `proof` is, for an item `triage confirm` proved, what a re-run
-    checks before keeping the cause (see `carry_confirmed`). `evidence`
+    proven. `proof` is what the cause rests on, typed by `kind`
+    (`PROOF_KINDS`); a stored proof's also names its file. `evidence`
     shows exact counts; `posted` is the same lines masked for the review
     issue (`report.shown_counts`), or None when it equals `evidence`.
     """
@@ -128,17 +128,15 @@ def _group_label(g: Group) -> str:
 
 
 def _group_item(g: Group, item_id: str, open_groups: list[Group]) -> Item:
-    column, value = _stub_dim(g, open_groups)
     label = _group_label(g)
+    stub: dict = {"comparison": g.comparison_id}
+    # A dashboard-filtered group is decided on its cause (the sheet filter),
+    # never by a column value that would close later groups no one proved.
+    if g.bucket != "dashboard_filtered":
+        column, value = _stub_dim(g, open_groups)
+        stub["group"] = {"column": column, "values": [value]}
     return Item(
-        id=item_id,
-        kind="group",
-        comparison=g.comparison_id,
-        label=label,
-        stub={
-            "comparison": g.comparison_id,
-            "group": {"column": column, "values": [value]},
-        },
+        id=item_id, kind="group", comparison=g.comparison_id, label=label, stub=stub
     )
 
 
@@ -314,6 +312,18 @@ def proven_triage(
             f"{view}: {bare} `cause` item{'' if bare == 1 else 's'} "
             f"{'has' if bare == 1 else 'have'} no cause; re-run triage"
         )
+    # A decision written by hand must not close what no one proved.
+    closed = {
+        _open_key(src): d for d, src in [*run.applied.quiet, *run.applied.quiet_cells]
+    }
+    for i in items:
+        d = closed.get(i.get("key", ""))
+        if d is not None and i["suggestion"] == "investigate":
+            raise pipeline.Refusal(
+                f"{view}: decision {d.id!r} closes item {i['id']!r}, which the "
+                "triage holds in `investigate`; delete the decision and prove "
+                "the item (cube-validation skill, step 8)"
+            )
     if n := piles["investigate"]:
         raise pipeline.Refusal(
             f"{view}: {n} triage item{'' if n == 1 else 's'} in `investigate`; "
@@ -354,13 +364,19 @@ _STALE = {
 }
 
 
+# The proofs of a row group that cause decisions decide.
+DECIDABLE_PROOFS = ("query", "reconcile")
+
+
 def decidable(item: dict) -> bool:
-    """A row group a stored proof explains: cause decisions decide it."""
+    """A proven row group: cause decisions decide it, never a column value."""
+    proof = item.get("proof") or {}
     return (
         item.get("kind") == "group"
         and item.get("suggestion") == "cause"
         and bool(item.get("cause"))
-        and bool((item.get("proof") or {}).get("path"))
+        and proof.get("kind") in DECIDABLE_PROOFS
+        and bool(proof.get("fingerprint"))
     )
 
 
@@ -474,7 +490,10 @@ def _covers_group(d: Decision, g: Group) -> bool:
 
 
 def cause_asks(
-    run: RunResult, loaded: dict, recorded: list[Decision]
+    run: RunResult,
+    loaded: dict,
+    recorded: list[Decision],
+    leads: dict[str, str] | None = None,
 ) -> list[CauseAsk]:
     """What `review` asks the owner: each unanswered owner cause and its groups.
 
@@ -501,7 +520,7 @@ def cause_asks(
                 mine.append(groups[item["key"]])
                 rows += sum(n)
         if mine:
-            out.append(CauseAsk(d, mine, rows))
+            out.append(CauseAsk(d, mine, rows, (leads or {}).get(d.comparison, "")))
     return out
 
 
@@ -585,43 +604,23 @@ def doc_leads(cfg: ViewConfig, docs_dir: Path = DOCS_DIR) -> dict[str, str]:
     return out
 
 
-def _involved_docs(cfg: ViewConfig, docs: dict[str, MemberDoc]) -> dict[str, list]:
-    """Each comparison's measure and dims, with their description and ai_context.
-
-    `review` reads them offline for a cause question's evidence.
-    """
-    members = [
-        m for c in cfg.comparisons for m in (c.measure, *(p.cube for p in c.dims))
-    ]
-    return {
-        name: texts
-        for name in dict.fromkeys(members)
-        if name in docs
-        and (
-            texts := [
-                t for t in (docs[name].description, docs[name].ai_context) if t.strip()
-            ]
-        )
-    }
-
-
 NOT_TRACED = "not traced (`triage --no-trace`)"
 NO_FILTER = "no `dashboard_filters` entry names the filter that drops these rows"
 
 
 def _filter_cause(
     comparison: Comparison | None, g: Group
-) -> tuple[list[dict], tuple[str, ...], tuple[str, ...]] | None:
+) -> tuple[list[dict], tuple[str, ...], tuple[str, ...], dict] | None:
     """A dashboard-filtered group's cause, from the run's reconcile.
 
     The reconcile found every row present with the comparison's
     `dashboard_filters` entry off and absent with it on.
 
     Returns:
-        The cause, its evidence and the posted copy; None when no entry names
-        the group's filter.
+        The cause, its evidence, the posted copy and the proof; None when no
+        entry names the group's filter.
     """
-    column = g.value_of("dashboard_filter")
+    column = g.value_of("dashboard_filter") or ""
     entry = next(
         (
             e
@@ -630,9 +629,17 @@ def _filter_cause(
         ),
         None,
     )
-    if entry is None:
+    if comparison is None or entry is None:
         return None
-    label = f"dashboard filter {pipeline._dashboard_filter_sql(entry)}"
+    # The sheet filter's caption, when the proof maps it to this column.
+    captions = {
+        c: caption
+        for caption, c in (
+            (comparison.proof.missing_columns or {}) if comparison.proof else {}
+        ).items()
+    }
+    label = f"sheet filter {captions.get(column, column)}"
+    sql = pipeline._dashboard_filter_sql(entry)
     cause = [
         {
             "side": "dashboard",
@@ -643,9 +650,23 @@ def _filter_cause(
     ]
     return (
         cause,
-        (f"the run's reconcile: {label} drops all {g.n_rows} rows",),
-        (f"the run's reconcile: {label} drops every row",),
+        (f"the run's reconcile: {label} ({sql}) drops all {g.n_rows} rows",),
+        (f"the run's reconcile: {label} ({sql}) drops every row",),
+        reconcile_proof(entry),
     )
+
+
+def reconcile_proof(entry: dict) -> dict:
+    """The proof of a dashboard-filtered group: the filter the reconcile ran.
+
+    Its fingerprint is the `dashboard_filters` entry's, so editing the filter
+    re-opens the decisions made on it.
+    """
+    text = json.dumps(entry, sort_keys=True, default=str)
+    return {
+        "kind": "reconcile",
+        "fingerprint": hashlib.sha256(text.encode()).hexdigest(),
+    }
 
 
 NO_ROWS = (
@@ -754,8 +775,8 @@ def suggest(
                     # dashboard-only filter drops it. No trace is needed.
                     filtered = _filter_cause(comparison, source)
                     if filtered:
-                        call, proof = "cause", {"kind": "reconcile"}
-                        cause, evidence, posted = filtered
+                        call = "cause"
+                        cause, evidence, posted, proof = filtered
                     else:
                         found = (NO_FILTER,)
                 elif traced is not None:
@@ -780,21 +801,6 @@ def suggest(
         if posted is None:
             posted = evidence
 
-        if isinstance(source, Group) and source.dims:
-            stub_group = item.stub["group"]
-            column, value = stub_group["column"], stub_group["values"][0]
-            # No column of this group is its own: the decision covers siblings.
-            also = [
-                i.id
-                for i, o in entries
-                if isinstance(o, Group)
-                and o is not source
-                and o.comparison_id == source.comparison_id
-                and o.value_of(column) == value
-            ]
-            if also:
-                evidence += (f"also covers: {', '.join(also)}",)
-                posted += (f"also covers: {', '.join(also)}",)
         out.append(Suggestion(item, call, evidence, candidates, cause, proof, posted))
 
     return sorted(out, key=lambda s: SUGGESTIONS.index(s.suggestion))
@@ -1096,7 +1102,6 @@ def run_triage(
                 "moment": _moment(run),
                 "decisions_fingerprint": run.decisions_fingerprint,
                 "open": open_keys(run),
-                "docs": _involved_docs(cfg, docs),
                 "items": items,
             },
             indent=1,

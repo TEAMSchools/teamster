@@ -2360,7 +2360,7 @@ def test_triage_proves_first_and_traces_only_what_no_proof_explains(
         order.append("trace")
         assert skip == {trace.item_key(group)}
         # A cap stops the trace: it never un-proves what a proof explained.
-        return trace.TraceResult({}, stops={("ada-region", group.bucket): "cap"})
+        return trace.TraceResult({})
 
     monkeypatch.setattr(confirm, "run_stored", stored)
     monkeypatch.setattr(trace, "trace_run", traced)
@@ -2580,10 +2580,7 @@ def test_triage_writes_its_batch_when_the_trace_stops(
     monkeypatch.setattr(
         trace,
         "trace_run",
-        lambda *a, **k: trace.TraceResult(
-            {trace.item_key(open_group): stopped},
-            stops={("ada-region", open_group.bucket): stopped.stopped},
-        ),
+        lambda *a, **k: trace.TraceResult({trace.item_key(open_group): stopped}),
     )
 
     assert cli.main(["triage", str(path)]) == 0
@@ -3276,9 +3273,12 @@ def test_a_changed_proof_re_opens_a_cause_decision_for_re_approval(
     first = {"id": "a", "call": "domain_owner", "reason": "r", "item": MIAMI}
     assert _approve(path, tmp_path, first) == 0
     _triaged_run(path, tmp_path)
-    # Approving a decided item again refuses.
-    assert _approve(path, tmp_path, {**first, "id": "b"}) == 1
-    assert "already decided" in capsys.readouterr().err
+    # Approving a decided item again writes nothing; another call refuses.
+    before = path.read_text()
+    assert _approve(path, tmp_path, {**first, "id": "b"}) == 0
+    assert path.read_text() == before
+    assert _approve(path, tmp_path, {**first, "id": "b", "call": "deliberate"}) == 1
+    assert "is decided domain_owner in 'a'" in capsys.readouterr().err
 
     # The proof file changes; the next triage carries its new fingerprint.
     proof = Path(STORED_PROOF["path"])
@@ -3335,3 +3335,35 @@ def test_a_trace_refusal_comes_before_any_proof_runs(
 
     assert cli.main(["triage", str(path)]) == 1
     assert "no dbt manifest" in capsys.readouterr().err
+
+
+def _drop_nulls(tmp_path):
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    data = json.loads(saved.read_text())
+    for g in data["applied"]["open"]:
+        del g["nulls"]
+    saved.write_text(json.dumps(data))
+    return data["moment"]["start"]
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        ["triage", "{path}", "--no-trace"],
+        ["triage", "confirm", "{path}", "--comparison", "ada-region", "--cells"],
+        ["add-decisions", "{path}", "{approved}"],
+    ],
+)
+def test_a_run_saved_before_null_aware_groups_refuses(fakes, tmp_path, capsys, command):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    start = _drop_nulls(tmp_path)
+    approved = _approved(tmp_path, [])
+    capsys.readouterr()
+
+    argv = [a.format(path=path, approved=approved) for a in command]
+    assert cli.main(argv) == 1
+
+    err = capsys.readouterr().err
+    assert "this run predates NULL-aware groups; run again" in err
+    assert f"`run --moment {start}`" in err and "proof" not in err

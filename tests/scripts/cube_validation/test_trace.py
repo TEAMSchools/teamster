@@ -52,6 +52,16 @@ CUBE = (
 )
 
 
+def _proven(found) -> bool:
+    """Every row attributed to a step and the counts add up: a lead, not a proof."""
+    return (
+        found.n_rows > 0
+        and found.unattributed == 0
+        and found.consistent
+        and not found.stopped
+    )
+
+
 def _group(n, school="X"):
     return Group("mastery", (("abbreviation", school),), "cube_only", n, n)
 
@@ -150,7 +160,7 @@ def test_one_step_two_steps_and_none_row_by_row(duck):
     assert found.steps == {"dashboard:main:1": 1}
     # (2, b) needs both steps: no single step brings it back.
     assert found.needs_more == {"the dashboard SQL": 1}
-    assert found.none == 1 and not found.proven and found.consistent
+    assert found.none == 1 and not _proven(found) and found.consistent
     assert (
         "2 rows unattributed: 1 lead: no single step brings it back, in the "
         "dashboard SQL; 1 recovered by no step"
@@ -206,15 +216,9 @@ def test_a_row_missing_from_a_table_descends_to_the_step_that_drops_it(duck, tmp
         trace.item_key(_group(1))
     ]
 
-    assert found.proven
-    assert found.cause() == [
-        {
-            "side": "dashboard",
-            "step": "dashboard:fact/main:1",
-            "label": "fact/main: keep",
-            "n_rows": 1,
-        }
-    ]
+    assert _proven(found)
+    assert found.steps == {"dashboard:fact/main:1": 1}
+    assert found.labels["dashboard:fact/main:1"] == "fact/main: keep"
 
 
 def test_rows_left_at_the_deepest_level_are_below_its_tables(duck, tmp_path):
@@ -267,10 +271,10 @@ def test_steps_of_one_scope_each_recovering_a_row_are_one_cause(duck):
     one = _trace(duck, UNION, [_group(1)])[trace.item_key(_group(1))]
     two = _trace(duck, SPLIT, [_group(1)])[trace.item_key(_group(1))]
 
-    assert one.proven
-    assert [c["label"] for c in one.cause()] == ["u: covers / u: covers"]
+    assert _proven(one)
+    assert [one.labels[k] for k in one.steps] == ["u: covers / u: covers"]
     # Across scopes the same rows stay unattributed.
-    assert not two.proven and two.many == 1
+    assert not _proven(two) and two.many == 1
     assert "recovered by steps in 2 or more scopes" in two.evidence()[-1]
 
 
@@ -280,7 +284,7 @@ def test_a_grain_the_other_side_holds_twice_is_never_attributed(duck):
 
     found = _trace(duck, FLAT, [_group(1)])[trace.item_key(_group(1))]
 
-    assert found.duplicates == 1 and not found.proven
+    assert found.duplicates == 1 and not _proven(found)
     assert "duplicate grain on the other side" in found.evidence()[-1]
 
 
@@ -342,7 +346,7 @@ def test_rows_the_unrelaxed_sql_already_returns_are_never_attributed(duck):
 
     found = bucket.run()[trace.item_key(_group(1))]
 
-    assert found.unreproduced == {"dashboard": 1} and not found.proven
+    assert found.unreproduced == {"dashboard": 1} and not _proven(found)
 
 
 # --- refusals, caps, stops and failures ----------------------------------------
@@ -401,7 +405,7 @@ def test_a_level_past_the_cap_stops_and_keeps_what_was_found():
 
     found = caught.value.found[trace.item_key(_group(5))]
     assert "would pass the $1.00 cap" in caught.value.reason
-    assert found.unknown == 5 and found.stopped and not found.proven
+    assert found.unknown == 5 and found.stopped and not _proven(found)
     assert "trace stopped: " in found.evidence()[-1]
 
 
@@ -425,7 +429,7 @@ def test_a_query_failure_keeps_its_job_and_reason_but_not_its_message():
 
     found = _canned(wh=Failing(None)).run()[trace.item_key(_group(5))]
 
-    assert found.unknown == 5 and not found.proven
+    assert found.unknown == 5 and not _proven(found)
     assert found.failed == ("the side's own SQL: job job-9, invalidQuery",)
     assert "12345" not in " ".join(found.evidence())
 
@@ -436,7 +440,7 @@ def test_counts_that_do_not_add_up_never_prove_an_item():
     found.labels["s"] = "main: s"
     found.none = 2
 
-    assert not found.consistent and not found.proven
+    assert not found.consistent and not _proven(found)
     assert "trace counts do not add up; trace it by hand" in found.evidence()
 
 
@@ -446,7 +450,6 @@ def test_evidence_masks_a_part_its_total_would_give_away():
     found.labels["s"] = "main: s"
     found.none = 7
 
-    assert found.shown_total(posted=True) == "25"
     assert found.evidence(posted=True) == (
         "main: s: masked rows",
         "<10 rows unattributed: <10 recovered by no step",
@@ -586,7 +589,7 @@ def test_a_row_two_levels_drop_never_descends_to_a_stand_in(duck, tmp_path):
         trace.item_key(_group(1))
     ]
 
-    assert not found.proven and not found.steps
+    assert not _proven(found) and not found.steps
     assert found.needs_more and not found.none
 
 
@@ -625,7 +628,7 @@ def test_a_row_a_row_pick_drops_never_descends_to_a_stand_in(duck, tmp_path):
         trace.item_key(_group(1))
     ]
 
-    assert not found.proven and not found.steps
+    assert not _proven(found) and not found.steps
     assert not found.none
 
 
@@ -664,8 +667,8 @@ def test_a_stop_keeps_the_items_already_proven(duck):
 
     proven = caught.value.found[trace.item_key(groups[0])]
     stopped = caught.value.found[trace.item_key(groups[1])]
-    assert proven.proven and not proven.stopped
-    assert stopped.stopped and not stopped.proven
+    assert _proven(proven) and not proven.stopped
+    assert stopped.stopped and not _proven(stopped)
 
 
 def test_a_dry_run_error_partway_stops_with_its_job_and_reason(duck):
@@ -740,8 +743,8 @@ def test_a_filter_ahead_of_a_pick_with_1_candidate_is_still_proven(duck):
 
     found = _trace(duck, PICKED, [_group(1)])[trace.item_key(_group(1))]
 
-    assert found.proven
-    assert [c["label"] for c in found.cause()] == ["f: x"]
+    assert _proven(found)
+    assert [found.labels[k] for k in found.steps] == ["f: x"]
 
 
 # --- fix round 4: the guard fails closed -------------------------------------------
@@ -787,7 +790,7 @@ def test_a_count_is_never_carried_through_an_except(duck):
 
     found = _trace(duck, EXCEPT_PICK, [_group(1)])[trace.item_key(_group(1))]
 
-    assert not found.proven and not found.steps
+    assert not _proven(found) and not found.steps
     assert not any("__cand" in sql for sql in duck.ran)
 
 
@@ -799,7 +802,7 @@ def test_a_row_only_a_row_pick_drops_says_so(duck):
 
     found = _trace(duck, PICKED, [_group(1)])[trace.item_key(_group(1))]
 
-    assert not found.proven and not found.steps and not found.needs_more
+    assert not _proven(found) and not found.steps and not found.needs_more
     assert found.evidence()[-1] == (
         "1 rows unattributed: 1 a row pick drops it; the row is in the "
         "tables the dashboard SQL reads"
@@ -819,7 +822,6 @@ def test_masked_cells_of_a_breakdown_hold_10_or_more_together():
 
     lines = found.evidence(posted=True)
 
-    assert found.shown_total(posted=True) == "40"
     assert lines[0] == "main: a: 10 rows"
     assert lines[1] == (
         "30 rows unattributed: masked recovered by steps in 2 or more scopes "
@@ -866,9 +868,6 @@ def test_a_stop_in_one_bucket_never_stops_the_other(monkeypatch):
     assert "invalidQuery" in result.items[trace.item_key(cube_only)].stopped
     assert not result.items[trace.item_key(dash_only)].stopped
     assert any("bucket = 'dashboard_only'" in sql for sql in wh.ran)
-    assert result.stops == {
-        ("mastery", "cube_only"): result.items[trace.item_key(cube_only)].stopped
-    }
 
 
 def test_a_level_zero_dry_run_error_stops_only_its_bucket(monkeypatch):

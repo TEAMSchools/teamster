@@ -281,27 +281,6 @@ def test_stub_takes_the_first_column_no_sibling_shares():
     assert not any("also covers" in e for s in result for e in s.evidence)
 
 
-def test_stub_with_no_unique_column_names_what_it_also_covers():
-    one = Group("enrollment", (("region", "Newark"),), "value_differs", 40, 38)
-    two = Group("enrollment", (("region", "Newark"),), "cube_only", 40, 38)
-
-    result = suggest(_cfg(), _run(groups=[one, two]), {})
-
-    assert [i.stub["group"]["column"] for i in open_items(_run(groups=[one, two]))] == [
-        "region",
-        "region",
-    ]
-    # The suffix follows the sort on raw dims then bucket, so `cube_only` is
-    # first and the first-listed `value_differs` group is the `#2`.
-    by_id = {s.item.id: s for s in result}
-    assert by_id["enrollment:region=Newark#2"].evidence[-1] == (
-        "also covers: enrollment:region=Newark"
-    )
-    assert by_id["enrollment:region=Newark"].evidence[-1] == (
-        "also covers: enrollment:region=Newark#2"
-    )
-
-
 def test_no_group_by_stub_matches_a_row_with_no_group_by():
     whole = Group("enrollment", (), "value_differs", 40, 38)
 
@@ -418,11 +397,15 @@ def test_rows_the_sheet_s_own_filter_drops_are_a_cause_with_no_trace():
     # `--no-trace`: the reconcile alone proves it.
     [s] = suggest(cfg, _run(groups=[group]), {}, traces=None)
 
-    assert s.suggestion == "cause" and s.proof == {"kind": "reconcile"}
+    assert s.suggestion == "cause" and s.proof["kind"] == "reconcile"
+    assert s.proof["fingerprint"]
     assert s.cause[0]["n_rows"] == 12
-    assert s.cause[0]["label"].startswith("dashboard filter administered_at <= ")
+    assert s.cause[0]["label"] == "sheet filter administered_at"
+    assert "(administered_at <= " in s.evidence[0]
     assert s.evidence[0].endswith("drops all 12 rows")
     assert s.posted[0].endswith("drops every row")
+    # Decided on its cause, never by a column value.
+    assert "group" not in s.item.stub
 
 
 def test_a_gap_the_workbook_carries_rests_on_the_workbook():
@@ -991,3 +974,61 @@ def test_decided_marks_round_trip_through_triage_json(tmp_path):
 
     assert (back["decided"], back["decisions"]) == (True, {f"cube: {NO_SECTION}": "a"})
     assert back["key"] == it.key and back == item
+
+
+# --- final review: sheet-filter causes, closed investigate items --------------
+
+from cube_validation.answers import approved_decisions  # noqa: E402
+
+
+def test_sheet_filtered_groups_share_one_cause_decision_and_no_group_stub(tmp_path):
+    # DDI's C6: 6 groups the sheet's own filter drops, on 6 different modules.
+    entry = {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0}
+    proof = _proof(missing_columns={"Exclude Future Assessments": "administered_at"})
+    cmp = Comparison(id="enrollment", measure="m", dims=[ColumnPair("Module", "module_code")],
+                     proof=proof, dashboard_filters=[entry])  # fmt: skip
+    cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
+    groups = [
+        Group("enrollment", (("dashboard_filter", "administered_at"),
+                             ("module_code", f"M{i}")), "dashboard_filtered", 12, 12)
+        for i in range(6)
+    ]  # fmt: skip
+    run = _fp_run(groups)
+    items = [_as_json(x) for x in suggest(cfg, run, {}, traces=None)]
+    approved = [
+        {"id": f"c6-{i}", "call": "deliberate", "reason": "the sheet hides them",
+         "item": item["id"]}
+        for i, item in enumerate(items)
+    ]  # fmt: skip
+
+    (decision,) = approved_decisions(approved, {"items": items}, {"enrollment": FPS})
+
+    assert all("group" not in i["stub"] for i in items)
+    assert decision["cause"] == {
+        "side": "dashboard",
+        "label": "sheet filter Exclude Future Assessments",
+    }
+    assert "group" not in decision
+    assert decision["fingerprints"]["proof"] == items[0]["proof"]["fingerprint"]
+    marked = [dict(i) for i in items]
+    mark_decided(run, marked, [Decision(**decision)])
+    assert all(i["decided"] for i in marked)
+
+
+def test_a_decision_closing_an_item_triage_holds_in_investigate_refuses(tmp_path):
+    group = _groups("Newark")[0]
+    run = _fp_run([group])
+    (it,) = open_items(run)
+    item = {"id": it.id, "key": it.key, "kind": "group", "comparison": "enrollment",
+            "suggestion": "investigate", "cause": None, "proof": None}  # fmt: skip
+    hand = Decision("hand", "enrollment", "deliberate", "r",
+                    group={"column": "region", "values": ["Newark"]},
+                    fingerprints=dict(FPS))  # fmt: skip
+    # Written by hand after triage, then re-applied: the group is now quiet.
+    run.applied = Applied(quiet=[(hand, group)])
+    run_json = _write_run_triage(tmp_path, run, [item])
+
+    with pytest.raises(
+        pipeline.Refusal, match=r"decision 'hand' closes item .* `investigate`"
+    ):
+        proven_triage(run, run_json)

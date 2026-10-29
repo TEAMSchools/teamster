@@ -532,12 +532,14 @@ def _group_part(
 
 @dataclass(frozen=True)
 class CauseAsk:
-    """One owner question on a cause: the decision, the groups it decides in
-    the latest triage, and the rows the proof attributes to it in them."""
+    """One comparison's part of an owner question on a cause: the decision,
+    the groups it decides in the latest triage, the rows the proof attributes
+    to it in them, and the comparison's model-doc lead (`triage.doc_leads`)."""
 
     decision: Decision
     groups: list[Group]
     rows: int
+    lead: str = ""
 
 
 def _cause_part(view: str, ask: CauseAsk) -> tuple[str, list]:
@@ -584,14 +586,16 @@ def _questions(
     One question per reason and task, across decision kinds and files: each
     kind and view adds a part to its bullet, and the reason prints once. A
     cause in `causes` (per view, `triage.cause_asks`) is its own question,
-    whatever its reason: one per cause and task, never one per school.
+    whatever its reason: one per side, words and task, never one per school
+    or comparison, with a part per comparison it covers.
 
     Returns:
         In the order the issue asks them, dicts of `reason`, `task`, `parts`
         (the masked count text per kind and view), `kinds`, `hidden` (values
         the reason and any evidence must lose), `decisions` as (view,
         Decision) pairs and `comparisons` as (view, comparison id, kind)
-        triples, each listed once; a cause question also has `ask`.
+        triples, each listed once; a cause question also has `asks`, (view,
+        `CauseAsk`) pairs.
     """
     questions: dict[tuple, dict] = {}
 
@@ -630,17 +634,11 @@ def _questions(
             )
         for ask in (causes or {}).get(run.view, []):
             part, hidden = _cause_part(run.view, ask)
-            key = ("cause", run.view, ask.decision.id, ask.decision.task)
-            add(
-                run.view,
-                "cause",
-                [ask.decision],
-                part,
-                hidden,
-                [ask.decision.comparison],
-                key=key,
-            )
-            questions[key]["ask"] = ask
+            d = ask.decision
+            # One rule proven on several comparisons is one question.
+            key = ("cause", d.cause.get("side"), d.cause.get("label"), d.task)
+            add(run.view, "cause", [d], part, hidden, [d.comparison], key=key)
+            questions[key].setdefault("asks", []).append((run.view, ask))
         for decisions, diffs in _by_reason(run.applied.quiet_cells):
             add(
                 run.view,

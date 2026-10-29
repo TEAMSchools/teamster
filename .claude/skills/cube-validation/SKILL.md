@@ -79,8 +79,10 @@ through a throwaway `tests/test_zz_cube_validation.py` in
                         "--comparison", "<id>"]) == 0
    ```
 
-2. Run `uv run pytest tests/test_zz_cube_validation.py -s --tb=short`, then
-   delete the file.
+2. Run it from `/workspaces/teamster`, where the secrets load, with the
+   validator worktree's environment, so the branch's sqlglot is used:
+   `uv run --project <worktree> pytest tests/test_zz_cube_validation.py -s --tb=short`.
+   Then delete the file.
 
 `review`, `add-decisions`, `reapply`, `record-answers` and `preflight` need no
 credentials: run them from the checkout that holds the validation files with
@@ -219,12 +221,17 @@ cause, do not retry around it.
    with an item in `investigate`, or one whose proof file changed since.
 
    Nothing goes to the owner without a cause proven row by row. A row group
-   reaches `cause` only through a stored proof (below). A missing cut or filter
-   reaches it from the workbook (`sheet filter <caption>` or `sheet cut`), and
-   rows a `dashboard_filters` entry drops ("dashboard filtered") from the run's
-   own reconcile. A cell set reaches it when every differing cell's rows lie in
-   groups in `cause`. A member description, a cell pattern or a trace count is a
-   lead, never a cause.
+   reaches `cause` only through a stored proof (below), including one whose
+   values differ on rows both sides hold (`--bucket value_differs`). A missing
+   cut or filter reaches it from the workbook (`sheet filter <caption>` or
+   `sheet cut`), and rows a `dashboard_filters` entry drops ("dashboard
+   filtered") from the run's own reconcile, as the cause
+   `sheet filter <caption>`. A cell set reaches it when every differing cell's
+   rows lie in groups in `cause`, so a cell set needs `rows` on its comparison
+   to be provable: add `rows` before `run`. A member description, a cell pattern
+   or a trace count is a lead, never a cause. A run saved before groups recorded
+   their NULLs is refused ("this run predates NULL-aware groups"):
+   `run --moment <its moment>` again.
 
    The trace leads. `triage` relaxes each step of the other side's SQL (WHERE
    and HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 3 dbt models)
@@ -267,11 +274,14 @@ cause, do not retry around it.
       columns, the grain under its Cube names, and `__rn` (past 1, a grain the
       other side holds twice). A `CASE` in lineage order names each row's first
       failing predicate, copied literally from the model's SQL, as a string
-      literal. A row the join misses must fall to `'UNEXPLAINED'`, never into a
-      cause: test the join first (or use `EXISTS`), and join a table at the
-      row's grain, since a finer one repeats rows. Name tables
-      `` `teamster-332318`.`<dataset>`.`<table>` ``; they are read as of the
-      run's moment. A proof may open with its own `WITH`.
+      literal, and every `CASE` ends in `ELSE 'UNEXPLAINED'`, never in a cause:
+      a later run's rows of a new cause must not be filed under an old one. A
+      row the join misses must fall to `'UNEXPLAINED'` too: test the join first
+      (or use `EXISTS`), and join a table at the row's grain, since a finer one
+      repeats rows. Name tables `` `teamster-332318`.`<dataset>`.`<table>` ``;
+      they are read as of the run's moment; `confirm` warns of a table named
+      without them. A proof may open with its own `WITH`; it takes no `QUALIFY`
+      or `GROUP BY ALL`.
 
       ```sql
       SELECT u.__row,
@@ -286,17 +296,18 @@ cause, do not retry around it.
         ON r.assessment_id = u.assessment_id
       ```
 
-   7. `triage confirm <file> --comparison <id> --bucket <cube_only|dashboard_only> --sql <draft.sql> --cause C1=dashboard:<plain words> ...`
+   7. `triage confirm <file> --comparison <id> --bucket <cube_only|dashboard_only|value_differs> --sql <draft.sql> --cause C1=dashboard:<plain words> ...`
       (through the runner) needs a `--cause` for every cause literal the query
       returns. The tool counts the rows itself, joining the proof back to
       `{unmatched}`, and refuses a row the proof drops or repeats, a cause that
-      is no string literal of the proof, any column but `__row` and `cause`, a
-      grain or ID column as the cause, a literal compared with a column that
-      names a person (the student column, a `_number`, `_name` or `_email`, a
-      student id or key; `assessment_id = 189131` is fine), and an ID-like
-      number or email in a comment or string. These checks catch the common
-      mistakes, not every one: read the proof yourself. It is priced and capped
-      like any query. It saves the proof to
+      is no CASE ending in `ELSE 'UNEXPLAINED'` or no string literal of the
+      proof, any column but `__row` and `cause`, a grain or ID column as the
+      cause, a literal compared with a column that names a person (the student
+      column, a `_number`, `_name` or `_email`, a student id or key;
+      `assessment_id = 189131` is fine), and an ID-like number or email in a
+      comment or string. These checks catch the common mistakes, not every one:
+      read the proof yourself. It is priced and capped like any query. It saves
+      the proof to
       `src/cube/validation/proofs/<view>/<comparison>__<bucket>.sql`, under lint
       opt-outs and its `-- cause <bucket> = <side>: <words>` block, and moves
       each item it fully explains (no `UNEXPLAINED`) to `cause`. The rest stay,
@@ -307,7 +318,7 @@ cause, do not retry around it.
       cells' differences and the proven rows.
    8. Show the analyst the proof file and the per-cause counts `confirm`
       printed, and wait for an OK before the file is kept for commit. On a no,
-      delete the file and run `triage` again.
+      delete the file and run `triage --no-trace` again.
    9. Proven means 2 things: `UNEXPLAINED` is 0 for the item, and each bucket's
       rule is a literal model predicate, not a paraphrase of a doc. For the rows
       a predicate drops, a second aggregate shows the value (the date, the flag,
@@ -316,9 +327,11 @@ cause, do not retry around it.
    Every `triage` re-runs every stored proof on the new run's rows first, priced
    and capped (`--no-proofs` skips them), then traces only what no proof
    explains; an item with rows a proof no longer explains returns to
-   `investigate`. The proof files are the durable record: commit them with the
-   decisions, in the validation-file commit. They hold SQL only: no values, no
-   names. A formatting-only edit to one re-opens nothing.
+   `investigate`. Re-triage a run whose leads are in hand with `--no-trace`;
+   trace again only when new items appeared. The proof files are the durable
+   record: commit them with the decisions, in the validation-file commit. They
+   hold SQL only: no values, no names. A formatting-only edit to one re-opens
+   nothing.
 
    Worked example (DDI). Cube-only rows were classified through the dashboard's
    `responses` CTE, dashboard-only rows through Cube's fact:
@@ -388,18 +401,20 @@ cause, do not retry around it.
    the excluded items stay unrecorded until the analyst says where they go.
    Write the approved items, owner items included, to `approved.json` in the
    session scratchpad: a JSON list of
-   `{"id", "call", "reason", "task", "item"}`, where `item` is the triage item
-   id, `id` a new decision id not already in the file, and `task` empty for
-   `deliberate` and `domain_owner`. Map items are not in it. Then
-   `add-decisions <file> <approved.json>`: a row group a stored proof explains
-   becomes one `cause:` decision per cause that has none yet; a cause already
-   decided keeps its decision, so give every item of one cause the same call. A
-   second new cause of one item takes the id `<id>-2`. Other items take their
-   key fields from the stub. It refuses an item already decided. Fingerprints
-   come from the latest run and the proof file. It writes the whole batch or
-   nothing, then re-applies every decision to the saved run offline, so `review`
-   reads it with no new `run`. After a hand edit to `decisions:`,
-   `reapply <file>` does the same.
+   `{"id", "call", "reason", "task", "item", "cause"}`, where `item` is the
+   triage item id, `id` a new decision id not already in the file, `task` empty
+   for `deliberate` and `domain_owner`, and `cause` the cause's words, needed
+   only on an item with several causes: give such an item one entry per cause,
+   each with its own call. Map items are not in it. Then
+   `add-decisions <file> <approved.json>`: a proven row group (a stored proof's,
+   or a sheet filter's) becomes one `cause:` decision per cause that has none
+   yet, never a `group:` decision; a cause already decided keeps its decision,
+   so give every entry on one cause the same call. An item is decided once every
+   one of its causes is; approving it again changes nothing. Other items take
+   their key fields from the stub. Fingerprints come from the latest run and the
+   proof. It writes the whole batch or nothing, then re-applies every decision
+   to the saved run offline, so `review` reads it with no new `run`. After a
+   hand edit to `decisions:`, `reapply <file>` does the same.
 
    Before `review`, give the file a top-level `tasks:` block,
    `{cube_fix: <the domain's Cube-fix issue>, dashboard_fix: <its Asana dashboard-fix task>}`:
@@ -418,36 +433,38 @@ cause, do not retry around it.
    `missing_cut: <caption>` or `missing_filter: <caption>` in place of `group`,
    with no `comparison` and no `fingerprints`: it covers the field across the
    view. A comparison's cell differences take `cells: true` in place of `group`,
-   with its `comparison` and `fingerprints`. Rows a dashboard-only filter drops
-   take `group: { column: dashboard_filter, values: [<its column>] }`. A proven
-   cause takes `cause: {side, label}` in place of `group`, `label` being the
-   proof's words with each number of 5 or more digits written `<n>`, and
-   `fingerprints` adds `proof`, the proof file's. It names no group: each
-   `triage` re-runs the proofs and marks an item `decided` when every one of its
-   causes has a decision that still holds, so a run never closes one. A decision
-   whose SQL or proof changed decides nothing until re-approved through
-   `add-decisions`, never by pasting new fingerprints; one the owner answered
-   (`answer:`) is never re-approved: delete it to ask again. `add-decisions`
-   writes these; do not hand-write one. A cause decision and a `group` decision
-   on one group with different calls refuse.
+   with its `comparison` and `fingerprints`. Never hand-write a `group:` or
+   `cells:` decision for an item triage holds in `investigate`: `add-decisions`
+   and `review` refuse while one closes such an item. A proven cause takes
+   `cause: {side, label}` in place of `group`, `label` being the proof's words
+   with each ID-shaped number written `<n>`, and `fingerprints` adds `proof`,
+   the proof's. It names no group: each `triage` re-runs the proofs and marks an
+   item `decided` when every one of its causes has a decision that still holds,
+   so a run never closes one. A decision whose SQL or proof changed decides
+   nothing until re-approved through `add-decisions`, never by pasting new
+   fingerprints; one the owner answered (`answer:`) is never re-approved: delete
+   it to ask again. `add-decisions` writes these; do not hand-write one. A cause
+   decision and a `group` decision on one group with different calls refuse.
 
 10. `review <files> --domain <domain>` prints the validation issue's body: the
     numbered questions, each with the owner's hand checks, and a closing JSON
-    block the owner's session reads. Each unanswered `domain_owner` cause
-    decision is one question, with its words, the count of groups it decides and
-    of the rows its proof attributes to it, and the member docs that share its
-    words. It refuses unless every file's view has a triage with nothing in
-    `investigate`. stderr names any question with no triage evidence: `triage`
-    that view and render again before posting. The footnote promises that
-    identifiers of students and staff are hidden, which holds only if no reason
-    or definition names a person: read them first. Show the draft to the
-    analyst, then post it with `mcp__github__issue_write`, titled "Validate
-    <dashboard> in Cube", using the repo's issue template. That issue is the
-    validation's hub. Then write `task: "#<issue>"` into each decision stderr
-    lists; filling in a task needs no new `run`. Tell the analyst the owner
-    answers in his own Claude Code session by saying "walk me through issue #N"
-    (the `cube-validation-answers` skill). When that session reports the pinned
-    SQL expired, `run` again, render `review` again, and update the issue body.
+    block the owner's session reads. Each unanswered `domain_owner` cause is one
+    question, across the comparisons it is proven on, with its words, per
+    comparison the count of groups it decides and of the rows its proof
+    attributes to it, and the model-doc leads; the owner's answer records onto
+    every decision it lists. It refuses unless every file's view has a triage
+    with nothing in `investigate`. stderr names any question with no triage
+    evidence: `triage` that view and render again before posting. The footnote
+    promises that identifiers of students and staff are hidden, which holds only
+    if no reason or definition names a person: read them first. Show the draft
+    to the analyst, then post it with `mcp__github__issue_write`, titled
+    "Validate <dashboard> in Cube", using the repo's issue template. That issue
+    is the validation's hub. Then write `task: "#<issue>"` into each decision
+    stderr lists; filling in a task needs no new `run`. Tell the analyst the
+    owner answers in his own Claude Code session by saying "walk me through
+    issue #N" (the `cube-validation-answers` skill). When that session reports
+    the pinned SQL expired, `run` again, render `review` again, and update the
+    issue body.
 11. On "pick up the answers on #N", read only the comment the analyst names; if
     they name none, ask which, never take the latest. Save its body to a file in
     the session scratchpad and show the analyst its author's login. Check its

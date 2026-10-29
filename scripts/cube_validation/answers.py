@@ -24,7 +24,6 @@ from typing import Any
 from .config import _TASK, CALLS, Decision, ViewConfig, mask_digits
 from .cube_client import _literal
 from .decisions import cause_state
-from .discover import _tokens
 from .report import (
     _SEPARATED_DIGITS,
     MASK_BELOW,
@@ -200,39 +199,23 @@ def _covers(d: Decision, stub: dict) -> bool:
     )
 
 
-def docs_on_cause(label: str, docs: dict[str, list[str]]) -> list[str]:
-    """Quote each member doc sharing a word with the cause, as `<member>: <text>`.
+def _cause_evidence(asks: list[tuple[str, CauseAsk]]) -> list[str]:
+    """A cause question's evidence: its words, each part's counts, the leads.
 
-    A plain token test: T20 may replace it with a better match.
+    The counts are the bullet's own, each comparison's share of its groups'
+    rows, so the issue never shows 2 totals whose difference is another
+    cause's. The leads name the model docs on each comparison, never a member
+    description.
     """
-    wanted = _tokens(label)
+    d = asks[0][1].decision
     return [
-        f"{name}: {text}"
-        for name, texts in docs.items()
-        for text in texts
-        if wanted & _tokens(text)
-    ]
-
-
-def _cause_evidence(ask: CauseAsk, triage: dict, cfg: ViewConfig | None) -> list[str]:
-    """A cause question's evidence: its words, its counts and the docs on it.
-
-    The counts are the bullet's own, the cause's share of its groups' rows,
-    so the issue never shows 2 totals whose difference is another cause's.
-    Docs are those of the comparison's measure and dims that mention the
-    cause's words.
-    """
-    d = ask.decision
-    label = str(d.cause.get("label"))
-    cmp = next(
-        (c for c in (cfg.comparisons if cfg else []) if c.id == d.comparison), None
-    )
-    members = [cmp.measure, *(p.cube for p in cmp.dims)] if cmp else []
-    docs = triage.get("docs") or {}
-    return [
-        f"cause ({d.cause.get('side')} side): {label}",
-        f"{mask(len(ask.groups))} row groups, {mask(ask.rows)} rows attributed to it",
-        *docs_on_cause(label, {m: docs[m] for m in members if m in docs}),
+        f"cause ({d.cause.get('side')} side): {d.cause.get('label')}",
+        *(
+            f"`{a.decision.comparison}` in `{view}`: {mask(len(a.groups))} row "
+            f"groups, {mask(a.rows)} rows attributed to it"
+            for view, a in asks
+        ),
+        *dict.fromkeys(a.lead for _, a in asks if a.lead),
     ]
 
 
@@ -317,9 +300,8 @@ def questions_json(
             if _covers(d, item.get("stub") or {})
         ]
         lines = [line for item in items for line in item.get("evidence", [])]
-        if q["kinds"] == ["cause"]:
-            ((view, _),) = q["decisions"]
-            lines = _cause_evidence(q["ask"], triage.get(view, {}), by_cfg.get(view))
+        if "asks" in q:
+            lines = _cause_evidence(q["asks"])
         evidence = list(
             dict.fromkeys(_safe_reason(line, q["hidden"]) for line in lines)
         )
@@ -595,12 +577,14 @@ _STUB_KEYS = ("comparison", "group", "cells", "missing_cut", "missing_filter")
 
 
 def _is_cause_item(item: dict) -> bool:
-    """A row group a stored proof explains, which cause decisions decide."""
+    """A proven row group, which cause decisions decide (`triage.decidable`)."""
+    proof = item.get("proof") or {}
     return (
         item.get("kind") == "group"
         and item.get("suggestion") == "cause"
         and bool(item.get("cause"))
-        and bool((item.get("proof") or {}).get("path"))
+        and proof.get("kind") in ("query", "reconcile")
+        and bool(proof.get("fingerprint"))
     )
 
 
@@ -632,7 +616,11 @@ def _proofs_by_cause(items: list[dict]) -> dict[tuple, set[str]]:
                     c.get("side"),
                     mask_digits(c.get("label", "")),
                 )
-                out.setdefault(key, set()).add(item["proof"]["path"])
+                # A reconcile has no file; its filter's fingerprint stands in.
+                proof = item["proof"]
+                out.setdefault(key, set()).add(
+                    proof.get("path") or proof["fingerprint"]
+                )
     return out
 
 
@@ -644,24 +632,27 @@ def approved_decisions(
 ) -> list[dict]:
     """Turn an approved triage batch into decisions, in the file's key order.
 
-    A row group a stored proof explains is decided on its causes, never on
-    itself: each cause (a bucket of its proof, named by the proof's words)
-    with no decision yet gets one, `{comparison, cause: {side, label}, call, reason,
-    task, fingerprints}`, whose fingerprints are the comparison's and the
-    proof file's. A cause already decided keeps its decision, which must have
-    the entry's call. One whose SQL or proof changed since is re-approved on
-    the current ones, unless the owner has answered it. The entry's id names
-    the first new decision; later ones take `<id>-2` and so on. A label's
-    numbers of 5 or more digits are written `<n>`.
+    A proven row group (a stored proof's, or the reconcile's for a sheet
+    filter) is decided on its causes, never on a column value: an entry
+    decides one cause of one item, `{comparison, cause: {side, label}, call,
+    reason, task, fingerprints}`, whose fingerprints are the comparison's and
+    the proof's. An item with several causes takes one entry per cause, each
+    naming it in `cause`, so each cause gets its own call; the item is
+    decided once every cause is. A cause already decided keeps its decision,
+    which must have the entry's call; entries on one cause merge into one
+    decision. One whose SQL or proof changed since is re-approved on the
+    current ones, unless the owner has answered it. A label's ID-shaped
+    numbers are written `<n>`. No order of the entries changes the result.
 
     Every other item takes its key fields from the triage item's `stub`,
-    which holds the group's real values. Either kind takes the comparison's
+    which holds its real values. Either kind takes the comparison's
     `{cube, dashboard}` from the run's fingerprints. A missing cut or filter
     covers the view, so it takes neither a comparison nor fingerprints.
 
     Args:
-        approved: `[{"id", "call", "reason", "task", "item"}]`; `item` is a
-            triage item id and `task` may be empty.
+        approved: `[{"id", "call", "reason", "task", "item", "cause"}]`;
+            `item` is a triage item id, `task` may be empty, and `cause` (the
+            cause's words) is needed only on an item with several causes.
         triage: The view's `triage.json`, marked by `triage.mark_decided`.
         fingerprints: The latest run's fingerprints per comparison id.
         existing: The file's decisions.
@@ -671,13 +662,14 @@ def approved_decisions(
         re-approved, each under its own id.
 
     Raises:
-        AnswerError: An entry is malformed, repeats an id or an item, takes an
-            id the file has, has a reason that carries what `NOTE_REFUSALS`
-            keeps out, names an item the triage does not list or one already
-            decided, names a comparison the run has no fingerprints for, or
-            has a cause with no words, words 2 proof files share, a decision
-            with another call, or an answered decision whose SQL or proof
-            changed.
+        AnswerError: An entry is malformed, repeats an id or an (item,
+            cause), takes an id the file has, has a reason that carries what
+            `NOTE_REFUSALS` keeps out, names an item the triage does not list,
+            a row group no proof decides, or a cause the item lacks, leaves
+            out `cause` on an item with several, names a comparison the run has
+            no fingerprints for, or has a cause with no words, words 2 proofs
+            share, a decision with another call, or an answered decision whose
+            SQL or proof changed.
     """
     items = {item.get("id"): item for item in triage.get("items", [])}
     proofs = _proofs_by_cause(list(items.values()))
@@ -686,7 +678,7 @@ def approved_decisions(
     # Each cause's decision as this batch leaves it, by (comparison, side, words).
     decided: dict[tuple, dict] = {}
     ids: set[str] = set()
-    seen: set[str] = set()
+    seen: set[tuple[str, str]] = set()
     for i, entry in enumerate(approved):
         if not isinstance(entry, dict):
             raise AnswerError(f"approved entry {i + 1}: must be an object")
@@ -698,10 +690,8 @@ def approved_decisions(
         item_id = _text(entry, "item", where)
         if item_id not in items:
             raise AnswerError(f"{where}: triage lists no item {item_id!r}")
-        if item_id in seen:
-            raise AnswerError(f"{where}: item {item_id!r} is approved twice")
-        seen.add(item_id)
         item = items[item_id]
+        named = _text(entry, "cause", where, required=False)
         stub = item.get("stub") or {}
         call = _text(entry, "call", where)
         reason = _text(entry, "reason", where)
@@ -719,7 +709,15 @@ def approved_decisions(
                 )
             fp = {"cube": fp["cube"], "dashboard": fp["dashboard"]}
 
+        if item.get("kind") == "group" and not _is_cause_item(item):
+            raise AnswerError(
+                f"{where}: item {item_id!r} is a row group no proof decides; a "
+                "row group is decided only on a proven cause"
+            )
         if not _is_cause_item(item):
+            if (item_id, "") in seen:
+                raise AnswerError(f"{where}: item {item_id!r} is approved twice")
+            seen.add((item_id, ""))
             if decision_id in taken:
                 raise AnswerError(
                     f"{where}: decisions already has {decision_id!r}; pick a new id"
@@ -734,12 +732,27 @@ def approved_decisions(
             out.append(decision)
             continue
 
-        if item.get("decided"):
-            raise AnswerError(f"{where}: item {item_id!r} is already decided")
         proof = item["proof"].get("fingerprint", "")
+        causes = item["cause"]
+        if named:
+            causes = [
+                c
+                for c in causes
+                if mask_digits(c.get("label") or "") == mask_digits(named)
+            ]
+            if not causes:
+                raise AnswerError(f"{where}: item {item_id!r} has no cause {named!r}")
+        elif len(causes) > 1:
+            raise AnswerError(
+                f"{where}: item {item_id!r} has {len(causes)} causes; approve each "
+                "in its own entry, naming its words in `cause`"
+            )
         new = 0
-        for c in item["cause"]:
+        for c in causes:
             side, label = c.get("side", ""), mask_digits(c.get("label") or "")
+            if (item_id, f"{side}: {label}") in seen:
+                raise AnswerError(f"{where}: item {item_id!r} is approved twice")
+            seen.add((item_id, f"{side}: {label}"))
             if not label.strip():
                 raise AnswerError(
                     f"{where}: item {item_id!r} has a cause with no words"

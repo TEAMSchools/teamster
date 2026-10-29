@@ -112,8 +112,6 @@ class ItemTrace:
     `unreproduced` already returned by the unrelaxed SQL, `duplicates` a
     grain the other side holds twice, `unknown` behind a query that failed or
     a stop, and `none` missing below the deepest level, under `below`.
-    `recovered` counts every row each step brings back, ambiguous ones
-    included.
     """
 
     side: str
@@ -129,7 +127,6 @@ class ItemTrace:
     unknown: int = 0
     none: int = 0
     below: tuple[str, ...] = ()
-    recovered: Counter = field(default_factory=Counter)
     failed: tuple[str, ...] = ()
     stopped: str = ""
 
@@ -175,35 +172,11 @@ class ItemTrace:
             self.n_rows
         )
 
-    @property
-    def proven(self) -> bool:
-        return (
-            self.n_rows > 0
-            and self.unattributed == 0
-            and self.consistent
-            and not self.stopped
-        )
-
-    def cause(self) -> list[dict]:
-        """Each cause with its rows, as triage.json records a proven cause."""
-        return [
-            {"side": self.side, "step": s, "label": self.labels[s], "n_rows": n}
-            for s, n in self.steps.most_common()
-        ]
-
     def _parts(self) -> list[int]:
         parts = [n for _, n in self.steps.most_common()]
         if self.unattributed:
             parts.append(self.unattributed)
         return parts
-
-    def shown_total(self, posted: bool = False) -> str:
-        """The group's row count as the batch may print it next to the evidence.
-
-        Exact for the terminal and the local cache; with `posted`, masked so
-        no small part of the evidence can be worked out.
-        """
-        return shown_counts(self.n_rows, self._parts(), posted)[0]
 
     def evidence(self, posted: bool = False) -> tuple[str, ...]:
         """Lines for the batch; with `posted`, small counts and what reveals them masked."""
@@ -256,15 +229,13 @@ def item_key(g: Group) -> tuple:
 
 @dataclass
 class TraceResult:
-    """Each traced group's trace, and why each stopped bucket stopped.
+    """Each traced group's trace.
 
-    `stops` holds each stopped bucket's own reason, by (comparison id,
-    bucket); a stop in one bucket never stops another, and each item it
-    stopped says so in its own evidence.
+    A stop in one bucket never stops another; each item it stopped says so in
+    its own evidence, and `trace_run` prints the bucket's reason.
     """
 
     items: dict[tuple, ItemTrace]
-    stops: dict[tuple[str, str], str] = field(default_factory=dict)
 
 
 class Manifest:
@@ -768,11 +739,6 @@ class _Bucket:
             if got is None:
                 return self._end(self._fail(in_play))
             found, hits = got
-            for key, counts in hits.items():
-                if key in out:
-                    out[key].recovered.update(
-                        {s: n for s, n in counts.items() if s in self.steps}
-                    )
             absent: dict[tuple, int] = {}
             for key, counts in found.items():
                 if key not in out:
@@ -1076,8 +1042,7 @@ def trace_run(
 
     Returns:
         Per `item_key`, the trace of each traced group (the one-sided buckets
-        of comparisons with `rows`), and each
-        stopped bucket's reason.
+        of comparisons with `rows`).
 
     Raises:
         pipeline.Refusal: A comparison's SQL changed since the run, or the
@@ -1102,14 +1067,13 @@ def trace_run(
 
     # Each bucket is priced, and stops, on its own: one bucket's failure never
     # keeps another from being traced.
-    usd, ready, stops = 0.0, [], {}
+    usd, ready = 0.0, []
     for b in buckets:
         try:
             usd += sum(wh.estimate(q) for q in b.first_queries())
         except GoogleAPIError as exc:
             reason = f"level 0: the dry run failed ({_failure(exc)})"
             print(f"Trace {b.runner.label} stopped: {reason}")
-            stops[(b.side.comparison.id, b.side.bucket)] = reason
             out |= b.stop(reason)
             continue
         ready.append(b)
@@ -1122,9 +1086,8 @@ def trace_run(
             out |= b.run()
         except Stopped as exc:
             out |= exc.found
-            stops[(b.side.comparison.id, b.side.bucket)] = exc.reason
             print(f"Trace {b.runner.label} stopped: {exc.reason}")
-    return TraceResult(out, stops=stops)
+    return TraceResult(out)
 
 
 __all__ = [
