@@ -118,7 +118,10 @@ cause, do not retry around it.
      result names it, since rows it drops read as Cube-only. Use it instead of
      writing the filter into `probe_sql`.
    - `scope` and `dashboard_filters` take `equals` (the default), `not_equals`,
-     `gt`, `gte`, `lt` and `lte` (exactly 1 number), or `set` (not null).
+     `gt`, `gte`, `lt` and `lte` (exactly 1 number), or `set` (not null). A
+     dashboard filter compares a date to the coming Sunday (Tableau's
+     `TODAY() + 8 - weekday`) with `days_from_week_end: <days after it>` and a
+     compare operator in place of `values`; it runs at the run's moment.
    - `parameters: {<caption>: <member>}`: a field the sheet shows only behind a
      parameter value (Chronic Absenteeism under "Attendance Metric"). The proof
      copy carries that value, so the REST export shows the field. Put the

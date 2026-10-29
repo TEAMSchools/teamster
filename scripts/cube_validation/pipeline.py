@@ -33,7 +33,14 @@ from . import report, tableau
 from .bq import Warehouse
 from .checks import CheckResult, Finding
 from .compare import CellDiff, Gap, Group
-from .config import ColumnPair, Comparison, Decision, ViewConfig, write_proof
+from .config import (
+    WEEK_END_KEY,
+    ColumnPair,
+    Comparison,
+    Decision,
+    ViewConfig,
+    write_proof,
+)
 from .cube_client import (
     Compiled,
     Cube,
@@ -138,11 +145,25 @@ _SQL_COMPARE = {"gt": ">", "gte": ">=", "lt": "<", "lte": "<="}
 _SCOPE_WORDS = {"equals": "in", "notEquals": "not in", **_SQL_COMPARE}
 
 
+# The coming Sunday in New York, as Tableau's `TODAY() + 8 - weekday` (Sunday is
+# 1 in both). `pin_clock` pins CURRENT_DATE to the run's moment.
+_TODAY = "CURRENT_DATE('America/New_York')"
+_WEEK_END = f"8 - EXTRACT(DAYOFWEEK FROM {_TODAY})"
+
+
+def _week_end_sql(days: int) -> str:
+    """The coming Sunday plus `days`, as a BigQuery date."""
+    offset = f" {'+' if days > 0 else '-'} {abs(days)}" if days else ""
+    return f"DATE_ADD({_TODAY}, INTERVAL {_WEEK_END}{offset} DAY)"
+
+
 def _dashboard_filter_sql(entry: dict[str, Any]) -> str:
     """One `dashboard_filters` entry as SQL; `not_equals` keeps nulls, as Cube's does."""
     column, operator = entry["dashboard"], entry["operator"]
     if operator == "set":
         return f"{column} IS NOT NULL"
+    if (days := entry.get(WEEK_END_KEY)) is not None:
+        return f"{column} {_SQL_COMPARE[operator]} {_week_end_sql(days)}"
     if operator in _SQL_COMPARE:
         return f"{column} {_SQL_COMPARE[operator]} {_lit(entry['values'][0])}"
     match = _column_predicate(column, entry["values"])

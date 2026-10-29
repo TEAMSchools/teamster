@@ -1,4 +1,5 @@
 import dataclasses
+from datetime import datetime, timezone
 
 import pytest
 
@@ -7,6 +8,9 @@ from cube_validation import pipeline
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.timetravel import pin_clock
 
 DS = "[federated.x]"
 
@@ -195,6 +199,29 @@ def test_dashboard_filters_join_every_cut_predicate(entry, sql):
     assert pipeline.dashboard_predicate(comparison, {}).endswith(sql)
     # They narrow the dashboard side only, so Cube's filters never see them.
     assert pipeline._cut_cube_filters("v", comparison, {}) == []
+
+
+def test_dashboard_filter_relative_to_the_week_end_pins_to_the_run():
+    today = "CURRENT_DATE('America/New_York')"
+    week_end = f"8 - EXTRACT(DAYOFWEEK FROM {today})"
+    entries = [
+        {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0},
+        {"dashboard": "administered_at", "operator": "gt", "days_from_week_end": -7},
+    ]
+    sql = pipeline.dashboard_predicate(_comparison(dashboard_filters=entries), {})
+
+    assert sql.endswith(
+        f"administered_at <= DATE_ADD({today}, INTERVAL {week_end} DAY) AND "
+        f"administered_at > DATE_ADD({today}, INTERVAL {week_end} - 7 DAY)"
+    )
+    pinned = pin_clock(sql, datetime(2026, 10, 29, 15, tzinfo=timezone.utc))
+    assert "CURRENT_DATE" not in pinned.upper()
+    assert (
+        pinned.count(
+            "date(timestamp '2026-10-29 15:00:00.000000+00:00', 'America/New_York')"
+        )
+        == 4
+    )
 
 
 def test_sheet_gaps_keep_a_dashboard_only_filter_as_missing():

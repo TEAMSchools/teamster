@@ -517,6 +517,47 @@ def test_dashboard_filters_refuse_sql_in_the_column(tmp_path):
         load_view_config(_write(tmp_path, text))
 
 
+def _dashboard_filter(tmp_path, entry):
+    text = EXAMPLE.replace(
+        SCOPE_LINE, SCOPE_LINE + f"    dashboard_filters:\n      - {entry}\n"
+    )
+    return load_view_config(_write(tmp_path, text)).comparisons[0]
+
+
+def test_dashboard_filter_loads_a_week_end_date(tmp_path):
+    first = _dashboard_filter(
+        tmp_path, "{ dashboard: administered_at, operator: lte, days_from_week_end: 0 }"
+    )
+    assert first.dashboard_filters == [
+        {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0}
+    ]
+
+
+@pytest.mark.parametrize(
+    "entry, match",
+    [
+        ("{ dashboard: d, operator: lte, days_from_week_end: '0' }", "must be int"),
+        ("{ dashboard: d, operator: lte, days_from_week_end: true }", "must be int"),
+        ("{ dashboard: d, operator: lte, days_from_week_end: 1.5 }", "must be int"),
+        ("{ dashboard: d, days_from_week_end: 0 }", "takes gt, gte, lt, lte; got 'equals'"),
+        ("{ dashboard: d, operator: set, days_from_week_end: 0 }", "got 'set'"),
+        ("{ dashboard: d, operator: lt, values: [1], days_from_week_end: 0 }", r"\.values: must be absent"),
+    ],
+)  # fmt: skip
+def test_dashboard_filter_week_end_is_checked(tmp_path, entry, match):
+    with pytest.raises(ConfigError, match=match):
+        _dashboard_filter(tmp_path, entry)
+
+
+def test_scope_refuses_a_week_end_date(tmp_path):
+    text = EXAMPLE.replace(
+        SCOPE_LINE,
+        "    scope:\n      - { cube: d, operator: lte, days_from_week_end: 0 }\n",
+    )
+    with pytest.raises(ConfigError, match="applies to dashboard_filters only"):
+        load_view_config(_write(tmp_path, text))
+
+
 # --- shared comparison blocks --------------------------------------------------
 
 SHARED = """\

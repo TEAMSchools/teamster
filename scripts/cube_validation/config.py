@@ -31,6 +31,8 @@ _TASK = re.compile(r"https://\S+|#\d+")
 # side). The comparisons take exactly 1 number; `set` means not null.
 SCOPE_OPERATORS = ("equals", "not_equals", "gt", "gte", "lt", "lte", "set")
 COMPARE_OPERATORS = ("gt", "gte", "lt", "lte")
+# A dashboard filter's days past the coming Sunday, in place of `values`.
+WEEK_END_KEY = "days_from_week_end"
 # How `prove` treats export rows that share every mapped dim: `refuse` fails
 # the proof; `sum` adds them, which is right only for a field that adds up.
 SPLIT_ROWS = ("refuse", "sum")
@@ -425,7 +427,9 @@ def _filter_entry(reader: _Reader, side: str) -> dict[str, Any]:
     """A one-sided row filter on `side` (`cube` or `dashboard`).
 
     `equals` and `not_equals` take `values`; `gt`, `gte`, `lt` and `lte` take
-    exactly 1 number; `set` (not null) takes none.
+    exactly 1 number; `set` (not null) takes none. A dashboard filter may
+    compare a date to the coming Sunday instead (`days_from_week_end: 0`, as
+    Tableau's `TODAY() + 8 - weekday`), plus that many days.
     """
     column = _identifier(reader, side, required=True)
     operator = reader.get("operator", str, default="equals")
@@ -433,6 +437,17 @@ def _filter_entry(reader: _Reader, side: str) -> dict[str, Any]:
         reader.fail(
             "operator", f"must be one of {', '.join(SCOPE_OPERATORS)}; got {operator!r}"
         )
+    if reader.data.get(WEEK_END_KEY) is not None:
+        if side != "dashboard":
+            reader.fail(WEEK_END_KEY, "applies to dashboard_filters only")
+        if operator not in COMPARE_OPERATORS:
+            reader.fail(
+                WEEK_END_KEY, f"takes {', '.join(COMPARE_OPERATORS)}; got {operator!r}"
+            )
+        if reader.data.get("values") is not None:
+            reader.fail("values", f"must be absent with {WEEK_END_KEY}")
+        days = reader.get(WEEK_END_KEY, int)
+        return {side: column, "operator": operator, WEEK_END_KEY: days}
     if operator == "set":
         if reader.data.get("values") is not None:
             reader.fail("values", "must be absent when operator is set")
