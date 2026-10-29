@@ -253,17 +253,23 @@ class Warehouse:
         """USD priced since the latest `budget` opened."""
         return self._spent
 
-    def rows(self, sql: str) -> list[dict]:
+    def rows(self, sql: str, timeout_s: float | None = None) -> list[dict]:
         """Run `sql` and return its rows.
 
         It is priced first when a run or daily cap is set; once it runs, the
-        bytes BigQuery billed replace that estimate in both totals.
+        bytes BigQuery billed replace that estimate in both totals. With
+        `timeout_s`, BigQuery stops the job after that many seconds and the
+        call raises.
         """
         estimate = 0.0
         if self._cap is not None or self._daily_cap is not None:
             estimate = self.price(sql)
 
-        job = self._client.query(sql)
+        if timeout_s is None:
+            job = self._client.query(sql)
+        else:
+            config = bigquery.QueryJobConfig(job_timeout_ms=int(timeout_s * 1000))
+            job = self._client.query(sql, job_config=config)
         out = [dict(r.items()) for r in job.result()]
         billed = getattr(job, "total_bytes_billed", None)
         if isinstance(billed, int):

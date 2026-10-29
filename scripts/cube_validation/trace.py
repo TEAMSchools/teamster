@@ -20,6 +20,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import sqlglot
 from google.api_core.exceptions import GoogleAPIError
 
 from . import compare, pipeline
@@ -35,6 +36,8 @@ from .timetravel import PROJECT, repin
 MAX_LEVELS = 2
 # BigQuery refuses a query longer than 1,024K characters.
 MAX_QUERY_CHARS = 900_000
+# A relaxed variant can multiply rows; BigQuery stops a query past this.
+TIMEOUT_S = 600
 MANIFEST = (
     Path(__file__).resolve().parents[2] / "src/dbt/kipptaf/target/prod/manifest.json"
 )
@@ -57,9 +60,11 @@ class ItemTrace:
     """What the trace found for one row group.
 
     `steps` counts the rows each step alone recovers; `many` the rows more
-    than one step recovers; `unreproduced` per table the rows its own SQL
+    than one step recovers, and `recovered` every row each step recovers,
+    ambiguous ones included; `unreproduced` per table the rows its own SQL
     already returns, so its steps prove nothing for them; `none` the rows no
-    step recovers; `below` the tables the trace stopped above.
+    step recovers; `below` the tables the trace stopped above; `failed` the
+    queries that failed at run time.
     """
 
     side: str
@@ -71,6 +76,7 @@ class ItemTrace:
     unreproduced: Counter = field(default_factory=Counter)
     none: int = 0
     below: tuple[str, ...] = ()
+    failed: tuple[str, ...] = ()
 
     @property
     def unattributed(self) -> int:
@@ -113,6 +119,7 @@ class ItemTrace:
             lines.append(
                 f"{mask(self.unattributed)} rows unattributed: {'; '.join(why)}"
             )
+            lines += [f"a trace query failed ({f})" for f in self.failed]
         return tuple(lines)
 
 
@@ -273,6 +280,7 @@ class _Runner:
         self.wh = wh
         self.side = side
         self.label = label
+        self.failures: list[str] = []
 
     def _run(self, queries: list[str], what: str) -> list[dict]:
         usd = sum(self.wh.estimate(q) for q in queries)
@@ -283,7 +291,14 @@ class _Runner:
         self.wh.refuse_past_caps(usd)
         out = []
         for q in queries:
-            out += self.wh.rows(q)
+            try:
+                out += self.wh.rows(q, timeout_s=TIMEOUT_S)
+            except GoogleAPIError as exc:
+                # A neutralized step can fail only at run time (a cast, a
+                # scalar subquery); the rows that query covers stay unexplained.
+                note = f"{what}: {str(exc).splitlines()[0][:200]}"
+                print(f"Trace query failed, {note}")
+                self.failures.append(note)
         return out
 
     def _key(self, row: dict) -> tuple:
@@ -401,21 +416,21 @@ def _trace_bucket(
                     continue
                 sql = _one_moment(at, end_tables, moved, side.build, wh)
                 try:
-                    # Free: compiled SQL from a checkout that is not the code
-                    # that built the table can name a column it lacks.
-                    wh.estimate(sql)
-                except GoogleAPIError as exc:
-                    print(f"Trace cannot descend into {ref.name}: {exc}")
-                    blocked.add(ref.name)
-                    continue
-                found.append(
-                    _Frame(
+                    child = _Frame(
                         Query(sql, ref.wanted),
                         (ref.dataset, ref.name),
                         frame,
                         frame.level + 1,
                     )
-                )
+                    # Free, and it must run read in place: compiled SQL from
+                    # another checkout can name a column the table lacks, and
+                    # a WITH RECURSIVE runs only at the top of a query.
+                    wh.estimate(side.rows(child.full(child.query.sql())))
+                except (GoogleAPIError, sqlglot.errors.SqlglotError) as exc:
+                    print(f"Trace cannot descend into {ref.name}: {exc}")
+                    blocked.add(ref.name)
+                    continue
+                found.append(child)
             kids[id(frame)] = found
         return kids[id(frame)]
 
@@ -491,21 +506,30 @@ def _trace_bucket(
         candidates = [k for f in frames for k in children(f)]
         if not candidates:
             break
-        _, screened = runner.level(
-            [
-                (f"?{i}", side.rows(c.full(subtree(c))))
-                for i, c in enumerate(candidates)
-            ],
-            exclude,
-            f"which of {len(candidates)} table(s) {level + 1} deep can explain a row",
-        )
-        hit = {s for key in out for s in screened.get(key, {})}
-        frames = [c for i, c in enumerate(candidates) if f"?{i}" in hit]
+        # One query per table, so one whose relaxed build runs away (every
+        # filter off can multiply rows) costs only itself.
+        frames = []
+        for c in candidates:
+            screen = side.rows(c.full(subtree(c)))
+            if len(screen) > MAX_QUERY_CHARS:
+                print(f"Trace cannot descend into {c.name}: its SQL is too long")
+                blocked.add(c.name)
+                continue
+            failed = len(runner.failures)
+            _, screened = runner.level(
+                [("?", screen)], exclude, f"can {c.name} explain a row"
+            )
+            if len(runner.failures) > failed:
+                blocked.add(c.name)
+            elif any("?" in screened.get(key, {}) for key in out):
+                frames.append(c)
         if not frames:
             break
     for item in out.values():
         if item.none:
             item.below = tuple(sorted(blocked))
+        if item.unattributed:
+            item.failed = tuple(runner.failures)
     return out
 
 

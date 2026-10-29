@@ -241,10 +241,12 @@ class _Analysis:
                     w |= wanted
             self._visit_source(x.node, w)
 
-        # Subqueries outside the FROM list: in a wanted projection or a filter.
+        # Subqueries outside the FROM list that decide which rows pass: an
+        # IN or EXISTS. A scalar subquery is left alone: neutralizing a step
+        # in it can make it return several rows, which BigQuery refuses.
         for n in wanted_proj + rest:
             for sub in n.find_all(exp.Select):
-                if sub is s:
+                if sub is s or not _is_predicate(sub):
                     continue
                 if sub.find_ancestor(exp.Select) is s or _parent_query(sub) is s:
                     self._visit_select(sub, None)
@@ -291,6 +293,14 @@ class _Analysis:
                 if node is not None:
                     out += [_Raw(clause, s, c) for c in _conjuncts(node.this)]
         return out
+
+
+def _is_predicate(sub: exp.Select) -> bool:
+    """`sub` is the query of an IN, EXISTS, ANY or ALL, not a scalar value."""
+    p = sub.parent
+    while isinstance(p, (exp.Subquery, exp.Paren)):
+        p = p.parent
+    return isinstance(p, (exp.In, exp.Exists, exp.Any, exp.All))
 
 
 def _inside(node: exp.Expression, ancestor: exp.Expression) -> bool:

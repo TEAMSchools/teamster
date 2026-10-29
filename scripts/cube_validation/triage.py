@@ -622,7 +622,7 @@ def run_triage(
     max_usd: float,
     cache_root: Path,
     trace_rows: bool = True,
-    manifest: Path = trace.MANIFEST,
+    manifest: Path | None = None,
 ) -> list[Suggestion]:
     """Sort each open item of the view's latest run into a pile and print them.
 
@@ -652,7 +652,9 @@ def run_triage(
 
     with wh.budget(max_usd):
         traces = (
-            trace.trace_run(cfg, run, wh=wh, cube=cube, manifest_path=manifest)
+            trace.trace_run(
+                cfg, run, wh=wh, cube=cube, manifest_path=manifest or trace.MANIFEST
+            )
             if trace_rows
             else None
         )

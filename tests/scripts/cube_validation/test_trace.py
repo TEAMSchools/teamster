@@ -1,5 +1,8 @@
 import json
+import subprocess
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
@@ -87,7 +90,7 @@ class FakeWarehouse:
     def refuse_past_caps(self, usd):
         pass
 
-    def rows(self, sql):
+    def rows(self, sql, timeout_s=None):
         self.ran.append(sql)
         return self.answer(sql)
 
@@ -249,8 +252,8 @@ ROLLUP = (
 
 def test_descends_into_a_table_its_steps_explain(tmp_path):
     def answer(sql):
-        if "'?0'" in sql:
-            return [_row("+?0", 5)]
+        if "'?'" in sql:
+            return [_row("+?", 5)]
         if "response_rollup/main" in sql:
             step = next(s for s in sql.split("'") if s.startswith("dashboard:response"))
             return [_row(step, 5), _row(f"+{step}", 5)]
@@ -276,8 +279,8 @@ def test_rows_left_at_the_deepest_level_are_below_its_tables(tmp_path):
     assert found.below == ()
 
     def answer(sql):
-        if "'?0'" in sql:
-            return [_row("+?0", 5)]
+        if "'?'" in sql:
+            return [_row("+?", 5)]
         return [_row("", 5)]
 
     found, _ = _trace(answer, levels=1, manifest=_manifest(tmp_path, ROLLUP))
@@ -324,7 +327,7 @@ def test_rows_the_unrelaxed_sql_already_returns_are_never_attributed():
 def test_a_table_whose_compiled_sql_does_not_run_is_skipped_and_named(tmp_path):
     class Stale(FakeWarehouse):
         def estimate(self, sql):
-            if "raw.responses`" in sql and "?0" not in sql and "!" not in sql:
+            if "raw.responses`" in sql and "'?'" not in sql and "!" not in sql:
                 raise BadRequest("Unrecognized name: quarter")
             return 0.0
 
@@ -335,3 +338,31 @@ def test_a_table_whose_compiled_sql_does_not_run_is_skipped_and_named(tmp_path):
     assert found.below == ("response_rollup",)
     assert "(below response_rollup)" in found.evidence()[-1]
     assert len(wh.ran) == 1  # nothing to screen
+
+
+def test_a_query_that_fails_at_run_time_leaves_its_rows_unexplained():
+    class Failing(FakeWarehouse):
+        def rows(self, sql, timeout_s=None):
+            self.ran.append(sql)
+            raise BadRequest("Scalar subquery produced more than one element")
+
+    found, _ = _trace(None, wh=Failing(None))
+
+    assert not found.proven and found.unattributed == 5
+    assert found.evidence()[-1].startswith(
+        "a trace query failed (the side's own SQL: 400 Scalar subquery"
+    )
+
+
+@pytest.mark.parametrize("first", ["trace", "sqlsteps", "triage", "pipeline", "cli"])
+def test_each_module_imports_first(first):
+    scripts = Path(trace.__file__).resolve().parents[1]
+    done = subprocess.run(
+        [sys.executable, "-c", f"import cube_validation.{first}"],
+        cwd=scripts,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert done.returncode == 0, done.stderr[-500:]

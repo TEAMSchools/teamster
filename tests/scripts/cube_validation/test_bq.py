@@ -332,3 +332,19 @@ def test_refuse_past_caps_counts_nothing_and_names_the_cap(tmp_path):
     wh.configure_local(tmp_path, daily_cap=0.5)
     with pytest.raises(CostCapError, match="daily cap"):
         wh.refuse_past_caps(0.6)
+
+
+def test_rows_can_bound_a_query_s_run_time():
+    configs = []
+
+    class Client(FakeClient):
+        def query(self, sql, job_config=None):
+            configs.append(job_config)
+            return super().query(sql, job_config)
+
+    wh = Warehouse(client=Client())
+    wh.rows("select 1")
+    wh.rows("select 2", timeout_s=90)
+
+    assert configs[0] is None
+    assert int(configs[1].job_timeout_ms) == 90_000 and not configs[1].dry_run

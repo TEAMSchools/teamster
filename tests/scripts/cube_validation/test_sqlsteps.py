@@ -241,3 +241,21 @@ def test_relaxed_all_neutralizes_every_step_at_once():
     assert "(SELECT 1 AS x) AS co" in out
     # Pruned steps stay as they were.
     assert "o.kind = 'WT'" in out
+
+
+def test_a_scalar_subquery_s_steps_are_left_alone_and_an_in_list_s_kept():
+    # Neutralizing a step inside a scalar subquery can make it return several
+    # rows, which BigQuery refuses at run time.
+    sql = (
+        "SELECT t.student FROM `teamster-332318.d.t` AS t "
+        "WHERE t.year = (SELECT MAX(y) FROM `teamster-332318.d.years` WHERE live) "
+        "AND t.school IN (SELECT s FROM `teamster-332318.d.schools` WHERE open)"
+    )
+    q = Query(sql, frozenset({"student"}), "student")
+
+    labels = [s.label for s in q.steps("cube")]
+
+    assert not any(label.endswith(": live") for label in labels)
+    assert any(label.endswith(": open") for label in labels)
+    step = next(s for s in q.steps("cube") if s.label.endswith(": open"))
+    assert "WHERE live" in q.relaxed(step) and "WHERE TRUE" in q.relaxed(step)
