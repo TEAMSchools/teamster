@@ -280,181 +280,50 @@ def test_cells_decision_with_no_differences_is_no_longer_needed():
 # --- cause decisions (T17) ---------------------------------------------------
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.decisions import (  # noqa: E402
-    cause_covers,
-    group_keys,
-    mask_step,
-    step_fingerprint,
-)
-
-LABEL_A = "main: s.section_id IS NOT NULL"
-LABEL_B = "main: d.week_start <= a.score_date"
+from cube_validation.decisions import cause_state  # noqa: E402
 
 
-def _school(value, n_students=12, grade="7", comparison_id="enrollment"):
-    return Group(
-        comparison_id,
-        (("region", value), ("grade_level", grade)),
-        "dashboard_only",
-        n_students * 2,
-        n_students,
-    )
-
-
-def _cause(id="c1", label=LABEL_A, groups=(), side="cube", call="deliberate",
-           fingerprints=None, comparison="enrollment"):  # fmt: skip
+def _cause(id="c1", call="deliberate", fingerprints=None):
     return Decision(
         id=id,
-        comparison=comparison,
+        comparison="enrollment",
         call=call,
         reason="known",
-        cause={"side": side, "step": mask_step(label), "groups": list(groups)},
-        fingerprints=(
-            {**FP, "step": step_fingerprint(label)}
-            if fingerprints is None
-            else fingerprints
-        ),
+        cause={"side": "cube", "label": "score has no section"},
+        fingerprints={**FP, "proof": "p1"} if fingerprints is None else fingerprints,
     )
 
 
-def test_group_keys_show_a_reviewed_value_only_for_10_or_more_students():
-    big, small = _school("Newark"), _school("Camden", n_students=4)
+def test_cause_state_names_what_changed():
+    d = _cause()
 
-    assert group_keys([big, small]) == [
-        "enrollment:region=Newark,grade_level=7",
-        "enrollment:region=<redacted>,grade_level=<redacted>",
-    ]
-
-
-def test_group_keys_number_colliding_masked_keys_by_raw_dims():
-    a, b = _school("Paterson", n_students=4), _school("Camden", n_students=4)
-
-    assert group_keys([a, b]) == group_keys([b, a])[::-1]
-    assert group_keys([a, b]) == [
-        "enrollment:region=<redacted>,grade_level=<redacted>#2",
-        "enrollment:region=<redacted>,grade_level=<redacted>",
-    ]
+    assert cause_state(d, "p1", FP) == "holds"
+    assert cause_state(d, "p2", FP) == "proof"
+    assert cause_state(d, "p1", {**FP, "cube": "c2"}) == "sql"
+    assert cause_state(_cause(fingerprints=dict(FP)), "p1", FP) == "proof"
 
 
-def test_step_fingerprint_changes_when_the_label_changes():
-    assert step_fingerprint(LABEL_A) == step_fingerprint(LABEL_A)
-    assert step_fingerprint(LABEL_A) != step_fingerprint(LABEL_A + " AND x")
-    # The masked text is the same; the hash of the full label tells them apart.
-    one, two = "main: t.term = 20240701", "main: t.term = 20250701"
-    assert mask_step(one) == mask_step(two) == "main: t.term = <n>"
-    assert step_fingerprint(one) != step_fingerprint(two)
+def test_apply_never_quiets_a_group_from_a_cause_decision():
+    group = _group()
+
+    applied = apply([_cause()], [group], {"enrollment": FP})
+
+    # The latest triage, not the run, says which groups a cause decides.
+    assert applied.open == [group] and applied.quiet == []
+    assert applied.causes == [_cause()] and applied.reconfirm == []
 
 
-def test_mask_step_masks_runs_of_5_or_more_digits_only():
-    assert mask_step("x IN (1234, 12345, 9876543210)") == "x IN (1234, <n>, <n>)"
-    assert mask_step("grade_level >= 9") == "grade_level >= 9"
+def test_apply_reconfirms_a_cause_decision_whose_sql_changed_or_has_no_proof():
+    stale = _cause(fingerprints={**FP, "cube": "old", "proof": "p1"})
+    bare = _cause("c2", fingerprints=dict(FP))
+
+    applied = apply([stale, bare], [_group()], {"enrollment": FP})
+
+    assert applied.reconfirm == [stale, bare] and applied.causes == []
 
 
-def test_cause_decision_quiets_the_groups_it_lists_in_its_comparison():
-    newark, camden = _school("Newark"), _school("Camden")
-    elsewhere = _school("Newark", comparison_id="other")
-    key = "enrollment:region=Newark,grade_level=7"
+def test_group_and_cause_decisions_coexist_in_apply():
+    applied = apply([_decision(), _cause()], [_group()], {"enrollment": FP})
 
-    applied = apply([_cause(groups=[key])], [newark, camden, elsewhere], {
-        "enrollment": FP, "other": FP})  # fmt: skip
-
-    assert [(d.id, g) for d, g in applied.quiet_causes] == [("c1", newark)]
-    assert applied.open == [camden, elsewhere]
-    assert applied.quiet == []
-
-
-def test_cause_decision_with_stale_sql_or_no_step_fingerprint_reconfirms():
-    newark = _school("Newark")
-    key = "enrollment:region=Newark,grade_level=7"
-    stale = _cause(groups=[key], fingerprints={"cube": "old", "dashboard": "d1",
-                                                "step": step_fingerprint(LABEL_A)})  # fmt: skip
-    no_step = _cause(id="c2", label=LABEL_B, groups=[key], fingerprints=dict(FP))
-
-    for decision in (stale, no_step):
-        applied = apply([decision], [newark], {"enrollment": FP})
-        assert applied.reconfirm == [decision] and applied.open == [newark]
-
-
-def test_cause_decision_keys_matching_no_group_are_stale():
-    newark = _school("Newark")
-    key = "enrollment:region=Newark,grade_level=7"
-
-    partly = apply([_cause(groups=[key, "enrollment:gone"])], [newark],
-                   {"enrollment": FP})  # fmt: skip
-    gone = apply([_cause(groups=["enrollment:gone"])], [newark], {"enrollment": FP})
-
-    assert [(d.id, keys) for d, keys in partly.partly_stale] == [
-        ("c1", ["enrollment:gone"])
-    ]
-    assert [d.id for d in gone.no_longer_needed] == ["c1"]
-
-
-def test_a_group_split_across_2_causes_needs_both_to_stay_quiet():
-    newark = _school("Newark")
-    key = "enrollment:region=Newark,grade_level=7"
-    a = _cause("a", LABEL_A, [key])
-    b = _cause("b", LABEL_B, [key], side="dashboard")
-    stale_b = _cause("b", LABEL_B, [key], side="dashboard",
-                     fingerprints={**FP, "cube": "old"})  # fmt: skip
-
-    both = apply([a, b], [newark], {"enrollment": FP})
-    half = apply([a, stale_b], [newark], {"enrollment": FP})
-
-    assert [d.id for d, _ in both.quiet_causes] == ["a", "b"]
-    assert both.open == [] and both.groups() == [newark]
-    assert half.open == [newark] and half.quiet_causes == []
-    assert half.reconfirm == [stale_b]
-
-
-def test_cause_covers_an_item_only_when_every_label_has_a_decision():
-    key = "enrollment:region=Newark,grade_level=7"
-    labels = [("cube", LABEL_A), ("dashboard", LABEL_B)]
-    a = _cause("a", LABEL_A, [key])
-    b = _cause("b", LABEL_B, [key], side="dashboard")
-    b_wrong_side = _cause("b", LABEL_B, [key], side="cube")
-
-    assert not cause_covers([a], "enrollment", key, labels)
-    assert not cause_covers([a, b_wrong_side], "enrollment", key, labels)
-    assert cause_covers([a, b], "enrollment", key, labels)
-    assert not cause_covers([a, b], "other", key, labels)
-    assert not cause_covers([a, b], "enrollment", "enrollment:x", labels)
-
-
-def test_group_and_cause_decisions_coexist():
-    newark, camden = _school("Newark"), _school("Camden")
-    by_value = _decision(values=["Camden"])
-
-    applied = apply(
-        [by_value, _cause(groups=["enrollment:region=Newark,grade_level=7"])],
-        [newark, camden],
-        {"enrollment": FP},
-    )
-
-    assert [(d.id, g) for d, g in applied.quiet] == [("d1", camden)]
-    assert [(d.id, g) for d, g in applied.quiet_causes] == [("c1", newark)]
-    assert applied.open == []
-
-
-def test_a_group_and_a_cause_decision_agreeing_on_one_group_leave_it_to_the_group():
-    newark = _school("Newark")
-    cause = _cause(groups=["enrollment:region=Newark,grade_level=7"])
-
-    applied = apply([_decision(), cause], [newark], {"enrollment": FP})
-
-    assert [(d.id, g) for d, g in applied.quiet] == [("d1", newark)]
-    assert applied.quiet_causes == [] and applied.groups() == [newark]
-
-
-def test_a_group_and_a_cause_decision_disagreeing_on_one_group_raise():
-    cause = _cause(call="fix_cube", groups=["enrollment:region=Newark,grade_level=7"])
-
-    with pytest.raises(ValueError, match=r"d1.*c1.*disagree|c1.*d1.*disagree"):
-        apply([_decision(), cause], [_school("Newark")], {"enrollment": FP})
-
-
-def test_two_cause_decisions_on_one_step_raise():
-    key = "enrollment:region=Newark,grade_level=7"
-
-    with pytest.raises(ValueError, match="c1.*c2.*both"):
-        apply([_cause("c1", groups=[key]), _cause("c2", groups=[key])],
-              [_school("Newark")], {"enrollment": FP})  # fmt: skip
+    assert [d.id for d, _ in applied.quiet] == ["d1"]
+    assert [d.id for d in applied.causes] == ["c1"]

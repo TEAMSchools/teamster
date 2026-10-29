@@ -2,9 +2,9 @@
 
 A decision quiets the groups it names only while the SQL on both sides is the
 SQL it was made against. A `group` decision names its groups by one column's
-value; a `cause` decision lists the masked keys of the groups whose rows a
-proven step drops, as written when triage proved them: coverage is read from
-the decision file, never traced again. Pure: no I/O.
+value. A `cause` decision names a proven cause, never a group: the latest
+triage, which re-runs every stored proof, says which items it decides
+(`triage.mark_decided`), so `apply` only checks its SQL. Pure: no I/O.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import re
 from dataclasses import dataclass, field
 
 from .compare import CellDiff, Gap, Group
-from .config import LONG_DIGITS, Decision
+from .config import Decision
 
 
 @dataclass
@@ -31,21 +31,8 @@ class Applied:
     quiet_gaps: list[tuple[Decision, Gap]] = field(default_factory=list)
     open_cells: list[CellDiff] = field(default_factory=list)
     quiet_cells: list[tuple[Decision, CellDiff]] = field(default_factory=list)
-    # Each cause decision with each group it quiets; a group split across
-    # several causes appears once per cause.
-    quiet_causes: list[tuple[Decision, Group]] = field(default_factory=list)
-
-    def groups(self) -> list[Group]:
-        """Every group the run found, open or quiet, each once."""
-        return list(
-            dict.fromkeys(
-                [
-                    *self.open,
-                    *(g for _, g in self.quiet),
-                    *(g for _, g in self.quiet_causes),
-                ]
-            )
-        )
+    # Cause decisions whose SQL still holds; the triage says what they cover.
+    causes: list[Decision] = field(default_factory=list)
 
 
 _OPEN = re.compile(r"(?i:rb|br|r|b)?('''|\"\"\"|'|\"|`)")
@@ -140,75 +127,26 @@ def decisions_fingerprint(decisions: list[Decision]) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def mask_step(label: str) -> str:
-    """A step's label as a decision writes it: each run of 5+ digits reads `<n>`."""
-    return LONG_DIGITS.sub("<n>", label)
-
-
-def step_fingerprint(label: str) -> str:
-    """Hash a step's full label, digits and all, as triage wrote it."""
-    return hashlib.sha256(label.encode()).hexdigest()
-
-
-def group_keys(groups: list[Group]) -> list[str]:
-    """Name each group by its masked values, numbering keys that collide.
-
-    A value shows only for a reviewed column of a group with 10+ students
-    (`report._shown_value`); any other reads `<redacted>`. Groups sharing a
-    masked key take `#2`, `#3` in the order of their raw dims and bucket, so
-    the suffix does not depend on the order `groups` comes in. Triage names
-    its items, and a cause decision its groups, this way, over every group
-    of the run.
-    """
-    # report imports Applied from here, so it is read at call time.
-    from .report import _shown_value
-
-    base = []
-    for g in groups:
-        shown = ",".join(f"{c}={_shown_value(g, c, v)}" for c, v in g.dims)
-        base.append(f"{g.comparison_id}:{shown or 'all'}")
-    keys = list(base)
-    for name in dict.fromkeys(base):
-        same = [i for i, b in enumerate(base) if b == name]
-        if len(same) > 1:
-            same.sort(key=lambda i: (groups[i].dims, groups[i].bucket))
-            for n, i in enumerate(same[1:], start=2):
-                keys[i] = f"{name}#{n}"
-    return keys
-
-
-def _is_cause(d: Decision) -> bool:
-    return bool(d.cause)
-
-
-def _cause_id(d: Decision) -> tuple[str, str, str]:
-    """What a cause decision is about: its comparison, side and full step."""
-    return d.comparison, d.cause.get("side", ""), d.fingerprints.get("step", "")
-
-
-def cause_covers(
-    decisions: list[Decision],
-    comparison: str,
-    key: str,
-    labels: list[tuple[str, str]],
-) -> bool:
-    """True when every proven step of a triage item has a decision listing it.
+def cause_state(d: Decision, proof: str, current: dict[str, str]) -> str:
+    """Whether a cause decision still holds for an item proven by `proof`.
 
     Args:
-        decisions: The recorded decisions.
-        comparison: The item's comparison.
-        key: The item's group key.
-        labels: Its triage cause as `(side, full label)` pairs; a pair
-            (`A + B`) or a fallback (`A / B`) is one label.
+        d: A cause decision.
+        proof: The fingerprint of the stored proof the item's cause rests on.
+        current: The comparison's current `{cube, dashboard}` fingerprints.
+
+    Returns:
+        `holds`, `sql` (either side's SQL changed since the decision) or
+        `proof` (the proof file changed since the decision).
     """
-    listed = {
-        _cause_id(d)
-        for d in decisions
-        if _is_cause(d) and d.comparison == comparison and key in d.cause["groups"]
-    }
-    return bool(labels) and all(
-        (comparison, side, step_fingerprint(label)) in listed for side, label in labels
-    )
+    if any(
+        not d.fingerprints.get(side) or d.fingerprints[side] != current.get(side)
+        for side in ("cube", "dashboard")
+    ):
+        return "sql"
+    if not d.fingerprints.get("proof") or d.fingerprints["proof"] != proof:
+        return "proof"
+    return "holds"
 
 
 def _text(value: object) -> str:
@@ -257,11 +195,17 @@ def apply(
     claimed: dict[int, Decision] = {}
     gap_claims: dict[tuple[str, str], Decision] = {}
     cell_claims: dict[str, Decision] = {}
-    causes: list[Decision] = []
 
     for decision in decisions:
-        if _is_cause(decision):
-            causes.append(decision)
+        if decision.cause:
+            # Its own proof stands in for the item's: here only the SQL, and
+            # that it has a proof at all, can fail.
+            state = cause_state(
+                decision,
+                decision.fingerprints.get("proof", ""),
+                fingerprints.get(decision.comparison) or {},
+            )
+            (applied.causes if state == "holds" else applied.reconfirm).append(decision)
             continue
         if (named := _gap_of(decision)) is not None:
             gap = next((g for g in gaps if (g.kind, g.field) == named), None)
@@ -333,83 +277,7 @@ def apply(
         if missing := [v for v in values if v not in found]:
             applied.partly_stale.append((decision, missing))
 
-    covered = _apply_causes(causes, groups, fingerprints, claimed, applied)
-    applied.open = [
-        g for i, g in enumerate(groups) if i not in claimed and i not in covered
-    ]
+    applied.open = [g for i, g in enumerate(groups) if i not in claimed]
     applied.open_gaps = [g for g in gaps if (g.kind, g.field) not in gap_claims]
     applied.open_cells = [d for d in cell_diffs if d.comparison_id not in cell_claims]
     return applied
-
-
-def _apply_causes(
-    causes: list[Decision],
-    groups: list[Group],
-    fingerprints: dict[str, dict[str, str]],
-    claimed: dict[int, Decision],
-    applied: Applied,
-) -> set[int]:
-    """Sort the cause decisions; return the indexes of the groups they quiet.
-
-    A group is quiet when at least 1 cause decision lists its key and every
-    cause decision listing it still holds: one whose SQL changed re-opens
-    every group it lists, even one another cause also lists. A group a
-    `group` decision already claims stays that decision's.
-
-    Raises:
-        ValueError: Two cause decisions name the same step, or a `group` and a
-            `cause` decision cover one group with different calls.
-    """
-    if not causes:
-        return set()
-    keys = group_keys(groups)
-    seen: dict[tuple[str, str, str], Decision] = {}
-    held: list[tuple[Decision, list[int]]] = []
-    blocked: set[int] = set()
-    for decision in causes:
-        if (named := _cause_id(decision)) in seen and named[2]:
-            raise ValueError(
-                f"decisions {seen[named].id!r} and {decision.id!r} both claim "
-                f"the {named[1]} step {decision.cause.get('step')!r} in "
-                f"comparison {decision.comparison!r}"
-            )
-        seen[named] = decision
-        listed = decision.cause.get("groups") or []
-        matched = [
-            i
-            for i, g in enumerate(groups)
-            if g.comparison_id == decision.comparison and keys[i] in listed
-        ]
-        current = fingerprints.get(decision.comparison) or {}
-        if not decision.fingerprints.get("step") or any(
-            not decision.fingerprints.get(side)
-            or decision.fingerprints[side] != current.get(side)
-            for side in ("cube", "dashboard")
-        ):
-            applied.reconfirm.append(decision)
-            blocked.update(matched)
-            continue
-        if not matched:
-            applied.no_longer_needed.append(decision)
-            continue
-        found = {keys[i] for i in matched}
-        if missing := [k for k in listed if k not in found]:
-            applied.partly_stale.append((decision, missing))
-        held.append((decision, matched))
-
-    covered: set[int] = set()
-    for decision, matched in held:
-        for i in matched:
-            if i in claimed:
-                if claimed[i].call != decision.call:
-                    raise ValueError(
-                        f"decisions {claimed[i].id!r} ({claimed[i].call}) and "
-                        f"{decision.id!r} ({decision.call}) disagree on group "
-                        f"{keys[i]!r} in comparison {decision.comparison!r}"
-                    )
-                continue
-            if i in blocked:
-                continue
-            covered.add(i)
-            applied.quiet_causes.append((decision, groups[i]))
-    return covered

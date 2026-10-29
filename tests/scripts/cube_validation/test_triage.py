@@ -663,3 +663,205 @@ def test_open_key_changes_when_a_group_or_cell_set_changes_its_counts():
     assert _open_key(cells) == _open_key(
         CellDiff("enrollment", {"differs": 3}, ("why",))
     )
+
+
+# --- cause decisions: what the latest triage says they decide (T17) ----------
+
+import copy  # noqa: E402
+import hashlib  # noqa: E402
+import json  # noqa: E402
+
+import pytest  # noqa: E402
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.config import Decision  # noqa: E402
+from cube_validation.triage import (  # noqa: E402
+    _moment,
+    cause_asks,
+    mark_decided,
+    open_keys,
+    proven_triage,
+)
+
+FPS = {"cube": "c1", "dashboard": "d1"}
+NO_SECTION = "score has no section"
+LATE = "score dated after the week"
+
+
+def _groups(*schools, n_rows=30, n_students=12, bucket="dashboard_only"):
+    return [
+        Group("enrollment", (("region", s),), bucket, n_rows, n_students)
+        for s in schools
+    ]
+
+
+def _fp_run(groups):
+    run = _run(groups=groups)
+    run.fingerprints = {"enrollment": dict(FPS)}
+    return run
+
+
+def _proof_file(tmp_path, text="SELECT 1"):
+    path = tmp_path / "enrollment__dashboard_only.sql"
+    path.write_text(text)
+    return {"path": str(path), "fingerprint": hashlib.sha256(text.encode()).hexdigest()}
+
+
+def _item(item_id, proof, *causes):
+    return {"id": item_id, "kind": "group", "comparison": "enrollment",
+            "label": "l", "stub": {"comparison": "enrollment",
+                                   "group": {"column": "region", "values": ["x"]}},
+            "suggestion": "cause", "evidence": ["proof line"],
+            "evidence_posted": ["proof line"], "candidates": [],
+            "cause": [{"side": side, "step": "b", "label": label, "n_rows": n}
+                      for side, label, n in causes],
+            "proof": proof}  # fmt: skip
+
+
+def _cause_decision(id, label, side="cube", call="domain_owner", proof=None, **kw):
+    return Decision(id, "enrollment", call, "r",
+                    cause={"side": side, "label": label},
+                    fingerprints={**FPS, "proof": proof or "", **kw.pop("fps", {})},
+                    **kw)  # fmt: skip
+
+
+def test_a_split_group_stays_undecided_until_both_causes_are_decided(tmp_path):
+    run = _fp_run(_groups("Newark"))
+    (key,) = [i.id for i in open_items(run)]
+    proof = _proof_file(tmp_path)
+    item = _item(key, proof, ("cube", NO_SECTION, 20), ("dashboard", LATE, 10))
+    a = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"])
+    b = _cause_decision("b", LATE, side="dashboard", proof=proof["fingerprint"])
+
+    half, both = copy.deepcopy(item), copy.deepcopy(item)
+    mark_decided(run, [half], [a])
+    mark_decided(run, [both], [a, b])
+
+    assert half["decided"] is False
+    assert half["decisions"] == {f"cube: {NO_SECTION}": "a", f"dashboard: {LATE}": None}
+    assert both["decided"] is True
+
+
+def test_a_changed_proof_file_re_opens_the_decision(tmp_path):
+    run = _fp_run(_groups("Newark"))
+    (key,) = [i.id for i in open_items(run)]
+    old = _proof_file(tmp_path, "SELECT 1")
+    new = _proof_file(tmp_path, "SELECT 2")
+    decision = _cause_decision("a", NO_SECTION, proof=old["fingerprint"])
+    item = _item(key, new, ("cube", NO_SECTION, 30))
+
+    mark_decided(run, [item], [decision], note=True)
+
+    assert item["decided"] is False and item["decisions"] == {
+        f"cube: {NO_SECTION}": None
+    }
+    assert item["evidence"][0] == (
+        "decision a: proof changed since the decision; re-approve"
+    )
+
+
+def test_a_cause_decision_on_other_sql_does_not_decide(tmp_path):
+    run = _fp_run(_groups("Newark"))
+    (key,) = [i.id for i in open_items(run)]
+    proof = _proof_file(tmp_path)
+    stale = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"],
+                            fps={"cube": "old"})  # fmt: skip
+    item = _item(key, proof, ("cube", NO_SECTION, 30))
+
+    mark_decided(run, [item], [stale], note=True)
+
+    assert item["decided"] is False
+    assert "SQL changed since the decision" in item["evidence"][0]
+
+
+def _group_decision(call, fps=FPS):
+    return Decision("by-region", "enrollment", call, "r",
+                    group={"column": "region", "values": ["Newark"]},
+                    fingerprints=dict(fps))  # fmt: skip
+
+
+def test_a_cause_decision_agreeing_with_a_group_decision_is_redundant(tmp_path):
+    run = _fp_run(_groups("Newark"))
+    (key,) = [i.id for i in open_items(run)]
+    proof = _proof_file(tmp_path)
+    item = _item(key, proof, ("cube", NO_SECTION, 30))
+    cause = _cause_decision(
+        "a", NO_SECTION, call="fix_cube", proof=proof["fingerprint"]
+    )
+
+    mark_decided(run, [item], [_group_decision("fix_cube"), cause], note=True)
+
+    assert item["evidence"][0] == "decision a repeats group decision by-region"
+
+
+@pytest.mark.parametrize("fps", [FPS, {"cube": "stale", "dashboard": "stale"}])
+def test_a_cause_decision_disagreeing_with_a_group_decision_refuses(tmp_path, fps):
+    run = _fp_run(_groups("Newark"))
+    (key,) = [i.id for i in open_items(run)]
+    proof = _proof_file(tmp_path)
+    item = _item(key, proof, ("cube", NO_SECTION, 30))
+    cause = _cause_decision("a", NO_SECTION, proof=proof["fingerprint"])
+
+    # Refused even while the group decision waits to be re-confirmed.
+    with pytest.raises(
+        pipeline.Refusal, match=r"'by-region' \(fix_cube\).*'a'.*disagree"
+    ):
+        mark_decided(
+            run, [item], [_group_decision("fix_cube", fps), cause], refuse=True
+        )
+
+
+def test_cause_asks_count_only_each_causes_own_rows(tmp_path):
+    run = _fp_run(_groups("Newark", "Camden"))
+    newark, camden = [i.id for i in open_items(run)]
+    proof = _proof_file(tmp_path)
+    fp = proof["fingerprint"]
+    items = [
+        _item(newark, proof, ("cube", NO_SECTION, 27), ("cube", LATE, 3)),
+        _item(camden, proof, ("cube", NO_SECTION, 30)),
+    ]
+    recorded = [
+        _cause_decision("a", NO_SECTION, proof=fp),
+        _cause_decision("b", LATE, proof=fp),
+        _cause_decision("answered", "x", proof=fp, answer="fix_cube"),
+    ]
+    mark_decided(run, items, recorded)
+
+    a, b = cause_asks(run, {"items": items}, recorded)
+
+    assert (a.decision.id, len(a.groups), a.rows) == ("a", 2, 57)
+    assert (b.decision.id, len(b.groups), b.rows) == ("b", 1, 3)
+
+
+def _write_run_triage(tmp_path, run, items):
+    run_json = tmp_path / "run.json"
+    run_json.write_text("{}")
+    (tmp_path / "triage.json").write_text(json.dumps(
+        {"moment": _moment(run), "open": open_keys(run), "items": items}))  # fmt: skip
+    return run_json
+
+
+def test_the_gate_refuses_a_proven_group_or_cell_set_with_no_proof(tmp_path):
+    run = _fp_run(_groups("Newark"))
+    (key,) = [i.id for i in open_items(run)]
+    item = {**_item(key, None, ("cube", NO_SECTION, 30))}
+
+    with pytest.raises(pipeline.Refusal, match="1 `cause` item rests on no proof"):
+        proven_triage(run, _write_run_triage(tmp_path, run, [item]))
+
+    proof = _proof_file(tmp_path)
+    proven_triage(run, _write_run_triage(tmp_path, run, [{**item, "proof": proof}]))
+
+
+def test_the_gate_takes_a_dashboard_filtered_group_or_a_gap_with_no_proof(tmp_path):
+    run = _fp_run(_groups("Newark", bucket="dashboard_filtered"))
+    run.applied.open_gaps = [_gap()]
+    (key, gap_id) = [i.id for i in open_items(run)]
+    items = [
+        _item(key, None, ("dashboard", "dashboard filter", 30)),
+        {"id": gap_id, "kind": "gap", "comparison": "", "suggestion": "cause",
+         "cause": [{"side": "dashboard", "label": "sheet filter x"}],
+         "proof": None},
+    ]  # fmt: skip
+
+    assert proven_triage(run, _write_run_triage(tmp_path, run, items))["items"]

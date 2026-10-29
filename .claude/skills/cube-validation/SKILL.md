@@ -337,7 +337,7 @@ cause, do not retry around it.
 
    `not compared: identifier column` means values were not compared, for
    privacy; never compare them by hand. A proven row group is decided on its
-   step, not its school: every group the same step drops shares one decision.
+   causes, not its school: every group a cause explains shares one decision.
    Anchor differences are judged here too. `CUBE_VALIDATION_CACHE` points every
    command at another cache, such as a copy of a run to rework.
 
@@ -365,15 +365,15 @@ cause, do not retry around it.
    list of `{"id", "call", "reason", "task", "item"}`, where `item` is the
    triage item id, `id` a new decision id not already in the file, and `task`
    empty for `deliberate` and `domain_owner`. Map items are not in it. Then
-   `add-decisions <file> <approved.json>`: a row group in `cause` becomes one
-   `cause:` decision per proven step, and a step already decided (in the batch
-   or the file) takes the group into that decision, keeping its id and reason;
-   so give every item of one step the same call. A second new step of one item
-   takes the id `<id>-2`. Other items take their key fields from the stub.
-   Fingerprints come from the latest run. It writes the whole batch or nothing,
-   then re-applies every decision to the saved run offline, so `review` reads it
-   with no new `run`. After a hand edit to `decisions:`, `reapply <file>` does
-   the same.
+   `add-decisions <file> <approved.json>`: a row group a stored proof explains
+   becomes one `cause:` decision per cause that has none yet; a cause already
+   decided keeps its decision, so give every item of one cause the same call. A
+   second new cause of one item takes the id `<id>-2`. Other items take their
+   key fields from the stub. It refuses an item already decided. Fingerprints
+   come from the latest run and the proof file. It writes the whole batch or
+   nothing, then re-applies every decision to the saved run offline, so `review`
+   reads it with no new `run`. After a hand edit to `decisions:`,
+   `reapply <file>` does the same.
 
    Before `review`, give the file a top-level `tasks:` block,
    `{cube_fix: <the domain's Cube-fix issue>, dashboard_fix: <its Asana dashboard-fix task>}`:
@@ -394,31 +394,34 @@ cause, do not retry around it.
    view. A comparison's cell differences take `cells: true` in place of `group`,
    with its `comparison` and `fingerprints`. Rows a dashboard-only filter drops
    take `group: { column: dashboard_filter, values: [<its column>] }`. A proven
-   step takes `cause: {side, step, groups}` in place of `group`: `step` is the
-   triage label with each run of 5 or more digits written `<n>`, `groups` the
-   triage item ids it covers, and `fingerprints` adds `step`, the hash of the
-   full label. A group split across steps stays quiet only while every decision
-   listing it holds. `add-decisions` writes these; do not hand-write one. A
-   group a `group` and a `cause` decision both cover with different calls
-   refuses.
+   cause takes `cause: {side, label}` in place of `group`, `label` being the
+   proof's words with each number of 5 or more digits written `<n>`, and
+   `fingerprints` adds `proof`, the proof file's. It names no group: each
+   `triage` re-runs the proofs and marks an item `decided` when every one of its
+   causes has a decision that still holds, so a run never closes one. A decision
+   whose SQL or proof changed decides nothing until re-approved through
+   `add-decisions`, never by pasting new fingerprints; one the owner answered
+   (`answer:`) is never re-approved: delete it to ask again. `add-decisions`
+   writes these; do not hand-write one. A cause decision and a `group` decision
+   on one group with different calls refuse.
 
 10. `review <files> --domain <domain>` prints the validation issue's body: the
     numbered questions, each with the owner's hand checks, and a closing JSON
-    block the owner's session reads. Each `domain_owner` cause decision is one
-    question, with its step, its masked group and row counts, and the member
-    docs that name the step's words. It refuses unless every file's view has a
-    triage with nothing in `investigate`. stderr names any question with no
-    triage evidence: `triage` that view and render again before posting. The
-    footnote promises that identifiers of students and staff are hidden, which
-    holds only if no reason or definition names a person: read them first. Show
-    the draft to the analyst, then post it with `mcp__github__issue_write`,
-    titled "Validate <dashboard> in Cube", using the repo's issue template. That
-    issue is the validation's hub. Then write `task: "#<issue>"` into each
-    decision stderr lists; filling in a task needs no new `run`. Tell the
-    analyst the owner answers in his own Claude Code session by saying "walk me
-    through issue #N" (the `cube-validation-answers` skill). When that session
-    reports the pinned SQL expired, `run` again, render `review` again, and
-    update the issue body.
+    block the owner's session reads. Each unanswered `domain_owner` cause
+    decision is one question, with its words, the count of groups it decides and
+    of the rows its proof attributes to it, and the member docs that share its
+    words. It refuses unless every file's view has a triage with nothing in
+    `investigate`. stderr names any question with no triage evidence: `triage`
+    that view and render again before posting. The footnote promises that
+    identifiers of students and staff are hidden, which holds only if no reason
+    or definition names a person: read them first. Show the draft to the
+    analyst, then post it with `mcp__github__issue_write`, titled "Validate
+    <dashboard> in Cube", using the repo's issue template. That issue is the
+    validation's hub. Then write `task: "#<issue>"` into each decision stderr
+    lists; filling in a task needs no new `run`. Tell the analyst the owner
+    answers in his own Claude Code session by saying "walk me through issue #N"
+    (the `cube-validation-answers` skill). When that session reports the pinned
+    SQL expired, `run` again, render `review` again, and update the issue body.
 11. On "pick up the answers on #N", read only the comment the analyst names; if
     they name none, ask which, never take the latest. Save its body to a file in
     the session scratchpad and show the analyst its author's login. Check its

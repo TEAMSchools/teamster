@@ -19,7 +19,7 @@ from pathlib import Path
 
 from .checks import Finding
 from .compare import Gap, Group
-from .config import Decision
+from .config import SEPARATED_DIGITS, Decision
 from .decisions import Applied
 from .moment import Build
 
@@ -50,7 +50,7 @@ def _is_identifier(column: str) -> bool:
     return column not in _SHOWN_COLUMNS
 
 
-_SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
+_SEPARATED_DIGITS = SEPARATED_DIGITS
 
 
 @dataclass
@@ -180,8 +180,8 @@ def _bullets(items: list[str], empty: str = "None.") -> list[str]:
 def _decision_line(d: Decision) -> str:
     if d.cause:
         return (
-            f"`{d.id}` ({d.comparison} {d.cause.get('side')} step "
-            f"`{_clean(str(d.cause.get('step')))}`, {d.call}): {d.reason}"
+            f"`{d.id}` ({d.comparison}, {d.cause.get('side')} cause "
+            f"`{_clean(str(d.cause.get('label')))}`, {d.call}): {d.reason}"
         )
     if d.cells:
         return f"`{d.id}` ({d.comparison} cells, {d.call}): {d.reason}"
@@ -294,7 +294,8 @@ def render_local(run: RunResult) -> str:
     out += _bullets(
         [_decision_line(d) for d, _ in run.applied.quiet]
         # A cause decision quiets many groups; it is listed once.
-        + list(dict.fromkeys(_decision_line(d) for d, _ in run.applied.quiet_causes))
+        # The latest triage says which groups a cause decision decides.
+        + [_decision_line(d) for d in run.applied.causes]
         + [_decision_line(d) for d, _ in run.applied.quiet_gaps]
         + [_decision_line(d) for d, _ in run.applied.quiet_cells]
     )
@@ -316,7 +317,7 @@ def render_local(run: RunResult) -> str:
         d
         for d, _ in [
             *run.applied.quiet,
-            *run.applied.quiet_causes,
+            *((d, None) for d in run.applied.causes),
             *run.applied.quiet_gaps,
             *run.applied.quiet_cells,
         ]
@@ -529,31 +530,33 @@ def _group_part(
     ), hidden
 
 
-def _by_cause(pairs) -> list[tuple[Decision, list[Group]]]:
-    """Domain-owner cause decisions, each with its groups, in first-seen order."""
-    out: dict[str, tuple[Decision, list[Group]]] = {}
-    for decision, group in pairs:
-        if decision.call == "domain_owner":
-            out.setdefault(decision.id, (decision, []))[1].append(group)
-    return list(out.values())
+@dataclass(frozen=True)
+class CauseAsk:
+    """One owner question on a cause: the decision, the groups it decides in
+    the latest triage, and the rows the proof attributes to it in them."""
+
+    decision: Decision
+    groups: list[Group]
+    rows: int
 
 
-def _cause_part(view: str, d: Decision, groups: list[Group]) -> tuple[str, list]:
+def _cause_part(view: str, ask: CauseAsk) -> tuple[str, list]:
     """A cause question's part, and the values its reason must lose.
 
-    It names the step, never a group's values, and masks the counts of its
-    groups and of their rows.
+    It names the cause, never a group's values. Its row count is the cause's
+    own share, the same figure its evidence gives, so no two posted totals
+    differ by another cause's rows.
     """
-    rows = sum(g.n_rows for g in groups)
+    d, groups = ask.decision, ask.groups
     plural = "group" if len(groups) == 1 else "groups"
     hidden = [
         v for g in groups for c, v in g.dims if _shown_value(g, c, v) == "<redacted>"
     ]
     return (
-        f"step `{_clean(str(d.cause.get('step')))}` on the "
+        f"cause `{_clean(str(d.cause.get('label')))}` on the "
         f"{d.cause.get('side')} side of `{d.comparison}` in `{view}` "
         f"({', '.join(sorted({g.bucket for g in groups}))}): "
-        f"{mask(len(groups))} row {plural}, {mask(rows)} rows"
+        f"{mask(len(groups))} row {plural}, {mask(ask.rows)} rows"
     ), hidden
 
 
@@ -573,20 +576,22 @@ def _gap_part(view: str, gaps: list[Gap]) -> str:
     )
 
 
-def _questions(runs: list[RunResult]) -> list[dict]:
+def _questions(
+    runs: list[RunResult], causes: dict[str, list[CauseAsk]] | None = None
+) -> list[dict]:
     """Group the runs' domain-owner decisions into the review's questions.
 
     One question per reason and task, across decision kinds and files: each
     kind and view adds a part to its bullet, and the reason prints once. A
-    cause decision is its own question, whatever its reason: one per cause
-    and task, never one per school.
+    cause in `causes` (per view, `triage.cause_asks`) is its own question,
+    whatever its reason: one per cause and task, never one per school.
 
     Returns:
         In the order the issue asks them, dicts of `reason`, `task`, `parts`
         (the masked count text per kind and view), `kinds`, `hidden` (values
         the reason and any evidence must lose), `decisions` as (view,
         Decision) pairs and `comparisons` as (view, comparison id, kind)
-        triples, each listed once; a cause question also has `n_groups`.
+        triples, each listed once; a cause question also has `ask`.
     """
     questions: dict[tuple, dict] = {}
 
@@ -623,20 +628,19 @@ def _questions(runs: list[RunResult]) -> list[dict]:
                 hidden,
                 [g.comparison_id for g in groups],
             )
-        for decision, groups in _by_cause(run.applied.quiet_causes):
-            part, hidden = _cause_part(run.view, decision, groups)
+        for ask in (causes or {}).get(run.view, []):
+            part, hidden = _cause_part(run.view, ask)
+            key = ("cause", run.view, ask.decision.id, ask.decision.task)
             add(
                 run.view,
                 "cause",
-                [decision],
+                [ask.decision],
                 part,
                 hidden,
-                [decision.comparison],
-                key=("cause", run.view, decision.id, decision.task),
+                [ask.decision.comparison],
+                key=key,
             )
-            questions[("cause", run.view, decision.id, decision.task)]["n_groups"] = (
-                len(groups)
-            )
+            questions[key]["ask"] = ask
         for decisions, diffs in _by_reason(run.applied.quiet_cells):
             add(
                 run.view,
@@ -760,6 +764,7 @@ def render_review_issue(
     runs: list[RunResult],
     definitions: dict[str, dict[str, dict[str, str]]] | None = None,
     questions: list[dict] | None = None,
+    causes: dict[str, list[CauseAsk]] | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -774,12 +779,13 @@ def render_review_issue(
         questions: `answers.questions_json` for the same runs. When given, each
             question's hand checks follow the bullets, and the body ends with
             the list as a fenced JSON block for the owner's Claude session.
+        causes: Per view, the owner's cause questions (`triage.cause_asks`).
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
         values outside the reviewed reference columns read `<redacted>`.
     """
-    asked = _questions(runs)
+    asked = _questions(runs, causes)
     kinds = [k for q in asked for k in q["kinds"]]
     asked_ids = [d.id for q in asked for _, d in q["decisions"]]
     anchor_lines: list[str] = []

@@ -25,9 +25,6 @@ from cube_validation.config import ColumnPair, Comparison, load_view_config
 from cube_validation.cube_client import Compiled
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.decisions import step_fingerprint
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.tableau import Snapshot, formula_fingerprint
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
@@ -925,7 +922,7 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
     }
     item = {"id": "i", "kind": "group", "comparison": "ada-region", "label": "l",
             "stub": stub, "suggestion": "cause", "evidence": ["the fact drops them"],
-            "candidates": [], "cause": [STEP]}  # fmt: skip
+            "candidates": [], "cause": [STEP], "proof": dict(STORED_PROOF)}  # fmt: skip
     _write_triage(run_json, [item])
     capsys.readouterr()
 
@@ -968,6 +965,28 @@ STEP = {"side": "dashboard", "step": "dashboard:main:1", "label": "x", "n_rows":
 MIAMI = "ada-region:regions_region_name=Miami"
 
 
+PROOF_TEXT = "-- cause x = dashboard: x\nSELECT item_key, 'x' AS cause, 1 AS n FROM {unmatched}\n"
+
+
+@pytest.fixture(autouse=True)
+def _proof_file(monkeypatch, tmp_path):
+    """Give every proven fixture item a stored proof file, as `triage confirm` does."""
+    path = tmp_path / "proofs" / "ada-region__dashboard_only.sql"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(PROOF_TEXT)
+    monkeypatch.setitem(globals(), "STORED_PROOF", _proof_of(path))
+
+
+def _proof_of(path):
+    return {
+        "path": str(path),
+        "fingerprint": hashlib.sha256(path.read_text().encode()).hexdigest(),
+    }
+
+
+STORED_PROOF: dict = {}
+
+
 def _triage_item(evidence, suggestion="cause", item_id=MIAMI):
     stub = {
         "comparison": "ada-region",
@@ -976,7 +995,8 @@ def _triage_item(evidence, suggestion="cause", item_id=MIAMI):
     cause = [STEP] if suggestion == "cause" else None
     return {"id": item_id, "kind": "group", "comparison": "ada-region",
             "label": "l", "stub": stub, "suggestion": suggestion,
-            "evidence": [evidence], "candidates": [], "cause": cause}  # fmt: skip
+            "evidence": [evidence], "candidates": [], "cause": cause,
+            "proof": dict(STORED_PROOF) if cause else None}  # fmt: skip
 
 
 def _write_triage(run_json, items=(), open_keys=None):
@@ -2602,12 +2622,12 @@ def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
         "fix_cube",
         "#6150",
     )
-    # A cause item becomes a decision on its proven step, keyed by the item.
+    # A proven group becomes a decision on its cause, never on the group.
     assert miami.group == {}
-    assert miami.cause == {"side": "dashboard", "step": "x", "groups": [MIAMI]}
+    assert miami.cause == {"side": "dashboard", "label": "x"}
     assert miami.fingerprints == {
         **_saved_fingerprints(tmp_path),
-        "step": step_fingerprint("x"),
+        "proof": STORED_PROOF["fingerprint"],
     }
     assert (team.missing_cut, team.comparison, team.fingerprints) == ("Team", "", {})
     assert cfg.comparisons[0].proof is not None
@@ -2615,7 +2635,7 @@ def test_add_decisions_takes_stub_from_triage_and_fingerprints_from_run(
     assert "miami-scope" in out and "no-team" in out
     assert "`run`" in out.rstrip().splitlines()[-1]
 
-    # The written decision covers the group on the next run.
+    # The next run lists it; the triage, not the run, says what it decides.
     assert cli.main(["run", str(path)]) == 0
     assert "miami-scope" in _section(capsys.readouterr().out, "Applied:", "To re-")
 
@@ -2639,9 +2659,10 @@ def test_add_decisions_re_applies_to_the_saved_run_offline(
 
     out = capsys.readouterr().out
     assert "Re-applied decisions to the saved run of" in out
-    assert "0 open groups" in out
+    # A cause decision never closes a group in the run; the triage marks it.
+    assert "1 open groups" in out
     applied = json.loads(run_json.read_text())["applied"]
-    assert [d["id"] for d, _ in applied["quiet_causes"]] == ["miami-scope"]
+    assert [d["id"] for d in applied["causes"]] == ["miami-scope"]
     assert _client_calls(fakes) == calls
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
 
@@ -2659,7 +2680,9 @@ def test_add_decisions_refuses_a_decision_overlapping_one_in_the_file(
     fakes, tmp_path, capsys
 ):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
-    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    # Stale, so the group stays open and triage proves its cause; the cause
+    # decision's other call still refuses.
+    path = _with_decision({"cube": "stale", "dashboard": "stale"}, tmp_path)
     _triaged_run(path, tmp_path)
     approved = _approved(
         tmp_path,
@@ -3160,12 +3183,11 @@ decisions:
     comparison: ada-region
     cause:
       side: cube
-      step: "main: s.section_id IS NOT NULL"
-      groups: ["ada-region:regions_region_name=Miami"]
+      label: score has no section
     call: domain_owner
     reason: Should a score with no section count?
     task: "#7"
-    fingerprints: { cube: abc, dashboard: def, step: "0f" }
+    fingerprints: { cube: abc, dashboard: def, proof: "0f" }
 """
 
 
@@ -3178,36 +3200,62 @@ def test_record_answers_writes_onto_the_cause_decision(tmp_path, capsys):
     assert _record([path], comment, "--yes") == 0
 
     (d,) = load_view_config(path).decisions
-    assert (d.call, d.task) == ("fix_cube", "#6150")
+    assert (d.call, d.task, d.answer) == ("fix_cube", "#6150", "fix_cube")
     assert d.reason.endswith("Owner: a score needs its section")
-    assert d.cause == {
-        "side": "cube",
-        "step": "main: s.section_id IS NOT NULL",
-        "groups": ["ada-region:regions_region_name=Miami"],
-    }
-    assert d.fingerprints == {"cube": "abc", "dashboard": "def", "step": "0f"}
+    assert d.cause == {"side": "cube", "label": "score has no section"}
+    assert d.fingerprints == {"cube": "abc", "dashboard": "def", "proof": "0f"}
 
 
-def test_add_decisions_merges_a_cause_into_the_files_decision(fakes, tmp_path, capsys):
+def _approve(path, tmp_path, entry):
+    return cli.main(["add-decisions", str(path), str(_approved(tmp_path, [entry]))])
+
+
+def test_a_changed_proof_re_opens_a_cause_decision_for_re_approval(
+    fakes, tmp_path, capsys
+):
     path = _file(tmp_path)
     _triaged_run(path, tmp_path)
-    first = _approved(
-        tmp_path, [{"id": "a", "call": "domain_owner", "reason": "r", "item": MIAMI}]
-    )
-    assert cli.main(["add-decisions", str(path), str(first)]) == 0
-    # A hand edit drops the group from the decision; the next triage lists it
-    # again, and approving it merges it back instead of writing a second one.
-    text = path.read_text().replace(MIAMI, "ada-region:gone")
-    path.write_text(text)
-    assert cli.main(["reapply", str(path)]) == 0
+    first = {"id": "a", "call": "domain_owner", "reason": "r", "item": MIAMI}
+    assert _approve(path, tmp_path, first) == 0
     _triaged_run(path, tmp_path)
-    again = _approved(
-        tmp_path, [{"id": "b", "call": "domain_owner", "reason": "r2", "item": MIAMI}]
-    )
-    capsys.readouterr()
+    # Approving a decided item again refuses.
+    assert _approve(path, tmp_path, {**first, "id": "b"}) == 1
+    assert "already decided" in capsys.readouterr().err
 
-    assert cli.main(["add-decisions", str(path), str(again)]) == 0, capsys.readouterr()
+    # The proof file changes; the next triage carries its new fingerprint.
+    proof = Path(STORED_PROOF["path"])
+    proof.write_text(PROOF_TEXT + "-- tightened\n")
+    STORED_PROOF.update(_proof_of(proof))
+    _triaged_run(path, tmp_path)
+    capsys.readouterr()
+    again = {"id": "b", "call": "fix_cube", "reason": "r2", "task": "#1", "item": MIAMI}
+
+    assert _approve(path, tmp_path, again) == 0, capsys.readouterr().err
 
     (d,) = load_view_config(path).decisions
-    assert d.id == "a" and d.reason == "r"
-    assert d.cause["groups"] == ["ada-region:gone", MIAMI]
+    assert (d.id, d.call, d.reason) == ("a", "fix_cube", "r2")
+    assert d.fingerprints["proof"] == STORED_PROOF["fingerprint"]
+    assert "re-approved a" in capsys.readouterr().out
+
+
+def test_an_answered_cause_decision_is_never_re_approved_on_a_changed_proof(
+    fakes, tmp_path, capsys
+):
+    path = _file(tmp_path)
+    _triaged_run(path, tmp_path)
+    assert _approve(path, tmp_path, {"id": "a", "call": "domain_owner",
+                                     "reason": "r", "item": MIAMI}) == 0  # fmt: skip
+    path.write_text(path.read_text().replace("    call: domain_owner\n",
+                                             "    call: domain_owner\n    answer: domain_owner\n"))  # fmt: skip
+    proof = Path(STORED_PROOF["path"])
+    proof.write_text(PROOF_TEXT + "-- tightened\n")
+    STORED_PROOF.update(_proof_of(proof))
+    _triaged_run(path, tmp_path)
+    before = path.read_text()
+    capsys.readouterr()
+
+    assert _approve(path, tmp_path, {"id": "b", "call": "domain_owner",
+                                     "reason": "r", "item": MIAMI}) == 1  # fmt: skip
+
+    assert "owner answered 'a'" in capsys.readouterr().err
+    assert path.read_text() == before

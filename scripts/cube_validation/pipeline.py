@@ -1398,9 +1398,7 @@ def _run_from_json(data: dict) -> RunResult:
             quiet_gaps=[
                 (Decision(**d), _gap(g)) for d, g in applied.get("quiet_gaps", [])
             ],
-            quiet_causes=[
-                (Decision(**d), _group(g)) for d, g in applied.get("quiet_causes", [])
-            ],
+            causes=[Decision(**d) for d in applied.get("causes", [])],
         ),
         findings=[Finding(**f) for f in data["findings"]],
         live_sources=data["live_sources"],
@@ -1475,7 +1473,7 @@ def _apply_saved(cfg: ViewConfig, saved: RunResult) -> Applied:
     try:
         return decisions.apply(
             cfg.decisions,
-            was.groups(),
+            was.open + [g for _, g in was.quiet],
             saved.fingerprints,
             gaps=was.open_gaps + [g for _, g in was.quiet_gaps],
             cell_diffs=was.open_cells + [d for _, d in was.quiet_cells],
@@ -1590,7 +1588,8 @@ def review(
     """Return the review-issue body from each view's latest saved run.
 
     Reads only the local cache: each run and its triage (see
-    `triage.proven_triage`), matching triage items to decisions by their stubs.
+    `triage.proven_triage`), matching triage items to decisions by their stubs,
+    and to cause decisions by the causes the triage proved.
     Nothing is posted; a question with no triage evidence, and a body near
     GitHub's cap, are named on stderr.
 
@@ -1603,23 +1602,30 @@ def review(
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
-            triage is missing, stale, unreadable or holds an unproven item
-            (see `triage.proven_triage`).
+            triage is missing, stale, unreadable, holds an unproven item, or
+            has a cause decision and a `group` decision disagreeing (see
+            `triage.proven_triage`).
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
-    found = {
-        run.view: triage.posted_triage(triage.proven_triage(run, run_json))
-        for run, run_json in saved
+    proven = {
+        run.view: triage.proven_triage(run, run_json, cfg.decisions)
+        for (run, run_json), cfg in zip(saved, configs, strict=True)
+    }
+    found = {view: triage.posted_triage(loaded) for view, loaded in proven.items()}
+    # One question per unanswered owner cause, over the groups it decides.
+    causes = {
+        run.view: triage.cause_asks(run, proven[run.view], cfg.decisions)
+        for run, cfg in zip(runs, configs, strict=True)
     }
     definitions = {
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs
     }
     questions = answers.questions_json(
-        runs, configs, definitions, found, now or datetime.now(timezone.utc)
+        runs, configs, definitions, found, now or datetime.now(timezone.utc), causes
     )
-    body = report.render_review_issue(domain, runs, definitions, questions)
+    body = report.render_review_issue(domain, runs, definitions, questions, causes)
     if len(body) > BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.
         print(

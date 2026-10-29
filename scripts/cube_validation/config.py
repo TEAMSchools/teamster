@@ -28,8 +28,24 @@ CALLS_NEEDING_TASK = ("fix_dashboard", "fix_cube", "fix_source")
 TASK_KEYS = ("cube_fix", "dashboard_fix")
 # The side of a comparison whose SQL holds a cause decision's step.
 CAUSE_SIDES = ("dashboard", "cube")
-# A committed decision carries no long digit run from a SQL literal.
+# A committed decision carries no ID or phone number: 5 or more digits whole
+# or split by spaces or dashes, or 7 or more split by any separator, as an
+# owner's note may not (`answers.NOTE_REFUSALS`). A list of grades passes.
 LONG_DIGITS = re.compile(r"\d{5,}")
+SPACED_DIGITS = re.compile(r"\d[\d\s-]*\d")
+SEPARATED_DIGITS = re.compile(r"\d[\d\-\s,.]{3,}\d")
+
+
+def mask_digits(text: str) -> str:
+    """Write each number `LONG_DIGITS` and its kin would refuse as `<n>`."""
+    for pattern, fewest in ((SEPARATED_DIGITS, 7), (SPACED_DIGITS, 5)):
+        text = pattern.sub(
+            lambda m, k=fewest: "<n>" if sum(c.isdigit() for c in m[0]) >= k else m[0],
+            text,
+        )
+    return LONG_DIGITS.sub("<n>", text)
+
+
 _TASK = re.compile(r"https://\S+|#\d+")
 # Filter operators for `scope` (Cube side) and `dashboard_filters` (dashboard
 # side). The comparisons take exactly 1 number; `set` means not null.
@@ -164,11 +180,15 @@ class Decision:
     missing_filter: str = ""
     # Covers the comparison's cell differences instead of a row group.
     cells: bool = False
-    # Covers the row groups whose rows a proven step drops, in place of
-    # `group`: `{side, step, groups}`, where `step` is the trace's label with
-    # each run of 5 or more digits written `<n>`, and `groups` the masked keys
-    # (`decisions.group_keys`) of the groups it covers.
+    # Covers the row groups whose triage cause names this `{side, label}`, in
+    # place of `group`: `label` is the words of a stored proof's bucket, with
+    # each number of 5 or more digits written `<n>`. Which groups it covers is
+    # read from the latest triage, never stored here; `fingerprints.proof` is
+    # the proof file's.
     cause: dict[str, Any] = field(default_factory=dict)
+    # The call the owner answered a cause decision with; set by
+    # `record-answers`, so `review` asks it no more.
+    answer: str = ""
 
 
 @dataclass(frozen=True)
@@ -568,6 +588,11 @@ def _decision(
     cause = reader.get("cause", dict, default={})
     if cause:
         _cause(reader.child("cause", cause))
+    answer = reader.get("answer", str, default="")
+    if answer and not cause:
+        reader.fail("answer", "belongs to a cause decision")
+    if answer and answer not in CALLS:
+        reader.fail("answer", f"must be one of {', '.join(CALLS)}; got {answer!r}")
     return Decision(
         id=reader.get("id", str, required=True),
         comparison=comparison,
@@ -580,32 +605,25 @@ def _decision(
         missing_filter=missing_filter,
         cells=bool(cells),
         cause=cause,
+        answer=answer,
     )
 
 
 def _cause(reader: _Reader) -> None:
-    """Check a cause decision's `side`, `step` and `groups`."""
+    """Check a cause decision's `side` and `label`."""
     side = reader.get("side", str, required=True)
     if side not in CAUSE_SIDES:
         reader.fail("side", f"must be one of {', '.join(CAUSE_SIDES)}; got {side!r}")
-    step = reader.get("step", str, required=True)
-    if not step.strip():
-        reader.fail("step", "must be the step's label")
-    if LONG_DIGITS.search(step):
+    label = reader.get("label", str, required=True)
+    if not label.strip():
+        reader.fail("label", "must be the cause's words")
+    if mask_digits(label) != label:
         reader.fail(
-            "step", "carries a run of 5 or more digits; write each such run as <n>"
+            "label", "carries a number of 5 or more digits; write each one as <n>"
         )
-    groups = reader.get("groups", list, required=True)
-    if not groups:
-        reader.fail("groups", "must list at least 1 group key")
-    for i, key in enumerate(groups):
-        if not isinstance(key, str) or not key:
-            reader.fail(f"groups[{i}]", "must be a group key from triage")
-        if groups.index(key) != i:
-            reader.fail(f"groups[{i}]", f"lists {key!r} twice")
     for key in reader.data:
-        if key not in ("side", "step", "groups"):
-            reader.fail(str(key), "must be one of side, step and groups")
+        if key not in ("side", "label"):
+            reader.fail(str(key), "must be one of side and label")
 
 
 def _tasks(root: _Reader) -> dict[str, str]:
@@ -836,6 +854,7 @@ def _holds(d: Decision, asked: dict[str, Any]) -> bool:
         and d.missing_cut == asked.get("missing_cut", "")
         and d.missing_filter == asked.get("missing_filter", "")
         and d.cause == asked.get("cause", {})
+        and d.answer == asked.get("answer", "")
         and d.fingerprints == asked.get("fingerprints", {})
     )
 

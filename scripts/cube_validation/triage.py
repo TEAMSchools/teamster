@@ -25,12 +25,13 @@ from pathlib import Path
 from . import decisions, pipeline, trace
 from .bq import CostCapError, Warehouse
 from .compare import CellDiff, Gap, Group
-from .config import Proof, ViewConfig
+from .config import Decision, Proof, ViewConfig, mask_digits
 from .cube_client import Cube, MemberDoc, member_docs
 from .discover import _tokens
 from .moment import Build
 from .report import (
     _CELL_WORDS,
+    CauseAsk,
     RunResult,
     _gap_line,
     _is_identifier,
@@ -141,14 +142,30 @@ def _gap_item(g: Gap) -> Item:
     )
 
 
+def _group_ids(groups: list[Group]) -> list[str]:
+    """Name each group by its masked values, numbering ids that collide.
+
+    Groups sharing a masked id take `#2`, `#3` in the order of their raw
+    dims, so the suffix is stable across runs.
+    """
+    base = []
+    for g in groups:
+        shown = ",".join(f"{c}={_shown_value(g, c, v)}" for c, v in g.dims)
+        base.append(f"{g.comparison_id}:{shown or 'all'}")
+    ids = list(base)
+    for name in dict.fromkeys(base):
+        same = [i for i, b in enumerate(base) if b == name]
+        if len(same) > 1:
+            same.sort(key=lambda i: (groups[i].dims, groups[i].bucket))
+            for n, i in enumerate(same[1:], start=2):
+                ids[i] = f"{name}#{n}"
+    return ids
+
+
 def _entries(run: RunResult) -> list[tuple[Item, Group | Gap | CellDiff]]:
     """Pair each open item with the object it came from."""
     open_groups = run.applied.open
-    # Numbered over every group of the run, so an item's id is the key a
-    # cause decision lists whichever of its siblings are quiet.
-    every = run.applied.groups()
-    key_of = dict(zip(every, decisions.group_keys(every), strict=True))
-    ids = [key_of[g] for g in open_groups]
+    ids = _group_ids(open_groups)
     out: list[tuple[Item, Group | Gap | CellDiff]] = [
         (_group_item(g, i, open_groups), g)
         for g, i in zip(open_groups, ids, strict=True)
@@ -221,7 +238,9 @@ def _moment(run: RunResult) -> dict:
     }
 
 
-def proven_triage(run: RunResult, run_json: Path) -> dict:
+def proven_triage(
+    run: RunResult, run_json: Path, recorded: list[Decision] | None = None
+) -> dict:
     """Read the triage of the view's latest run, refusing while any item is unproven.
 
     Nothing is recorded or reviewed for a view until every one of its items has
@@ -234,13 +253,17 @@ def proven_triage(run: RunResult, run_json: Path) -> dict:
     Args:
         run: The view's latest run (see `pipeline.latest_run`).
         run_json: The `run.json` it came from.
+        recorded: The view's decisions. When given, each proven row group is
+            marked by the cause decisions that decide it (`mark_decided`).
 
     Raises:
         pipeline.Refusal: No triage sits beside the run, it is unreadable or of
             another moment, the run has an open item the triage did not see,
             an item sits in a pile this validator does not sort into (a triage
             from an older validator), a `cause` item has no cause, an item is
-            in `investigate`, or a proof an item rests on changed since.
+            in `investigate`, a row group or cell set in `cause` rests on no
+            proof, a proof an item rests on changed since, or a cause decision
+            and a `group` decision disagree on one group.
     """
     view, found = run.view, run_json.parent / "triage.json"
     again = f"run `triage` for {run.moment.start:%Y-%m-%d %H:%M} UTC"
@@ -281,13 +304,189 @@ def proven_triage(run: RunResult, run_json: Path) -> dict:
             "prove each with `triage confirm` (cube-validation skill, step 8), "
             "then re-run `triage`"
         )
+    # A gap's proof is the workbook XML, and a dashboard-filtered group's the
+    # run's own reconcile; any other cause rests on a stored proof.
+    buckets = {i.id: g.bucket for i, g in _entries(run) if isinstance(g, Group)}
+    if bare := sum(
+        1
+        for i in items
+        if i["suggestion"] == "cause"
+        and i.get("kind") in ("group", "cells")
+        and not i.get("proof")
+        and buckets.get(i["id"]) != "dashboard_filtered"
+    ):
+        raise pipeline.Refusal(
+            f"{view}: {bare} `cause` item{'' if bare == 1 else 's'} "
+            f"rest{'s' if bare == 1 else ''} on no proof; prove "
+            f"{'it' if bare == 1 else 'them'} with `triage confirm`, then re-run "
+            "`triage`"
+        )
     if moved := sum(1 for i in items if _proof_changed(i.get("proof"))):
         raise pipeline.Refusal(
             f"{view}: {moved} item{'' if moved == 1 else 's'} in `cause` "
             f"rest{'s' if moved == 1 else ''} on a proof file changed since "
             "triage; re-run `triage`"
         )
+    if recorded is not None:
+        try:
+            mark_decided(run, items, recorded, refuse=True)
+        except pipeline.Refusal as exc:
+            raise pipeline.Refusal(f"{view}: {exc}") from exc
     return loaded
+
+
+# Why a cause decision no longer decides an item it names.
+_STALE = {
+    "sql": "the SQL changed since the decision; re-approve",
+    "proof": "proof changed since the decision; re-approve",
+}
+
+
+def decidable(item: dict) -> bool:
+    """A row group a stored proof explains: cause decisions decide it."""
+    return (
+        item.get("kind") == "group"
+        and item.get("suggestion") == "cause"
+        and bool(item.get("cause"))
+        and bool((item.get("proof") or {}).get("path"))
+    )
+
+
+def cause_key(side: str, label: str) -> str:
+    """A cause as a decision names it: its side and its digit-masked words."""
+    return f"{side}: {mask_digits(label)}"
+
+
+def cause_decision(
+    recorded: list[Decision], comparison: str, side: str, label: str
+) -> Decision | None:
+    """The cause decision on `label` at `side` of `comparison`, if any."""
+    words = mask_digits(label)
+    return next(
+        (
+            d
+            for d in recorded
+            if d.cause
+            and d.comparison == comparison
+            and d.cause.get("side") == side
+            and d.cause.get("label") == words
+        ),
+        None,
+    )
+
+
+def mark_decided(
+    run: RunResult,
+    items: list[dict],
+    recorded: list[Decision],
+    *,
+    refuse: bool = False,
+    note: bool = False,
+) -> None:
+    """Mark each proven row group by the cause decisions that decide it.
+
+    A decidable item gets `decisions`, `{cause_key: decision id or None}`, and
+    `decided`, true only when every one of its causes has a decision that
+    holds: the comparison's SQL and the item's proof file are the ones it was
+    made on. A pair `A + B` or a fallback `A / B` is one cause. A decision
+    that no longer holds counts as none.
+
+    A holding cause decision on a group a `group` decision also covers,
+    stale or not, is redundant when their calls agree and refused when they
+    differ.
+
+    Args:
+        run: The run the items come from.
+        items: The triage items, marked in place.
+        recorded: The view's decisions.
+        refuse: Raise on a disagreement instead of noting it.
+        note: Add why a decision does not hold, and any redundancy or
+            disagreement, to the item's evidence.
+
+    Raises:
+        pipeline.Refusal: With `refuse`, a disagreement.
+    """
+    groups = {i.id: g for i, g in _entries(run) if isinstance(g, Group)}
+    by_group = [d for d in recorded if d.group and not d.cause]
+    for item in items:
+        if not decidable(item):
+            continue
+        current = run.fingerprints.get(item["comparison"]) or {}
+        proof = item["proof"].get("fingerprint", "")
+        found: dict[str, str | None] = {}
+        held: list[Decision] = []
+        lines: list[str] = []
+        for c in item["cause"]:
+            key = cause_key(c["side"], c["label"])
+            d = cause_decision(recorded, item["comparison"], c["side"], c["label"])
+            state = decisions.cause_state(d, proof, current) if d else ""
+            found[key] = d.id if d and state == "holds" else None
+            if d and state == "holds":
+                held.append(d)
+            elif d:
+                lines.append(f"decision {d.id}: {_STALE[state]}")
+        item["decisions"] = found
+        item["decided"] = all(found.values())
+        g = groups.get(item["id"])
+        covering = [o for o in by_group if g is not None and _covers_group(o, g)]
+        for other in covering:
+            for d in held:
+                if d.call == other.call:
+                    lines.append(f"decision {d.id} repeats group decision {other.id}")
+                    continue
+                line = (
+                    f"decisions {other.id!r} ({other.call}) and {d.id!r} "
+                    f"({d.call}) disagree on item {item['id']!r}"
+                )
+                if refuse:
+                    raise pipeline.Refusal(line)
+                lines.append(line)
+        if note and lines:
+            evidence = item.get("evidence", [])
+            posted = item.get("evidence_posted", evidence)
+            item["evidence"] = [*lines, *evidence]
+            item["evidence_posted"] = [*lines, *posted]
+
+
+def _covers_group(d: Decision, g: Group) -> bool:
+    """A `group` decision names `g`, whether or not its SQL still holds."""
+    values = {"" if v is None else str(v) for v in d.group.get("values") or []}
+    return (
+        d.comparison == g.comparison_id
+        and g.value_of(d.group.get("column") or "") in values
+    )
+
+
+def cause_asks(
+    run: RunResult, loaded: dict, recorded: list[Decision]
+) -> list[CauseAsk]:
+    """What `review` asks the owner: each unanswered owner cause and its groups.
+
+    Reads items `mark_decided` marked. A cause's rows are only those its
+    proof attributes to it, so a group split across causes counts in each
+    question only by its own share.
+    """
+    groups = {i.id: g for i, g in _entries(run) if isinstance(g, Group)}
+    out = []
+    for d in recorded:
+        if not d.cause or d.call != "domain_owner" or d.answer:
+            continue
+        mine, rows = [], 0
+        for item in loaded.get("items", []):
+            if not decidable(item) or item["id"] not in groups:
+                continue
+            marks = item.get("decisions") or {}
+            n = [
+                c.get("n_rows") or 0
+                for c in item["cause"]
+                if marks.get(cause_key(c["side"], c["label"])) == d.id
+            ]
+            if n:
+                mine.append(groups[item["id"]])
+                rows += sum(n)
+        if mine:
+            out.append(CauseAsk(d, mine, rows))
+    return out
 
 
 def _proof_changed(proof: dict | None) -> bool:
@@ -497,8 +696,7 @@ def suggest(
         if posted is None:
             posted = evidence
 
-        # A cause item's decision lists its own key, not a column value.
-        if isinstance(source, Group) and source.dims and call != "cause":
+        if isinstance(source, Group) and source.dims:
             stub_group = item.stub["group"]
             column, value = stub_group["column"], stub_group["values"][0]
             # No column of this group is its own: the decision covers siblings.
@@ -735,7 +933,8 @@ def run_triage(
     them), under the same caps: only a proof moves an item to `cause`. Prints
     `batch_lines`. Writes every item to `triage.json`
     beside that run's `run.json`, with the run's moment, decisions
-    fingerprint and open items (see `proven_triage`): it stays in the local
+    fingerprint and open items (see `proven_triage`), each proven row group
+    marked by the cause decisions that decide it (`mark_decided`): it stays in the local
     cache, and its stubs and causes carry real values and exact counts.
 
     Raises:
@@ -786,7 +985,8 @@ def run_triage(
 
             confirm.reprove(cfg, run, items, proofs, wh=wh, cube=cube)
             items.sort(key=lambda i: SUGGESTIONS.index(i["suggestion"]))
-            found = [_from_json(i) for i in items]
+        mark_decided(run, items, cfg.decisions, note=True)
+        found = [_from_json(i) for i in items]
 
     out = run_json.parent / "triage.json"
     out.write_text(

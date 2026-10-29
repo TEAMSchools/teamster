@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import copy
 import dataclasses
 import json
 import os
@@ -572,11 +573,12 @@ def _write_all(writes: list[tuple[Path, dict]]) -> None:
         raise
 
 
-def _check_claims(writes: list[tuple[Path, dict]]) -> None:
+def _check_claims(writes: list[tuple[Path, dict]], also=None) -> None:
     """Refuse, before writing, a batch whose decisions would claim one item twice.
 
     The writes are rehearsed on copies, so the check reads the decisions the
-    way the loader will read the real file.
+    way the loader will read the real file. `also(cfg)`, when given, checks
+    each rehearsed file's config too.
     """
     with tempfile.TemporaryDirectory() as tmp:
         copies: dict[Path, Path] = {}
@@ -589,7 +591,10 @@ def _check_claims(writes: list[tuple[Path, dict]]) -> None:
             write_decision(copies[path], decision)
         for path, copy in copies.items():
             try:
-                pipeline.check_claims(load_view_config(copy), cache_root())
+                rehearsed = load_view_config(copy)
+                pipeline.check_claims(rehearsed, cache_root())
+                if also is not None:
+                    also(rehearsed)
             except pipeline.Refusal as exc:
                 raise pipeline.Refusal(f"{path}: {exc}; nothing written") from exc
 
@@ -598,24 +603,30 @@ def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     """Write an approved triage batch into the view's `decisions:`.
 
     Stubs and proven causes come from the triage beside the latest run and
-    fingerprints from that run; a cause already decided in the file takes the
-    new groups into that decision (see `answers.approved_decisions`). Refuses
-    while that triage is stale or holds an unproven item (see
-    `triage.proven_triage`). The whole batch is written or none of it.
+    fingerprints from that run; a cause already decided keeps its decision
+    (see `answers.approved_decisions`). Refuses while that triage is stale or
+    holds an unproven item (see `triage.proven_triage`), or when a cause
+    decision would disagree with a `group` decision on one group. The whole
+    batch is written or none of it.
     """
     approved = _read_json(approved_path, "approved")
     run, run_json = pipeline.latest_run(cfg, cache_root())
-    saved = triage.proven_triage(run, run_json)
+    saved = triage.proven_triage(run, run_json, cfg.decisions)
 
     decisions = answers.approved_decisions(
         approved, saved, run.fingerprints, existing=cfg.decisions
     )
     writes = [(path, d) for d in decisions]
-    _check_claims(writes)
+
+    def agree(rehearsed: ViewConfig) -> None:
+        items = copy.deepcopy(saved.get("items", []))
+        triage.mark_decided(run, items, rehearsed.decisions, refuse=True)
+
+    _check_claims(writes, agree)
     _write_all(writes)
     had = {d.id for d in cfg.decisions}
     for d in decisions:
-        done = "added groups to" if d["id"] in had else "wrote"
+        done = "re-approved" if d["id"] in had else "wrote"
         print(f"{path}: {done} {d['id']} ({d['call']})")
     _reapply_written([path])
     return 0
@@ -666,6 +677,10 @@ def _record_answers(views: list[Path], comment: Path, author: str, yes: bool) ->
         decision.update(call=c.call[1], reason=c.reason[1])
         if c.task[1]:
             decision["task"] = c.task[1]
+        if decision.get("cause"):
+            # Answered: `review` asks it no more, and it is never re-approved
+            # on a changed proof.
+            decision["answer"] = c.call[1]
         writes.append((path, decision))
     if not writes:
         print("Nothing to write; every answer is already recorded.")

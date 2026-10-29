@@ -49,7 +49,7 @@ validation files or runs the validator, and neither does this session.
 3. Ask one question at a time, with everything up front, in this order:
    1. The question in policy words ("Which attendance codes should count as
       tardy?"), built from `reason` and `counts`, with no column names. A
-      `counts` that starts with `step` asks about one rule across every school
+      `counts` that starts with `cause` asks about one rule across every school
       it touches: the answer covers them all, so ask it once, never school by
       school.
    2. Both definitions side by side (`definitions.dashboard` and

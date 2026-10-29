@@ -7,6 +7,7 @@ import yaml
 from cube_validation.config import (
     ConfigError,
     load_view_config,
+    mask_digits,
     write_decision,
     write_proof,
 )
@@ -922,53 +923,56 @@ CAUSE_DECISION = """\
     comparison: ada-y1-region
     cause:
       side: cube
-      step: "main: s.section_id IS NOT NULL"
-      groups: ["ada-y1-region:region=Newark", "ada-y1-region:region=<redacted>#2"]
+      label: score has no section on the anchor date
     call: domain_owner
     reason: the owner says whether a score with no section counts
-    fingerprints: { cube: abc, dashboard: def, step: "0f0f" }
+    fingerprints: { cube: abc, dashboard: def, proof: "0f0f" }
 """
 
 
 def test_cause_decision_loads(tmp_path):
     d = load_view_config(_write(tmp_path, EXAMPLE + CAUSE_DECISION)).decisions[1]
 
-    assert (d.comparison, d.group, d.cells) == ("ada-y1-region", {}, False)
+    assert (d.comparison, d.group, d.cells, d.answer) == (
+        "ada-y1-region",
+        {},
+        False,
+        "",
+    )
     assert d.cause == {
         "side": "cube",
-        "step": "main: s.section_id IS NOT NULL",
-        "groups": ["ada-y1-region:region=Newark", "ada-y1-region:region=<redacted>#2"],
+        "label": "score has no section on the anchor date",
     }
-    assert d.fingerprints["step"] == "0f0f"
+    assert d.fingerprints["proof"] == "0f0f"
+
+
+LABEL_LINE = "      label: score has no section on the anchor date\n"
 
 
 @pytest.mark.parametrize(
     "old, new, match",
     [
         ("side: cube", "side: both", r"cause\.side.*dashboard, cube"),
-        ('step: "main: s.section_id IS NOT NULL"', "step: ''", r"cause\.step"),
-        (
-            'step: "main: s.section_id IS NOT NULL"',
-            'step: "main: s.term_id = 20250701"',
-            r"cause\.step.*5 or more digits.*<n>",
-        ),
-        (
-            'groups: ["ada-y1-region:region=Newark", "ada-y1-region:region=<redacted>#2"]',
-            "groups: []",
-            r"cause\.groups",
-        ),
-        (
-            'groups: ["ada-y1-region:region=Newark", "ada-y1-region:region=<redacted>#2"]',
-            "groups: [x, x]",
-            r"cause\.groups.*twice",
-        ),
+        (LABEL_LINE, "      label: ''\n", r"cause\.label.*words"),
+        (LABEL_LINE, "      label: term 20250701\n", r"cause\.label.*5 or more.*<n>"),
+        (LABEL_LINE, "      label: id 1234 5678\n", r"cause\.label.*5 or more.*<n>"),
+        (LABEL_LINE, LABEL_LINE + "      groups: [a]\n", r"cause\.groups.*side and label"),
         ("comparison: ada-y1-region\n    cause", "cause", r"comparison"),
+        ("    call: domain_owner\n", "    call: domain_owner\n    answer: maybe\n",
+         r"answer.*one of"),
     ],
-)
+)  # fmt: skip
 def test_cause_decision_shape_is_checked(tmp_path, old, new, match):
     text = EXAMPLE + CAUSE_DECISION.replace(old, new)
 
     with pytest.raises(ConfigError, match=match):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_only_a_cause_decision_takes_an_answer(tmp_path):
+    text = EXAMPLE.replace('    task: ""\n', '    task: ""\n    answer: fix_cube\n')
+
+    with pytest.raises(ConfigError, match=r"answer.*cause decision"):
         load_view_config(_write(tmp_path, text))
 
 
@@ -984,17 +988,28 @@ def test_write_decision_round_trips_a_cause_decision(tmp_path):
     decision = {
         "id": "no-section",
         "comparison": "ada-y1-region",
-        "cause": {
-            "side": "cube",
-            "step": "main: x = <n>",
-            "groups": ["ada-y1-region:region=Newark", "a:b=<redacted>,c=<redacted>#3"],
-        },
-        "call": "domain_owner",
+        "cause": {"side": "cube", "label": "term <n> has no section"},
+        "call": "fix_cube",
         "reason": "r",
-        "fingerprints": {"cube": "abc", "dashboard": "def", "step": "0f"},
+        "task": "#1",
+        "answer": "fix_cube",
+        "fingerprints": {"cube": "abc", "dashboard": "def", "proof": "0f"},
     }
 
     write_decision(path, decision)
 
     d = load_view_config(path).decisions[1]
-    assert d.cause == decision["cause"] and d.fingerprints == decision["fingerprints"]
+    assert (d.cause, d.answer) == (decision["cause"], "fix_cube")
+    assert d.fingerprints == decision["fingerprints"]
+
+
+@pytest.mark.parametrize(
+    "text, want",
+    [
+        ("term 20250701", "term <n>"),
+        ("id 1234 5678 and 973-555-1234", "id <n> and <n>"),
+        ("grades 9, 10, 11 since 2024", "grades 9, 10, 11 since 2024"),
+    ],
+)
+def test_mask_digits_masks_whole_and_split_numbers_of_5_or_more_digits(text, want):
+    assert mask_digits(text) == want
