@@ -1976,6 +1976,71 @@ def test_probe_fingerprint_covers_parameters(tmp_path):
     assert fp(with_param) != fp(YML)
 
 
+RESHAPED = "    shelves: { drop: [Team, Region], add: { cols: [Region] } }\n"
+
+
+def _reshaped(text):
+    return text.replace("    sheet_field: Rate\n", "    sheet_field: Rate\n" + RESHAPED)
+
+
+def test_prove_reshapes_the_copy_and_records_it(fakes, tmp_path, capsys):
+    fakes.tbl.twb = _with_team(fakes.tbl.twb)
+    path = _file(tmp_path, _reshaped(UNPROVEN))
+
+    assert cli.main(["prove", str(path), "--comparison", "ada-region"]) == 0, (
+        capsys.readouterr().err
+    )
+
+    assert "<rows />" in fakes.tbl.edited
+    assert "+ [federated.0sample].[usr:Calculation_1002:qk]) / " in fakes.tbl.edited
+    proof = load_view_config(path).comparisons[0].proof
+    assert proof.shelves == {"drop": ["Team", "Region"], "add": {"cols": ["Region"]}}
+    # Team left the copy's shelves, so it is no longer a missing cut.
+    assert proof.missing_cuts == []
+
+
+def test_prove_headers_shows_the_reshaped_sheet(fakes, tmp_path, capsys):
+    fakes.tbl.twb = _with_team(fakes.tbl.twb)
+    path = _file(tmp_path, _reshaped(UNPROVEN))
+
+    argv = ["prove", str(path), "--comparison", "ada-region", "--headers"]
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    assert "ada-region reshaped: rows none; columns Region" in capsys.readouterr().out
+
+
+def test_prove_refuses_a_drop_off_the_sheet(fakes, tmp_path, capsys):
+    path = _file(tmp_path, _reshaped(UNPROVEN))
+
+    assert cli.main(["prove", str(path), "--comparison", "ada-region"]) == 1
+
+    assert "'Team' is not on the rows or columns" in capsys.readouterr().err
+
+
+def test_probe_fingerprint_covers_shelves(tmp_path):
+    def fp(text):
+        cfg = load_view_config(_file(tmp_path, text))
+        return pipeline.probe_fingerprint(cfg, cfg.comparisons[0])
+
+    other = _reshaped(YML).replace("drop: [Team, Region]", "drop: [Region]")
+    assert len({fp(YML), fp(_reshaped(YML)), fp(other)}) == 3
+
+
+def test_run_names_a_reshaped_proof(fakes, tmp_path, capsys):
+    path = _file(tmp_path, _reshaped(YML))
+
+    assert cli.main(["run", str(path)]) == 0, capsys.readouterr().err
+
+    section = capsys.readouterr().out.split("## Proofs", 1)[1].split("## ", 1)[0]
+    assert (
+        "ada-region: last proven 2026-10-26T12:00:00+00:00; proven on a reshaped "
+        "copy: dropped Team, Region; added Region to columns" in section
+    )
+    assert pipeline._run_from_json(_saved_run(tmp_path)).reshaped == {
+        "ada-region": "dropped Team, Region; added Region to columns"
+    }
+
+
 def test_the_daily_cap_refuses_a_run_across_runs(fakes, tmp_path, capsys):
     fakes.bq.cost = lambda sql: 4.0 if "fct_f" in sql else 0.0
     assert cli.main(["run", str(_file(tmp_path)), "--max-usd", "50"]) == 1

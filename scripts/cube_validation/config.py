@@ -84,6 +84,8 @@ class Proof:
     # column behind a plain missing field. None when the proof predates them.
     filter_notes: dict[str, str] | None = None
     missing_columns: dict[str, str] | None = None
+    # The reshape the proof's copy carried; the probe fingerprint covers it.
+    shelves: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -117,6 +119,11 @@ class Comparison:
     # Workbook parameters set on the proof copy, `{caption: member}`, for a
     # field the sheet shows only behind a parameter value.
     parameters: dict[str, str] = field(default_factory=dict)
+    # A reshape of the proof copy's rows and columns, for a sheet field Cube has
+    # no member for: `{drop: [caption], add: {rows: [caption], cols: [caption]}}`.
+    # Tableau recomputes the measure at the new grain, so the proof covers that
+    # grain, not the sheet's own.
+    shelves: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -289,8 +296,10 @@ def _comparison(reader: _Reader) -> Comparison:
             restricting_filters=_captions(proof_reader, "restricting_filters"),
             filter_notes=_caption_map(proof_reader, "filter_notes"),
             missing_columns=_caption_map(proof_reader, "missing_columns"),
+            shelves=proof_reader.get("shelves", dict),
         )
 
+    dims = _pairs(reader, "dims")
     split_rows = reader.get("split_rows", str, default="refuse")
     if split_rows not in SPLIT_ROWS:
         reader.fail(
@@ -307,7 +316,7 @@ def _comparison(reader: _Reader) -> Comparison:
         probe=probe,
         probe_sql=probe_sql,
         decimals=reader.get("decimals", int),
-        dims=_pairs(reader, "dims"),
+        dims=dims,
         filters=filters,
         defaults=reader.get("defaults", dict, default={}),
         cuts=reader.get("cuts", list, default=[]),
@@ -324,7 +333,62 @@ def _comparison(reader: _Reader) -> Comparison:
             str(k): str(v)
             for k, v in reader.get("parameters", dict, default={}).items()
         },
+        shelves=_shelves(reader, dims, filters),
     )
+
+
+def _caption_list(reader: _Reader, key: str) -> list[str]:
+    captions = reader.get(key, list, default=[])
+    if not all(isinstance(c, str) and c for c in captions):
+        reader.fail(key, "captions must be text")
+    return captions
+
+
+def _snake(caption: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", caption.lower()).strip("_")
+
+
+def _shelves(
+    reader: _Reader, dims: list[ColumnPair], filters: dict[str, ColumnPair]
+) -> dict[str, Any]:
+    """Read `shelves`; each added caption must name a dim.
+
+    A caption names a dim when a `filters:` caption maps it to the dim's
+    dashboard column, or when it is that column's name, as is or in Tableau's
+    default caption form (`Grade Level` for `grade_level`).
+    """
+    if reader.data.get("shelves") is None:
+        return {}
+    child = reader.child("shelves", reader.get("shelves", dict))
+    if set(child.data) - {"drop", "add"}:
+        child.fail("", "takes drop and add")
+    out: dict[str, Any] = {}
+    if drop := _caption_list(child, "drop"):
+        out["drop"] = drop
+    if child.data.get("add") is not None:
+        add = child.child("add", child.get("add", dict))
+        if set(add.data) - {"rows", "cols"}:
+            add.fail("", "takes rows and cols")
+        dashboard = {d.dashboard for d in dims}
+        for shelf in ("rows", "cols"):
+            captions = _caption_list(add, shelf)
+            for caption in captions:
+                pair = filters.get(caption)
+                if not (
+                    (pair is not None and pair.dashboard in dashboard)
+                    or caption in dashboard
+                    or _snake(caption) in dashboard
+                ):
+                    add.fail(
+                        "",
+                        f"{caption!r} maps to no dim; add it under dims, or "
+                        "name it under filters with a dim's dashboard column",
+                    )
+            if captions:
+                out.setdefault("add", {})[shelf] = captions
+    if not out:
+        child.fail("", "set drop or add")
+    return out
 
 
 def _definitions(reader: _Reader) -> dict[str, str]:

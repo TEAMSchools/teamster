@@ -11,6 +11,9 @@ import pytest
 from cube_validation.config import ColumnPair, Comparison
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.discover import sheet_shape
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.tableau import (
     RefreshMovedError,
     Tableau,
@@ -19,6 +22,7 @@ from cube_validation.tableau import (
     expose_sheet,
     formula_fingerprint,
     prove,
+    set_shelves,
     split_cuts,
 )
 
@@ -632,3 +636,72 @@ def test_sign_out_returns_a_sign_in_error_instead_of_raising():
                 raise FailedSignInError("401002", "Unauthorized Access", "")
 
     assert "401002" in (Tableau(Server()).sign_out() or "")
+
+
+# --- shelves on the proof copy ---------------------------------------------------
+
+SHELVES_TWB = (Path(__file__).parent / "fixtures" / "shelves.twb").read_text()
+RESHAPE = {
+    "drop": ["Week Start Monday", "Grade/Subject"],
+    "add": {"rows": ["Grade Level", "Subject Area"]},
+}
+
+
+def _worksheets(xml: str) -> dict[str, str]:
+    return {
+        m[1]: m[0]
+        for m in re.finditer(r"<worksheet name='([^']*)'>.*?</worksheet>", xml, re.S)
+    }
+
+
+def test_set_shelves_reshapes_one_sheet_only():
+    for src in (SHELVES_TWB, SHELVES_TWB.replace("\n", "\r\n")):
+        out = set_shelves(src, "Mastery Grid", RESHAPE)
+
+        ET.fromstring(out)
+        shape = sheet_shape(out, "Mastery Grid")
+        assert shape.rows == ["Grade Level", "Subject Area"]
+        assert shape.cols == ["Module Code", "School"]
+        assert (
+            "<rows onTop='true'>([federated.0ddi (copy)].[none:grade_level:ok] / "
+            in out
+        )
+        before, after = _worksheets(src), _worksheets(out)
+        assert after["Mastery by Week"] == before["Mastery by Week"]
+        assert out.replace(after["Mastery Grid"], "") == src.replace(
+            before["Mastery Grid"], ""
+        )
+        # Subject Area was not on the sheet: its column and the instance the
+        # workbook already uses join the sheet's dependencies, line endings kept.
+        grid = after["Mastery Grid"]
+        assert grid.count("name='[subject_area]'") == 1
+        assert grid.count("name='[none:subject_area:nk]'") == 1
+        assert ("\r\n" in src) == ("\r\n" in grid) and "\r\r" not in grid
+        assert grid.count("name='[grade_level]'") == 1
+
+
+def test_set_shelves_fills_an_empty_shelf_and_keeps_its_attributes():
+    src = SHELVES_TWB.replace(
+        "<cols onLeft='true'>([federated.0ddi (copy)].[none:module_code:nk] / "
+        "[federated.0ddi (copy)].[none:school:nk])</cols>",
+        "<cols onLeft='true' />",
+    )
+    out = set_shelves(src, "Mastery Grid", {"add": {"cols": ["School"]}})
+
+    assert "<cols onLeft='true'>[federated.0ddi (copy)].[none:school:nk]</cols>" in out
+
+
+def test_set_shelves_refuses_a_drop_off_the_shelves_and_an_unknown_add():
+    with pytest.raises(ValueError, match="'Subject Area' is not on .*Grade/Subject"):
+        set_shelves(SHELVES_TWB, "Mastery Grid", {"drop": ["Subject Area"]})
+    with pytest.raises(ValueError, match="no field 'Grade Band'"):
+        set_shelves(SHELVES_TWB, "Mastery Grid", {"add": {"rows": ["Grade Band"]}})
+    with pytest.raises(ValueError, match="no worksheet 'Nope'"):
+        set_shelves(SHELVES_TWB, "Nope", RESHAPE)
+
+
+def test_set_shelves_refuses_a_measure_and_an_unlisted_calculation():
+    with pytest.raises(ValueError, match="'Is Mastery Int' is a measure"):
+        set_shelves(SHELVES_TWB, "Mastery Grid", {"add": {"rows": ["Is Mastery Int"]}})
+    with pytest.raises(ValueError, match="'Mastery Band' is a calculation"):
+        set_shelves(SHELVES_TWB, "Mastery Grid", {"add": {"rows": ["Mastery Band"]}})

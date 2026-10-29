@@ -597,6 +597,8 @@ def probe_fingerprint(cfg: ViewConfig, comparison: Comparison) -> str:
         extras.append(f"split_rows={comparison.split_rows}")
     if comparison.parameters:
         extras.append(f"parameters={json.dumps(comparison.parameters, sort_keys=True)}")
+    if comparison.shelves:
+        extras.append(f"shelves={json.dumps(comparison.shelves, sort_keys=True)}")
     if not extras:
         return base
     return hashlib.sha256("\n".join([base, *extras]).encode()).hexdigest()
@@ -990,6 +992,20 @@ def _unproven_totals(comparisons: list[Comparison]) -> list[str]:
     return out
 
 
+def reshape_text(shelves: dict[str, Any]) -> str:
+    """`dropped A, B; added C to rows, D to columns`, for a `shelves:` key."""
+    parts = []
+    if shelves.get("drop"):
+        parts.append(f"dropped {', '.join(shelves['drop'])}")
+    added = [
+        f"{', '.join(captions)} to {tableau.SHELF_NAMES[shelf]}"
+        for shelf, captions in shelves.get("add", {}).items()
+    ]
+    if added:
+        parts.append(f"added {', '.join(added)}")
+    return "; ".join(parts)
+
+
 def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
     """Missing cuts and filters across the proofs, one per kind and field.
 
@@ -1156,6 +1172,7 @@ def run(
         proofs={c.id: c.proof.proven_at for c in comparisons if c.proof},
         browser_cuts=_browser_cuts(comparisons),
         totals=totals,
+        reshaped={c.id: reshape_text(c.shelves) for c in comparisons if c.shelves},
         clauses={k: v for k, v in clauses.items() if v},
         fingerprints=sides.fingerprints,
         decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
@@ -1255,6 +1272,7 @@ def _run_from_json(data: dict) -> RunResult:
         proofs=data["proofs"],
         browser_cuts=data["browser_cuts"],
         totals=data.get("totals", []),
+        reshaped=data.get("reshaped", {}),
         clauses=data["clauses"],
         fingerprints=data.get("fingerprints", {}),
         decisions_fingerprint=data.get("decisions_fingerprint", ""),
@@ -1901,17 +1919,26 @@ def _capture(
     comparison: Comparison,
     tbl: tableau.Tableau,
     captures: dict[tuple, tableau.Snapshot] | None,
-) -> tuple[str, list[ET.Element], list[dict], list[dict], tableau.Snapshot]:
-    """Export a comparison's sheet once per (workbook, sheet, cuts).
+) -> tuple[str, str, list[ET.Element], list[dict], list[dict], tableau.Snapshot]:
+    """Export a comparison's sheet once per workbook, sheet, cuts, parameter
+    values and reshape.
 
     Returns:
-        The workbook XML, the sheet's columns, the cuts a REST export takes,
-        the cuts only a browser can prove, and the snapshot.
+        The workbook XML, the same with the sheet reshaped (`shelves`), the
+        reshaped sheet's columns, the cuts a REST export takes, the cuts only
+        a browser can prove, and the snapshot.
     """
     _require(comparison, "workbook", "sheet")
     workbook, sheet = comparison.workbook or "", comparison.sheet or ""
     twb = tbl.download_twb(workbook)
-    columns = _sheet_columns(twb, sheet)
+    parameters, shelves = comparison.parameters, comparison.shelves
+    try:
+        if parameters:
+            tableau.set_parameters(twb, parameters)
+        shaped = tableau.set_shelves(twb, sheet, shelves) if shelves else twb
+    except ValueError as exc:
+        raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
+    columns = _sheet_columns(shaped, sheet)
     measures = [c.get("name") or "" for c in columns if c.get("role") == "measure"]
     if not measures:
         raise Refusal(f"sheet {sheet!r} lists no measure")
@@ -1919,14 +1946,10 @@ def _capture(
     if not exportable:
         raise Refusal(f"comparison {comparison.id!r} has no cut a REST export can take")
     captures = {} if captures is None else captures
-    parameters = comparison.parameters
-    if parameters:
-        try:
-            tableau.set_parameters(twb, parameters)
-        except ValueError as exc:
-            raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
 
     def edit(x: str) -> str:
+        # The reshape goes first, so the format drop sees any column it copied.
+        x = tableau.set_shelves(x, sheet, shelves) if shelves else x
         x = tableau.expose_sheet(tableau.drop_number_formats(x, measures), sheet)
         # A field shown only behind a parameter value exports once the copy
         # carries that value.
@@ -1937,13 +1960,14 @@ def _capture(
         sheet,
         tuple(cut_label(cut) for cut in exportable),
         tuple(sorted(parameters.items())),
+        json.dumps(shelves, sort_keys=True),
     )
     if key not in captures:
         try:
             captures[key] = tbl.capture(workbook, sheet, exportable, edit)
         except (LookupError, tableau.RefreshMovedError) as exc:
             raise Refusal(f"cannot export {sheet!r}: {exc}") from exc
-    return twb, columns, exportable, browser, captures[key]
+    return twb, shaped, columns, exportable, browser, captures[key]
 
 
 def prove_headers(
@@ -1955,10 +1979,17 @@ def prove_headers(
     captures: dict[tuple, tableau.Snapshot] | None = None,
 ) -> None:
     """Print each exported cut's column headers, and the fields a long export
-    names, without probing or writing anything.
+    names, without probing or writing anything. A reshaped comparison first
+    prints the copy's rows and columns.
     """
     comparison = _comparison_by_id(cfg, path, comparison_id)
-    _, _, exportable, _, snap = _capture(comparison, tbl, captures)
+    _, shaped, _, exportable, _, snap = _capture(comparison, tbl, captures)
+    if comparison.shelves:
+        shape = finder.sheet_shape(shaped, comparison.sheet or "")
+        print(
+            f"{comparison.id} reshaped: rows {', '.join(shape.rows) or 'none'}; "
+            f"columns {', '.join(shape.cols) or 'none'}"
+        )
     for cut, rows in zip(exportable, snap.exports, strict=True):
         headers = list(rows[0]) if rows else []
         print(
@@ -1994,7 +2025,9 @@ def prove(
     """
     comparison = _comparison_by_id(cfg, path, comparison_id)
     _require(comparison, "workbook", "sheet", "dashboard_view", "decimals")
-    twb, columns, exportable, browser, snap = _capture(comparison, tbl, captures)
+    twb, shaped, columns, exportable, browser, snap = _capture(
+        comparison, tbl, captures
+    )
     if snap.refresh_started < now - PROOF_WINDOW:
         raise Refusal(
             f"the extract refreshed at {snap.refresh_started}, outside the 7 days "
@@ -2044,7 +2077,8 @@ def prove(
         _print_failures(comparison.id, proof.failures, failures_dir)
         raise Refusal(f"comparison {comparison.id!r} is not proven; nothing written")
 
-    gaps = sheet_gaps(twb, comparison)
+    # The copy's shelves: a dropped field is no longer a missing cut.
+    gaps = sheet_gaps(shaped, comparison)
     for kind, names in (("cuts", gaps.cuts), ("filters", gaps.filters)):
         if names:
             print(f"Sheet {kind} with no Cube member: {', '.join(names)}")
@@ -2070,6 +2104,9 @@ def prove(
                 if comparison.parameters
                 else {}
             ),
+            # The reshape the copy carried; `run` names it, since the proof
+            # covers the reshaped grain, not the sheet's own.
+            **({"shelves": comparison.shelves} if comparison.shelves else {}),
             # `run` lists these as missing cuts and filters to triage.
             "missing_cuts": gaps.cuts,
             "missing_filters": gaps.filters,

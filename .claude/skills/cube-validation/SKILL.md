@@ -121,6 +121,12 @@ cause, do not retry around it.
      parameter value (Chronic Absenteeism under "Attendance Metric"). The proof
      copy carries that value, so the REST export shows the field. Put the
      parameter here, never in `cuts`: a cut takes only `filters:` captions.
+   - `shelves: {drop: [<caption>], add: {rows: [<caption>]}}`: the sheet's rows
+     or columns hold a field Cube cannot map (a combined calc, a week, an id).
+     The proof copy drops it and adds mapped fields (each under `dims`), and
+     Tableau recomputes the measure, so an average stays right where
+     `split_rows` cannot. The proof then covers the reshaped grain, not the
+     sheet's own; tell the analyst, and the run result says so.
    - `definitions: {dashboard: ..., cube: ...}`: what each side counts, in a
      sentence or a code list. The review issue shows both for a comparison with
      a domain-owner question. It goes to GitHub: never name a person.

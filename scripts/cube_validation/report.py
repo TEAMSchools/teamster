@@ -81,6 +81,9 @@ class RunResult:
     browser_cuts: list[str] = field(default_factory=list)
     # Total rows the proofs' exports showed but no proof compared.
     totals: list[str] = field(default_factory=list)
+    # Comparison id to the reshape its proof's copy carried (`dropped ...;
+    # added ...`): that proof covers the reshaped grain, not the sheet's own.
+    reshaped: dict[str, str] = field(default_factory=dict)
     clauses: dict[str, list[str]] = field(default_factory=dict)
     fingerprints: dict[str, dict[str, str]] = field(default_factory=dict)
     # The `decisions:` block the run applied; `review` refuses a changed one.
@@ -303,6 +306,11 @@ def render_local(run: RunResult) -> str:
     out += _bullets(
         [
             f"{comparison}: last proven {at}"
+            + (
+                f"; proven on a reshaped copy: {run.reshaped[comparison]}"
+                if comparison in run.reshaped
+                else ""
+            )
             for comparison, at in sorted(run.proofs.items())
         ]
     )

@@ -395,6 +395,352 @@ def _unquote(text: str) -> str:
     return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
 
 
+# A shelf: `<rows onTop='true'>(A / (B / C))</rows>`, or empty as `<rows />`.
+_SHELF_TAG = re.compile(
+    r"<(?P<tag>rows|cols)(?P<attrs>(?:\s[^>]*?)?)\s*(?:/>|>(?P<body>[^<]*)</(?P=tag)>)"
+)
+_BRACKETED = r"\[(?:[^\]]|\]\])*\]"
+_SHELF_TOKEN = re.compile(
+    rf"\s*(?:(?P<ref>{_BRACKETED}(?:\.{_BRACKETED})?)"
+    r"|(?P<op>[/+])|(?P<open>\()|(?P<close>\)))"
+)
+_DEPENDENCIES = re.compile(
+    r"<datasource-dependencies\b[^>]*>.*?</datasource-dependencies>", re.DOTALL
+)
+_INSTANCE_SUFFIX = {"nominal": "nk", "ordinal": "ok", "quantitative": "qk"}
+SHELF_NAMES = {"rows": "rows", "cols": "columns"}
+
+
+@dataclass
+class _Group:
+    """A parenthesized shelf expression: fields nested (`/`) or side by side (`+`)."""
+
+    items: list[_Group | str]
+    ops: list[str]
+
+
+def _parse_shelf(text: str) -> _Group | str | None:
+    tokens = []
+    end = 0
+    for m in _SHELF_TOKEN.finditer(text):
+        if m.start() != end:
+            break
+        tokens.append((m.lastgroup, m[m.lastgroup or ""]))
+        end = m.end()
+    if text[end:].strip():
+        raise ValueError(f"cannot read the shelf {text!r}")
+    if not tokens:
+        return None
+    at = 0
+
+    def expect(kind: str) -> str:
+        nonlocal at
+        if at >= len(tokens) or tokens[at][0] != kind:
+            raise ValueError(f"cannot read the shelf {text!r}")
+        at += 1
+        return tokens[at - 1][1]
+
+    def operand() -> _Group | str:
+        if at < len(tokens) and tokens[at][0] == "open":
+            expect("open")
+            node = expression()
+            expect("close")
+            return node
+        return expect("ref")
+
+    def expression() -> _Group | str:
+        items, ops = [operand()], []
+        while at < len(tokens) and tokens[at][0] == "op":
+            ops.append(expect("op"))
+            items.append(operand())
+        return items[0] if len(items) == 1 else _Group(items, ops)
+
+    node = expression()
+    if at != len(tokens):
+        raise ValueError(f"cannot read the shelf {text!r}")
+    return node
+
+
+def _shelf_text(node: _Group | str) -> str:
+    if isinstance(node, str):
+        return node
+    out = _shelf_text(node.items[0])
+    for op, item in zip(node.ops, node.items[1:], strict=True):
+        out += f" {op} {_shelf_text(item)}"
+    return f"({out})"
+
+
+def _shelf_leaves(node: _Group | str | None) -> list[str]:
+    if node is None:
+        return []
+    if isinstance(node, str):
+        return [node]
+    return [leaf for item in node.items for leaf in _shelf_leaves(item)]
+
+
+def _without(
+    node: _Group | str | None, drop: Callable[[str], bool]
+) -> _Group | str | None:
+    """The shelf with every field `drop` matches taken out."""
+    if node is None or isinstance(node, str):
+        return None if node is None or drop(node) else node
+    items: list[_Group | str] = []
+    ops: list[str] = []
+    for i, item in enumerate(node.items):
+        kept = _without(item, drop)
+        if kept is None:
+            continue
+        if items:
+            ops.append(node.ops[i - 1])
+        items.append(kept)
+    if not items:
+        return None
+    return items[0] if len(items) == 1 else _Group(items, ops)
+
+
+def _nested_under(node: _Group | str | None, ref: str) -> _Group | str:
+    """The shelf with `ref` nested innermost, as Tableau writes `(A / (B / C))`."""
+    if node is None:
+        return ref
+    if isinstance(node, _Group) and set(node.ops) == {"/"}:
+        return _Group([*node.items[:-1], _nested_under(node.items[-1], ref)], node.ops)
+    return _Group([node, ref], ["/"])
+
+
+def _xml_attr(value: str) -> str:
+    for raw, escaped in (
+        ("&", "&amp;"), ("<", "&lt;"), (">", "&gt;"), ("'", "&apos;"),
+        ('"', "&quot;"), ("\n", "&#10;"), ("\r", "&#13;"),
+    ):  # fmt: skip
+        value = value.replace(raw, escaped)
+    return value
+
+
+def _xml_element(el: ET.Element, indent: str, nl: str) -> str:
+    """Write an element the way Tableau does: single quotes, 2-space nesting."""
+    if (el.text or "").strip() or any("{" in k for k in el.attrib):
+        raise ValueError(f"cannot copy <{el.tag} name={el.get('name')!r}>")
+    attrs = "".join(f" {k}='{_xml_attr(v)}'" for k, v in el.attrib.items())
+    children = list(el)
+    if not children:
+        return f"{indent}<{el.tag}{attrs} />"
+    inner = nl.join(_xml_element(c, indent + "  ", nl) for c in children)
+    return f"{indent}<{el.tag}{attrs}>{nl}{inner}{nl}{indent}</{el.tag}>"
+
+
+def _ref_column(ref: str) -> str:
+    """The column name of a shelf field, as the XML escapes it or not."""
+    return _field_column(html.unescape(ref))
+
+
+def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
+    """Reshape one worksheet's rows and columns, so it exports at a new grain.
+
+    Each `drop` caption leaves the sheet's rows and columns; each `add` caption
+    is nested innermost on its shelf as a dimension (`none`, the instance the
+    workbook already uses for that field when there is one). An added field the
+    sheet does not list joins its datasource dependencies, copied from the
+    datasource. Tableau recomputes every measure at the new grain. Only that
+    worksheet's text changes; filters are left alone.
+
+    Args:
+        twb_xml: The workbook XML.
+        sheet: The worksheet name.
+        shelves: `{drop: [caption], add: {rows: [caption], cols: [caption]}}`.
+
+    Raises:
+        ValueError: The workbook has no such worksheet, a dropped caption is
+            not on the sheet's rows or columns, an added caption names no
+            field of the sheet's datasources (or more than 1), names a
+            measure, a calculation the sheet does not list, or a field
+            already on the rows or columns.
+    """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    root = ET.fromstring(twb_xml)
+    ws = next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
+    blocks = [
+        m
+        for m in _WORKSHEET.finditer(twb_xml)
+        if _attrs(m[0].split(">", 1)[0]).get("name") == sheet
+    ]
+    if ws is None or len(blocks) != 1:
+        raise ValueError(f"the workbook has no worksheet {sheet!r}")
+    block = blocks[0]
+    text = block[0]
+    nl = "\r\n" if "\r\n" in twb_xml else "\n"
+
+    caption = {}
+    for col in ws.iter("column"):
+        name = _bare(col.get("name") or "")
+        caption.setdefault(name, col.get("caption") or name)
+
+    def shown(ref: str) -> str:
+        column = _ref_column(ref)
+        return caption.get(column, column.lstrip(":"))
+
+    found_tags = list(_SHELF_TAG.finditer(text))
+    tags = {m["tag"]: m for m in found_tags}
+    if len(tags) != len(found_tags):
+        raise ValueError(f"sheet {sheet!r} has more than 1 rows or cols shelf")
+    trees = {
+        tag: _parse_shelf(html.unescape(m["body"] or "")) for tag, m in tags.items()
+    }
+    on_shelves = [
+        shown(leaf) for tree in trees.values() for leaf in _shelf_leaves(tree)
+    ]
+
+    def is_named(ref: str, wanted: str) -> bool:
+        return wanted in (shown(ref), _ref_column(ref))
+
+    for wanted in shelves.get("drop", []):
+        if not any(
+            is_named(leaf, wanted) for t in trees.values() for leaf in _shelf_leaves(t)
+        ):
+            raise ValueError(
+                f"{wanted!r} is not on the rows or columns of {sheet!r}; they "
+                f"hold {', '.join(dict.fromkeys(on_shelves)) or 'nothing'}"
+            )
+        trees = {
+            tag: _without(tree, lambda ref, w=wanted: is_named(ref, w))
+            for tag, tree in trees.items()
+        }
+
+    top = root.find("datasources")
+    datasources = {
+        ds.get("name") or "": ds
+        for ds in ([] if top is None else top.findall("datasource"))
+    }
+    dependencies = {
+        deps.get("datasource") or "": deps
+        for deps in ws.iter("datasource-dependencies")
+    }
+    inserts: dict[str, list[ET.Element]] = {}
+    for tag, wanted_list in shelves.get("add", {}).items():
+        if tag not in tags:
+            raise ValueError(f"sheet {sheet!r} has no {SHELF_NAMES[tag]} shelf")
+        for wanted in wanted_list:
+            ds_name, col, listed = _added_column(
+                wanted, sheet, dependencies, datasources
+            )
+            name = _bare(col.get("name") or "")
+            if col.get("role") == "measure":
+                raise ValueError(f"{wanted!r} is a measure; add a dimension")
+            if col.find("calculation") is not None and not listed:
+                raise ValueError(
+                    f"{wanted!r} is a calculation {sheet!r} does not list; add a "
+                    "plain field or one the sheet uses"
+                )
+            if any(
+                _ref_column(leaf) == name
+                for t in trees.values()
+                for leaf in _shelf_leaves(t)
+            ):
+                raise ValueError(
+                    f"{wanted!r} is already on the rows or columns of {sheet!r}"
+                )
+            instance = _dimension_instance(root, ws, ds_name, col)
+            deps = dependencies[ds_name]
+            if not listed:
+                inserts.setdefault(ds_name, []).append(col)
+            if not any(
+                i.get("name") == instance.get("name")
+                for i in deps.findall("column-instance")
+            ):
+                inserts.setdefault(ds_name, []).append(instance)
+            ref = f"[{ds_name}].{instance.get('name')}"
+            trees[tag] = _nested_under(trees[tag], ref)
+
+    def with_inserts(m: re.Match) -> str:
+        ds_name = _attrs(m[0].split(">", 1)[0]).get("datasource", "")
+        added = inserts.pop(ds_name, [])
+        if not added:
+            return m[0]
+        head, close = m[0].rsplit("</datasource-dependencies>", 1)
+        indent = head[len(head.rstrip(" \t")) :]
+        lines = [_xml_element(el, indent + "  ", nl).lstrip(" \t") for el in added]
+        body = f"{nl}{indent}  ".join(lines)
+        return f"{head}  {body}{nl}{indent}</datasource-dependencies>{close}"
+
+    text = _DEPENDENCIES.sub(with_inserts, text)
+
+    def shelf(m: re.Match) -> str:
+        tree = trees[m["tag"]]
+        if tree == _parse_shelf(html.unescape(m["body"] or "")):
+            return m[0]
+        attrs = m["attrs"].rstrip()
+        if tree is None:
+            return f"<{m['tag']}{attrs} />"
+        body = _shelf_text(tree).replace("&", "&amp;").replace("<", "&lt;")
+        return f"<{m['tag']}{attrs}>{body.replace('>', '&gt;')}</{m['tag']}>"
+
+    text = _SHELF_TAG.sub(shelf, text)
+    out = twb_xml[: block.start()] + text + twb_xml[block.end() :]
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    ET.fromstring(out)
+    return out
+
+
+def _named(columns: list[ET.Element], wanted: str) -> list[ET.Element]:
+    return [
+        c for c in columns if wanted in (c.get("caption"), _bare(c.get("name") or ""))
+    ]
+
+
+def _added_column(
+    wanted: str,
+    sheet: str,
+    dependencies: dict[str, ET.Element],
+    datasources: dict[str, ET.Element],
+) -> tuple[str, ET.Element, bool]:
+    """Find a field to add: its datasource, its column, and whether the sheet
+    lists it. Only a datasource's own columns count, never its extract's.
+    """
+    found = []
+    for ds_name, deps in dependencies.items():
+        listed = _named(deps.findall("column"), wanted)
+        source = datasources.get(ds_name)
+        defined = [] if source is None else _named(source.findall("column"), wanted)
+        if listed or defined:
+            found.append((ds_name, (listed or defined)[0], bool(listed)))
+    if not found:
+        raise ValueError(
+            f"the workbook has no field {wanted!r} on the datasources of {sheet!r}"
+        )
+    if len(found) > 1:
+        raise ValueError(
+            f"{wanted!r} names a field on {len(found)} datasources of {sheet!r}"
+        )
+    return found[0]
+
+
+def _dimension_instance(
+    root: ET.Element, ws: ET.Element, ds_name: str, col: ET.Element
+) -> ET.Element:
+    """The `none` instance of a field: the sheet's own, the workbook's, or new."""
+    name = col.get("name") or ""
+    for scope in (ws, root):
+        for deps in scope.iter("datasource-dependencies"):
+            if deps.get("datasource") != ds_name:
+                continue
+            for instance in deps.findall("column-instance"):
+                if (
+                    instance.get("column") == name
+                    and instance.get("derivation") == "None"
+                ):
+                    return instance
+    kind = col.get("type") or "nominal"
+    return ET.Element(
+        "column-instance",
+        {
+            "column": name,
+            "derivation": "None",
+            "name": f"[none:{_bare(name)}:{_INSTANCE_SUFFIX.get(kind, 'nk')}]",
+            "pivot": "key",
+            "type": kind,
+        },
+    )
+
+
 def _parameter_names(twb_xml: str) -> set[str]:
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     root = ET.fromstring(twb_xml)

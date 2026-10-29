@@ -637,6 +637,43 @@ def test_parameters_load_as_text(tmp_path):
     assert first.parameters == {"Attendance Metric": "Chronic Absenteeism"}
 
 
+def _shelves(tmp_path, shelves):
+    text = EXAMPLE.replace(SCOPE_LINE, SCOPE_LINE + f"    shelves: {shelves}\n")
+    return load_view_config(_write(tmp_path, text)).comparisons[0]
+
+
+def test_shelves_load_when_each_added_field_maps_to_a_dim(tmp_path):
+    # `Region` maps by its filters caption, `region` by the dim's own name.
+    first = _shelves(
+        tmp_path,
+        "{ drop: [Week Start Monday], add: { rows: [Region], cols: [region] } }",
+    )
+    assert first.shelves == {
+        "drop": ["Week Start Monday"],
+        "add": {"rows": ["Region"], "cols": ["region"]},
+    }
+
+
+@pytest.mark.parametrize(
+    "shelves, message",
+    [
+        (
+            "{ add: { rows: [Grade Level] } }",
+            r"shelves\.add: 'Grade Level' maps to no dim",
+        ),
+        ("{ add: { rows: [Academic Year] } }", "'Academic Year' maps to no dim"),
+        ("{ add: { pages: [Region] } }", r"shelves\.add: takes rows and cols"),
+        ("{ drop: Week }", r"shelves\.drop: must be list"),
+        ("{ drop: [2026] }", r"shelves\.drop: captions must be text"),
+        ("{ keep: [Region] }", "shelves: takes drop and add"),
+        ("{}", "shelves: set drop or add"),
+    ],
+)
+def test_shelves_refuse_an_unmapped_add_and_a_bad_shape(tmp_path, shelves, message):
+    with pytest.raises(ConfigError, match=message):
+        _shelves(tmp_path, shelves)
+
+
 def test_fix_source_needs_a_task(tmp_path):
     path = _write(tmp_path, EXAMPLE.replace("call: deliberate", "call: fix_source"))
 
