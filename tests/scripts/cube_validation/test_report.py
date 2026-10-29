@@ -816,9 +816,17 @@ def test_suppress_hides_a_lone_small_part_and_its_next_smallest():
 def test_suppress_rules():
     assert suppress(40, [20, 20]) == ("40", ["20", "20"])
     assert suppress(48, [30, 13, 5]) == ("48", ["30", "masked", "<10"])
-    assert suppress(15, [9, 6]) == ("15", ["<10", "<10"])
+    assert suppress(15, [9, 6]) == ("masked", ["<10", "<10"])
     assert suppress(5, [5]) == ("<10", ["<10"])
     assert suppress(120, [100, 20]) == ("120", ["100", "20"])
+
+
+def test_suppress_never_lets_a_sum_pin_the_small_parts():
+    # 18 over two `<10` parts is 9 and 9; 48 - 30 leaves 18 for two `<10`
+    # parts, the same. A `masked` part, or a hidden total, breaks the pin.
+    assert suppress(18, [9, 9]) == ("masked", ["<10", "<10"])
+    assert suppress(27, [9, 9, 9]) == ("masked", ["<10", "<10", "<10"])
+    assert suppress(48, [30, 9, 9]) == ("48", ["masked", "<10", "<10"])
 
 
 def test_suppress_masks_until_the_masked_parts_hold_10_together():

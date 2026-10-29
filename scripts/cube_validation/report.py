@@ -124,12 +124,13 @@ SUPPRESSED = "masked"
 def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
     """Mask a total and its parts so no small part can be worked out.
 
-    Each part under `MASK_BELOW` reads `<10`. The masked parts must hold
-    `MASK_BELOW` or more together, or the total minus the shown parts would
-    give them away: until they do, the next-smallest shown part reads
-    `masked` too. The total reads `<10` only when it is under `MASK_BELOW`;
-    with every part masked, it gives only their sum, which then holds
-    `MASK_BELOW` or more.
+    Each part under `MASK_BELOW` reads `<10`. The total minus the shown parts
+    gives the masked parts' sum, so the masked parts must hold `MASK_BELOW` or
+    more together and include at least one `masked` part with no upper bound:
+    `<10` parts alone are pinned by their sum (18 over two `<10` parts is 9
+    and 9). Until both hold, the next-smallest shown part reads `masked` too.
+    When no part is left to mask, the total reads `masked`, or `<10` when it
+    is under `MASK_BELOW`.
 
     Returns:
         The total's text and each part's, in order.
@@ -139,12 +140,18 @@ def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
         (i for i in range(len(parts)) if i not in hidden), key=parts.__getitem__
     )
     extra: set[int] = set()
-    while hidden and shown and sum(parts[i] for i in hidden | extra) < MASK_BELOW:
+    while (
+        hidden
+        and shown
+        and (not extra or sum(parts[i] for i in hidden | extra) < MASK_BELOW)
+    ):
         extra.add(shown.pop(0))
     texts = [
         "<10" if i in hidden else SUPPRESSED if i in extra else str(n)
         for i, n in enumerate(parts)
     ]
+    if hidden and not extra and total >= MASK_BELOW:
+        return SUPPRESSED, texts
     return mask(total), texts
 
 
