@@ -76,7 +76,8 @@ def make_warehouse() -> Warehouse:
 def _warehouse(args: argparse.Namespace) -> Warehouse:
     """A warehouse that shares its view cache and daily spend with other runs."""
     wh = make_warehouse()
-    wh.configure_local(cache_root(), args.max_usd_per_day)
+    # One day's ledger per machine, wherever the cache is.
+    wh.configure_local(cache_root(), args.max_usd_per_day, ledger_dir=report.CACHE_ROOT)
     return wh
 
 
@@ -261,6 +262,12 @@ def _parser() -> argparse.ArgumentParser:
         default=trace.MANIFEST,
         help="dbt manifest with compiled SQL for the tables the trace descends into",
     )
+    p.add_argument(
+        "--trace-max-minutes",
+        type=float,
+        default=trace.TRACE_MAX_MINUTES,
+        help="stop the trace after this long, keeping what it found",
+    )
 
     p = sub.add_parser(
         "add-decisions", help="write an approved triage batch as decisions"
@@ -363,6 +370,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             cache_root=cache_root(),
             trace_rows=not args.no_trace,
             manifest=args.manifest,
+            trace_max_minutes=args.trace_max_minutes,
         )
         return 0
 

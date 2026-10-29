@@ -97,13 +97,18 @@ def _stub_dim(g: Group, open_groups: list[Group]) -> tuple[str, str]:
     return g.dims[0]
 
 
-def _group_item(g: Group, item_id: str, open_groups: list[Group]) -> Item:
-    column, value = _stub_dim(g, open_groups)
-    label = (
+def _group_label(g: Group, rows: str | None = None) -> str:
+    """The group's masked label; `rows` replaces its row count's text."""
+    return (
         f"{_where(g, lambda column, value: _shown_value(g, column, value))} in "
-        f"{g.comparison_id} ({g.bucket}): {mask(g.n_rows)} rows, "
+        f"{g.comparison_id} ({g.bucket}): {rows or mask(g.n_rows)} rows, "
         f"{mask(g.n_students)} students"
     )
+
+
+def _group_item(g: Group, item_id: str, open_groups: list[Group]) -> Item:
+    column, value = _stub_dim(g, open_groups)
+    label = _group_label(g)
     return Item(
         id=item_id,
         kind="group",
@@ -323,6 +328,7 @@ def suggest(
     docs: dict[str, MemberDoc],
     values: Callable[[str, str], str] | None = None,
     traces: dict[tuple, trace.ItemTrace] | None = None,
+    stopped: str = "",
 ) -> list[Suggestion]:
     """Sort each open item into a pile, first matching rule wins.
 
@@ -335,6 +341,8 @@ def suggest(
             `None` skips value checks.
         traces: Each traced row group's trace, by `trace.item_key`; `None`
             when the trace was skipped.
+        stopped: Why the trace stopped early, if it did: a group it did not
+            reach says so.
 
     Returns:
         One suggestion per open item, ordered by `SUGGESTIONS`. A missing
@@ -410,12 +418,20 @@ def suggest(
                     members += [to_cube.get(c, c) for c, _ in source.dims]
             if isinstance(source, Group):
                 traced = (traces or {}).get(trace.item_key(source))
+                if traced is not None:
+                    # The breakdown masks what would give a small part away,
+                    # and the label's total with it.
+                    item = dataclasses.replace(
+                        item, label=_group_label(source, traced.shown_total())
+                    )
                 if traced is not None and traced.proven:
                     call, cause, evidence = "cause", traced.cause(), traced.evidence()
                 elif traced is not None:
                     found = traced.evidence()
                 elif traces is None:
                     found = (NOT_TRACED,)
+                elif stopped and source.bucket in trace.TRACED:
+                    found = (f"trace stopped: {stopped}",)
                 elif source.bucket == "value_differs":
                     found = (NO_ROWS,)
                 else:
@@ -623,12 +639,14 @@ def run_triage(
     cache_root: Path,
     trace_rows: bool = True,
     manifest: Path | None = None,
+    trace_max_minutes: float | None = None,
 ) -> list[Suggestion]:
     """Sort each open item of the view's latest run into a pile and print them.
 
     Traces the run's row groups first (`trace.trace_run`) unless `trace_rows`
     is False; its queries count against `max_usd` and the daily cap with the
-    value checks. Prints `batch_lines`. Writes every item to `triage.json`
+    value checks. A cap or `trace_max_minutes` hit partway stops the trace;
+    what it found is kept and the batch is still written. Prints `batch_lines`. Writes every item to `triage.json`
     beside that run's `run.json`, with the run's moment, decisions
     fingerprint and open items (see `proven_triage`): it stays in the local
     cache, and its stubs and causes carry real values and exact counts.
@@ -651,14 +669,26 @@ def run_triage(
         return value_check(wh, cube, cfg, column, member, run.moment, pii)
 
     with wh.budget(max_usd):
-        traces = (
+        traced = (
             trace.trace_run(
-                cfg, run, wh=wh, cube=cube, manifest_path=manifest or trace.MANIFEST
+                cfg,
+                run,
+                wh=wh,
+                cube=cube,
+                manifest_path=manifest or trace.MANIFEST,
+                max_minutes=trace_max_minutes or trace.TRACE_MAX_MINUTES,
             )
             if trace_rows
             else None
         )
-        found = suggest(cfg, run, docs, values, traces)
+        found = suggest(
+            cfg,
+            run,
+            docs,
+            values,
+            traced.items if traced else None,
+            traced.stopped if traced else "",
+        )
 
     out = run_json.parent / "triage.json"
     out.write_text(

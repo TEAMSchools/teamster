@@ -1,18 +1,23 @@
-"""Find the steps of a query that can drop a row, and neutralize one at a time.
+"""Find the steps of a query that can drop a row, and neutralize them.
 
-A step is one place a query can drop a row: a WHERE, HAVING or QUALIFY
-conjunct, an INNER JOIN, a LEFT JOIN a later predicate requires, or an
-INNER JOIN's ON conjunct other than a key equality (which filters as a WHERE
-conjunct would). Steps are found in every SELECT, CTE,
-subquery and inlined view that can change which rows the query returns;
-the rest (a CTE nothing reads, a LEFT JOIN that feeds no output key and
-nothing requires, a UNION branch whose student column is NULL) are pruned.
+A step is one place a query can drop a row: a WHERE or HAVING conjunct, an
+INNER JOIN, a LEFT JOIN a later predicate requires, or an INNER JOIN's ON
+conjunct other than a key equality (which filters as a WHERE conjunct would).
+A row pick (QUALIFY, or `rn = 1` on a ROW_NUMBER or RANK column) is never a
+step: neutralizing it brings back another row of the same key, not the row.
+Steps are found in every SELECT, CTE, subquery and inlined view that can
+change which rows the query returns; the rest (a CTE nothing reads, a LEFT
+JOIN that feeds no output key and nothing requires, a UNION branch whose
+student column is NULL, a scalar or NOT IN / NOT EXISTS subquery) are pruned.
 
-A required LEFT JOIN and the predicates that require it split the rows they
-drop between them: neutralizing the join keeps the rows its table is missing
-from, neutralizing a predicate keeps the rows it fails while every table it
-reads is present. So a row the join drops is recovered by the join alone,
-not by the join and its predicate both.
+To neutralize steps, a select is first rewritten to an equal canonical form:
+every INNER JOIN becomes a LEFT JOIN on its key equalities, with its match
+and its other ON conjuncts moved into the WHERE. Every requirement is then a
+WHERE conjunct, and the steps split the rows they drop between them: a join
+step keeps the rows its table is missing from (its parents present), a
+predicate step keeps the rows it fails while every table it reads is
+present. So a row a join drops is recovered by the join alone, and any set
+of steps of one select can be neutralized together.
 
 The module is pure: it parses and writes SQL and runs nothing.
 """
@@ -37,9 +42,10 @@ class Step:
 
     `id` is `<side>:<scope>:<n>`, where scope is the CTE or subquery the step
     sits in (`main` at the top), prefixed by the table it was found in when
-    the trace descended into one. `label` is the scope plus the predicate or
-    join text, whitespace collapsed and cut at `LABEL_CHARS`. `ordinal`
-    finds the step again in a fresh parse of the same SQL.
+    the trace descended into one; `scope` is that scope. `label` is the scope
+    plus the predicate or join text, whitespace collapsed and cut at
+    `LABEL_CHARS`. `ordinal` finds the step again in a fresh parse of the same
+    SQL.
     """
 
     id: str
@@ -47,6 +53,7 @@ class Step:
     label: str
     kind: str
     ordinal: int
+    scope: str = ""
 
 
 @dataclass(frozen=True)
@@ -68,7 +75,7 @@ class _Source:
     node: exp.Expression
     join: exp.Join | None
     side: str  # root, inner, left or other
-    present: exp.Column | None = None
+    present: exp.Expression | None = None
     parents: set[str] = field(default_factory=set)
 
 
@@ -272,7 +279,11 @@ class _Analysis:
             known = {x.alias for x in sources}
             where = s.args.get("where")
             if where is not None:
-                out += [_Raw("where", s, c) for c in _conjuncts(where.this)]
+                out += [
+                    _Raw("where", s, c)
+                    for c in _conjuncts(where.this)
+                    if not _is_row_pick(c, s, sources)
+                ]
             required = _required(s, sources)
             for x in sources:
                 if x.join is None:
@@ -287,20 +298,75 @@ class _Analysis:
                             _Raw("on", s, c, x.alias)
                             for c in _conjuncts(on)
                             if not _is_key(c, x.alias, s, known)
+                            and not _is_row_pick(c, s, sources)
                         ]
-            for clause in ("having", "qualify"):
-                node = s.args.get(clause)
-                if node is not None:
-                    out += [_Raw(clause, s, c) for c in _conjuncts(node.this)]
+            having = s.args.get("having")
+            if having is not None:
+                out += [_Raw("having", s, c) for c in _conjuncts(having.this)]
         return out
 
 
+_PICKS = (exp.RowNumber, exp.Rank, exp.DenseRank)
+
+
+def _picked_by(source: _Source, name: str) -> bool:
+    """`name` is a ROW_NUMBER, RANK or DENSE_RANK column of `source`."""
+    node = source.node
+    if isinstance(node, exp.Table):
+        cte = _cte_for(node)
+        node = cte.this if cte is not None else None
+    while isinstance(node, exp.Subquery):
+        node = node.this
+    queries = []
+    while isinstance(node, exp.SetOperation):
+        queries.append(node.expression)
+        node = node.this
+    queries.append(node)
+    for q in queries:
+        while isinstance(q, exp.Subquery):
+            q = q.this
+        if not isinstance(q, exp.Select):
+            continue
+        for e in q.expressions:
+            inner = e.unalias()
+            if (
+                e.alias_or_name == name
+                and isinstance(inner, exp.Window)
+                and isinstance(inner.this, _PICKS)
+            ):
+                return True
+    return False
+
+
+def _is_row_pick(c: exp.Expression, s: exp.Select, sources: list[_Source]) -> bool:
+    """`rn = 1` (or `<= 1`, `< 2`) on a source's row-number or rank column."""
+    if not isinstance(c, (exp.EQ, exp.LTE, exp.LT)):
+        return False
+    col, lit = c.this, c.expression
+    if isinstance(col, exp.Literal):
+        col, lit = lit, col
+    if not isinstance(col, exp.Column) or not isinstance(lit, exp.Literal):
+        return False
+    if lit.this not in ("1", "2") or (lit.this == "2") != isinstance(c, exp.LT):
+        return False
+    owners = [x for x in sources if not col.table or x.alias == col.table]
+    return any(_picked_by(x, col.name) for x in owners)
+
+
 def _is_predicate(sub: exp.Select) -> bool:
-    """`sub` is the query of an IN, EXISTS, ANY or ALL, not a scalar value."""
+    """`sub` is the query of an IN, EXISTS, ANY or ALL, not a scalar value.
+
+    Under NOT, neutralizing a step inside it can only drop more rows.
+    """
     p = sub.parent
     while isinstance(p, (exp.Subquery, exp.Paren)):
         p = p.parent
-    return isinstance(p, (exp.In, exp.Exists, exp.Any, exp.All))
+    if not isinstance(p, (exp.In, exp.Exists, exp.Any, exp.All)):
+        return False
+    up = p.parent
+    while isinstance(up, exp.Paren):
+        up = up.parent
+    return not isinstance(up, exp.Not)
 
 
 def _inside(node: exp.Expression, ancestor: exp.Expression) -> bool:
@@ -365,7 +431,9 @@ def _sources(s: exp.Select) -> list[_Source]:
         on = x.join.args.get("on") if x.join else None
         if on is None or x.side not in ("inner", "left"):
             continue
-        x.present = _present(on, x.alias, s, known)
+        # With no key equality, the alias itself: an unmatched LEFT JOIN row
+        # reads as NULL.
+        x.present = _present(on, x.alias, s, known) or exp.column(x.alias)
         x.parents = _aliases(on, s, known) & joined - {x.alias}
     return out
 
@@ -445,10 +513,9 @@ def _required(s: exp.Select, sources: list[_Source]) -> set[str]:
 
 
 def _is_absent(x: _Source) -> exp.Expression:
-    """`x`'s match column is NULL; only called for a source that has one."""
-    return exp.Is(
-        this=x.present.copy() if x.present else exp.null(), expression=exp.Null()
-    )
+    """`x` matched no row: its match marker is NULL."""
+    marker = x.present.copy() if x.present is not None else exp.column(x.alias)
+    return exp.Is(this=marker, expression=exp.Null())
 
 
 def _is_present(x: _Source) -> exp.Expression:
@@ -456,11 +523,7 @@ def _is_present(x: _Source) -> exp.Expression:
 
 
 def _all_present(aliases, by_alias: dict[str, _Source]) -> exp.Expression | None:
-    conds = [
-        _is_present(by_alias[a])
-        for a in sorted(aliases)
-        if by_alias[a].present is not None
-    ]
+    conds = [_is_present(by_alias[a]) for a in sorted(aliases) if a in by_alias]
     if not conds:
         return None
     return exp.and_(*conds) if len(conds) > 1 else conds[0]
@@ -488,8 +551,8 @@ def _label(raw: _Raw) -> str:
     text = _text(raw.node) if raw.node is not None else ""
     if raw.kind == "on":
         return f"{text} (ON {raw.alias})"
-    if raw.kind in ("having", "qualify"):
-        return f"{raw.kind.upper()} {text}"
+    if raw.kind == "having":
+        return f"HAVING {text}"
     return text
 
 
@@ -540,7 +603,7 @@ class Query:
             if len(label) > LABEL_CHARS:
                 label = label[: LABEL_CHARS - 1] + "…"
             out.append(
-                Step(f"{side}:{scope}:{counts[scope]}", side, label, raw.kind, i)
+                Step(f"{side}:{scope}:{counts[scope]}", side, label, raw.kind, i, scope)
             )
         return out
 
@@ -560,10 +623,13 @@ class Query:
 
     def relaxed(self, step: Step) -> str:
         """The query with `step` neutralized, every other step kept."""
+        return self.relaxed_many([step])
+
+    def relaxed_many(self, steps: list[Step]) -> str:
+        """The query with every one of `steps` neutralized together."""
         tree = self._tree.copy()
         raws = self._analysis(tree).raw_steps()
-        raw = raws[step.ordinal]
-        _neutralize(raw)
+        _neutralize([raws[s.ordinal] for s in steps])
         return tree.sql(dialect=DIALECT)
 
     def relaxed_all(
@@ -615,58 +681,86 @@ def _as_left(join: exp.Join | None) -> None:
         join.set("kind", None)
 
 
-def _neutralize(raw: _Raw) -> None:
-    s = raw.select
+def _canonicalize(s: exp.Select) -> dict[int, exp.Expression]:
+    """Rewrite `s` to an equal query whose every requirement is a WHERE conjunct.
+
+    Each INNER JOIN becomes a LEFT JOIN on its key equalities; its other ON
+    conjuncts and its own match (`<marker> IS NOT NULL`) move into the WHERE.
+    A LEFT JOIN on the keys keeps every pair the keys allow, and the moved
+    conjuncts then drop the same pairs, and the same unmatched rows, the
+    INNER JOIN did.
+
+    Returns:
+        Each moved ON conjunct's new WHERE node, by the id of the old one.
+    """
     sources = _sources(s)
-    by_alias = {x.alias: x for x in sources}
-
-    if raw.node is None:
-        return
-
-    if raw.kind in ("having", "qualify", "on"):
-        raw.node.replace(exp.true())
-        return
-
-    if raw.kind == "where":
-        chain = _chain(_aliases(raw.node, s, set(by_alias)), by_alias)
-        cond = _all_present(chain, by_alias)
-        if cond is None:
-            raw.node.replace(exp.true())
-        else:
-            # Parenthesized, or the OR swallows the AND chain it sits in.
-            raw.node.replace(exp.paren(exp.or_(exp.paren(raw.node.copy()), cond)))
-        return
-
-    # A join: the rows its table is missing from pass every requirement that
-    # hangs on it, as long as the joins it hangs on are present.
-    x = by_alias[raw.alias]
-    if x.present is None:
-        if x.side == "inner":
-            _as_left(x.join)
-        return
-    hangs_on = _all_present(_ancestors(x.alias, by_alias), by_alias)
-    missing = _is_absent(x) if hangs_on is None else exp.and_(_is_absent(x), hangs_on)
-
+    known = {x.alias for x in sources}
+    moved: dict[int, exp.Expression] = {}
     added: list[exp.Expression] = []
-    for req, chain in _requirements(s, sources):
-        if isinstance(req, _Source):
-            if req.present is None:
+    for x in sources:
+        if x.side != "inner" or x.join is None:
+            continue
+        on = x.join.args.get("on")
+        conjuncts = _conjuncts(on) if on is not None else []
+        keys = [c for c in conjuncts if _is_key(c, x.alias, s, known)]
+        for c in conjuncts:
+            if any(c is k for k in keys):
                 continue
-            # An INNER JOIN read as a LEFT JOIN that requires its match.
-            _as_left(req.join)
-            if req is x:
-                # Its own match is required only of rows the joins it hangs
-                # on reach.
-                if hangs_on is not None:
-                    added.append(exp.or_(_is_present(x), exp.paren(hangs_on.copy())))
-                continue
-            cond = _is_present(req)
-            if x.alias in chain:
-                cond = exp.or_(cond, exp.paren(missing.copy()))
-            added.append(cond)
-        elif x.alias in chain:
-            req.replace(
-                exp.paren(exp.or_(exp.paren(req.copy()), exp.paren(missing.copy())))
-            )
+            new = c.copy()
+            moved[id(c)] = new
+            added.append(new)
+        added.append(_is_present(x))
+        x.join.set("on", exp.and_(*[k.copy() for k in keys]) if keys else exp.true())
+        _as_left(x.join)
     for cond in added:
         s.where(cond, copy=False)
+    return moved
+
+
+def _neutralize(raws: list[_Raw]) -> None:
+    """Neutralize `raws` together, select by select, in canonical form."""
+    by_select: dict[int, list[_Raw]] = {}
+    for raw in raws:
+        by_select.setdefault(id(raw.select), []).append(raw)
+    for group in by_select.values():
+        s = group[0].select
+        moved = _canonicalize(s)
+        sources = _sources(s)
+        by_alias = {x.alias: x for x in sources}
+        known = set(by_alias)
+
+        # Predicates first: a join step rewrites the conjuncts around them.
+        for raw in group:
+            if raw.kind == "join" or raw.node is None:
+                continue
+            node = moved.get(id(raw.node), raw.node)
+            if node.parent is None:
+                continue
+            if raw.kind == "having":
+                node.replace(exp.true())
+                continue
+            cond = _all_present(_chain(_aliases(node, s, known), by_alias), by_alias)
+            if cond is None:
+                node.replace(exp.true())
+            else:
+                # Parenthesized, or the OR swallows the AND chain it sits in.
+                node.replace(exp.paren(exp.or_(exp.paren(node.copy()), cond)))
+
+        # A join: the rows its table is missing from pass every requirement
+        # that hangs on it, as long as the joins it hangs on are present.
+        for raw in group:
+            if raw.kind != "join" or raw.alias not in by_alias:
+                continue
+            x = by_alias[raw.alias]
+            hangs_on = _all_present(_ancestors(x.alias, by_alias), by_alias)
+            missing = (
+                _is_absent(x) if hangs_on is None else exp.and_(_is_absent(x), hangs_on)
+            )
+            where = s.args.get("where")
+            for req in _conjuncts(where.this) if where is not None else []:
+                if x.alias in _chain(_aliases(req, s, known), by_alias):
+                    req.replace(
+                        exp.paren(
+                            exp.or_(exp.paren(req.copy()), exp.paren(missing.copy()))
+                        )
+                    )

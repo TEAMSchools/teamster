@@ -118,6 +118,39 @@ def mask(n: int) -> str:
     return "<10" if n < MASK_BELOW else str(n)
 
 
+SUPPRESSED = "masked"
+
+
+def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
+    """Mask a total and its parts so no small part can be worked out.
+
+    Each part under `MASK_BELOW` reads `<10`. When that hides exactly 1 of
+    several parts, the next-smallest part reads `masked` too, or the total
+    minus the shown parts would give it away. When every part is hidden, or
+    the hidden parts sum to under `MASK_BELOW`, the total is hidden as well.
+
+    Returns:
+        The total's text and each part's, in order.
+    """
+    hidden = {i for i, n in enumerate(parts) if n < MASK_BELOW}
+    shown = [i for i in range(len(parts)) if i not in hidden]
+    extra: set[int] = set()
+    if len(hidden) == 1 and shown:
+        extra = {min(shown, key=lambda i: parts[i])}
+    texts = [
+        "<10" if i in hidden else SUPPRESSED if i in extra else str(n)
+        for i, n in enumerate(parts)
+    ]
+    secret = hidden | extra
+    if (
+        parts
+        and (len(secret) == len(parts) or sum(parts[i] for i in secret) < MASK_BELOW)
+        and secret
+    ):
+        return mask(total) if total < MASK_BELOW else SUPPRESSED, texts
+    return mask(total), texts
+
+
 def _verdict_text(m: MeasureResult) -> str:
     if m.verdict == "not validated" and m.strongest == "consistent only":
         return "not validated (consistent only)"

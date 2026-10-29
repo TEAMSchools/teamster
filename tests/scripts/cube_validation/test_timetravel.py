@@ -10,6 +10,7 @@ from cube_validation.timetravel import (
     closing_paren,
     pin_clock,
     repin,
+    strip_comments,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -314,3 +315,9 @@ def test_repin_moves_only_the_named_tables():
 def test_closing_paren_skips_quotes_backticks_and_escapes():
     sql = "f(a, ')', `x)`, 'it\\'s)', g(1)) tail"
     assert sql[closing_paren(sql, 1) + 1 :] == " tail"
+
+
+def test_strip_comments_drops_hash_comments_outside_quotes():
+    sql = "select '#x', `a#b` # depends_on: `p`.`d`.`v`\nfrom t"
+
+    assert strip_comments(sql) == "select '#x', `a#b` \nfrom t"

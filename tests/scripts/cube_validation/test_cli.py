@@ -255,8 +255,9 @@ class Clock:
 
 @pytest.fixture(autouse=True)
 def _cache_in_tmp(monkeypatch, tmp_path):
-    """Keep every test off the analyst's own cache, `fakes` or not."""
+    """Keep every test off the analyst's own cache and spend ledger."""
     monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
+    monkeypatch.setattr(report, "CACHE_ROOT", tmp_path / "cache")
 
 
 @pytest.fixture
@@ -2362,23 +2363,35 @@ def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch)
     run = pipeline._run_from_json(json.loads(saved.read_text()))
     seen = {}
 
-    def traced(cfg, run_, *, wh, cube, manifest_path):
-        seen["manifest"] = manifest_path
+    def traced(cfg, run_, *, wh, cube, manifest_path, max_minutes):
+        seen["manifest"], seen["minutes"] = manifest_path, max_minutes
         found = {}
         for g in run_.applied.open:
             t = trace.ItemTrace("dashboard", g.n_rows)
             t.steps["dashboard:main:1"] = g.n_rows
             t.labels["dashboard:main:1"] = "main: region <> 'Miami'"
             found[trace.item_key(g)] = t
-        return found
+        return trace.TraceResult(found)
 
     monkeypatch.setattr(trace, "trace_run", traced)
     manifest = tmp_path / "m.json"
     capsys.readouterr()
 
-    assert cli.main(["triage", str(path), "--manifest", str(manifest)]) == 0
+    assert (
+        cli.main(
+            [
+                "triage",
+                str(path),
+                "--manifest",
+                str(manifest),
+                "--trace-max-minutes",
+                "5",
+            ]
+        )
+        == 0
+    )
 
-    assert seen["manifest"] == manifest
+    assert seen == {"manifest": manifest, "minutes": 5.0}
     items = json.loads((saved.parent / "triage.json").read_text())["items"]
     groups = [i for i in items if i["kind"] == "group"]
     assert len(groups) == len(run.applied.open)
@@ -2397,6 +2410,39 @@ def test_cache_root_follows_the_environment(monkeypatch, tmp_path):
 
     monkeypatch.delenv(cli.CACHE_VAR)
     assert _CACHE_ROOT() == report.CACHE_ROOT
+
+
+def test_a_moved_cache_keeps_the_machine_s_spend_ledger(monkeypatch, tmp_path):
+    monkeypatch.setenv(cli.CACHE_VAR, str(tmp_path / "copy"))
+    monkeypatch.setattr(cli, "cache_root", _CACHE_ROOT)
+    monkeypatch.setattr(report, "CACHE_ROOT", tmp_path / "default")
+    monkeypatch.setattr(cli, "make_warehouse", lambda: Warehouse(client=object()))
+
+    wh = cli._warehouse(SimpleNamespace(max_usd_per_day=3.0))
+    wh._record(0.5)
+
+    assert (tmp_path / "default" / "spend.json").exists()
+    assert not (tmp_path / "copy" / "spend.json").exists()
+
+
+def test_triage_writes_its_batch_when_the_trace_stops(
+    fakes, tmp_path, capsys, monkeypatch
+):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    (saved,) = (tmp_path / "cache" / "v").glob("*/run.json")
+    monkeypatch.setattr(
+        trace,
+        "trace_run",
+        lambda *a, **k: trace.TraceResult({}, "the trace passed its time limit"),
+    )
+
+    assert cli.main(["triage", str(path)]) == 0
+
+    items = json.loads((saved.parent / "triage.json").read_text())["items"]
+    (group,) = [i for i in items if i["kind"] == "group"]
+    assert group["suggestion"] == "investigate"
+    assert group["evidence"][0] == "trace stopped: the trace passed its time limit"
 
 
 # --- add-decisions and record-answers ----------------------------------------

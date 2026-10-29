@@ -1,20 +1,32 @@
-"""Trace each unmatched row of a run to the one SQL step that drops it.
+"""Trace each unmatched row of a run to the SQL step that drops it.
 
 A Cube-only row is traced through the dashboard side's SQL, a dashboard-only
-row through Cube's: each step of that side (`sqlsteps`) is neutralized alone,
-and a row is attributed to a step when that step alone brings it back, by the
-comparison's grain. A row no step at one level recovers may be missing from
-a table the side reads: the trace then inlines that table's dbt compiled SQL,
-as of the moment, and traces its steps, at most `MAX_LEVELS` tables deep.
+row through Cube's (`sqlsteps` finds the steps). At each level:
 
-Every relaxed variant runs inside one query that rebuilds the unmatched rows
-the way the run's reconcile did (`compare.trace_sql`), so no row leaves
-BigQuery; each query returns group columns, a step id and a count.
+1. Each step is neutralized alone. A row one step brings back is attributed
+   to it. A row several steps of one scope each bring back is attributed to
+   them as one cause (`A / B`: either alone lets it through); across scopes
+   it stays unattributed.
+2. The rest are checked for presence: the level's SQL with every one of its
+   own steps neutralized, its tables unchanged. A row that brings back is in
+   the tables and dropped by several steps here; a pair of steps in one
+   scope that alone brings it back is its cause (`A + B`), else it stays
+   unattributed. It never descends.
+3. Only a row presence does not bring back is missing from a table this level
+   reads. The trace then inlines that table's dbt compiled SQL, as of the
+   moment, and repeats, at most `MAX_LEVELS` tables deep, into a table whose
+   whole subtree with every step neutralized can bring the row back.
+
+Every variant runs inside one query that rebuilds the unmatched rows the way
+the run's reconcile did (`compare.trace_sql`), so no row leaves BigQuery; each
+query returns group columns, a step id and a count.
 """
 
 from __future__ import annotations
 
+import itertools
 import json
+import time
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -24,20 +36,24 @@ from google.api_core.exceptions import GoogleAPIError
 from sqlglot.errors import SqlglotError
 
 from . import compare, pipeline
-from .bq import Warehouse
-from .compare import MANY, NONE, UNREPRODUCED, Group
+from .bq import JOB_ID, CostCapError, Warehouse
+from .compare import DUPLICATE, MANY, NONE, PRESENT, UNREPRODUCED, Group, many_ids
 from .config import Comparison, ViewConfig
 from .cube_client import Cube, network_schools
 from .moment import Build, changed_between
-from .report import RunResult, mask
+from .report import RunResult, suppress
 from .sqlsteps import Query, Step, TableRef
 from .timetravel import PROJECT, repin
 
-MAX_LEVELS = 2
+MAX_LEVELS = 3
 # BigQuery refuses a query longer than 1,024K characters.
 MAX_QUERY_CHARS = 900_000
 # A relaxed variant can multiply rows; BigQuery stops a query past this.
 TIMEOUT_S = 1800
+# Pairs of steps searched in one level's frame; past it the rows stay
+# unattributed rather than buying a search that size.
+MAX_PAIRS = 400
+TRACE_MAX_MINUTES = 120
 MANIFEST = (
     Path(__file__).resolve().parents[2] / "src/dbt/kipptaf/target/prod/manifest.json"
 )
@@ -45,26 +61,49 @@ TRACED = ("cube_only", "dashboard_only")
 _MATERIALIZED = ("table", "incremental")
 
 
-def compile_command(models: Iterable[str]) -> str:
-    """The command, run from the repository root, that writes compiled SQL."""
+def compile_command(models: Iterable[str], ancestors: bool = False) -> str:
+    """The command, run from the repository root, that writes compiled SQL.
+
+    A compile writes compiled SQL only for the models it selects and drops
+    it for every other model, so the command always names every model the
+    trace needs; `ancestors` selects each model with all its parents
+    (`+<model>`), for when no manifest says which those are.
+    """
+    names = sorted(models)
+    select = " ".join(f"+{n}" for n in names) if ancestors else " ".join(names)
     return (
         "uv run dbt deps --project-dir src/dbt/kipptaf && "
         "uv run dbt compile --project-dir src/dbt/kipptaf "
         "--profiles-dir src/dbt/kipptaf --target prod --target-path target/prod "
-        f"--select {' '.join(sorted(models))}"
+        f"--select {select}"
     )
+
+
+class Stopped(RuntimeError):
+    """The trace stopped before it finished: a cap or its time limit.
+
+    `found` holds the traces made so far; they are kept, not thrown away.
+    """
+
+    def __init__(self, reason: str, found: dict | None = None) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.found = found or {}
 
 
 @dataclass
 class ItemTrace:
     """What the trace found for one row group.
 
-    `steps` counts the rows each step alone recovers; `many` the rows more
-    than one step recovers, and `recovered` every row each step recovers,
-    ambiguous ones included; `unreproduced` per table the rows its own SQL
-    already returns, so its steps prove nothing for them; `none` the rows no
-    step recovers; `below` the tables the trace stopped above; `failed` the
-    queries that failed at run time.
+    `steps` counts the rows each cause recovers: one step, steps of one scope
+    each recovering it alone (`a/b`), or a pair of one scope recovering it
+    together (`a+b`). The rest are unattributed: `many` recovered by steps of
+    several scopes, `pairs_many` by several pairs, `needs_more` present but
+    recovered by no single step or pair, `unreproduced` already returned by
+    the unrelaxed SQL, `duplicates` a grain the other side holds twice,
+    `unknown` behind a query that failed or a stop, and `none` missing below
+    the deepest level, under `below`. `recovered` counts every row each
+    step recovers, ambiguous ones included.
     """
 
     side: str
@@ -72,54 +111,106 @@ class ItemTrace:
     steps: Counter = field(default_factory=Counter)
     labels: dict[str, str] = field(default_factory=dict)
     many: int = 0
-    recovered: Counter = field(default_factory=Counter)
+    many_labels: tuple[str, ...] = ()
+    pairs_many: int = 0
+    needs_more: Counter = field(default_factory=Counter)
     unreproduced: Counter = field(default_factory=Counter)
+    duplicates: int = 0
+    unknown: int = 0
     none: int = 0
     below: tuple[str, ...] = ()
+    recovered: Counter = field(default_factory=Counter)
     failed: tuple[str, ...] = ()
+    stopped: str = ""
 
     @property
     def unattributed(self) -> int:
         return self.n_rows - sum(self.steps.values())
 
+    def _reasons(self) -> list[tuple[str, int]]:
+        out = []
+        if self.many:
+            out.append(
+                (
+                    "recovered by steps in 2 or more scopes "
+                    f"({', '.join(self.many_labels)})",
+                    self.many,
+                )
+            )
+        if self.pairs_many:
+            out.append(("recovered by more than one pair of steps", self.pairs_many))
+        out += [
+            (f"needs 3 or more steps, or steps in 2 or more scopes, in {at}", n)
+            for at, n in sorted(self.needs_more.items())
+        ]
+        out += [
+            (f"already returned by the {t} SQL with no step neutralized", n)
+            for t, n in sorted(self.unreproduced.items())
+        ]
+        if self.duplicates:
+            out.append(("duplicate grain on the other side", self.duplicates))
+        if self.unknown:
+            out.append(("not traced: a trace query failed or stopped", self.unknown))
+        if self.none:
+            where = f" (below {', '.join(self.below)})" if self.below else ""
+            out.append((f"recovered by no step{where}", self.none))
+        return [(t, n) for t, n in out if n]
+
+    @property
+    def consistent(self) -> bool:
+        """Every row is either attributed or has a reason it is not."""
+        return sum(self.steps.values()) + sum(n for _, n in self._reasons()) == (
+            self.n_rows
+        )
+
     @property
     def proven(self) -> bool:
-        return self.n_rows > 0 and self.unattributed == 0
+        return (
+            self.n_rows > 0
+            and self.unattributed == 0
+            and self.consistent
+            and not self.stopped
+        )
 
     def cause(self) -> list[dict]:
-        """Each step with its rows, as triage.json records a proven cause."""
+        """Each cause with its rows, as triage.json records a proven cause."""
         return [
             {"side": self.side, "step": s, "label": self.labels[s], "n_rows": n}
             for s, n in self.steps.most_common()
         ]
 
-    def evidence(self) -> tuple[str, ...]:
-        """Lines for the batch, counts masked below 10."""
-        lines = [
-            f"{self.labels[s]}: {mask(n)} rows" for s, n in self.steps.most_common()
-        ]
+    def shown_total(self) -> str:
+        """The group's row count as the batch may print it next to the evidence."""
+        parts = [n for _, n in self.steps.most_common()]
         if self.unattributed:
-            why = []
-            if self.many:
-                shared = ", ".join(
-                    self.labels[s] if s in self.labels else str(s)
-                    for s, _ in self.recovered.most_common()
-                    if not str(s).startswith(UNREPRODUCED)
-                )
-                why.append(
-                    f"{mask(self.many)} recovered by more than one step ({shared})"
-                )
-            why += [
-                f"{mask(n)} already returned by the {t} SQL with no step neutralized"
-                for t, n in sorted(self.unreproduced.items())
-            ]
-            if self.none:
-                where = f" (below {', '.join(self.below)})" if self.below else ""
-                why.append(f"{mask(self.none)} recovered by no step{where}")
+            parts.append(self.unattributed)
+        return suppress(self.n_rows, parts)[0]
+
+    def evidence(self) -> tuple[str, ...]:
+        """Lines for the batch, with small counts and what reveals them masked."""
+        causes = self.steps.most_common()
+        parts = [n for _, n in causes]
+        if self.unattributed:
+            parts.append(self.unattributed)
+        _, texts = suppress(self.n_rows, parts)
+        lines = [
+            f"{self.labels[s]}: {text} rows"
+            for (s, _), text in zip(causes, texts, strict=False)
+        ]
+        if not self.consistent:
+            lines.append("trace counts do not add up; trace it by hand")
+        if self.unattributed:
+            reasons = self._reasons()
+            total, why = suppress(self.unattributed, [n for _, n in reasons])
+            if len(texts) > len(causes):
+                total = texts[-1] if total != "masked" else total
             lines.append(
-                f"{mask(self.unattributed)} rows unattributed: {'; '.join(why)}"
+                f"{total} rows unattributed: "
+                + "; ".join(f"{t} {r}" for (r, _), t in zip(reasons, why, strict=True))
             )
             lines += [f"a trace query failed ({f})" for f in self.failed]
+            if self.stopped:
+                lines.append(f"trace stopped: {self.stopped}")
         return tuple(lines)
 
 
@@ -127,15 +218,19 @@ def item_key(g: Group) -> tuple:
     return (g.comparison_id, g.bucket, g.dims)
 
 
+@dataclass
+class TraceResult:
+    """Each traced group's trace, and why the trace stopped early, if it did."""
+
+    items: dict[tuple, ItemTrace]
+    stopped: str = ""
+
+
 class Manifest:
     """The dbt manifest's materialized models, by `dataset.table`."""
 
     def __init__(self, path: Path) -> None:
         self.path = path
-        if not path.is_file():
-            raise pipeline.Refusal(
-                f"no dbt manifest at {path}; produce it with: {compile_command([])}"
-            )
         nodes = json.loads(path.read_text())["nodes"]
         self._nodes = {k: v for k, v in nodes.items() if k.startswith("model.")}
         self._by_relation = {
@@ -143,6 +238,21 @@ class Manifest:
             for v in self._nodes.values()
             if v.get("database") in (PROJECT, None)
         }
+
+    @classmethod
+    def load(cls, path: Path, roots: Iterable[TableRef]) -> Manifest:
+        """Read the manifest, refusing when there is none.
+
+        Raises:
+            pipeline.Refusal: No manifest at `path`; the message prints the
+                command that writes one with every model the trace may need.
+        """
+        if not path.is_file():
+            raise pipeline.Refusal(
+                f"no dbt manifest at {path}. From the repository root, run: "
+                + compile_command({t.name for t in roots}, ancestors=True)
+            )
+        return cls(path)
 
     def model(self, dataset: str, name: str) -> dict | None:
         """The materialized model behind a table, or None (a source, a view)."""
@@ -171,7 +281,8 @@ class Manifest:
 
         Raises:
             pipeline.Refusal: Some have none; the message prints the command
-                that writes it.
+                that compiles every model the trace needs, so following it
+                never strips another's.
         """
         frontier = [m for t in tables if (m := self.model(t.dataset, t.name))]
         wanted: dict[str, dict] = {}
@@ -187,7 +298,7 @@ class Manifest:
             raise pipeline.Refusal(
                 f"{self.path} has no compiled SQL for {', '.join(missing)}; the "
                 "trace descends into them. From the repository root, run: "
-                + compile_command(missing)
+                + compile_command(wanted)
             )
 
 
@@ -250,7 +361,7 @@ class _Side:
             None,
         )
 
-    def query(self, variants, exclude, combine: bool) -> str:
+    def query(self, variants, exclude, combine: bool, include=()) -> str:
         if self.comparison.rows is None:
             raise pipeline.Refusal(f"comparison {self.comparison.id!r} has no rows")
         return compare.trace_sql(
@@ -269,36 +380,59 @@ class _Side:
             side=self.side,
             variants=variants,
             exclude=exclude,
+            include=include,
             combine=combine,
         )
 
 
-class _Runner:
-    """Prices and runs a level's queries, reading each result by item."""
+class _Meter:
+    """The whole trace's dry-run running total and its time limit."""
 
-    def __init__(self, wh: Warehouse, side: _Side, label: str) -> None:
+    def __init__(self, deadline: float | None) -> None:
+        self.total = 0.0
+        self.deadline = deadline
+
+    def check(self) -> None:
+        if self.deadline is not None and time.monotonic() > self.deadline:
+            raise Stopped("the trace passed its time limit (--trace-max-minutes)")
+
+
+class _Runner:
+    """Prices and runs one bucket's queries, reading each result by item."""
+
+    def __init__(self, wh: Warehouse, side: _Side, meter: _Meter) -> None:
         self.wh = wh
         self.side = side
-        self.label = label
+        self.meter = meter
+        self.label = f"{side.comparison.id} {side.bucket}"
         self.failures: list[str] = []
 
-    def _run(self, queries: list[str], what: str) -> list[dict]:
+    def _run(self, queries: list[str], what: str) -> list[dict] | None:
+        """Run `queries`, or return None when one fails at run time."""
+        self.meter.check()
         usd = sum(self.wh.estimate(q) for q in queries)
+        self.wh.refuse_past_caps(usd)
+        self.meter.total += usd
         print(
             f"Trace {self.label}, {what}: {len(queries)} "
-            f"quer{'y' if len(queries) == 1 else 'ies'}, ${usd:.2f} (dry run)."
+            f"quer{'y' if len(queries) == 1 else 'ies'}, ${usd:.2f} (dry run); "
+            f"${self.meter.total:.2f} so far."
         )
-        self.wh.refuse_past_caps(usd)
         out = []
         for q in queries:
+            self.meter.check()
             try:
                 out += self.wh.rows(q, timeout_s=TIMEOUT_S)
             except GoogleAPIError as exc:
                 # A neutralized step can fail only at run time (a cast, a
-                # scalar subquery); the rows that query covers stay unexplained.
-                note = f"{what}: {str(exc).splitlines()[0][:200]}"
+                # date overflow). Its message can quote a row's values, so
+                # only the job and the reason are kept.
+                errors = getattr(exc, "errors", None) or [{}]
+                reason = errors[0].get("reason") or type(exc).__name__
+                note = f"{what}: job {getattr(exc, JOB_ID, '') or '?'}, {reason}"
                 print(f"Trace query failed, {note}")
                 self.failures.append(note)
+                return None
         return out
 
     def _key(self, row: dict) -> tuple:
@@ -309,21 +443,28 @@ class _Runner:
         return (self.side.comparison.id, row["bucket"], dims)
 
     def level(
-        self, variants: list[tuple[str, str]], exclude: list[str], what: str
-    ) -> tuple[dict[tuple, Counter], dict[tuple, Counter]]:
+        self,
+        variants: list[tuple[str, str]],
+        exclude: list[str],
+        what: str,
+        include: list[str] | None = None,
+    ) -> tuple[dict[tuple, Counter], dict[tuple, Counter]] | None:
         """Each item's rows by the one step that recovers them, and each step's hits.
 
         Returns:
-            Per item, rows by step id (or `MANY`, `NONE`, an `UNREPRODUCED`
-            id); and per item, every row each variant recovers.
+            Per item, rows by step id (a `MANY` id lists the steps, or
+            `NONE`, `DUPLICATE`, an `UNREPRODUCED` or `PRESENT` id); and per
+            item, every row each variant recovers. None when a query failed.
         """
-        whole = self.side.query(variants, exclude, True)
+        include = include or []
+        whole = self.side.query(variants, exclude, True, include)
         if len(whole) <= MAX_QUERY_CHARS:
-            return self._read(self._run([whole], what))
+            rows = self._run([whole], what)
+            return None if rows is None else self._read(rows)
 
         # Too long for one query: count each step's rows apart, then count
         # once more over only the steps that share an item.
-        base = len(self.side.query([], exclude, False))
+        base = len(self.side.query([], exclude, False, include))
         batches: list[list[tuple[str, str]]] = [[]]
         size = base
         for v in variants:
@@ -333,37 +474,48 @@ class _Runner:
             batches[-1].append(v)
             size += len(v[1])
         rows = self._run(
-            [self.side.query(b, exclude, False) for b in batches], f"{what}, by step"
+            [self.side.query(b, exclude, False, include) for b in batches],
+            f"{what}, by step",
         )
+        if rows is None:
+            return None
         hits: dict[tuple, Counter] = {}
         in_play: dict[tuple, int] = {}
+        dupes: dict[tuple, int] = {}
         for r in rows:
             key = self._key(r)
+            n = int(r["n_rows"])
             if r["step_id"] == NONE:
-                in_play[key] = int(r["n_rows"])
+                in_play[key] = n
+            elif r["step_id"] == DUPLICATE:
+                dupes[key] = n
             else:
-                hits.setdefault(key, Counter())[r["step_id"]] += int(r["n_rows"])
-        found: dict[tuple, Counter] = {}
+                hits.setdefault(key, Counter())[r["step_id"]] += n
+        found: dict[tuple, Counter] = {
+            k: Counter({DUPLICATE: n}) for k, n in dupes.items()
+        }
         shared: set[str] = set()
         for key, total in in_play.items():
             h = hits.get(key, Counter())
-            if len(h) <= 1 and not any(s.startswith(UNREPRODUCED) for s in h):
-                found[key] = Counter(h)
+            if len(h) <= 1:
+                found.setdefault(key, Counter()).update(h)
                 found[key][NONE] += total - sum(h.values())
             else:
                 shared |= set(h)
         if shared:
             subset = [v for v in variants if v[0] in shared]
-            again = self.side.query(subset, exclude, True)
-            if len(again) > MAX_QUERY_CHARS:
-                for key in in_play:
-                    if key not in found:
-                        found[key] = Counter({MANY: in_play[key]})
-            else:
-                combined, _ = self._read(self._run([again], f"{what}, shared steps"))
-                for key in in_play:
-                    if key not in found:
-                        found[key] = combined.get(key, Counter({NONE: in_play[key]}))
+            again = self.side.query(subset, exclude, True, include)
+            combined = None
+            if len(again) <= MAX_QUERY_CHARS:
+                rows = self._run([again], f"{what}, shared steps")
+                combined = None if rows is None else self._read(rows)[0]
+            if combined is None:
+                return None
+            for key in in_play:
+                if NONE not in found.get(key, {}) and key in combined:
+                    counts = Counter(combined[key])
+                    counts.pop(DUPLICATE, None)
+                    found.setdefault(key, Counter()).update(counts)
         return found, hits
 
     def _read(
@@ -381,156 +533,310 @@ class _Runner:
         return found, hits
 
 
-def _trace_bucket(
-    side: _Side,
-    groups: list[Group],
-    *,
-    wh: Warehouse,
-    manifest: Manifest | None,
-    levels: int,
-    end_tables: set[str],
-    moved: dict[str, bool],
-) -> dict[tuple, ItemTrace]:
-    out = {item_key(g): ItemTrace(side.side, g.n_rows) for g in groups}
-    root = _Frame(Query(side.root_sql(), frozenset(side.grain()), side.grain()[0]))
-    if manifest is not None and levels:
-        manifest.require_compiled(root.query.tables(), levels)
-    runner = _Runner(wh, side, f"{side.comparison.id} {side.bucket}")
-    kids: dict[int, list[_Frame]] = {}
-    blocked: set[str] = set()
+def _pairs(steps: list[Step]) -> list[tuple[Step, Step]]:
+    """Every pair of steps that share a scope."""
+    by_scope: dict[str, list[Step]] = {}
+    for s in steps:
+        by_scope.setdefault(s.scope, []).append(s)
+    return [p for group in by_scope.values() for p in itertools.combinations(group, 2)]
 
-    def children(frame: _Frame) -> list[_Frame]:
-        """The materialized tables `frame` reads, each as the next frame down."""
-        if id(frame) not in kids:
-            found = []
-            for ref in frame.query.tables():
-                node = manifest.model(ref.dataset, ref.name) if manifest else None
-                if node is None or not node.get("compiled_code"):
-                    continue
-                try:
-                    at = pipeline._as_of(node["compiled_code"], side.build.start, wh)
-                except pipeline.Refusal as exc:
-                    # Its rows stay unexplained, below it; the rest go on.
-                    print(f"Trace cannot descend into {ref.name}: {exc}")
-                    blocked.add(ref.name)
-                    continue
-                sql = _one_moment(at, end_tables, moved, side.build, wh)
-                try:
-                    child = _Frame(
-                        Query(sql, ref.wanted),
-                        (ref.dataset, ref.name),
-                        frame,
-                        frame.level + 1,
-                    )
-                    # Free, and it must run read in place: compiled SQL from
-                    # another checkout can name a column the table lacks, and
-                    # a WITH RECURSIVE runs only at the top of a query.
-                    wh.estimate(side.rows(child.full(child.query.sql())))
-                except (GoogleAPIError, SqlglotError) as exc:
-                    print(f"Trace cannot descend into {ref.name}: {exc}")
-                    blocked.add(ref.name)
-                    continue
-                found.append(child)
-            kids[id(frame)] = found
-        return kids[id(frame)]
 
-    def subtree(frame: _Frame) -> str:
-        """`frame` with every step neutralized, down to the deepest level."""
-        below = children(frame) if frame.level < levels else []
-        return frame.query.relaxed_all({k.table: subtree(k) for k in below if k.table})
+class _Bucket:
+    """One comparison bucket's trace, level by level."""
 
-    frames = [root]
-    exclude: list[str] = []
-    for level in range(levels + 1):
-        variants: list[tuple[str, str]] = []
-        labels: dict[str, str] = {}
+    def __init__(
+        self,
+        side: _Side,
+        groups: list[Group],
+        *,
+        wh: Warehouse,
+        manifest: Manifest | None,
+        levels: int,
+        end_tables: set[str],
+        moved: dict[str, bool],
+        meter: _Meter,
+    ) -> None:
+        self.side = side
+        self.out = {item_key(g): ItemTrace(side.side, g.n_rows) for g in groups}
+        self.root = _Frame(
+            Query(side.root_sql(), frozenset(side.grain()), side.grain()[0])
+        )
+        self.wh = wh
+        self.manifest = manifest
+        self.levels = levels
+        self.end_tables = end_tables
+        self.moved = moved
+        self.runner = _Runner(wh, side, meter)
+        self.kids: dict[int, list[_Frame]] = {}
+        self.blocked: set[str] = set()
+        self.steps: dict[str, Step] = {}
+
+    # --- what a level runs ----------------------------------------------------
+
+    def variants(self, frames: list[_Frame]) -> list[tuple[str, str]]:
+        """Each frame's unrelaxed SQL, then each of its steps neutralized alone."""
+        side = self.side
+        out = []
         for frame in frames:
-            # The SQL regenerated with nothing neutralized: a row it returns
-            # is no step's to explain (a table's build differs from its SQL,
-            # or the regeneration changed what the SQL means).
-            variants.append(
+            # A row the unrelaxed SQL returns is no step's to explain: a
+            # table's build differs from its SQL, or the regeneration changed
+            # what the SQL means.
+            out.append(
                 (
                     f"{UNREPRODUCED}{frame.name or side.side}",
                     side.rows(frame.full(frame.query.sql())),
                 )
             )
             for step in frame.query.steps(side.side, frame.name):
-                labels[step.id] = step.label
-                variants.append(
-                    (step.id, side.rows(frame.full(frame.query.relaxed(step))))
-                )
-        found, hits = runner.level(
-            variants,
-            exclude,
-            "the side's own SQL" if level == 0 else f"tables {level} deep",
-        )
-        left = False
-        for key, counts in hits.items():
-            if key in out:
-                out[key].recovered.update(counts)
-                for step_id in counts:
-                    if step_id in labels:
-                        out[key].labels[step_id] = labels[step_id]
-        for key, counts in found.items():
-            if key not in out:
+                self.steps[step.id] = step
+                out.append((step.id, side.rows(frame.full(frame.query.relaxed(step)))))
+        return out
+
+    def first_query(self) -> str:
+        """The level-0 query, to price before anything runs."""
+        return self.side.query(self.variants([self.root]), [], True)
+
+    # --- descent --------------------------------------------------------------
+
+    def children(self, frame: _Frame) -> list[_Frame]:
+        """The materialized tables `frame` reads, each as the next frame down."""
+        if id(frame) in self.kids:
+            return self.kids[id(frame)]
+        side, found = self.side, []
+        for ref in frame.query.tables():
+            node = self.manifest.model(ref.dataset, ref.name) if self.manifest else None
+            if node is None or not node.get("compiled_code"):
                 continue
-            item = out[key]
-            item.none = counts.get(NONE, 0)
-            left = left or item.none > 0
+            try:
+                at = pipeline._as_of(node["compiled_code"], side.build.start, self.wh)
+                sql = _one_moment(at, self.end_tables, self.moved, side.build, self.wh)
+                child = _Frame(
+                    Query(sql, ref.wanted),
+                    (ref.dataset, ref.name),
+                    frame,
+                    frame.level + 1,
+                )
+                # Free, and it must run read in place: compiled SQL from
+                # another checkout can name a column the table lacks, and a
+                # WITH RECURSIVE runs only at the top of a query.
+                self.wh.estimate(side.rows(child.full(child.query.sql())))
+            except (pipeline.Refusal, SqlglotError) as exc:
+                print(f"Trace cannot descend into {ref.name}: {type(exc).__name__}")
+                self.blocked.add(ref.name)
+                continue
+            except GoogleAPIError as exc:
+                errors = getattr(exc, "errors", None) or [{}]
+                reason = errors[0].get("reason") or type(exc).__name__
+                print(f"Trace cannot descend into {ref.name}: {reason}")
+                self.blocked.add(ref.name)
+                continue
+            found.append(child)
+        self.kids[id(frame)] = found
+        return found
+
+    def subtree(self, frame: _Frame) -> str:
+        """`frame` with every step neutralized, down to the deepest level."""
+        below = self.children(frame) if frame.level < self.levels else []
+        return frame.query.relaxed_all(
+            {k.table: self.subtree(k) for k in below if k.table}
+        )
+
+    # --- the trace ------------------------------------------------------------
+
+    def _label(self, ids: list[str], joiner: str) -> str:
+        return joiner.join(self.steps[i].label for i in ids)
+
+    def _fail(self, in_play: dict[tuple, int]) -> dict[tuple, int]:
+        for key, n in in_play.items():
+            self.out[key].unknown += n
+        return {}
+
+    def run(self) -> dict[tuple, ItemTrace]:
+        try:
+            self._run()
+        except (Stopped, CostCapError) as exc:
+            reason = exc.reason if isinstance(exc, Stopped) else str(exc)
+            for item in self.out.values():
+                left = (
+                    item.n_rows
+                    - sum(item.steps.values())
+                    - sum(n for _, n in item._reasons())
+                )
+                if left > 0:
+                    item.unknown += left
+                item.stopped = reason
+            self._finish()
+            raise Stopped(reason, self.out) from exc
+        self._finish()
+        return self.out
+
+    def _finish(self) -> None:
+        for item in self.out.values():
+            if item.none:
+                item.below = tuple(sorted(self.blocked))
+            if item.unattributed:
+                item.failed = tuple(self.runner.failures)
+
+    def _run(self) -> None:
+        side, out = self.side, self.out
+        in_play = {key: item.n_rows for key, item in out.items()}
+        frames = [self.root]
+        exclude: list[str] = []
+        for level in range(self.levels + 1):
+            depth = "the side's own SQL" if level == 0 else f"tables {level} deep"
+            variants = self.variants(frames)
+            got = self.runner.level(variants, exclude, depth)
+            if got is None:
+                return self._end(self._fail(in_play))
+            found, hits = got
+            for key, counts in hits.items():
+                if key in out:
+                    out[key].recovered.update(
+                        {s: n for s, n in counts.items() if s in self.steps}
+                    )
+            absent: dict[tuple, int] = {}
+            for key, counts in found.items():
+                if key not in out:
+                    continue
+                item = out[key]
+                for step_id, n in counts.items():
+                    if step_id == NONE:
+                        absent[key] = n
+                    elif step_id == DUPLICATE:
+                        item.duplicates += n if level == 0 else 0
+                    elif step_id.startswith(UNREPRODUCED):
+                        item.unreproduced[step_id[1:]] += n
+                    elif step_id.startswith(MANY):
+                        ids = many_ids(step_id)
+                        if len({self.steps[i].scope for i in ids}) == 1:
+                            cause = "/".join(ids)
+                            item.steps[cause] += n
+                            item.labels[cause] = self._label(ids, " / ")
+                        else:
+                            item.many += n
+                            item.many_labels = tuple(
+                                dict.fromkeys(
+                                    item.many_labels
+                                    + tuple(self.steps[i].label for i in ids)
+                                )
+                            )
+                    else:
+                        item.steps[step_id] += n
+                        item.labels[step_id] = self.steps[step_id].label
+            recovered = {s for key in out for s in hits.get(key, {})}
+            exclude = exclude + [
+                sql for step_id, sql in variants if step_id in recovered
+            ]
+
+            # Presence: a row its level's SQL brings back with every own step
+            # neutralized is in the tables, dropped by several steps here.
+            in_play = {k: n for k, n in absent.items() if n}
+            if not in_play:
+                return self._end({})
+            gates = [
+                (f"{PRESENT}{i}", side.rows(f.full(f.query.relaxed_all())))
+                for i, f in enumerate(frames)
+            ]
+            got = self.runner.level(gates, exclude, f"{depth}, presence")
+            if got is None:
+                return self._end(self._fail(in_play))
+            found, _ = got
+            missing: dict[tuple, int] = {}
+            present: dict[int, dict[tuple, int]] = {}
+            for key, counts in found.items():
+                if key not in out:
+                    continue
+                for step_id, n in counts.items():
+                    if step_id == NONE:
+                        missing[key] = n
+                    elif step_id.startswith(PRESENT):
+                        present.setdefault(int(step_id[1:]), {})[key] = n
+            for i, rows in present.items():
+                self._search_pairs(frames[i], gates[i][1], rows, exclude, depth)
+            exclude = exclude + [sql for _, sql in gates]
+
+            in_play = {k: n for k, n in missing.items() if n}
+            if not in_play or self.manifest is None:
+                return self._end(in_play)
+            if level == self.levels:
+                self.blocked |= {
+                    ref.name
+                    for f in frames
+                    for ref in f.query.tables()
+                    if self.manifest.model(ref.dataset, ref.name)
+                }
+                return self._end(in_play)
+            frames = self._descend(frames, exclude)
+            if not frames:
+                return self._end(in_play)
+        return None
+
+    def _search_pairs(
+        self,
+        frame: _Frame,
+        gate: str,
+        present: dict[tuple, int],
+        exclude: list[str],
+        depth: str,
+    ) -> None:
+        """Attribute rows present at `frame` to the one same-scope pair recovering them."""
+        where = frame.name or f"the {self.side.side} SQL"
+        steps = frame.query.steps(self.side.side, frame.name)
+        pairs = _pairs(steps)
+        if not pairs or len(pairs) > MAX_PAIRS:
+            for key, n in present.items():
+                self.out[key].needs_more[where] += n
+            return
+        variants = [
+            (
+                f"{a.id}+{b.id}",
+                self.side.rows(frame.full(frame.query.relaxed_many([a, b]))),
+            )
+            for a, b in pairs
+        ]
+        got = self.runner.level(variants, exclude, f"{depth}, step pairs", [gate])
+        if got is None:
+            self._fail(present)
+            return
+        found, _ = got
+        for key, counts in found.items():
+            if key not in present:
+                continue
+            item = self.out[key]
             for step_id, n in counts.items():
                 if step_id == NONE:
-                    continue
-                if step_id == MANY:
-                    item.many += n
-                elif step_id.startswith(UNREPRODUCED):
-                    item.unreproduced[step_id[1:]] += n
-                else:
+                    item.needs_more[where] += n
+                elif step_id.startswith(MANY):
+                    item.pairs_many += n
+                elif step_id != DUPLICATE:
+                    a, b = step_id.split("+", 1)
                     item.steps[step_id] += n
-                    item.labels[step_id] = labels[step_id]
-        if not left or manifest is None:
-            break
-        if level == levels:
-            blocked |= {
-                ref.name
-                for f in frames
-                for ref in f.query.tables()
-                if manifest.model(ref.dataset, ref.name)
-            }
-            break
+                    item.labels[step_id] = self._label([a, b], " + ")
 
-        # Rows a variant here recovered stay explained here; descend only
-        # into a table whose whole subtree, every step neutralized, brings
-        # back a row still unexplained.
-        recovered = {s for key in out for s in hits.get(key, {})}
-        exclude += [sql for step_id, sql in variants if step_id in recovered]
-        candidates = [k for f in frames for k in children(f)]
-        if not candidates:
-            break
+    def _end(self, in_play: dict[tuple, int]) -> None:
+        for key, n in in_play.items():
+            self.out[key].none += n
+
+    def _descend(self, frames: list[_Frame], exclude: list[str]) -> list[_Frame]:
+        """The tables a level down whose neutralized subtree brings back a row."""
+        candidates = [k for f in frames for k in self.children(f)]
         # One query per table, so one whose relaxed build runs away (every
         # filter off can multiply rows) costs only itself.
-        frames = []
+        nxt = []
         for c in candidates:
-            screen = side.rows(c.full(subtree(c)))
+            screen = self.side.rows(c.full(self.subtree(c)))
             if len(screen) > MAX_QUERY_CHARS:
                 print(f"Trace cannot descend into {c.name}: its SQL is too long")
-                blocked.add(c.name)
+                self.blocked.add(c.name)
                 continue
-            failed = len(runner.failures)
-            _, screened = runner.level(
+            got = self.runner.level(
                 [("?", screen)], exclude, f"can {c.name} explain a row"
             )
-            if len(runner.failures) > failed:
-                blocked.add(c.name)
-            elif any("?" in screened.get(key, {}) for key in out):
-                frames.append(c)
-        if not frames:
-            break
-    for item in out.values():
-        if item.none:
-            item.below = tuple(sorted(blocked))
-        if item.unattributed:
-            item.failed = tuple(runner.failures)
-    return out
+            if got is None:
+                self.blocked.add(c.name)
+            elif any("?" in got[1].get(key, {}) for key in self.out):
+                nxt.append(c)
+        return nxt
 
 
 def _one_moment(
@@ -541,6 +847,9 @@ def _one_moment(
     It is expanded as of the build start, when the build read its inputs; a
     table the Cube side reads at the build end is moved there, after checking
     it did not change in between (BigQuery reads a table at 1 moment).
+
+    Raises:
+        pipeline.Refusal: Such a table changed during the build.
     """
     clash = sorted(at.tables & end_tables)
     unknown = [t for t in clash if t not in moved]
@@ -589,12 +898,15 @@ def trace_run(
     cube: Cube,
     manifest_path: Path = MANIFEST,
     levels: int = MAX_LEVELS,
-) -> dict[tuple, ItemTrace]:
+    max_minutes: float = TRACE_MAX_MINUTES,
+) -> TraceResult:
     """Trace every open row group of a run to the steps that drop its rows.
 
-    Call inside `wh.budget`: every query is priced and counted there, and
-    each level's dry-run total is printed and checked against the caps
-    before it runs.
+    Call inside `wh.budget`. Every refusal (a comparison's SQL changed, a
+    manifest or compiled model missing) comes before the first priced trace
+    query. The level-0 total is printed before any trace query runs, and
+    each later query's price before it runs, with a running total. A cap or
+    the time limit hit partway stops the trace but keeps what it found.
 
     Args:
         cfg: The view's config.
@@ -604,15 +916,16 @@ def trace_run(
         manifest_path: The dbt manifest with compiled SQL for the tables the
             trace descends into.
         levels: How many tables deep to descend.
+        max_minutes: The whole trace's time limit.
 
     Returns:
-        Per `item_key`, the trace of each traced group: the one-sided buckets
-        of comparisons with `rows`, and dashboard-filtered groups.
+        Per `item_key`, the trace of each traced group (the one-sided buckets
+        of comparisons with `rows`, and dashboard-filtered groups), and why
+        the trace stopped early, if it did.
 
     Raises:
         pipeline.Refusal: A comparison's SQL changed since the run, or the
-            manifest lacks compiled SQL for a table to descend into.
-        CostCapError: A level would pass the run's or the day's cap.
+            manifest or a model's compiled SQL is missing.
     """
     open_groups = run.applied.open
     out = _filter_traces(
@@ -627,10 +940,11 @@ def trace_run(
         and any(g.comparison_id == c and g.bucket in TRACED for g in open_groups)
     ]
     if not todo:
-        return out
-    manifest = Manifest(manifest_path) if levels else None
+        return TraceResult(out)
+    meter = _Meter(time.monotonic() + max_minutes * 60 if max_minutes else None)
     schools = network_schools(wh)
     moved: dict[str, bool] = {}
+    plans = []
     for cid in todo:
         comparison = by_id[cid]
         sides = pipeline.row_sides(
@@ -643,23 +957,60 @@ def trace_run(
             fingerprints=run.fingerprints.get(cid, {}),
         )
         shared = sides.cube.tables & sides.dashboard.tables
-        end_tables = set(sides.cube.tables - shared)
         for bucket in TRACED:
             groups = [
                 g for g in open_groups if g.comparison_id == cid and g.bucket == bucket
             ]
-            if not groups:
-                continue
-            out |= _trace_bucket(
-                _Side(cfg, comparison, sides, run.moment, bucket),
-                groups,
-                wh=wh,
-                manifest=manifest,
-                levels=levels,
-                end_tables=end_tables,
-                moved=moved,
-            )
-    return out
+            if groups:
+                plans.append(
+                    (_Side(cfg, comparison, sides, run.moment, bucket), groups, shared)
+                )
+
+    buckets = [
+        _Bucket(
+            side,
+            groups,
+            wh=wh,
+            manifest=None,
+            levels=levels,
+            end_tables=set(side.sides.cube.tables - shared),
+            moved=moved,
+            meter=meter,
+        )
+        for side, groups, shared in plans
+    ]
+    if levels:
+        roots = [t for b in buckets for t in b.root.query.tables()]
+        manifest = Manifest.load(manifest_path, roots)
+        manifest.require_compiled(roots, levels)
+        for b in buckets:
+            b.manifest = manifest
+
+    first = [b.first_query() for b in buckets]
+    usd = sum(wh.estimate(q) for q in first)
+    print(
+        f"Trace: {len(buckets)} bucket(s), level 0 costs ${usd:.2f} (dry run); "
+        "each deeper level is priced before it runs."
+    )
+    stopped = ""
+    for b in buckets:
+        try:
+            out |= b.run()
+        except Stopped as exc:
+            out |= exc.found
+            stopped = exc.reason
+            print(f"Trace stopped: {stopped}")
+            break
+    return TraceResult(out, stopped)
 
 
-__all__ = ["ItemTrace", "Manifest", "Step", "compile_command", "item_key", "trace_run"]
+__all__ = [
+    "ItemTrace",
+    "Manifest",
+    "Step",
+    "Stopped",
+    "TraceResult",
+    "compile_command",
+    "item_key",
+    "trace_run",
+]

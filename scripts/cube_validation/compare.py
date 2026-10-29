@@ -276,11 +276,16 @@ def _joined(
     ), group_names
 
 
-# Trace output step ids that are not steps: a row no variant recovers, a row
-# more than one recovers, and (prefix) a row a table's own SQL already adds.
+# Trace output step ids that are not steps. A row no variant recovers; a row
+# several recover (`*a|b`, their ids); a row the other side has more than once
+# (`=`, never attributed); and prefixes: a row a table's unrelaxed SQL
+# already returns (`!`), and a row only a presence check returns (`#`).
 NONE = ""
 MANY = "*"
+DUPLICATE = "="
 UNREPRODUCED = "!"
+PRESENT = "#"
+_SEP = "|"
 
 
 def trace_sql(
@@ -294,6 +299,7 @@ def trace_sql(
     side: str,
     variants: Sequence[tuple[str, str]],
     exclude: Sequence[str] = (),
+    include: Sequence[str] = (),
     combine: bool = True,
 ) -> str:
     """Build the query that counts which relaxed variants recover each unmatched row.
@@ -301,8 +307,9 @@ def trace_sql(
     The unmatched rows are rebuilt inside the query exactly as `reconcile_sql`
     finds them, so no row leaves BigQuery: the result has the group columns,
     a step id and a count, nothing else. A variant recovers a row when it
-    returns the row's grain (by the reconcile's keys and NULL rules) at
-    least as many times as the row's duplicate number.
+    returns the row's grain (by the reconcile's keys and NULL rules). A row
+    whose grain the other side holds more than once (duplicate number past
+    1) is never traced: any step that fans out would "recover" it.
 
     Args:
         cube_rows_sql: The Cube rows the run reconciled.
@@ -316,13 +323,18 @@ def trace_sql(
             rows) or `cube`. Their grain columns carry that side's names.
         variants: `(step_id, rows_sql)` per relaxed variant. An id starting
             with `UNREPRODUCED` marks a table's unrelaxed SQL: a row it
-            recovers is counted under that id whatever else recovers it.
+            recovers is counted under that id whatever else recovers it. An
+            id starting with `PRESENT` marks a presence check: it counts a
+            row only when no step recovers it.
         exclude: Variants whose recovered rows are left out first, because
             a shallower level already explained them.
+        include: Variants a row must be recovered by to stay in play.
         combine: True counts each row once: under the one step that recovers
-            it, `MANY` or `NONE`; then, under `+<step id>`, every row each
-            variant recovers. False counts each step's rows separately, plus
-            every row in play under `NONE`.
+            it, `MANY` plus the ids of the several that do, a `PRESENT` id, or
+            `NONE`; then, under `+<step id>`, every row each variant
+            recovers. False counts each step's rows separately, plus every
+            row in play under `NONE`. Both count, under `DUPLICATE`, the rows
+            left out for a duplicate grain.
 
     Returns:
         One query returning `bucket`, each group-by column, `step_id` and
@@ -343,14 +355,11 @@ def trace_sql(
         )
         return (
             # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
-            f"{name} AS (\n  SELECT {cols}, COUNT(*) AS __n\n  FROM (\n{sql}\n  ) AS s\n"
-            f"  GROUP BY {', '.join(keys)}\n)"
+            f"{name} AS (\n  SELECT DISTINCT {cols}\n  FROM (\n{sql}\n  ) AS s\n)"
         )
 
     def matches(v: str, u: str) -> str:
-        return " AND ".join(
-            [f"{v}.{k} = {u}.{k}" for k in keys] + [f"{v}.__n >= {u}.{_RN}"]
-        )
+        return " AND ".join(f"{v}.{k} = {u}.{k}" for k in keys)
 
     parts = [
         ctes,
@@ -360,13 +369,20 @@ def trace_sql(
         f"  FROM joined WHERE bucket = '{bucket}'\n)",
     ]
     parts += [keyed(f"x{i}", sql) for i, sql in enumerate(exclude)]
-    gone = " AND ".join(
+    parts += [keyed(f"i{i}", sql) for i, sql in enumerate(include)]
+    keep = [f"{_RN} = 1"]
+    keep += [
         # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
         f"NOT EXISTS (SELECT 1 FROM x{i} WHERE {matches(f'x{i}', 'u')})"
         for i in range(len(exclude))
-    )
+    ]
+    keep += [
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
+        f"EXISTS (SELECT 1 FROM i{i} WHERE {matches(f'i{i}', 'u')})"
+        for i in range(len(include))
+    ]
     # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
-    parts.append(f"p AS (\n  SELECT * FROM u{f' WHERE {gone}' if gone else ''}\n)")
+    parts.append(f"p AS (\n  SELECT * FROM u WHERE {' AND '.join(keep)}\n)")
     parts += [keyed(f"v{i}", sql) for i, (_, sql) in enumerate(variants)]
     hits = (
         "\n  UNION ALL\n  ".join(
@@ -378,14 +394,23 @@ def trace_sql(
     )
     parts.append(f"hits AS (\n  {hits}\n)")
     group_clause = ", ".join(item + ["step_id"])
+    duplicates = (
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
+        f"  UNION ALL SELECT {', '.join(item)}, '{DUPLICATE}' AS step_id "
+        f"FROM u WHERE {_RN} > 1\n"
+    )
     if combine:
+        step = f"IF(STARTS_WITH(step_id, '{PRESENT}'), NULL, step_id)"
         parts.append(
             # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from the run's own SQL
             "per_row AS (\n  SELECT __row, CASE "
             f"WHEN LOGICAL_OR(STARTS_WITH(step_id, '{UNREPRODUCED}')) "
             f"THEN MIN(IF(STARTS_WITH(step_id, '{UNREPRODUCED}'), step_id, NULL)) "
-            f"WHEN COUNT(DISTINCT step_id) = 1 THEN ANY_VALUE(step_id) "
-            f"ELSE '{MANY}' END AS step_id\n  FROM hits GROUP BY __row\n)"
+            f"WHEN COUNT(DISTINCT {step}) = 1 THEN MIN({step}) "
+            f"WHEN COUNT(DISTINCT {step}) > 1 THEN CONCAT('{MANY}', "
+            f"STRING_AGG(DISTINCT {step}, '{_SEP}' ORDER BY {step})) "
+            f"ELSE MIN(IF(STARTS_WITH(step_id, '{PRESENT}'), step_id, NULL)) "
+            "END AS step_id\n  FROM hits GROUP BY __row\n)"
         )
         # Then every row each variant recovers, `+`-prefixed, so the caller
         # knows which variants explain anything, ambiguous rows included.
@@ -398,7 +423,8 @@ def trace_sql(
             "FROM p LEFT JOIN per_row USING (__row)\n"
             f"  UNION ALL SELECT {', '.join(f'p.{c}' for c in item)}, "
             "CONCAT('+', hits.step_id) AS step_id FROM p JOIN hits USING (__row)\n"
-            ")\n"
+            + duplicates
+            + ")\n"
             f"GROUP BY {group_clause}"
         )
     else:
@@ -409,10 +435,16 @@ def trace_sql(
             f"  SELECT {', '.join(f'p.{c}' for c in item)}, hits.step_id "
             "FROM p JOIN hits USING (__row)\n"
             f"  UNION ALL SELECT {', '.join(item)}, '{NONE}' AS step_id FROM p\n"
-            ")\n"
+            + duplicates
+            + ")\n"
             f"GROUP BY {group_clause}"
         )
     return ",\n".join(parts) + "\n-- outer\n" + outer
+
+
+def many_ids(step_id: str) -> list[str]:
+    """The step ids a `MANY` id lists."""
+    return [s for s in step_id[len(MANY) :].split(_SEP) if s]
 
 
 def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:

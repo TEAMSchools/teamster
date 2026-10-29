@@ -398,11 +398,13 @@ def test_a_group_with_an_unattributed_row_stays_in_investigate():
     )
 
     assert s.suggestion == "investigate" and s.cause is None
+    # 1 of 40 masked alone would read as 40 - 39: the 39 and the total hide too.
     assert s.evidence == (
-        "wpp: 39 rows",
+        "wpp: masked rows",
         "<10 rows unattributed: <10 recovered by no step",
         "student_count: Counts students.",
     )
+    assert ": masked rows, " in s.item.label
 
 
 def test_groups_the_trace_cannot_reach_say_why():

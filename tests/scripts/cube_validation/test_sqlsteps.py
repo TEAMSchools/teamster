@@ -175,12 +175,97 @@ def test_an_inner_join_on_filter_is_a_step_and_its_key_is_not():
     assert "candidates: s.anchor_date < ce.left_date (ON ce)" in labels
     assert "candidates: NOT ce.dcid IS NULL (ON ce)" in labels
     assert not any("s.student = ce.student (ON" in label for label in labels)
-    step = next(s for s in q.steps("cube") if "left_date (ON" in s.label)
-    out = _flat(q.relaxed(step))
-    assert "ON s.student = ce.student AND TRUE AND NOT ce.dcid IS NULL" in out
+    # `rn = 1` on a ROW_NUMBER column picks a row: never a step.
+    assert not any("rn = 1" in label for label in labels)
 
 
-def test_having_and_qualify_conjuncts_are_steps():
+def _resolver_tables(duck):
+    duck.table(
+        "anchors",
+        "student BIGINT, score_id VARCHAR, anchor_date DATE",
+        [(1, "a", "2026-09-01"), (2, "b", "2026-09-01"), (3, "c", "2026-09-01")],
+    )
+    duck.table(
+        "course_enrollments",
+        "student BIGINT, section VARCHAR, left_date DATE, dcid BIGINT",
+        # 1: section ended before the anchor (fails the date filter only);
+        # 2: no section at all (fails the key); 3: matches.
+        [(1, "s1", "2026-06-01", 10), (3, "s3", "2027-06-01", 30)],
+    )
+
+
+def _students(duck, sql):
+    return sorted(r["student"] for r in duck.rows(sql))
+
+
+def test_an_inner_join_s_filter_and_its_key_split_the_rows_they_drop(duck):
+    _resolver_tables(duck)
+    q = Query(RESOLVER, frozenset({"student", "score_id"}), "student")
+    by_label = {s.label: s for s in q.steps("cube")}
+    join = next(s for s in q.steps("cube") if s.kind == "join")
+    date = by_label["candidates: s.anchor_date < ce.left_date (ON ce)"]
+
+    assert _students(duck, q.sql()) == [3]
+    # The date filter alone brings back the row whose only failure it is;
+    # the join alone brings back the row with no key match, and not the other.
+    assert _students(duck, q.relaxed(date)) == [1, 3]
+    assert _students(duck, q.relaxed(join)) == [2, 3]
+
+
+def test_two_steps_of_one_select_neutralize_together(duck):
+    duck.table(
+        "t", "student BIGINT, ok BOOLEAN, k BIGINT", [(1, False, 9), (2, True, 5)]
+    )
+    duck.table("u", "k BIGINT, open BOOLEAN", [(5, True)])
+    sql = (
+        "SELECT t.student FROM `teamster-332318.d.t` AS t "
+        "LEFT JOIN `teamster-332318.d.u` AS u ON u.k = t.k "
+        "WHERE t.ok AND u.open"
+    )
+    q = Query(sql, frozenset({"student"}), "student")
+    ok, join = (
+        next(s for s in q.steps("cube") if s.label == "main: t.ok"),
+        next(s for s in q.steps("cube") if s.kind == "join"),
+    )
+
+    # Row 1 fails `t.ok` and has no `u` row: neither step alone brings it
+    # back, both together do.
+    assert _students(duck, q.relaxed(ok)) == [2]
+    assert _students(duck, q.relaxed(join)) == [2]
+    assert _students(duck, q.relaxed_many([ok, join])) == [1, 2]
+    assert _students(duck, q.relaxed_many([join, ok])) == [1, 2]
+
+
+def test_a_left_join_with_no_key_equality_uses_its_alias_as_presence():
+    sql = (
+        "SELECT t.student FROM `teamster-332318.d.t` AS t "
+        "LEFT JOIN `teamster-332318.d.u` AS u ON t.d BETWEEN u.lo AND u.hi "
+        "WHERE u.open"
+    )
+    q = Query(sql, frozenset({"student"}), "student")
+    join = next(s for s in q.steps("cube") if s.kind == "join")
+    where = next(s for s in q.steps("cube") if s.kind == "where")
+
+    assert "(u.open) OR (u IS NULL)" in _flat(q.relaxed(join))
+    assert "(u.open) OR NOT u IS NULL" in _flat(q.relaxed(where))
+
+
+def test_steps_under_not_in_or_not_exists_are_left_out():
+    sql = (
+        "SELECT t.student FROM `teamster-332318.d.t` AS t "
+        "WHERE t.student NOT IN (SELECT s FROM `teamster-332318.d.x` WHERE gone) "
+        "AND NOT EXISTS (SELECT 1 FROM `teamster-332318.d.y` WHERE closed) "
+        "AND t.school IN (SELECT s FROM `teamster-332318.d.z` WHERE open)"
+    )
+    q = Query(sql, frozenset({"student"}), "student")
+
+    labels = [s.label.split(": ", 1)[1] for s in q.steps("cube")]
+
+    assert "open" in labels
+    assert "gone" not in labels and "closed" not in labels
+
+
+def test_having_is_a_step_and_qualify_is_a_row_pick():
     sql = (
         "SELECT student, COUNT(*) AS n FROM `teamster-332318.d.t` "
         "GROUP BY student HAVING COUNT(*) > 1 QUALIFY ROW_NUMBER() OVER () = 1"
@@ -189,10 +274,8 @@ def test_having_and_qualify_conjuncts_are_steps():
 
     labels = [s.label for s in q.steps("cube")]
 
-    assert "main: HAVING COUNT(*) > 1" in labels
-    assert "main: QUALIFY ROW_NUMBER() OVER () = 1" in labels
-    having = next(s for s in q.steps("cube") if "HAVING" in s.label)
-    assert "HAVING TRUE" in q.relaxed(having)
+    assert labels == ["main: HAVING COUNT(*) > 1"]
+    assert "HAVING TRUE" in q.relaxed(q.steps("cube")[0])
 
 
 def test_labels_drop_the_moment_and_comments_and_stay_short():

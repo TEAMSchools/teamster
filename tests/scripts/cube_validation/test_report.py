@@ -29,6 +29,7 @@ from cube_validation.report import (
     render_local,
     render_review_issue,
     save_local,
+    suppress,
 )
 
 START = datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc)
@@ -804,3 +805,17 @@ def test_review_issue_ends_with_fenced_json_in_details():
     # A comparison with no sheet or filters named leaves the sheet as it is.
     assert "On the dashboard: leave the sheet's filters as they are." in markdown
     assert "- Q1. `region` = `Newark`" in markdown
+
+
+def test_suppress_hides_a_lone_small_part_and_its_next_smallest():
+    # 25 = 18 + 7: masking 7 alone leaves it as 25 - 18.
+    assert suppress(25, [18, 7]) == ("masked", ["masked", "<10"])
+
+
+def test_suppress_rules():
+    assert suppress(40, [20, 20]) == ("40", ["20", "20"])
+    assert suppress(48, [30, 13, 5]) == ("48", ["30", "masked", "<10"])
+    assert suppress(15, [9, 6]) == ("masked", ["<10", "<10"])
+    assert suppress(30, [22, 4, 4]) == ("masked", ["22", "<10", "<10"])
+    assert suppress(5, [5]) == ("<10", ["<10"])
+    assert suppress(120, [100, 20]) == ("120", ["100", "20"])

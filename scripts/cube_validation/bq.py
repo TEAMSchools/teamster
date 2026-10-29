@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from google.api_core.exceptions import GoogleAPIError
 from google.cloud import bigquery
 
 from .timetravel import PROJECT, TableInfo, closing_paren, utc_literal
@@ -51,17 +52,22 @@ class Warehouse:
         self._spent = 0.0
         self._views: dict[tuple[str, str], list[tuple[datetime, datetime, str]]] = {}
         self._cache_dir: Path | None = None
+        self._ledger_dir: Path | None = None
         self._daily_cap: float | None = None
 
-    def configure_local(self, cache_dir: Path, daily_cap: float | None) -> None:
+    def configure_local(
+        self, cache_dir: Path, daily_cap: float | None, ledger_dir: Path | None = None
+    ) -> None:
         """Keep view versions and each day's spend on disk, shared by every run.
 
         A view version found once is never looked up again: the definition in
         force over a past span cannot change. A query that would take the
         day's priced total (UTC day) past `daily_cap` USD is refused before it
-        runs, whichever run asks.
+        runs, whichever run asks. The day's spend sits in `ledger_dir` (the
+        cache by default), so runs on another cache still share one cap.
         """
         self._cache_dir = Path(cache_dir)
+        self._ledger_dir = Path(ledger_dir) if ledger_dir is not None else None
         self._daily_cap = daily_cap
         for key, spans in _read_json(self._cache_dir / _VIEWS_FILE, {}).items():
             dataset, name = key.split(".", 1)
@@ -236,14 +242,19 @@ class Warehouse:
 
     def spent_today(self) -> float:
         """USD priced or billed today (UTC) by every run sharing this cache."""
-        if self._cache_dir is None:
+        ledger = self._ledger
+        if ledger is None:
             return 0.0
-        return float(_read_json(self._cache_dir / _SPEND_FILE, {}).get(_today(), 0.0))
+        return float(_read_json(ledger / _SPEND_FILE, {}).get(_today(), 0.0))
+
+    @property
+    def _ledger(self) -> Path | None:
+        return self._ledger_dir or self._cache_dir
 
     def _record(self, usd: float) -> None:
-        if self._cache_dir is None or not usd:
+        if self._ledger is None or not usd:
             return
-        path = self._cache_dir / _SPEND_FILE
+        path = self._ledger / _SPEND_FILE
         ledger = _read_json(path, {})
         ledger[_today()] = ledger.get(_today(), 0.0) + usd
         _write_json(path, ledger)
@@ -270,7 +281,12 @@ class Warehouse:
         else:
             config = bigquery.QueryJobConfig(job_timeout_ms=int(timeout_s * 1000))
             job = self._client.query(sql, job_config=config)
-        out = [dict(r.items()) for r in job.result()]
+        try:
+            out = [dict(r.items()) for r in job.result()]
+        except GoogleAPIError as exc:
+            # The id finds the job's own record; the message can quote values.
+            setattr(exc, JOB_ID, getattr(job, "job_id", ""))
+            raise
         billed = getattr(job, "total_bytes_billed", None)
         if isinstance(billed, int):
             delta = billed / _TIB * USD_PER_TIB - estimate
@@ -291,6 +307,8 @@ class Warehouse:
 
 _VIEWS_FILE = "view-history.json"
 _SPEND_FILE = "spend.json"
+# The attribute `rows` sets on a query's error: its BigQuery job id.
+JOB_ID = "job_id"
 
 
 def _today() -> str:

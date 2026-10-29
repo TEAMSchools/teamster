@@ -223,30 +223,45 @@ cause, do not retry around it.
 
    The trace proves row groups. Before sorting, `triage` traces each one-sided
    row group of a comparison with `rows`: Cube-only rows through the dashboard
-   side's SQL, dashboard-only rows through Cube's. It neutralizes one step at a
-   time (a WHERE, HAVING or QUALIFY conjunct, an INNER JOIN or its ON filter, a
-   LEFT JOIN a later predicate requires) and attributes a row to a step only
-   when that step alone brings it back, by the grain. Rows no step recovers send
-   it into the materialized tables the side reads, through their dbt compiled
-   SQL as of the run's moment, 2 tables deep. A group whose rows are all
-   attributed lands in `cause` with each step and its rows; otherwise it stays
-   in `investigate`, with the per-step counts and why the rest are unattributed
-   (more than one step, no step, below a table, or a table's own SQL already
-   returns them).
+   side's SQL, dashboard-only rows through Cube's. The steps are WHERE and
+   HAVING conjuncts, INNER JOINs and their non-key ON filters, and LEFT JOINs a
+   later predicate requires; a row pick (QUALIFY, `rn = 1`) never is. At each
+   level, by the grain:
 
-   - Cost: each level's queries are priced by dry run, printed, and refused past
-     `--max-usd` or the daily cap before they run. No row leaves BigQuery; each
-     query returns group columns, a step and a count. `--no-trace` skips it and
-     leaves every row group in `investigate`.
+   - A row 1 step alone brings back is attributed to it. A row several steps of
+     one scope each bring back is attributed to them as one cause (`A / B`);
+     across scopes it stays unattributed.
+   - The rest are checked for presence (every step of the level neutralized, its
+     tables unchanged). A present row is attributed to the 1 pair of steps in
+     one scope that brings it back (`A + B`); 3 or more steps, or steps in 2 or
+     more scopes, stay unattributed. A present row never descends.
+   - Only a row missing from a table descends into it, through the table's dbt
+     compiled SQL as of the run's moment, 3 tables deep.
+   - A grain the other side holds twice is never attributed.
+
+   A group whose rows are all attributed lands in `cause` with each cause and
+   its rows; otherwise it stays in `investigate` with the counts and why the
+   rest are unattributed. Counts that would let a small part be worked out read
+   `masked`.
+
+   - Cost: the level-0 total is printed before any trace query runs, then each
+     later query's price before it runs, with a running total; each is refused
+     past `--max-usd` or the daily cap. The daily cap's ledger stays in the
+     default cache whatever `CUBE_VALIDATION_CACHE` says. A cap or
+     `--trace-max-minutes` (default 120) hit partway stops the trace: what it
+     found is kept, the rest say "trace stopped", and `triage.json` is still
+     written. No row leaves BigQuery; a failed query keeps only its job id and
+     reason. `--no-trace` skips it and leaves every row group in `investigate`.
    - Compiled SQL: the trace reads `src/dbt/kipptaf/target/prod/manifest.json`
-     in the checkout running the tool (`--manifest` for another). When a model
-     it may descend into has no compiled SQL, `triage` refuses and prints the
-     `dbt deps` and `dbt compile --target prod --target-path target/prod`
-     command that writes it; run that from the repository root, then `triage`
-     again. `--target prod` resolves every ref to a prod relation. Compile in a
-     checkout whose dbt code built the tables (`main` as of the run's moment): a
-     table whose compiled SQL no longer runs is skipped and named ("below"), and
-     rows its SQL returns unrelaxed are never attributed.
+     in the checkout running the tool (`--manifest` for another). Before any
+     trace query, `triage` refuses when the manifest or a model's compiled SQL
+     is missing, and prints the `dbt deps` and
+     `dbt compile --target prod --target-path target/prod` command; run it from
+     the repository root, then `triage` again. It names every model the trace
+     needs, because a compile drops the compiled SQL of every model it does not
+     select. Compile in a checkout whose dbt code built the tables (`main` as of
+     the run's moment): a table whose compiled SQL no longer runs is skipped and
+     named ("below"), and rows its SQL returns unrelaxed are never attributed.
    - Its SQL must be the run's: `triage` refuses when either side's SQL changed
      since the run; `run` again first.
    - `CUBE_VALIDATION_CACHE` points every command at another cache, such as a

@@ -132,7 +132,7 @@ def pin_clock(sql: str, ts: datetime) -> str:
 
 
 def strip_comments(sql: str) -> str:
-    """Drop `--` and `/* */` comments, leaving quoted text and line breaks alone."""
+    """Drop `--`, `#` and `/* */` comments, leaving quoted text and line breaks."""
     out: list[str] = []
     quote, i = "", 0
 
@@ -149,7 +149,7 @@ def strip_comments(sql: str) -> str:
         elif ch in "'\"`":
             quote = ch
             out.append(ch)
-        elif sql.startswith("--", i):
+        elif sql.startswith("--", i) or ch == "#":
             end = sql.find("\n", i)
             i = len(sql) if end == -1 else end
             continue
