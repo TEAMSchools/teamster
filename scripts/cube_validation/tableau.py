@@ -533,7 +533,99 @@ def _ref_column(ref: str) -> str:
     return _field_column(html.unescape(ref))
 
 
-def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
+@dataclass(frozen=True)
+class TableCalc:
+    """A table calculation on a worksheet.
+
+    `ref` is its `[datasource].[instance]`, `ordering` Tableau's
+    `ordering-type` (`Rows`, `Columns`, `Field`, ...), `along` the captions of
+    the fields a `Field` ordering names, and `columns` every bare column its
+    attributes name.
+    """
+
+    ref: str
+    caption: str
+    ordering: str
+    along: tuple[str, ...]
+    columns: frozenset[str]
+
+    @property
+    def label(self) -> str:
+        """`Difference in Avg. X (along Week, Module)`, or `(along Rows)`."""
+        along = ", ".join(self.along) or self.ordering
+        return f"{self.caption} (along {along})" if along else self.caption
+
+
+# How Tableau names a table calculation in front of its field.
+_TABLE_CALC_WORDS = {
+    "Difference": "Difference in",
+    "PctDiff": "% Difference in",
+    "PctTotal": "% of Total",
+    "CumTotal": "Running",
+    "Rank": "Rank of",
+}
+
+
+def table_calcs(ws: ET.Element) -> list[TableCalc]:
+    """The worksheet's table calculations, in the order its dependencies list
+    them.
+    """
+    caption = {}
+    for col in ws.iter("column"):
+        name = _bare(col.get("name") or "")
+        caption.setdefault(name, col.get("caption") or name)
+    found = []
+    for deps in ws.iter("datasource-dependencies"):
+        for instance in deps.findall("column-instance"):
+            calc = instance.find("table-calc")
+            if calc is None:
+                continue
+            kind = calc.get("type") or ""
+            derivation = instance.get("derivation") or ""
+            agg = "" if derivation in ("", "None", "User") else f"{derivation}. "
+            column = _bare(instance.get("column") or "")
+            words = _TABLE_CALC_WORDS.get(kind, f"{kind} of")
+            found.append(
+                TableCalc(
+                    ref=f"[{deps.get('datasource')}].{instance.get('name')}",
+                    caption=f"{words} {agg}{caption.get(column, column)}",
+                    ordering=calc.get("ordering-type") or "",
+                    along=tuple(
+                        caption.get(c, c)
+                        for el in calc.iter("order")
+                        if (c := _field_column(el.get("field") or ""))
+                    ),
+                    columns=frozenset(
+                        _field_column(v)
+                        for el in calc.iter()
+                        for v in el.attrib.values()
+                        if "].[" in v
+                    ),
+                )
+            )
+    return found
+
+
+@dataclass(frozen=True)
+class Reshaped:
+    """A workbook with one worksheet reshaped.
+
+    `removed` labels the table calculations the drop took out (see
+    `TableCalc.label`); `recomputed` captions, by shelf (`rows`, `columns`),
+    the kept ones that run down or across a shelf the reshape changed, since
+    they now compute along other fields.
+    """
+
+    xml: str
+    removed: tuple[str, ...] = ()
+    recomputed: dict[str, tuple[str, ...]] = field(default_factory=dict)
+
+
+# The shelf a table calculation runs along, by its `ordering-type`.
+_ORDERING_SHELF = {"Rows": "rows", "Columns": "cols"}
+
+
+def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
     """Reshape one worksheet's rows and columns, so it exports at a new grain.
 
     Each `drop` caption leaves the sheet's rows and columns; each `add` caption
@@ -551,6 +643,10 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
         sheet: The worksheet name.
         shelves: `{drop: [caption], add: {rows: [caption], cols: [caption]},
             clear_filters: [caption]}`.
+
+    Returns:
+        The edited workbook, the table calculations the drop removed, and the
+        kept ones the new shelves recompute.
 
     Raises:
         ValueError: The workbook has no such worksheet, a dropped caption is
@@ -597,6 +693,7 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
     def is_named(ref: str, wanted: str) -> bool:
         return wanted in (shown(ref), _ref_column(ref))
 
+    original = dict(trees)
     before = {leaf for t in trees.values() for leaf in _shelf_leaves(t)}
     for wanted in shelves.get("drop", []):
         if not any(
@@ -612,7 +709,8 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
         }
     kept = {leaf for t in trees.values() for leaf in _shelf_leaves(t)}
     dropped = {_ref_column(r) for r in before - kept} - {_ref_column(r) for r in kept}
-    calcs = _table_calcs_along(ws, dropped)
+    on_sheet = table_calcs(ws)
+    calcs = {c.ref for c in on_sheet if c.columns & dropped}
     trees = {
         tag: _without(tree, lambda ref: ref in calcs) for tag, tree in trees.items()
     }
@@ -692,23 +790,15 @@ def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> str:
     out = twb_xml[: block.start()] + text + twb_xml[block.end() :]
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     ET.fromstring(out)
-    return out
-
-
-def _table_calcs_along(ws: ET.Element, dropped: set[str]) -> set[str]:
-    """The sheet's table calculations that order or address along a dropped
-    column, as `[datasource].[instance]` refs.
-    """
-    found = set()
-    for deps in ws.iter("datasource-dependencies"):
-        for instance in deps.findall("column-instance"):
-            calc = instance.find("table-calc")
-            if calc is None:
-                continue
-            fields = [v for el in calc.iter() for v in el.attrib.values() if "].[" in v]
-            if any(_field_column(v) in dropped for v in fields):
-                found.add(f"[{deps.get('datasource')}].{instance.get('name')}")
-    return found
+    changed = {tag for tag in trees if trees[tag] != original[tag]}
+    recomputed: dict[str, tuple[str, ...]] = {}
+    for c in on_sheet:
+        along = _ORDERING_SHELF.get(c.ordering)
+        if along is not None and along in changed and c.ref not in calcs:
+            shelf_name = SHELF_NAMES[along]
+            recomputed[shelf_name] = (*recomputed.get(shelf_name, ()), c.caption)
+    removed = tuple(dict.fromkeys(c.label for c in on_sheet if c.ref in calcs))
+    return Reshaped(out, removed, recomputed)
 
 
 def _element(tag: str) -> re.Pattern:
@@ -720,21 +810,36 @@ def _element(tag: str) -> re.Pattern:
 
 _EMPTY_ELEMENT = re.compile(r"(?:\r?\n[ \t]*)?<[\w:-]+(?=[\s/])[^>]*/>")
 _SLICE = re.compile(r"(?:\r?\n[ \t]*)?<column>([^<]*)</column>")
-_EMPTY_STYLE_RULE = re.compile(
-    r"(?:\r?\n[ \t]*)?<style-rule(?=[\s>])[^>]*>\s*</style-rule>"
-)
 # What sorts or formats one field, and goes when the field leaves the view.
 _PER_FIELD = {"natural-sort", "sort", "format"}
+# Containers an edit can empty, innermost first: a label whose runs all went
+# leaves an empty <formatted-text>, then an empty <customized-label>. No
+# reference shows any of them empty.
+_EMPTIABLE = (
+    "style-rule",
+    "formatted-text",
+    "customized-label",
+    "customized-tooltip",
+    "encodings",
+)
+
+
+def _emptied(tag: str) -> re.Pattern:
+    """One `tag` element holding only whitespace, with the line it starts."""
+    return re.compile(rf"(?:\r?\n[ \t]*)?<{tag}(?=[\s>])[^>]*(?<!/)>\s*</{tag}>")
 
 
 def _strip_dropped(text: str, dropped: set[str], calcs: set[str]) -> str:
     """A reshaped worksheet without what still leans on a dropped field.
 
-    A sort or format on a dropped column goes. A table calculation along one
-    goes entirely (its instance, every encoding, format, label run, filter and
-    slice naming it), since along the remaining fields it would mean something
-    else. Filters on a dropped column stay: they keep filtering, and the
-    filter cards on the sheet and its dashboards name them.
+    A sort (manual ones included) or format on a dropped column goes. A table
+    calculation along one goes entirely (its instance and every element with an
+    attribute naming it: encoding, format, computed sort, Measure Names member,
+    filter; and every label run and slice naming it), since along the
+    remaining fields it would mean something else. A container this leaves
+    empty goes too (see `_EMPTIABLE`). Filters on a dropped column stay: they
+    keep filtering, and the filter cards on the sheet and its dashboards name
+    them.
     """
 
     def on_dropped(attrs: dict[str, str]) -> bool:
@@ -742,7 +847,8 @@ def _strip_dropped(text: str, dropped: set[str], calcs: set[str]) -> str:
         return "].[" in ref and _field_column(ref) in dropped
 
     def names_calc(attrs: dict[str, str]) -> bool:
-        return bool({attrs.get("field"), attrs.get("column")} & calcs)
+        # A Measure Names member quotes the ref, so match it inside the value.
+        return any(ref in value for value in attrs.values() for ref in calcs)
 
     def head(element: str) -> tuple[str, dict[str, str]]:
         tag = element.lstrip().split(">", 1)[0]
@@ -768,7 +874,7 @@ def _strip_dropped(text: str, dropped: set[str], calcs: set[str]) -> str:
 
     def body(m: re.Match) -> str:
         tag, attrs = head(m[0])
-        if names_calc(attrs) or (tag == "format" and on_dropped(attrs)):
+        if names_calc(attrs) or (tag in ("format", "sort") and on_dropped(attrs)):
             return ""
         return m[0]
 
@@ -778,13 +884,15 @@ def _strip_dropped(text: str, dropped: set[str], calcs: set[str]) -> str:
 
     out = _DEPENDENCIES.sub(dependencies, text)
     out = _EMPTY_ELEMENT.sub(empty, out)
-    for tag in ("format", "filter"):
+    for tag in ("format", "sort", "filter"):
         out = _element(tag).sub(body, out)
     out = _element("run").sub(run, out)
     out = _SLICE.sub(lambda m: "" if html.unescape(m[1]) in calcs else m[0], out)
-    # A rule this edit emptied goes: no reference shows an empty <style-rule>.
-    if not _EMPTY_STYLE_RULE.search(text):
-        out = _EMPTY_STYLE_RULE.sub("", out)
+    # Only a container this edit emptied goes; one the sheet had empty stays.
+    for tag in _EMPTIABLE:
+        pattern = _emptied(tag)
+        if not pattern.search(text):
+            out = pattern.sub("", out)
     return out
 
 

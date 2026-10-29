@@ -123,7 +123,9 @@ cause, do not retry around it.
      `gt`, `gte`, `lt` and `lte` (exactly 1 number), or `set` (not null). A
      dashboard filter compares a date to the coming Sunday (Tableau's
      `TODAY() + 8 - weekday`) with `days_from_week_end: <days after it>` and a
-     compare operator in place of `values`; it runs at the run's moment.
+     compare operator in place of `values`; it runs at the run's moment. Do not
+     start a `run` between 8 pm and midnight ET on a Saturday: the week can
+     shift if Tableau Server's clock is not Eastern.
    - `parameters: {<caption>: <member>}`: a field the sheet shows only behind a
      parameter value (Chronic Absenteeism under "Attendance Metric"). The proof
      copy carries that value, so the REST export shows the field. Put the
@@ -135,7 +137,9 @@ cause, do not retry around it.
      `split_rows` cannot. The proof then covers the reshaped grain, not the
      sheet's own; tell the analyst, and the run result says so. A dropped
      field's sorts, formats and any table calc along it leave the copy (that
-     calc's column leaves the export); its filters stay.
+     calc's column leaves the export); its filters stay. `prove --headers` names
+     the removed table calcs and the kept ones that now recompute along the new
+     rows or columns; a compared field among them needs the analyst's call.
      `clear_filters: [<caption>]` resets that sheet's filter on each caption to
      every member (the analyst's call to validate past it, such as all subjects,
      not ELA).

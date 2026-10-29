@@ -2029,6 +2029,34 @@ def test_prove_headers_shows_the_reshaped_sheet(fakes, tmp_path, capsys):
     assert "ada-region reshaped: rows none; columns Region" in capsys.readouterr().out
 
 
+def test_prove_headers_names_the_table_calcs_a_reshape_changes(fakes, tmp_path, capsys):
+    fakes.tbl.twb = (FIXTURES / "dki_grid.twb").read_text()
+    text = (
+        UNPROVEN.replace("sheet: Rate by Region", "sheet: Mastery Grid")
+        .replace(
+            "    sheet_field: Rate\n",
+            "    sheet_field: Rate\n    shelves: { drop: [Week Start Monday], "
+            "add: { rows: [Subject Area] } }\n",
+        )
+        .replace(
+            "      - { dashboard: region, cube: regions_region_name }\n    filters:",
+            "      - { dashboard: region, cube: regions_region_name }\n"
+            "      - { dashboard: subject_area, cube: academic_subject }\n    filters:",
+        )
+    )
+    path = _file(tmp_path, text)
+
+    argv = ["prove", str(path), "--comparison", "ada-region", "--headers"]
+    assert cli.main(argv) == 0, capsys.readouterr().err
+
+    assert (
+        "ada-region reshaped: rows Grade Level, Subject Area; columns Module Code, "
+        "School; removed the table calcs Difference in Avg. Is Mastery Int (along "
+        "Week Start Monday, Module Code); recomputes along the new rows: "
+        "Difference in Avg. Is Mastery Int"
+    ) in capsys.readouterr().out
+
+
 def test_prove_refuses_a_drop_off_the_sheet(fakes, tmp_path, capsys):
     path = _file(tmp_path, _reshaped(UNPROVEN))
 
@@ -2052,6 +2080,20 @@ def test_reshape_text_names_cleared_filters():
     assert (
         pipeline.reshape_text(shelves)
         == "dropped Week; cleared the filters on Discipline, Term"
+    )
+
+
+def test_reshape_text_names_removed_and_recomputed_table_calcs():
+    reshaped = tableau.Reshaped(
+        "<workbook />",
+        removed=("Difference in Avg. X (along Week)",),
+        recomputed={"rows": ("Difference in Avg. X",), "columns": ("Rank of Y",)},
+    )
+
+    assert pipeline.reshape_text({"drop": ["Week"]}, reshaped) == (
+        "dropped Week; removed the table calcs Difference in Avg. X (along Week); "
+        "recomputes along the new rows: Difference in Avg. X; recomputes along "
+        "the new columns: Rank of Y"
     )
 
 
