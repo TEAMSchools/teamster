@@ -206,11 +206,22 @@ cause, do not retry around it.
    the `run` it reads.
 8. `triage <file>` reads the latest run and writes `triage.json` beside its
    `run.json`. It sorts every open item (row groups, cell differences, missing
-   cuts and filters) under one suggestion: `map_filters`, `filters_nothing`,
-   `docs`, then `owner`, each with a masked label and its evidence. Start from
-   the summary it prints first; a flood in one bucket means fix the grain. It
-   lists 25 items per suggestion; `triage.json` holds them all. Sort every item
-   into one of 5 piles (step 9 lists the calls):
+   cuts and filters) into one pile: `map_filters`, `filters_nothing`, `cause`,
+   then `investigate`, each with a masked label and its evidence. Start from the
+   summary it prints first; a flood in one bucket means fix the grain. It lists
+   25 items per pile; `triage.json` holds them all.
+
+   Every item must reach a proven cause before anything is recorded: a step (a
+   filter, join or rule in either side's SQL, or in a model it reads) shown row
+   by row to drop every one of the item's rows. `add-decisions` and `review`
+   refuse while the view's latest triage holds an `investigate` item, per view
+   file. Never present a guess as a cause: a member description or a cell
+   pattern is a lead to trace, not a cause.
+
+   - Investigate: no proven cause yet. Work it by tracing its unmatched rows
+     through the other side's SQL and the models it reads until one step
+     accounts for every row. It never goes to the owner, and it leaves
+     `investigate` only when `triage` files it under `cause`.
    - Map under `filters:`: a `same values: map it under filters:` verdict. Once
      the analyst approves the batch, map the field under the comparison's
      `filters:` instead of recording a decision, then re-prove the comparisons
@@ -218,28 +229,25 @@ cause, do not retry around it.
      `same field, different coding` is not a map: the codes differ, and the item
      stays where triage put it.
    - Filters nothing: `deliberate`, quoting the evidence.
-   - Close as deliberate: a `docs` item whose quoted description or `ai_context`
-     explains the difference. Check the quote against the result first: a
-     description that says a code counts while Cube returns blank for it is a
-     contradiction, not an answer. A contradiction goes to the owner (or a known
-     issue), named in the reason.
-   - Known issue: search open GitHub issues (`mcp__github__search_issues`, by
-     measure, member, region and school words) for a known gap that explains the
-     item. The call is the one that issue fixes (`fix_source` for source data,
-     `fix_cube` for the Cube model), with the issue as `task`.
-   - Owner: anything the evidence does not answer. It becomes a `domain_owner`
-     decision with an empty `task`, and only these reach `review`.
+   - A `cause` item is one of these (step 9 lists the calls):
+     - Deliberate: the proven step is intended on that side.
+     - Known issue: search open GitHub issues (`mcp__github__search_issues`, by
+       measure, member, region and school words) for one that names the step.
+       The call is the one that issue fixes (`fix_source` for source data,
+       `fix_cube` for the Cube model), with the issue as `task`.
+     - Owner: a question only the owner can settle about the proven step, such
+       as whether WPP should count or which date anchors a score. It becomes a
+       `domain_owner` decision with an empty `task`, and only these reach
+       `review`.
 
-   A missing cut or filter is a sheet field Cube has no member for: Cube cannot
-   make that cut, so the owner decides whether the measure needs it. "Cell
+   A missing cut or filter is a sheet field Cube has no member for. "Cell
    differences" lists candidate causes (patterns, where they cluster, both
    definitions): leads to check, not findings. Rows a `dashboard_filters` entry
    drops read "dashboard filtered", not Cube-only, and the filter is triaged as
    a missing filter. `not compared: identifier column` means values were not
    compared, for privacy; never compare them by hand. `also covers:` lists the
    sibling groups the same decision would close: approve the item only if its
-   reason holds for each, else send it to the owner. Anchor differences are
-   judged here too.
+   cause is proven for each. Anchor differences are judged here too.
 
 9. The calls:
    - `deliberate`: the difference is intended. Say what the Cube member counts
@@ -255,21 +263,21 @@ cause, do not retry around it.
      from step 10, filled in after it is posted.
 
    Draft a reason for every item, so the analyst edits rather than writes: a
-   close quotes the evidence or names the issue; an owner item says why the
-   evidence leaves it to the owner, which his session shows him. Show the
-   analyst one batch, numbered across piles in the order above, owner pile last;
-   each line has the masked label, the evidence, the call and the drafted
-   reason. On "approve all" or "approve all but 2 and 6", the excluded items go
-   where the analyst says (the owner pile unless told otherwise). Write the
-   approved items, owner pile included, to `approved.json` in the session
-   scratchpad: a JSON list of `{"id", "call", "reason", "task", "item"}`, where
-   `item` is the triage item id, `id` a new decision id not already in the file,
-   and `task` empty for `deliberate` and `domain_owner`. Map items are not in
-   it. Then `add-decisions <file> <approved.json>`: it takes each decision's key
-   fields from the item's stub and its fingerprints from the latest run, and
-   writes the whole batch or nothing, then re-applies every decision to the
-   saved run offline, so `review` reads it with no new `run`. After a hand edit
-   to `decisions:`, `reapply <file>` does the same.
+   close quotes the evidence or names the issue; an owner item names the proven
+   step and the question it leaves, which his session shows him. Show the
+   analyst one batch, numbered across piles in the order above, owner items
+   last; each line has the masked label, the evidence, the call and the drafted
+   reason. On "approve all" or "approve all but 2 and 6", the excluded items
+   stay unrecorded until the analyst says where they go. Write the approved
+   items, owner items included, to `approved.json` in the session scratchpad: a
+   JSON list of `{"id", "call", "reason", "task", "item"}`, where `item` is the
+   triage item id, `id` a new decision id not already in the file, and `task`
+   empty for `deliberate` and `domain_owner`. Map items are not in it. Then
+   `add-decisions <file> <approved.json>`: it takes each decision's key fields
+   from the item's stub and its fingerprints from the latest run, and writes the
+   whole batch or nothing, then re-applies every decision to the saved run
+   offline, so `review` reads it with no new `run`. After a hand edit to
+   `decisions:`, `reapply <file>` does the same.
 
    Before `review`, give the file a top-level `tasks:` block,
    `{cube_fix: <the domain's Cube-fix issue>, dashboard_fix: <its Asana dashboard-fix task>}`:
@@ -293,18 +301,19 @@ cause, do not retry around it.
 
 10. `review <files> --domain <domain>` prints the validation issue's body: the
     numbered questions, each with the owner's hand checks, and a closing JSON
-    block the owner's session reads. stderr names any question with no triage
-    evidence: `triage` that view and render again before posting. The footnote
-    promises that identifiers of students and staff are hidden, which holds only
-    if no reason or definition names a person: read them first. Show the draft
-    to the analyst, then post it with `mcp__github__issue_write`, titled
-    "Validate <dashboard> in Cube", using the repo's issue template. That issue
-    is the validation's hub. Then write `task: "#<issue>"` into each decision
-    stderr lists; filling in a task needs no new `run`. Tell the analyst the
-    owner answers in his own Claude Code session by saying "walk me through
-    issue #N" (the `cube-validation-answers` skill). When that session reports
-    the pinned SQL expired, `run` again, render `review` again, and update the
-    issue body.
+    block the owner's session reads. It refuses unless every file's view has a
+    triage with nothing in `investigate`. stderr names any question with no
+    triage evidence: `triage` that view and render again before posting. The
+    footnote promises that identifiers of students and staff are hidden, which
+    holds only if no reason or definition names a person: read them first. Show
+    the draft to the analyst, then post it with `mcp__github__issue_write`,
+    titled "Validate <dashboard> in Cube", using the repo's issue template. That
+    issue is the validation's hub. Then write `task: "#<issue>"` into each
+    decision stderr lists; filling in a task needs no new `run`. Tell the
+    analyst the owner answers in his own Claude Code session by saying "walk me
+    through issue #N" (the `cube-validation-answers` skill). When that session
+    reports the pinned SQL expired, `run` again, render `review` again, and
+    update the issue body.
 11. On "pick up the answers on #N", read only the comment the analyst names; if
     they name none, ask which, never take the latest. Save its body to a file in
     the session scratchpad and show the analyst its author's login. Check its

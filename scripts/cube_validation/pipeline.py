@@ -1498,6 +1498,49 @@ def _triage_file(run_json: Path, view_root: Path) -> Path | None:
     return found[-1] if found else None
 
 
+# The piles `triage` sorts open items into, in batch order. Only a `cause` item
+# carries a proven cause; an `investigate` item has none yet.
+PILES = ("map_filters", "filters_nothing", "cause", "investigate")
+
+
+def proven_triage(view: str, run_json: Path, view_root: Path) -> dict:
+    """Read the view's triage (see `_triage_file`), refusing while any item is unproven.
+
+    Nothing is recorded or reviewed for a view until every one of its items has
+    left `investigate`. The gate is per view file: it reads only that view's
+    triage, so one view's open item blocks `add-decisions` on that file and any
+    `review` that includes it.
+
+    Raises:
+        Refusal: The view has no triage, it is not a JSON object, an item sits
+            in a pile this validator does not sort into (a triage from an
+            older validator), or an item is in `investigate`.
+    """
+    found = _triage_file(run_json, view_root)
+    if found is None:
+        raise Refusal(f"{view}: no triage.json; run `triage` first")
+    unreadable = Refusal(f"{view}: triage.json is unreadable; re-run triage")
+    try:
+        loaded = json.loads(found.read_text())
+    except json.JSONDecodeError as exc:
+        raise unreadable from exc
+    if not isinstance(loaded, dict):
+        raise unreadable
+    piles = Counter(item.get("suggestion") for item in loaded.get("items", []))
+    if other := sorted(str(p) for p in set(piles) - set(PILES)):
+        raise Refusal(
+            f"{view}: {found} has items in piles this validator does not sort "
+            f"into ({', '.join(other)}); re-run triage"
+        )
+    if n := piles["investigate"]:
+        raise Refusal(
+            f"{view}: {n} triage item{'' if n == 1 else 's'} in `investigate`; "
+            "trace each to a proven cause (cube-validation skill, step 8), "
+            "then re-run `triage`"
+        )
+    return loaded
+
+
 def review(
     configs: list[ViewConfig],
     domain: str,
@@ -1506,7 +1549,7 @@ def review(
 ) -> str:
     """Return the review-issue body from each view's latest saved run.
 
-    Reads only the local cache: each run and its triage (see `_triage_file`),
+    Reads only the local cache: each run and its triage (see `proven_triage`),
     matching triage items to decisions by their stubs. Nothing is posted; a
     question with no triage evidence, and a body near GitHub's cap, are named
     on stderr.
@@ -1520,23 +1563,15 @@ def review(
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
-            triage file is not a JSON object.
+            triage is missing, unreadable or holds an unproven item (see
+            `proven_triage`).
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
-    triage = {}
-    for run, run_json in saved:
-        if found := _triage_file(run_json, cache_root / run.view):
-            unreadable = Refusal(
-                f"{run.view}: triage.json is unreadable; re-run triage"
-            )
-            try:
-                loaded = json.loads(found.read_text())
-            except json.JSONDecodeError as exc:
-                raise unreadable from exc
-            if not isinstance(loaded, dict):
-                raise unreadable
-            triage[run.view] = loaded
+    triage = {
+        run.view: proven_triage(run.view, run_json, cache_root / run.view)
+        for run, run_json in saved
+    }
     definitions = {
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs

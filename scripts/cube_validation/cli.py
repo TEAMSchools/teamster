@@ -498,21 +498,13 @@ def _check_claims(writes: list[tuple[Path, dict]]) -> None:
 def _add_decisions(cfg: ViewConfig, path: Path, approved_path: Path) -> int:
     """Write an approved triage batch into the view's `decisions:`.
 
-    Stubs come from the triage beside the latest run (see
-    `pipeline._triage_file`) and fingerprints from that run. The whole batch
-    is written or none of it.
+    Stubs come from the triage beside the latest run and fingerprints from that
+    run. Refuses while that triage holds an `investigate` item (see
+    `pipeline.proven_triage`). The whole batch is written or none of it.
     """
     approved = _read_json(approved_path, "approved")
     run, run_json = pipeline.latest_run(cfg, cache_root())
-    found = pipeline._triage_file(run_json, cache_root() / cfg.view)
-    if found is None:
-        raise pipeline.Refusal(f"{cfg.view}: no triage.json; `triage` it first")
-    try:
-        saved = json.loads(found.read_text())
-    except json.JSONDecodeError as exc:
-        raise pipeline.Refusal(
-            f"{cfg.view}: triage.json is unreadable; re-run triage"
-        ) from exc
+    saved = pipeline.proven_triage(cfg.view, run_json, cache_root() / cfg.view)
 
     decisions = answers.approved_decisions(approved, saved, run.fingerprints)
     taken = {d.id for d in cfg.decisions} & {d["id"] for d in decisions}

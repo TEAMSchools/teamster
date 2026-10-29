@@ -1,9 +1,10 @@
-"""Gather evidence and suggest a call for each open item of a run.
+"""Gather evidence and sort each open item of a run into a pile.
 
 An open item is a row group, a comparison's cell differences, or a missing cut
-or filter. A suggestion never applies a call: the analyst reads it and decides.
-Item ids and labels carry no value the review issue would hide. `suggest` is
-pure; `value_check` and `run_triage` read the warehouse and Cube.
+or filter. A pile never applies a call: the analyst reads it and decides, and
+an item in `investigate` blocks every decision on the view until it reaches a
+proven cause. Item ids and labels carry no value the review issue would hide.
+`suggest` is pure; `value_check` and `run_triage` read the warehouse and Cube.
 """
 
 from __future__ import annotations
@@ -34,29 +35,8 @@ from .report import (
 )
 from .timetravel import PROJECT
 
-# The order the analyst's batch shows suggestions, the owner last.
-SUGGESTIONS = ("map_filters", "filters_nothing", "docs", "owner")
-
-NO_ANSWER = "no description or ai_context answers it"
-
-# The fixed words of `pipeline.candidate_causes` and `pipeline._cell_diffs`:
-# they read the same on every cell set, so they never tie a doc to one.
-_CAUSE_WORDS = frozenset(
-    _tokens(
-        "cell cells Cube is blank where the dashboard shows 0 a value display "
-        "unit apart at decimals values differ beyond rounding of in cut have row "
-        "groups on this comparison see Triage may explain part it every matches "
-        "grain and so definitions or their filters"
-    )
-)
-# Cause lines that restate the measure's definitions, not the cells.
-_DEFINITION_CAUSES = ("Cube computes ", "Recorded definitions:")
-# Words any column name or description carries, which tie a doc to nothing.
-_GENERIC_WORDS = frozenset(
-    {"name", "code", "type", "level", "id", "number", "date", "key", "label"}
-    | {"value", "the", "for", "per", "each", "with", "this", "and", "from"}
-    | {"that", "any"}
-)
+# The order the analyst's batch shows the piles, `investigate` last.
+SUGGESTIONS = pipeline.PILES
 
 
 @dataclass(frozen=True)
@@ -78,16 +58,20 @@ class Item:
 
 @dataclass(frozen=True)
 class Suggestion:
-    """A suggested call for one item, with what it rests on.
+    """The pile one item lands in, with what it rests on.
 
-    `evidence` is the quoted note, doc text or verdict behind the call, and
-    `candidates` the Cube members a missing filter or cut may map to.
+    `evidence` is the quoted note, verdict or member doc text; doc text is
+    evidence only and never picks the pile. `candidates` are the Cube members a
+    missing filter or cut may map to. `cause` is, for a `cause` item, the steps
+    its rows are attributed to, each `{side, step, label, n_rows}`; it is None
+    until a trace proves one.
     """
 
     item: Item
     suggestion: str
     evidence: tuple[str, ...]
     candidates: tuple[str, ...] = ()
+    cause: list[dict] | None = None
 
 
 def _stub_dim(g: Group, open_groups: list[Group]) -> tuple[str, str]:
@@ -224,57 +208,13 @@ def _doc_evidence(members: list[str], docs: dict[str, MemberDoc]) -> tuple[str, 
     return tuple(out)
 
 
-def _group_topic(
-    g: Group, to_cube: dict[str, str], docs: dict[str, MemberDoc]
-) -> dict[str, set[str]]:
-    """Words naming a group's columns, keyed by the member each column is.
-
-    Each column gives its name, its member's and the member's title. A
-    dashboard-only filter's dim names the filter's column in its value and
-    belongs to no member (key `""`).
-    """
-    out: dict[str, set[str]] = {}
-    for column, value in g.dims:
-        if column == "dashboard_filter":
-            out.setdefault("", set()).update(_tokens(value))
-            continue
-        member = to_cube.get(column, column)
-        title = docs[member].title if member in docs else ""
-        out.setdefault(member, set()).update(_tokens(f"{column} {member} {title}"))
-    return {k: w - _GENERIC_WORDS for k, w in out.items()}
-
-
-def _cells_topic(diff: CellDiff) -> set[str]:
-    """Words of a cell set's candidate causes, past their fixed wording, counts and the definitions."""
-    words = set().union(
-        *(_tokens(c) for c in diff.causes if not c.startswith(_DEFINITION_CAUSES))
-    )
-    return {w for w in words - _CAUSE_WORDS - _GENERIC_WORDS if not w.isdigit()}
-
-
-def _speaks_to(
-    members: list[str], topics: dict[str, set[str]], docs: dict[str, MemberDoc]
-) -> bool:
-    """Whether a member's description or ai_context names a word of the item.
-
-    A member's own words never count for it: every column's description names
-    the column, so it says nothing about why that column's rows differ.
-    """
-    return any(
-        _tokens(text) & set().union(*(w for k, w in topics.items() if k != name))
-        for name in members
-        if (d := docs.get(name))
-        for text in (d.description, d.ai_context)
-    )
-
-
 def suggest(
     cfg: ViewConfig,
     run: RunResult,
     docs: dict[str, MemberDoc],
     values: Callable[[str, str], str] | None = None,
 ) -> list[Suggestion]:
-    """Suggest a call for each open item, first matching rule wins.
+    """Sort each open item into a pile, first matching rule wins.
 
     Args:
         cfg: The view's config, for each comparison's measure, group-by
@@ -285,13 +225,10 @@ def suggest(
             `None` skips value checks.
 
     Returns:
-        One suggestion per open item, ordered by `SUGGESTIONS`, owner last.
-        `docs` needs a description or ai_context of an involved member to name
-        the item: its group's column or that member's title, the gap's
-        caption, or a word of the cell set's candidate causes. A member's
-        docs never count for its own column, and the measure's name and title
-        never count, since its description is always there. Docs that name
-        nothing are still quoted on an `owner` item.
+        One suggestion per open item, ordered by `SUGGESTIONS`. A missing
+        filter the proof shows filters nothing, or whose values match a Cube
+        member's, takes `filters_nothing` or `map_filters`; every other item
+        is `investigate`, quoting its involved members' docs as evidence.
     """
     by_id = {c.id: c for c in cfg.comparisons}
     entries = _entries(run)
@@ -301,16 +238,12 @@ def suggest(
         verdict_lines: tuple[str, ...] = ()
         candidates: tuple[str, ...] = ()
         members: list[str] = []
-        measures: list[str] = []
-        topics: dict[str, set[str]] = {}
         call = ""
 
         if isinstance(source, Gap):
             gap = source
             caption = gap.field
-            measures = [by_id[c].measure for c in gap.comparisons if c in by_id]
-            members = list(measures)
-            topics = {"": _tokens(caption) - _GENERIC_WORDS}
+            members = [by_id[c].measure for c in gap.comparisons if c in by_id]
             # Only the sheets the gap sits on speak for it; a proof that
             # predates `restricting_filters` leaves the answer unknown.
             proofs: list[Proof] = [
@@ -337,24 +270,14 @@ def suggest(
         else:
             comparison = by_id.get(item.comparison)
             if comparison:
-                measures = [comparison.measure]
-                members = list(measures)
+                members = [comparison.measure]
                 if isinstance(source, Group):
                     to_cube = {p.dashboard: p.cube for p in comparison.dims}
                     members += [to_cube.get(c, c) for c, _ in source.dims]
-                    topics = _group_topic(source, to_cube, docs)
-                elif isinstance(source, CellDiff):
-                    topics = {"": _cells_topic(source)}
 
         if not call:
-            for m in measures:
-                own = _tokens(f"{m} {docs[m].title if m in docs else ''}")
-                topics = {k: w - own for k, w in topics.items()}
-            quoted = _doc_evidence(members, docs)
-            if _speaks_to(members, topics, docs):
-                call, evidence = "docs", verdict_lines + quoted
-            else:
-                call, evidence = "owner", verdict_lines + quoted + (NO_ANSWER,)
+            call = "investigate"
+            evidence = verdict_lines + _doc_evidence(members, docs)
 
         if isinstance(source, Group) and source.dims:
             stub_group = item.stub["group"]
@@ -548,7 +471,7 @@ def _missing_column(cfg: ViewConfig, caption: str) -> str:
 def run_triage(
     cfg: ViewConfig, *, wh: Warehouse, cube: Cube, max_usd: float, cache_root: Path
 ) -> list[Suggestion]:
-    """Suggest a call for each open item of the view's latest run and print them.
+    """Sort each open item of the view's latest run into a pile and print them.
 
     Prints `batch_lines`. Writes every item to `triage.json` beside that run's
     `run.json`: it stays in the local cache, and its stubs carry real values.
@@ -588,6 +511,7 @@ def run_triage(
                         "suggestion": s.suggestion,
                         "evidence": list(s.evidence),
                         "candidates": list(s.candidates),
+                        "cause": s.cause,
                     }
                     for s in found
                 ],

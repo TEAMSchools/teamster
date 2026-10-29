@@ -9,7 +9,6 @@ from cube_validation.config import ColumnPair, Comparison, Proof, ViewConfig
 from cube_validation.cube_client import MemberDoc
 from cube_validation.decisions import Applied
 from cube_validation.moment import Build
-from cube_validation.pipeline import Cell, candidate_causes, cut_label, row_group_cause
 from cube_validation.report import RunResult
 from cube_validation.triage import (
     BATCH_CAP,
@@ -17,7 +16,6 @@ from cube_validation.triage import (
     SUGGESTIONS,
     Item,
     Suggestion,
-    _cells_topic,
     batch_lines,
     open_items,
     pii_members,
@@ -89,7 +87,7 @@ def test_caption_match_lists_candidates_without_value_check():
 
     [s] = suggest(cfg, _run(gaps=[_gap("Grade Level")]), docs)
 
-    assert s.suggestion == "owner"
+    assert s.suggestion == "investigate"
     assert s.candidates == ("grade_level",)
 
 
@@ -121,7 +119,7 @@ def test_every_verdict_reaches_the_evidence_but_only_same_maps():
         lambda c, m: "same field, different coding",
     )
 
-    assert s.suggestion == "owner"
+    assert s.suggestion == "investigate"
     assert s.candidates == ("grade_level",)
     assert "grade_level: same field, different coding" in s.evidence
 
@@ -134,238 +132,45 @@ def test_every_verdict_reaches_the_evidence_but_only_same_maps():
     assert "grade_level: not compared: identifier column" in s.evidence
 
 
-def test_a_members_own_docs_do_not_explain_its_group_but_are_quoted():
-    cfg = _cfg()
-    docs = {
-        "student_count": _doc("student_count", description="Counts enrolled students."),
-        "grade_level": _doc("grade_level", ai_context="Use for the grade filter."),
-    }
-    group = Group("enrollment", (("grade_level", "9"),), "value_differs", 40, 38)
-
-    [s] = suggest(cfg, _run(groups=[group]), docs)
-
-    assert s.suggestion == "owner"
-    assert s.evidence == (
-        "student_count: Counts enrolled students.",
-        "grade_level: Use for the grade filter.",
-        "no description or ai_context answers it",
-    )
-
-
-def _pct_cfg():
-    cmp = Comparison(
-        id="enrollment",
-        measure="pct_proficient",
-        dims=[ColumnPair("Grade", "grade_level")],
-        proof=_proof(),
-    )
-    return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
-
-
-def test_grade_level_own_description_naming_grade_goes_to_owner():
-    docs = {
-        "pct_proficient": MemberDoc(
-            "pct_proficient", "", "Share of students proficient.", "", "measure"
-        ),
-        "grade_level": _doc("grade_level", description="The grade the student is in."),
-    }
-    group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
-
-    [s] = suggest(_pct_cfg(), _run(groups=[group]), docs)
-
-    assert s.suggestion == "owner"
-
-
-def test_measure_description_naming_grade_explains_a_grade_group():
-    docs = {
-        "pct_proficient": MemberDoc(
-            "pct_proficient", "", "Proficiency by grade at test time.", "", "measure"
-        ),
-        "grade_level": _doc("grade_level", description="The grade the student is in."),
-    }
-    group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
-
-    [s] = suggest(_pct_cfg(), _run(groups=[group]), docs)
-
-    assert s.suggestion == "docs"
-
-
-def test_another_dims_description_can_explain_the_group():
-    docs = {
-        "region_name": _doc(
-            "region_name", description="Region name; grade bands vary."
-        ),
-        "grade_level": _doc("grade_level", description="The grade the student is in."),
-    }
-    own = Group("enrollment", (("region_name", "Camden"),), "cube_only", 40, 38)
-    both = Group(
-        "enrollment",
-        (("region_name", "Camden"), ("grade_level", "9")),
-        "cube_only",
-        40,
-        38,
-    )
-
-    [s] = suggest(_cfg(), _run(groups=[own]), docs)
-    assert s.suggestion == "owner"
-    [s] = suggest(_cfg(), _run(groups=[both]), docs)
-    assert s.suggestion == "docs"
-
-
 def _measure_doc(description="", ai_context=""):
     return MemberDoc(
         "student_count", "Student Count", description, ai_context, "measure"
     )
 
 
-def test_group_column_named_in_the_measure_description_suggests_docs():
-    docs = {
-        "student_count": _measure_doc("Counts students; grade level is as of entry.")
-    }
+def test_an_item_no_filter_evidence_answers_goes_to_investigate():
     group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
 
-    [s] = suggest(_cfg(), _run(groups=[group]), docs)
+    [s] = suggest(_cfg(), _run(groups=[group]), {})
 
-    assert s.suggestion == "docs"
+    assert s.suggestion == "investigate"
+    assert s.cause is None
+    assert s.evidence == ()
+
+
+def test_member_docs_are_evidence_and_never_decide_the_pile():
+    # A description naming the group's column still proves no cause.
+    docs = {
+        "student_count": _measure_doc("Counts students; grade level is as of entry."),
+        "grade_level": _doc("grade_level", ai_context="Use for the grade filter."),
+    }
+    group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
+    cfg = _cfg(restricting_filters=["Enroll Status"])
+    gap_docs = {"student_count": _measure_doc(ai_context="Excludes enroll status X.")}
+
+    [s] = suggest(cfg, _run(groups=[group]), docs)
+    [gap] = suggest(cfg, _run(gaps=[_gap("Enroll Status")]), gap_docs)
+    [cells] = suggest(cfg, _run(cells=[CellDiff("enrollment", {"differs": 3})]), docs)
+
+    assert s.suggestion == gap.suggestion == cells.suggestion == "investigate"
     assert s.evidence == (
         "student_count: Counts students; grade level is as of entry.",
+        "grade_level: Use for the grade filter.",
     )
+    assert gap.evidence == ("student_count: Excludes enroll status X.",)
 
 
-def test_group_column_in_no_description_goes_to_owner_with_the_quote():
-    # The measure's description always exists; on its own it answers nothing.
-    docs = {"student_count": _measure_doc("Counts enrolled students.")}
-    group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
-
-    [s] = suggest(_cfg(), _run(groups=[group]), docs)
-
-    assert s.suggestion == "owner"
-    assert s.evidence == (
-        "student_count: Counts enrolled students.",
-        "no description or ai_context answers it",
-    )
-
-
-def test_measure_name_tokens_do_not_make_a_description_specific():
-    # `student_count` names the measure: its own words never count.
-    docs = {"student_count": _measure_doc("Student count per student group.")}
-    group = Group("enrollment", (("student_group", "ELL"),), "cube_only", 40, 38)
-
-    [s] = suggest(_cfg(), _run(groups=[group]), docs)
-
-    assert s.suggestion == "docs"
-    group = Group("enrollment", (("student_count_band", "low"),), "cube_only", 40, 38)
-    [s] = suggest(_cfg(), _run(groups=[group]), docs)
-    assert s.suggestion == "owner"
-
-
-def test_member_title_of_the_group_column_counts():
-    docs = {
-        "student_count": _measure_doc("Counts students by cohort year."),
-        "entry_cohort": _doc("entry_cohort", title="Cohort Year"),
-    }
-    group = Group("enrollment", (("entry_cohort", "2020"),), "cube_only", 40, 38)
-
-    [s] = suggest(_cfg(), _run(groups=[group]), docs)
-
-    assert s.suggestion == "docs"
-
-
-def test_gap_caption_in_a_member_ai_context_suggests_docs():
-    cfg = _cfg(restricting_filters=["Enroll Status"])
-    docs = {
-        "student_count": _measure_doc(ai_context="Excludes no-shows by enroll status.")
-    }
-
-    [s] = suggest(cfg, _run(gaps=[_gap("Enroll Status")]), docs)
-
-    assert s.suggestion == "docs"
-    assert s.evidence == ("student_count: Excludes no-shows by enroll status.",)
-
-
-def test_gap_caption_in_no_description_goes_to_owner():
-    cfg = _cfg(restricting_filters=["Enroll Status"])
-    docs = {"student_count": _measure_doc("Counts enrolled students.")}
-
-    [s] = suggest(cfg, _run(gaps=[_gap("Enroll Status")]), docs)
-
-    assert s.suggestion == "owner"
-
-
-def test_cell_causes_that_a_description_names_suggest_docs():
-    docs = {"student_count": _measure_doc("Rounds the region total, not each school.")}
-    generic = CellDiff(
-        "enrollment",
-        {"differs": 3},
-        ("3 cells: 1 display unit apart at 0 decimals",),
-    )
-    clustered = CellDiff(
-        "enrollment", {"differs": 3}, ('3 of 3 in cut {"Region": "Camden"}',)
-    )
-
-    [s] = suggest(_cfg(), _run(cells=[generic]), docs)
-    assert s.suggestion == "owner"
-    [s] = suggest(_cfg(), _run(cells=[clustered]), docs)
-    assert s.suggestion == "docs"
-
-
-def test_a_shared_column_suffix_does_not_explain_a_group():
-    docs = {
-        "region_name": _doc("region_name", description="Region name (Camden, Newark)."),
-    }
-    group = Group(
-        "enrollment",
-        (("region_name", "Camden"), ("school_name", "A")),
-        "cube_only",
-        40,
-        38,
-    )
-
-    [s] = suggest(_cfg(), _run(groups=[group]), docs)
-
-    assert s.suggestion == "owner"
-
-
-def test_a_specific_measure_statement_still_explains_a_group():
-    docs = {"student_count": _measure_doc("Excludes Miami grade 9 retakes.")}
-    group = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
-
-    [s] = suggest(_cfg(), _run(groups=[group]), docs)
-
-    assert s.suggestion == "docs"
-
-
-def test_cell_cause_counts_do_not_explain_cells():
-    docs = {"student_count": _measure_doc("Counts 12 grades from 2019.")}
-    diff = CellDiff("enrollment", {"differs": 12}, ("12 of 2019 have x = 12",))
-
-    [s] = suggest(_cfg(), _run(cells=[diff]), docs)
-
-    assert s.suggestion == "owner"
-
-
-def test_cause_templates_leave_no_topic():
-    # Fails when a template in pipeline.candidate_causes or row_group_cause
-    # gains a word `_CAUSE_WORDS` lacks: add the word there.
-    comparison = Comparison(id="c", measure="m", probe="SELECT 1")
-    cells = [
-        Cell("c", cut_label({}), "k", d, c, v)
-        for d, c, v in [
-            (0.0, None, "dashboard_only"),
-            (5.0, None, "dashboard_only"),
-            (None, 0.0, "cube_only"),
-            (None, 5.0, "cube_only"),
-            (1.0, 2.0, "differs"),
-            (1.0, 9.0, "differs"),
-        ]
-    ]
-    causes = candidate_causes(comparison, cells, 0, "SUM(x)")
-    causes += [row_group_cause(3), row_group_cause(0)]
-
-    assert _cells_topic(CellDiff("c", {"differs": 6}, tuple(causes))) == set()
-
-
-def test_nothing_found_goes_to_owner_last():
+def test_piles_sort_in_batch_order_investigate_last():
     cfg = _cfg(restricting_filters=["Odd Field"])
     cells = CellDiff("enrollment", {"differs": 3})
     result = suggest(
@@ -373,10 +178,9 @@ def test_nothing_found_goes_to_owner_last():
     )
 
     names = [s.suggestion for s in result]
-    assert names == ["filters_nothing", "owner", "owner"]
+    assert names == ["filters_nothing", "investigate", "investigate"]
     assert names == sorted(names, key=SUGGESTIONS.index)
-    assert result[-1].evidence == ("no description or ai_context answers it",)
-    assert SUGGESTIONS == ("map_filters", "filters_nothing", "docs", "owner")
+    assert SUGGESTIONS == ("map_filters", "filters_nothing", "cause", "investigate")
 
 
 def test_item_ids_are_stable_and_hold_no_unreviewed_value():
@@ -443,21 +247,6 @@ def test_colliding_masked_ids_get_a_stable_suffix():
     ] == ["111"]
 
 
-def test_colliding_ids_keep_their_own_docs_evidence():
-    cfg = _cfg()
-    docs = {"student_count": _measure_doc("Excludes grade 9 retakes.")}
-    a = Group("enrollment", (("student_number", "222"),), "cube_only", 2, 2)
-    b = Group("enrollment", (("grade_level", "9"),), "value_differs", 2, 2)
-    c = Group("enrollment", (("grade_level", "9"),), "cube_only", 40, 38)
-
-    result = suggest(cfg, _run(groups=[a, b, c]), docs)
-
-    by_id = {s.item.id: s for s in result}
-    assert by_id["enrollment:student_number=<redacted>"].suggestion == "owner"
-    assert by_id["enrollment:grade_level=<redacted>"].suggestion == "docs"
-    assert by_id["enrollment:grade_level=9"].suggestion == "docs"
-
-
 def test_stub_takes_the_first_column_no_sibling_shares():
     one = Group(
         "enrollment",
@@ -520,7 +309,7 @@ def test_unknown_proof_on_the_gap_sheet_is_not_filters_nothing():
 
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
 
-    assert s.suggestion == "owner"
+    assert s.suggestion == "investigate"
 
 
 def test_another_sheets_note_does_not_speak_for_the_gap():
@@ -540,7 +329,7 @@ def test_another_sheets_note_does_not_speak_for_the_gap():
 
     [s] = suggest(cfg, _run(gaps=[_gap()]), {})
 
-    assert s.suggestion == "owner"
+    assert s.suggestion == "investigate"
 
 
 # --- value_check -------------------------------------------------------------
@@ -678,38 +467,39 @@ def test_batch_starts_with_a_summary_per_comparison():
     assert summary == [
         "Summary",
         "  enrollment: 3 items",
-        "    by suggestion: filters_nothing 1, owner 2",
+        "    by suggestion: filters_nothing 1, investigate 2",
         "    by kind: gap 1, group 2",
         "    groups by bucket: cube_only 1, dashboard_only 1",
     ]
-    assert "filters_nothing (1)" in lines and "owner (2)" in lines
+    assert "filters_nothing (1)" in lines and "investigate (2)" in lines
 
 
 def test_batch_summary_orders_suggestions_as_the_batch_does():
     found = [
-        _suggestion("a", "docs"),
+        _suggestion("a", "investigate"),
         _suggestion("b", "map_filters", "gap"),
         _suggestion("c", "filters_nothing", "gap"),
     ]
 
     lines = batch_lines(_run(), found)
 
-    assert "    by suggestion: map_filters 1, filters_nothing 1, docs 1" in lines
+    assert "    by suggestion: map_filters 1, filters_nothing 1, investigate 1" in lines
 
 
 def test_batch_lists_at_most_the_cap_per_suggestion():
-    found = [_suggestion(n, "owner") for n in range(BATCH_CAP + 5)]
-    found += [_suggestion("d", "docs")]
+    found = [_suggestion(n, "investigate") for n in range(BATCH_CAP + 5)]
+    found += [_suggestion("d", "cause")]
 
     lines = batch_lines(_run(), found)
 
     assert BATCH_CAP == 25
-    assert f"owner ({BATCH_CAP + 5})" in lines
+    assert f"investigate ({BATCH_CAP + 5})" in lines
     assert sum(line.startswith("- label ") for line in lines) == BATCH_CAP + 1
     assert "- label 24" in lines and "- label 25" not in lines
     assert "  … 5 more in triage.json" in lines
     assert not any(
-        "more in triage.json" in line for line in lines[: lines.index("owner (30)")]
+        "more in triage.json" in line
+        for line in lines[: lines.index("investigate (30)")]
     )
 
 

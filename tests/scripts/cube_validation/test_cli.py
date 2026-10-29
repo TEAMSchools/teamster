@@ -889,6 +889,7 @@ def test_review_never_posts(fakes, tmp_path, monkeypatch, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["run", str(path)]) == 0
+    _triage_everything(tmp_path)
     capsys.readouterr()
 
     def no_network(*args, **kwargs):
@@ -919,7 +920,7 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
         "group": {"column": "regions_region_name", "values": ["Miami"]},
     }
     item = {"id": "i", "kind": "group", "comparison": "ada-region", "label": "l",
-            "stub": stub, "suggestion": "owner", "evidence": ["the fact drops them"],
+            "stub": stub, "suggestion": "cause", "evidence": ["the fact drops them"],
             "candidates": []}  # fmt: skip
     (run_json.parent / "triage.json").write_text(json.dumps({"items": [item]}))
     capsys.readouterr()
@@ -934,14 +935,69 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
     assert '"stub"' not in out
 
 
-def _triage_item(evidence):
+def _triage_item(evidence, suggestion="cause", item_id="i"):
     stub = {
         "comparison": "ada-region",
         "group": {"column": "regions_region_name", "values": ["Miami"]},
     }
-    return {"id": "i", "kind": "group", "comparison": "ada-region", "label": "l",
-            "stub": stub, "suggestion": "owner", "evidence": [evidence],
-            "candidates": []}  # fmt: skip
+    return {"id": item_id, "kind": "group", "comparison": "ada-region",
+            "label": "l", "stub": stub, "suggestion": suggestion,
+            "evidence": [evidence], "candidates": []}  # fmt: skip
+
+
+def _triage_everything(tmp_path, items=()):
+    """Write a triage holding `items` beside every saved run of view `v`."""
+    for run_json in (tmp_path / "cache" / "v").glob("*/run.json"):
+        (run_json.parent / "triage.json").write_text(json.dumps({"items": list(items)}))
+
+
+def test_review_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
+
+    captured = capsys.readouterr()
+    assert "v: no triage.json; run `triage` first" in captured.err
+    assert captured.out == ""
+
+
+def test_review_refuses_while_an_item_is_in_investigate(fakes, tmp_path, capsys):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    _triage_everything(
+        tmp_path,
+        [
+            _triage_item("e"),
+            _triage_item("x", "investigate", "j"),
+            _triage_item("y", "investigate", "k"),
+        ],  # fmt: skip
+    )
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
+
+    captured = capsys.readouterr()
+    assert "v: 2 triage items in `investigate`" in captured.err
+    assert "step 8" in captured.err
+    assert captured.out == ""
+
+
+def test_review_refuses_a_triage_from_before_the_investigate_pile(
+    fakes, tmp_path, capsys
+):
+    assert cli.main(["run", str(_file(tmp_path))]) == 0
+    path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    _triage_everything(tmp_path, [_triage_item("e", "owner")])
+    capsys.readouterr()
+
+    assert cli.main(["review", str(path), "--domain", "Registrar"]) == 1
+
+    assert "re-run triage" in capsys.readouterr().err
 
 
 def test_review_reads_triage_from_an_older_moment(fakes, tmp_path, capsys):
@@ -969,6 +1025,7 @@ def test_review_names_questions_left_without_evidence(fakes, tmp_path, capsys):
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["run", str(path)]) == 0
+    _triage_everything(tmp_path)
     capsys.readouterr()
 
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
@@ -1015,6 +1072,7 @@ def test_review_says_expired_by_the_command_lines_clock(
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["run", str(path)]) == 0
+    _triage_everything(tmp_path)
 
     monkeypatch.setattr(cli, "utcnow", lambda: START + timedelta(days=1))
     assert _review_json(path, capsys)[0]["expired"] is False
@@ -1028,6 +1086,7 @@ def test_review_warns_when_the_body_nears_githubs_cap(
     assert cli.main(["run", str(_file(tmp_path))]) == 0
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     assert cli.main(["run", str(path)]) == 0
+    _triage_everything(tmp_path)
     capsys.readouterr()
 
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
@@ -1047,6 +1106,7 @@ def test_review_reads_the_run_written_last(fakes, tmp_path, capsys):
     path = _with_decision(_saved_fingerprints(tmp_path), tmp_path)
     fakes.bq.build = (START, END)
     assert cli.main(["run", str(path)]) == 0
+    _triage_everything(tmp_path)
     later, earlier = sorted((tmp_path / "cache" / "v").glob("*/run.json"), reverse=True)
     os.utime(later, (1_000_000, 1_000_000))
     os.utime(earlier, (2_000_000, 2_000_000))
@@ -1565,6 +1625,7 @@ decisions:
     )
     path = _file(tmp_path, text)
     assert cli.main(["run", str(path)]) == 0
+    _triage_everything(tmp_path)
     capsys.readouterr()
 
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
@@ -1764,6 +1825,7 @@ decisions:
     )
     path = _file(tmp_path, text)
     assert cli.main(["run", str(path)]) == 0
+    _triage_everything(tmp_path)
     capsys.readouterr()
 
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
@@ -2142,10 +2204,11 @@ def test_triage_command_writes_triage_json_beside_latest_run(fakes, tmp_path, ca
     item = written["items"][0]
     assert set(item) == {
         "id", "kind", "comparison", "label", "stub",
-        "suggestion", "evidence", "candidates",
+        "suggestion", "evidence", "candidates", "cause",
     }  # fmt: skip
     assert item["stub"]["group"]["values"] == ["Miami"]
-    assert "owner (" in out and item["label"] in out
+    assert (item["suggestion"], item["cause"]) == ("investigate", None)
+    assert "investigate (" in out and item["label"] in out
 
 
 def test_triage_refuses_when_decisions_changed_since_run(fakes, tmp_path, capsys):
@@ -2205,7 +2268,7 @@ def test_triage_runs_a_value_check_and_records_the_verdict(fakes, tmp_path, caps
 
 def _gap_triage_item():
     return {"id": "cut:Team", "kind": "gap", "comparison": "", "label": "l",
-            "stub": {"missing_cut": "Team"}, "suggestion": "deliberate",
+            "stub": {"missing_cut": "Team"}, "suggestion": "filters_nothing",
             "evidence": [], "candidates": []}  # fmt: skip
 
 
@@ -2394,6 +2457,30 @@ def test_add_decisions_refuses_an_unknown_item_and_writes_nothing(
     assert path.read_text() == before
 
 
+def test_add_decisions_refuses_while_an_item_is_in_investigate(fakes, tmp_path, capsys):
+    path = _file(tmp_path)
+    assert cli.main(["run", str(path)]) == 0
+    _triage_everything(
+        tmp_path, [_triage_item("e"), _triage_item("x", "investigate", "j")]
+    )
+    approved = _approved(
+        tmp_path, [{"id": "a", "call": "deliberate", "reason": "r", "item": "i"}]
+    )
+    before = path.read_text()
+    capsys.readouterr()
+
+    assert cli.main(["add-decisions", str(path), str(approved)]) == 1
+
+    err = capsys.readouterr().err
+    assert "v: 1 triage item in `investigate`" in err and "step 8" in err
+    assert path.read_text() == before
+
+    # Once the item carries a proven cause, the same batch writes.
+    _triage_everything(tmp_path, [_triage_item("e"), _triage_item("x", "cause", "j")])
+    assert cli.main(["add-decisions", str(path), str(approved)]) == 0
+    assert [d.id for d in load_view_config(path).decisions] == ["a"]
+
+
 def test_add_decisions_refuses_a_view_never_triaged(fakes, tmp_path, capsys):
     path = _file(tmp_path)
     assert cli.main(["run", str(path)]) == 0
@@ -2459,6 +2546,7 @@ def test_reapply_quiets_a_newly_decided_group_and_review_accepts_it(
     assert "## Cells" in text
     assert _client_calls(fakes) == calls
 
+    _triage_everything(tmp_path)
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
 
 
@@ -2762,6 +2850,7 @@ def test_record_answers_re_applies_to_the_saved_run_offline(
 
     assert "Re-applied decisions to the saved run of" in capsys.readouterr().out
     assert _client_calls(fakes) == calls
+    _triage_everything(tmp_path)
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
 
 
