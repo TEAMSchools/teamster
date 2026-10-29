@@ -68,12 +68,17 @@ class CellDiff:
 
 
 def _numbered(rows_sql: str, grain: list[str], values: list[str]) -> str:
-    """Wrap a row source, numbering duplicates on the grain so the join cannot fan out."""
+    """Wrap a row source, numbering duplicates on the grain so the join cannot fan out.
+
+    Partitions by the same keys the join compares, so both sides number a
+    NULL, or 1 and 1.0, as one grain value.
+    """
     order = ", ".join(values or grain)
+    partition = ", ".join(_grain_key(g) for g in grain)
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py; row SQL comes from Cube's compiled query
         f"SELECT s.*, TRUE AS {_IN}, "
-        f"ROW_NUMBER() OVER (PARTITION BY {', '.join(grain)} ORDER BY {order}) "
+        f"ROW_NUMBER() OVER (PARTITION BY {partition} ORDER BY {order}) "
         f"AS {_RN}\n  FROM (\n{rows_sql}\n  ) AS s"
     )
 
@@ -105,6 +110,15 @@ def _key(col: str) -> str:
     return f"COALESCE(CAST(SAFE_CAST({text} AS FLOAT64) AS STRING), {text})"
 
 
+def _grain_key(col: str) -> str:
+    """`_key` made null-safe: a NULL keys as '' and a value, '' included, as '=<key>'.
+
+    A grain column is an identity, so a NULL on both sides is the same row. An
+    equality rather than `OR ... IS NULL` keeps the FULL OUTER JOIN hashable.
+    """
+    return f"IFNULL(CONCAT('=', {_key(col)}), '')"
+
+
 def reconcile_sql(
     cube_rows_sql: str,
     dashboard_rows_sql: str,
@@ -117,9 +131,10 @@ def reconcile_sql(
     Rows are joined on the grain plus a per-grain duplicate number. The cube
     source names its columns by each pair's `cube` name and the dashboard
     source by its `dashboard` name. Numeric grain keys join across types (1,
-    1.0 and '1'); anything else joins as text, and a NULL grain value never
-    matches. Temporal grains are not normalized: callers must emit date grains
-    as DATE on both sides.
+    1.0 and '1'); anything else joins as text. A NULL grain value matches a
+    NULL on the other side and nothing else, the empty string included.
+    Temporal grains are not normalized: callers must emit date grains as DATE
+    on both sides.
 
     Args:
         cube_rows_sql: SELECT returning the grain, value and group-by columns
@@ -142,7 +157,8 @@ def reconcile_sql(
     dash_grain = [p.dashboard for p in rows.grain]
 
     on = [f"c.{_RN} = d.{_RN}"] + [
-        f"{_key(f'c.{p.cube}')} = {_key(f'd.{p.dashboard}')}" for p in rows.grain
+        f"{_grain_key(f'c.{p.cube}')} = {_grain_key(f'd.{p.dashboard}')}"
+        for p in rows.grain
     ]
     same = [_pair_matches(f"d.{p.dashboard}", f"c.{p.cube}") for p in rows.values]
     all_same = " AND ".join(same) or "TRUE"
