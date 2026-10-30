@@ -443,7 +443,10 @@ def _safe_reason(reason: str, values: list) -> str:
     text = _clean(reason)
     texts = {str(v) for v in values if v is not None and str(v)}
     for value in sorted(texts, key=len, reverse=True):
-        text = text.replace(_clean(value), "<redacted>")
+        # A whole value only: a hidden grade `1` must not eat the 1 in `414`.
+        text = re.sub(
+            rf"(?<![\w.]){re.escape(_clean(value))}(?![\w.])", "<redacted>", text
+        )
     text = _SEPARATED_DIGITS.sub(
         lambda m: (
             "<redacted>" if sum(c.isdigit() for c in m.group()) >= 5 else m.group()
@@ -460,15 +463,17 @@ def _with_task(reason: str, task: str) -> str:
     return f"{reason} Task: {task}" if task else reason
 
 
-def _by_reason(pairs) -> list[tuple[list[Decision], list]]:
+def _by_reason(pairs, owner: bool = True) -> list[tuple[list[Decision], list]]:
     """Domain-owner decisions grouped by their reason and task, each with the
     items they cover, in first-seen order: one shared reason, one question.
+    With `owner` False, every other decision, grouped by call too.
     """
-    out: dict[tuple[str, str], tuple[list[Decision], list]] = {}
+    out: dict[tuple[str, ...], tuple[list[Decision], list]] = {}
     for decision, item in pairs:
-        if decision.call != "domain_owner":
+        if (decision.call == "domain_owner") != owner:
             continue
-        decisions, items = out.setdefault((decision.reason, decision.task), ([], []))
+        key = (decision.reason, decision.task, "" if owner else decision.call)
+        decisions, items = out.setdefault(key, ([], []))
         if decision not in decisions:
             decisions.append(decision)
         items.append(item)
@@ -548,12 +553,20 @@ class CauseAsk:
     proofs: tuple[tuple[str, str], ...] = ()
 
 
-def _cause_part(view: str, ask: CauseAsk) -> tuple[str, list]:
-    """A cause question's part, and the values its reason must lose.
+def _cause_head(ask: CauseAsk) -> str:
+    """A cause question's opening: the cause, named once for every comparison."""
+    d = ask.decision
+    return (
+        f"cause `{_clean(str(d.cause.get('label')))}` on the {d.cause.get('side')} side"
+    )
 
-    It names the cause, never a group's values. Its row count is the cause's
-    own share, the same figure its evidence gives, so no two posted totals
-    differ by another cause's rows.
+
+def _cause_part(view: str, ask: CauseAsk) -> tuple[str, list]:
+    """A cause question's part for one comparison, and the values its reason
+    must lose.
+
+    It names the comparison, never a group's values. Its row count is the
+    cause's own share, so no two posted totals differ by another cause's rows.
     """
     d, groups = ask.decision, ask.groups
     plural = "group" if len(groups) == 1 else "groups"
@@ -561,11 +574,23 @@ def _cause_part(view: str, ask: CauseAsk) -> tuple[str, list]:
         v for g in groups for c, v in g.dims if _shown_value(g, c, v) == "<redacted>"
     ]
     return (
-        f"cause `{_clean(str(d.cause.get('label')))}` on the "
-        f"{d.cause.get('side')} side of `{d.comparison}` in `{view}` "
+        f"`{d.comparison}` in `{view}` "
         f"({', '.join(sorted({g.bucket for g in groups}))}): "
         f"{mask(len(groups))} row {plural}, {mask(ask.rows)} rows"
     ), hidden
+
+
+def question_parts(q: dict) -> list[str]:
+    """A question's parts as posted: a cause question opens with its cause,
+    and names each comparison's view only when it spans several."""
+    if not q.get("head"):
+        return list(q["parts"])
+    views = {v for v, _, _ in q["comparisons"]}
+    parts = q["parts"]
+    if len(views) == 1:
+        (view,) = views
+        parts = [p.replace(f" in `{view}`", "", 1) for p in parts]
+    return [q["head"], *parts]
 
 
 def _gap_part(view: str, gaps: list[Gap]) -> str:
@@ -597,7 +622,8 @@ def _questions(
 
     Returns:
         In the order the issue asks them, dicts of `reason`, `task`, `parts`
-        (the masked count text per kind and view), `kinds`, `hidden` (values
+        (the masked count text per kind and view; a cause question's per
+        comparison, after its `head`), `kinds`, `hidden` (values
         the reason and any evidence must lose), `decisions` as (view,
         Decision) pairs and `comparisons` as (view, comparison id, kind)
         triples, each listed once; a cause question also has `asks`, (view,
@@ -645,6 +671,7 @@ def _questions(
             key = ("cause", d.cause.get("side"), d.cause.get("label"), d.task)
             add(run.view, "cause", [d], part, hidden, [d.comparison], key=key)
             questions[key].setdefault("asks", []).append((run.view, ask))
+            questions[key]["head"] = _cause_head(ask)
         for decisions, diffs in _by_reason(run.applied.quiet_cells):
             add(
                 run.view,
@@ -666,6 +693,67 @@ def _questions(
                 [c for g in gaps for c in g.comparisons],
             )
     return list(questions.values())
+
+
+# A call in the owner's words, for the decisions the review only reports.
+CALL_WORDS = {
+    "deliberate": "an intended difference; later runs stay quiet on it",
+    "fix_cube": "Cube gets fixed",
+    "fix_dashboard": "the dashboard gets fixed",
+    "fix_source": "the source data gets fixed",
+}
+
+
+def also_decided(
+    runs: list[RunResult], decided: dict[str, list[CauseAsk]] | None = None
+) -> list[str]:
+    """One line per decision the analyst made that the owner only sees.
+
+    Every call but `domain_owner`, masked like the questions: what it covers
+    (a cause once across its comparisons, else the question's part), the call,
+    the reason and the task. `decided` is per view, `triage.cause_asks` for
+    those calls. Never part of the questions JSON, so `record-answers` cannot
+    take one for an answer.
+    """
+    lines: dict[tuple, dict] = {}
+
+    def add(key, head, where, d, hidden) -> None:
+        entry = lines.setdefault(key, {"head": head, "where": [], "d": d, "hidden": []})
+        entry["where"] += [w for w in where if w not in entry["where"]]
+        entry["hidden"] += hidden
+
+    for run in runs:
+        for ask in (decided or {}).get(run.view, []):
+            d = ask.decision
+            _, hidden = _cause_part(run.view, ask)
+            key = ("cause", d.cause.get("side"), d.cause.get("label"), d.call,
+                   d.reason, d.task)  # fmt: skip
+            add(key, _cause_head(ask), [(run.view, d.comparison)], d, hidden)
+        for decisions, groups in _by_reason(run.applied.quiet, owner=False):
+            part, hidden = _group_part(run.view, decisions, groups)
+            d = decisions[0]
+            add(("group", run.view, part, d.call), part, [], d, hidden)
+        for decisions, diffs in _by_reason(run.applied.quiet_cells, owner=False):
+            part = (
+                f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in "
+                f"`{run.view}`: cell differences"
+            )
+            add(("cells", part, decisions[0].call), part, [], decisions[0], [])
+        for decisions, gaps in _by_reason(run.applied.quiet_gaps, owner=False):
+            part = _gap_part(run.view, gaps)
+            add(("gap", part, decisions[0].call), part, [], decisions[0], [])
+    out = []
+    for e in lines.values():
+        d = e["d"]
+        views: dict[str, list[str]] = {}
+        for view, cid in e["where"]:
+            views.setdefault(view, []).append(f"`{cid}`")
+        where = "; ".join(f"{', '.join(c)} in `{v}`" for v, c in views.items())
+        where = f" ({where})" if where else ""
+        call = CALL_WORDS.get(d.call, d.call)
+        reason = _with_task(_safe_reason(d.reason, e["hidden"]), d.task)
+        out.append(f"{e['head']}{where}: {call} (`{d.call}`). Reason: {reason}")
+    return out
 
 
 def question_reason(q: dict) -> str:
@@ -721,9 +809,10 @@ def _dashboard_location(check: dict) -> str:
 
 def _hand_check_lines(question_id: str, check: dict) -> list[str]:
     """One question's hand check: what to expect, then the pinned SQL folded."""
-    where = f"{question_id}, `{check['comparison']}` in `{check['view']}`"
     if "none" in check:
-        return [f"{where}: {check['none']}.", ""]
+        names = ", ".join(f"`{c}`" for c in check["comparisons"])
+        return [f"{question_id}, {names} in `{check['view']}`: {check['none']}.", ""]
+    where = f"{question_id}, `{check['comparison']}` in `{check['view']}`"
     dims = ", ".join(f"`{c}` = `{_clean(v)}`" for c, v in check["dims"])
     line = (
         f"{where}, cut `{_clean(check['cut'])}`"
@@ -763,56 +852,56 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
     ]
 
 
-def _reproduce_lines(question_id: str, parts: list[dict]) -> list[str]:
-    """A cause question's folded Reproduce block: per comparison, the example
-    cell as a Cube query, then per proven cause a live count on today's
-    tables, the command that re-proves it, and the proof file."""
+def _reproduce_lines(question_id: str, block: dict) -> list[str]:
+    """A cause question's folded Reproduce block (`answers.merged_reproduce`):
+    each example cell as a Cube query, each live count on today's tables
+    once, then each proof file with the commands that re-prove it."""
     out = ["<details>", f"<summary>Reproduce {question_id}</summary>", ""]
-    for part in parts:
-        where = f"`{part['comparison']}` in `{part['view']}`"
-        cube = part.get("cube")
-        if cube:
-            out += [
-                f"{where}. With the Cube connector in Claude chat, run this "
-                "query; Cube applies your own access. "
-                + _dashboard_location(cube["dashboard"]).replace(
-                    "On the dashboard:", "Compare it with the dashboard:"
-                ),
-                "",
-                "```json",
-                json.dumps(cube["query"], indent=1),
-                "```",
-                "",
-            ]
-        else:
-            out += [f"{where}: no example cell to query.", ""]
-        for proof in part["proofs"]:
-            label = f"Cause `{_clean(proof['bucket'])}`"
-            if proof["reproduce"]:
-                out += [
-                    f"{label}, a live count in BigQuery (today's data; counts "
-                    "drift from the run):",
-                    "",
-                    "```sql",
-                    proof["reproduce"],
-                    "```",
-                    "",
-                ]
-            else:
-                out += [f"{label}: no live count yet.", ""]
-            link = (
-                f"[`{proof['path']}`]({proof['url']})"
-                if proof["url"]
-                else f"`{proof['path']}`"
-            )
-            out += [
-                f"In Claude in VS Code, in this repository: `{proof['confirm']}` "
-                f"re-proves it at the run's moment until {proof['expires']}; "
-                f"after that, `{proof['after'][0]}` then `{proof['after'][1]}`. "
-                f"The proof: {link}.",
-                "",
-            ]
+    for cube in block["cube"]:
+        out += [
+            f"`{cube['comparison']}` in `{cube['view']}`. With the Cube connector "
+            "in Claude chat, run this query; Cube applies your own access. "
+            + _dashboard_location(cube["dashboard"]).replace(
+                "On the dashboard:", "Compare it with the dashboard:"
+            ),
+            "",
+            "```json",
+            json.dumps(cube["query"], indent=1),
+            "```",
+            "",
+        ]
+    for n, query in enumerate(block["queries"], start=1):
+        out += [
+            f"Live count {n}, cause `{_clean(query['bucket'])}`, in BigQuery "
+            "(today's data; counts drift from the run):",
+            "",
+            "```sql",
+            query["sql"],
+            "```",
+            "",
+        ]
+    for proof in block["proofs"]:
+        name = proof.get("path") or proof["url"].rsplit("/", 1)[-1]
+        link = f"[`{name}`]({proof['url']})" if proof.get("url") else f"`{name}`"
+        count = (
+            f"live count {proof['query'] + 1}"
+            if proof["query"] is not None
+            else "no live count yet"
+        )
+        commands = "; ".join(f"`{c}`" for c in proof["confirm"])
+        out += [f"- Cause `{_clean(proof['bucket'])}` in {link} ({count}): {commands}"]
+    after = " then ".join(f"`{a}`" for a in block["after"])
+    out += [
+        "",
+        "Each command re-proves its cause at the run's moment, in Claude in VS "
+        f"Code in this repository, until {block['expires']}; after that, {after}.",
+        "",
+    ]
     return out + ["</details>", ""]
+
+
+# GitHub caps an issue body and a comment at 65,536 characters; keep room.
+BODY_WARN_CHARS = 60_000
 
 
 def render_review_issue(
@@ -821,6 +910,8 @@ def render_review_issue(
     definitions: dict[str, dict[str, dict[str, str]]] | None = None,
     questions: list[dict] | None = None,
     causes: dict[str, list[CauseAsk]] | None = None,
+    comments: list[str] | None = None,
+    decided: dict[str, list[CauseAsk]] | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -836,6 +927,12 @@ def render_review_issue(
             question's hand checks follow the bullets, and the body ends with
             the list as a fenced JSON block for the owner's Claude session.
         causes: Per view, the owner's cause questions (`triage.cause_asks`).
+        comments: Given, and the body would pass `BODY_WARN_CHARS` with
+            every cause question's Reproduce block, the blocks move out of
+            the body into this list instead, as follow-up comments each under
+            the cap, in question order; the body says they follow.
+        decided: Per view, the cause decisions with any other call
+            (`triage.cause_asks` with `owner=False`), for `also_decided`.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -866,16 +963,76 @@ def render_review_issue(
                 )
     # Numbered like the JSON's question ids, so a hand check names its bullet.
     question_lines = [
-        f"Q{n}. {'; '.join(q['parts'])}. "
+        f"Q{n}. {'; '.join(question_parts(q))}. "
         f"Reason: {_with_task(question_reason(q), q['task'])}"
         for n, q in enumerate(asked, start=1)
     ]
-    check_lines = []
+    check_lines, reproduce = [], []
     for q in questions or []:
-        for check in q["hand_checks"]:
-            check_lines += _hand_check_lines(q["id"], check)
-        if q.get("reproduce"):
-            check_lines += _reproduce_lines(q["id"], q["reproduce"])
+        hand = [
+            line for c in q["hand_checks"] for line in _hand_check_lines(q["id"], c)
+        ]
+        block = _reproduce_lines(q["id"], q["reproduce"]) if q.get("reproduce") else []
+        check_lines += hand + block
+        reproduce.append((q["id"], block))
+    also = also_decided(runs, decided)
+    body = _review_body(
+        domain, question_lines, anchor_lines, definition_lines, check_lines,
+        asked_ids, kinds, questions, also, moved=False,
+    )  # fmt: skip
+    if (
+        comments is None
+        or len(body) <= BODY_WARN_CHARS
+        or not any(b for _, b in reproduce)
+    ):
+        return body
+    kept = [
+        line
+        for q in questions or []
+        for c in q["hand_checks"]
+        for line in _hand_check_lines(q["id"], c)
+    ]
+    comments += _comment_chunks([(qid, b) for qid, b in reproduce if b])
+    return _review_body(
+        domain, question_lines, anchor_lines, definition_lines, kept,
+        asked_ids, kinds, questions, also, moved=True,
+    )  # fmt: skip
+
+
+def _comment_chunks(blocks: list[tuple[str, list[str]]]) -> list[str]:
+    """Reproduce blocks as follow-up comments, whole blocks, each under the cap."""
+    chunks: list[list[tuple[str, list[str]]]] = [[]]
+    size = 0
+    for qid, block in blocks:
+        length = sum(len(line) + 1 for line in block)
+        if chunks[-1] and size + length > BODY_WARN_CHARS:
+            chunks.append([])
+            size = 0
+        chunks[-1].append((qid, block))
+        size += length
+    out = []
+    for n, chunk in enumerate(chunks, start=1):
+        first, last = chunk[0][0], chunk[-1][0]
+        span = first if first == last else f"{first} to {last}"
+        lines = [f"Reproduce {span} (comment {n} of {len(chunks)}).", ""]
+        out.append("\n".join(lines + [line for _, b in chunk for line in b]))
+    return out
+
+
+def _review_body(
+    domain: str,
+    question_lines: list[str],
+    anchor_lines: list[str],
+    definition_lines: list[str],
+    check_lines: list[str],
+    asked_ids: list[str],
+    kinds: list[str],
+    questions: list[dict] | None,
+    also: list[str],
+    moved: bool,
+) -> str:
+    """The review body from its rendered parts; `moved` says the Reproduce
+    blocks follow in comments."""
     # One question per bullet and per anchor finding.
     ids = sorted(set(asked_ids))
     n = len(question_lines) + len(anchor_lines)
@@ -889,6 +1046,13 @@ def render_review_issue(
         "",
     ]
     out += _bullets(question_lines + anchor_lines, "Nothing needs review.")
+    if also:
+        out += [
+            "",
+            "Also decided (no answer needed): the analyst's calls on the other "
+            "differences, for you to see.",
+            "",
+        ] + _bullets(also)
     if definition_lines:
         out += ["", "Definitions side by side:", ""] + _bullets(definition_lines)
     if check_lines:
@@ -901,6 +1065,12 @@ def render_review_issue(
             "question's Reproduce block works after that SQL expires.",
             "",
             *check_lines[:-1],
+        ]
+    if moved:
+        out += [
+            "",
+            "Each cause question's Reproduce block is in the comments below, to "
+            "keep this body under GitHub's size limit.",
         ]
     out += [
         "",
@@ -930,7 +1100,8 @@ def render_review_issue(
             "<summary>Questions for Claude (JSON)</summary>",
             "",
             "```json",
-            json.dumps(questions, indent=1),
+            # Compact: GitHub caps an issue body at 65,536 characters.
+            json.dumps(questions, separators=(",", ":")),
             "```",
             "",
             "</details>",

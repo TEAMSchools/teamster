@@ -527,24 +527,33 @@ cause, do not retry around it.
     question, across the comparisons it is proven on, with its words, per
     comparison the count of groups it decides and of the rows its proof
     attributes to it, and the model-doc leads; the owner's answer records onto
-    every decision it lists. Each cause question also gets a folded Reproduce
-    block: per comparison, the example cell as a Cube `load` query for Claude
-    chat's Cube connector, and per proof its `-- reproduce` count (labeled
-    today's data), the `triage confirm` that re-proves it at the run's moment
-    and the `run` plus `triage` after time travel ends, and a branch link to the
-    proof file. Commit and push the proofs before posting, or the link finds
-    nothing. It refuses unless every file's view has a triage with nothing in
-    `investigate`. stderr names any question with no triage evidence: `triage`
-    that view and render again before posting. The footnote promises that
-    identifiers of students and staff are hidden, which holds only if no reason
-    or definition names a person: read them first. Show the draft to the
-    analyst, then post it with `mcp__github__issue_write`, titled "Validate
-    <dashboard> in Cube", using the repo's issue template. That issue is the
-    validation's hub. Then write `task: "#<issue>"` into each decision stderr
-    lists; filling in a task needs no new `run`. Tell the analyst the owner
-    answers in his own Claude Code session by saying "walk me through issue #N"
-    (the `cube-validation-answers` skill). When that session reports the pinned
-    SQL expired, `run` again, render `review` again, and update the issue body.
+    every decision it lists. Every other call (`deliberate`, a `fix_`) is listed
+    once per cause or part under "Also decided (no answer needed)": what it
+    covers, the call, the reason and the task, masked like the questions and
+    kept out of the JSON, so `record-answers` never reads one as an answer. Each
+    cause question also gets a folded Reproduce block: each example cell as a
+    Cube `load` query for Claude chat's Cube connector, each distinct
+    `-- reproduce` count once (labeled today's data), then per proof file a
+    branch link and the `triage confirm` that re-proves it at the run's moment,
+    and the `run` plus `triage` after time travel ends. Commit and push the
+    proofs before posting, or the link finds nothing. When the Reproduce blocks
+    would take the body past GitHub's 65,536-character cap, they move out of it
+    into numbered comment files that stderr names: post the issue, then each
+    file as a comment, in order (the JSON in the body still holds everything the
+    owner's session reads). If stderr still warns that the body is too long,
+    review fewer views at a time. It refuses unless every file's view has a
+    triage with nothing in `investigate`. stderr names any question with no
+    triage evidence: `triage` that view and render again before posting. The
+    footnote promises that identifiers of students and staff are hidden, which
+    holds only if no reason or definition names a person: read them first. Show
+    the draft to the analyst, then post it with `mcp__github__issue_write`,
+    titled "Validate <dashboard> in Cube", using the repo's issue template. That
+    issue is the validation's hub. Then write `task: "#<issue>"` into each
+    decision stderr lists; filling in a task needs no new `run`. Tell the
+    analyst the owner answers in his own Claude Code session by saying "walk me
+    through issue #N" (the `cube-validation-answers` skill). When that session
+    reports the pinned SQL expired, `run` again, render `review` again, and
+    update the issue body.
 11. On "pick up the answers on #N", read only the comment the analyst names; if
     they name none, ask which, never take the latest. Save its body to a file in
     the session scratchpad and show the analyst its author's login. Check its

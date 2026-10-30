@@ -356,10 +356,10 @@ def test_question_without_example_cell_says_find_one_locally():
 
     assert questions[0]["hand_checks"] == [
         {
-            "view": "enrollment",
-            "comparison": "enrollment",
             "none": "no group cell with 10+ students differs; find an example "
             "under your own access",
+            "view": "enrollment",
+            "comparisons": ["enrollment"],
         }
     ]
     assert questions[0]["evidence"] == []
@@ -545,6 +545,26 @@ def test_approved_decisions_take_the_stub_and_the_run_fingerprints():
     assert team == {"id": "team", "missing_cut": "Team", "call": "deliberate",
                     "reason": "r2"}  # fmt: skip
     assert cells["cells"] is True and cells["fingerprints"] == FPS["ada"]
+
+
+def test_a_missing_filter_in_cause_is_decided_across_the_view():
+    # As triage writes it: a comparison it was found on, and the sheet filter
+    # as its proven cause.
+    item = {
+        "id": "filter:Exclude Future", "kind": "gap", "suggestion": "cause",
+        "comparison": "ada", "stub": {"missing_filter": "Exclude Future"},
+        "cause": [{"side": "dashboard", "step": "sheet filter Exclude Future",
+                   "label": "sheet filter Exclude Future", "n_rows": None}],
+        "proof": {"kind": "workbook"},
+    }  # fmt: skip
+    approved = [{"id": "future", "call": "deliberate", "reason": "a display filter",
+                 "item": item["id"]}]  # fmt: skip
+
+    (decision,) = approved_decisions(approved, {"items": [item]}, FPS)
+
+    # No comparison and no fingerprints: the loader refuses either on one.
+    assert decision == {"id": "future", "missing_filter": "Exclude Future",
+                        "call": "deliberate", "reason": "a display filter"}  # fmt: skip
 
 
 @pytest.mark.parametrize(
@@ -819,16 +839,104 @@ def test_review_asks_one_question_per_cause_not_per_school():
     assert [q["decisions"] for q in questions] == [["school-0"], ["school-1"]]
     no_section, late = questions
     # The model-doc lead stands in for member descriptions.
-    assert no_section["evidence"] == [
-        f"cause (cube side): {NO_SECTION}",
-        "enrollment in enrollment: <10 row groups, 90 rows attributed to it",
-        LEAD,
+    # The counts carry each comparison's share; the evidence names the cause.
+    assert no_section["evidence"] == [f"cause (cube side): {NO_SECTION}", LEAD]
+    assert no_section["counts"] == [
+        f"cause `{NO_SECTION}` on the cube side",
+        "`enrollment` (dashboard_only): <10 row groups, 90 rows",
     ]
     assert late["evidence"][0] == "cause (cube side): score dated after week <n>"
     assert "20250701" not in body
     bullets = [x for x in body.split("## Proposed")[0].splitlines() if "Reason:" in x]
     assert len(bullets) == 2
     assert f"`{NO_SECTION}`" in bullets[0] and "<10 row groups, 90 rows" in bullets[0]
+
+
+def _decided_ddi():
+    groups, items = _ddi()
+    approved = [
+        _ok(f"school-{i}", item["id"], reason=f"Which rule holds at school {i}?")
+        for i, item in enumerate(items)
+    ]
+    written = approved_decisions(approved, {"items": items}, CAUSE_FPS)
+    return groups, items, [Decision(**d) for d in written]
+
+
+def test_a_long_body_moves_the_reproduce_blocks_to_comments(monkeypatch):
+    from cube_validation import report as report_mod
+
+    groups, items, decisions = _decided_ddi()
+    run = _run([])
+    run.applied = apply(decisions, groups, CAUSE_FPS)
+    run.fingerprints = CAUSE_FPS
+    triage_mod.mark_decided(run, items, decisions)
+    loaded = {"view": "enrollment", "items": items}
+    causes = {"enrollment": triage_mod.cause_asks(run, loaded, decisions)}
+    questions = questions_json(
+        [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
+    )
+    for q in questions:
+        q["reproduce"] = {
+            "queries": [{"bucket": "C1", "sql": "SELECT 1 AS n_rows" + " " * 400}],
+            "proofs": [], "cube": [], "expires": "2026-11-06",
+            "after": ["run v.yml", "triage v.yml"],
+        }  # fmt: skip
+    inline = render_review_issue("Registrar", [run], DEFS, questions, causes, [])
+    # Every block fits 1 comment, but not the body and a block together.
+    monkeypatch.setattr(report_mod, "BODY_WARN_CHARS", len(inline) - 100)
+    comments: list[str] = []
+
+    body = render_review_issue("Registrar", [run], DEFS, questions, causes, comments)
+
+    assert "<summary>Reproduce" not in body
+    assert "Reproduce block is in the comments below" in body
+    assert '"reproduce"' in body  # the owner's JSON keeps everything
+    (comment,) = comments
+    assert comment.startswith("Reproduce Q1 to Q2 (comment 1 of 1).")
+    assert "<summary>Reproduce Q1</summary>" in comment
+    assert "<summary>Reproduce Q2</summary>" in comment
+    # Without a list to fill, the body keeps its blocks, however long.
+    assert render_review_issue("Registrar", [run], DEFS, questions, causes) == inline
+
+
+def test_other_calls_show_once_each_as_also_decided_never_as_questions():
+    groups, items = _ddi()
+    calls = [("deliberate", "", "Intended, as the schools agreed"),
+             ("fix_cube", "#5668", "Cube drops these")]  # fmt: skip
+    approved = [
+        {**_ok(f"c-{i}", item["id"], call=call, reason=reason),
+         **({"task": task} if task else {})}
+        for i, (item, (call, task, reason)) in enumerate(zip(items, calls))
+    ]  # fmt: skip
+    decisions = [
+        Decision(**d) for d in approved_decisions(approved, {"items": items}, CAUSE_FPS)
+    ]
+    run = _run([])
+    run.applied = apply(decisions, groups, CAUSE_FPS)
+    run.fingerprints = CAUSE_FPS
+    triage_mod.mark_decided(run, items, decisions)
+    loaded = {"view": "enrollment", "items": items}
+    causes = {"enrollment": triage_mod.cause_asks(run, loaded, decisions)}
+    decided = {"enrollment": triage_mod.cause_asks(run, loaded, decisions, owner=False)}
+    questions = questions_json(
+        [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
+    )
+
+    body = render_review_issue(
+        "Registrar", [run], DEFS, questions, causes, decided=decided
+    )
+
+    assert questions == [] and "Nothing needs review." in body
+    also = [x for x in body.splitlines() if x.startswith("- cause ")]
+    assert also == [
+        f"- cause `{NO_SECTION}` on the cube side (`enrollment` in `enrollment`): "
+        "an intended difference; later runs stay quiet on it (`deliberate`). "
+        "Reason: Intended, as the schools agreed.",
+        "- cause `score dated after week <n>` on the cube side (`enrollment` in "
+        "`enrollment`): Cube gets fixed (`fix_cube`). Reason: Cube drops these. "
+        "Task: #5668",
+    ]
+    assert "Also decided (no answer needed)" in body
 
 
 def test_one_cause_on_several_comparisons_is_one_question():
@@ -860,11 +968,13 @@ def test_one_cause_on_several_comparisons_is_one_question():
     )
 
     assert question["decisions"] == ["a", "b"]
-    assert len(question["counts"]) == 2
-    assert question["evidence"][1:] == [
-        "enrollment in enrollment: <10 row groups, 30 rows attributed to it",
-        "other in enrollment: <10 row groups, 30 rows attributed to it",
+    # The cause once, then each comparison's share; 1 view, so no view names.
+    assert question["counts"] == [
+        f"cause `{NO_SECTION}` on the cube side",
+        "`enrollment` (dashboard_only): <10 row group, 30 rows",
+        "`other` (dashboard_only): <10 row group, 30 rows",
     ]
+    assert question["evidence"] == [f"cause (cube side): {NO_SECTION}"]
 
 
 def test_a_split_group_shows_only_each_causes_own_rows():
@@ -905,7 +1015,11 @@ from dataclasses import replace as _replace  # noqa: E402
 
 from cube_validation import confirm as confirm_mod  # noqa: E402
 from cube_validation import pipeline as pipeline_mod  # noqa: E402
-from cube_validation.answers import ProofSource, reproduce_json  # noqa: E402
+from cube_validation.answers import (  # noqa: E402
+    ProofSource,
+    merged_reproduce,
+    reproduce_json,
+)
 from cube_validation.report import CauseAsk, _reproduce_lines  # noqa: E402
 
 PROOF_SQL = (
@@ -972,11 +1086,20 @@ def test_a_cause_reproduces_through_cube_a_live_count_and_the_proof(tmp_path):
     ]
     assert proof["url"] == f"https://x/blob/b/dir/{path}"
 
-    text = "\n".join(_reproduce_lines("Q1", [part]))
+    block = merged_reproduce([part])
+    assert block["queries"] == [{"bucket": "C1", "sql": LIVE}]
+    assert block["proofs"] == [
+        {"bucket": "C1", "query": 0, "url": f"https://x/blob/b/dir/{path}",
+         "confirm": [proof["confirm"]]},
+    ]  # fmt: skip
+    text = "\n".join(_reproduce_lines("Q1", block))
     assert "<summary>Reproduce Q1</summary>" in text
     assert "With the Cube connector in Claude chat" in text
     assert "today's data; counts drift from the run" in text and LIVE in text
-    assert f"[`{path}`](https://x/blob/b/dir/{path})" in text
+    assert (
+        f"- Cause `C1` in [`enrollment__cube_only.sql`](https://x/blob/b/dir/{path}) "
+        "(live count 1)"
+    ) in text
 
 
 def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
@@ -988,10 +1111,10 @@ def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
     )
 
     assert part["cube"] is None and part["proofs"][0]["reproduce"] is None
-    text = "\n".join(_reproduce_lines("Q2", [part]))
-    assert "no example cell to query" in text
-    assert "Cause `C1`: no live count yet." in text
-    assert f"The proof: `{path}`." in text
+    block = merged_reproduce([part])
+    assert block["queries"] == [] and block["cube"] == []
+    text = "\n".join(_reproduce_lines("Q2", block))
+    assert f"- Cause `C1` in `{path}` (no live count yet)" in text
 
 
 def test_a_proof_source_links_the_branch_and_never_the_remote_s_credentials(tmp_path):

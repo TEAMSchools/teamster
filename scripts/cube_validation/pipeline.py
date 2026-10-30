@@ -1653,8 +1653,7 @@ def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
     return run_result, run_json
 
 
-# GitHub caps an issue body at 65,536 characters; warn with room to spare.
-BODY_WARN_CHARS = 60_000
+BODY_WARN_CHARS = report.BODY_WARN_CHARS
 
 
 def review(
@@ -1663,6 +1662,7 @@ def review(
     cache_root: Path,
     now: datetime | None = None,
     view_files: list[Path] | None = None,
+    comments: list[str] | None = None,
 ) -> str:
     """Return the review-issue body from each view's latest saved run.
 
@@ -1680,6 +1680,8 @@ def review(
             runs; defaults to the clock.
         view_files: Each config's validation file, in order: stored proof
             paths are relative to its directory.
+        comments: Given, receives the follow-up comments a long body's
+            Reproduce blocks move to (`report.render_review_issue`).
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
@@ -1720,7 +1722,14 @@ def review(
         causes,
         sources,
     )
-    body = report.render_review_issue(domain, runs, definitions, questions, causes)
+    # The analyst's other calls, which the body reports without asking.
+    decided = {
+        run.view: triage.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
+        for run, cfg in zip(runs, configs, strict=True)
+    }
+    body = report.render_review_issue(
+        domain, runs, definitions, questions, causes, comments, decided
+    )
     if len(body) > BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.
         print(
