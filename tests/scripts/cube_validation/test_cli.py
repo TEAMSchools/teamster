@@ -245,9 +245,6 @@ class FakeTableau:
             raise error
         return self.updated
 
-    def reconnect(self):
-        self.reconnects = getattr(self, "reconnects", 0) + 1
-
     def capture(self, workbook_luid, sheet, cuts, xml_edit):
         self.captures = getattr(self, "captures", 0) + 1
         self.edited = xml_edit(self.twb)
@@ -1894,15 +1891,29 @@ TWIN = UNPROVEN.replace(
 TWO = ["--comparison", "ada-region", "--comparison", "ada-twin"]
 
 
-def test_prove_signs_in_again_after_a_401(fakes, tmp_path, capsys):
-    fakes.tbl.fail_next = TSC.ServerResponseError("401002", "Unauthorized Access", "")
+def test_prove_keeps_what_it_proved_when_tableau_ends_the_session(
+    fakes, tmp_path, capsys
+):
     path = _file(tmp_path, TWIN)
+    real = fakes.tbl.workbook_updated
+    calls = []
 
-    assert cli.main(["prove", str(path), *TWO]) == 0, capsys.readouterr().err
+    def workbook_updated(luid):
+        # The second comparison finds the session gone for good.
+        calls.append(luid)
+        if len(calls) > 1:
+            raise tableau.SessionEnded("Tableau ended the session again (401002)")
+        return real(luid)
 
-    assert fakes.tbl.reconnects == 1
-    assert all(c.proof is not None for c in load_view_config(path).comparisons)
-    assert "signing in again" in capsys.readouterr().err
+    fakes.tbl.workbook_updated = workbook_updated
+
+    assert cli.main(["prove", str(path), *TWO]) == 1
+
+    err = capsys.readouterr().err
+    assert "during ada-twin. Proven and kept: ada-region." in err
+    assert f"Prove the rest with: prove {path} --comparison ada-twin" in err
+    proofs = [c.proof for c in load_view_config(path).comparisons]
+    assert proofs[0] is not None and proofs[1] is None
 
 
 def test_prove_refuses_one_comparison_on_another_tableau_error(fakes, tmp_path, capsys):

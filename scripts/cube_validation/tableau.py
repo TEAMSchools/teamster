@@ -20,6 +20,7 @@ import io
 import json
 import os
 import re
+import sys
 import tempfile
 
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
@@ -33,6 +34,7 @@ from pathlib import Path
 from typing import Any
 
 import tableauserverclient as TSC
+from tableauserverclient.server.endpoint.exceptions import FailedSignInError
 
 from .compare import cell_verdict
 from .config import Comparison
@@ -47,6 +49,9 @@ ENV_VARS = (
     "TABLEAU_PERSONAL_ACCESS_TOKEN",
 )
 REFRESH_JOB_TYPES = ("refresh_extracts", "increment_extracts")
+# New sign-ins one session may make after Tableau ends it: the personal
+# access token is shared, and each other sign-in with it ends this session.
+MAX_RECONNECTS = 3
 JOB_LOOKBACK = timedelta(days=8)
 MAX_JOB_LOOKUPS = 200
 
@@ -69,6 +74,14 @@ _HIDDEN = re.compile(r"""\s+hidden=(?:'true'|"true")""")
 
 class RefreshMovedError(RuntimeError):
     """An extract refresh started while the exports were being taken, twice."""
+
+
+class SessionEnded(RuntimeError):
+    """Tableau ended the session and a new sign-in did not hold.
+
+    A 401 right after signing in again, a sign-in Tableau refused, or more
+    than `MAX_RECONNECTS` new sign-ins in one session.
+    """
 
 
 # --- workbook XML ------------------------------------------------------------
@@ -1309,6 +1322,7 @@ class Tableau:
         self._server = server
         self._now = now or (lambda: datetime.now(timezone.utc))
         self._sign_in = sign_in
+        self._reconnects = 0
 
     def sign_out(self) -> str | None:
         """Sign out; return why it failed instead of raising, so a failure here
@@ -1332,12 +1346,55 @@ class Tableau:
         self.sign_out()
         self._server = self._sign_in()
 
+    def _call(self, fn: Callable[[Any], Any]) -> Any:
+        """Run `fn(server)`, signing in again once if Tableau ended the session.
+
+        Tableau answers 401 (`FailedSignInError`) when another sign-in with
+        the same token ended this session. The call is retried once on a new
+        session; `fn` must read everything it needs inside it, as a lazy
+        result (a job list, a CSV) fetches only when read.
+
+        Raises:
+            SessionEnded: The retry got a 401 too, the new sign-in failed, or
+                the session already signed in again `MAX_RECONNECTS` times.
+        """
+        try:
+            return fn(self._server)
+        except FailedSignInError as exc:
+            if self._sign_in is None or self._reconnects >= MAX_RECONNECTS:
+                raise SessionEnded(
+                    f"Tableau ended the session ({exc.code}) and this one signs in "
+                    f"again at most {MAX_RECONNECTS} times"
+                ) from exc
+            print(
+                f"Tableau ended the session ({exc.code}); signing in again",
+                file=sys.stderr,
+            )
+            self._reconnects += 1
+            try:
+                self.reconnect()
+            except (FailedSignInError, TSC.ServerResponseError) as refused:
+                raise SessionEnded(
+                    f"Tableau refused the new sign-in ({refused.code})"
+                ) from refused
+        try:
+            return fn(self._server)
+        except FailedSignInError as again:
+            raise SessionEnded(
+                f"Tableau ended the session again ({again.code}) right after a new "
+                "sign-in: another job keeps signing in with the same token"
+            ) from again
+
     def download_twb(self, luid: str) -> str:
         """Return a workbook's XML, downloaded without its extract."""
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(
-                self._server.workbooks.download(
-                    luid, filepath=str(Path(tmp) / "workbook"), include_extract=False
+                self._call(
+                    lambda s: s.workbooks.download(
+                        luid,
+                        filepath=str(Path(tmp) / "workbook"),
+                        include_extract=False,
+                    )
                 )
             )
             if zipfile.is_zipfile(path):
@@ -1347,7 +1404,7 @@ class Tableau:
 
     def workbook_updated(self, luid: str) -> datetime:
         """Return when a workbook was last published."""
-        return self._server.workbooks.get_by_id(luid).updated_at
+        return self._call(lambda s: s.workbooks.get_by_id(luid).updated_at)
 
     def refresh_started(
         self, workbook_luid: str, since: datetime | None = None
@@ -1372,24 +1429,34 @@ class Tableau:
                 newest `MAX_JOB_LOOKUPS` jobs.
         """
         since = since or self._now() - JOB_LOOKBACK
-        wb = self._server.workbooks.get_by_id(workbook_luid)
-        self._server.workbooks.populate_connections(wb)
+
+        def connections(s: Any) -> Any:
+            wb = s.workbooks.get_by_id(workbook_luid)
+            s.workbooks.populate_connections(wb)
+            return wb, list(wb.connections)
+
+        wb, conns = self._call(connections)
         source_ids = {
             c.datasource_id
-            for c in wb.connections
+            for c in conns
             if c.connection_type == "sqlproxy" and c.datasource_id
         }
 
         # The server parses only this form; str(datetime) is rejected.
         bound = since.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        candidates = sorted(
-            (
-                job
-                for job in self._server.jobs.filter(
+        jobs = self._call(
+            lambda s: list(
+                s.jobs.filter(
                     status="Success",
                     job_type__in=list(REFRESH_JOB_TYPES),
                     started_at__gte=bound,
                 )
+            )
+        )
+        candidates = sorted(
+            (
+                job
+                for job in jobs
                 if job.status == "Success"
                 and job.type in REFRESH_JOB_TYPES
                 and job.started_at is not None
@@ -1398,7 +1465,7 @@ class Tableau:
             reverse=True,
         )
         for job in candidates[:MAX_JOB_LOOKUPS]:
-            detail = self._server.jobs.get_by_id(job.id)
+            detail = self._call(lambda s, job=job: s.jobs.get_by_id(job.id))
             if (
                 detail.workbook_id == workbook_luid
                 or detail.datasource_id in source_ids
@@ -1437,8 +1504,8 @@ class Tableau:
                 landed elsewhere.
             ValueError: The edit is not well-formed XML or flattened CRLF.
         """
-        wb = self._server.workbooks.get_by_id(workbook_luid)
-        projects = list(self._server.projects.filter(name=TEMP_PROJECT))
+        wb = self._call(lambda s: s.workbooks.get_by_id(workbook_luid))
+        projects = self._call(lambda s: list(s.projects.filter(name=TEMP_PROJECT)))
         if len(projects) != 1 or projects[0].name != TEMP_PROJECT:
             raise RuntimeError(
                 f"expected 1 project named {TEMP_PROJECT}, found {len(projects)}; "
@@ -1449,10 +1516,12 @@ class Tableau:
 
         with tempfile.TemporaryDirectory() as tmp:
             src = Path(
-                self._server.workbooks.download(
-                    workbook_luid,
-                    filepath=str(Path(tmp) / "base"),
-                    include_extract=True,
+                self._call(
+                    lambda s: s.workbooks.download(
+                        workbook_luid,
+                        filepath=str(Path(tmp) / "base"),
+                        include_extract=True,
+                    )
                 )
             )
             out = Path(tmp) / f"copy{src.suffix}"
@@ -1472,8 +1541,11 @@ class Tableau:
             if project.name != TEMP_PROJECT or not name.startswith(COPY_PREFIX):
                 raise RuntimeError("the copy goes only to TEMP-CB as ZZ-VALIDATE")
             item = TSC.WorkbookItem(project_id=project.id, name=name)
-            published = self._server.workbooks.publish(
-                item, str(out), mode=TSC.Server.PublishMode.Overwrite
+            # Overwrite: a publish retried after a 401 replaces the same copy.
+            published = self._call(
+                lambda s: s.workbooks.publish(
+                    item, str(out), mode=TSC.Server.PublishMode.Overwrite
+                )
             )
 
         if published.project_id != project.id:
@@ -1498,9 +1570,13 @@ class Tableau:
             LookupError: The sheet is not a view on the copy; a sheet hidden
                 in the workbook does not publish as a view.
         """
-        wb = self._server.workbooks.get_by_id(copy_luid)
-        self._server.workbooks.populate_views(wb)
-        view = next((v for v in wb.views if v.name == sheet), None)
+
+        def views(s: Any) -> list:
+            wb = s.workbooks.get_by_id(copy_luid)
+            s.workbooks.populate_views(wb)
+            return list(wb.views)
+
+        view = next((v for v in self._call(views) if v.name == sheet), None)
         if view is None:
             raise LookupError(
                 f"no view {sheet!r} on the copy; a hidden sheet is not published"
@@ -1509,8 +1585,13 @@ class Tableau:
         opts = TSC.CSVRequestOptions()
         for caption, value in filters.items():
             opts.vf(caption, _vf_value(value))
-        self._server.views.populate_csv(view, opts)
-        text = b"".join(view.csv).decode("utf-8-sig")
+
+        def rows(s: Any) -> bytes:
+            # The CSV is fetched as it is read, so it is read inside the call.
+            s.views.populate_csv(view, opts)
+            return b"".join(view.csv)
+
+        text = self._call(rows).decode("utf-8-sig")
         return list(csv.DictReader(io.StringIO(text, newline="")))
 
     def capture(

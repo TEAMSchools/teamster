@@ -191,6 +191,16 @@ cause, do not retry around it.
    refusal is not a failed proof: retry after the refresh. The proof records the
    cuts its export covered, and the sheet's cuts and filters with no Cube member
    (by caption; filter values are never read).
+
+   The Tableau token is shared with Dagster's scheduled Tableau refreshes (and
+   any Tableau MCP call), and Tableau keeps 1 session per token: any other
+   sign-in ends the validator's, as a 401 mid-run. Each call then signs in again
+   once and is retried; a second 401 in a row, or a fourth new sign-in in one
+   session, stops `prove`. Each comparison it finished is already written, and
+   the refusal prints the `prove ... --comparison` command for the rest: run
+   that, not the whole list. A token used by the validator alone removes the
+   clash; issuing one is the analyst's call.
+
 5. `check-api <file>` once per view, before the first `run`. A disagreement
    means Cube's API and its compiled SQL differ, so `run` results are not
    trustworthy until it is explained.
