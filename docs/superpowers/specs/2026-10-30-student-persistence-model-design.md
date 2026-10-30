@@ -446,45 +446,102 @@ The model ships only when it reproduces what stakeholders already have:
 
 ### 1. Finalsite overwrites old answers
 
-We checked the Finalsite data model:
+_Revised October 30, 2026. We read the Finalsite forms list for every Newark and
+Miami contact with withdrawal data, 2,085 contacts in all. Camden and Paterson
+are not checked yet._
 
-- Finalsite keeps every submitted form. Its API lists each form on a contact
-  (`/api/external/contacts/{contact_id}/forms`) with a submit date. Teamster
-  does not pull that endpoint today.
-- That list returns only form details and a link to a PDF. The answers exist as
-  data only in contact-level custom fields, which hold 1 value each. A new form
-  overwrites the last answers.
-- All 4 regions store every withdrawal field as a contact-level custom field.
-  Finalsite also supports fields stored once per school year ("track-siloed"
-  fields), and KTAF already uses them for `assigned_school_ss`,
-  `intent_to_enroll_ynu_ss`, `promotion_status_ss`, and `residency_outcome_ss`.
+How Finalsite stores a withdrawal:
+
+- The answers live in contact-level custom fields, which hold 1 value each. A
+  new form replaces the earlier answers. All 4 regions store every withdrawal
+  field this way, and none of them as a track-siloed field.
+- The forms list (`/api/external/contacts/{contact_id}/forms`) returns each
+  form's ID, name, submit date, and a PDF link. It returns no answers. Teamster
+  does not pull it today.
+- A contact can list more than 1 withdrawal form, but the list is not a full
+  record. 154 contacts (7%) have withdrawal answers and no withdrawal form in
+  the list. 81 of them are enrolled again, and 69 have a "not enrolling" status.
+  We do not know yet whether staff delete the form when a student re-enrolls, or
+  enter answers without a form.
+- The status report also keeps only the latest timestamp for each status. The
+  2025-26 and 2026-27 files carry the same timestamps for every student in both
+  files. So the model's stand-in for the form date moves whenever a status
+  changes again.
 - Teamster pulls the `contacts` endpoint once a day and replaces the previous
-  pull, so the warehouse keeps no history.
+  pull, so the warehouse keeps no history. BigQuery time travel keeps about 7
+  days.
 
 What goes wrong today:
 
-- Between October 1 and October 19, 2026, 7 leavers lost their reason when the
-  answers on their contact were cleared.
-- A 2025-26 leaver who re-enrolls and withdraws again gets a new form. That form
-  overwrites the 2025-26 answers, and the 2025-26 row goes blank.
+- Between October 1 and October 19, 2026, the prototype lost the Finalsite
+  reason on 8 leavers. Finalsite cleared none of them:
+  - 6 still carry the same answer. The prototype blanks Finalsite fields for any
+    student enrolled today, and all 6 re-enrolled in October.
+  - 1 re-enrolled and withdrew again, and the new form replaced the earlier
+    answer.
+  - 1 lost its form date. The student's withdrawal status changed on October 1,
+    2026, which moved the stand-in date out of the 2025-26 window.
+- After October 19, 4 more leavers got a different reason. Each now lists 1
+  withdrawal form, submitted on October 20, and the earlier answers match no
+  listed form.
+- A 2025-26 leaver who re-enrolls and withdraws again gets a new form, and the
+  new answers replace the 2025-26 answers. The model then fills the 2025-26 row
+  with the later answer, or leaves it blank when the later date falls outside
+  the window.
+
+Is a student's latest form a clean record of their latest withdrawal? Not yet.
+
+- Of the 107 Newark and Miami students who withdrew from October 1 through
+  October 30, 2026, none lists more than 1 withdrawal form. 99 list exactly 1.
+  Of the 8 with none, 5 changed schools inside KTAF, 2 are enrolled again, and 1
+  withdrew with answers but no listed form.
+- Across all 2,085 contacts, 6 list more than 1 withdrawal form. Only 1 of them
+  withdrew twice, with each form matching an SIS exit. On that contact, the
+  answers carry the older form's last-attended date, so the latest form did not
+  clearly win.
+- 4 of the 6 have 2 or more forms for 1 SIS withdrawal, which means re-entries
+  or corrections. 2 of those include the older "Withdraw KIPP" form next to
+  "Withdraw from KIPP Form". The last 1 has no SIS enrollment.
+- Submit dates trail the withdrawal. Most forms arrive between 1 day before and
+  2 weeks after the SIS exit. 40 Newark forms submitted from late August through
+  October list a last-attended date of July 1 or 2.
+
+So a warehouse record per withdrawal must match each form to an SIS exit by the
+form's last-attended date, not its submit date, and keep 1 form per exit.
 
 The paths can combine:
 
-- **Make the withdrawal fields track-siloed in Finalsite.** This fixes the
-  problem at the source. The Finalsite admin must confirm what happens to
-  existing values and which school year a withdrawal form writes to. A second
-  withdrawal in the same school year still overwrites the first, but that case
-  is rare.
-- **Keep history in the warehouse.** A daily dbt snapshot of the withdrawal
-  fields needs no Finalsite change. It protects answers only from the day it
-  ships.
-- **Pull the forms list.** It gives each form's real submit date, which is
-  better than the status-date stand-in. It does not recover old answers, which
-  exist only in the PDFs. It costs 1 API call per contact for the first pull,
-  and `updated_since` keeps later pulls small.
+- **Keep history in the warehouse.** A daily dbt snapshot of each contact's
+  withdrawal answers and forms list (form ID and submit date) needs no Finalsite
+  change. When a new form ID appears, the answers on the contact most likely
+  belong to that form. Each captured form then matches to an SIS exit, and the
+  latest form wins for each exit. The snapshot protects answers only from the
+  day it ships, plus the 7 days that time travel can seed.
+- **Make the withdrawal fields track-siloed in Finalsite.** A track-siloed field
+  stores 1 value per school year. The daily pull already returns every year's
+  track-siloed values, tagged with the school year: 6,298 Newark contacts carry
+  `assigned_school_ss` for 2 years. So Teamster needs only a dbt pivot by year.
+  A second withdrawal in the same school year still replaces the first.
+- **Pull the forms list.** It gives each form's real submit date, which replaces
+  the status-date stand-in. It does not recover old answers, and old forms can
+  be missing from the list. Every contact needs its own call, so `updated_since`
+  makes each response smaller but does not cut the number of calls. The
+  `contacts` endpoint's `since` filter can limit the calls to contacts that
+  changed.
+- **Stop blanking answers for re-enrolled students.** That prototype rule hid 6
+  of the 8 lost reasons. This design fills exit fields on every "Left" row, so
+  its Finalsite-sourced reasons will not tie exactly to the prototype's 1,669.
 
-Recommendation: ask the Finalsite admin about track-siloed fields, and build the
-snapshot either way. Treat the forms list as optional.
+Questions for the Finalsite admin:
+
+1. Does re-enrolling a student delete their withdrawal form?
+2. Do staff enter withdrawal answers on a contact without a form?
+3. Can the withdrawal fields become track-siloed? What happens to current
+   values, and which school year does a summer withdrawal write to?
+
+Recommendation: build the daily snapshot of answers and the forms list now,
+because every day without it loses changes. Ask the Finalsite admin the 3
+questions, and decide on track-siloed fields after they answer.
 
 ### 2. 2025-26 exit reasons
 
