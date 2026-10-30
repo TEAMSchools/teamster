@@ -750,7 +750,10 @@ def also_decided(
         for decisions, gaps in _by_reason(run.applied.quiet_gaps, owner=False):
             part = _gap_part(run.view, gaps)
             add(("gap", part, decisions[0].call), part, [], decisions[0], [])
-    out = []
+    # One line per call, reason and task: a cause and the missing sheet filter
+    # behind it, decided alike, print once. A filter's caption cannot be tied
+    # to the cause's column from config, so the shared words decide.
+    merged: dict[tuple, dict] = {}
     for e in lines.values():
         d = e["d"]
         views: dict[str, list[str]] = {}
@@ -758,9 +761,17 @@ def also_decided(
             views.setdefault(view, []).append(f"`{cid}`")
         where = "; ".join(f"{', '.join(c)} in `{v}`" for v, c in views.items())
         where = f" ({where})" if where else ""
+        m = merged.setdefault(
+            (d.call, d.reason, d.task), {"heads": [], "d": d, "hidden": []}
+        )
+        m["heads"].append(f"{e['head']}{where}")
+        m["hidden"] += e["hidden"]
+    out = []
+    for m in merged.values():
+        d = m["d"]
         call = CALL_WORDS.get(d.call, d.call)
-        reason = _with_task(_safe_reason(d.reason, e["hidden"]), d.task)
-        out.append(f"{e['head']}{where}: {call} (`{d.call}`). Reason: {reason}")
+        reason = _with_task(_safe_reason(d.reason, m["hidden"]), d.task)
+        out.append(f"{' and '.join(m['heads'])}: {call} (`{d.call}`). Reason: {reason}")
     return out
 
 
@@ -882,7 +893,7 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
 
 def _reproduce_lines(question_id: str, block: dict) -> list[str]:
     """A cause question's folded Reproduce block (`answers.merged_reproduce`):
-    each example cell as a Cube query, each live count on today's tables
+    each example cell as a Cube query, each count query on today's tables
     once, then each proof file with the commands that re-prove it."""
     out = ["<details>", f"<summary>Reproduce {question_id}</summary>", ""]
     for cube in block["cube"]:
@@ -896,9 +907,12 @@ def _reproduce_lines(question_id: str, block: dict) -> list[str]:
             "```",
             "",
         ]
+    # Numbered only when there are several: "Live count 1" read as 1 row.
+    several = len(block["queries"]) > 1
     for n, query in enumerate(block["queries"], start=1):
+        label = f"Count query {n}" if several else "Count query"
         out += [
-            f"Live count {n}, cause `{_clean(query['bucket'])}`, in BigQuery "
+            f"{label}, cause `{_clean(query['bucket'])}`, in BigQuery "
             "(today's data; counts drift from the run):",
             "",
             "```sql",
@@ -910,13 +924,12 @@ def _reproduce_lines(question_id: str, block: dict) -> list[str]:
         name = proof["path"].rsplit("/", 1)[-1]
         blob = block.get("blob")
         link = f"[`{name}`]({blob}/{proof['path']})" if blob else f"`{proof['path']}`"
-        count = (
-            f"live count {proof['query'] + 1}"
-            if proof["query"] is not None
-            else "no live count yet"
-        )
+        if proof["query"] is None:
+            count = " (no count query yet)"
+        else:
+            count = f" (count query {proof['query'] + 1})" if several else ""
         commands = "; ".join(f"`{c}`" for c in proof["confirm"])
-        out += [f"- Cause `{_clean(proof['bucket'])}` in {link} ({count}): {commands}"]
+        out += [f"- Cause `{_clean(proof['bucket'])}` in {link}{count}: {commands}"]
     after = " then ".join(f"`{a}`" for a in block["after"])
     out += [
         "",

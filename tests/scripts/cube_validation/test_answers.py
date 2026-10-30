@@ -1162,7 +1162,7 @@ def _stored_proof(tmp_path, reproduce):
     return "proofs/enrollment/enrollment__cube_only.sql"
 
 
-def test_a_cause_reproduces_through_cube_a_live_count_and_the_proof(tmp_path):
+def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
     path = _stored_proof(tmp_path, {"C1": LIVE})
     source = ProofSource("src/cube/validation/e.yml", tmp_path, "https://x/blob/b/dir")
     run = _run([_cell("b", 10, 20)])
@@ -1197,10 +1197,12 @@ def test_a_cause_reproduces_through_cube_a_live_count_and_the_proof(tmp_path):
     assert "<summary>Reproduce Q1</summary>" in text
     assert "With the Cube connector in Claude chat" in text
     assert "today's data; counts drift from the run" in text and LIVE in text
+    # One query: unnumbered, so it never reads as a count of 1.
+    assert "Count query, cause `C1`, in BigQuery" in text
     assert (
-        f"- Cause `C1` in [`enrollment__cube_only.sql`](https://x/blob/b/dir/{path}) "
-        "(live count 1)"
+        f"- Cause `C1` in [`enrollment__cube_only.sql`](https://x/blob/b/dir/{path}): "
     ) in text
+    assert "live count" not in text.lower()
 
 
 def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
@@ -1215,7 +1217,7 @@ def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
     block = merged_reproduce([part])
     assert block["queries"] == [] and block["cube"] == []
     text = "\n".join(_reproduce_lines("Q2", block))
-    assert f"- Cause `C1` in `{path}` (no live count yet)" in text
+    assert f"- Cause `C1` in `{path}` (no count query yet)" in text
 
 
 def test_a_proof_source_links_the_branch_and_never_the_remote_s_credentials(tmp_path):

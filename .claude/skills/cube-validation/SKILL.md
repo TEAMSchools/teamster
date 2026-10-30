@@ -354,7 +354,7 @@ cause, do not retry around it.
       the rows never leave BigQuery. A shorter proof runs inline, which is
       faster.
 
-      Give each owner cause a live count the owner can run after time travel
+      Give each owner cause a count query the owner can run after time travel
       ends: a `-- reproduce <bucket>:` block in the proof's header, the query as
       comment lines below it, ending at a blank line. It counts the cause's rows
       on today's tables with the cause's predicates (for example "Cube rows in
@@ -541,16 +541,18 @@ cause, do not retry around it.
     comparison the count of groups it decides and of the rows its proof
     attributes to it, and the model-doc leads; the owner's answer records onto
     every decision it lists. Every other call (`deliberate`, a `fix_`) is listed
-    once per cause or part under "Also decided (no answer needed)": what it
-    covers, the call, the reason and the task, masked like the questions and
-    kept out of the JSON, so `record-answers` never reads one as an answer. Each
-    cause question also gets a folded Reproduce block: each example cell as a
-    Cube `load` query for Claude chat's Cube connector, each distinct
-    `-- reproduce` count once (labeled today's data), then per proof file a
-    branch link and the `triage confirm` that re-proves it at the run's moment,
-    and the `run` plus `triage` after time travel ends. Commit and push the
-    proofs before posting, or the link finds nothing. When the checks and
-    Reproduce blocks would take the body past GitHub's 65,536-character cap,
+    under "Also decided (no answer needed)", one line per call, reason and task,
+    so a cause and the missing sheet filter behind it, decided alike, print
+    once: what it covers, the call, the reason and the task, masked like the
+    questions and kept out of the JSON, so `record-answers` never reads one as
+    an answer. Each cause question also gets a folded Reproduce block: each
+    example cell as a Cube `load` query for Claude chat's Cube connector, each
+    distinct `-- reproduce` count query once (numbered only when there are
+    several, so "1" never reads as a count; labeled today's data), then per
+    proof file a branch link and the `triage confirm` that re-proves it at the
+    run's moment, and the `run` plus `triage` after time travel ends. Commit and
+    push the proofs before posting, or the link finds nothing. When the checks
+    and Reproduce blocks would take the body past GitHub's 65,536-character cap,
     they move out of it into numbered comment files that stderr names: post the
     issue, then each file as a comment, in order (the linked JSON holds
     everything the owner's session reads). It refuses unless every file's view

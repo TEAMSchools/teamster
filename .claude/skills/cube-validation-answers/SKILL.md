@@ -85,8 +85,8 @@ validation files or runs the validator, and neither does this session.
       the dashboard number in the hand check of the same `comparison`; each
       `queries` entry's `sql` to paste into BigQuery, labeled today's data whose
       counts drift from the run; and each `proofs` entry's file
-      (`<blob>/<path>`, or `path` when `blob` is null), with its live count (its
-      `query` index into `queries`, or none yet). The issue's comments may
+      (`<blob>/<path>`, or `path` when `blob` is null), with its count query
+      (its `query` index into `queries`, or none yet). The issue's comments may
       repeat the checks and Reproduce blocks; read them from the JSON.
    6. The choices, with what happens next, plus free text:
 
