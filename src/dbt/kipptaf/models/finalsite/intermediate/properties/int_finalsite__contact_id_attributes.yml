@@ -24,3 +24,10 @@ models:
           `rpt_tableau__fresh_dashboard_qc` join it to a student roster without
           deduplicating first. The finalsite package model tests that
           uniqueness, where a duplicate first appears.
+      - name: is_latest_powerschool_student_number
+        data_type: boolean
+        description:
+          True on the one record per PowerSchool student number per district
+          that consumers should use, picked in the finalsite package model.
+          Filter on it before joining to a PowerSchool roster, or a student with
+          duplicate Finalsite records fans out.

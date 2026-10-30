@@ -293,7 +293,14 @@ async def fetch_failure_detail(gql: GraphQL, run: dict) -> dict:
     tags = {t["key"]: t["value"] for t in run.get("tags", [])}
     haystack = " ".join([run_failure_msg, error_class, error_detail, engine_match])
     category = classify(haystack)
-    if (
+    max_runtime = tags.get("dagster/max_runtime")
+    start, end = run.get("startTime"), run.get("endTime")
+    runtime = round(end - start) if start is not None and end is not None else None
+    if max_runtime and runtime is not None and runtime >= float(max_runtime) - 5:
+        # The cap's SIGTERM reads as an interrupt and often leaves no failure
+        # message, so the run's own duration is the only reliable signal.
+        category = "Max runtime"
+    elif (
         category == "Unclassified"
         and "Discovered failed Kubernetes job" in error_detail
         and failed_step not in captured_steps
@@ -317,6 +324,8 @@ async def fetch_failure_detail(gql: GraphQL, run: dict) -> dict:
         "errorClass": error_class,
         "errorDetail": error_detail,
         "engineEventMatch": engine_match,
+        "maxRuntimeSeconds": max_runtime,
+        "runtimeSeconds": runtime,
         "category": category,
     }
 
@@ -1195,6 +1204,9 @@ def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
 def step_11_alerts(utc_start: str) -> dict:
     """Cloud Monitoring alert-policy violations: open now, or opened in window.
 
+    Alerts opened in the 24 hours before the window go in `priorDay`: one that
+    opened and closed just before the window start is otherwise never seen.
+
     Uses Monitoring rather than the Service Health API because the codespaces
     service account ADC resolves to can read Monitoring but not
     `servicehealth.events.list`. Monitoring is also the better fit: it covers
@@ -1210,16 +1222,23 @@ def step_11_alerts(utc_start: str) -> dict:
     )
     if resp.status_code >= 400:
         raise RuntimeError(f"monitoring HTTP {resp.status_code}: {resp.text[:300]}")
-    out = []
+    prior_start = (
+        datetime.fromisoformat(utc_start.replace("Z", "+00:00")) - timedelta(days=1)
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    out, prior = [], []
     for a in resp.json().get("alerts", []):
-        in_window = (a.get("openTime") or "") >= utc_start
-        if not (in_window or a.get("state") == "OPEN"):
+        open_time = a.get("openTime") or ""
+        if open_time >= utc_start or a.get("state") == "OPEN":
+            bucket = out
+        elif open_time >= prior_start:
+            bucket = prior
+        else:
             continue
         resource = a.get("resource") or {}
         labels = resource.get("labels") or {}
         extracted = (a.get("log") or {}).get("extractedLabels") or {}
         policy = a.get("policy") or {}
-        out.append(
+        bucket.append(
             {
                 "name": a.get("name"),
                 "state": a.get("state"),
@@ -1234,7 +1253,7 @@ def step_11_alerts(utc_start: str) -> dict:
                 "message": extracted.get("message") or extracted.get("description"),
             }
         )
-    return {"alerts": out}
+    return {"alerts": out, "priorDay": prior}
 
 
 # ─── Step 12: Error groups ────────────────────────────────────────────────

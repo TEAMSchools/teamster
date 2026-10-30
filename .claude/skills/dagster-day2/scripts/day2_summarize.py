@@ -111,7 +111,9 @@ def main() -> int:
     print(
         f"step_10 gke:         cluster={_len(s10.get('clusterEvents'))} pod={_len(s10.get('podEvents'))}"
     )
-    print(f"step_11 alerts:      {_len(s11.get('alerts'))}")
+    print(
+        f"step_11 alerts:      {_len(s11.get('alerts'))} (24h before window: {_len(s11.get('priorDay'))})"
+    )
     buckets = s12.get("buckets", {})
     print(
         f"step_12 errgroups:   {_len(s12.get('groups'))} total, inWindow={_len(buckets.get('inWindow'))}, staleOpen={_len(buckets.get('staleOpen'))}"
@@ -241,6 +243,11 @@ def _print_details(data: dict) -> None:
     if alerts:
         print(f"\n[step_11] alerts ({len(alerts)}):")
         for a in alerts:
+            print(f"  {_trunc(a, 240)}")
+    prior = data.get("step_11_alerts", {}).get("priorDay", [])
+    if prior:
+        print(f"\n[step_11] alerts in the 24h before the window ({len(prior)}):")
+        for a in prior:
             print(f"  {_trunc(a, 240)}")
 
     s12 = data.get("step_12_error_groups", {})

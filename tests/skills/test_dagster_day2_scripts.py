@@ -87,6 +87,25 @@ def test_other_step_captured_logs_do_not_count():
     assert _category(events) == "K8s pre-start kill"
 
 
+def _run_category(start: float, end: float, max_runtime: str) -> str:
+    run = {
+        "runId": "r",
+        "startTime": start,
+        "endTime": end,
+        "tags": [{"key": "dagster/max_runtime", "value": max_runtime}],
+    }
+    events = [{"__typename": "RunFailureEvent", "message": "", "error": None}]
+    return asyncio.run(dc.fetch_failure_detail(FakeGQL(events), run))["category"]
+
+
+def test_run_at_its_cap_is_max_runtime():
+    assert _run_category(0.0, 603.0, "600") == "Max runtime"
+
+
+def test_run_under_its_cap_keeps_its_category():
+    assert _run_category(0.0, 300.0, "600") == "Unclassified"
+
+
 RUN_ID = "e9e0067b-b503-4919-8ab2-33811557d6f0"
 
 

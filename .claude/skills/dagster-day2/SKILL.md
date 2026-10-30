@@ -36,7 +36,7 @@ Output shape:
   "step_08_agent_pod_churn": {"events": [...], "skipped": bool},
   "step_09_daemons":     {"daemons": [...], "allHealthy": bool},
   "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [{"timestamp":..., "timestampEt":"...", "podName":..., "reason":..., "message":..., "runId": "<uuid|null>", "runStatus": "SUCCESS|FAILURE|UNKNOWN", "stepKey": "<step pods only|null>"}], "stepPodLookupError": "<str|null>", "stepPodsUnmatched": N, "podEventsTruncated": bool},
-  "step_11_alerts":      {"alerts": [...]},
+  "step_11_alerts":      {"alerts": [...], "priorDay": [...]},
   "step_12_error_groups":{"groups": [{"groupId":..., "exception":..., "affectedServices":[{"service":...,"version":"<pod>"}], "exceptionLine":"<bottom-of-traceback or null>", "correlatedPodEvent":{"reason":"Preempted|Preempting|Evicted|OOMKilling", "timestamp":..., "podName":...} | null, "category":"sigterm_during_import|preemption_artifact|unclassified"}], "buckets": {"inWindow":[], "staleOpen":[]}},
   "step_13_oom_metrics": {"oomRuns": [...], "skipped": bool},
   "step_14_queued_runs": {"runs": [...], "stuckCount": N},
@@ -80,8 +80,8 @@ Run classification (`step_01_failed_runs.failures[].category`) is one of:
 `Preemption/Interrupt`, `Node OOM/eviction`, `Scheduling failure`,
 `K8s API failure`, `Backoff limit`, `Step preempt-hang`, `BigQuery transient`,
 `Network/SSH`, `Connection failure`, `Infra timeout`, `K8s pre-start kill`,
-`Code error`, `Unclassified`. Phase 2 may reclassify based on cross-signal
-context; see _Reclassify_ in Phase 2.
+`Max runtime`, `Code error`, `Unclassified`. Phase 2 may reclassify based on
+cross-signal context; see _Reclassify_ in Phase 2.
 
 - `BigQuery transient`: BigQuery failed the job itself (`internalError`,
   `backendError`). dbt never resubmits a failed job, since `job_retries` covers
@@ -97,6 +97,15 @@ context; see _Reclassify_ in Phase 2.
   The check matches step keys, not attempts: a step with a `RetryPolicy` whose
   first attempt captured logs and whose retry pod died before starting lands in
   `Code error`, so check the attempts on a retried step's `Code error`.
+- `Max runtime`: the run lasted at least its `dagster/max_runtime` tag
+  (`maxRuntimeSeconds` vs `runtimeSeconds`), whatever its messages say. The
+  cap's SIGTERM reads as an interrupt and often leaves `runFailureMessage`
+  empty, so it would otherwise land in `Preemption/Interrupt` or `Unclassified`.
+  The cap counts from STARTED, so it includes step-pod scheduling wait. Split
+  the runtime into pod wait (GKE pod events for the step pod) and step work
+  (`get_run_compute_logs` timestamps), and compare the work against the job's
+  recent successful runs before choosing between a slow vendor, a slow query,
+  and a cap that is too tight.
 - `Step preempt-hang`: the step pod was preempted, its replacement exited 0
   through `verify_step` (`Exiting to prevent re-running`), and K8s marked the
   Job `Complete`; the executor fails the step `ZOMBIE_JOB_GRACE_SECONDS` later
@@ -111,7 +120,10 @@ Work in this order:
 
 1. Run the summary and pass its error gate (below).
 2. Invoke `superpowers:systematic-debugging`. Phase 1 surfaces signals; Phase 2
-   reaches root cause, not symptoms.
+   reaches root cause, not symptoms. Every failed run gets a root cause backed
+   by evidence (logs, pod events, query history), including a run whose retry
+   succeeded and an `Unclassified` run with an empty message. "Transient" is not
+   a root cause; name what was transient and show it.
 3. Reclassify runs with cross-signal context (below).
 4. Correlate signals across steps, passing the temporal overlap gate.
 5. Write the report in the format below.
@@ -151,8 +163,7 @@ The collector's queries are proxies, not ground truth:
   visible in GKE logs.
 - **Unclassified → Node OOM/eviction**: a GKE pod event `OOMKilling` or
   `Evicted` for the run's pod. Then drill down with step 13.
-- **Unclassified / Infra timeout → Slow-query timeout (dbt)**:
-  `runFailureMessage: Exceeded maximum runtime` without
+- **Max runtime → Slow-query timeout (dbt)**: a dbt run without
   `Exiting to prevent re-running`, and the step materialized assets
   (`MaterializationEvent` or `LogsCapturedEvent` present), so the run did real
   work. One model ran long: diff `AssetMaterializationPlannedEvent` against
@@ -285,6 +296,17 @@ outages, agent errors → tick failures, daemon issues → tick/run impacts, ale
 **Impact**: Affected assets/jobs, retry outcomes (definitive). Include queued
 runs and backfills if present.
 
+**A dbt test failing at `error` on source data is itself a finding.** An error
+test should fail only on a code change. When one fails because of what a source
+system holds (a duplicate record, a missing id), check it against _Tests on
+marts and `rpt_` models_ in `.claude/rules/dbt-yaml.md`: the source defect needs
+a `warn` at the earliest model that sees it plus a downstream defense. Name the
+missing warn and defense as an Action, not only the data fix.
+
+**Alerts**: `step_11_alerts.alerts` goes in the timeline. `priorDay` holds
+alerts opened in the 24 hours before the window; list them in a separate note
+under Impact, and check whether one caused a failure inside the window.
+
 **Retry SUCCESS is not definitive for a dbt `table` model killed by
 `max_runtime` mid-query.** dbt cancels its open BigQuery jobs on SIGINT, but
 only if the step pod lives long enough; a pod killed first leaves the job
@@ -333,9 +355,9 @@ seen before the window; leave it out of the report.
   Issues, not Impact. Their runs predate `step_01`, so list them by run with
   `byMaterializationType` instead of verifying each model.
 
-**Actions**: No action (transient + retry success), Monitor (recurring/emerging,
-or a retry still `STARTED` when the collector ran), Investigate (retry failure),
-Escalate (sustained platform issue).
+**Actions**: No action (root cause named and self-healing, retry succeeded),
+Monitor (recurring/emerging, or a retry still `STARTED` when the collector ran),
+Investigate (retry failure), Escalate (sustained platform issue).
 
 **Known self-resolving alerts**: kipptaf `dagster-step-*` CPU-limit alerts
 during import self-resolve in about a minute (limits in
