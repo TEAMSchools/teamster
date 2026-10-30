@@ -23,9 +23,15 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: points
+        data_type: int64
+        description: >-
+          Points the band adds to the launch score. Scoring treats a blank as 0
+          points, so fill it on the GPA Bands tab.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: label
         data_type: string
         description: Band name shown to staff.
-      - name: points
-        data_type: int64
-        description: Points the band adds to the launch score.

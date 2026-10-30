@@ -24,4 +24,10 @@ models:
                 severity: error
       - name: stage
         data_type: string
-        description: Stage name shown to staff.
+        description: >-
+          Stage name shown to staff. A blank leaves launch_stage empty for every
+          score in that range, so fill it on the Stages tab.
+        data_tests:
+          - not_null:
+              config:
+                severity: error

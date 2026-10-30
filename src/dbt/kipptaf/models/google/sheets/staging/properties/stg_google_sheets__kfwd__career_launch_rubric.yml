@@ -25,27 +25,15 @@ models:
           - unique:
               config:
                 severity: error
-          - accepted_values:
-              arguments:
-                values:
-                  - career_ready_1
-                  - career_ready_2
-                  - career_ready_3
-                  - career_ready_4
-                  - active_search_1
-                  - active_search_2
-                  - active_search_3
-                  - active_search_4
-                  - internship_experience_1
-                  - internship_experience_2
-                  - internship_experience_3
-                  - internship_experience_4
-                  - network_1
-                  - network_2
-                  - network_3
-                  - network_4
+      - name: points
+        data_type: int64
+        description: >-
+          Points the level adds to the launch score. Scoring treats a blank as 0
+          points, so fill it on the Rubric tab.
+        data_tests:
+          - not_null:
               config:
-                severity: warn
+                severity: error
       - name: indicator
         data_type: string
         description: Indicator display name.
@@ -55,6 +43,3 @@ models:
       - name: label
         data_type: string
         description: What the level means.
-      - name: points
-        data_type: int64
-        description: Points the level adds to the launch score.
