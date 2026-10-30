@@ -6,6 +6,73 @@
 -- cause C4 = dashboard: the assessment was given before the student's first enrollment week, so no week row covers it
 -- cause C5 = dashboard: the student was not enrolled at the end of the week the assessment was given
 -- cause C5O = dashboard: the student was out of district that week
+-- reproduce C1:
+--  SELECT r.region, COUNT(*) AS n_rows
+--  FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup` AS r
+--  WHERE r.academic_year = 2026 AND r.is_internal_assessment AND r.module_type = 'WPP'
+--  GROUP BY r.region
+-- reproduce C2:
+--  SELECT r.region, COUNT(*) AS n_rows
+--  FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup` AS r
+--  WHERE r.academic_year = 2026 AND r.is_internal_assessment AND r.module_type IS NULL
+--  GROUP BY r.region
+-- reproduce C3:
+--  SELECT r.region, COUNT(*) AS n_rows
+--  FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup` AS r
+--  INNER JOIN `teamster-332318`.`kipptaf_assessments`.`int_assessments__assessments_members` AS m
+--    ON r.source = m.source AND r.assessment_id = m.assessment_id
+--  INNER JOIN `teamster-332318`.`kipptaf_assessments`.`int_assessments__assessments_canonical` AS c
+--    ON m.source = c.source AND m.canonical_assessment_id = c.canonical_assessment_id
+--  WHERE r.is_internal_assessment AND r.module_type != 'WPP' AND r.academic_year < 2026
+--    AND COALESCE(c.administered_date, r.date_taken) >= DATE '2026-07-01'
+--  GROUP BY r.region
+-- reproduce C4:
+--  WITH scores AS (
+--    SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup`
+--    WHERE academic_year = 2026 AND is_internal_assessment AND module_type != 'WPP')
+--  SELECT r.region, COUNT(*) AS n_rows
+--  FROM scores AS r
+--  WHERE NOT EXISTS (
+--    SELECT w.region FROM `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks` AS w
+--    WHERE w.student_number = r.student_number AND w.academic_year = r.academic_year
+--      AND w.region = r.region AND w.week_start_monday <= r.administered_at)
+--  GROUP BY r.region
+-- reproduce C5:
+--  WITH scores AS (
+--    SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup`
+--    WHERE academic_year = 2026 AND is_internal_assessment AND module_type != 'WPP')
+--  SELECT r.region, COUNT(*) AS n_rows
+--  FROM scores AS r
+--  WHERE EXISTS (
+--      SELECT w.region FROM `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks` AS w
+--      WHERE w.student_number = r.student_number AND w.academic_year = r.academic_year
+--        AND w.region = r.region AND r.administered_at BETWEEN w.week_start_monday AND w.week_end_sunday)
+--    AND NOT EXISTS (
+--      SELECT w.region FROM `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks` AS w
+--      WHERE w.student_number = r.student_number AND w.academic_year = r.academic_year
+--        AND w.region = r.region AND r.administered_at BETWEEN w.week_start_monday AND w.week_end_sunday
+--        AND w.is_enrolled_week_end)
+--  GROUP BY r.region
+-- reproduce C5O:
+--  WITH scores AS (
+--    SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup`
+--    WHERE academic_year = 2026 AND is_internal_assessment AND module_type != 'WPP'),
+--  eligible AS (
+--    SELECT * FROM `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks`
+--    WHERE is_enrolled_week_end AND enroll_status IN (0, 2, 3))
+--  SELECT r.region, COUNT(*) AS n_rows
+--  FROM scores AS r
+--  WHERE EXISTS (
+--      SELECT w.region FROM eligible AS w
+--      WHERE w.student_number = r.student_number AND w.academic_year = r.academic_year
+--        AND w.region = r.region AND r.administered_at BETWEEN w.week_start_monday AND w.week_end_sunday
+--        AND w.is_out_of_district)
+--    AND NOT EXISTS (
+--      SELECT w.region FROM eligible AS w
+--      WHERE w.student_number = r.student_number AND w.academic_year = r.academic_year
+--        AND w.region = r.region AND r.administered_at BETWEEN w.week_start_monday AND w.week_end_sunday
+--        AND NOT w.is_out_of_district)
+--  GROUP BY r.region
 
 with
     types as (
