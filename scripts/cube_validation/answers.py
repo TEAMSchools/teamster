@@ -88,28 +88,75 @@ class HandCheck:
     workbook: str | None = None
     sheet: str | None = None
     filters: dict[str, Any] = field(default_factory=dict)
-    # A cause's example that also holds other causes' rows: no cell held
-    # that cause's alone.
+    # A cause's example that also holds other causes' rows.
     mixed: bool = False
+    # The fewest students the cause surely has in the cell (`cell_causes`).
+    cause_students: int | None = None
+
+
+# The side whose rows a group's bucket counts, in `RunResult.cell_rows`.
+_ROWS_SIDE = {
+    "cube_only": "c",
+    "dashboard_filtered": "c",
+    "value_differs": "c",
+    "dashboard_only": "d",
+}
 
 
 def cell_causes(
     run: RunResult, cfg: ViewConfig, comparison: str, items: list[dict]
-) -> list[tuple[dict, frozenset[str]]]:
-    """Each differing cell of a comparison with the causes its rows carry.
+) -> list[tuple[dict, dict[str, int]]]:
+    """Each differing cell of a comparison, with the causes its rows carry and
+    the fewest students each surely has in it.
 
     A cell's rows lie in the groups whose columns agree with its dims and cut
     (`confirm._in_cut`, `confirm._in_cells`, as `--cells` links them); each
     group carries its triage item's causes (`triage.cause_key`), and a group
     with none carries `""`.
 
+    A cause's students in a cell are not recorded: a group's `n_students`
+    covers all its causes and every cut. So the count is a floor: the most
+    students of one group that carries only that cause, splits by every one
+    of the cell's dims with the cell's values, and has all its rows in the
+    cell's cut (the run's per-cut sums, `RunResult.cell_rows`). A cause with
+    no such group counts 0. Never a sum, which could count a student twice.
+
     Returns:
-        `[(cell, causes)]` in `run.diff_cells` order.
+        `[(cell, {cause: students})]` in `run.diff_cells` order.
     """
-    from . import confirm
+    from . import compare, confirm, pipeline
     from . import triage as triage_mod
 
     spec = next((c for c in cfg.comparisons if c.id == comparison), None)
+    single_cut = spec is not None and len(pipeline._cuts(spec)) == 1
+    entries: dict[tuple, list[dict]] = {}
+    for e in run.cell_rows.get(comparison) or []:
+        key = (e["bucket"], frozenset((k, v) for k, v in e["dims"]))
+        entries.setdefault(key, []).append(e)
+
+    def whole_in(g, cell) -> bool:
+        """Whether every row of `g` lies in `cell`: its dims and its cut."""
+        mine = {
+            k: (None if k in g.nulls else v)
+            for k, v in g.dims
+            if not k.startswith(compare.DASH_PREFIX) and k != "dashboard_filter"
+        }
+        for column, value in cell["dims"]:
+            if column not in mine or pipeline._key(mine[column]) != pipeline._key(
+                value
+            ):
+                return False
+        side = _ROWS_SIDE.get(g.bucket)
+        found = entries.get((g.bucket, frozenset(mine.items())), [])
+        if side is None or len(found) != 1:
+            return False
+        (e,) = found
+        cuts = e.get("cuts") or {}
+        if not cuts:
+            return single_cut and e[side]["rows"] > 0
+        held = cuts.get(cell.get("cut", "{}"))
+        return held is not None and 0 < held[side]["rows"] == e[side]["rows"]
+
     by_key = {
         item.get("key"): frozenset(
             triage_mod.cause_key(c.get("side", ""), c.get("label") or "")
@@ -128,14 +175,19 @@ def cell_causes(
     for cell in run.diff_cells:
         if cell["comparison"] != comparison:
             continue
-        held = frozenset().union(
-            *(
-                by_key.get(key, frozenset({""}))
-                for key, g in groups
-                if confirm._in_cut(g, spec, cell.get("cut", "{}"))
+        held: dict[str, int] = {}
+        for key, g in groups:
+            if not (
+                confirm._in_cut(g, spec, cell.get("cut", "{}"))
                 and any(confirm._in_cells(g, cell))
-            )
-        )
+            ):
+                continue
+            causes = by_key.get(key, frozenset({""}))
+            for cause in causes:
+                held.setdefault(cause, 0)
+            if len(causes) == 1 and whole_in(g, cell):
+                (cause,) = causes
+                held[cause] = max(held[cause], g.n_students)
         out.append((cell, held))
     return out
 
@@ -152,15 +204,17 @@ def example_cell(
         run: The saved run.
         comparison: The comparison id.
         cause: A cause question's cause (`triage.cause_key`): the cell must
-            hold its rows, and one holding no other cause's wins.
+            hold `MASK_BELOW` or more of its students (`cell_causes`), so the
+            question's words cannot single one out; the most wins.
         cells: `cell_causes` for the comparison; without it, `cause` is
             not used.
 
     Returns:
         The cell with the largest absolute difference whose dims are all
         reviewed columns and whose `n_students` is at least `MASK_BELOW`; ties
-        go to the lowest `key`. With `cause`, among the cells holding only
-        that cause, else those holding it with others (`mixed` set). None
+        go to the lowest `key`. With `cause`, the cell where the cause holds
+        the most students, then the largest difference, with
+        `cause_students` and `mixed` (other causes' rows in it too). None
         when no cell qualifies.
     """
     ok = [
@@ -173,17 +227,32 @@ def example_cell(
         and c["dashboard"] is not None
         and c["cube"] is not None
     ]
-    mixed = False
     if cause is not None and cells is not None:
         held = {id(cell): causes for cell, causes in cells}
-        mine = [c for c in ok if cause in held.get(id(c), frozenset())]
-        ok = [c for c in mine if held[id(c)] == {cause}]
-        if not ok:
-            ok, mixed = mine, True
+        sure = [
+            (held[id(c)][cause], c)
+            for c in ok
+            if held.get(id(c), {}).get(cause, 0) >= MASK_BELOW
+        ]
+        if not sure:
+            return None
+        students, best = min(
+            sure,
+            key=lambda sc: (
+                -sc[0],
+                -abs(sc[1]["dashboard"] - sc[1]["cube"]),
+                sc[1]["key"],
+            ),
+        )
+        return {
+            **best,
+            "mixed": len(held[id(best)]) > 1,
+            "cause_students": students,
+        }
     if not ok:
         return None
     best = min(ok, key=lambda c: (-abs(c["dashboard"] - c["cube"]), c["key"]))
-    return {**best, "mixed": mixed}
+    return {**best, "mixed": False, "cause_students": None}
 
 
 def _predicate(column: str, key: str) -> str:
@@ -274,6 +343,7 @@ def hand_check(
         sheet=cmp.sheet,
         filters=filters,
         mixed=cell["mixed"],
+        cause_students=cell["cause_students"],
     )
 
 
@@ -427,9 +497,9 @@ def _ask_cause(ask: CauseAsk) -> str:
 
 
 def _rank(check: HandCheck) -> tuple:
-    """Order a cause's examples: its rows alone first, then the widest gap."""
+    """Order a cause's examples: the most of its students, then the widest gap."""
     gap = abs((check.dashboard or 0) - (check.cube or 0))
-    return (check.mixed, -gap, check.comparison)
+    return (-(check.cause_students or 0), -gap, check.comparison)
 
 
 def merged_reproduce(

@@ -67,8 +67,10 @@ validation files or runs the validator, and neither does this session.
       to read (`dims`, or the total), and the number to expect (`dashboard`)
       beside Cube's (`cube`). `<10` on a rate or average is a whole value under
       10, such as a rate of 0 or 1 (0% or 100%), masked by rule. A cause
-      question has 1 example, a cell holding that cause's rows; with `mixed`
-      true, say it holds other causes' rows too. Then each side's SQL
+      question has at most 1 example: a cell where at least `cause_students` (10
+      or more) students' rows have that cause; with `mixed` true, say it holds
+      other causes' rows too. Without one, never offer a cell of your own for a
+      cause: its words could single out a student there. Then each side's SQL
       (`dashboard_sql`, `cube_sql`) in a fenced `sql` block to paste into the
       BigQuery console, with its dry-run price (`dashboard_usd`, `cube_usd`): it
       is pinned to the run's moment and returns only that cell. When they are

@@ -11,6 +11,7 @@ from cube_validation.answers import (
     AnswerError,
     HandCheck,
     approved_decisions,
+    cell_causes,
     example_cell,
     hand_check,
     note_refusal,
@@ -102,19 +103,57 @@ def test_example_cell_reads_a_view_s_bare_reference_names():
     assert example_cell(run, "enrollment") is None
 
 
-def test_a_cause_s_example_holds_its_rows_alone_when_one_can():
-    alone, shared, other = _cell("a", 10, 12), _cell("b", 10, 30), _cell("c", 10, 50)
-    run = _run([alone, shared, other])
-    cells = [(alone, frozenset({"C1"})), (shared, frozenset({"C1", "C2"})),
-             (other, frozenset({"C2"}))]  # fmt: skip
+def test_a_cause_s_example_needs_10_of_its_own_students_and_the_most_wins():
+    few, many, wide = _cell("a", 10, 12), _cell("b", 10, 13), _cell("c", 10, 90)
+    run = _run([few, many, wide])
+    # `wide` has the widest gap but only 1 student of C1: the words of the
+    # question would name them.
+    cells = [(few, {"C1": 12}), (many, {"C1": 40, "C2": 3}), (wide, {"C1": 1})]
 
-    # The widest gap holding C1 is shared; the one holding C1 alone wins.
     picked = example_cell(run, "enrollment", "C1", cells)
-    assert (picked["key"], picked["mixed"]) == ("a", False)
-    # C2 is never alone except in `c`; with that cell gone, `b` is mixed.
-    picked = example_cell(run, "enrollment", "C2", cells[:2])
-    assert (picked["key"], picked["mixed"]) == ("b", True)
+    assert picked["key"] == "b"
+    assert (picked["cause_students"], picked["mixed"]) == (40, True)
+    assert example_cell(run, "enrollment", "C2", cells) is None
     assert example_cell(run, "enrollment", "C3", cells) is None
+
+
+def _floor_run(groups, rows):
+    run = _run([_cell("a", 10, 20)])
+    run.applied = Applied(open=list(groups))
+    run.cell_rows = {"enrollment": rows}
+    return run
+
+
+def _rows(bucket, c_rows, in_cut, cut=CUT):
+    side = {"rows": c_rows, "n": [0], "sum": [0.0]}
+    shown = {"rows": in_cut, "n": [0], "sum": [0.0]}
+    none = {"rows": 0, "n": [0], "sum": [0.0]}
+    return {"bucket": bucket, "dims": [list(d) for d in DIMS], "dash_dims": None,
+            "c": side, "d": none, "cuts": {cut: {"c": shown, "d": none}}}  # fmt: skip
+
+
+def test_a_cause_s_students_in_a_cell_are_only_what_its_groups_prove():
+    g = Group("enrollment", tuple(map(tuple, DIMS)), "cube_only", 30, 25)
+
+    def floor(groups, rows, causes):
+        run = _floor_run(groups, rows)
+        items = [
+            {"key": it.key, "kind": "group",
+             "cause": [{"side": "cube", "label": c} for c in causes]}
+            for it in triage_mod.open_items(run)
+        ]  # fmt: skip
+        ((_, held),) = cell_causes(run, _cfg(), "enrollment", items)
+        return held
+
+    # All 30 rows in the cell's cut, 1 cause: its 25 students count.
+    assert floor([g], [_rows("cube_only", 30, 30)], ["C1"]) == {"cube: C1": 25}
+    # Rows in another cut too: which students are in this one is unknown.
+    assert floor([g], [_rows("cube_only", 30, 12)], ["C1"]) == {"cube: C1": 0}
+    # 2 causes share the group's students: neither count is known.
+    assert floor([g], [_rows("cube_only", 30, 30)], ["C1", "C2"]) == {
+        "cube: C1": 0,
+        "cube: C2": 0,
+    }
 
 
 def test_example_cell_skips_cells_under_10_students():
