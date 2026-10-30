@@ -105,6 +105,8 @@ class Proof:
     proven_at: str
     workbook_updated_at: str = ""
     probe_fingerprint: str = ""
+    # `tableau.source_fingerprint` of the sheet; "" when the proof predates it.
+    source_fingerprint: str = ""
     # The cut labels the REST export proved; None when the proof predates them.
     cuts: list[str] | None = None
     # Total rows the export showed and the proof skipped; None when the proof
@@ -368,6 +370,7 @@ def _comparison(reader: _Reader) -> Comparison:
             proven_at=str(proof_reader.data.get("proven_at", "")),
             workbook_updated_at=str(proof_reader.data.get("workbook_updated_at", "")),
             probe_fingerprint=str(proof_reader.data.get("probe_fingerprint", "")),
+            source_fingerprint=str(proof_reader.data.get("source_fingerprint", "")),
             totals_skipped=totals_skipped,
             missing_cuts=_captions(proof_reader, "missing_cuts"),
             missing_filters=_captions(proof_reader, "missing_filters"),

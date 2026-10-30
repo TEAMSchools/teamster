@@ -334,6 +334,46 @@ def formula_fingerprint(twb_xml: str, sheet: str) -> str:
     return hashlib.sha256(json.dumps(sorted(parts)).encode("utf-8")).hexdigest()
 
 
+def source_fingerprint(twb_xml: str, sheet: str) -> str:
+    """Fingerprint what feeds one sheet that `formula_fingerprint` leaves out.
+
+    Covers, for each datasource the sheet depends on (Parameters aside), its
+    connection (the table or custom SQL it reads, as canonical XML) and its
+    own filters (data source filters). Its extract is left out: a republish
+    rewrites the extract's refresh times without changing the data's logic.
+
+    Raises:
+        ValueError: The workbook has no worksheet of that name.
+    """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    root = ET.fromstring(twb_xml)
+    ws = next(
+        (w for w in root.iter("worksheet") if w.get("name") == sheet),
+        None,
+    )
+    if ws is None:
+        raise ValueError(f"the workbook has no worksheet {sheet!r}")
+    used = {d.get("datasource") or "" for d in ws.iter("datasource-dependencies")} - {
+        "Parameters",
+        "",
+    }
+    parts = []
+    for ds in root.findall("./datasources/datasource"):
+        name = ds.get("name") or ""
+        if name not in used:
+            continue
+        for child in ds:
+            if child.tag in ("connection", "filter"):
+                parts.append(
+                    [
+                        name,
+                        child.tag,
+                        ET.canonicalize(ET.tostring(child, encoding="unicode")),
+                    ]
+                )
+    return hashlib.sha256(json.dumps(sorted(parts)).encode("utf-8")).hexdigest()
+
+
 _PARAMETERS_DS = re.compile(
     r"<datasource\b(?=[^>]*\bname='Parameters')[^>]*[^/]>.*?</datasource>", re.DOTALL
 )
