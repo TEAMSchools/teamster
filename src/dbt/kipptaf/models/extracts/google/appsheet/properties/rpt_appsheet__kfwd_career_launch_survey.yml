@@ -62,6 +62,42 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: current_college_cumulative_gpa_source
+        data_type: string
+        description: >-
+          Source__c of the Salesforce GPA record behind the current college GPA,
+          such as Unofficial Transcript or Student Portal. Null when there is no
+          current college GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_band
+        data_type: string
+        description: >-
+          Career Launch GPA band the current college GPA falls in, from the
+          Career Launch Scoring Rubric sheet. Null when there is no current
+          college GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_points
+        data_type: int64
+        description: >-
+          Points the GPA band adds to the Career Launch score; 0 when there is
+          no current college GPA. The app adds these to the four indicator
+          points.
+        config:
+          meta:
+            contains_pii: true
+      - name: ecc
+        data_type: numeric
+        description: >-
+          Adjusted six-year minority graduation rate of the college the alumnus
+          graduated from. Null when they have not graduated. Context next to
+          GPA; not scored.
+        config:
+          meta:
+            contains_pii: true
       - name: pursuing_degree_type
         data_type: string
         description:
