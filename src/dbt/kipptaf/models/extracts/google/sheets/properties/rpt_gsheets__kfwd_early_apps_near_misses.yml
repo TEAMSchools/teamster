@@ -21,10 +21,18 @@ models:
         description:
           District code location the Overgrad record came from. Part of the
           grain; left out of the sheet.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: overgrad_student_id
         data_type: int64
         description:
           Overgrad student id. Part of the grain; left out of the sheet.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: criterion_code
         data_type: string
         description: Goal code. Part of the grain.
@@ -43,6 +51,9 @@ models:
       - name: counselor_name
         data_type: string
         description: Assigned Overgrad counselor.
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_band
         data_type: string
         description: Early-application goal band.

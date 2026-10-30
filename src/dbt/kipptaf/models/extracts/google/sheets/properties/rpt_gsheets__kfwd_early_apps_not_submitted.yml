@@ -22,10 +22,18 @@ models:
         description:
           District code location the Overgrad record came from. Part of the
           grain; left out of the sheet.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: overgrad_student_id
         data_type: int64
         description:
           Overgrad student id. Part of the grain; left out of the sheet.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: section
         data_type: string
         description:
@@ -52,6 +60,9 @@ models:
       - name: counselor_name
         data_type: string
         description: Assigned Overgrad counselor.
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_band
         data_type: string
         description: Early-application goal band.
@@ -111,12 +122,16 @@ unit_tests:
       rows:
         - overgrad_student_id: 1
           section: A
+          section_label: A. Flagged ED/EA, no early app submitted
           will_apply_early_applications: Example College A (EA)
           earliest_will_apply_due_date: 2026-11-01
           submitted_early_applications: null
           submitted_no_deadline_type_applications: Example College H
         - overgrad_student_id: 3
           section: B
+          section_label:
+            "B. Submitted early, but the Is ED/EA flag is not Yes: check the
+            flag in Overgrad"
           will_apply_early_applications: null
           earliest_will_apply_due_date: null
           submitted_early_applications: Example College C (EA) 73.6%

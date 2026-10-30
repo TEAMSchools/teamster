@@ -1,18 +1,17 @@
 models:
   - name: rpt_gsheets__kfwd_early_apps_summary
     description:
-      Summary tab of the KIPP Forward early apps tracker. 19 rows — N (current
-      seniors at the 3 KIPP high schools whose Overgrad Is ED/EA flag is Yes),
-      the count in each GPA band, then 2 rows per goal, "% of N" and "% of
-      band". The 7 goals are the 5 in
-      int_students__early_application_criteria_scaffold plus "met both" for
-      3.75+ and for 3.50-3.74. Display columns read like 3% (1/40); a 0
-      denominator shows "-". Numeric met, denominator, and percent columns sit
-      beside them for charting.
+      Summary tab of the KIPP Forward early apps tracker. N (current seniors at
+      the tracker's high schools whose Overgrad Is ED/EA flag is Yes) and the
+      count in each GPA band come first, then 2 rows per goal, "% of N" and "%
+      of band". The goals come from the early_application_criteria macro, plus a
+      "met both" row for each band with more than 1 goal. Display columns read
+      like 3% (1/40); a 0 denominator shows "-". Numeric met, denominator, and
+      percent columns sit beside them for charting.
     columns:
       - name: row_sort
         data_type: int64
-        description: Display order, 1 to 19.
+        description: Display order of the row.
         data_tests:
           - unique:
               config:
@@ -103,13 +102,13 @@ unit_tests:
       - input: ref("int_students__early_applications_rollup")
         format: sql
         rows: |
-          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, 'KIPP Cooper Norcross High School' as high_school, '3.75+' as gpa_band, true as is_ed_ea_flagged, timestamp '2026-10-28 13:00:00' as latest_overgrad_updated_at
+          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, 'KIPP Cooper Norcross High School' as high_school, '3.75+' as gpa_band, true as is_ed_ea_flagged, timestamp '2026-10-28 13:00:00' as latest_overgrad_updated_at, 'cooper_norcross' as school_key
           union all
-          select 'kippcamden', 2, 'KIPP Cooper Norcross High School', '3.75+', true, timestamp '2026-10-27 13:00:00'
+          select 'kippcamden', 2, 'Renamed Cooper Norcross', '3.75+', true, timestamp '2026-10-27 13:00:00', 'cooper_norcross'
           union all
-          select 'kippnewark', 3, 'KIPP Newark Collegiate Academy', '3.00-3.49', true, timestamp '2026-10-27 13:00:00'
+          select 'kippnewark', 3, 'KIPP Newark Collegiate Academy', '3.00-3.49', true, timestamp '2026-10-27 13:00:00', 'newark_collegiate'
           union all
-          select 'kippnewark', 4, 'KIPP Newark Lab High School', '3.00-3.49', false, timestamp '2026-10-29 13:00:00'
+          select 'kippnewark', 4, 'KIPP Newark Lab High School', '3.00-3.49', false, timestamp '2026-10-29 13:00:00', 'newark_lab'
       - input: ref("int_students__early_application_criteria_scaffold")
         format: sql
         rows: |

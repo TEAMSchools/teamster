@@ -88,9 +88,16 @@ models:
         description:
           Adjusted 6-year graduation rate for underrepresented minority
           students, on a 0 to 100 scale, from the Salesforce account whose NCES
-          id matches the college's IPEDS id. A college with 2 Salesforce
-          accounts gets 1 rate, the higher of the 2. Null when no account
-          matches or the account has no rate.
+          id matches the college's IPEDS id. A college whose Salesforce accounts
+          carry the same rate gets that rate. Null when no account matches, the
+          account has no rate, or 2 accounts disagree (see
+          has_conflicting_rate).
+      - name: has_conflicting_rate
+        data_type: boolean
+        description:
+          True when 2 Salesforce accounts for the college carry different URM
+          rates. The rate is left null so the college never counts toward a URM
+          bar until someone fixes the accounts.
       - name: is_full_need
         data_type: boolean
         description:
@@ -190,6 +197,10 @@ unit_tests:
             adjusted_6_year_minority_graduation_rate: 80.0
           - nces_id: 333
             adjusted_6_year_minority_graduation_rate: null
+          - nces_id: 222
+            adjusted_6_year_minority_graduation_rate: 70.0
+          - nces_id: 222
+            adjusted_6_year_minority_graduation_rate: 75.0
     expect:
       rows:
         - admission_id: 1
@@ -197,28 +208,33 @@ unit_tests:
           application_type: ED
           is_submitted: true
           urm_graduation_rate: 80.0
+          has_conflicting_rate: false
           is_full_need: true
         - admission_id: 2
           is_early: true
           application_type: ED
           is_submitted: false
           urm_graduation_rate: null
+          has_conflicting_rate: true
           is_full_need: true
         - admission_id: 3
           is_early: true
           application_type: EA
           is_submitted: true
           urm_graduation_rate: null
+          has_conflicting_rate: false
           is_full_need: true
         - admission_id: 4
           is_early: true
           application_type: EA
           is_submitted: false
           urm_graduation_rate: null
+          has_conflicting_rate: false
           is_full_need: true
         - admission_id: 7
           is_early: false
           application_type: null
           is_submitted: true
           urm_graduation_rate: null
+          has_conflicting_rate: false
           is_full_need: true

@@ -5,16 +5,7 @@ with
             overgrad_student_id,
             gpa_band,
             latest_overgrad_updated_at,
-
-            case
-                high_school
-                when 'KIPP Cooper Norcross High School'
-                then 'cooper_norcross'
-                when 'KIPP Newark Collegiate Academy'
-                then 'newark_collegiate'
-                when 'KIPP Newark Lab High School'
-                then 'newark_lab'
-            end as school_key,
+            school_key,
         from {{ ref("int_students__early_applications_rollup") }}
         where is_ed_ea_flagged
     ),

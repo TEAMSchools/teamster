@@ -9,7 +9,7 @@ with
             due_date__type,
             status,
 
-            cast(university__ipeds_id as string) as university_ipeds_id,
+            cast(university__ipeds_id as string) as ipeds_id_string,
             cast(due_date__date as date) as due_date,
             cast(updated_at as timestamp) as updated_at,
 
@@ -36,7 +36,7 @@ with
             university_name,
             due_date__type,
             status,
-            university_ipeds_id,
+            ipeds_id_string,
             due_date,
             updated_at,
             is_early,
@@ -46,15 +46,27 @@ with
         from admissions
     ),
 
-    college_rates as (
-        -- a college can have 2 Salesforce accounts; keep 1 rate per IPEDS id
+    college_rate_range as (
+        -- a college can have 2 Salesforce accounts; collapse to 1 row per IPEDS id
         select
             nces_id,
 
-            max(adjusted_6_year_minority_graduation_rate) as urm_graduation_rate,
+            min(adjusted_6_year_minority_graduation_rate) as min_rate,
+            max(adjusted_6_year_minority_graduation_rate) as max_rate,
         from {{ ref("stg_kippadb__account") }}
         where nces_id is not null
         group by nces_id
+    ),
+
+    college_rates as (
+        select
+            nces_id,
+
+            -- accounts that disagree get no rate, so the college never counts
+            if(min_rate != max_rate, null, max_rate) as urm_graduation_rate,
+
+            if(min_rate != max_rate, true, false) as has_conflicting_rate,
+        from college_rate_range
     )
 
 select
@@ -74,6 +86,9 @@ select
     -- TODO(#6194): placeholder until a meets-full-need source is chosen
     true as is_full_need,
 
+    coalesce(cr.has_conflicting_rate, false) as has_conflicting_rate,
+
+    -- Applied and every later status; Will Apply, Withdrew, Did Not Apply are not
     if(
         a.status
         in ('Applied', 'Accepted', 'Denied', 'Deferred', 'Waitlisted', 'Enrolled'),
@@ -88,5 +103,5 @@ select
         then 'EA'
     end as application_type,
 from admissions_scoped as a
-left join college_rates as cr on a.university_ipeds_id = cr.nces_id
+left join college_rates as cr on a.ipeds_id_string = cr.nces_id
 where a.is_in_scope

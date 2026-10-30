@@ -12,15 +12,20 @@ with
 
             cast(academics__unweighted_gpa as numeric) as unweighted_gpa_numeric,
             cast(updated_at as timestamp) as updated_at,
+
+            -- the 3 KIPP high schools the tracker reports on; every other
+            -- Overgrad school gets no key and drops out
+            case
+                school__name
+                when 'KIPP Cooper Norcross High School'
+                then 'cooper_norcross'
+                when 'KIPP Newark Collegiate Academy'
+                then 'newark_collegiate'
+                when 'KIPP Newark Lab High School'
+                then 'newark_lab'
+            end as school_key,
         from {{ ref("int_overgrad__students") }}
-        where
-            graduation_year = {{ var("current_academic_year") + 1 }}
-            -- the 3 KIPP high schools the tracker reports on
-            and school__name in (
-                'KIPP Cooper Norcross High School',
-                'KIPP Newark Collegiate Academy',
-                'KIPP Newark Lab High School'
-            )
+        where graduation_year = {{ var("current_academic_year") + 1 }}
     ),
 
     seniors_rounded as (
@@ -28,6 +33,7 @@ with
             _dbt_source_project,
             overgrad_student_id,
             high_school,
+            school_key,
             is_ed_ea,
             first_name,
             last_name,
@@ -37,6 +43,7 @@ with
 
             round(unweighted_gpa_numeric, 2) as unweighted_gpa,
         from seniors
+        where school_key is not null
     ),
 
     application_labels as (
@@ -53,7 +60,13 @@ with
 
             university_name || ' (' || application_type || ')' as application_label,
 
-            coalesce(format('%.1f%%', urm_graduation_rate), 'no rate') as urm_text,
+            case
+                when has_conflicting_rate
+                then 'review rate'
+                when urm_graduation_rate is null
+                then 'no rate'
+                else format('%.1f%%', urm_graduation_rate)
+            end as urm_text,
         from {{ ref("int_students__early_applications") }}
     ),
 
@@ -124,6 +137,7 @@ select
     s._dbt_source_project,
     s.overgrad_student_id,
     s.high_school,
+    s.school_key,
     s.unweighted_gpa,
 
     sub.submitted_early_applications,

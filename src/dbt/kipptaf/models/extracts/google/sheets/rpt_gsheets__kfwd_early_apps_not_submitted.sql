@@ -39,7 +39,9 @@ select
         when 'A'
         then 'A. Flagged ED/EA, no early app submitted'
         when 'B'
-        then 'B. Submitted early, but Is ED/EA flag is blank: fix the flag in Overgrad'
+        then
+            'B. Submitted early, but the Is ED/EA flag is not Yes: '
+            || 'check the flag in Overgrad'
     end as section_label,
 from sectioned
 where section is not null
