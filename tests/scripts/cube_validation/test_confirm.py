@@ -1013,3 +1013,139 @@ def test_a_sibling_s_own_failing_proof_shows_its_refusal(duck, tmp_path, offline
     assert by["mastery-b"]["evidence"][0].startswith(
         "proof mastery-b__cube_only.sql not run"
     )
+
+
+# --- reproduce queries ---------------------------------------------------------------
+
+REPRODUCE = """SELECT f.school, COUNT(*) AS n_rows
+FROM `teamster-332318`.`d`.`fact` AS f
+WHERE NOT f.ok1
+GROUP BY f.school"""
+
+
+def test_a_reproduce_query_rides_in_the_header_and_not_the_fingerprint():
+    text = confirm.compose(CAUSES, PROOF, {"C1": REPRODUCE})
+
+    assert "-- reproduce C1:\n--  SELECT f.school, COUNT(*) AS n_rows\n" in text
+    causes, reproduce, body = confirm.split_proof(text)
+    assert (causes, reproduce, body) == (CAUSES, {"C1": REPRODUCE}, PROOF.strip())
+    assert confirm.split_block(text) == (CAUSES, PROOF.strip())
+    assert confirm.fingerprint(causes, body) == confirm.fingerprint(CAUSES, PROOF)
+
+
+def test_check_reproduce_takes_counts_by_a_column_that_names_no_one():
+    confirm.check_reproduce(REPRODUCE, {"student", "lea"}, {"student", "lea"})
+    confirm.check_reproduce(
+        "WITH t AS (SELECT 1 AS x) SELECT COUNT(*) AS n FROM t", {"student"}
+    )
+    confirm.check_reproduce(
+        "SELECT school, COUNTIF(NOT ok1) AS n FROM d.fact GROUP BY 1", {"student"}
+    )
+
+
+@pytest.mark.parametrize(
+    ("sql", "why"),
+    [
+        ("SELECT COUNT(*) FROM {unmatched}", "never {unmatched}"),
+        (
+            "SELECT COUNT(*) FROM `teamster-332318.d.fact` "
+            "FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-28 00:00:00+00:00'",
+            "FOR SYSTEM_TIME",
+        ),
+        ("SELECT * FROM d.fact", "selects \\*"),
+        ("SELECT school, COUNT(*) FROM d.fact", "not in its GROUP BY"),
+        (
+            "SELECT student, COUNT(*) FROM d.fact GROUP BY student",
+            "grain or identifying",
+        ),
+        ("SELECT COUNT(*) FROM d.fact GROUP BY student_number", "grain or identifying"),
+        ("SELECT school FROM d.fact GROUP BY school", "no aggregate"),
+        ("SELECT COUNT(*) OVER () AS n FROM d.fact", "window function"),
+        ("SELECT COUNT(*) FROM d.fact WHERE student = 123456", "identifying column"),
+        ("SELECT COUNT(*) FROM d.fact WHERE note = '1234567'", "ID-like"),
+        ("SELECT 1; SELECT 2", "1 SELECT"),
+    ],
+)
+def test_check_reproduce_refuses_what_could_name_a_row(sql, why):
+    with pytest.raises(pipeline.Refusal, match=why):
+        confirm.check_reproduce(sql, {"student", "lea"}, {"student", "lea"})
+
+
+def _draft(tmp_path, text):
+    draft = tmp_path / "draft.sql"
+    draft.write_text(text)
+    return draft
+
+
+def _confirm_text(duck, tmp_path, text, wh=None):
+    confirm.run_confirm(
+        CFG,
+        tmp_path / "validation" / "v.yml",
+        wh=wh or Wh(duck),
+        cube=None,
+        max_usd=1.0,
+        cache_root=tmp_path,
+        comparison="mastery",
+        bucket="cube_only",
+        sql=_draft(tmp_path, text),
+    )
+
+
+def test_confirm_keeps_a_checked_reproduce_query_with_the_proof(
+    duck, tmp_path, monkeypatch, offline, capsys
+):
+    _tables(duck)
+    _saved(tmp_path, monkeypatch, _run([_group(3)]))
+
+    _confirm_text(duck, tmp_path, confirm.compose(CAUSES, PROOF, {"C1": REPRODUCE}))
+
+    stored = tmp_path / "validation" / "proofs" / "v" / "mastery__cube_only.sql"
+    assert confirm.read_proof(stored).reproduce == {"C1": REPRODUCE}
+    assert "Reproduce C1: dry run OK" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("reproduce", "why"),
+    [
+        ({"C9": REPRODUCE}, "no cause C9"),
+        (
+            {"C1": "SELECT * FROM d.fact"},
+            "-- reproduce C1: the reproduce query selects",
+        ),
+    ],
+)
+def test_confirm_refuses_a_bad_reproduce_query_before_any_query(
+    duck, tmp_path, monkeypatch, offline, reproduce, why
+):
+    _tables(duck)
+    _saved(tmp_path, monkeypatch, _run([_group(3)]))
+    wh = Wh(duck)
+
+    with pytest.raises(pipeline.Refusal, match=why):
+        _confirm_text(duck, tmp_path, confirm.compose(CAUSES, PROOF, reproduce), wh)
+
+    assert wh.ran == [] and not (tmp_path / "validation").exists()
+
+
+def test_confirm_refuses_a_reproduce_query_bigquery_refuses(
+    duck, tmp_path, monkeypatch, offline
+):
+    _tables(duck)
+    _saved(tmp_path, monkeypatch, _run([_group(3)]))
+
+    class Refusing(Wh):
+        def estimate(self, sql):
+            if "n_rows" in sql and "{unmatched}" not in sql and "__row" not in sql:
+                raise BadRequest(
+                    "Unrecognized name: ok3", errors=[{"reason": "invalidQuery"}]
+                )
+            return 0.01
+
+    with pytest.raises(pipeline.Refusal, match="reproduce C1: BigQuery refused it"):
+        _confirm_text(
+            duck,
+            tmp_path,
+            confirm.compose(CAUSES, PROOF, {"C1": REPRODUCE}),
+            Refusing(duck),
+        )
+    assert not (tmp_path / "validation").exists()
