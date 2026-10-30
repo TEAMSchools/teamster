@@ -36,15 +36,16 @@ validation files or runs the validator, and neither does this session.
    (`mcp__github__search_issues`); if several match, ask which. Read it with
    `mcp__github__issue_read` and parse its one fenced `json` block: a list of
    questions, each with `id`, `reason`, `decisions`, `views`, `definitions`,
-   `evidence`, `counts`, `hand_checks`, `moment`, `expires` and `expired`. Read
-   its comments too: skip a question an earlier answers comment of the owner's
-   already covers, unless they want to change it, and then send them to the
-   analyst.
+   `evidence`, `counts`, `hand_checks`, `moment`, `expires` and `expired`; a
+   cause question also has `reproduce`. Read its comments too: skip a question
+   an earlier answers comment of the owner's already covers, unless they want to
+   change it, and then send them to the analyst.
 2. Say how many questions there are. A question with `expired: true` has pinned
-   SQL that no longer runs: the owner can answer without the checks, or wait for
-   the analyst to re-run so they work. For the wait, offer to draft a short
-   comment on the validation issue asking the analyst to re-run, posted only on
-   the owner's confirmation. When `expires` is within 1 day, say when the checks
+   SQL that no longer runs: the owner can answer without the checks, check a
+   cause through its `reproduce` entries (which never expire), or wait for the
+   analyst to re-run so they work. For the wait, offer to draft a short comment
+   on the validation issue asking the analyst to re-run, posted only on the
+   owner's confirmation. When `expires` is within 1 day, say when the checks
    stop working, so the owner runs them first.
 3. Ask one question at a time, with everything up front, in this order:
    1. The question in policy words ("Which attendance codes should count as
@@ -67,7 +68,13 @@ validation files or runs the validator, and neither does this session.
       `cube_usd`): it is pinned to the run's moment and returns only that cell.
       Tableau shows its last refresh, so a small difference may not match there.
       An entry with `none` has no group cell to show: offer to find an example
-      under the owner's access, in this chat.
+      under the owner's access, in this chat. For a cause question, then each
+      `reproduce` entry, which keeps working after the pinned SQL expires: its
+      `cube.query` for the owner to run with the Cube connector (Cube applies
+      their access) and compare with the dashboard cell `cube.dashboard` names;
+      each proof's `reproduce` SQL to paste into BigQuery, labeled today's data
+      whose counts drift from the run (or say it has none yet); and the proof
+      file's `url`.
    6. The choices, with what happens next, plus free text:
 
       | Choice                     | `call`          | What happens next                                 |

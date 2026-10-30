@@ -897,3 +897,128 @@ def test_a_split_group_shows_only_each_causes_own_rows():
     # groups' whole 60 never shows, so nothing gives the other cause's 3 away.
     numbers = set(re.findall(r"(?<![<\d])\d+ rows", posted))
     assert numbers == {"57 rows"}
+
+
+# --- reproducing a cause ---------------------------------------------------------------
+
+from dataclasses import replace as _replace  # noqa: E402
+
+from cube_validation import confirm as confirm_mod  # noqa: E402
+from cube_validation import pipeline as pipeline_mod  # noqa: E402
+from cube_validation.answers import ProofSource, reproduce_json  # noqa: E402
+from cube_validation.report import CauseAsk, _reproduce_lines  # noqa: E402
+
+PROOF_SQL = (
+    "SELECT u.__row, CASE WHEN TRUE THEN 'C1' ELSE 'UNEXPLAINED' END AS cause "
+    "FROM {unmatched} AS u"
+)
+LIVE = "SELECT school, COUNT(*) AS n_rows FROM d.t GROUP BY school"
+
+
+def _cause_cfg():
+    cmp = _replace(
+        _cfg().comparisons[0],
+        filters={
+            "Academic Year": ColumnPair("academic_year", "academic_year"),
+            "Grade": ColumnPair("grade_level", "grade_level"),
+        },
+    )
+    return ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
+
+
+def _ask(proofs):
+    decision = Decision(
+        id="c1",
+        comparison="enrollment",
+        call="domain_owner",
+        reason="r",
+        cause={"side": "dashboard", "label": "the sheet drops WPP"},
+    )
+    return CauseAsk(decision, [], 30, "", proofs)
+
+
+def _stored_proof(tmp_path, reproduce):
+    directory = tmp_path / "proofs" / "enrollment"
+    directory.mkdir(parents=True)
+    path = confirm_mod.proof_path(directory, "enrollment", "cube_only")
+    path.write_text(
+        confirm_mod.compose({"C1": ("dashboard", "drops WPP")}, PROOF_SQL, reproduce)
+    )
+    return "proofs/enrollment/enrollment__cube_only.sql"
+
+
+def test_a_cause_reproduces_through_cube_a_live_count_and_the_proof(tmp_path):
+    path = _stored_proof(tmp_path, {"C1": LIVE})
+    source = ProofSource("src/cube/validation/e.yml", tmp_path, "https://x/blob/b/dir")
+    run = _run([_cell("b", 10, 20)])
+
+    part = reproduce_json(
+        "enrollment", _ask(((path, "C1"),)), run, _cause_cfg(), source, START
+    )
+
+    query = part["cube"]["query"]
+    assert query["measures"] == ["enrollment.student_count"]
+    assert {"member": "enrollment.grade_level", "operator": "equals",
+            "values": ["7"]} in query["filters"]  # fmt: skip
+    (proof,) = part["proofs"]
+    assert proof["reproduce"] == LIVE
+    assert proof["confirm"] == (
+        "triage confirm src/cube/validation/e.yml --comparison enrollment "
+        "--bucket cube_only"
+    )
+    assert proof["after"] == [
+        "run src/cube/validation/e.yml",
+        "triage src/cube/validation/e.yml",
+    ]
+    assert proof["url"] == f"https://x/blob/b/dir/{path}"
+
+    text = "\n".join(_reproduce_lines("Q1", [part]))
+    assert "<summary>Reproduce Q1</summary>" in text
+    assert "With the Cube connector in Claude chat" in text
+    assert "today's data; counts drift from the run" in text and LIVE in text
+    assert f"[`{path}`](https://x/blob/b/dir/{path})" in text
+
+
+def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
+    path = _stored_proof(tmp_path, None)
+    source = ProofSource("v.yml", tmp_path)
+
+    part = reproduce_json(
+        "enrollment", _ask(((path, "C1"),)), _run([]), _cause_cfg(), source, START
+    )
+
+    assert part["cube"] is None and part["proofs"][0]["reproduce"] is None
+    text = "\n".join(_reproduce_lines("Q2", [part]))
+    assert "no example cell to query" in text
+    assert "Cause `C1`: no live count yet." in text
+    assert f"The proof: `{path}`." in text
+
+
+def test_a_proof_source_links_the_branch_and_never_the_remote_s_credentials(tmp_path):
+    import subprocess
+
+    def git(*args):
+        subprocess.run(
+            ["git", "-C", str(tmp_path), *args], check=True, capture_output=True
+        )
+
+    git("init", "-q", "-b", "feat/x")
+    git("remote", "add", "origin", "https://user:secret-token@github.com/org/repo.git")
+    view = tmp_path / "src" / "cube" / "validation" / "v.yml"
+    view.parent.mkdir(parents=True)
+    view.write_text("")
+
+    source = pipeline_mod.proof_source(view)
+
+    assert source.view_file == "src/cube/validation/v.yml"
+    assert source.blob == "https://github.com/org/repo/blob/feat/x/src/cube/validation"
+    assert "secret" not in source.blob
+
+
+def test_a_proof_source_outside_git_has_no_link(tmp_path):
+    view = tmp_path / "v.yml"
+    view.write_text("")
+
+    source = pipeline_mod.proof_source(view)
+
+    assert source.blob is None and source.base == tmp_path

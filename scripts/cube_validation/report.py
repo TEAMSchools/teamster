@@ -543,6 +543,9 @@ class CauseAsk:
     groups: list[Group]
     rows: int
     lead: str = ""
+    # Each stored proof that proves the cause in these groups, as its path
+    # relative to the validation file's directory and the cause's bucket.
+    proofs: tuple[tuple[str, str], ...] = ()
 
 
 def _cause_part(view: str, ask: CauseAsk) -> tuple[str, list]:
@@ -760,6 +763,58 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
     ]
 
 
+def _reproduce_lines(question_id: str, parts: list[dict]) -> list[str]:
+    """A cause question's folded Reproduce block: per comparison, the example
+    cell as a Cube query, then per proven cause a live count on today's
+    tables, the command that re-proves it, and the proof file."""
+    out = ["<details>", f"<summary>Reproduce {question_id}</summary>", ""]
+    for part in parts:
+        where = f"`{part['comparison']}` in `{part['view']}`"
+        cube = part.get("cube")
+        if cube:
+            out += [
+                f"{where}. With the Cube connector in Claude chat, run this "
+                "query; Cube applies your own access. "
+                + _dashboard_location(cube["dashboard"]).replace(
+                    "On the dashboard:", "Compare it with the dashboard:"
+                ),
+                "",
+                "```json",
+                json.dumps(cube["query"], indent=1),
+                "```",
+                "",
+            ]
+        else:
+            out += [f"{where}: no example cell to query.", ""]
+        for proof in part["proofs"]:
+            label = f"Cause `{_clean(proof['bucket'])}`"
+            if proof["reproduce"]:
+                out += [
+                    f"{label}, a live count in BigQuery (today's data; counts "
+                    "drift from the run):",
+                    "",
+                    "```sql",
+                    proof["reproduce"],
+                    "```",
+                    "",
+                ]
+            else:
+                out += [f"{label}: no live count yet.", ""]
+            link = (
+                f"[`{proof['path']}`]({proof['url']})"
+                if proof["url"]
+                else f"`{proof['path']}`"
+            )
+            out += [
+                f"In Claude in VS Code, in this repository: `{proof['confirm']}` "
+                f"re-proves it at the run's moment until {proof['expires']}; "
+                f"after that, `{proof['after'][0]}` then `{proof['after'][1]}`. "
+                f"The proof: {link}.",
+                "",
+            ]
+    return out + ["</details>", ""]
+
+
 def render_review_issue(
     domain: str,
     runs: list[RunResult],
@@ -815,12 +870,12 @@ def render_review_issue(
         f"Reason: {_with_task(question_reason(q), q['task'])}"
         for n, q in enumerate(asked, start=1)
     ]
-    check_lines = [
-        line
-        for q in questions or []
-        for check in q["hand_checks"]
-        for line in _hand_check_lines(q["id"], check)
-    ]
+    check_lines = []
+    for q in questions or []:
+        for check in q["hand_checks"]:
+            check_lines += _hand_check_lines(q["id"], check)
+        if q.get("reproduce"):
+            check_lines += _reproduce_lines(q["id"], q["reproduce"])
     # One question per bullet and per anchor finding.
     ids = sorted(set(asked_ids))
     n = len(question_lines) + len(anchor_lines)
@@ -842,7 +897,8 @@ def render_review_issue(
             "Checks to run yourself: the example cell with the biggest difference, "
             "and BigQuery SQL for each side pinned to the run's moment, to paste "
             "into the console under your own access. Tableau shows its last "
-            "refresh, so a small difference may not match there.",
+            "refresh, so a small difference may not match there. Each cause "
+            "question's Reproduce block works after that SQL expires.",
             "",
             *check_lines[:-1],
         ]

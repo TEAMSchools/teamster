@@ -13,6 +13,7 @@ import dataclasses
 import hashlib
 import json
 import re
+import subprocess
 import sys
 
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
@@ -1656,8 +1657,18 @@ def review(
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs
     }
+    sources = {
+        cfg.view: proof_source(f)
+        for cfg, f in zip(configs, view_files or [], strict=False)
+    }
     questions = answers.questions_json(
-        runs, configs, definitions, found, now or datetime.now(timezone.utc), causes
+        runs,
+        configs,
+        definitions,
+        found,
+        now or datetime.now(timezone.utc),
+        causes,
+        sources,
     )
     body = report.render_review_issue(domain, runs, definitions, questions, causes)
     if len(body) > BODY_WARN_CHARS:
@@ -1681,6 +1692,46 @@ def review(
             file=sys.stderr,
         )
     return body
+
+
+_GITHUB = re.compile(r"github\.com[:/](?P<repo>[\w.-]+/[\w.-]+?)(?:\.git)?/?$")
+
+
+def _git(directory: Path, *args: str) -> str:
+    # trunk-ignore(bandit/B603,bandit/B607): git from PATH with a static argv and no shell
+    done = subprocess.run(
+        ["git", "-C", str(directory), *args],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return done.stdout.strip()
+
+
+def proof_source(view_file: Path) -> answers.ProofSource:
+    """Where a validation file's stored proofs live: its repo path and the
+    branch URL of its directory, for an owner's Reproduce block.
+
+    Outside a git checkout, a GitHub remote or a branch, the link is left out.
+    The remote's address is read for its `owner/repo` only, never copied.
+    """
+    view_file = Path(view_file)
+    base = view_file.parent
+    try:
+        top = Path(_git(base, "rev-parse", "--show-toplevel"))
+        branch = _git(base, "branch", "--show-current")
+        remote = _git(base, "remote", "get-url", "origin")
+        relative = view_file.resolve().relative_to(top.resolve())
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        return answers.ProofSource(str(view_file), base)
+    found = _GITHUB.search(remote)
+    blob = None
+    if found and branch:
+        blob = (
+            f"https://github.com/{found['repo']}/blob/{branch}/"
+            f"{relative.parent.as_posix()}"
+        )
+    return answers.ProofSource(relative.as_posix(), base, blob)
 
 
 # --- check-api ---------------------------------------------------------------

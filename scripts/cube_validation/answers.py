@@ -19,6 +19,7 @@ import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from pathlib import Path
 from typing import Any
 
 from .config import _TASK, CALLS, Decision, ViewConfig, mask_digits
@@ -40,6 +41,25 @@ from .report import (
 
 # BigQuery keeps table history this long, so an as-of query stops working then.
 TIME_TRAVEL_DAYS = 7
+
+NO_REPRODUCE = (
+    "no live count yet: the proof has no `-- reproduce {bucket}:` block for it"
+)
+
+
+@dataclass(frozen=True)
+class ProofSource:
+    """Where a view's stored proofs live, for an owner to reproduce a cause.
+
+    `view_file` is the validation file as a command names it (repo-relative
+    when known); `base` its directory, which proof paths are relative to;
+    `blob` the branch URL of that directory, or None outside a GitHub clone.
+    """
+
+    view_file: str
+    base: Path
+    blob: str | None = None
+
 
 NO_EXAMPLE = (
     "no group cell with 10+ students differs; find an example under your own access"
@@ -244,6 +264,79 @@ def _check_json(view: str, check: HandCheck) -> dict:
     }
 
 
+def _cube_query(cfg: ViewConfig, check: HandCheck) -> dict:
+    """The example cell as a Cube `load` query: its cut, with its dims pinned."""
+    from . import pipeline
+
+    comparison = next(c for c in cfg.comparisons if c.id == check.comparison)
+    query = pipeline.cell_query(cfg.view, comparison, json.loads(check.cut or "{}"))
+    query["filters"] = query["filters"] + [
+        {
+            "member": pipeline._member(cfg.view, member),
+            "operator": "equals",
+            "values": [value],
+        }
+        for member, value in check.dims
+    ]
+    return query
+
+
+def reproduce_json(
+    view: str,
+    ask: CauseAsk,
+    run: RunResult,
+    cfg: ViewConfig,
+    source: ProofSource | None,
+    now: datetime,
+) -> dict:
+    """How an owner reproduces one comparison's part of a cause question.
+
+    Returns:
+        `comparison`, `cube` (the example cell as a `load` query and where to
+        read the dashboard's, or None without an example cell), and `proofs`:
+        per stored proof and cause bucket, its `reproduce` query on today's
+        tables (None without one), the `confirm` command that re-proves it
+        at the run's moment until `expires`, the `after` commands once that
+        has passed, and the proof file's `path` and branch `url`.
+    """
+    from . import confirm
+
+    cid = ask.decision.comparison
+    check = hand_check(run, cfg, cid, now)
+    cube = None
+    if check:
+        cube = {
+            "query": _cube_query(cfg, check),
+            "dashboard": _check_json(view, check),
+        }
+    file = source.view_file if source else f"<{view} validation file>"
+    proofs = []
+    for path, bucket in ask.proofs:
+        stored = (source.base / path) if source else None
+        try:
+            proof = confirm.read_proof(stored) if stored else None
+        except (OSError, confirm.pipeline.Refusal):
+            proof = None
+        proofs.append(
+            {
+                "bucket": bucket,
+                "reproduce": (proof.reproduce.get(bucket) if proof else None),
+                "confirm": (
+                    f"triage confirm {file} --comparison "
+                    f"{proof.comparison if proof else cid} --bucket "
+                    f"{proof.bucket if proof else '<bucket>'}"
+                ),
+                "after": [f"run {file}", f"triage {file}"],
+                "expires": (
+                    run.moment.start + timedelta(days=TIME_TRAVEL_DAYS)
+                ).isoformat(),
+                "path": path,
+                "url": f"{source.blob}/{path}" if source and source.blob else None,
+            }
+        )
+    return {"view": view, "comparison": cid, "cube": cube, "proofs": proofs}
+
+
 def questions_json(
     runs: list[RunResult],
     configs: list[ViewConfig],
@@ -251,6 +344,7 @@ def questions_json(
     triage: dict[str, dict],
     now: datetime,
     causes: dict[str, list[CauseAsk]] | None = None,
+    sources: dict[str, ProofSource] | None = None,
 ) -> list[dict]:
     """List the review issue's questions for the owner's Claude session.
 
@@ -267,6 +361,8 @@ def questions_json(
             evidence.
         now: The current time, to say whether the pinned SQL still runs.
         causes: Per view, the owner's cause questions (`triage.cause_asks`).
+        sources: Per view, where its stored proofs live, for a cause
+            question's `reproduce` block.
 
     Returns:
         One dict per question in the issue's order: `id` (`Q1`, ...),
@@ -275,7 +371,8 @@ def questions_json(
         `counts` (the masked parts of its bullet), `hand_checks` (one per
         comparison, or `none` saying to find an example locally), and the
         earliest `moment` among its views with when its pinned SQL `expires`
-        and whether it has `expired`.
+        and whether it has `expired`; a cause question also has `reproduce`,
+        one `reproduce_json` per comparison it covers.
     """
     by_run = {r.view: r for r in runs}
     by_cfg = {c.view: c for c in configs}
@@ -317,6 +414,20 @@ def questions_json(
 
         moment = min((by_run[v].moment for v in views), key=lambda m: m.start)
         expires = moment.start + timedelta(days=TIME_TRAVEL_DAYS)
+        extra = {}
+        if "asks" in q:
+            extra["reproduce"] = [
+                reproduce_json(
+                    view,
+                    ask,
+                    by_run[view],
+                    by_cfg[view],
+                    (sources or {}).get(view),
+                    now,
+                )
+                for view, ask in q["asks"]
+                if view in by_cfg
+            ]
         out.append(
             {
                 "id": f"Q{n}",
@@ -334,6 +445,7 @@ def questions_json(
                 },
                 "expires": expires.isoformat(),
                 "expired": now >= expires,
+                **extra,
             }
         )
     return out
