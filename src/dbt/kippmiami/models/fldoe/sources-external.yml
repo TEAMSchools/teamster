@@ -2,8 +2,8 @@ sources:
   - name: fldoe
     schema:
       "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
-      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif -%}{{
-      var('fldoe_schema', 'kippmiami_fldoe') }}"
+      'dev') | replace('-', '_') }}_{%- elif target.name == 'staging'
+      -%}zz_stg_{%- endif -%}{{ var('fldoe_schema', 'kippmiami_fldoe') }}"
     tables:
       - name: src_fldoe__fast
         config:

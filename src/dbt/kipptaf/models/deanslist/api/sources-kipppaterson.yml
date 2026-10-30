@@ -1,8 +1,8 @@
 sources:
   - name: kipppaterson_deanslist
     schema:
-      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      elif target.name == 'staging' -%}zz_stg_{%- endif
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') |
+      replace('-', '_') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
       -%}kipppaterson_deanslist"
     tables:
       - name: stg_deanslist__behavior
