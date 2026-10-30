@@ -467,3 +467,1398 @@ comparisons:
         Dibels Most Recent Composite: dibels_most_recent_composite
         Ml Status: ml_status
         IEP Status: iep_status
+decisions:
+  - id: school-c6-future-filter
+    comparison: mastery-dki-school
+    cause: { side: dashboard, label: sheet filter administered_at }
+    call: deliberate
+    reason:
+      The sheet's Exclude Future Assessments filter hides assessments
+      administered after the coming Sunday. It is a display filter on the sheet,
+      not a different definition; Cube has no such member.
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 5c04d8f5bc040fad8f425230dfa582594a15e7dd0fad84408ce688afd38fc484,
+      }
+  - id: region-c6-future-filter
+    comparison: mastery-dki-region
+    cause: { side: dashboard, label: sheet filter administered_at }
+    call: deliberate
+    reason:
+      The sheet's Exclude Future Assessments filter hides assessments
+      administered after the coming Sunday. It is a display filter on the sheet,
+      not a different definition; Cube has no such member.
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 5c04d8f5bc040fad8f425230dfa582594a15e7dd0fad84408ce688afd38fc484,
+      }
+  - id: gened-school-c6-future-filter
+    comparison: mastery-gened-dki-school
+    cause: { side: dashboard, label: sheet filter administered_at }
+    call: deliberate
+    reason:
+      The sheet's Exclude Future Assessments filter hides assessments
+      administered after the coming Sunday. It is a display filter on the sheet,
+      not a different definition; Cube has no such member.
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 5c04d8f5bc040fad8f425230dfa582594a15e7dd0fad84408ce688afd38fc484,
+      }
+  - id: iep-school-c6-future-filter
+    comparison: mastery-iep-dki-school
+    cause: { side: dashboard, label: sheet filter administered_at }
+    call: deliberate
+    reason:
+      The sheet's Exclude Future Assessments filter hides assessments
+      administered after the coming Sunday. It is a display filter on the sheet,
+      not a different definition; Cube has no such member.
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: 5c04d8f5bc040fad8f425230dfa582594a15e7dd0fad84408ce688afd38fc484,
+      }
+  - id: gened-region-c6-future-filter
+    comparison: mastery-gened-dki-region
+    cause: { side: dashboard, label: sheet filter administered_at }
+    call: deliberate
+    reason:
+      The sheet's Exclude Future Assessments filter hides assessments
+      administered after the coming Sunday. It is a display filter on the sheet,
+      not a different definition; Cube has no such member.
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 5c04d8f5bc040fad8f425230dfa582594a15e7dd0fad84408ce688afd38fc484,
+      }
+  - id: iep-region-c6-future-filter
+    comparison: mastery-iep-dki-region
+    cause: { side: dashboard, label: sheet filter administered_at }
+    call: deliberate
+    reason:
+      The sheet's Exclude Future Assessments filter hides assessments
+      administered after the coming Sunday. It is a display filter on the sheet,
+      not a different definition; Cube has no such member.
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: 5c04d8f5bc040fad8f425230dfa582594a15e7dd0fad84408ce688afd38fc484,
+      }
+  - id: school-c5-not-enrolled-week-end
+    comparison: mastery-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled at the end of the week the assessment was
+          given,
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only if the student was enrolled at the end of
+      the week it was given (is_enrolled_week_end); Cube has no such rule. Which
+      eligibility rule should hold?
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: school-c2-blank-module
+    comparison: mastery-dki-school
+    cause:
+      {
+        side: dashboard,
+        label: assessments with a blank module_type are left off the dashboard,
+      }
+    call: domain_owner
+    reason:
+      The same != 'WPP' filter also drops assessments with a blank module_type,
+      since a blank fails the comparison; Cube keeps them. Is leaving them off
+      the dashboard intended?
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: school-c5o-out-of-district
+    comparison: mastery-dki-school
+    cause: { side: dashboard, label: the student was out of district that week }
+    call: domain_owner
+    reason:
+      The dashboard drops scores from weeks the student was out of district;
+      Cube keeps them. Should out-of-district weeks count?
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: school-c3-prior-year
+    comparison: mastery-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the response rollup dates the administration in a prior academic
+          year, so the dashboard cannot place it in 2026",
+      }
+    call: domain_owner
+    reason:
+      int_assessments__response_rollup dates the administration in a prior
+      academic year while Cube dates it by its canonical administered date, so
+      the dashboard's academic-year join misses it. Which date is right? If the
+      rollup's is wrong, this becomes a source fix.
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: school-c1-wpp
+    comparison: mastery-dki-school
+    cause:
+      {
+        side: dashboard,
+        label: WPP assessments are left off the dashboard (module_type = WPP),
+      }
+    call: domain_owner
+    reason:
+      "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
+      marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
+      leave WPP out?"
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: school-c4-before-first-week
+    comparison: mastery-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the assessment was given before the student's first enrollment week,
+          so no week row covers it",
+      }
+    call: domain_owner
+    reason:
+      The assessment was given before the student's first enrollment week, so
+      the dashboard's week join finds no row; Cube counts the score. Should
+      scores from before a student's first week count?
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: school-d2-anchor-outside-section
+    comparison: mastery-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          "the student has a section in the subject, but none spans the
+          assessment's anchor date, and no homeroom does",
+      }
+    call: domain_owner
+    reason:
+      The student has a section in the subject, but none spans the assessment's
+      anchor date (its scheduled administration date), and no homeroom does, so
+      Cube's section resolver drops the score; the dashboard keeps it. Should
+      such a score count?
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: school-d1-replacement
+    comparison: mastery-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          replacement scores (is_replacement) are left out of Cube's score
+          anchors,
+      }
+    call: domain_owner
+    reason:
+      "Cube's score anchors drop replacement scores (not is_replacement); the
+      dashboard counts them. Decided in #5885, which asks whether scores from
+      another grade's assessment count."
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: school-d4-orphan-enrollment
+    comparison: mastery-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          "the resolved section's student enrollment key has no row in
+          dim_student_enrollments, so Cube cannot reach the student's school",
+      }
+    call: fix_cube
+    reason:
+      The resolved section's student enrollment key has no row in
+      dim_student_enrollments, so Cube cannot reach the student's school and
+      drops the score. A gap in the marts' join chain.
+    task: https://github.com/TEAMSchools/teamster/issues/5668
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: school-d3-no-section
+    comparison: mastery-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          the student has no section in the subject and no homeroom on the
+          anchor date,
+      }
+    call: domain_owner
+    reason:
+      The student has no section in the subject and no homeroom on the anchor
+      date, so Cube's section resolver drops the score; the dashboard keeps it.
+      Should Cube count scores with no section?
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: school-m1-enrollment-changed
+    comparison: mastery-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the student's enrollment changed (grade or school): Cube files the
+          score by the enrollment its resolved section belongs to, the dashboard
+          by the enrollment week it was given in, and the two disagree",
+      }
+    call: domain_owner
+    reason:
+      "The student's enrollment changed mid-year (grade or school). Cube files
+      the score by the enrollment its resolved section belongs to, the dashboard
+      by the enrollment week it was given in, so it lands in a different cell on
+      each side. Which should decide? Also seen: the enrollment-weeks model can
+      show the later grade for weeks before that enrollment began."
+    fingerprints:
+      {
+        cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
+        dashboard: f88018e939e5aec0b720c59c0b272f0cb3b39ea923463cade559c42dc6daab36,
+        proof: 3acfd5d1fc2e9476ab918abbb588d189efe8fdda01839f499ffaa73b6912a718,
+      }
+  - id: region-c3-prior-year
+    comparison: mastery-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the response rollup dates the administration in a prior academic
+          year, so the dashboard cannot place it in 2026",
+      }
+    call: domain_owner
+    reason:
+      int_assessments__response_rollup dates the administration in a prior
+      academic year while Cube dates it by its canonical administered date, so
+      the dashboard's academic-year join misses it. Which date is right? If the
+      rollup's is wrong, this becomes a source fix.
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: region-c5-not-enrolled-week-end
+    comparison: mastery-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled at the end of the week the assessment was
+          given,
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only if the student was enrolled at the end of
+      the week it was given (is_enrolled_week_end); Cube has no such rule. Which
+      eligibility rule should hold?
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: region-c1-wpp
+    comparison: mastery-dki-region
+    cause:
+      {
+        side: dashboard,
+        label: WPP assessments are left off the dashboard (module_type = WPP),
+      }
+    call: domain_owner
+    reason:
+      "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
+      marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
+      leave WPP out?"
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: region-c2-blank-module
+    comparison: mastery-dki-region
+    cause:
+      {
+        side: dashboard,
+        label: assessments with a blank module_type are left off the dashboard,
+      }
+    call: domain_owner
+    reason:
+      The same != 'WPP' filter also drops assessments with a blank module_type,
+      since a blank fails the comparison; Cube keeps them. Is leaving them off
+      the dashboard intended?
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: region-c4-before-first-week
+    comparison: mastery-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the assessment was given before the student's first enrollment week,
+          so no week row covers it",
+      }
+    call: domain_owner
+    reason:
+      The assessment was given before the student's first enrollment week, so
+      the dashboard's week join finds no row; Cube counts the score. Should
+      scores from before a student's first week count?
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: region-c5o-out-of-district
+    comparison: mastery-dki-region
+    cause: { side: dashboard, label: the student was out of district that week }
+    call: domain_owner
+    reason:
+      The dashboard drops scores from weeks the student was out of district;
+      Cube keeps them. Should out-of-district weeks count?
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: region-d1-replacement
+    comparison: mastery-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          replacement scores (is_replacement) are left out of Cube's score
+          anchors,
+      }
+    call: domain_owner
+    reason:
+      "Cube's score anchors drop replacement scores (not is_replacement); the
+      dashboard counts them. Decided in #5885, which asks whether scores from
+      another grade's assessment count."
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: region-d2-anchor-outside-section
+    comparison: mastery-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          "the student has a section in the subject, but none spans the
+          assessment's anchor date, and no homeroom does",
+      }
+    call: domain_owner
+    reason:
+      The student has a section in the subject, but none spans the assessment's
+      anchor date (its scheduled administration date), and no homeroom does, so
+      Cube's section resolver drops the score; the dashboard keeps it. Should
+      such a score count?
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: region-d4-orphan-enrollment
+    comparison: mastery-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          "the resolved section's student enrollment key has no row in
+          dim_student_enrollments, so Cube cannot reach the student's school",
+      }
+    call: fix_cube
+    reason:
+      The resolved section's student enrollment key has no row in
+      dim_student_enrollments, so Cube cannot reach the student's school and
+      drops the score. A gap in the marts' join chain.
+    task: https://github.com/TEAMSchools/teamster/issues/5668
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: region-d3-no-section
+    comparison: mastery-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          the student has no section in the subject and no homeroom on the
+          anchor date,
+      }
+    call: domain_owner
+    reason:
+      The student has no section in the subject and no homeroom on the anchor
+      date, so Cube's section resolver drops the score; the dashboard keeps it.
+      Should Cube count scores with no section?
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: region-m1-enrollment-changed
+    comparison: mastery-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the student's enrollment changed (grade or school): Cube files the
+          score by the enrollment its resolved section belongs to, the dashboard
+          by the enrollment week it was given in, and the two disagree",
+      }
+    call: domain_owner
+    reason:
+      "The student's enrollment changed mid-year (grade or school). Cube files
+      the score by the enrollment its resolved section belongs to, the dashboard
+      by the enrollment week it was given in, so it lands in a different cell on
+      each side. Which should decide? Also seen: the enrollment-weeks model can
+      show the later grade for weeks before that enrollment began."
+    fingerprints:
+      {
+        cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
+        dashboard: a6b36aedd0b1bf6ad7f26841c291975e87f9aa0a145f56a0404bc3cbf3487709,
+        proof: 3acfd5d1fc2e9476ab918abbb588d189efe8fdda01839f499ffaa73b6912a718,
+      }
+  - id: gened-school-c5-not-enrolled-week-end
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled at the end of the week the assessment was
+          given,
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only if the student was enrolled at the end of
+      the week it was given (is_enrolled_week_end); Cube has no such rule. Which
+      eligibility rule should hold?
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-school-c2-blank-module
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: dashboard,
+        label: assessments with a blank module_type are left off the dashboard,
+      }
+    call: domain_owner
+    reason:
+      The same != 'WPP' filter also drops assessments with a blank module_type,
+      since a blank fails the comparison; Cube keeps them. Is leaving them off
+      the dashboard intended?
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-school-c3-prior-year
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the response rollup dates the administration in a prior academic
+          year, so the dashboard cannot place it in 2026",
+      }
+    call: domain_owner
+    reason:
+      int_assessments__response_rollup dates the administration in a prior
+      academic year while Cube dates it by its canonical administered date, so
+      the dashboard's academic-year join misses it. Which date is right? If the
+      rollup's is wrong, this becomes a source fix.
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-school-c1-wpp
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: dashboard,
+        label: WPP assessments are left off the dashboard (module_type = WPP),
+      }
+    call: domain_owner
+    reason:
+      "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
+      marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
+      leave WPP out?"
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-school-c4-before-first-week
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the assessment was given before the student's first enrollment week,
+          so no week row covers it",
+      }
+    call: domain_owner
+    reason:
+      The assessment was given before the student's first enrollment week, so
+      the dashboard's week join finds no row; Cube counts the score. Should
+      scores from before a student's first week count?
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-region-c3-prior-year
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the response rollup dates the administration in a prior academic
+          year, so the dashboard cannot place it in 2026",
+      }
+    call: domain_owner
+    reason:
+      int_assessments__response_rollup dates the administration in a prior
+      academic year while Cube dates it by its canonical administered date, so
+      the dashboard's academic-year join misses it. Which date is right? If the
+      rollup's is wrong, this becomes a source fix.
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-region-c5-not-enrolled-week-end
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled at the end of the week the assessment was
+          given,
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only if the student was enrolled at the end of
+      the week it was given (is_enrolled_week_end); Cube has no such rule. Which
+      eligibility rule should hold?
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-region-c1-wpp
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: dashboard,
+        label: WPP assessments are left off the dashboard (module_type = WPP),
+      }
+    call: domain_owner
+    reason:
+      "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
+      marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
+      leave WPP out?"
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-region-c2-blank-module
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: dashboard,
+        label: assessments with a blank module_type are left off the dashboard,
+      }
+    call: domain_owner
+    reason:
+      The same != 'WPP' filter also drops assessments with a blank module_type,
+      since a blank fails the comparison; Cube keeps them. Is leaving them off
+      the dashboard intended?
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-region-c4-before-first-week
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the assessment was given before the student's first enrollment week,
+          so no week row covers it",
+      }
+    call: domain_owner
+    reason:
+      The assessment was given before the student's first enrollment week, so
+      the dashboard's week join finds no row; Cube counts the score. Should
+      scores from before a student's first week count?
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-school-d2-anchor-outside-section
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          "the student has a section in the subject, but none spans the
+          assessment's anchor date, and no homeroom does",
+      }
+    call: domain_owner
+    reason:
+      The student has a section in the subject, but none spans the assessment's
+      anchor date (its scheduled administration date), and no homeroom does, so
+      Cube's section resolver drops the score; the dashboard keeps it. Should
+      such a score count?
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: gened-school-d4-orphan-enrollment
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          "the resolved section's student enrollment key has no row in
+          dim_student_enrollments, so Cube cannot reach the student's school",
+      }
+    call: fix_cube
+    reason:
+      The resolved section's student enrollment key has no row in
+      dim_student_enrollments, so Cube cannot reach the student's school and
+      drops the score. A gap in the marts' join chain.
+    task: https://github.com/TEAMSchools/teamster/issues/5668
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: gened-school-d1-replacement
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          replacement scores (is_replacement) are left out of Cube's score
+          anchors,
+      }
+    call: domain_owner
+    reason:
+      "Cube's score anchors drop replacement scores (not is_replacement); the
+      dashboard counts them. Decided in #5885, which asks whether scores from
+      another grade's assessment count."
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: gened-school-d3-no-section
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          the student has no section in the subject and no homeroom on the
+          anchor date,
+      }
+    call: domain_owner
+    reason:
+      The student has no section in the subject and no homeroom on the anchor
+      date, so Cube's section resolver drops the score; the dashboard keeps it.
+      Should Cube count scores with no section?
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: gened-region-d1-replacement
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          replacement scores (is_replacement) are left out of Cube's score
+          anchors,
+      }
+    call: domain_owner
+    reason:
+      "Cube's score anchors drop replacement scores (not is_replacement); the
+      dashboard counts them. Decided in #5885, which asks whether scores from
+      another grade's assessment count."
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: gened-region-d2-anchor-outside-section
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          "the student has a section in the subject, but none spans the
+          assessment's anchor date, and no homeroom does",
+      }
+    call: domain_owner
+    reason:
+      The student has a section in the subject, but none spans the assessment's
+      anchor date (its scheduled administration date), and no homeroom does, so
+      Cube's section resolver drops the score; the dashboard keeps it. Should
+      such a score count?
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: gened-region-d4-orphan-enrollment
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          "the resolved section's student enrollment key has no row in
+          dim_student_enrollments, so Cube cannot reach the student's school",
+      }
+    call: fix_cube
+    reason:
+      The resolved section's student enrollment key has no row in
+      dim_student_enrollments, so Cube cannot reach the student's school and
+      drops the score. A gap in the marts' join chain.
+    task: https://github.com/TEAMSchools/teamster/issues/5668
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: gened-region-d3-no-section
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          the student has no section in the subject and no homeroom on the
+          anchor date,
+      }
+    call: domain_owner
+    reason:
+      The student has no section in the subject and no homeroom on the anchor
+      date, so Cube's section resolver drops the score; the dashboard keeps it.
+      Should Cube count scores with no section?
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 5a6053c679796ee9df45eac0b22a51f7a8e05ed0b0b5bf8f1fb30e435ddbdead,
+      }
+  - id: gened-school-m1-enrollment-changed
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the student's enrollment changed (grade or school): Cube files the
+          score by the enrollment its resolved section belongs to, the dashboard
+          by the enrollment week it was given in, and the two disagree",
+      }
+    call: domain_owner
+    reason:
+      "The student's enrollment changed mid-year (grade or school). Cube files
+      the score by the enrollment its resolved section belongs to, the dashboard
+      by the enrollment week it was given in, so it lands in a different cell on
+      each side. Which should decide? Also seen: the enrollment-weeks model can
+      show the later grade for weeks before that enrollment began."
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 3acfd5d1fc2e9476ab918abbb588d189efe8fdda01839f499ffaa73b6912a718,
+      }
+  - id: gened-region-m1-enrollment-changed
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the student's enrollment changed (grade or school): Cube files the
+          score by the enrollment its resolved section belongs to, the dashboard
+          by the enrollment week it was given in, and the two disagree",
+      }
+    call: domain_owner
+    reason:
+      "The student's enrollment changed mid-year (grade or school). Cube files
+      the score by the enrollment its resolved section belongs to, the dashboard
+      by the enrollment week it was given in, so it lands in a different cell on
+      each side. Which should decide? Also seen: the enrollment-weeks model can
+      show the later grade for weeks before that enrollment began."
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 3acfd5d1fc2e9476ab918abbb588d189efe8fdda01839f499ffaa73b6912a718,
+      }
+  - id: iep-school-c2-blank-module
+    comparison: mastery-iep-dki-school
+    cause:
+      {
+        side: dashboard,
+        label: assessments with a blank module_type are left off the dashboard,
+      }
+    call: domain_owner
+    reason:
+      The same != 'WPP' filter also drops assessments with a blank module_type,
+      since a blank fails the comparison; Cube keeps them. Is leaving them off
+      the dashboard intended?
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-school-c5o-out-of-district
+    comparison: mastery-iep-dki-school
+    cause: { side: dashboard, label: the student was out of district that week }
+    call: domain_owner
+    reason:
+      The dashboard drops scores from weeks the student was out of district;
+      Cube keeps them. Should out-of-district weeks count?
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-school-c3-prior-year
+    comparison: mastery-iep-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the response rollup dates the administration in a prior academic
+          year, so the dashboard cannot place it in 2026",
+      }
+    call: domain_owner
+    reason:
+      int_assessments__response_rollup dates the administration in a prior
+      academic year while Cube dates it by its canonical administered date, so
+      the dashboard's academic-year join misses it. Which date is right? If the
+      rollup's is wrong, this becomes a source fix.
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-school-c1-wpp
+    comparison: mastery-iep-dki-school
+    cause:
+      {
+        side: dashboard,
+        label: WPP assessments are left off the dashboard (module_type = WPP),
+      }
+    call: domain_owner
+    reason:
+      "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
+      marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
+      leave WPP out?"
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-school-c4-before-first-week
+    comparison: mastery-iep-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the assessment was given before the student's first enrollment week,
+          so no week row covers it",
+      }
+    call: domain_owner
+    reason:
+      The assessment was given before the student's first enrollment week, so
+      the dashboard's week join finds no row; Cube counts the score. Should
+      scores from before a student's first week count?
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-school-c5-not-enrolled-week-end
+    comparison: mastery-iep-dki-school
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled at the end of the week the assessment was
+          given,
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only if the student was enrolled at the end of
+      the week it was given (is_enrolled_week_end); Cube has no such rule. Which
+      eligibility rule should hold?
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-region-c3-prior-year
+    comparison: mastery-iep-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the response rollup dates the administration in a prior academic
+          year, so the dashboard cannot place it in 2026",
+      }
+    call: domain_owner
+    reason:
+      int_assessments__response_rollup dates the administration in a prior
+      academic year while Cube dates it by its canonical administered date, so
+      the dashboard's academic-year join misses it. Which date is right? If the
+      rollup's is wrong, this becomes a source fix.
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-region-c1-wpp
+    comparison: mastery-iep-dki-region
+    cause:
+      {
+        side: dashboard,
+        label: WPP assessments are left off the dashboard (module_type = WPP),
+      }
+    call: domain_owner
+    reason:
+      "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
+      marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
+      leave WPP out?"
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-region-c5-not-enrolled-week-end
+    comparison: mastery-iep-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          the student was not enrolled at the end of the week the assessment was
+          given,
+      }
+    call: domain_owner
+    reason:
+      The dashboard keeps a score only if the student was enrolled at the end of
+      the week it was given (is_enrolled_week_end); Cube has no such rule. Which
+      eligibility rule should hold?
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-region-c2-blank-module
+    comparison: mastery-iep-dki-region
+    cause:
+      {
+        side: dashboard,
+        label: assessments with a blank module_type are left off the dashboard,
+      }
+    call: domain_owner
+    reason:
+      The same != 'WPP' filter also drops assessments with a blank module_type,
+      since a blank fails the comparison; Cube keeps them. Is leaving them off
+      the dashboard intended?
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-region-c4-before-first-week
+    comparison: mastery-iep-dki-region
+    cause:
+      {
+        side: dashboard,
+        label:
+          "the assessment was given before the student's first enrollment week,
+          so no week row covers it",
+      }
+    call: domain_owner
+    reason:
+      The assessment was given before the student's first enrollment week, so
+      the dashboard's week join finds no row; Cube counts the score. Should
+      scores from before a student's first week count?
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-region-c5o-out-of-district
+    comparison: mastery-iep-dki-region
+    cause: { side: dashboard, label: the student was out of district that week }
+    call: domain_owner
+    reason:
+      The dashboard drops scores from weeks the student was out of district;
+      Cube keeps them. Should out-of-district weeks count?
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: 4e97601d201f85ca87eff854c3bcbe7063a7cf1679323ff177cf6e8a1d6a44bd,
+      }
+  - id: iep-school-d2-anchor-outside-section
+    comparison: mastery-iep-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          "the student has a section in the subject, but none spans the
+          assessment's anchor date, and no homeroom does",
+      }
+    call: domain_owner
+    reason:
+      The student has a section in the subject, but none spans the assessment's
+      anchor date (its scheduled administration date), and no homeroom does, so
+      Cube's section resolver drops the score; the dashboard keeps it. Should
+      such a score count?
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
+      }
+  - id: iep-school-d1-replacement
+    comparison: mastery-iep-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          replacement scores (is_replacement) are left out of Cube's score
+          anchors,
+      }
+    call: domain_owner
+    reason:
+      "Cube's score anchors drop replacement scores (not is_replacement); the
+      dashboard counts them. Decided in #5885, which asks whether scores from
+      another grade's assessment count."
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
+      }
+  - id: iep-school-d3-no-section
+    comparison: mastery-iep-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          the student has no section in the subject and no homeroom on the
+          anchor date,
+      }
+    call: domain_owner
+    reason:
+      The student has no section in the subject and no homeroom on the anchor
+      date, so Cube's section resolver drops the score; the dashboard keeps it.
+      Should Cube count scores with no section?
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
+      }
+  - id: iep-school-d4-orphan-enrollment
+    comparison: mastery-iep-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          "the resolved section's student enrollment key has no row in
+          dim_student_enrollments, so Cube cannot reach the student's school",
+      }
+    call: fix_cube
+    reason:
+      The resolved section's student enrollment key has no row in
+      dim_student_enrollments, so Cube cannot reach the student's school and
+      drops the score. A gap in the marts' join chain.
+    task: https://github.com/TEAMSchools/teamster/issues/5668
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
+      }
+  - id: iep-region-d1-replacement
+    comparison: mastery-iep-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          replacement scores (is_replacement) are left out of Cube's score
+          anchors,
+      }
+    call: domain_owner
+    reason:
+      "Cube's score anchors drop replacement scores (not is_replacement); the
+      dashboard counts them. Decided in #5885, which asks whether scores from
+      another grade's assessment count."
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
+      }
+  - id: iep-region-d2-anchor-outside-section
+    comparison: mastery-iep-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          "the student has a section in the subject, but none spans the
+          assessment's anchor date, and no homeroom does",
+      }
+    call: domain_owner
+    reason:
+      The student has a section in the subject, but none spans the assessment's
+      anchor date (its scheduled administration date), and no homeroom does, so
+      Cube's section resolver drops the score; the dashboard keeps it. Should
+      such a score count?
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
+      }
+  - id: iep-region-d3-no-section
+    comparison: mastery-iep-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          the student has no section in the subject and no homeroom on the
+          anchor date,
+      }
+    call: domain_owner
+    reason:
+      The student has no section in the subject and no homeroom on the anchor
+      date, so Cube's section resolver drops the score; the dashboard keeps it.
+      Should Cube count scores with no section?
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
+      }
+  - id: iep-region-d4-orphan-enrollment
+    comparison: mastery-iep-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          "the resolved section's student enrollment key has no row in
+          dim_student_enrollments, so Cube cannot reach the student's school",
+      }
+    call: fix_cube
+    reason:
+      The resolved section's student enrollment key has no row in
+      dim_student_enrollments, so Cube cannot reach the student's school and
+      drops the score. A gap in the marts' join chain.
+    task: https://github.com/TEAMSchools/teamster/issues/5668
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
+      }
+  - id: gened-school-i1-iep-status-differs
+    comparison: mastery-gened-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          "the student's IEP status differs: Cube reads no IEP from the
+          enrollment its resolved section belongs to, the dashboard reads Has
+          IEP from the enrollment week, so the score falls in a different IEP
+          scope on each side",
+      }
+    call: domain_owner
+    reason:
+      The student's IEP status changed. Cube reads it from the enrollment its
+      resolved section belongs to, the dashboard from the enrollment week, so
+      the score falls in a different IEP group on each side. Which record should
+      decide?
+    fingerprints:
+      {
+        cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
+        dashboard: 976623fc9b43e71ee67149dbe3562fdd80abdbb6d1fbd6099e6d5432694b48e3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: gened-region-i1-iep-status-differs
+    comparison: mastery-gened-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          "the student's IEP status differs: Cube reads no IEP from the
+          enrollment its resolved section belongs to, the dashboard reads Has
+          IEP from the enrollment week, so the score falls in a different IEP
+          scope on each side",
+      }
+    call: domain_owner
+    reason:
+      The student's IEP status changed. Cube reads it from the enrollment its
+      resolved section belongs to, the dashboard from the enrollment week, so
+      the score falls in a different IEP group on each side. Which record should
+      decide?
+    fingerprints:
+      {
+        cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
+        dashboard: 316737e09c0d60f65913e5cd68d44e77c98a1fcbc4546ce1528f22c7d82e0ea3,
+        proof: 329b79b4fefd881513e1cfb887602c3311aedfe8b8e27fd8f070f371f4798a10,
+      }
+  - id: iep-school-i1-iep-status-differs
+    comparison: mastery-iep-dki-school
+    cause:
+      {
+        side: cube,
+        label:
+          "the student's IEP status differs: Cube reads no IEP from the
+          enrollment its resolved section belongs to, the dashboard reads Has
+          IEP from the enrollment week, so the score falls in a different IEP
+          scope on each side",
+      }
+    call: domain_owner
+    reason:
+      The student's IEP status changed. Cube reads it from the enrollment its
+      resolved section belongs to, the dashboard from the enrollment week, so
+      the score falls in a different IEP group on each side. Which record should
+      decide?
+    fingerprints:
+      {
+        cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
+        dashboard: aad8a01831ce37e46685edfebd09f633bbb5b636d3269f203634b4dfb238948c,
+        proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
+      }
+  - id: iep-region-i1-iep-status-differs
+    comparison: mastery-iep-dki-region
+    cause:
+      {
+        side: cube,
+        label:
+          "the student's IEP status differs: Cube reads no IEP from the
+          enrollment its resolved section belongs to, the dashboard reads Has
+          IEP from the enrollment week, so the score falls in a different IEP
+          scope on each side",
+      }
+    call: domain_owner
+    reason:
+      The student's IEP status changed. Cube reads it from the enrollment its
+      resolved section belongs to, the dashboard from the enrollment week, so
+      the score falls in a different IEP group on each side. Which record should
+      decide?
+    fingerprints:
+      {
+        cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
+        dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
+        proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
+      }
