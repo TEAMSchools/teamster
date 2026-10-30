@@ -1663,6 +1663,7 @@ def review(
     now: datetime | None = None,
     view_files: list[Path] | None = None,
     comments: list[str] | None = None,
+    json_file: Path | None = None,
 ) -> str:
     """Return the review-issue body from each view's latest saved run.
 
@@ -1682,12 +1683,17 @@ def review(
             paths are relative to its directory.
         comments: Given, receives the follow-up comments a long body's
             Reproduce blocks move to (`report.render_review_issue`).
+        json_file: Given, the questions JSON is written there (`reviews/`
+            beside the validation file) and the body links it at the commit
+            that holds it, instead of carrying it.
 
     Raises:
         Refusal: A view has no usable saved run (see `latest_run`), or its
             triage is missing, stale, unreadable, holds an unproven item, or
             has a cause decision and a `group` decision disagreeing (see
-            `triage.proven_triage`).
+            `triage.proven_triage`). With `json_file`: the file is new or
+            changed, or its commit is not pushed (it is written; commit and
+            push it, then review again).
     """
     saved = [latest_run(cfg, cache_root) for cfg in configs]
     runs = [run for run, _ in saved]
@@ -1727,8 +1733,11 @@ def review(
         run.view: triage.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
         for run, cfg in zip(runs, configs, strict=True)
     }
+    link = None
+    if json_file is not None:
+        link = _review_file(Path(json_file), report.posted_json(questions))
     body = report.render_review_issue(
-        domain, runs, definitions, questions, causes, comments, decided
+        domain, runs, definitions, questions, causes, comments, decided, link
     )
     if len(body) > BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.
@@ -1751,6 +1760,70 @@ def review(
             file=sys.stderr,
         )
     return body
+
+
+def review_file(view_files: list[Path], configs: list[ViewConfig], domain: str) -> Path:
+    """Where a review's questions JSON is kept: `reviews/` beside the first
+    validation file, named for its view, or for the domain across views."""
+    name = configs[0].view if len(configs) == 1 else _slug(domain)
+    return Path(view_files[0]).parent / "reviews" / f"{name}.json"
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "review"
+
+
+def _review_file(path: Path, data: list[dict]) -> str:
+    """The questions JSON's link at the commit that holds it.
+
+    Compared by content, so the commit hook's formatting is no change.
+
+    Raises:
+        Refusal: The file was new or held other questions (now written), or
+            it is not committed and pushed as it stands.
+    """
+    try:
+        held = json.loads(path.read_text())
+    except (OSError, ValueError):
+        held = None
+    if held != data:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2) + "\n")
+        raise Refusal(
+            f"wrote {path}: commit and push it, then run `review` again; the "
+            "issue links it at that commit"
+        )
+    link = committed_link(path)
+    if link is None:
+        raise Refusal(
+            f"{path} is not committed and pushed as it stands: commit and push "
+            "it, then run `review` again"
+        )
+    return link
+
+
+def committed_link(path: Path) -> str | None:
+    """The GitHub link to `path` at HEAD, or None.
+
+    None unless the file is tracked with no change since HEAD and HEAD is on
+    a remote branch (a pushed commit), so the link opens once posted and
+    keeps opening after the branch is gone.
+    """
+    base = path.parent
+    try:
+        top = Path(_git(base, "rev-parse", "--show-toplevel"))
+        changed = _git(base, "status", "--porcelain", "--", path.name)
+        tracked = _git(base, "ls-files", "--", path.name)
+        sha = _git(base, "rev-parse", "HEAD")
+        pushed = _git(base, "branch", "-r", "--contains", sha)
+        remote = _git(base, "remote", "get-url", "origin")
+        relative = path.resolve().relative_to(top.resolve())
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        return None
+    found = _GITHUB.search(remote)
+    if changed or not tracked or not pushed or not found:
+        return None
+    return f"https://github.com/{found['repo']}/blob/{sha}/{relative.as_posix()}"
 
 
 _GITHUB = re.compile(r"github\.com[:/](?P<repo>[\w.-]+/[\w.-]+?)(?:\.git)?/?$")

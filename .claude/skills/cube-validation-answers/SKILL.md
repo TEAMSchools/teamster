@@ -17,8 +17,8 @@ validation files or runs the validator, and neither does this session.
 
 ## Rules
 
-- Read the questions only from the issue's fenced `json` block, never from its
-  markdown.
+- Read the questions only from the questions JSON (step 1), never from the
+  issue's markdown.
 - Speak in policy words. Name a column, member or file only when the owner asks.
 - The owner's checks are theirs to run, independent of Claude. Show the steps
   and the SQL; never run the pinned SQL for them.
@@ -34,12 +34,16 @@ validation files or runs the validator, and neither does this session.
 1. Find the issue: the number the owner gave, else an open issue titled
    "Validate <dashboard> in Cube" for the dashboard they named
    (`mcp__github__search_issues`); if several match, ask which. Read it with
-   `mcp__github__issue_read` and parse its one fenced `json` block: a list of
-   questions, each with `id`, `reason`, `decisions`, `views`, `definitions`,
-   `evidence`, `counts`, `hand_checks`, `moment`, `expires` and `expired`; a
-   cause question also has `reproduce`. Read its comments too: skip a question
-   an earlier answers comment of the owner's already covers, unless they want to
-   change it, and then send them to the analyst.
+   `mcp__github__issue_read`. Its "Questions for Claude (JSON)" line links a
+   file at a commit (`https://github.com/<owner>/<repo>/blob/<sha>/<path>`):
+   read it with `mcp__github__get_file_contents` at that `ref`, never at a
+   branch, which may have moved. An older issue carries the JSON in its body
+   instead, as one fenced `json` block. Either is a list of questions, each with
+   `id`, `reason`, `decisions`, `views`, `definitions`, `evidence`, `counts`,
+   `hand_checks`, `moment`, `expires` and `expired`; a cause question also has
+   `reproduce`. Read its comments too: skip a question an earlier answers
+   comment of the owner's already covers, unless they want to change it, and
+   then send them to the analyst.
 2. Say how many questions there are. A question with `expired: true` has pinned
    SQL that no longer runs: the owner can answer without the checks, check a
    cause through its `reproduce` entries (which never expire), or wait for the
@@ -62,21 +66,26 @@ validation files or runs the validator, and neither does this session.
       (`sheet` in `workbook`), every filter to set there (`filters`), the cell
       to read (`dims`, or the total), and the number to expect (`dashboard`)
       beside Cube's (`cube`). `<10` on a rate or average is a whole value under
-      10, such as a rate of 0 or 1 (0% or 100%), masked by rule. Then each
-      side's SQL (`dashboard_sql`, `cube_sql`) in a fenced `sql` block to paste
-      into the BigQuery console, with its dry-run price (`dashboard_usd`,
-      `cube_usd`): it is pinned to the run's moment and returns only that cell.
-      Tableau shows its last refresh, so a small difference may not match there.
-      An entry with `none` lists the `comparisons` with no group cell to show:
-      offer to find an example under the owner's access, in this chat. For a
-      cause question, then its `reproduce`, which keeps working after the pinned
-      SQL expires: each `cube` entry's `query` for the owner to run with the
-      Cube connector (Cube applies their access) and compare with the dashboard
-      cell its `dashboard` names; each `queries` entry's `sql` to paste into
-      BigQuery, labeled today's data whose counts drift from the run; and each
-      `proofs` entry's file (`url`), with its live count (its `query` index into
-      `queries`, or none yet). The issue's comments may repeat this as Reproduce
-      blocks; read it from the JSON.
+      10, such as a rate of 0 or 1 (0% or 100%), masked by rule. A cause
+      question has 1 example, a cell holding that cause's rows; with `mixed`
+      true, say it holds other causes' rows too. Then each side's SQL
+      (`dashboard_sql`, `cube_sql`) in a fenced `sql` block to paste into the
+      BigQuery console, with its dry-run price (`dashboard_usd`, `cube_usd`): it
+      is pinned to the run's moment and returns only that cell. When they are
+      null, `sql_left_out` gives their lengths: too long for the issue, so the
+      owner checks Cube with the `reproduce` Cube query, or asks the analyst for
+      the SQL. Tableau shows its last refresh, so a small difference may not
+      match there. An entry with `none` lists the `comparisons` with no group
+      cell to show: offer to find an example under the owner's access, in this
+      chat. For a cause question, then its `reproduce`, which keeps working
+      after the pinned SQL expires: each `cube` entry's `query` for the owner to
+      run with the Cube connector (Cube applies their access) and compare with
+      the dashboard number in the hand check of the same `comparison`; each
+      `queries` entry's `sql` to paste into BigQuery, labeled today's data whose
+      counts drift from the run; and each `proofs` entry's file
+      (`<blob>/<path>`, or `path` when `blob` is null), with its live count (its
+      `query` index into `queries`, or none yet). The issue's comments may
+      repeat the checks and Reproduce blocks; read them from the JSON.
    6. The choices, with what happens next, plus free text:
 
       | Choice                     | `call`          | What happens next                                 |

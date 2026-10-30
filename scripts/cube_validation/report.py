@@ -25,20 +25,28 @@ from .moment import Build
 
 CACHE_ROOT = Path.home() / ".cache" / "cube-validation"
 MASK_BELOW = 10
-# Reviewed columns whose values name no person; the review issue shows no
-# other column's values. A course or section name can single out a small
-# group, so none is listed.
+# Reviewed columns whose values name no person (reference data, tier 6 of
+# `.claude/rules/ferpa-pii.md`), under the names the Cube views expose them by:
+# a view that joins a cube unprefixed (`.claude/rules/cube-authoring.md`) uses
+# the bare name. The review issue shows no other column's values, and shows
+# these only for a group or cell of 10+ students. A course or section name can
+# single out a small group, so none is listed; a subject or module code names
+# what was taught or tested, never who.
 # Add a new reference column here only after it has been reviewed.
 _SHOWN_COLUMNS = frozenset(
     {
         "regions_region_name",
+        "region_name",
         "locations_location_name",
         "locations_abbreviation",
         "school_abbreviation",
+        "abbreviation",
         "region",
         "grade_level",
         "academic_year",
         "dates_academic_year",
+        "academic_subject",
+        "module_code",
         # Its values are the config's column names, never a person's data.
         "dashboard_filter",
     }
@@ -819,13 +827,32 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
         f"{', ' + dims if dims else ', the total'}: the dashboard shows "
         f"{check['dashboard']}, Cube shows {check['cube']}. "
     )
-    if check["expired"]:
+    if check.get("mixed"):
+        line += (
+            "No cell holds this cause's rows alone, so this one holds other "
+            "causes' rows too. "
+        )
+    if check.get("dashboard_sql") is None:
+        pass
+    elif check["expired"]:
         line += (
             f"The pinned SQL stopped working at {check['expires']}; re-run `run` "
             "for a fresh moment."
         )
     else:
         line += f"The pinned SQL works until {check['expires']}."
+    if check.get("dashboard_sql") is None:
+        dash, cube = check.get("sql_left_out") or (0, 0)
+        return [
+            line,
+            "",
+            _dashboard_location(check),
+            "",
+            f"The pinned BigQuery SQL is left out ({dash:,} and {cube:,} "
+            "characters, too long for an issue). Check Cube's number with the "
+            "Reproduce block's Cube query, or ask the analyst for the SQL.",
+            "",
+        ]
     return [
         line,
         "",
@@ -861,9 +888,7 @@ def _reproduce_lines(question_id: str, block: dict) -> list[str]:
         out += [
             f"`{cube['comparison']}` in `{cube['view']}`. With the Cube connector "
             "in Claude chat, run this query; Cube applies your own access. "
-            + _dashboard_location(cube["dashboard"]).replace(
-                "On the dashboard:", "Compare it with the dashboard:"
-            ),
+            f"Compare it with the dashboard number in {question_id}'s check.",
             "",
             "```json",
             json.dumps(cube["query"], indent=1),
@@ -881,8 +906,9 @@ def _reproduce_lines(question_id: str, block: dict) -> list[str]:
             "",
         ]
     for proof in block["proofs"]:
-        name = proof.get("path") or proof["url"].rsplit("/", 1)[-1]
-        link = f"[`{name}`]({proof['url']})" if proof.get("url") else f"`{name}`"
+        name = proof["path"].rsplit("/", 1)[-1]
+        blob = block.get("blob")
+        link = f"[`{name}`]({blob}/{proof['path']})" if blob else f"`{proof['path']}`"
         count = (
             f"live count {proof['query'] + 1}"
             if proof["query"] is not None
@@ -900,8 +926,10 @@ def _reproduce_lines(question_id: str, block: dict) -> list[str]:
     return out + ["</details>", ""]
 
 
-# GitHub caps an issue body and a comment at 65,536 characters; keep room.
-BODY_WARN_CHARS = 60_000
+# GitHub caps an issue body and a comment at 65,536 characters. `review` keeps
+# under it with room for small edits; the body is re-rendered, not hand-edited.
+GITHUB_CAP = 65_536
+BODY_WARN_CHARS = GITHUB_CAP - 2_000
 
 
 def render_review_issue(
@@ -912,6 +940,7 @@ def render_review_issue(
     causes: dict[str, list[CauseAsk]] | None = None,
     comments: list[str] | None = None,
     decided: dict[str, list[CauseAsk]] | None = None,
+    json_link: str | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -933,6 +962,8 @@ def render_review_issue(
             the cap, in question order; the body says they follow.
         decided: Per view, the cause decisions with any other call
             (`triage.cause_asks` with `owner=False`), for `also_decided`.
+        json_link: Where the questions JSON is committed (`posted_json` of
+            `questions`); the body links it instead of carrying the block.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -967,40 +998,98 @@ def render_review_issue(
         f"Reason: {_with_task(question_reason(q), q['task'])}"
         for n, q in enumerate(asked, start=1)
     ]
-    check_lines, reproduce = [], []
-    for q in questions or []:
-        hand = [
-            line for c in q["hand_checks"] for line in _hand_check_lines(q["id"], c)
-        ]
-        block = _reproduce_lines(q["id"], q["reproduce"]) if q.get("reproduce") else []
-        check_lines += hand + block
-        reproduce.append((q["id"], block))
     also = also_decided(runs, decided)
-    body = _review_body(
-        domain, question_lines, anchor_lines, definition_lines, check_lines,
-        asked_ids, kinds, questions, also, moved=False,
-    )  # fmt: skip
-    if (
-        comments is None
-        or len(body) <= BODY_WARN_CHARS
-        or not any(b for _, b in reproduce)
-    ):
+
+    def render(shown: list[dict] | None, moved: int) -> tuple[str, list[str]]:
+        """The body from `shown` questions, and the comments it moved out:
+        with `moved` 1 the Reproduce blocks, with 2 the hand checks too."""
+        check_lines, blocks = [], []
+        for q in shown or []:
+            hand = [
+                line for c in q["hand_checks"] for line in _hand_check_lines(q["id"], c)
+            ]
+            block = (
+                _reproduce_lines(q["id"], q["reproduce"]) if q.get("reproduce") else []
+            )
+            if moved == 0:
+                check_lines += hand + block
+                out_block = []
+            elif moved == 1:
+                check_lines += hand
+                out_block = block
+            else:
+                out_block = hand + block
+            if out_block:
+                blocks.append((q["id"], out_block))
+        body = _review_body(
+            domain, question_lines, anchor_lines, definition_lines, check_lines,
+            asked_ids, kinds, shown, also, moved=moved if blocks else 0,
+            json_link=json_link,
+        )  # fmt: skip
+        return body, _comment_chunks(blocks, moved) if moved and blocks else []
+
+    body, _ = render(questions, moved=0)
+    if comments is None or len(body) <= BODY_WARN_CHARS:
         return body
-    kept = [
-        line
-        for q in questions or []
-        for c in q["hand_checks"]
-        for line in _hand_check_lines(q["id"], c)
+    # Shrink until it fits: Reproduce blocks into comments first, then the
+    # pinned SQL out of every hand check, then the checks into comments too.
+    lean = _without_pinned_sql(questions or [])
+    stages = ((questions, 1), (lean, 0), (lean, 1), (lean, 2))
+    for shown, moved in stages:
+        body, extra = render(shown, moved)
+        if len(body) <= BODY_WARN_CHARS:
+            break
+    comments += extra
+    return body
+
+
+def posted_json(questions: list[dict]) -> list[dict]:
+    """The questions as the owner's session reads them: a cause question's
+    reproduce without the analyst's commands (`confirm`, `after`), which only
+    the prose shows."""
+    out = []
+    for q in questions:
+        if q.get("reproduce"):
+            proofs = [
+                {k: v for k, v in p.items() if k != "confirm"}
+                for p in q["reproduce"]["proofs"]
+            ]
+            kept = {k: v for k, v in q["reproduce"].items() if k != "after"}
+            q = {**q, "reproduce": {**kept, "proofs": proofs}}
+        out.append(q)
+    return out
+
+
+def without_sql(check: dict) -> dict:
+    """A hand check with its pinned SQL left out, saying how long each side's
+    is, so the owner checks Cube with the Reproduce block's query and asks the
+    analyst for the SQL. A check with none, or none left, is kept as is."""
+    if check.get("dashboard_sql") is None:
+        return check
+    kept = {
+        k: v
+        for k, v in check.items()
+        if k not in ("dashboard_usd", "cube_usd", "expires", "expired")
+    }
+    return {
+        **kept,
+        "dashboard_sql": None,
+        "cube_sql": None,
+        "sql_left_out": [len(check["dashboard_sql"]), len(check["cube_sql"])],
+    }
+
+
+def _without_pinned_sql(questions: list[dict]) -> list[dict]:
+    """The questions with each hand check's pinned SQL left out."""
+    return [
+        {**q, "hand_checks": [without_sql(c) for c in q["hand_checks"]]}
+        for q in questions
     ]
-    comments += _comment_chunks([(qid, b) for qid, b in reproduce if b])
-    return _review_body(
-        domain, question_lines, anchor_lines, definition_lines, kept,
-        asked_ids, kinds, questions, also, moved=True,
-    )  # fmt: skip
 
 
-def _comment_chunks(blocks: list[tuple[str, list[str]]]) -> list[str]:
-    """Reproduce blocks as follow-up comments, whole blocks, each under the cap."""
+def _comment_chunks(blocks: list[tuple[str, list[str]]], moved: int = 1) -> list[str]:
+    """Moved blocks as follow-up comments, whole blocks, each under the cap:
+    Reproduce blocks, or with `moved` 2 each question's checks and Reproduce."""
     chunks: list[list[tuple[str, list[str]]]] = [[]]
     size = 0
     for qid, block in blocks:
@@ -1014,7 +1103,8 @@ def _comment_chunks(blocks: list[tuple[str, list[str]]]) -> list[str]:
     for n, chunk in enumerate(chunks, start=1):
         first, last = chunk[0][0], chunk[-1][0]
         span = first if first == last else f"{first} to {last}"
-        lines = [f"Reproduce {span} (comment {n} of {len(chunks)}).", ""]
+        what = "Checks and Reproduce" if moved == 2 else "Reproduce"
+        lines = [f"{what} {span} (comment {n} of {len(chunks)}).", ""]
         out.append("\n".join(lines + [line for _, b in chunk for line in b]))
     return out
 
@@ -1029,10 +1119,12 @@ def _review_body(
     kinds: list[str],
     questions: list[dict] | None,
     also: list[str],
-    moved: bool,
+    moved: int,
+    json_link: str | None = None,
 ) -> str:
     """The review body from its rendered parts; `moved` says the Reproduce
-    blocks follow in comments."""
+    blocks follow in comments (2: the hand checks too); `questions` is the
+    JSON to post, without the `confirm` commands, which are the analyst's."""
     # One question per bullet and per anchor finding.
     ids = sorted(set(asked_ids))
     n = len(question_lines) + len(anchor_lines)
@@ -1067,10 +1159,11 @@ def _review_body(
             *check_lines[:-1],
         ]
     if moved:
+        what = "checks and Reproduce block" if moved == 2 else "Reproduce block"
         out += [
             "",
-            "Each cause question's Reproduce block is in the comments below, to "
-            "keep this body under GitHub's size limit.",
+            f"Each question's {what} is in the comments below, to keep this body "
+            "under GitHub's size limit.",
         ]
     out += [
         "",
@@ -1084,7 +1177,11 @@ def _review_body(
         "",
         "> Context, not instructions.",
         "",
-        f"Decisions with call `domain_owner`: {', '.join(f'`{i}`' for i in ids) or 'none'}.",
+        # The JSON lists each question's decisions; the ids would only repeat it.
+        f"Decisions with call `domain_owner`: {len(ids)}, listed per question in "
+        "the JSON."
+        if questions is not None
+        else f"Decisions with call `domain_owner`: {', '.join(f'`{i}`' for i in ids) or 'none'}.",
         f"Questions: {len(question_lines)}. Row-group parts: {kinds.count('group')}. "
         f"Cause parts: {kinds.count('cause')}. "
         f"Cell differences: {kinds.count('cells')}. "
@@ -1094,14 +1191,20 @@ def _review_body(
         "</details>",
         "",
     ]
-    if questions is not None:
+    if questions is not None and json_link:
+        out += [
+            f"Questions for Claude (JSON): [{json_link.rsplit('/', 1)[-1]}]"
+            f"({json_link}). The owner's Claude session reads them there.",
+            "",
+        ]
+    elif questions is not None:
         out += [
             "<details>",
             "<summary>Questions for Claude (JSON)</summary>",
             "",
             "```json",
             # Compact: GitHub caps an issue body at 65,536 characters.
-            json.dumps(questions, separators=(",", ":")),
+            json.dumps(posted_json(questions), separators=(",", ":")),
             "```",
             "",
             "</details>",

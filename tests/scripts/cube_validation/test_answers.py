@@ -91,6 +91,32 @@ def test_example_cell_ties_go_to_the_lowest_key():
     assert example_cell(run, "enrollment")["key"] == "a"
 
 
+def test_example_cell_reads_a_view_s_bare_reference_names():
+    bare = [["abbreviation", "KHS"], ["region_name", "Camden"],
+            ["academic_subject", "English 300"], ["module_code", "QA2"]]  # fmt: skip
+    run = _run([_cell("a", 10, 12, dims=bare)])
+
+    assert example_cell(run, "enrollment")["key"] == "a"
+    # Any column not reviewed still keeps a cell out.
+    run = _run([_cell("a", 10, 12, dims=[*bare, ["student_number", "1"]])])
+    assert example_cell(run, "enrollment") is None
+
+
+def test_a_cause_s_example_holds_its_rows_alone_when_one_can():
+    alone, shared, other = _cell("a", 10, 12), _cell("b", 10, 30), _cell("c", 10, 50)
+    run = _run([alone, shared, other])
+    cells = [(alone, frozenset({"C1"})), (shared, frozenset({"C1", "C2"})),
+             (other, frozenset({"C2"}))]  # fmt: skip
+
+    # The widest gap holding C1 is shared; the one holding C1 alone wins.
+    picked = example_cell(run, "enrollment", "C1", cells)
+    assert (picked["key"], picked["mixed"]) == ("a", False)
+    # C2 is never alone except in `c`; with that cell gone, `b` is mixed.
+    picked = example_cell(run, "enrollment", "C2", cells[:2])
+    assert (picked["key"], picked["mixed"]) == ("b", True)
+    assert example_cell(run, "enrollment", "C3", cells) is None
+
+
 def test_example_cell_skips_cells_under_10_students():
     run = _run([_cell("small", 10, 99, n=9), _cell("none", 10, 98, n=None)])
     assert example_cell(run, "enrollment") is None
@@ -939,6 +965,28 @@ def test_other_calls_show_once_each_as_also_decided_never_as_questions():
     assert "Also decided (no answer needed)" in body
 
 
+def test_pinned_sql_too_long_to_post_is_left_out_before_anything_else(monkeypatch):
+    from cube_validation import report as report_mod
+
+    questions = [
+        {"id": "Q1", "hand_checks": [{
+            "view": "v", "comparison": "c", "cut": "{}", "dims": [],
+            "dashboard": "1", "cube": "2", "dashboard_sql": "S" * 5000,
+            "cube_sql": "T" * 7000, "dashboard_usd": 0.01, "cube_usd": 0.01,
+            "expires": "2026-11-06", "expired": False, "workbook": "w",
+            "sheet": "s", "filters": {}, "mixed": False}]},
+    ]  # fmt: skip
+    full = render_review_issue("Registrar", [_run([])], DEFS, questions, None, [])
+    monkeypatch.setattr(report_mod, "BODY_WARN_CHARS", len(full) - 1000)
+    comments: list[str] = []
+
+    body = render_review_issue("Registrar", [_run([])], DEFS, questions, None, comments)
+
+    assert "S" * 5000 not in body and comments == []
+    assert "The pinned BigQuery SQL is left out (5,000 and 7,000 characters" in body
+    assert '"sql_left_out":[5000,7000]' in body and '"dashboard_sql":null' in body
+
+
 def test_one_cause_on_several_comparisons_is_one_question():
     groups = [
         Group(cid, (("region", "Newark"),), "dashboard_only", 30, 12)
@@ -1089,9 +1137,9 @@ def test_a_cause_reproduces_through_cube_a_live_count_and_the_proof(tmp_path):
     block = merged_reproduce([part])
     assert block["queries"] == [{"bucket": "C1", "sql": LIVE}]
     assert block["proofs"] == [
-        {"bucket": "C1", "query": 0, "url": f"https://x/blob/b/dir/{path}",
-         "confirm": [proof["confirm"]]},
+        {"bucket": "C1", "query": 0, "path": path, "confirm": [proof["confirm"]]},
     ]  # fmt: skip
+    assert block["blob"] == "https://x/blob/b/dir"
     text = "\n".join(_reproduce_lines("Q1", block))
     assert "<summary>Reproduce Q1</summary>" in text
     assert "With the Cube connector in Claude chat" in text
@@ -1145,3 +1193,54 @@ def test_a_proof_source_outside_git_has_no_link(tmp_path):
     source = pipeline_mod.proof_source(view)
 
     assert source.blob is None and source.base == tmp_path
+
+
+def test_the_review_file_is_linked_only_once_committed_and_pushed(tmp_path):
+    import subprocess
+
+    def git(*args):
+        return subprocess.run(
+            ["git", "-C", str(tmp_path), *args], check=True, capture_output=True,
+            text=True,
+        ).stdout.strip()  # fmt: skip
+
+    git("init", "-q", "-b", "feat/x")
+    git("config", "user.email", "t@example.org")
+    git("config", "user.name", "t")
+    git("remote", "add", "origin", "https://github.com/org/repo.git")
+    view = tmp_path / "src" / "v.yml"
+    view.parent.mkdir()
+    view.write_text("")
+    cfg = ViewConfig(view="v", fact="d.t", comparisons=[])
+    path = pipeline_mod.review_file([view], [cfg], "DDI")
+    assert path == tmp_path / "src" / "reviews" / "v.json"
+    data = [{"id": "Q1", "counts": ["<10 rows"]}]
+
+    with pytest.raises(pipeline_mod.Refusal, match="wrote .*commit and push it"):
+        pipeline_mod._review_file(path, data)
+    assert json.loads(path.read_text()) == data
+    with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
+        pipeline_mod._review_file(path, data)
+
+    git("add", ".")
+    git("commit", "-q", "-m", "review")
+    with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
+        pipeline_mod._review_file(path, data)  # committed, not pushed
+
+    git("update-ref", "refs/remotes/origin/feat/x", "HEAD")
+    sha = git("rev-parse", "HEAD")
+    link = f"https://github.com/org/repo/blob/{sha}/src/reviews/v.json"
+    assert pipeline_mod._review_file(path, data) == link
+    # The commit hook's formatting is no change; other questions are.
+    path.write_text(json.dumps(data, indent=4))
+    git("commit", "-q", "-am", "fmt")
+    git("update-ref", "refs/remotes/origin/feat/x", "HEAD")
+    assert pipeline_mod._review_file(path, data).endswith("/src/reviews/v.json")
+    with pytest.raises(pipeline_mod.Refusal, match="wrote"):
+        pipeline_mod._review_file(path, [{"id": "Q2"}])
+
+
+def test_a_review_across_views_is_named_for_its_domain(tmp_path):
+    cfgs = [ViewConfig(view=v, fact="d.t", comparisons=[]) for v in ("a", "b")]
+    path = pipeline_mod.review_file([tmp_path / "a.yml"], cfgs, "Data & Analytics")
+    assert path == tmp_path / "reviews" / "data-analytics.json"

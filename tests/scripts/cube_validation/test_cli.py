@@ -288,6 +288,14 @@ def fakes(monkeypatch, tmp_path):
     monkeypatch.setattr(cli, "tableau_session", session)
     monkeypatch.setattr(cli, "utcnow", Clock())
     monkeypatch.setattr(cli, "cache_root", lambda: tmp_path / "cache")
+
+    def linked(path, data):
+        """The review JSON written and linked as if committed and pushed."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2))
+        return f"https://github.com/o/r/blob/abc/{path.name}"
+
+    monkeypatch.setattr(pipeline, "_review_file", linked)
     monkeypatch.setenv("CUBE_REST_URL", "http://cube.test/cubejs-api/v1")
     monkeypatch.setenv("CUBE_API_SECRET", "not-a-secret")
     monkeypatch.setenv("CUBE_VALIDATION_EMAIL", "analyst@example.org")
@@ -939,11 +947,12 @@ def test_review_carries_triage_evidence_in_its_json(fakes, tmp_path, capsys):
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
 
     out = capsys.readouterr().out
-    block = out.split("```json\n", 1)[1].split("\n```", 1)[0]
+    assert "[v.json](https://github.com/o/r/blob/abc/v.json)" in out
+    block = (tmp_path / "reviews" / "v.json").read_text()
     (question,) = json.loads(block)
     assert question["decisions"] == ["miami-scope"]
     assert question["evidence"] == ["the fact drops them"]
-    assert '"stub"' not in out
+    assert '"stub"' not in out + block
 
 
 def test_review_quotes_the_masked_copy_of_exact_triage_evidence(
@@ -963,7 +972,8 @@ def test_review_quotes_the_masked_copy_of_exact_triage_evidence(
 
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
 
-    out = capsys.readouterr().out
+    # Everything posted: the body and the review file it links.
+    out = capsys.readouterr().out + (tmp_path / "reviews" / "v.json").read_text()
     assert "brings back <10 of 40 rows" in out
     assert "3 of 40" not in out
 
@@ -1202,8 +1212,8 @@ def test_review_refuses_a_triage_file_that_is_not_an_object(fakes, tmp_path, cap
 def _review_json(path, capsys):
     capsys.readouterr()
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
-    out = capsys.readouterr().out
-    return json.loads(out.split("```json\n", 1)[1].split("\n```", 1)[0])
+    capsys.readouterr()
+    return json.loads((path.parent / "reviews" / "v.json").read_text())
 
 
 def test_review_says_expired_by_the_command_lines_clock(
@@ -1232,11 +1242,12 @@ def test_review_warns_when_the_body_nears_githubs_cap(
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
     assert "65,536" not in capsys.readouterr().err
 
-    monkeypatch.setattr(pipeline.report, "render_review_issue", lambda *a: "x" * 60_001)
+    long = pipeline.report.BODY_WARN_CHARS + 1
+    monkeypatch.setattr(pipeline.report, "render_review_issue", lambda *a: "x" * long)
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
     captured = capsys.readouterr()
-    assert captured.out.startswith("x" * 60_001)
-    assert "60,001 characters" in captured.err and "65,536" in captured.err
+    assert captured.out.startswith("x" * long)
+    assert f"{long:,} characters" in captured.err and "65,536" in captured.err
 
 
 def test_review_reads_the_run_written_last(fakes, tmp_path, capsys):

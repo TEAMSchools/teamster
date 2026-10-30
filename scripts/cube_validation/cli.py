@@ -394,6 +394,7 @@ def _dispatch(args: argparse.Namespace) -> int:
                 now=utcnow(),
                 view_files=args.views,
                 comments=comments,
+                json_file=pipeline.review_file(args.views, configs, args.domain),
             )
         )
         if comments:
