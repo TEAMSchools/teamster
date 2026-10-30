@@ -91,6 +91,32 @@ def test_example_cell_ties_go_to_the_lowest_key():
     assert example_cell(run, "enrollment")["key"] == "a"
 
 
+def test_example_cell_reads_a_view_s_bare_reference_names():
+    bare = [["abbreviation", "KHS"], ["region_name", "Camden"],
+            ["academic_subject", "English 300"], ["module_code", "QA2"]]  # fmt: skip
+    run = _run([_cell("a", 10, 12, dims=bare)])
+
+    assert example_cell(run, "enrollment")["key"] == "a"
+    # Any column not reviewed still keeps a cell out.
+    run = _run([_cell("a", 10, 12, dims=[*bare, ["student_number", "1"]])])
+    assert example_cell(run, "enrollment") is None
+
+
+def test_a_cause_s_example_holds_its_rows_alone_when_one_can():
+    alone, shared, other = _cell("a", 10, 12), _cell("b", 10, 30), _cell("c", 10, 50)
+    run = _run([alone, shared, other])
+    cells = [(alone, frozenset({"C1"})), (shared, frozenset({"C1", "C2"})),
+             (other, frozenset({"C2"}))]  # fmt: skip
+
+    # The widest gap holding C1 is shared; the one holding C1 alone wins.
+    picked = example_cell(run, "enrollment", "C1", cells)
+    assert (picked["key"], picked["mixed"]) == ("a", False)
+    # C2 is never alone except in `c`; with that cell gone, `b` is mixed.
+    picked = example_cell(run, "enrollment", "C2", cells[:2])
+    assert (picked["key"], picked["mixed"]) == ("b", True)
+    assert example_cell(run, "enrollment", "C3", cells) is None
+
+
 def test_example_cell_skips_cells_under_10_students():
     run = _run([_cell("small", 10, 99, n=9), _cell("none", 10, 98, n=None)])
     assert example_cell(run, "enrollment") is None
@@ -937,6 +963,28 @@ def test_other_calls_show_once_each_as_also_decided_never_as_questions():
         "Task: #5668",
     ]
     assert "Also decided (no answer needed)" in body
+
+
+def test_pinned_sql_too_long_to_post_is_left_out_before_anything_else(monkeypatch):
+    from cube_validation import report as report_mod
+
+    questions = [
+        {"id": "Q1", "hand_checks": [{
+            "view": "v", "comparison": "c", "cut": "{}", "dims": [],
+            "dashboard": "1", "cube": "2", "dashboard_sql": "S" * 5000,
+            "cube_sql": "T" * 7000, "dashboard_usd": 0.01, "cube_usd": 0.01,
+            "expires": "2026-11-06", "expired": False, "workbook": "w",
+            "sheet": "s", "filters": {}, "mixed": False}]},
+    ]  # fmt: skip
+    full = render_review_issue("Registrar", [_run([])], DEFS, questions, None, [])
+    monkeypatch.setattr(report_mod, "BODY_WARN_CHARS", len(full) - 1000)
+    comments: list[str] = []
+
+    body = render_review_issue("Registrar", [_run([])], DEFS, questions, None, comments)
+
+    assert "S" * 5000 not in body and comments == []
+    assert "The pinned BigQuery SQL is left out (5,000 and 7,000 characters" in body
+    assert '"sql_left_out":[5000,7000]' in body and '"dashboard_sql":null' in body
 
 
 def test_one_cause_on_several_comparisons_is_one_question():
