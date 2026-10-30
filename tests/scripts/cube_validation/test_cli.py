@@ -30,6 +30,7 @@ from cube_validation.tableau import Snapshot, formula_fingerprint
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.timetravel import utc_literal
+from google.api_core.exceptions import BadRequest
 
 FIXTURES = Path(__file__).parent / "fixtures"
 REAL_TABLEAU_SESSION = cli.tableau_session
@@ -131,12 +132,23 @@ class FakeBigQuery:
         return SimpleNamespace(table_type="TABLE", view_query=None, modified=START)
 
     def query(self, sql, job_config=None):
+        nbytes = int(self.cost(sql) / 6.25 * TIB)
         if job_config is not None and job_config.dry_run:
-            nbytes = int(self.cost(sql) / 6.25 * TIB)
             return SimpleNamespace(total_bytes_processed=nbytes, result=lambda: [])
+        limit = job_config.maximum_bytes_billed if job_config is not None else None
+        if limit is not None and nbytes > int(limit):
+            # BigQuery refuses an over-limit query before it runs, unbilled.
+            def refuse():
+                raise BadRequest(
+                    "over the limit", errors=[{"reason": "bytesBilledLimitExceeded"}]
+                )
+
+            return SimpleNamespace(total_bytes_processed=0, result=refuse)
         self.ran.append(sql)
         rows = self.answer(sql)
-        return SimpleNamespace(total_bytes_processed=0, result=lambda: rows)
+        return SimpleNamespace(
+            total_bytes_processed=nbytes, total_bytes_billed=nbytes, result=lambda: rows
+        )
 
     def answer(self, sql):
         if "JOBS_BY_PROJECT" in sql:
@@ -2499,7 +2511,7 @@ def test_triage_traces_the_rows_by_default(fakes, tmp_path, capsys, monkeypatch)
     run = pipeline._run_from_json(json.loads(saved.read_text()))
     seen = {}
 
-    def traced(cfg, run_, *, wh, cube, manifest_path, max_minutes, skip):
+    def traced(cfg, run_, *, wh, cube, manifest_path, max_minutes, skip, prepared):
         seen["manifest"], seen["minutes"] = manifest_path, max_minutes
         found = {}
         for g in run_.applied.open:
@@ -2577,6 +2589,7 @@ def test_triage_writes_its_batch_when_the_trace_stops(
     stopped = trace.ItemTrace("dashboard", open_group.n_rows)
     stopped.unknown = open_group.n_rows
     stopped.stopped = "the trace passed its time limit"
+    monkeypatch.setattr(trace, "check_ready", lambda *a, **k: None)
     monkeypatch.setattr(
         trace,
         "trace_run",

@@ -40,10 +40,11 @@ from sqlglot.tokens import TokenType
 from . import compare, decisions, pipeline, trace, triage
 from .bq import CostCapError, ViewHistoryError, Warehouse
 from .compare import Group
-from .config import Comparison, ViewConfig, id_like
+from .config import Comparison, ViewConfig, id_like, mask_digits, row_population
 from .cube_client import Cube, CubeError, CubeRefusal, network_schools
 from .moment import Build
 from .report import RunResult, shown_counts
+from .timetravel import PROJECT
 from .trace import TIMEOUT_S, TRACED, _failure
 
 # The buckets a stored proof classifies: the one-sided rows the trace leads on,
@@ -51,6 +52,11 @@ from .trace import TIMEOUT_S, TRACED, _failure
 PROVABLE = (*TRACED, "value_differs")
 
 PLACEHOLDER = "{unmatched}"
+# Enough of a BigQuery message to name the table and the reason.
+MAX_MESSAGE = 600
+_NOT_AN_ID = re.compile(
+    re.escape(PROJECT) + r"|\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?"
+)
 UNEXPLAINED = "UNEXPLAINED"
 COLUMNS = ("__row", "cause")
 SIDES = ("cube", "dashboard")
@@ -528,6 +534,7 @@ def proof_query(ctes: str, select: str, body: str, literals: set[str]) -> str:
     allowed = ", ".join(pipeline._lit(v) for v in sorted(literals))
     proof = body.replace(PLACEHOLDER, "__u")
     return (
+        # trunk-ignore(bandit/B608): the proof is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline._lit
         f"{ctes},\n__u AS (\n{select}\n),\n__p AS (\n{proof}\n),\n"
         "__per AS (\n  SELECT __row, COUNT(*) AS __times, "
         f"MIN(IF(cause IN ({allowed}), cause, NULL)) AS cause, "
@@ -624,6 +631,31 @@ def outcomes(
     return out
 
 
+def bigquery_said(exc: GoogleAPIError) -> str:
+    """A BigQuery error with its message, for the terminal and local files only.
+
+    The message names tables, columns and timestamps; ID-shaped numbers in it
+    are masked in case it quotes a value. Posted text keeps a fixed line.
+    """
+    message = " ".join(str(getattr(exc, "message", None) or exc).split())
+    # The project and the timestamps name what clashed; they are no ID.
+    kept: list[str] = []
+
+    def keep(m: re.Match) -> str:
+        kept.append(m[0])
+        return f"\x00{len(kept) - 1}\x00"
+
+    masked = re.sub(
+        "\x00(\\d+)\x00",
+        lambda m: kept[int(m[1])],
+        mask_digits(_NOT_AN_ID.sub(keep, message)),
+    )
+    # Cut after masking, so a cut never leaves part of an ID unmasked.
+    if len(masked) > MAX_MESSAGE:
+        masked = masked[:MAX_MESSAGE] + "..."
+    return f"{_failure(exc)}: {masked}"
+
+
 def run_proof(
     wh: Warehouse,
     cfg: ViewConfig,
@@ -632,20 +664,36 @@ def run_proof(
     proof: Proof,
     items: list[tuple[str, Group]],
     build: Build,
+    moved: dict[str, bool] | None = None,
 ) -> dict[str, Outcome]:
     """Check, pin, price and run a proof on the run's rows. Call inside `wh.budget`.
 
     The proof's own tables are read as of the build start, as the dashboard
-    side is (`timetravel.as_of`); `{unmatched}` is already pinned.
+    side is (`timetravel.as_of`); a table `{unmatched}` reads at the build end
+    (one only the Cube side reads) is read there too, as the trace does,
+    since BigQuery reads a table at 1 moment per query.
+
+    Args:
+        moved: The tables already checked for a change during the build, and
+            whether they changed; shared across the proofs of one triage.
 
     Raises:
         pipeline.Refusal: The proof fails a check (see `check_sql` and
-            `outcomes`), cannot be read as of the moment, or BigQuery refuses
-            it; only its job id and reason are kept.
+            `outcomes`), cannot be read as of the moment, reads a table that
+            changed during the build at the build end, or BigQuery refuses it
+            (its message is kept for the terminal).
         CostCapError: It would pass the run's or the day's cap.
     """
     literals = check_sql(proof.body, grain_names(comparison), identifying(comparison))
-    body = pipeline._as_of(proof.body, build.start, wh).sql
+    at = pipeline._as_of(proof.body, build.start, wh)
+    body = trace._one_moment(
+        at,
+        set(sides.cube.tables - sides.dashboard.tables),
+        {} if moved is None else moved,
+        build,
+        wh,
+        doing=f"read in {proof.path.name}",
+    )
     ctes, select = unmatched_sql(cfg, comparison, sides, proof.bucket, items)
     sql = proof_query(ctes, select, body, literals)
     try:
@@ -655,7 +703,7 @@ def run_proof(
         rows = wh.rows(sql, timeout_s=TIMEOUT_S)
     except GoogleAPIError as exc:
         raise pipeline.Refusal(
-            f"{proof.path.name}: BigQuery refused it ({_failure(exc)})"
+            f"{proof.path.name}: BigQuery refused it ({bigquery_said(exc)})"
         ) from exc
     return outcomes(rows, proof, items, literals)
 
@@ -889,6 +937,31 @@ class Ran:
     why: str = ""
 
 
+def siblings(cfg: ViewConfig, comparison: Comparison) -> list[Comparison]:
+    """The other comparisons that reconcile the same rows (`row_population`)."""
+    key = row_population(comparison)
+    return [
+        c
+        for c in cfg.comparisons
+        if key is not None and c.id != comparison.id and row_population(c) == key
+    ]
+
+
+def _shared(
+    cfg: ViewConfig, directory: Path, proof: Proof, comparison: Comparison
+) -> list[Comparison]:
+    """The siblings a proof also classifies: those with no proof of their own.
+
+    A sibling's own proof wins even when it fails: its refusal shows, rather
+    than another proof standing in for it.
+    """
+    return [
+        c
+        for c in siblings(cfg, comparison)
+        if not proof_path(directory, c.id, proof.bucket).is_file()
+    ]
+
+
 def run_stored(
     cfg: ViewConfig,
     run: RunResult,
@@ -896,16 +969,18 @@ def run_stored(
     *,
     wh: Warehouse,
     cube: Cube,
+    prepared: trace.Prepared | None = None,
 ) -> list[Ran]:
     """Run every stored proof of the view on the run's rows. Call inside `wh.budget`.
 
     A proof that cannot run (a failed check, a cap, a BigQuery or Cube error,
     its SQL no longer the run's) keeps why and moves nothing; the rest still
-    run. Each comparison's row SQL is rebuilt once.
+    run. A proof also runs on each comparison that reconciles the same rows
+    and has no proof of its own for the bucket (`siblings`). Each
+    comparison's row SQL is rebuilt once, or taken from `prepared`.
     """
     by_id = {c.id: c for c in cfg.comparisons}
-    schools: set[str] | None = None
-    sides: dict[str, pipeline.RowSides] = {}
+    prepared = prepared or trace.Prepared()
     out = []
     for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
         try:
@@ -913,47 +988,55 @@ def run_stored(
         except (OSError, pipeline.Refusal) as exc:
             print(f"Proof {path.name} skipped: {exc}")
             continue
-        comparison = by_id.get(proof.comparison)
-        bucket_items = _bucket_items(run, proof.comparison, proof.bucket)
-        if comparison is None or not bucket_items:
+        if (own := by_id.get(proof.comparison)) is None:
             continue
-        ran = Ran(proof, bucket_items)
-        try:
-            if schools is None:
-                schools = network_schools(wh)
-            if comparison.id not in sides:
-                sides[comparison.id] = pipeline.row_sides(
-                    cfg,
-                    comparison,
-                    wh=wh,
-                    cube=cube,
-                    build=run.moment,
-                    schools=schools,
-                    fingerprints=run.fingerprints.get(comparison.id, {}),
-                )
-            ran.found = run_proof(
-                wh,
-                cfg,
-                comparison,
-                sides[comparison.id],
-                proof,
-                bucket_items,
-                run.moment,
-            )
-        except (
-            pipeline.Refusal,
-            CostCapError,
-            ViewHistoryError,
-            CubeError,
-            CubeRefusal,
-        ) as exc:
-            ran.why = f"proof {path.name} not run: {exc}"
-        except GoogleAPIError as exc:
-            ran.why = f"proof {path.name} not run ({_failure(exc)})"
-        if ran.why:
-            print(ran.why)
-        out.append(ran)
+        for comparison in [own, *_shared(cfg, directory, proof, own)]:
+            if ran := _run_one(cfg, run, comparison, proof, wh, cube, prepared):
+                out.append(ran)
     return out
+
+
+def _run_one(
+    cfg: ViewConfig,
+    run: RunResult,
+    comparison: Comparison,
+    proof: Proof,
+    wh: Warehouse,
+    cube: Cube,
+    prepared: trace.Prepared,
+) -> Ran | None:
+    """Run `proof` on one comparison's open groups of its bucket, if any."""
+    path = proof.path
+    bucket_items = _bucket_items(run, comparison.id, proof.bucket)
+    if not bucket_items:
+        return None
+    ran = Ran(proof, bucket_items)
+    try:
+        if prepared.schools is None:
+            prepared.schools = network_schools(wh)
+        ran.found = run_proof(
+            wh,
+            cfg,
+            comparison,
+            prepared.row_sides(cfg, comparison, run, wh, cube),
+            proof,
+            bucket_items,
+            run.moment,
+            prepared.moved,
+        )
+    except (
+        pipeline.Refusal,
+        CostCapError,
+        ViewHistoryError,
+        CubeError,
+        CubeRefusal,
+    ) as exc:
+        ran.why = f"proof {path.name} not run: {exc}"
+    except GoogleAPIError as exc:
+        ran.why = f"proof {path.name} not run ({bigquery_said(exc)})"
+    if ran.why:
+        print(ran.why)
+    return ran
 
 
 def explained(runs: list[Ran]) -> set[tuple]:
@@ -1126,25 +1209,47 @@ def run_confirm(
         )
 
     with wh.budget(max_usd):
-        sides = pipeline.row_sides(
+        prepared = trace.Prepared(schools=network_schools(wh))
+        found = run_proof(
+            wh,
             cfg,
             target,
-            wh=wh,
-            cube=cube,
-            build=run.moment,
-            schools=network_schools(wh),
-            fingerprints=run.fingerprints.get(comparison, {}),
+            prepared.row_sides(cfg, target, run, wh, cube),
+            proof,
+            bucket_items,
+            run.moment,
+            prepared.moved,
         )
-        found = run_proof(wh, cfg, target, sides, proof, bucket_items, run.moment)
+        # The comparisons holding the same rows: the proof classifies theirs
+        # too, unless one has its own. A refusal there keeps this proof.
+        shared = [
+            r
+            for c in _shared(cfg, stored.parent, proof, target)
+            if (r := _run_one(cfg, run, c, proof, wh, cube, prepared))
+        ]
 
     stored.parent.mkdir(parents=True, exist_ok=True)
     stored.write_text(proof.text)
     apply_outcomes(all_items, proof, found)
+    apply_runs(run, all_items, shared, cfg)
     link_cells(run, all_items, comparison, cfg)
     _mark(run, all_items, cfg)
     _save_triage(path, loaded, all_items)
     moved = sum(1 for o in found.values() if o.explained)
     print(f"Saved {stored}: {moved} of {len(found)} items proven.")
-    _report(all_items, wanted or set(found))
+    reported = set(found)
+    for r in shared:
+        sibling = _comparison_of(r)
+        if r.found is None:
+            print(f"Also {sibling}: not run; see above.")
+            continue
+        n = sum(1 for o in r.found.values() if o.explained)
+        print(f"Also {sibling} (same rows): {n} of {len(r.found)} items proven.")
+        reported |= set(r.found)
+    _report(all_items, wanted or reported)
     print(f"Saved {path}")
     return 0
+
+
+def _comparison_of(ran: Ran) -> str:
+    return ran.items[0][1].comparison_id

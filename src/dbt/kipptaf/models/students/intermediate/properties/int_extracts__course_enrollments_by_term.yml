@@ -1521,8 +1521,8 @@ models:
       - name: quarter_start_date_alt
         data_type: date
         description: >
-          Adjusted quarter start date. Clamps Q1 start to the first day of
-          school when the PS term start predates it.
+          Quarter start date, clamped to no earlier than the first school week
+          of the year.
         config:
           meta:
             source_system: PowerSchool
@@ -1531,8 +1531,7 @@ models:
       - name: quarter_end_date_alt
         data_type: date
         description: >
-          Adjusted quarter end date. Clamps Q4 end to the last day of school
-          when the PS term end falls after it.
+          Quarter end date, clamped to no later than the last day of school.
         config:
           meta:
             source_system: PowerSchool

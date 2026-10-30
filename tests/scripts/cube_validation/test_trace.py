@@ -903,3 +903,147 @@ def test_check_ready_refuses_an_old_sqlglot(monkeypatch):
     monkeypatch.setattr(trace.sqlglot, "__version__", "28.0.0")
     with pytest.raises(pipeline.Refusal, match="sqlglot 28.0.0 cannot parse"):
         trace.check_ready(None, None, wh=None, cube=None)
+
+
+def test_check_ready_s_plan_is_reused_by_the_trace(monkeypatch):
+    side = _side(FLAT)
+    calls = []
+    monkeypatch.setattr(trace, "network_schools", lambda wh: calls.append("s") or set())
+
+    def sides(*a, **k):
+        calls.append("r")
+        return side.sides
+
+    monkeypatch.setattr(pipeline, "row_sides", sides)
+    run = RunResult(
+        view="v", moment=BUILD, measures=[], applied=Applied(open=[_group(5)])
+    )
+    wh = FakeWarehouse(lambda sql: [])
+
+    prepared = trace.check_ready(CFG, run, wh=wh, cube=None, levels=0)
+    trace.trace_run(CFG, run, wh=wh, cube=None, levels=0, prepared=prepared)
+
+    assert calls == ["s", "r"]
+
+
+def test_dry_runs_run_at_once_and_keep_each_error_in_order():
+    import threading
+
+    seen = set()
+    gate = threading.Barrier(3, timeout=5)
+
+    class Wh:
+        def estimate(self, sql):
+            seen.add(threading.get_ident())
+            gate.wait()  # all 3 in flight at once, or this times out
+            if sql == "b":
+                raise BadRequest("x", errors=[{"reason": "invalidQuery"}])
+            return 1.0
+
+    got = trace._dry_runs(Wh(), ["a", "b", "c"])
+
+    assert got[0] == 1.0 and got[2] == 1.0 and isinstance(got[1], BadRequest)
+    assert len(seen) == 3
+    with pytest.raises(BadRequest):
+        gate.reset()
+        trace._priced(Wh(), ["a", "b", "c"])
+
+
+# --- refused before BigQuery: too long, or not runnable inside a query -----------
+
+
+def test_a_with_recursive_model_is_read_as_built_without_a_dry_run(tmp_path):
+    seen = []
+
+    class Wh(FakeWarehouse):
+        def estimate(self, sql):
+            seen.append(sql)
+            return 0.0
+
+    manifest = _manifest(
+        tmp_path,
+        {"fact": ("WITH RECURSIVE r AS (SELECT 1 AS n) SELECT * FROM r", [])},
+    )
+
+    found = _canned(
+        wh=Wh(lambda sql: [_answer_row("", 5)]), levels=1, manifest=manifest
+    ).run()[trace.item_key(_group(5))]
+
+    assert found.below == ("fact",)
+    assert not any("recursive" in s.lower() for s in seen)
+
+
+def test_a_child_whose_check_is_too_long_is_skipped_without_a_dry_run(
+    tmp_path, monkeypatch
+):
+    seen = []
+
+    class Wh(FakeWarehouse):
+        def estimate(self, sql):
+            seen.append(len(sql))
+            return 0.0
+
+    monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 50_000)
+    long = "x" * 60_000
+    manifest = _manifest(
+        tmp_path,
+        {
+            "fact": (
+                f"SELECT * FROM `teamster-332318`.`d`.`raw` WHERE '{long}' <> ''",
+                [],
+            )
+        },
+    )
+
+    found = _canned(
+        wh=Wh(lambda sql: [_answer_row("", 5)]), levels=1, manifest=manifest
+    ).run()[trace.item_key(_group(5))]
+
+    assert found.below == ("fact",)
+    assert max(seen) <= 50_000
+
+
+def test_a_step_too_long_alone_is_left_out_and_noted(monkeypatch):
+    side = _side(FLAT)
+    runner = trace._Runner(FakeWarehouse(lambda sql: []), side, trace._Meter(None))
+    base = len(side.query([], [], False, []))
+    monkeypatch.setattr(trace, "MAX_QUERY_CHARS", base + 2_000)
+    variants = [("a", "SELECT 1 AS keep_me"), ("big", "SELECT '" + "y" * 5_000 + "'")]
+
+    queries, whole = runner.plan(variants, [], [])
+
+    assert not whole and len(queries) == 1
+    assert "keep_me" in queries[0] and "yyyy" not in queries[0]
+    assert runner.failures == ["relaxing step big makes a query too long to run"]
+
+    monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 10)
+    with pytest.raises(trace.Stopped, match="alone is too long"):
+        runner.plan(variants, [], [])
+
+
+def test_a_side_too_long_at_level_0_stops_only_its_bucket(monkeypatch):
+    side = _side(FLAT)
+    monkeypatch.setattr(trace, "network_schools", lambda wh: set())
+    monkeypatch.setattr(pipeline, "row_sides", lambda *a, **k: side.sides)
+    cube_only = _group(5)
+    dash_only = Group("mastery", (("abbreviation", "X"),), "dashboard_only", 4, 4)
+    run = RunResult(
+        view="v",
+        moment=BUILD,
+        measures=[],
+        applied=Applied(open=[cube_only, dash_only]),
+    )
+    real = trace._Runner.plan
+
+    def plan(self, variants, exclude, include):
+        if self.side.bucket == "cube_only":
+            raise trace.Stopped("the cube SQL alone is too long to run")
+        return real(self, variants, exclude, include)
+
+    monkeypatch.setattr(trace._Runner, "plan", plan)
+    wh = FakeWarehouse(lambda sql: [])
+
+    result = trace.trace_run(CFG, run, wh=wh, cube=None, levels=0)
+
+    assert "alone is too long" in result.items[trace.item_key(cube_only)].stopped
+    assert not result.items[trace.item_key(dash_only)].stopped

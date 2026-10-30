@@ -48,6 +48,8 @@ _REF_CANDIDATE = re.compile(
     r"\b(?:FROM|JOIN)\s+(?P<tok>[`\w-]+(?:\.[`\w-]+)+)", re.IGNORECASE
 )
 _UNNEST = re.compile(r",\s*unnest\s*\(", re.IGNORECASE)
+# BigQuery takes no `FOR SYSTEM_TIME AS OF` between a table and its PIVOT.
+_PIVOT_NEXT = re.compile(r"\s*(?:un)?pivot\b", re.IGNORECASE)
 # `extract(day from d.col)` and `is distinct from d.col` are not table refs.
 _NOT_A_TABLE = re.compile(
     r"(?:extract\s*\(\s*\w+|distinct|trim\s*\([^()]*?'[^()]*?')\s+$", re.IGNORECASE
@@ -252,11 +254,14 @@ def as_of(sql: str, ts: datetime, catalog: Catalog) -> AsOf:
                 return f"{prefix}({body}){_as(alias)}"
 
             tables.add(key)
+            pinned = f"`{PROJECT}.{ds}.{name}`"
+            at = f"FOR SYSTEM_TIME AS OF TIMESTAMP '{literal}'"
 
-            return (
-                f"{prefix}`{PROJECT}.{ds}.{name}`{alias} "
-                f"FOR SYSTEM_TIME AS OF TIMESTAMP '{literal}'"
-            )
+            if _PIVOT_NEXT.match(match.string, match.end()):
+                inner = f"(SELECT * FROM {pinned} {at})"
+                return f"{prefix}{inner}{_as(alias) if alias else ''}"
+
+            return f"{prefix}{pinned}{alias} {at}"
 
         return _REF.sub(replace, text)
 
@@ -317,7 +322,11 @@ def _refuse_unmatched(text: str) -> None:
         if _NOT_A_TABLE.search(text[: cand.start()]):
             continue
 
-        raise ValueError(f"table reference not recognized: {cand['tok']!r}")
+        raise ValueError(
+            f"table reference not recognized: {cand['tok']!r}; write it as dbt "
+            f"compiles it, each part in its own backticks: `{PROJECT}`.`<dataset>`"
+            ".`<table>`"
+        )
 
     for _, end in covered:
         # `, unnest(...)` reads an array of the row, not another table.

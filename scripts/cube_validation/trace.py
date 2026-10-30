@@ -27,9 +27,11 @@ person proves a cause (`confirm.py`).
 from __future__ import annotations
 
 import json
+import re
 import time
 from collections import Counter
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -53,13 +55,16 @@ from .cube_client import Cube, network_schools
 from .moment import Build, changed_between
 from .report import SUPPRESSED, RunResult, shown_counts
 from .sqlsteps import Query, Step, TableRef
-from .timetravel import PROJECT, repin
+from .timetravel import PROJECT, repin, strip_comments
 
 MAX_LEVELS = 3
 # Older sqlglot cannot parse BigQuery time travel after a table alias.
 SQLGLOT_MAJOR = 30
 # BigQuery refuses a query longer than 1,024K characters.
 MAX_QUERY_CHARS = 900_000
+_RECURSIVE = re.compile(r"\bwith\s+recursive\b", re.IGNORECASE)
+# Dry runs in flight at once; each waits on BigQuery's planner, not the CPU.
+DRY_RUN_WORKERS = 8
 # A relaxed variant can multiply rows; BigQuery stops a query past this.
 TIMEOUT_S = 1800
 TRACE_MAX_MINUTES = 120
@@ -415,6 +420,36 @@ def _failure(exc: GoogleAPIError) -> str:
     return f"job {getattr(exc, JOB_ID, '') or '?'}, {reason}"
 
 
+def _dry_runs(wh: Warehouse, queries: list[str]) -> list[float | GoogleAPIError]:
+    """Dry-run `queries` at once: each one's price, or the error it raised.
+
+    A dry run is free and spends its time waiting on BigQuery's planner.
+    """
+
+    def one(q: str) -> float | GoogleAPIError:
+        try:
+            return wh.estimate(q)
+        except GoogleAPIError as exc:
+            return exc
+
+    if len(queries) <= 1:
+        return [one(q) for q in queries]
+    with ThreadPoolExecutor(max_workers=min(DRY_RUN_WORKERS, len(queries))) as pool:
+        return list(pool.map(one, queries))
+
+
+def _priced(wh: Warehouse, queries: list[str]) -> float:
+    """The summed dry-run price of `queries`, run at once.
+
+    Raises:
+        GoogleAPIError: The first query, in order, whose dry run failed.
+    """
+    got = _dry_runs(wh, queries)
+    if errors := [g for g in got if isinstance(g, GoogleAPIError)]:
+        raise errors[0]
+    return sum(g for g in got if not isinstance(g, GoogleAPIError))
+
+
 class _Meter:
     """The whole trace's dry-run running total and its time limit."""
 
@@ -441,7 +476,7 @@ class _Runner:
         """Run `queries`, or return None when one fails at run time."""
         self.meter.check()
         try:
-            usd = sum(self.wh.estimate(q) for q in queries)
+            usd = _priced(self.wh, queries)
         except GoogleAPIError as exc:
             # After paid queries, a dry run that fails stops the bucket like
             # a cap, keeping what it found.
@@ -494,14 +529,23 @@ class _Runner:
         first = variants[0] if variants else ("", "")
         extra = len(self.side.query([first], exclude, False, include)) - base
         extra -= len(first[1])
+        if base > MAX_QUERY_CHARS:
+            raise Stopped(f"the {self.side.side} SQL alone is too long to run")
         batches: list[list[tuple[str, str]]] = [[]]
         size = base
         for v in variants:
-            if batches[-1] and size + len(v[1]) + extra > MAX_QUERY_CHARS:
+            cost = len(v[1]) + extra + len(v[0])
+            if base + cost > MAX_QUERY_CHARS:
+                # Alone it is past BigQuery's limit: its rows stay unattributed.
+                note = f"relaxing step {v[0]} makes a query too long to run"
+                print(f"Trace {self.label}: {note}")
+                self.failures.append(note)
+                continue
+            if batches[-1] and size + cost > MAX_QUERY_CHARS:
                 batches.append([])
                 size = base
             batches[-1].append(v)
-            size += len(v[1]) + extra + len(v[0])
+            size += cost
         return [self.side.query(b, exclude, False, include) for b in batches], False
 
     def level(
@@ -644,10 +688,16 @@ class _Bucket:
         """The materialized tables `frame` reads, each as the next frame down."""
         if id(frame) in self.kids:
             return self.kids[id(frame)]
-        side, found = self.side, []
+        side, ready = self.side, []
         for ref in frame.query.tables():
             node = self.manifest.model(ref.dataset, ref.name) if self.manifest else None
             if node is None or not node.get("compiled_code"):
+                continue
+            if _RECURSIVE.search(strip_comments(node["compiled_code"])):
+                # Its SQL runs only at the top of a query, never inside the
+                # trace's: the table is read as built, at the moment.
+                print(f"Trace reads {ref.name} as built: it is a WITH RECURSIVE model")
+                self.blocked.add(ref.name)
                 continue
             try:
                 at = pipeline._as_of(node["compiled_code"], side.build.start, self.wh)
@@ -658,17 +708,26 @@ class _Bucket:
                     frame,
                     frame.level + 1,
                 )
-                # Free, and it must run read in place: compiled SQL from
-                # another checkout can name a column the table lacks, and a
-                # WITH RECURSIVE runs only at the top of a query.
-                self.wh.estimate(side.rows(child.full(child.query.sql())))
+                check = side.rows(child.full(child.query.sql()))
             except (pipeline.Refusal, SqlglotError) as exc:
                 print(f"Trace cannot descend into {ref.name}: {type(exc).__name__}")
                 self.blocked.add(ref.name)
                 continue
-            except GoogleAPIError as exc:
-                errors = getattr(exc, "errors", None) or [{}]
-                reason = errors[0].get("reason") or type(exc).__name__
+            if len(check) > MAX_QUERY_CHARS:
+                print(f"Trace cannot descend into {ref.name}: its SQL is too long")
+                self.blocked.add(ref.name)
+                continue
+            ready.append((ref, child, check))
+        # Free, and each must run read in place: compiled SQL from another
+        # checkout can name a column the table lacks, and a WITH RECURSIVE
+        # runs only at the top of a query.
+        found = []
+        for (ref, child, _), got in zip(
+            ready, _dry_runs(self.wh, [c for _, _, c in ready]), strict=True
+        ):
+            if isinstance(got, GoogleAPIError):
+                errors = getattr(got, "errors", None) or [{}]
+                reason = errors[0].get("reason") or type(got).__name__
                 print(f"Trace cannot descend into {ref.name}: {reason}")
                 self.blocked.add(ref.name)
                 continue
@@ -875,13 +934,26 @@ class _Bucket:
 
 
 def _one_moment(
-    at, end_tables: set[str], moved: dict[str, bool], build: Build, wh: Warehouse
+    at,
+    end_tables: set[str],
+    moved: dict[str, bool],
+    build: Build,
+    wh: Warehouse,
+    doing: str = "trace through",
 ) -> str:
-    """Read a descended table's SQL at the moment the rest of the query reads.
+    """Read SQL expanded at the build start at the moment the rest of the query reads.
 
     It is expanded as of the build start, when the build read its inputs; a
     table the Cube side reads at the build end is moved there, after checking
     it did not change in between (BigQuery reads a table at 1 moment).
+
+    Args:
+        at: `as_of` output at the build start.
+        end_tables: The tables the rest of the query reads at the build end.
+        moved: Each table already checked, and whether it changed; updated.
+        build: The run's moment.
+        wh: The warehouse, for the change check.
+        doing: What the refusal says could not be done, before the tables.
 
     Raises:
         pipeline.Refusal: Such a table changed during the build.
@@ -892,10 +964,40 @@ def _one_moment(
     moved |= {t: t in changed for t in unknown}
     if bad := [t for t in clash if moved[t]]:
         raise pipeline.Refusal(
-            f"cannot trace through {', '.join(bad)}: it changed during the build, "
+            f"cannot {doing} {', '.join(bad)}: it changed during the build, "
             "and BigQuery reads a table at 1 moment per query"
         )
     return repin(at.sql, clash, build.start, build.end)
+
+
+@dataclass
+class Prepared:
+    """What planning a triage fetches once, for `check_ready`, the stored proofs
+    and `trace_run` to share: the network's schools, each comparison's row SQL,
+    the dbt manifest, and each table checked for a change during the build."""
+
+    schools: set[str] | None = None
+    sides: dict[str, pipeline.RowSides] = field(default_factory=dict)
+    manifest: Manifest | None = None
+    moved: dict[str, bool] = field(default_factory=dict)
+
+    def row_sides(
+        self, cfg: ViewConfig, comparison: Comparison, run: RunResult, wh, cube
+    ) -> pipeline.RowSides:
+        """The comparison's row SQL as the run reconciled it, rebuilt once."""
+        if self.schools is None:
+            self.schools = network_schools(wh)
+        if comparison.id not in self.sides:
+            self.sides[comparison.id] = pipeline.row_sides(
+                cfg,
+                comparison,
+                wh=wh,
+                cube=cube,
+                build=run.moment,
+                schools=self.schools,
+                fingerprints=run.fingerprints.get(comparison.id, {}),
+            )
+        return self.sides[comparison.id]
 
 
 def _plan(
@@ -908,6 +1010,7 @@ def _plan(
     manifest_path: Path,
     levels: int,
     meter: _Meter,
+    prepared: Prepared,
 ) -> list[_Bucket]:
     """One `_Bucket` per traced comparison bucket of `open_groups`.
 
@@ -925,20 +1028,10 @@ def _plan(
     ]
     if not todo:
         return []
-    schools = network_schools(wh)
-    moved: dict[str, bool] = {}
     plans = []
     for cid in todo:
         comparison = by_id[cid]
-        sides = pipeline.row_sides(
-            cfg,
-            comparison,
-            wh=wh,
-            cube=cube,
-            build=run.moment,
-            schools=schools,
-            fingerprints=run.fingerprints.get(cid, {}),
-        )
+        sides = prepared.row_sides(cfg, comparison, run, wh, cube)
         shared = sides.cube.tables & sides.dashboard.tables
         for bucket in TRACED:
             groups = [
@@ -957,14 +1050,16 @@ def _plan(
             manifest=None,
             levels=levels,
             end_tables=set(side.sides.cube.tables - shared),
-            moved=moved,
+            moved=prepared.moved,
             meter=meter,
         )
         for side, groups, shared in plans
     ]
     if levels:
         roots = [t for b in buckets for t in b.root.query.tables()]
-        manifest = Manifest.load(manifest_path, roots)
+        if prepared.manifest is None:
+            prepared.manifest = Manifest.load(manifest_path, roots)
+        manifest = prepared.manifest
         manifest.require_compiled(roots, levels)
         for b in buckets:
             b.manifest = manifest
@@ -979,11 +1074,15 @@ def check_ready(
     cube: Cube,
     manifest_path: Path = MANIFEST,
     levels: int = MAX_LEVELS,
-) -> None:
+    prepared: Prepared | None = None,
+) -> Prepared:
     """Refuse now what `trace_run` would refuse, before anything is spent.
 
     Checks every open row group, so it may ask for a model only a group a
     proof later explains would have needed. Call inside `wh.budget`.
+
+    Returns:
+        What the check fetched, for the stored proofs and `trace_run` to reuse.
 
     Raises:
         pipeline.Refusal: sqlglot is older than the parser the as-of SQL
@@ -997,6 +1096,7 @@ def check_ready(
             f"{SQLGLOT_MAJOR} or later. Run from a checkout synced to the "
             "branch's uv.lock (`uv sync`)"
         )
+    prepared = prepared or Prepared()
     _plan(
         cfg,
         run,
@@ -1006,7 +1106,9 @@ def check_ready(
         manifest_path=manifest_path,
         levels=levels,
         meter=_Meter(None),
+        prepared=prepared,
     )
+    return prepared
 
 
 def trace_run(
@@ -1019,6 +1121,7 @@ def trace_run(
     levels: int = MAX_LEVELS,
     max_minutes: float = TRACE_MAX_MINUTES,
     skip: set[tuple] = frozenset(),
+    prepared: Prepared | None = None,
 ) -> TraceResult:
     """Trace every open row group of a run to the steps that drop its rows.
 
@@ -1039,6 +1142,7 @@ def trace_run(
         levels: How many tables deep to descend.
         max_minutes: The whole trace's time limit.
         skip: `item_key`s of groups not to trace.
+        prepared: What `check_ready` fetched; fetched here when None.
 
     Returns:
         Per `item_key`, the trace of each traced group (the one-sided buckets
@@ -1061,16 +1165,27 @@ def trace_run(
         manifest_path=manifest_path,
         levels=levels,
         meter=meter,
+        prepared=prepared or Prepared(),
     )
     if not buckets:
         return TraceResult(out)
 
     # Each bucket is priced, and stops, on its own: one bucket's failure never
     # keeps another from being traced.
-    usd, ready = 0.0, []
+    usd, ready, planned = 0.0, [], []
     for b in buckets:
         try:
-            usd += sum(wh.estimate(q) for q in b.first_queries())
+            planned.append((b, b.first_queries()))
+        except Stopped as exc:
+            print(f"Trace {b.runner.label} stopped: level 0: {exc.reason}")
+            out |= b.stop(f"level 0: {exc.reason}")
+    priced = iter(_dry_runs(wh, [q for _, qs in planned for q in qs]))
+    for b, qs in planned:
+        got = [next(priced) for _ in qs]
+        try:
+            if errors := [g for g in got if isinstance(g, GoogleAPIError)]:
+                raise errors[0]
+            usd += sum(g for g in got if not isinstance(g, GoogleAPIError))
         except GoogleAPIError as exc:
             reason = f"level 0: the dry run failed ({_failure(exc)})"
             print(f"Trace {b.runner.label} stopped: {reason}")
@@ -1093,6 +1208,7 @@ def trace_run(
 __all__ = [
     "ItemTrace",
     "Manifest",
+    "Prepared",
     "Step",
     "Stopped",
     "TraceResult",

@@ -11,6 +11,7 @@ from cube_validation.timetravel import (
     pin_clock,
     repin,
     strip_comments,
+    utc_literal,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -280,6 +281,22 @@ def test_unaliased_cube_style_ref_is_refused():
         as_of("select 1 from a join d.t on true", TS, catalog)
 
 
+@pytest.mark.parametrize(
+    "ref",
+    [
+        "`teamster-332318`.kipptaf_marts.dim_assessments",
+        "`teamster-332318.kipptaf_marts.dim_assessments`",
+    ],
+)
+def test_a_refused_ref_names_the_form_that_is_read(ref):
+    catalog = FakeCatalog({"kipptaf_marts.dim_assessments": TableInfo("TABLE", None)})
+
+    with pytest.raises(ValueError, match="each part in its own backticks") as err:
+        as_of(f"select 1 from {ref} as r", TS, catalog)
+
+    assert "`teamster-332318`.`<dataset>`.`<table>`" in str(err.value)
+
+
 def test_extract_from_is_not_a_table_ref():
     catalog = FakeCatalog({})
 
@@ -321,3 +338,23 @@ def test_strip_comments_drops_hash_comments_outside_quotes():
     sql = "select '#x', `a#b` # depends_on: `p`.`d`.`v`\nfrom t"
 
     assert strip_comments(sql) == "select '#x', `a#b` \nfrom t"
+
+
+@pytest.mark.parametrize("alias", ["", " as x"])
+def test_a_table_before_unpivot_is_pinned_inside_a_subquery(alias):
+    import sqlglot
+
+    catalog = FakeCatalog({"ds.t": TableInfo("TABLE", None)})
+    sql = f"select * from `teamster-332318`.`ds`.`t`{alias} unpivot (v for k in (a, b))"
+
+    result = as_of(sql, TS, catalog)
+
+    pinned = (
+        "(SELECT * FROM `teamster-332318.ds.t` FOR SYSTEM_TIME AS OF TIMESTAMP "
+        f"'{utc_literal(TS)}'){alias} unpivot"
+    )
+    assert pinned in result.sql
+    assert result.tables == frozenset({"ds.t"})
+    sqlglot.parse_one(result.sql, read="bigquery")
+    later = TS + timedelta(minutes=1)
+    assert utc_literal(later) in repin(result.sql, ["ds.t"], TS, later)

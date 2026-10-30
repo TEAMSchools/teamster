@@ -91,3 +91,12 @@ sources:
                 - kipptaf
                 - extracts
                 - rpt_parentsquare__rosters
+      - name: rpt_powerschool__stored_grades
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_powerschool__stored_grades

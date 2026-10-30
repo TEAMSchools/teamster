@@ -279,9 +279,14 @@ cause, do not retry around it.
       a later run's rows of a new cause must not be filed under an old one. A
       row the join misses must fall to `'UNEXPLAINED'` too: test the join first
       (or use `EXISTS`), and join a table at the row's grain, since a finer one
-      repeats rows. Name tables `` `teamster-332318`.`<dataset>`.`<table>` ``;
-      they are read as of the run's moment; `confirm` warns of a table named
-      without them. A proof may open with its own `WITH`.
+      repeats rows. Name each table as dbt compiles it, every part in its own
+      backticks: `` `teamster-332318`.`kipptaf_marts`.`dim_assessments` ``.
+      `` `teamster-332318`.kipptaf_marts.dim_assessments `` and
+      `` `teamster-332318.kipptaf_marts.dim_assessments` `` are refused, and
+      `confirm` warns of a table named with no project and dataset. Tables are
+      read as of the run's moment: the build start, or the build end for a table
+      only the Cube side reads, which is refused if it changed during the build.
+      A proof may open with its own `WITH`.
 
       ```sql
       SELECT u.__row,
@@ -323,6 +328,15 @@ cause, do not retry around it.
       rule is a literal model predicate, not a paraphrase of a doc. For the rows
       a predicate drops, a second aggregate shows the value (the date, the flag,
       the missing key).
+
+   Comparisons that differ only in `dims`, `measure` or what shapes their cells
+   (same `dashboard_view`, `rows`, `filters`, `defaults`, `cuts`, `scope` and
+   `dashboard_filters`) usually reconcile the same rows. Prove one of them: its
+   proof also runs on the others' groups of that bucket, in `confirm` (printed
+   as "Also <comparison> (same rows)") and in every `triage`, unless one has a
+   proof file of its own, which then wins, even when it fails. Each run checks
+   that comparison's own rows, so a dim whose join drops or repeats rows shows
+   as a refusal there. Delete a duplicate file to share.
 
    Every `triage` re-runs every stored proof on the new run's rows first, priced
    and capped (`--no-proofs` skips them), then traces only what no proof

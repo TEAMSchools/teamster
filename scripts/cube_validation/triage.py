@@ -1057,17 +1057,23 @@ def run_triage(
 
     from . import confirm
 
+    prepared = trace.Prepared()
     with wh.budget(max_usd):
         if trace_rows:
             # A trace refusal after the proofs ran would throw their spend away.
             trace.check_ready(
-                cfg, run, wh=wh, cube=cube, manifest_path=manifest or trace.MANIFEST
+                cfg,
+                run,
+                wh=wh,
+                cube=cube,
+                manifest_path=manifest or trace.MANIFEST,
+                prepared=prepared,
             )
         # Proofs first: they are the only path to `cause`, so a trace that
         # hits a cap never un-proves an item, and nothing they explain is
         # traced.
         ran = (
-            confirm.run_stored(cfg, run, proofs, wh=wh, cube=cube)
+            confirm.run_stored(cfg, run, proofs, wh=wh, cube=cube, prepared=prepared)
             if proofs is not None
             else []
         )
@@ -1080,6 +1086,7 @@ def run_triage(
                 manifest_path=manifest or trace.MANIFEST,
                 max_minutes=trace_max_minutes or trace.TRACE_MAX_MINUTES,
                 skip=confirm.explained(ran),
+                prepared=prepared,
             )
             if trace_rows
             else None

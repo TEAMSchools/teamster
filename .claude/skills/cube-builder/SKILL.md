@@ -166,7 +166,11 @@ merged, else the validator's branch. The runner's `PKG` is the
    any later `inventory`.
 5. On the validation branch, add the comparison that proves the piece by the
    `cube-validation` runbook steps 2 and 3. A new dimension is proven by slicing
-   an existing measure by it (the new dimension mapped under `dims`).
+   an existing measure by it (the new dimension mapped under `dims`). Give the
+   comparison a `rows:` block: without it a differing cell can never be traced
+   to a cause, and `review` stays blocked. Slicing an existing measure brings
+   back that measure's known causes; read them in the view's validation file
+   before calling a difference a bug in the new piece.
 6. Run the `cube-validation` runbook steps 4 to 7: `prove`, `check-api`,
    `prove --check`, `run`.
 7. The PR description says what was proven, the moment, the branch, and the

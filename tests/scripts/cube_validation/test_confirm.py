@@ -29,7 +29,7 @@ from cube_validation.moment import Build
 from cube_validation.report import RunResult
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.timetravel import AsOf, TableInfo
+from cube_validation.timetravel import AsOf, TableInfo, utc_literal
 from google.api_core.exceptions import BadRequest
 
 BUILD = Build(
@@ -248,6 +248,73 @@ def test_a_proof_that_cannot_run_notes_why_and_moves_nothing(duck, tmp_path, off
     assert "invalidQuery" in item["evidence"][0] and "12345" not in item["evidence"][0]
     assert item["evidence_posted"][0] == (
         "proof mastery__cube_only.sql not run; see the terminal"
+    )
+
+
+def test_a_refused_proof_keeps_bigquerys_message_locally(duck, tmp_path, offline):
+    _tables(duck)
+    said = (
+        "Conflicting 'FOR SYSTEM_TIME AS OF' expressions found for table "
+        "'teamster-332318.m.t': 2026-10-28 21:34:52.982 UTC vs. 2026-10-28 "
+        "21:34:41.073 UTC; for table m.t 12345"
+    )
+
+    class Failing(Wh):
+        def rows(self, sql, timeout_s=None):
+            raise BadRequest(said, errors=[{"reason": "invalidQuery"}])
+
+    (item,) = _reprove(duck, tmp_path, _run([_group(3)]), wh=Failing(duck))
+
+    assert "Conflicting 'FOR SYSTEM_TIME AS OF'" in item["evidence"][0]
+    assert "for table m.t <n>" in item["evidence"][0]
+    assert (
+        "'teamster-332318.m.t': 2026-10-28 21:34:52.982 UTC vs." in item["evidence"][0]
+    )
+    assert item["evidence_posted"][0] == (
+        "proof mastery__cube_only.sql not run; see the terminal"
+    )
+
+
+# A proof reading the table only the Cube side reads.
+CUBE_TABLE_PROOF = PROOF.replace(
+    "AND f.item = u.aid",
+    "AND f.item = u.aid\nLEFT JOIN `teamster-332318`.`m`.`cube_t` AS c ON c.lea = u.lea",
+)
+
+
+def test_a_proof_reads_a_table_the_cube_side_reads_at_the_build_end(
+    duck, tmp_path, offline, monkeypatch
+):
+    _tables(duck)
+    checked = []
+    monkeypatch.setattr(
+        trace, "changed_between", lambda wh, t, a, b: checked.append(list(t)) or []
+    )
+    wh = Wh(duck)
+
+    (item,) = _reprove(duck, tmp_path, _run([_group(3)]), body=CUBE_TABLE_PROOF, wh=wh)
+
+    assert item["suggestion"] == "cause"
+    assert checked == [["m.cube_t"]]
+    sql = wh.ran[-1][0]
+    at = "FOR SYSTEM_TIME AS OF TIMESTAMP"
+    assert f"`teamster-332318.m.cube_t` AS c {at} '{utc_literal(BUILD.end)}'" in sql
+    # The dashboard's table stays at the build start.
+    assert f"`teamster-332318.d.fact` AS f {at} '{utc_literal(BUILD.start)}'" in sql
+
+
+def test_a_proof_refuses_a_cube_side_table_that_changed_during_the_build(
+    duck, tmp_path, offline, monkeypatch
+):
+    _tables(duck)
+    monkeypatch.setattr(trace, "changed_between", lambda wh, t, a, b: list(t))
+
+    (item,) = _reprove(duck, tmp_path, _run([_group(3)]), body=CUBE_TABLE_PROOF)
+
+    assert item["suggestion"] == "investigate"
+    assert (
+        "cannot read in mastery__cube_only.sql m.cube_t: it changed during the build"
+        in item["evidence"][0]
     )
 
 
@@ -832,3 +899,117 @@ def test_compose_opts_out_of_banned_syntax_only_when_the_proof_uses_it():
     assert "sql-banned-syntax" not in plain
     assert "sql-banned-syntax" in picked
     assert confirm.split_block(picked)[0] == causes
+
+
+# --- one proof per row population -------------------------------------------------
+
+# Same rows as COMPARISON, another measure: its groups are the same rows.
+SIBLING = Comparison(
+    id="mastery-b",
+    measure="pct2",
+    dims=[ColumnPair("school", "abbreviation")],
+    rows=ROWS,
+)
+CFG2 = ViewConfig(view="v", fact="m.fct", comparisons=[COMPARISON, SIBLING])
+
+
+def test_comparisons_that_differ_only_in_dims_share_a_row_population():
+    from dataclasses import replace
+
+    by_region = replace(COMPARISON, id="r", dims=[ColumnPair("region", "region")])
+    narrower = replace(COMPARISON, id="n", scope=[{"school": ["X"]}])
+
+    key = confirm.row_population(COMPARISON)
+    assert key is not None and confirm.row_population(by_region) == key
+    assert confirm.row_population(narrower) != key
+    assert confirm.row_population(replace(COMPARISON, rows=None)) is None
+    assert confirm.siblings(CFG2, COMPARISON) == [SIBLING]
+
+
+def _items2(run):
+    return [triage._as_json(s) for s in triage.suggest(CFG2, run, {}, traces={})]
+
+
+def _sibling_run():
+    sib = Group("mastery-b", (("abbreviation", "X"),), "cube_only", 3, 3)
+    return _run([_group(3), sib])
+
+
+def test_a_stored_proof_also_proves_a_comparison_with_the_same_rows(
+    duck, tmp_path, offline
+):
+    _tables(duck)
+    run = _sibling_run()
+    items = _items2(run)
+    directory, _ = _proof(tmp_path)
+
+    _stored(run, items, directory, Wh(duck), cfg=CFG2)
+
+    by = {i["comparison"]: i for i in items}
+    assert {i["suggestion"] for i in items} == {"cause"}
+    assert by["mastery-b"]["proof"]["path"] == by["mastery"]["proof"]["path"]
+
+
+def test_a_comparison_s_own_proof_wins_over_a_shared_one(duck, tmp_path, offline):
+    _tables(duck)
+    run = _sibling_run()
+    items = _items2(run)
+    directory, _ = _proof(tmp_path)
+    own = confirm.proof_path(directory, "mastery-b", "cube_only")
+    own.write_text(confirm.compose(CAUSES, PROOF))
+    wh = Wh(duck)
+
+    _stored(run, items, directory, wh, cfg=CFG2)
+
+    by = {i["comparison"]: i for i in items}
+    assert by["mastery-b"]["proof"]["path"].endswith("mastery-b__cube_only.sql")
+    assert len(wh.ran) == 2  # each comparison ran once, with its own file
+
+
+def test_confirm_also_proves_the_comparisons_with_the_same_rows(
+    duck, tmp_path, monkeypatch, offline, capsys
+):
+    _tables(duck)
+    run = _sibling_run()
+    path = _saved(tmp_path, monkeypatch, run)
+    saved = json.loads(path.read_text())
+    saved["items"] = _items2(run)
+    path.write_text(json.dumps(saved))
+    draft = tmp_path / "draft.sql"
+    draft.write_text(PROOF)
+
+    confirm.run_confirm(
+        CFG2,
+        tmp_path / "validation" / "v.yml",
+        wh=Wh(duck),
+        cube=None,
+        max_usd=1.0,
+        cache_root=tmp_path,
+        comparison="mastery",
+        bucket="cube_only",
+        sql=draft,
+        causes=[f"{b}={side}:{words}" for b, (side, words) in CAUSES.items()],
+    )
+
+    items = json.loads(path.read_text())["items"]
+    assert {i["suggestion"] for i in items} == {"cause"}
+    assert "Also mastery-b (same rows): 1 of 1 items proven." in capsys.readouterr().out
+    proofs = tmp_path / "validation" / "proofs" / "v"
+    assert [p.name for p in proofs.iterdir()] == ["mastery__cube_only.sql"]
+
+
+def test_a_sibling_s_own_failing_proof_shows_its_refusal(duck, tmp_path, offline):
+    _tables(duck)
+    run = _sibling_run()
+    items = _items2(run)
+    directory, _ = _proof(tmp_path)
+    confirm.proof_path(directory, "mastery-b", "cube_only").write_text("not a proof")
+
+    _stored(run, items, directory, Wh(duck), cfg=CFG2)
+
+    by = {i["comparison"]: i for i in items}
+    assert by["mastery"]["suggestion"] == "cause"
+    assert by["mastery-b"]["suggestion"] == "investigate"
+    assert by["mastery-b"]["evidence"][0].startswith(
+        "proof mastery-b__cube_only.sql not run"
+    )

@@ -400,6 +400,12 @@ models:
         data_type: string
       - name: teacher_lastfirst
         data_type: string
+      - name: courses_gradescale_name
+        data_type: string
+        description: >-
+          Name of the course's grade scale, from the scale's own gradescaleitem
+          row. Null when the course has no grade scale or the scale id has no
+          gradescaleitem row.
       - name: courses_gradescaleid_unweighted
         data_type: int64
         description: >-

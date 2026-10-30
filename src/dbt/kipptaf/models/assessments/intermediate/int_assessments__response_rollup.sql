@@ -1,4 +1,58 @@
 with
+    responses_keyed as (
+        select
+            asr.student_assessment_id,
+            asr.response_type,
+            asr.response_type_code,
+            asr.response_type_description,
+            asr.response_type_root_description,
+            asr.points_possible,
+            asr.points,
+            asr.percent_correct,
+
+            pb.canonical_performance_band_set_id,
+
+            coalesce(
+                pb.canonical_response_type_id, asr.response_type_id
+            ) as response_type_id,
+        from {{ ref("int_illuminate__agg_student_responses") }} as asr
+        left join
+            {{ ref("int_assessments__performance_bands") }} as pb
+            on asr.assessment_id = pb.assessment_id
+            and asr.response_type = pb.response_type
+            and asr.response_type_id = pb.response_type_id
+    ),
+
+    -- one sitting scores a split standard once per record; sum the records back
+    -- into one score
+    responses_merged as (
+        select
+            student_assessment_id,
+            response_type,
+            response_type_id,
+            response_type_code,
+            response_type_description,
+            canonical_performance_band_set_id,
+
+            min(response_type_root_description) as response_type_root_description,
+            sum(points_possible) as points_possible,
+            sum(points) as points,
+            any_value(percent_correct) as reported_percent_correct,
+            count(*) as n_records,
+
+            round(
+                safe_divide(sum(points), sum(points_possible)) * 100, 1
+            ) as merged_percent_correct,
+        from responses_keyed
+        group by
+            student_assessment_id,
+            response_type,
+            response_type_id,
+            response_type_code,
+            response_type_description,
+            canonical_performance_band_set_id
+    ),
+
     scaffold_responses as (
         select
             s.illuminate_student_id,
@@ -30,10 +84,13 @@ with
             asr.response_type_root_description,
             asr.points_possible,
             asr.points,
-            asr.percent_correct,
+            asr.canonical_performance_band_set_id,
 
-            pb.canonical_performance_band_set_id,
-
+            if(
+                asr.n_records = 1,
+                asr.reported_percent_correct,
+                asr.merged_percent_correct
+            ) as percent_correct,
             if(s.is_internal_assessment, c.title, s.title) as canonical_title,
             if(
                 s.is_internal_assessment, c.administered_date, s.administered_at
@@ -44,13 +101,8 @@ with
 
         from {{ ref("int_assessments__scaffold") }} as s
         left join
-            {{ ref("int_illuminate__agg_student_responses") }} as asr
+            responses_merged as asr
             on s.student_assessment_id = asr.student_assessment_id
-        left join
-            {{ ref("int_assessments__performance_bands") }} as pb
-            on s.assessment_id = pb.assessment_id
-            and asr.response_type = pb.response_type
-            and asr.response_type_id = pb.response_type_id
         left join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on s.source = c.source
@@ -157,8 +209,9 @@ with
             response_type_id,
             response_type_code,
             response_type_description,
-            response_type_root_description,
 
+            -- members can score one standard through records with different roots
+            min(response_type_root_description) as response_type_root_description,
             min(date_taken) as date_taken,
 
             -- selected_* values are constant per partition (windowed in
@@ -200,8 +253,7 @@ with
             response_type,
             response_type_id,
             response_type_code,
-            response_type_description,
-            response_type_root_description
+            response_type_description
     ),
 
     response_union as (

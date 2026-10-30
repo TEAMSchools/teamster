@@ -5,9 +5,11 @@ data_tests:
       standards set. Lists current-year assessments that align items to one
       standard (same code and description) through records in more than one set,
       which splits that standard's scores across records.
-      int_assessments__standard_rollup merges the split, so reports stay right.
-      Fix it in Illuminate by realigning the assessment's items to one set's
-      record.
+      int_assessments__performance_bands groups the records and
+      int_assessments__response_rollup scores them once, so reports stay right.
+      A split across records with different band sets leaves that standard
+      without a band label. Fix it in Illuminate by realigning the assessment's
+      items to one set's record.
     config:
       severity: warn
       meta:
@@ -291,6 +293,22 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__people__locations
+
+  - name: stg_google_sheets__assessments__academic_goals__sheet_duplicates
+    description: >-
+      Lists keys that appear on more than one row of the academic goals Google
+      Sheet (academic year, school, grade, state assessment code and subject).
+      The staging model keeps the row with the higher school goal, so reports
+      stay at one row per key, but that pick may not be the goal the school set.
+      To fix, the sheet owner deletes the extra row for each listed key.
+    config:
+      tags:
+        - google_sheet
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__assessments__academic_goals
 
   - name: test_sf_contact_note_duplicate
     description: >-
