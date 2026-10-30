@@ -33,6 +33,7 @@ from . import (
     answers,
     builder,
     confirm,
+    describe,
     pipeline,
     preflight,
     report,
@@ -352,6 +353,11 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("views", type=Path, nargs="+", help="validation files")
     p.add_argument("--domain", required=True, help="domain whose owner reviews")
 
+    p = sub.add_parser(
+        "describe", help="draft ai_context text for deliberate differences"
+    )
+    p.add_argument("views", type=Path, nargs="+", help="validation files")
+
     p = sub.add_parser("members", help="list Cube measures and the ones sharing SQL")
     email(p)
 
@@ -388,6 +394,10 @@ def _dispatch(args: argparse.Namespace) -> int:
                 view_files=args.views,
             )
         )
+        return 0
+
+    if args.command == "describe":
+        print(describe.render([_load(v) for v in args.views]))
         return 0
 
     if args.command == "record-answers":

@@ -1013,3 +1013,281 @@ def test_a_sibling_s_own_failing_proof_shows_its_refusal(duck, tmp_path, offline
     assert by["mastery-b"]["evidence"][0].startswith(
         "proof mastery-b__cube_only.sql not run"
     )
+
+
+# --- reproduce queries ---------------------------------------------------------------
+
+REPRODUCE = """SELECT f.school, COUNT(*) AS n_rows
+FROM `teamster-332318`.`d`.`fact` AS f
+WHERE NOT f.ok1
+GROUP BY f.school"""
+
+
+def test_a_reproduce_query_rides_in_the_header_and_not_the_fingerprint():
+    text = confirm.compose(CAUSES, PROOF, {"C1": REPRODUCE})
+
+    assert "-- reproduce C1:\n--  SELECT f.school, COUNT(*) AS n_rows\n" in text
+    causes, reproduce, body = confirm.split_proof(text)
+    assert (causes, reproduce, body) == (CAUSES, {"C1": REPRODUCE}, PROOF.strip())
+    assert confirm.split_block(text) == (CAUSES, PROOF.strip())
+    assert confirm.fingerprint(causes, body) == confirm.fingerprint(CAUSES, PROOF)
+
+
+def test_check_reproduce_takes_counts_by_a_column_that_names_no_one():
+    confirm.check_reproduce(REPRODUCE, {"student", "lea"}, {"student", "lea"})
+    confirm.check_reproduce(
+        "WITH t AS (SELECT 1 AS x) SELECT COUNT(*) AS n FROM t", {"student"}
+    )
+    confirm.check_reproduce(
+        "SELECT school, COUNTIF(NOT ok1) AS n FROM d.fact GROUP BY 1", {"student"}
+    )
+
+
+@pytest.mark.parametrize(
+    ("sql", "why"),
+    [
+        ("SELECT COUNT(*) FROM {unmatched}", "never {unmatched}"),
+        (
+            "SELECT COUNT(*) FROM `teamster-332318.d.fact` "
+            "FOR SYSTEM_TIME AS OF TIMESTAMP '2026-10-28 00:00:00+00:00'",
+            "FOR SYSTEM_TIME",
+        ),
+        ("SELECT * FROM d.fact", "selects \\*"),
+        ("SELECT school, COUNT(*) FROM d.fact", "not in its GROUP BY"),
+        (
+            "SELECT student, COUNT(*) FROM d.fact GROUP BY student",
+            "grain or identifying",
+        ),
+        ("SELECT COUNT(*) FROM d.fact GROUP BY student_number", "grain or identifying"),
+        ("SELECT school FROM d.fact GROUP BY school", "no aggregate"),
+        ("SELECT COUNT(*) OVER () AS n FROM d.fact", "window function"),
+        ("SELECT COUNT(*) FROM d.fact WHERE student = 123456", "identifying column"),
+        ("SELECT COUNT(*) FROM d.fact WHERE note = '1234567'", "ID-like"),
+        ("SELECT 1; SELECT 2", "1 SELECT"),
+    ],
+)
+def test_check_reproduce_refuses_what_could_name_a_row(sql, why):
+    with pytest.raises(pipeline.Refusal, match=why):
+        confirm.check_reproduce(sql, {"student", "lea"}, {"student", "lea"})
+
+
+def _draft(tmp_path, text):
+    draft = tmp_path / "draft.sql"
+    draft.write_text(text)
+    return draft
+
+
+def _confirm_text(duck, tmp_path, text, wh=None):
+    confirm.run_confirm(
+        CFG,
+        tmp_path / "validation" / "v.yml",
+        wh=wh or Wh(duck),
+        cube=None,
+        max_usd=1.0,
+        cache_root=tmp_path,
+        comparison="mastery",
+        bucket="cube_only",
+        sql=_draft(tmp_path, text),
+    )
+
+
+def test_confirm_keeps_a_checked_reproduce_query_with_the_proof(
+    duck, tmp_path, monkeypatch, offline, capsys
+):
+    _tables(duck)
+    _saved(tmp_path, monkeypatch, _run([_group(3)]))
+
+    _confirm_text(duck, tmp_path, confirm.compose(CAUSES, PROOF, {"C1": REPRODUCE}))
+
+    stored = tmp_path / "validation" / "proofs" / "v" / "mastery__cube_only.sql"
+    assert confirm.read_proof(stored).reproduce == {"C1": REPRODUCE}
+    assert "Reproduce C1: dry run OK" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("reproduce", "why"),
+    [
+        ({"C9": REPRODUCE}, "no cause C9"),
+        (
+            {"C1": "SELECT * FROM d.fact"},
+            "-- reproduce C1: the reproduce query selects",
+        ),
+    ],
+)
+def test_confirm_refuses_a_bad_reproduce_query_before_any_query(
+    duck, tmp_path, monkeypatch, offline, reproduce, why
+):
+    _tables(duck)
+    _saved(tmp_path, monkeypatch, _run([_group(3)]))
+    wh = Wh(duck)
+
+    with pytest.raises(pipeline.Refusal, match=why):
+        _confirm_text(duck, tmp_path, confirm.compose(CAUSES, PROOF, reproduce), wh)
+
+    assert wh.ran == [] and not (tmp_path / "validation").exists()
+
+
+def test_confirm_refuses_a_reproduce_query_bigquery_refuses(
+    duck, tmp_path, monkeypatch, offline
+):
+    _tables(duck)
+    _saved(tmp_path, monkeypatch, _run([_group(3)]))
+
+    class Refusing(Wh):
+        def estimate(self, sql):
+            if "n_rows" in sql and "{unmatched}" not in sql and "__row" not in sql:
+                raise BadRequest(
+                    "Unrecognized name: ok3", errors=[{"reason": "invalidQuery"}]
+                )
+            return 0.01
+
+    with pytest.raises(pipeline.Refusal, match="reproduce C1: BigQuery refused it"):
+        _confirm_text(
+            duck,
+            tmp_path,
+            confirm.compose(CAUSES, PROOF, {"C1": REPRODUCE}),
+            Refusing(duck),
+        )
+    assert not (tmp_path / "validation").exists()
+
+
+# --- sizing a rate cell from its rows; rows that sit in another cell ------------------
+
+RATE = Comparison(
+    id="mastery",
+    measure="pct",
+    dims=[ColumnPair("school", "abbreviation")],
+    rows=RowSpec(grain=ROWS.grain, values=[ColumnPair("ok", "ok")]),
+    decimals=2,
+)
+RATE_CFG = ViewConfig(view="v", fact="m.fct", comparisons=[RATE])
+
+
+def _side(rows, n, total):
+    return {"rows": rows, "n": [n], "sum": [float(total)]}
+
+
+def _entry(bucket, school, c, d, dash=None):
+    return {"bucket": bucket, "dims": [["abbreviation", school]],
+            "dash_dims": dash, "c": c, "d": d}  # fmt: skip
+
+
+# Synthetic school X: 1 matched row (1 on both sides) and 3 rows only Cube
+# holds (0 each): Cube's cell is 1/4, the dashboard's 1/1.
+X_ROWS = [
+    _entry("match", "X", _side(1, 1, 1), _side(1, 1, 1)),
+    _entry("cube_only", "X", _side(3, 3, 0), _side(0, 0, 0)),
+]
+
+
+def _rate_run(cube, dashboard, cell_rows=X_ROWS, groups=None):
+    from dataclasses import replace
+
+    run = _run(
+        groups or [_group(3)],
+        cells=CELLS_RUN["cells"],
+        diff_cells=[{**CELLS_RUN["diff_cells"][0], "cube": cube,
+                     "dashboard": dashboard}],
+    )  # fmt: skip
+    return replace(run, cell_rows={} if cell_rows is None else {"mastery": cell_rows})
+
+
+def test_a_rate_cell_links_when_its_rows_rebuild_both_sides(tmp_path, monkeypatch):
+    cells = _cells(tmp_path, monkeypatch, run=_rate_run(0.25, 1.0), cfg=RATE_CFG)
+
+    assert cells["suggestion"] == "cause"
+
+
+def test_a_rate_cell_its_rows_do_not_rebuild_stays_open(tmp_path, monkeypatch):
+    # The proven Cube-only rows explain 1/4, but Cube shows 0.20: other rows
+    # (moved, or outside the reconcile) changed the cell too.
+    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
+        _cells(tmp_path, monkeypatch, run=_rate_run(0.20, 1.0), cfg=RATE_CFG)
+
+
+def test_a_run_saved_before_cell_sums_links_and_says_sizes_went_unchecked(
+    tmp_path, monkeypatch
+):
+    run = _rate_run(0.20, 1.0, cell_rows=None)
+
+    cells = _cells(tmp_path, monkeypatch, run=run, cfg=RATE_CFG)
+
+    assert cells["suggestion"] == "cause"
+    assert "cell sizes not checked" in cells["evidence"][0]
+
+
+def test_a_rate_cell_under_a_cut_the_reconcile_does_not_group_by_stays_open(
+    tmp_path, monkeypatch
+):
+    from dataclasses import replace
+
+    by_region = replace(
+        RATE,
+        cuts=[{}, {"Region": "R"}],
+        filters={"Region": ColumnPair("region", "region")},
+    )
+    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[by_region])
+
+    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
+        _cells(tmp_path, monkeypatch, run=_rate_run(0.25, 1.0), cfg=cfg)
+
+
+def test_a_moved_group_sits_in_cube_s_cell_and_the_dashboard_s():
+    moved = Group(
+        "mastery",
+        (("abbreviation", "X"), ("d:abbreviation", "Y")),
+        "dims_differ",
+        2,
+        2,
+    )
+
+    assert confirm._in_cells(moved, {"dims": [["abbreviation", "X"]]}) == (True, False)
+    assert confirm._in_cells(moved, {"dims": [["abbreviation", "Y"]]}) == (False, True)
+    assert confirm._in_cells(moved, {"dims": []}) == (True, True)
+
+
+def test_a_count_cell_takes_moved_rows_out_of_the_dashboard_s_cell(
+    tmp_path, monkeypatch
+):
+    moved = Group(
+        "mastery",
+        (("abbreviation", "Y"), ("d:abbreviation", "X")),
+        "dims_differ",
+        3,
+        3,
+    )
+    # In cell X the dashboard holds 3 rows Cube files under Y: Cube shows 3 fewer.
+    run = _run(
+        [moved],
+        cells=CELLS_RUN["cells"],
+        diff_cells=[{**CELLS_RUN["diff_cells"][0], "cube": 1.0, "dashboard": 4.0}],
+    )
+
+    cells = _cells(tmp_path, monkeypatch, run=run)
+
+    assert cells["suggestion"] == "cause"
+
+
+def test_a_proof_classifies_rows_that_sit_in_another_cell(duck, tmp_path, offline):
+    # Synthetic: Cube files the row under school X, the dashboard under Y.
+    _tables(duck, cube_rows=[(1, "a", "X")], fact_rows=[(1, "a", "Y", True, True)])
+    moved = Group(
+        "mastery", (("abbreviation", "X"), ("d:abbreviation", "Y")), "dims_differ", 1, 1
+    )
+    run = _run([moved])
+    items = _items(run)
+    directory = tmp_path / "proofs" / "v"
+    directory.mkdir(parents=True)
+    confirm.proof_path(directory, "mastery", "dims_differ").write_text(
+        confirm.compose(
+            {"C1": ("dashboard", "the dashboard files the row under another school")},
+            "SELECT u.__row, CASE WHEN u.side = 'both' THEN 'C1' "
+            "ELSE 'UNEXPLAINED' END AS cause FROM {unmatched} AS u",
+        )
+    )
+
+    _stored(run, items, directory, Wh(duck))
+
+    (item,) = items
+    assert item["suggestion"] == "cause"
+    assert item["cause"][0]["n_rows"] == 1

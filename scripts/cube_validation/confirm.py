@@ -28,7 +28,7 @@ import hashlib
 import json
 import re
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import sqlglot
@@ -49,7 +49,7 @@ from .trace import TIMEOUT_S, TRACED, _failure
 
 # The buckets a stored proof classifies: the one-sided rows the trace leads on,
 # and rows both sides hold whose values differ.
-PROVABLE = (*TRACED, "value_differs")
+PROVABLE = (*TRACED, "value_differs", "dims_differ")
 
 PLACEHOLDER = "{unmatched}"
 # Enough of a BigQuery message to name the table and the reason.
@@ -70,6 +70,7 @@ HEADER = (
     "-- fmt: off",
 )
 _BUCKET = re.compile(r"[A-Za-z][A-Za-z0-9_]{0,63}")
+_REPRODUCE = re.compile(r"--\s*reproduce\s+(?P<bucket>[A-Za-z][A-Za-z0-9_]*)\s*:")
 _BLOCK = re.compile(
     r"--\s*cause\s+(?P<bucket>\S+)\s*=\s*(?P<side>\S+?)\s*:\s*(?P<words>.*\S)\s*"
 )
@@ -99,10 +100,13 @@ class Proof:
     bucket: str
     causes: dict[str, tuple[str, str]]
     body: str
+    # Per cause bucket, an aggregate query on today's tables an owner can run
+    # (`-- reproduce <bucket>:`); not part of what the proof proves.
+    reproduce: dict[str, str] = field(default_factory=dict)
 
     @property
     def text(self) -> str:
-        return compose(self.causes, self.body)
+        return compose(self.causes, self.body, self.reproduce)
 
     @property
     def recorded(self) -> str:
@@ -133,9 +137,17 @@ def file_fingerprint(path: Path) -> str | None:
         return None
 
 
-def compose(causes: dict[str, tuple[str, str]], body: str) -> str:
-    """The proof file: the lint opt-outs, its bucket map, then the SQL."""
+def compose(
+    causes: dict[str, tuple[str, str]],
+    body: str,
+    reproduce: dict[str, str] | None = None,
+) -> str:
+    """The proof file: the lint opt-outs, its bucket map, each cause's
+    reproduce query as comment lines, then the SQL."""
     block = [f"-- cause {b} = {side}: {words}" for b, (side, words) in causes.items()]
+    for b, sql in (reproduce or {}).items():
+        block.append(f"-- reproduce {b}:")
+        block += [f"--  {line}" if line.strip() else "--" for line in sql.splitlines()]
     banned = re.search(r"\bqualify\b|\bgroup\s+by\s+all\b", body, re.IGNORECASE)
     header = [h for h in HEADER if banned or "sql-banned-syntax" not in h]
     return "\n".join([*header, *block]) + "\n\n" + body.strip() + "\n"
@@ -144,12 +156,31 @@ def compose(causes: dict[str, tuple[str, str]], body: str) -> str:
 def split_block(text: str) -> tuple[dict[str, tuple[str, str]], str]:
     """A proof's leading `-- cause` block and the SQL after it.
 
-    The lint opt-outs and blank lines above or inside the block are skipped.
+    The lint opt-outs, blank lines and `-- reproduce` blocks above or inside
+    the block are skipped (`split_proof` reads those too).
 
     Raises:
         pipeline.Refusal: A line of the block names no side or no words.
     """
+    causes, _, body = split_proof(text)
+    return causes, body
+
+
+def split_proof(
+    text: str,
+) -> tuple[dict[str, tuple[str, str]], dict[str, str], str]:
+    """A proof's `-- cause` block, its `-- reproduce <bucket>:` queries, its SQL.
+
+    A reproduce query is the comment lines after its header, each without
+    its `--` and up to 2 spaces, up to the next header or SQL line.
+
+    Raises:
+        pipeline.Refusal: A cause line names no side or no words, or a
+            reproduce header names no bucket or repeats one.
+    """
     causes: dict[str, tuple[str, str]] = {}
+    reproduce: dict[str, list[str]] = {}
+    current: list[str] | None = None
     lines = text.splitlines()
     i = 0
     while i < len(lines):
@@ -157,10 +188,26 @@ def split_block(text: str) -> tuple[dict[str, tuple[str, str]], str]:
         if line.startswith("-- cause"):
             bucket, side, words = _cause(line)
             causes[bucket] = (side, words)
+            current = None
+        elif line.startswith("-- reproduce"):
+            m = _REPRODUCE.fullmatch(line)
+            if not m or m["bucket"] in reproduce:
+                raise pipeline.Refusal(
+                    "cannot read a `-- reproduce` line: write `-- reproduce "
+                    "<bucket>:`, once per bucket, then the query as comment lines"
+                )
+            current = reproduce[m["bucket"]] = []
+        elif current is not None and line.startswith("--") and line not in HEADER:
+            rest = lines[i].lstrip()[2:]
+            current.append(rest[2:] if rest.startswith("  ") else rest.lstrip(" "))
         elif line and line not in HEADER:
             break
+        else:
+            # A blank line or a lint opt-out ends a reproduce query.
+            current = None
         i += 1
-    return causes, "\n".join(lines[i:]).strip()
+    queries = {b: "\n".join(q).strip() for b, q in reproduce.items()}
+    return causes, queries, "\n".join(lines[i:]).strip()
 
 
 def _cause(line: str) -> tuple[str, str, str]:
@@ -208,8 +255,8 @@ def read_proof(path: Path) -> Proof:
         raise pipeline.Refusal(
             f"{path.name}: name a proof <comparison>__<{'|'.join(PROVABLE)}>.sql"
         )
-    causes, body = split_block(path.read_text())
-    return Proof(path, comparison, bucket, causes, body)
+    causes, reproduce, body = split_proof(path.read_text())
+    return Proof(path, comparison, bucket, causes, body, reproduce)
 
 
 # --- the checks -------------------------------------------------------------------
@@ -403,6 +450,101 @@ def check_sql(body: str, grain: set[str], student: set[str] = frozenset()) -> se
     return literals
 
 
+def check_reproduce(sql: str, grain: set[str], student: set[str] = frozenset()) -> None:
+    """Refuse a reproduce query that could return or name a row, before it runs.
+
+    A reproduce query reads today's tables, outside the run, and returns
+    counts an owner compares with the cause: every column it returns is an
+    aggregate or one of its GROUP BY columns.
+
+    Args:
+        sql: The query, without its comment prefixes.
+        grain: Every grain column name, lowercased.
+        student: The student column's names, lowercased.
+
+    Raises:
+        pipeline.Refusal: It reads `{unmatched}` or time-travels; does not
+            parse; is not 1 SELECT; returns `*`, a window function, or a
+            column that is no aggregate and not grouped by; has no aggregate;
+            groups by or returns a grain or identifying column; holds an
+            ID-like value or an email in a comment or string; or compares an
+            identifying column with a literal.
+    """
+    if PLACEHOLDER in sql:
+        raise pipeline.Refusal(
+            f"a reproduce query reads today's tables, never {PLACEHOLDER}"
+        )
+    if re.search(r"\bfor\s+system_time\b", sql, re.IGNORECASE):
+        raise pipeline.Refusal(
+            "a reproduce query reads today's tables: drop FOR SYSTEM_TIME AS OF"
+        )
+    _scan_text(sql)
+    try:
+        parsed = sqlglot.parse(sql, read="bigquery")
+    except SqlglotError as exc:
+        raise pipeline.Refusal(
+            f"the reproduce query does not parse as BigQuery SQL: {type(exc).__name__}"
+        ) from exc
+    statements = [t for t in parsed if t is not None]
+    if len(statements) != 1 or not isinstance(statements[0], exp.Select):
+        raise pipeline.Refusal("a reproduce query is 1 SELECT (a WITH may lead it)")
+    tree = statements[0]
+    group = (tree.args.get("group") or exp.Group()).expressions
+    by_position = {int(g.this) for g in group if isinstance(g, exp.Literal)}
+    grouped = {g.sql().lower() for g in group} | {
+        g.alias_or_name.lower() for g in group if not isinstance(g, exp.Literal)
+    }
+
+    def names_a_row(node: exp.Expression) -> bool:
+        cols = [c.name.lower() for c in node.find_all(exp.Column)]
+        if isinstance(node, exp.Column):
+            cols.append(node.name.lower())
+        return any(c in grain or _id_like(c, student) for c in cols)
+
+    aggregates = 0
+    for n, projection in enumerate(tree.expressions, start=1):
+        value = projection.unalias()
+        if isinstance(value, exp.Star) or (
+            isinstance(value, exp.Column) and isinstance(value.this, exp.Star)
+        ):
+            raise pipeline.Refusal("the reproduce query selects *; return counts")
+        if value.find(exp.Window):
+            raise pipeline.Refusal(
+                "the reproduce query uses a window function; aggregate with GROUP BY"
+            )
+        if value.find(exp.AggFunc):
+            aggregates += 1
+            continue
+        name = projection.alias_or_name.lower()
+        if not (n in by_position or name in grouped or value.sql().lower() in grouped):
+            raise pipeline.Refusal(
+                f"the reproduce query returns {name or 'a column'} that is no "
+                "aggregate and not in its GROUP BY; return counts only"
+            )
+        if name in grain or _id_like(name, student) or names_a_row(value):
+            raise pipeline.Refusal(
+                "the reproduce query groups by a grain or identifying column; "
+                "count by school, grade or another column that names no one"
+            )
+    if not aggregates:
+        raise pipeline.Refusal("the reproduce query returns no aggregate; count rows")
+    for g in group:
+        if not isinstance(g, exp.Literal) and names_a_row(g):
+            raise pipeline.Refusal(
+                "the reproduce query groups by a grain or identifying column; "
+                "count by school, grade or another column that names no one"
+            )
+    for node in tree.find_all(exp.Predicate):
+        leaves = list(_leaves(node))
+        if any(
+            isinstance(c, exp.Column) and _identifies(c.name, student) for c in leaves
+        ) and any(isinstance(c, exp.Literal) for c in leaves):
+            raise pipeline.Refusal(
+                "the reproduce query compares an identifying column with a "
+                "literal: never name a row by its value"
+            )
+
+
 def _check_default(value: exp.Expression) -> None:
     """Refuse a cause that is not one CASE of literals ending in `ELSE 'UNEXPLAINED'`.
 
@@ -483,6 +625,8 @@ def unmatched_sql(
         for i, p in enumerate(grain)
     ]
     dims = pipeline.group_dims(comparison)
+    # A `dims_differ` group also names the dashboard's cell, as `d:<column>`.
+    extra += [f"CAST(d.{p.dashboard} AS STRING) AS __d_{p.cube}" for p in dims]
     ctes, _ = compare._joined(
         pipeline.wrap_cube(
             sides.cube_rows_sql,
@@ -502,9 +646,9 @@ def unmatched_sql(
     for item_id, g in items:
         nulls = set(g.nulls)
         test = " AND ".join(
-            f"{column} IS NULL"
+            f"{_joined_column(column)} IS NULL"
             if column in nulls
-            else f"{column} = {pipeline._lit(value)}"
+            else f"{_joined_column(column)} = {pipeline._lit(value)}"
             for column, value in g.dims
         )
         whens.append(f"WHEN {test or 'TRUE'} THEN {pipeline._lit(item_id)}")
@@ -521,6 +665,13 @@ def unmatched_sql(
     # trunk-ignore(bandit/B608): identifiers are validated in config.py; values are bound literals
     select = f"SELECT {', '.join(columns)}\nFROM joined WHERE bucket = '{bucket}'"
     return ctes, select
+
+
+def _joined_column(dim: str) -> str:
+    """The `joined` column a group's dim reads: a `d:` dim is the dashboard's."""
+    if dim.startswith(compare.DASH_PREFIX):
+        return f"__d_{dim[len(compare.DASH_PREFIX) :]}"
+    return dim
 
 
 def proof_query(ctes: str, select: str, body: str, literals: set[str]) -> str:
@@ -819,6 +970,85 @@ def _in_cut(g: Group, comparison: Comparison | None, cut: str) -> bool:
 _SIGN = {"cube_only": 1, "dashboard_filtered": 1, "dashboard_only": -1}
 
 
+def _agrees(values, dims) -> bool:
+    """Whether a cell's dims agree with a group's columns (`values(col)`); a
+    column the group does not split by agrees with any value."""
+    return all(
+        values(col) is None or pipeline._key(values(col)) == pipeline._key(value)
+        for col, value in dims
+    )
+
+
+def _dash_value(g: Group, column: str) -> str | None:
+    return g.value_of(f"{compare.DASH_PREFIX}{column}")
+
+
+def _in_cells(g: Group, cell: dict) -> tuple[bool, bool]:
+    """Whether a group's rows sit in a cell on the Cube side, the dashboard's.
+
+    A `dims_differ` group's rows sit in Cube's cell (its own columns) on one
+    side and the dashboard's (its `d:` columns) on the other.
+    """
+    cube = _agrees(g.value_of, cell["dims"])
+    if g.bucket != "dims_differ":
+        return cube, cube
+    return cube, _agrees(lambda col: _dash_value(g, col), cell["dims"])
+
+
+def _sizable(spec: Comparison | None, entries: list[dict], cell: dict) -> bool:
+    """Whether the run's per-cell sums can rebuild this cell from its rows.
+
+    Needs 1 value column, the cell's every dim among the reconcile's group
+    columns, and each cut's captions among them too, or a single cut: the
+    reconcile counts the rows of every cut together.
+    """
+    if not (spec and spec.rows and len(spec.rows.values) == 1 and entries):
+        return False
+    columns = {col for col, _ in entries[0]["dims"]}
+    if any(col not in columns for col, _ in cell["dims"]):
+        return False
+    cuts = pipeline._cuts(spec)
+    if len(cuts) == 1:
+        return True
+    for cut in cuts:
+        for caption in {**spec.defaults, **cut}:
+            pair = spec.filters.get(caption)
+            if pair is None or pair.cube not in columns:
+                return False
+    return True
+
+
+def _rebuilt(spec: Comparison, entries: list[dict], cell: dict) -> tuple:
+    """Each side's mean of the value column over the cell's rows, or None."""
+    out = []
+    for side in ("c", "d"):
+        n = total = 0.0
+        for e in entries:
+            dims = e["dash_dims"] if side == "d" and e["dash_dims"] else e["dims"]
+            values = dict(dims)
+            held = Group(
+                spec.id, tuple((k, v or "") for k, v in dims), e["bucket"], 0, 0
+            )
+            if not e[side]["rows"] or not _agrees(values.get, cell["dims"]):
+                continue
+            if not _in_cut(held, spec, cell.get("cut", "{}")):
+                continue
+            n += e[side]["n"][0]
+            total += e[side]["sum"][0]
+        out.append(total / n if n else None)
+    return tuple(out)
+
+
+def _reproduces(spec: Comparison, entries: list[dict], cell: dict) -> bool:
+    """Whether both sides' cells, rebuilt from their rows, show the run's values."""
+    cube, dashboard = _rebuilt(spec, entries, cell)
+    decimals = spec.decimals or 0
+    return (
+        compare.cell_verdict(cell.get("cube"), cube, decimals) == "pass"
+        and compare.cell_verdict(cell.get("dashboard"), dashboard, decimals) == "pass"
+    )
+
+
 def link_cells(
     run: RunResult,
     items: list[dict],
@@ -828,11 +1058,20 @@ def link_cells(
     """Move each cell set whose differing cells' rows all lie in proven groups.
 
     A cell's rows lie in the open groups of its comparison whose columns agree
-    with the cell's dims and its cut. A cell no open group agrees with, or one
-    a group outside `cause` agrees with, is not linked. For a comparison that
-    counts its rows, the cell's difference (Cube minus dashboard) must also
-    equal the linked groups' net rows (Cube-only and dashboard-filtered rows
-    add, dashboard-only rows take away); otherwise the cell is not linked.
+    with the cell's dims and its cut (a `dims_differ` group's in both its
+    cells). A cell no open group agrees with, or one a group outside `cause`
+    agrees with, is not linked. Its size is checked too:
+
+    - A comparison that counts its rows: the cell's difference (Cube minus
+      dashboard) must equal the linked groups' net rows (Cube-only and
+      dashboard-filtered rows add, dashboard-only rows take away; a
+      `dims_differ` group adds to Cube's cell and takes from the dashboard's).
+    - Any other comparison with 1 value column: each side's cell, rebuilt as
+      the mean of that column over the cell's rows from the run's per-cell
+      sums (`RunResult.cell_rows`), must show the run's value. A cell the sums
+      cannot rebuild (another value column count, a dim or cut column the
+      reconcile does not group by) is not linked. A run saved before those
+      sums links as before, and says its sizes went unchecked.
 
     Returns:
         Per cell-set item id: the differing cells not linked, all of them, and
@@ -853,28 +1092,39 @@ def link_cells(
             if isinstance(g, Group) and g.comparison_id == item.comparison
         ]
         cells = [c for c in run.diff_cells if c["comparison"] == item.comparison]
-        unlinked, used, gap = 0, {}, 0.0
+        entries = run.cell_rows.get(item.comparison)
+        unlinked, used, gap, unsized, unbuilt = 0, {}, 0.0, 0, 0
         for cell in cells:
             match = [
-                (gid, g)
+                (gid, g, sides)
                 for gid, g in groups
                 if _in_cut(g, spec, cell.get("cut", "{}"))
-                and all(
-                    g.value_of(col) is None
-                    or pipeline._key(g.value_of(col)) == pipeline._key(value)
-                    for col, value in cell["dims"]
-                )
+                and any(sides := _in_cells(g, cell))
             ]
-            proven = [gid for gid, _ in match if by_id[gid]["suggestion"] == "cause"]
+            proven = [gid for gid, _, _ in match if by_id[gid]["suggestion"] == "cause"]
             if not match or len(proven) < len(match):
                 unlinked += 1
                 continue
             if counts:
-                net = sum(_SIGN.get(g.bucket, 0) * g.n_rows for _, g in match)
+                net = 0
+                for _, g, (in_cube, in_dash) in match:
+                    if g.bucket == "dims_differ":
+                        net += g.n_rows * (int(in_cube) - int(in_dash))
+                    else:
+                        net += _SIGN.get(g.bucket, 0) * g.n_rows
                 differs = (cell.get("cube") or 0) - (cell.get("dashboard") or 0)
                 if abs(differs - net) > 1e-9:
                     unlinked += 1
                     gap += abs(differs - net)
+                    continue
+            elif entries is not None:
+                if not _sizable(spec, entries, cell):
+                    unlinked += 1
+                    unsized += 1
+                    continue
+                if not _reproduces(spec, entries, cell):
+                    unlinked += 1
+                    unbuilt += 1
                     continue
             used |= dict.fromkeys(proven)
         out[item.id] = (unlinked, len(cells), gap)
@@ -889,6 +1139,8 @@ def link_cells(
             line = (
                 f"every differing cell's rows lie in proven groups: {', '.join(used)}"
             )
+            if not counts and entries is None:
+                line += "; cell sizes not checked: the run predates per-cell sums"
             target.update(
                 suggestion="cause",
                 cause=list(merged.values()),
@@ -910,6 +1162,18 @@ def link_cells(
                 if gap:
                     line += f"; their differences exceed the proven rows by {gap:g}"
                     posted += "; their differences exceed the proven rows"
+                if unbuilt:
+                    line += (
+                        f"; {unbuilt} do not rebuild from their rows (the mean of "
+                        "the value column over each side's rows is not the cell)"
+                    )
+                    posted += "; some do not rebuild from their rows"
+                if unsized:
+                    line += (
+                        f"; {unsized} cannot be sized from the run's per-cell sums "
+                        "(a dim or cut column the reconcile does not group by)"
+                    )
+                    posted += "; some cannot be sized"
             target["evidence"] = [line, *_unlinked(target.get("evidence"))]
             target["evidence_posted"] = [
                 posted,
@@ -1195,11 +1459,21 @@ def run_confirm(
     source = sql or stored
     if not source.is_file():
         raise pipeline.Refusal(f"{source}: no such proof; pass --sql <file>")
-    block, body = split_block(source.read_text())
+    block, reproduce, body = split_proof(source.read_text())
     for flag in causes or []:
         b, side, words = parse_cause_flag(flag)
         block[b] = (side, words)
-    proof = Proof(stored, comparison, bucket, block, body)
+    proof = Proof(stored, comparison, bucket, block, body, reproduce)
+    for b, query in reproduce.items():
+        if b not in block:
+            raise pipeline.Refusal(
+                f"-- reproduce {b}: the proof has no cause {b}; name a bucket "
+                "of its `-- cause` block"
+            )
+        try:
+            check_reproduce(query, grain_names(target), identifying(target))
+        except pipeline.Refusal as exc:
+            raise pipeline.Refusal(f"-- reproduce {b}: {exc}") from exc
     bucket_items = _bucket_items(run, comparison, bucket)
     if not bucket_items:
         raise pipeline.Refusal(f"{comparison} {bucket}: no open row group to prove")
@@ -1209,6 +1483,14 @@ def run_confirm(
         )
 
     with wh.budget(max_usd):
+        for b, query in reproduce.items():
+            try:
+                usd = wh.estimate(query)
+            except GoogleAPIError as exc:
+                raise pipeline.Refusal(
+                    f"-- reproduce {b}: BigQuery refused it ({bigquery_said(exc)})"
+                ) from exc
+            print(f"Reproduce {b}: dry run OK, ${usd:.2f} on today's tables.")
         prepared = trace.Prepared(schools=network_schools(wh))
         found = run_proof(
             wh,

@@ -506,21 +506,28 @@ def cause_asks(
     for d in recorded:
         if not d.cause or d.call != "domain_owner" or d.answer:
             continue
-        mine, rows = [], 0
+        mine, rows, proofs = [], 0, {}
         for item in loaded.get("items", []):
             if not decidable(item) or item.get("key", "") not in groups:
                 continue
             marks = item.get("decisions") or {}
-            n = [
-                c.get("n_rows") or 0
+            causes = [
+                c
                 for c in item["cause"]
                 if marks.get(cause_key(c["side"], c["label"])) == d.id
             ]
-            if n:
+            if causes:
                 mine.append(groups[item["key"]])
-                rows += sum(n)
+                rows += sum(c.get("n_rows") or 0 for c in causes)
+                proof = item.get("proof") or {}
+                if proof.get("kind") == "query" and proof.get("path"):
+                    proofs |= dict.fromkeys((proof["path"], c["step"]) for c in causes)
         if mine:
-            out.append(CauseAsk(d, mine, rows, (leads or {}).get(d.comparison, "")))
+            out.append(
+                CauseAsk(
+                    d, mine, rows, (leads or {}).get(d.comparison, ""), tuple(proofs)
+                )
+            )
     return out
 
 
@@ -674,6 +681,11 @@ NO_ROWS = (
     "`triage confirm --bucket value_differs`"
 )
 NO_GRAIN = "not traced: the comparison has no `rows` grain"
+MOVED_ROWS = (
+    "rows both sides hold sit in different cells (Cube's columns, then the "
+    "dashboard's as `d:`): no trace; prove them with "
+    "`triage confirm --bucket dims_differ`"
+)
 
 
 def suggest(
@@ -787,6 +799,8 @@ def suggest(
                     found = (NOT_TRACED,)
                 elif source.bucket == "value_differs":
                     found = (NO_ROWS,)
+                elif source.bucket == "dims_differ":
+                    found = (MOVED_ROWS,)
                 else:
                     found = (NO_GRAIN,)
 

@@ -510,3 +510,62 @@ def test_trace_sql_counts_by_step_when_split(duck):
     out = _run(duck, [_step("s1", "ok1"), _step("s2", "ok2")], combine=False)
 
     assert out == {("X", "s1"): 1, ("X", "s2"): 2, ("X", ""): 2}
+
+
+# --- rows both sides hold in different cells -----------------------------------
+
+MOVED_ROWS = RowSpec(
+    grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")],
+    values=[ColumnPair("ok_d", "ok_c")],
+)
+MOVED_BY = [ColumnPair("grade_d", "grade_c")]
+
+
+def _moved(duck):
+    """Synthetic rows: student 1 matches in grade 1; student 2 is in grade 1 on
+    Cube and grade 2 on the dashboard; student 3 is Cube's only, in grade 2."""
+    duck.table(
+        "cube_t",
+        "lea BIGINT, aid VARCHAR, grade_c VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "1", True), (2, "a", "1", False), (3, "a", "2", True)],
+    )
+    duck.table(
+        "dash_t",
+        "student BIGINT, item VARCHAR, grade_d VARCHAR, ok_d BOOLEAN",
+        [(1, "a", "1", True), (2, "a", "2", False)],
+    )
+    return duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            MOVED_ROWS,
+            MOVED_BY,
+        )
+    )
+
+
+def test_a_row_in_another_cell_on_each_side_is_its_own_bucket(duck):
+    groups = groups_from("x", _moved(duck))
+
+    by = {g.bucket: g for g in groups}
+    assert set(by) == {"dims_differ", "cube_only"}
+    assert by["dims_differ"].dims == (("grade_c", "1"), ("d:grade_c", "2"))
+    assert by["dims_differ"].n_rows == 1
+    # A group of another bucket keeps its key: no dashboard-cell columns.
+    assert by["cube_only"].dims == (("grade_c", "2"),)
+
+
+def test_the_reconcile_keeps_each_side_s_rows_and_sums_per_cell(duck):
+    from cube_validation.compare import cell_rows_from
+
+    rows = {
+        (r["bucket"], tuple(map(tuple, r["dims"]))): r
+        for r in cell_rows_from(_moved(duck))
+    }
+
+    match = rows[("match", (("grade_c", "1"),))]
+    assert match["c"] == match["d"] == {"rows": 1, "n": [1], "sum": [1.0]}
+    moved = rows[("dims_differ", (("grade_c", "1"),))]
+    assert moved["dash_dims"] == [["grade_c", "2"]]
+    assert moved["c"] == moved["d"] == {"rows": 1, "n": [1], "sum": [0.0]}
+    assert rows[("cube_only", (("grade_c", "2"),))]["d"]["rows"] == 0

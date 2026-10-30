@@ -222,16 +222,23 @@ cause, do not retry around it.
 
    Nothing goes to the owner without a cause proven row by row. A row group
    reaches `cause` only through a stored proof (below), including one whose
-   values differ on rows both sides hold (`--bucket value_differs`). A missing
+   values differ on rows both sides hold (`--bucket value_differs`) and one
+   whose rows both sides hold in different cells (`--bucket dims_differ`: the
+   group's columns are Cube's cell, its `d:` columns the dashboard's). A missing
    cut or filter reaches it from the workbook (`sheet filter <caption>` or
    `sheet cut`), and rows a `dashboard_filters` entry drops ("dashboard
    filtered") from the run's own reconcile, as the cause
    `sheet filter <caption>`. A cell set reaches it when every differing cell's
-   rows lie in groups in `cause`, so a cell set needs `rows` on its comparison
-   to be provable: add `rows` before `run`. A member description, a cell pattern
-   or a trace count is a lead, never a cause. A run saved before groups recorded
-   their NULLs is refused ("this run predates NULL-aware groups"):
-   `run --moment <its moment>` again.
+   rows lie in groups in `cause` and the cell's size checks out, so a cell set
+   needs `rows` on its comparison to be provable: add `rows` before `run`. For a
+   count, the cell's difference must equal the groups' net rows. For a rate with
+   1 value column, each side's cell rebuilt from its rows (the mean of the value
+   column) must show the run's value; a cell under a cut whose column the rows
+   are not grouped by cannot be sized and stays open. A run saved before
+   per-cell sums links without the rate check and says so: `run` again to check
+   sizes. A member description, a cell pattern or a trace count is a lead, never
+   a cause. A run saved before groups recorded their NULLs is refused ("this run
+   predates NULL-aware groups"): `run --moment <its moment>` again.
 
    The trace leads. `triage` relaxes each step of the other side's SQL (WHERE
    and HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 3 dbt models)
@@ -301,7 +308,7 @@ cause, do not retry around it.
         ON r.assessment_id = u.assessment_id
       ```
 
-   7. `triage confirm <file> --comparison <id> --bucket <cube_only|dashboard_only|value_differs> --sql <draft.sql> --cause C1=dashboard:<plain words> ...`
+   7. `triage confirm <file> --comparison <id> --bucket <cube_only|dashboard_only|value_differs|dims_differ> --sql <draft.sql> --cause C1=dashboard:<plain words> ...`
       (through the runner) needs a `--cause` for every cause literal the query
       returns. The tool counts the rows itself, joining the proof back to
       `{unmatched}`, and refuses a row the proof drops or repeats, a cause that
@@ -318,9 +325,32 @@ cause, do not retry around it.
       each item it fully explains (no `UNEXPLAINED`) to `cause`. The rest stay,
       with "proof <file> leaves N rows unexplained". `--items <ids>` narrows the
       printout only. After an edit, run it again without `--sql`.
+
+      Give each owner cause a live count the owner can run after time travel
+      ends: a `-- reproduce <bucket>:` block in the proof's header, the query as
+      comment lines below it, ending at a blank line. It counts the cause's rows
+      on today's tables with the cause's predicates (for example "Cube rows in
+      AY2026 whose `module_type` is WPP, by school"): aggregates and their GROUP
+      BY columns only, no `{unmatched}` and no time travel. `confirm` refuses
+      one that names no cause of the proof, returns a row, a grain or
+      identifying column, or an ID-like literal, or fails its dry run, before
+      the proof runs. It is no part of the proof's fingerprint, so adding one
+      later re-opens nothing.
+
+      ```sql
+      -- cause C1 = dashboard: the dashboard drops WPP modules
+      -- reproduce C1:
+      --  SELECT r.school_abbreviation, COUNT(*) AS n_rows
+      --  FROM `teamster-332318`.`kipptaf_marts`.`fct_assessment_scores` AS r
+      --  WHERE r.academic_year = 2026 AND r.module_type = 'WPP'
+      --  GROUP BY r.school_abbreviation
+      ```
+
       `--cells --comparison <id>` confirms a cell set, or refuses with the count
       of cells outside proven groups and, for a count, the gap between the
-      cells' differences and the proven rows.
+      cells' differences and the proven rows; for a rate, how many cells do not
+      rebuild from their rows or cannot be sized.
+
    8. Show the analyst the proof file and the per-cause counts `confirm`
       printed, and wait for an OK before the file is kept for commit. On a no,
       delete the file and run `triage --no-trace` again.
@@ -466,19 +496,24 @@ cause, do not retry around it.
     question, across the comparisons it is proven on, with its words, per
     comparison the count of groups it decides and of the rows its proof
     attributes to it, and the model-doc leads; the owner's answer records onto
-    every decision it lists. It refuses unless every file's view has a triage
-    with nothing in `investigate`. stderr names any question with no triage
-    evidence: `triage` that view and render again before posting. The footnote
-    promises that identifiers of students and staff are hidden, which holds only
-    if no reason or definition names a person: read them first. Show the draft
-    to the analyst, then post it with `mcp__github__issue_write`, titled
-    "Validate <dashboard> in Cube", using the repo's issue template. That issue
-    is the validation's hub. Then write `task: "#<issue>"` into each decision
-    stderr lists; filling in a task needs no new `run`. Tell the analyst the
-    owner answers in his own Claude Code session by saying "walk me through
-    issue #N" (the `cube-validation-answers` skill). When that session reports
-    the pinned SQL expired, `run` again, render `review` again, and update the
-    issue body.
+    every decision it lists. Each cause question also gets a folded Reproduce
+    block: per comparison, the example cell as a Cube `load` query for Claude
+    chat's Cube connector, and per proof its `-- reproduce` count (labeled
+    today's data), the `triage confirm` that re-proves it at the run's moment
+    and the `run` plus `triage` after time travel ends, and a branch link to the
+    proof file. Commit and push the proofs before posting, or the link finds
+    nothing. It refuses unless every file's view has a triage with nothing in
+    `investigate`. stderr names any question with no triage evidence: `triage`
+    that view and render again before posting. The footnote promises that
+    identifiers of students and staff are hidden, which holds only if no reason
+    or definition names a person: read them first. Show the draft to the
+    analyst, then post it with `mcp__github__issue_write`, titled "Validate
+    <dashboard> in Cube", using the repo's issue template. That issue is the
+    validation's hub. Then write `task: "#<issue>"` into each decision stderr
+    lists; filling in a task needs no new `run`. Tell the analyst the owner
+    answers in his own Claude Code session by saying "walk me through issue #N"
+    (the `cube-validation-answers` skill). When that session reports the pinned
+    SQL expired, `run` again, render `review` again, and update the issue body.
 11. On "pick up the answers on #N", read only the comment the analyst names; if
     they name none, ask which, never take the latest. Save its body to a file in
     the session scratchpad and show the analyst its author's login. Check its
@@ -492,6 +527,20 @@ cause, do not retry around it.
     comment; never edit the saved body to make it pass. The validation issue
     closes when every question has a decision and every fix has its issue, PR or
     Asana task.
+12. Tell Cube's users why a number differs on purpose. Run `describe <files>`
+    (no credentials, writes nothing): per measure, every `deliberate` decision
+    (the analyst's, or an owner's answer) as what differs and its reason, and a
+    draft `meta.ai_context` sentence ("Differs from <dashboard> on purpose:
+    ..."). The MCP chat reads `ai_context`, so an analyst asking why Cube does
+    not match the dashboard gets the answer. Show the analyst the draft and
+    reword it with them: plain words, no student or staff value, under Cube's
+    2,000-character cap. Then, on a branch of its own off `origin/main`, Read
+    `.claude/rules/cube-authoring.md` and add the sentence to the member's
+    `ai_context` (the view's, for a note on reading the whole view; a view
+    override restates the member's own), keeping any text already there.
+    `description:` takes it only when it defines the raw column. Run
+    `uv run pytest tests/cube/`, open the PR (`Refs` the validation issue), and
+    merge it with the validation PR or after it.
 
 ## Gotchas
 
