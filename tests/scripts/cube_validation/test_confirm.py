@@ -1291,3 +1291,109 @@ def test_a_proof_classifies_rows_that_sit_in_another_cell(duck, tmp_path, offlin
     (item,) = items
     assert item["suggestion"] == "cause"
     assert item["cause"][0]["n_rows"] == 1
+
+
+def test_two_cell_sets_link_on_a_run_saved_before_cell_sums():
+    # A run with no per-cell sums used to crash on the second cell set.
+    sib = Group("mastery-b", (("abbreviation", "X"),), "cube_only", 3, 3)
+    cell = CELLS_RUN["diff_cells"][0]
+    run = _run(
+        [_group(3), sib],
+        cells=[
+            CellDiff("mastery", {"differs": 1}),
+            CellDiff("mastery-b", {"differs": 1}),
+        ],
+        diff_cells=[cell, {**cell, "comparison": "mastery-b"}],
+    )
+    items = _items2(run)
+    for item in items:
+        if item["kind"] == "group":
+            item.update(suggestion="cause", cause=[{"side": "dashboard",
+                        "step": "C1", "label": "fails ok1", "n_rows": 3}])  # fmt: skip
+
+    linked = confirm.link_cells(run, items, cfg=CFG2)
+
+    assert set(linked) == {"mastery:cells", "mastery-b:cells"}
+    assert {i["suggestion"] for i in items if i["kind"] == "cells"} == {"cause"}
+
+
+BY_TYPE = Comparison(
+    id="mastery",
+    measure="pct",
+    dims=[ColumnPair("school", "abbreviation")],
+    rows=RowSpec(
+        grain=[*ROWS.grain, ColumnPair("rtype", "rtype")],
+        values=[ColumnPair("ok", "ok")],
+    ),
+    decimals=2,
+    filters={
+        "Response Type": ColumnPair("rtype", "rtype"),
+        "Academic Year": ColumnPair("year", "year"),
+    },
+    defaults={"Academic Year": 2026},
+    cuts=[{"Response Type": "overall"}, {"Response Type": "standard"}],
+)
+
+
+def test_cut_flags_skip_a_caption_every_cut_shares():
+    flags = pipeline.cut_flags(BY_TYPE)
+
+    assert [label for label, _, _ in flags] == [
+        '{"Response Type": "overall"}',
+        '{"Response Type": "standard"}',
+    ]
+    _, cube, dash = flags[1]
+    assert "c.rtype" in cube and "'standard'" in cube and "year" not in cube
+    assert "d.rtype" in dash
+
+
+def test_cut_flags_need_each_varying_caption_among_the_row_columns():
+    from dataclasses import replace
+
+    by_region = replace(
+        BY_TYPE,
+        cuts=[{"Region": "A"}, {"Region": "B"}],
+        filters={**BY_TYPE.filters, "Region": ColumnPair("region", "region")},
+    )
+
+    assert pipeline.cut_flags(by_region) is None
+
+
+def test_a_rate_cell_under_a_cut_is_sized_by_that_cut_s_sums(tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    standard = '{"Response Type": "standard"}'
+    # Over both cuts the cell would read 2/5; under `standard` alone it is 1/4.
+    entries = [
+        {**_entry("match", "X", _side(2, 2, 2), _side(2, 2, 2)),
+         "cuts": {standard: {"c": _side(1, 1, 1), "d": _side(1, 1, 1)}}},
+        {**_entry("cube_only", "X", _side(3, 3, 0), _side(0, 0, 0)),
+         "cuts": {standard: {"c": _side(3, 3, 0), "d": _side(0, 0, 0)}}},
+    ]  # fmt: skip
+    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[BY_TYPE])
+    run = _rate_run(0.25, 1.0, cell_rows=entries)
+    run = replace(run, diff_cells=[{**run.diff_cells[0], "cut": standard}])
+
+    cells = _cells(tmp_path, monkeypatch, run=run, cfg=cfg)
+
+    assert cells["suggestion"] == "cause"
+
+
+EXISTS_REPRODUCE = """SELECT r.school, COUNT(*) AS n_rows
+FROM d.fact AS r
+WHERE EXISTS (
+  SELECT 1 FROM d.enrollments AS e
+  WHERE e.student_number = r.student_number AND e.academic_year = {year}
+)
+GROUP BY r.school"""
+
+
+def test_check_reproduce_tests_each_comparison_inside_exists_on_its_own():
+    # The literal and the identifying join sit in different comparisons.
+    confirm.check_reproduce(EXISTS_REPRODUCE.format(year="2026"), {"student"})
+
+    with pytest.raises(pipeline.Refusal, match="identifying column"):
+        confirm.check_reproduce(
+            EXISTS_REPRODUCE.replace("= r.student_number", "= 123").format(year="2026"),
+            {"student"},
+        )

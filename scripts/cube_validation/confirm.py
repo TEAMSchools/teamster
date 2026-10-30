@@ -535,6 +535,10 @@ def check_reproduce(sql: str, grain: set[str], student: set[str] = frozenset()) 
                 "count by school, grade or another column that names no one"
             )
     for node in tree.find_all(exp.Predicate):
+        # An EXISTS is no comparison: each comparison inside it is tested on
+        # its own, as find_all reaches it.
+        if isinstance(node, exp.Exists):
+            continue
         leaves = list(_leaves(node))
         if any(
             isinstance(c, exp.Column) and _identifies(c.name, student) for c in leaves
@@ -995,18 +999,25 @@ def _in_cells(g: Group, cell: dict) -> tuple[bool, bool]:
     return cube, _agrees(lambda col: _dash_value(g, col), cell["dims"])
 
 
+def _per_cut(entries: list[dict], cell: dict) -> bool:
+    """Whether the run kept the sums of the cell's own cut (`cut_flags`)."""
+    return cell.get("cut", "{}") in (entries[0].get("cuts") or {})
+
+
 def _sizable(spec: Comparison | None, entries: list[dict], cell: dict) -> bool:
     """Whether the run's per-cell sums can rebuild this cell from its rows.
 
-    Needs 1 value column, the cell's every dim among the reconcile's group
-    columns, and each cut's captions among them too, or a single cut: the
-    reconcile counts the rows of every cut together.
+    Needs 1 value column and the cell's every dim among the reconcile's group
+    columns. The rows must be the cut's own: sums the run kept per cut, a
+    single cut, or each cut's captions among the group columns.
     """
     if not (spec and spec.rows and len(spec.rows.values) == 1 and entries):
         return False
     columns = {col for col, _ in entries[0]["dims"]}
     if any(col not in columns for col, _ in cell["dims"]):
         return False
+    if _per_cut(entries, cell):
+        return True
     cuts = pipeline._cuts(spec)
     if len(cuts) == 1:
         return True
@@ -1019,22 +1030,29 @@ def _sizable(spec: Comparison | None, entries: list[dict], cell: dict) -> bool:
 
 
 def _rebuilt(spec: Comparison, entries: list[dict], cell: dict) -> tuple:
-    """Each side's mean of the value column over the cell's rows, or None."""
+    """Each side's mean of the value column over the cell's rows, or None.
+
+    The cut's own sums when the run kept them per cut; else every entry the
+    cut's captions allow (`_in_cut`).
+    """
+    cut = cell.get("cut", "{}")
+    per_cut = _per_cut(entries, cell)
     out = []
     for side in ("c", "d"):
         n = total = 0.0
         for e in entries:
             dims = e["dash_dims"] if side == "d" and e["dash_dims"] else e["dims"]
             values = dict(dims)
+            stats = e["cuts"][cut][side] if per_cut else e[side]
+            if not stats["rows"] or not _agrees(values.get, cell["dims"]):
+                continue
             held = Group(
                 spec.id, tuple((k, v or "") for k, v in dims), e["bucket"], 0, 0
             )
-            if not e[side]["rows"] or not _agrees(values.get, cell["dims"]):
+            if not per_cut and not _in_cut(held, spec, cut):
                 continue
-            if not _in_cut(held, spec, cell.get("cut", "{}")):
-                continue
-            n += e[side]["n"][0]
-            total += e[side]["sum"][0]
+            n += stats["n"][0]
+            total += stats["sum"][0]
         out.append(total / n if n else None)
     return tuple(out)
 
@@ -1092,7 +1110,7 @@ def link_cells(
             if isinstance(g, Group) and g.comparison_id == item.comparison
         ]
         cells = [c for c in run.diff_cells if c["comparison"] == item.comparison]
-        entries = run.cell_rows.get(item.comparison)
+        sums = run.cell_rows.get(item.comparison)
         unlinked, used, gap, unsized, unbuilt = 0, {}, 0.0, 0, 0
         for cell in cells:
             match = [
@@ -1117,12 +1135,12 @@ def link_cells(
                     unlinked += 1
                     gap += abs(differs - net)
                     continue
-            elif entries is not None:
-                if not _sizable(spec, entries, cell):
+            elif sums is not None:
+                if not _sizable(spec, sums, cell):
                     unlinked += 1
                     unsized += 1
                     continue
-                if not _reproduces(spec, entries, cell):
+                if not _reproduces(spec, sums, cell):
                     unlinked += 1
                     unbuilt += 1
                     continue
@@ -1139,7 +1157,7 @@ def link_cells(
             line = (
                 f"every differing cell's rows lie in proven groups: {', '.join(used)}"
             )
-            if not counts and entries is None:
+            if not counts and sums is None:
                 line += "; cell sizes not checked: the run predates per-cell sums"
             target.update(
                 suggestion="cause",

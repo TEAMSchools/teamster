@@ -569,3 +569,47 @@ def test_the_reconcile_keeps_each_side_s_rows_and_sums_per_cell(duck):
     assert moved["dash_dims"] == [["grade_c", "2"]]
     assert moved["c"] == moved["d"] == {"rows": 1, "n": [1], "sum": [0.0]}
     assert rows[("cube_only", (("grade_c", "2"),))]["d"]["rows"] == 0
+
+
+def test_the_reconcile_keeps_sums_per_cut(duck):
+    from cube_validation.compare import cell_rows_from
+
+    rows = RowSpec(
+        grain=[
+            ColumnPair("student", "lea"),
+            ColumnPair("item", "aid"),
+            ColumnPair("rtype_d", "rtype_c"),
+        ],
+        values=[ColumnPair("ok_d", "ok_c")],
+    )
+    duck.table(
+        "cube_t",
+        "lea BIGINT, aid VARCHAR, rtype_c VARCHAR, grade_c VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "overall", "1", True), (1, "a", "standard", "1", False),
+         (2, "a", "standard", "1", True)],
+    )  # fmt: skip
+    duck.table(
+        "dash_t",
+        "student BIGINT, item VARCHAR, rtype_d VARCHAR, grade_d VARCHAR, ok_d BOOLEAN",
+        [(1, "a", "overall", "1", True), (1, "a", "standard", "1", False)],
+    )
+    cuts = [
+        ("c.rtype_c = 'overall'", "d.rtype_d = 'overall'"),
+        ("c.rtype_c = 'standard'", "d.rtype_d = 'standard'"),
+    ]
+    result = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            rows,
+            MOVED_BY,
+            cuts=cuts,
+        )
+    )
+
+    by = {r["bucket"]: r for r in cell_rows_from(result, ["overall", "standard"])}
+    match = by["match"]["cuts"]
+    assert match["overall"]["c"] == {"rows": 1, "n": [1], "sum": [1.0]}
+    assert match["standard"]["d"] == {"rows": 1, "n": [1], "sum": [0.0]}
+    only = by["cube_only"]["cuts"]
+    assert only["standard"]["c"]["rows"] == 1 and only["overall"]["c"]["rows"] == 0
