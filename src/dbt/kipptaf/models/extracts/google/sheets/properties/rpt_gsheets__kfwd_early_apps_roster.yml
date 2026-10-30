@@ -1,0 +1,223 @@
+models:
+  - name: rpt_gsheets__kfwd_early_apps_roster
+    description:
+      Roster tab of the KIPP Forward early apps tracker. One row per current
+      senior at the 3 KIPP high schools whose Overgrad Is ED/EA flag is Yes,
+      with a Yes, No, or N/A for each early-application goal, the qualifying
+      colleges for each goal met, and every submitted early application with its
+      URM rate. Goals outside the senior's GPA band show N/A. Rules live in
+      int_students__early_application_criteria_scaffold.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - overgrad_student_id
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          District code location the Overgrad record came from. Part of the
+          grain; left out of the sheet.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: overgrad_student_id
+        data_type: int64
+        description:
+          Overgrad student id. Part of the grain; left out of the sheet.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: student_name
+        data_type: string
+        description: Student name as last name, first name.
+        config:
+          meta:
+            contains_pii: true
+      - name: high_school
+        data_type: string
+        description: High school name from Overgrad.
+      - name: counselor_name
+        data_type: string
+        description: Assigned Overgrad counselor.
+        config:
+          meta:
+            contains_pii: true
+      - name: unweighted_gpa
+        data_type: numeric
+        description: Overgrad unweighted GPA rounded to 2 decimals.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_band
+        data_type: string
+        description:
+          Early-application goal band — 3.75+, 3.50-3.74, 3.00-3.49, Below 3.00,
+          or No GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: met_all_for_band
+        data_type: string
+        description:
+          Yes when every goal for the senior's band is met, No when any is not,
+          N/A when the band has no goals.
+        config:
+          meta:
+            contains_pii: true
+      - name: submitted_early_count
+        data_type: int64
+        description: Distinct colleges with a submitted early application.
+        config:
+          meta:
+            contains_pii: true
+      - name: ed_80_full_need_status
+        data_type: string
+        description:
+          3.75+ goal of 1 ED college at 80%+ URM that meets full need — Yes, No,
+          or N/A.
+        config:
+          meta:
+            contains_pii: true
+      - name: ed_80_full_need_colleges
+        data_type: string
+        description: Qualifying colleges for ed_80_full_need when Yes.
+        config:
+          meta:
+            contains_pii: true
+      - name: ea_78_status
+        data_type: string
+        description: 3.75+ goal of 2 EA colleges at 78%+ URM — Yes, No, or N/A.
+        config:
+          meta:
+            contains_pii: true
+      - name: ea_78_colleges
+        data_type: string
+        description: Qualifying colleges for ea_78 when Yes.
+        config:
+          meta:
+            contains_pii: true
+      - name: early_80_full_need_status
+        data_type: string
+        description:
+          3.50-3.74 goal of 1 ED or EA college at 80%+ URM that meets full need
+          — Yes, No, or N/A.
+        config:
+          meta:
+            contains_pii: true
+      - name: early_80_full_need_colleges
+        data_type: string
+        description: Qualifying colleges for early_80_full_need when Yes.
+        config:
+          meta:
+            contains_pii: true
+      - name: additional_68_status
+        data_type: string
+        description:
+          3.50-3.74 goal of 2 additional early colleges at 68%+ URM — Yes, No,
+          or N/A.
+        config:
+          meta:
+            contains_pii: true
+      - name: additional_68_colleges
+        data_type: string
+        description: Qualifying additional colleges for additional_68 when Yes.
+        config:
+          meta:
+            contains_pii: true
+      - name: early_68_status
+        data_type: string
+        description:
+          3.00-3.49 goal of 3 early colleges at 68%+ URM — Yes, No, or N/A.
+        config:
+          meta:
+            contains_pii: true
+      - name: early_68_colleges
+        data_type: string
+        description: Qualifying colleges for early_68 when Yes.
+        config:
+          meta:
+            contains_pii: true
+      - name: near_miss_count
+        data_type: int64
+        description:
+          Number of the senior's goals that are near misses. 0 when none.
+        config:
+          meta:
+            contains_pii: true
+      - name: submitted_early_applications
+        data_type: string
+        description:
+          Every submitted early application as "College (ED) 77.4%". Shows why a
+          college did or did not count, even when it is far from a bar.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_rpt_gsheets__kfwd_early_apps_roster
+    model: rpt_gsheets__kfwd_early_apps_roster
+    description:
+      Flagged seniors only. Goals outside the band show N/A, met_all_for_band is
+      Yes only when every band goal is met, and a senior with no band goals
+      shows N/A throughout.
+    given:
+      - input: ref("int_students__early_applications_rollup")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, 'A, Student' as student_name, 'KIPP Cooper Norcross High School' as high_school, 'Counselor One' as counselor_name, cast(3.96 as numeric) as unweighted_gpa, '3.75+' as gpa_band, true as is_ed_ea_flagged, 3 as submitted_early_count, 'Example College A (ED) 95.8%' as submitted_early_applications
+          union all
+          select 'kippnewark', 2, 'B, Student', 'KIPP Newark Collegiate Academy', 'Counselor Two', cast(null as numeric), 'No GPA', true, 0, cast(null as string)
+          union all
+          select 'kippnewark', 3, 'C, Student', 'KIPP Newark Lab High School', 'Counselor Two', cast(3.80 as numeric), '3.75+', false, 1, 'Example College B (ED) 90.0%'
+          union all
+          select 'kippcamden', 4, 'D, Student', 'KIPP Cooper Norcross High School', 'Counselor One', cast(3.80 as numeric), '3.75+', true, 1, 'Example College B (ED) 90.0%'
+      - input: ref("int_students__early_application_criteria_scaffold")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, 'ed_80_full_need' as criterion_code, true as is_met, false as is_near_miss, 'Example College A (ED) 95.8%' as qualifying_colleges
+          union all
+          select 'kippcamden', 1, 'ea_78', true, false, 'Example College B (EA) 79.1%, Example College C (EA) 88.8%'
+          union all
+          select 'kippnewark', 3, 'ed_80_full_need', true, false, 'Example College B (ED) 90.0%'
+          union all
+          select 'kippnewark', 3, 'ea_78', false, false, cast(null as string)
+          union all
+          select 'kippcamden', 4, 'ed_80_full_need', true, false, 'Example College B (ED) 90.0%'
+          union all
+          select 'kippcamden', 4, 'ea_78', false, true, 'Example College D (EA) 79.0%'
+    expect:
+      rows:
+        - overgrad_student_id: 1
+          met_all_for_band: "Yes"
+          ed_80_full_need_status: "Yes"
+          ed_80_full_need_colleges: Example College A (ED) 95.8%
+          ea_78_status: "Yes"
+          ea_78_colleges:
+            Example College B (EA) 79.1%, Example College C (EA) 88.8%
+          early_80_full_need_status: N/A
+          early_68_status: N/A
+          near_miss_count: 0
+        - overgrad_student_id: 2
+          met_all_for_band: N/A
+          ed_80_full_need_status: N/A
+          ed_80_full_need_colleges: null
+          ea_78_status: N/A
+          ea_78_colleges: null
+          early_80_full_need_status: N/A
+          early_68_status: N/A
+          near_miss_count: 0
+        - overgrad_student_id: 4
+          met_all_for_band: "No"
+          ed_80_full_need_status: "Yes"
+          ed_80_full_need_colleges: Example College B (ED) 90.0%
+          ea_78_status: "No"
+          ea_78_colleges: null
+          early_80_full_need_status: N/A
+          early_68_status: N/A
+          near_miss_count: 1

@@ -1,0 +1,279 @@
+models:
+  - name: rpt_gsheets__kfwd_early_apps_summary
+    description:
+      Summary tab of the KIPP Forward early apps tracker. N (current seniors at
+      the tracker's high schools whose Overgrad Is ED/EA flag is Yes) and the
+      count in each GPA band come first, then 2 rows per goal, "% of N" and "%
+      of band". The goals come from the early_application_criteria macro, plus a
+      "met both" row for each band with more than 1 goal. Display columns read
+      like 3% (1/40); a 0 denominator shows "-". Numeric met, denominator, and
+      percent columns sit beside them for charting.
+    columns:
+      - name: row_sort
+        data_type: int64
+        description: Display order of the row.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: gpa_band
+        data_type: string
+        description: GPA band the row belongs to, or All for the N row.
+      - name: row_label
+        data_type: string
+        description:
+          'Readable row name, for example "1 ED, full need, 80%+ URM: % of
+          band". Goal rows take their label from the early_application_criteria
+          macro.'
+      - name: cooper_norcross
+        data_type: string
+        description: Display value for KIPP Cooper Norcross High School.
+      - name: newark_collegiate
+        data_type: string
+        description: Display value for KIPP Newark Collegiate Academy.
+      - name: newark_lab
+        data_type: string
+        description: Display value for KIPP Newark Lab High School.
+      - name: all_schools
+        data_type: string
+        description: Display value across the 3 high schools.
+      - name: cooper_norcross_met
+        data_type: int64
+        description:
+          Seniors counted, or seniors meeting the goal, at Cooper Norcross.
+      - name: cooper_norcross_denominator
+        data_type: int64
+        description: Denominator at Cooper Norcross. Null on count rows.
+      - name: cooper_norcross_pct
+        data_type: float64
+        description:
+          Met divided by denominator at Cooper Norcross, 0 to 1. Null when there
+          is none.
+      - name: newark_collegiate_met
+        data_type: int64
+        description:
+          Seniors counted, or seniors meeting the goal, at Newark Collegiate.
+      - name: newark_collegiate_denominator
+        data_type: int64
+        description: Denominator at Newark Collegiate. Null on count rows.
+      - name: newark_collegiate_pct
+        data_type: float64
+        description:
+          Met divided by denominator at Newark Collegiate, 0 to 1. Null when
+          there is none.
+      - name: newark_lab_met
+        data_type: int64
+        description:
+          Seniors counted, or seniors meeting the goal, at Newark Lab.
+      - name: newark_lab_denominator
+        data_type: int64
+        description: Denominator at Newark Lab. Null on count rows.
+      - name: newark_lab_pct
+        data_type: float64
+        description:
+          Met divided by denominator at Newark Lab, 0 to 1. Null when there is
+          none.
+      - name: all_schools_met
+        data_type: int64
+        description:
+          Seniors counted, or seniors meeting the goal, across the 3 schools.
+      - name: all_schools_denominator
+        data_type: int64
+        description: Denominator across the 3 schools. Null on count rows.
+      - name: all_schools_pct
+        data_type: float64
+        description:
+          Met divided by denominator across the 3 schools, 0 to 1. Null when
+          there is none.
+      - name: data_as_of
+        data_type: date
+        description:
+          Date of the latest Overgrad update among flagged seniors and their
+          early applications, in local time. Shows how fresh the tracker's data
+          is.
+
+unit_tests:
+  - name: test_rpt_gsheets__kfwd_early_apps_summary
+    model: rpt_gsheets__kfwd_early_apps_summary
+    description:
+      Counts flagged seniors only, divides by N or by the band count, shows "-"
+      for a 0 denominator, and adds the 3 schools into the All column.
+    given:
+      - input: ref("int_students__early_applications_rollup")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, 'KIPP Cooper Norcross High School' as high_school, '3.75+' as gpa_band, true as is_ed_ea_flagged, timestamp '2026-10-28 13:00:00' as latest_overgrad_updated_at, 'cooper_norcross' as school_key
+          union all
+          select 'kippcamden', 2, 'Renamed Cooper Norcross', '3.75+', true, timestamp '2026-10-27 13:00:00', 'cooper_norcross'
+          union all
+          select 'kippnewark', 3, 'KIPP Newark Collegiate Academy', '3.00-3.49', true, timestamp '2026-10-27 13:00:00', 'newark_collegiate'
+          union all
+          select 'kippnewark', 4, 'KIPP Newark Lab High School', '3.00-3.49', false, timestamp '2026-10-29 13:00:00', 'newark_lab'
+      - input: ref("int_students__early_application_criteria_scaffold")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 1 as overgrad_student_id, '3.75+' as gpa_band, 'ed_80_full_need' as criterion_code, true as is_met
+          union all
+          select 'kippcamden', 1, '3.75+', 'ea_78', true
+          union all
+          select 'kippcamden', 2, '3.75+', 'ed_80_full_need', false
+          union all
+          select 'kippcamden', 2, '3.75+', 'ea_78', false
+          union all
+          select 'kippnewark', 3, '3.00-3.49', 'early_68', false
+          union all
+          select 'kippnewark', 4, '3.00-3.49', 'early_68', true
+    expect:
+      rows:
+        - {
+            row_sort: 1,
+            row_label: "N: flagged Is ED/EA = Yes",
+            cooper_norcross: 2,
+            newark_collegiate: 1,
+            newark_lab: 0,
+            all_schools: 3,
+          }
+        - {
+            row_sort: 2,
+            row_label: Seniors in band,
+            cooper_norcross: 2,
+            newark_collegiate: 0,
+            newark_lab: 0,
+            all_schools: 2,
+          }
+        - {
+            row_sort: 3,
+            row_label: Seniors in band,
+            cooper_norcross: 0,
+            newark_collegiate: 0,
+            newark_lab: 0,
+            all_schools: 0,
+          }
+        - {
+            row_sort: 4,
+            row_label: Seniors in band,
+            cooper_norcross: 0,
+            newark_collegiate: 1,
+            newark_lab: 0,
+            all_schools: 1,
+          }
+        - {
+            row_sort: 5,
+            row_label: Seniors in band,
+            cooper_norcross: 0,
+            newark_collegiate: 0,
+            newark_lab: 0,
+            all_schools: 0,
+          }
+        - {
+            row_sort: 6,
+            row_label: "1 ED, full need, 80%+ URM: % of N",
+            cooper_norcross: 50% (1/2),
+            newark_collegiate: 0% (0/1),
+            newark_lab: "-",
+            all_schools: 33% (1/3),
+          }
+        - {
+            row_sort: 7,
+            row_label: "1 ED, full need, 80%+ URM: % of band",
+            cooper_norcross: 50% (1/2),
+            newark_collegiate: "-",
+            newark_lab: "-",
+            all_schools: 50% (1/2),
+          }
+        - {
+            row_sort: 8,
+            row_label: "2 EA, 78%+ URM: % of N",
+            cooper_norcross: 50% (1/2),
+            newark_collegiate: 0% (0/1),
+            newark_lab: "-",
+            all_schools: 33% (1/3),
+          }
+        - {
+            row_sort: 9,
+            row_label: "2 EA, 78%+ URM: % of band",
+            cooper_norcross: 50% (1/2),
+            newark_collegiate: "-",
+            newark_lab: "-",
+            all_schools: 50% (1/2),
+          }
+        - {
+            row_sort: 10,
+            row_label: "Met both: % of N",
+            cooper_norcross: 50% (1/2),
+            newark_collegiate: 0% (0/1),
+            newark_lab: "-",
+            all_schools: 33% (1/3),
+          }
+        - {
+            row_sort: 11,
+            row_label: "Met both: % of band",
+            cooper_norcross: 50% (1/2),
+            newark_collegiate: "-",
+            newark_lab: "-",
+            all_schools: 50% (1/2),
+          }
+        - {
+            row_sort: 12,
+            row_label: "1 ED/EA, full need, 80%+ URM: % of N",
+            cooper_norcross: 0% (0/2),
+            newark_collegiate: 0% (0/1),
+            newark_lab: "-",
+            all_schools: 0% (0/3),
+          }
+        - {
+            row_sort: 13,
+            row_label: "1 ED/EA, full need, 80%+ URM: % of band",
+            cooper_norcross: "-",
+            newark_collegiate: "-",
+            newark_lab: "-",
+            all_schools: "-",
+          }
+        - {
+            row_sort: 14,
+            row_label: "2 additional early, 68%+ URM: % of N",
+            cooper_norcross: 0% (0/2),
+            newark_collegiate: 0% (0/1),
+            newark_lab: "-",
+            all_schools: 0% (0/3),
+          }
+        - {
+            row_sort: 15,
+            row_label: "2 additional early, 68%+ URM: % of band",
+            cooper_norcross: "-",
+            newark_collegiate: "-",
+            newark_lab: "-",
+            all_schools: "-",
+          }
+        - {
+            row_sort: 16,
+            row_label: "Met both: % of N",
+            cooper_norcross: 0% (0/2),
+            newark_collegiate: 0% (0/1),
+            newark_lab: "-",
+            all_schools: 0% (0/3),
+          }
+        - {
+            row_sort: 17,
+            row_label: "Met both: % of band",
+            cooper_norcross: "-",
+            newark_collegiate: "-",
+            newark_lab: "-",
+            all_schools: "-",
+          }
+        - {
+            row_sort: 18,
+            row_label: "3 early, 68%+ URM: % of N",
+            cooper_norcross: 0% (0/2),
+            newark_collegiate: 0% (0/1),
+            newark_lab: "-",
+            all_schools: 0% (0/3),
+          }
+        - {
+            row_sort: 19,
+            row_label: "3 early, 68%+ URM: % of band",
+            cooper_norcross: "-",
+            newark_collegiate: 0% (0/1),
+            newark_lab: "-",
+            all_schools: 0% (0/1),
+          }

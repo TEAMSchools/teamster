@@ -1,0 +1,138 @@
+models:
+  - name: rpt_gsheets__kfwd_early_apps_not_submitted
+    description:
+      Not Submitted Yet tab of the KIPP Forward early apps tracker. Section A
+      lists current seniors at the 3 KIPP high schools whose Overgrad Is ED/EA
+      flag is Yes but who have no submitted early application, with the early
+      applications still marked Will Apply and the earliest deadline. Section B
+      lists seniors who submitted an early application but whose flag is not
+      Yes, so counselors can fix the flag in Overgrad. Section B seniors are not
+      in N on the other tabs.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - overgrad_student_id
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          District code location the Overgrad record came from. Part of the
+          grain; left out of the sheet.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: overgrad_student_id
+        data_type: int64
+        description:
+          Overgrad student id. Part of the grain; left out of the sheet.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: section
+        data_type: string
+        description:
+          A for flagged with no early application submitted; B for submitted but
+          not flagged.
+        config:
+          meta:
+            contains_pii: true
+      - name: section_label
+        data_type: string
+        description: Readable section heading for the sheet.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_name
+        data_type: string
+        description: Student name as last name, first name.
+        config:
+          meta:
+            contains_pii: true
+      - name: high_school
+        data_type: string
+        description: High school name from Overgrad.
+      - name: counselor_name
+        data_type: string
+        description: Assigned Overgrad counselor.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_band
+        data_type: string
+        description: Early-application goal band.
+        config:
+          meta:
+            contains_pii: true
+      - name: will_apply_early_applications
+        data_type: string
+        description:
+          Early applications still marked Will Apply, as "College (EA)".
+        config:
+          meta:
+            contains_pii: true
+      - name: earliest_will_apply_due_date
+        data_type: date
+        description: Earliest deadline among the Will Apply early applications.
+        config:
+          meta:
+            contains_pii: true
+      - name: submitted_early_applications
+        data_type: string
+        description:
+          Submitted early applications as "College (ED) 77.4%". Filled for
+          section B.
+        config:
+          meta:
+            contains_pii: true
+      - name: submitted_no_deadline_type_applications
+        data_type: string
+        description:
+          Submitted applications whose deadline type is missing in Overgrad.
+          They cannot count as early until a counselor fills in the deadline
+          type, so a section A senior listed here may have applied early.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_rpt_gsheets__kfwd_early_apps_not_submitted
+    model: rpt_gsheets__kfwd_early_apps_not_submitted
+    description:
+      A flagged senior with nothing submitted is section A, an unflagged senior
+      with a submitted early application is section B, and everyone else is left
+      out.
+    given:
+      - input: ref("int_students__early_applications_rollup")
+        format: sql
+        rows: |
+          select 'kippnewark' as _dbt_source_project, 1 as overgrad_student_id, 'A, Student' as student_name, 'KIPP Newark Lab High School' as high_school, 'Counselor Two' as counselor_name, '3.00-3.49' as gpa_band, true as is_ed_ea_flagged, 0 as submitted_early_count, 'Example College A (EA)' as will_apply_early_applications, date '2026-11-01' as earliest_will_apply_due_date, cast(null as string) as submitted_early_applications, 'Example College H' as submitted_no_deadline_type_applications
+          union all
+          select 'kippnewark', 2, 'B, Student', 'KIPP Newark Lab High School', 'Counselor Two', '3.00-3.49', true, 1, cast(null as string), cast(null as date), 'Example College B (EA) 70.0%', cast(null as string)
+          union all
+          select 'kippnewark', 3, 'C, Student', 'KIPP Newark Collegiate Academy', 'Counselor Three', '3.50-3.74', false, 1, cast(null as string), cast(null as date), 'Example College C (EA) 73.6%', cast(null as string)
+          union all
+          select 'kippnewark', 4, 'D, Student', 'KIPP Newark Collegiate Academy', 'Counselor Three', '3.50-3.74', false, 0, cast(null as string), cast(null as date), cast(null as string), cast(null as string)
+    expect:
+      rows:
+        - overgrad_student_id: 1
+          section: A
+          section_label: A. Flagged ED/EA, no early app submitted
+          will_apply_early_applications: Example College A (EA)
+          earliest_will_apply_due_date: 2026-11-01
+          submitted_early_applications: null
+          submitted_no_deadline_type_applications: Example College H
+        - overgrad_student_id: 3
+          section: B
+          section_label:
+            "B. Submitted early, but the Is ED/EA flag is not Yes: check the
+            flag in Overgrad"
+          will_apply_early_applications: null
+          earliest_will_apply_due_date: null
+          submitted_early_applications: Example College C (EA) 73.6%
+          submitted_no_deadline_type_applications: null

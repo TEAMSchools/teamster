@@ -94,6 +94,22 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  - name: kfwd_early_apps_tracker
+    label: KIPP Forward Early Apps Tracker
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/11X8CPo5JlTmNfcgjm91liy87L2FIfJjJjT0_oQVJEqk
+    depends_on:
+      - ref("rpt_gsheets__kfwd_early_apps_summary")
+      - ref("rpt_gsheets__kfwd_early_apps_roster")
+      - ref("rpt_gsheets__kfwd_early_apps_not_submitted")
+      - ref("rpt_gsheets__kfwd_early_apps_near_misses")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
   - name: camden_sar_accommodations_errors20241031
     label: "[Camden] SAR Accommodations Errors - 20241031"
     type: application

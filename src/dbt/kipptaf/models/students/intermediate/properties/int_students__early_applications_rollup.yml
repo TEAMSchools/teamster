@@ -1,0 +1,300 @@
+models:
+  - name: int_students__early_applications_rollup
+    description:
+      One row per current senior (Overgrad graduation year is the current
+      academic year plus 1) at KIPP Cooper Norcross High School, KIPP Newark
+      Collegiate Academy, or KIPP Newark Lab High School, whether or not they
+      are flagged for early applications or have any. Rolls their Overgrad early
+      applications up to counts and readable lists for the KIPP Forward early
+      apps tracker. Counts are distinct colleges, so a duplicate application row
+      never adds to a count.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - overgrad_student_id
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location the Overgrad record came from.
+      - name: overgrad_student_id
+        data_type: int64
+        description: Overgrad student id.
+      - name: high_school
+        data_type: string
+        description: High school name from Overgrad.
+      - name: school_key
+        data_type: string
+        description:
+          Short key for the high school — cooper_norcross, newark_collegiate, or
+          newark_lab. Seniors at any other Overgrad school are left out, so the
+          tracker's school list lives here only.
+      - name: student_name
+        data_type: string
+        description: Student name as last name, first name.
+        config:
+          meta:
+            contains_pii: true
+      - name: counselor_name
+        data_type: string
+        description: Assigned Overgrad counselor as first name and last name.
+        config:
+          meta:
+            contains_pii: true
+      - name: unweighted_gpa
+        data_type: numeric
+        description:
+          Overgrad unweighted GPA, cast to numeric and rounded to 2 decimals.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_band
+        data_type: string
+        description:
+          Early-application goal band from unweighted_gpa — 3.75+, 3.50-3.74,
+          3.00-3.49, Below 3.00, or No GPA when Overgrad has no GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_ed_ea_flagged
+        data_type: boolean
+        description:
+          True when the Overgrad student custom field Is ED/EA is Yes. These
+          seniors make up N on the tracker.
+        config:
+          meta:
+            contains_pii: true
+      - name: submitted_early_count
+        data_type: int64
+        description:
+          Distinct colleges with a submitted early application. 0 when none.
+        config:
+          meta:
+            contains_pii: true
+      - name: submitted_early_applications
+        data_type: string
+        description:
+          Submitted early applications as "College (ED) 77.4%", alphabetical and
+          comma-separated. The percent is the URM graduation rate to 1 decimal,
+          so a rate just under a bar never displays as the bar itself, or "no
+          rate" when the college has none. Null when none.
+        config:
+          meta:
+            contains_pii: true
+      - name: will_apply_early_applications
+        data_type: string
+        description:
+          Early applications still marked Will Apply, as "College (EA)",
+          alphabetical and comma-separated. Null when none.
+        config:
+          meta:
+            contains_pii: true
+      - name: earliest_will_apply_due_date
+        data_type: date
+        description: Earliest deadline among the Will Apply early applications.
+        config:
+          meta:
+            contains_pii: true
+      - name: submitted_no_deadline_type_applications
+        data_type: string
+        description:
+          Submitted applications whose Overgrad deadline type is missing, as
+          college names, alphabetical and comma-separated. They cannot count as
+          early until a counselor fills in the deadline type. Null when none.
+        config:
+          meta:
+            contains_pii: true
+      - name: latest_overgrad_updated_at
+        data_type: timestamp
+        description:
+          Latest Overgrad update time across the student record and their early
+          applications. The tracker shows the maximum as its data as-of date.
+
+unit_tests:
+  - name: test_int_students__early_applications_rollup
+    model: int_students__early_applications_rollup
+    description:
+      Keeps current seniors at the 3 high schools only, bands GPA after rounding
+      to 2 decimals, counts submitted early applications, ignores Withdrew, and
+      lists Will Apply applications with the earliest deadline.
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref("int_overgrad__students")
+        rows:
+          - id: 1
+            _dbt_source_project: kippcamden
+            graduation_year: 2027
+            school__name: KIPP Cooper Norcross High School
+            is_ed_ea: "Yes"
+            academics__unweighted_gpa: 3.96
+            first_name: Student
+            last_name: A
+            updated_at: 2026-10-20T00:00:00Z
+          - id: 2
+            _dbt_source_project: kippnewark
+            graduation_year: 2027
+            school__name: KIPP Newark Collegiate Academy
+            is_ed_ea: "Yes"
+            academics__unweighted_gpa: null
+            first_name: Student
+            last_name: B
+            updated_at: 2026-10-20T00:00:00Z
+          - id: 3
+            _dbt_source_project: kippnewark
+            graduation_year: 2027
+            school__name: KIPP Newark Lab High School
+            is_ed_ea: "Yes"
+            academics__unweighted_gpa: 3.10
+            first_name: Student
+            last_name: C
+            updated_at: 2026-10-20T00:00:00Z
+          - id: 4
+            _dbt_source_project: kippcamden
+            graduation_year: 2027
+            school__name: KIPP Cooper Norcross High School
+            is_ed_ea: null
+            academics__unweighted_gpa: 3.50
+            first_name: Student
+            last_name: D
+            updated_at: 2026-10-20T00:00:00Z
+          - id: 5
+            _dbt_source_project: kippnewark
+            graduation_year: 2027
+            school__name: KIPP Newark Collegiate Academy
+            is_ed_ea: "Yes"
+            academics__unweighted_gpa: 3.745
+            first_name: Student
+            last_name: E
+            updated_at: 2026-10-20T00:00:00Z
+          - id: 6
+            _dbt_source_project: kippnewark
+            graduation_year: 2027
+            school__name: KIPP MS Completers (Newark)
+            is_ed_ea: "Yes"
+            academics__unweighted_gpa: 3.90
+            first_name: Student
+            last_name: F
+            updated_at: 2026-10-20T00:00:00Z
+          - id: 7
+            _dbt_source_project: kippcamden
+            graduation_year: 2028
+            school__name: KIPP Cooper Norcross High School
+            is_ed_ea: "Yes"
+            academics__unweighted_gpa: 3.90
+            first_name: Student
+            last_name: G
+            updated_at: 2026-10-20T00:00:00Z
+      - input: ref("int_students__early_applications")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 11 as admission_id, 1 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'early_decision' as due_date_type, 'ED' as application_type, date '2026-11-01' as due_date, 'Applied' as application_status, true as is_submitted, cast(95.8 as numeric) as urm_graduation_rate, true as is_full_need, timestamp '2026-10-28 13:00:00' as updated_at, true as is_early, false as has_conflicting_rate
+          union all
+          select 'kippcamden', 12, 1, 102, 'Example College B', 'early_action', 'EA', date '2026-11-01', 'Applied', true, cast(79.1 as numeric), true, timestamp '2026-10-27 13:00:00', true, false
+          union all
+          select 'kippnewark', 31, 3, 103, 'Example College C', 'early_action', 'EA', date '2026-11-01', 'Withdrew', false, cast(70 as numeric), true, timestamp '2026-10-01 13:00:00', true, false
+          union all
+          select 'kippnewark', 32, 3, 104, 'Example College D', 'early_action', 'EA', date '2026-12-01', 'Will Apply', false, cast(70 as numeric), true, timestamp '2026-10-01 13:00:00', true, false
+          union all
+          select 'kippnewark', 33, 3, 105, 'Example College E', 'early_action', 'EA', date '2026-11-01', 'Will Apply', false, null, true, timestamp '2026-10-01 13:00:00', true, false
+          union all
+          select 'kippcamden', 41, 4, 106, 'Example College F', 'early_action', 'EA', date '2026-11-01', 'Applied', true, cast(70 as numeric), true, timestamp '2026-10-01 13:00:00', true, false
+          union all
+          select 'kippnewark', 34, 3, 107, 'Example College G', cast(null as string), cast(null as string), cast(null as date), 'Applied', true, cast(75 as numeric), true, timestamp '2026-10-01 13:00:00', false, false
+          union all
+          select 'kippcamden', 42, 4, 108, 'Example College H', 'early_action', 'EA', date '2026-11-01', 'Applied', true, cast(null as numeric), true, timestamp '2026-10-01 13:00:00', true, true
+    expect:
+      rows:
+        - overgrad_student_id: 1
+          gpa_band: 3.75+
+          school_key: cooper_norcross
+          unweighted_gpa: 3.96
+          is_ed_ea_flagged: true
+          submitted_early_count: 2
+          submitted_early_applications:
+            Example College A (ED) 95.8%, Example College B (EA) 79.1%
+          will_apply_early_applications: null
+          earliest_will_apply_due_date: null
+          submitted_no_deadline_type_applications: null
+          latest_overgrad_updated_at: 2026-10-28 13:00:00
+        - overgrad_student_id: 2
+          gpa_band: No GPA
+          school_key: newark_collegiate
+          unweighted_gpa: null
+          is_ed_ea_flagged: true
+          submitted_early_count: 0
+          submitted_early_applications: null
+          will_apply_early_applications: null
+          earliest_will_apply_due_date: null
+          submitted_no_deadline_type_applications: null
+          latest_overgrad_updated_at: 2026-10-20 00:00:00
+        - overgrad_student_id: 3
+          gpa_band: 3.00-3.49
+          school_key: newark_lab
+          unweighted_gpa: 3.10
+          is_ed_ea_flagged: true
+          submitted_early_count: 0
+          submitted_early_applications: null
+          will_apply_early_applications:
+            Example College D (EA), Example College E (EA)
+          earliest_will_apply_due_date: 2026-11-01
+          submitted_no_deadline_type_applications: Example College G
+          latest_overgrad_updated_at: 2026-10-20 00:00:00
+        - overgrad_student_id: 4
+          gpa_band: 3.50-3.74
+          school_key: cooper_norcross
+          unweighted_gpa: 3.50
+          is_ed_ea_flagged: false
+          submitted_early_count: 2
+          submitted_early_applications:
+            Example College F (EA) 70.0%, Example College H (EA) review rate
+          will_apply_early_applications: null
+          earliest_will_apply_due_date: null
+          submitted_no_deadline_type_applications: null
+          latest_overgrad_updated_at: 2026-10-20 00:00:00
+        - overgrad_student_id: 5
+          gpa_band: 3.75+
+          school_key: newark_collegiate
+          unweighted_gpa: 3.75
+          is_ed_ea_flagged: true
+          submitted_early_count: 0
+          submitted_early_applications: null
+          will_apply_early_applications: null
+          earliest_will_apply_due_date: null
+          submitted_no_deadline_type_applications: null
+          latest_overgrad_updated_at: 2026-10-20 00:00:00
+
+  - name: test_int_students__early_applications_rollup_distinct_colleges
+    model: int_students__early_applications_rollup
+    description:
+      Two submitted rows for the same college count once and list once.
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref("int_overgrad__students")
+        rows:
+          - id: 1
+            _dbt_source_project: kippcamden
+            graduation_year: 2027
+            school__name: KIPP Cooper Norcross High School
+            is_ed_ea: "Yes"
+            academics__unweighted_gpa: 3.20
+            first_name: Student
+            last_name: A
+            updated_at: 2026-10-20T00:00:00Z
+      - input: ref("int_students__early_applications")
+        format: sql
+        rows: |
+          select 'kippcamden' as _dbt_source_project, 11 as admission_id, 1 as overgrad_student_id, 101 as university_id, 'Example College A' as university_name, 'early_action' as due_date_type, 'EA' as application_type, date '2026-11-01' as due_date, 'Applied' as application_status, true as is_submitted, cast(70 as numeric) as urm_graduation_rate, true as is_full_need, timestamp '2026-10-28 13:00:00' as updated_at, true as is_early, false as has_conflicting_rate
+          union all
+          select 'kippcamden', 12, 1, 101, 'Example College A', 'early_action', 'EA', date '2026-11-01', 'Applied', true, cast(70 as numeric), true, timestamp '2026-10-28 13:00:00', true, false
+    expect:
+      rows:
+        - overgrad_student_id: 1
+          submitted_early_count: 1
+          submitted_early_applications: Example College A (EA) 70.0%
