@@ -974,12 +974,15 @@ def _one_moment(
 class Prepared:
     """What planning a triage fetches once, for `check_ready`, the stored proofs
     and `trace_run` to share: the network's schools, each comparison's row SQL,
-    the dbt manifest, and each table checked for a change during the build."""
+    the dbt manifest, each table checked for a change during the build, and
+    each comparison bucket's unmatched rows frozen in the session's temp
+    tables (`confirm.run_proof`)."""
 
     schools: set[str] | None = None
     sides: dict[str, pipeline.RowSides] = field(default_factory=dict)
     manifest: Manifest | None = None
     moved: dict[str, bool] = field(default_factory=dict)
+    frozen: dict[tuple[str, str], str] = field(default_factory=dict)
 
     def row_sides(
         self, cfg: ViewConfig, comparison: Comparison, run: RunResult, wh, cube

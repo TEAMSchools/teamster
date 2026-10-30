@@ -2357,6 +2357,11 @@ def prove(
                 comparison.workbook or ""
             ).isoformat(),
             "probe_fingerprint": probe_fingerprint(cfg, comparison),
+            # `prove --check` reads a republish that changed neither this nor
+            # `fingerprint` as no change to the sheet.
+            "source_fingerprint": tableau.source_fingerprint(
+                twb, comparison.sheet or ""
+            ),
             # `run` lists every other cut as one to prove in the browser.
             "cuts": [cut_label(cut) for cut in exportable],
             # `run` lists these rows as totals no proof covered.
@@ -2414,8 +2419,17 @@ def _print_failures(
 
 
 def prove_check(cfg: ViewConfig, *, tbl: tableau.Tableau) -> list[str]:
-    """List comparisons whose workbook was published after their proof."""
+    """List comparisons whose sheet changed since their proof.
+
+    A workbook published after the proof is downloaded once and its sheet
+    compared by what the proof covers: `fingerprint` (the sheet's formulas
+    and filters) and `source_fingerprint` (its datasources' connection and
+    filters). A republish that changed neither is reported and kept current.
+    A proof without `source_fingerprint` cannot rule out a datasource change,
+    so it is stale after any republish.
+    """
     stale = []
+    twbs: dict[str, str] = {}
     for comparison in cfg.comparisons:
         if not comparison.workbook:
             continue
@@ -2426,10 +2440,40 @@ def prove_check(cfg: ViewConfig, *, tbl: tableau.Tableau) -> list[str]:
         updated = tbl.workbook_updated(comparison.workbook)
         if not proof.workbook_updated_at:
             stale.append(f"{comparison.id}: proof has no workbook_updated_at; re-prove")
-        elif updated > datetime.fromisoformat(proof.workbook_updated_at):
+            continue
+        if updated <= datetime.fromisoformat(proof.workbook_updated_at):
+            continue
+        published = (
+            f"workbook published {updated.isoformat()}, after the proof's "
+            f"{proof.workbook_updated_at}"
+        )
+        if comparison.workbook not in twbs:
+            twbs[comparison.workbook] = tbl.download_twb(comparison.workbook)
+        twb, sheet = twbs[comparison.workbook], comparison.sheet or ""
+        try:
+            formulas = tableau.formula_fingerprint(twb, sheet)
+            sources = tableau.source_fingerprint(twb, sheet)
+        except ValueError as exc:
+            stale.append(f"{comparison.id}: {published}, and {exc}; re-prove")
+            continue
+        if formulas != proof.fingerprint:
             stale.append(
-                f"{comparison.id}: workbook published {updated.isoformat()}, after "
-                f"the proof's {proof.workbook_updated_at}; re-prove"
+                f"{comparison.id}: {published}; the sheet's formulas or filters "
+                "changed; re-prove"
+            )
+        elif not proof.source_fingerprint:
+            stale.append(
+                f"{comparison.id}: {published}; the sheet's formulas are unchanged, "
+                "but the proof predates the datasource check; re-prove once"
+            )
+        elif sources != proof.source_fingerprint:
+            stale.append(
+                f"{comparison.id}: {published}; a datasource's connection or "
+                "filters changed; re-prove"
+            )
+        else:
+            print(
+                f"{comparison.id}: republished {updated.isoformat()}, sheet unchanged"
             )
     for line in stale:
         print(line)

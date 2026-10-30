@@ -1058,3 +1058,24 @@ def test_a_session_signs_in_again_at_most_a_few_times():
         assert tab.workbook_updated("wb-luid") == T0
     with pytest.raises(tableau_mod.SessionEnded, match="at most"):
         tab.workbook_updated("wb-luid")
+
+
+def test_source_fingerprint_follows_the_connection_not_the_extract():
+    from cube_validation.tableau import source_fingerprint
+
+    def twb(table, refreshed, other="x"):
+        return f"""<workbook><datasources>
+<datasource name='federated.a'>
+  <connection class='federated'><relation name='r' table='[ds].[{table}]' type='table' /></connection>
+  <extract enabled='true'><connection class='hyper' update-time='{refreshed}' /></extract>
+</datasource>
+<datasource name='federated.b'><connection class='federated'><relation table='[ds].[{other}]' /></connection></datasource>
+</datasources><worksheets><worksheet name='S'><table><view>
+<datasource-dependencies datasource='federated.a' />
+</view></table></worksheet></worksheets></workbook>"""
+
+    base = source_fingerprint(twb("v1", "10/29/2026"), "S")
+
+    assert source_fingerprint(twb("v1", "10/30/2026"), "S") == base
+    assert source_fingerprint(twb("v1", "10/29/2026", other="y"), "S") == base
+    assert source_fingerprint(twb("v2", "10/29/2026"), "S") != base

@@ -1504,6 +1504,75 @@ def test_prove_check_quiet_when_current(fakes, tmp_path, capsys):
     assert "current" in capsys.readouterr().out
 
 
+DS_END = "        <calculation class='tableau' formula='COUNTD([row_key])' />\n      </column>\n    </datasource>"
+DS_FILTER = (
+    "        <calculation class='tableau' formula='COUNTD([row_key])' />\n      </column>\n"
+    "      <filter class='categorical' column='[federated.0sample].[region]' />\n"
+    "    </datasource>"
+)
+
+
+def _republished(fakes, tmp_path, source=True):
+    from cube_validation.tableau import source_fingerprint
+
+    twb = fakes.tbl.twb
+    proof = PROOF.replace(
+        "fingerprint: abc", f"fingerprint: {formula_fingerprint(twb, 'Rate by Region')}"
+    )
+    if source:
+        proof += (
+            f"      source_fingerprint: {source_fingerprint(twb, 'Rate by Region')}\n"
+        )
+    fakes.tbl.updated = datetime(2026, 10, 25, tzinfo=timezone.utc)
+    return _file(tmp_path, YML.replace(PROOF, proof))
+
+
+def test_prove_check_keeps_a_proof_when_a_republish_left_the_sheet_alone(
+    fakes, tmp_path, capsys
+):
+    path = _republished(fakes, tmp_path)
+
+    assert cli.main(["prove", str(path), "--check"]) == 0
+
+    out = capsys.readouterr().out
+    assert "ada-region: republished 2026-10-25T00:00:00+00:00, sheet unchanged" in out
+    assert "Every proof is current." in out
+
+
+def test_prove_check_stales_a_proof_whose_datasource_filters_changed(
+    fakes, tmp_path, capsys
+):
+    path = _republished(fakes, tmp_path)
+    assert DS_END in fakes.tbl.twb
+    fakes.tbl.twb = fakes.tbl.twb.replace(DS_END, DS_FILTER)
+
+    assert cli.main(["prove", str(path), "--check"]) == 0
+
+    assert "a datasource's connection or filters changed; re-prove" in (
+        capsys.readouterr().out
+    )
+
+
+def test_prove_check_stales_a_proof_that_predates_the_datasource_check(
+    fakes, tmp_path, capsys
+):
+    path = _republished(fakes, tmp_path, source=False)
+
+    assert cli.main(["prove", str(path), "--check"]) == 0
+
+    assert "predates the datasource check; re-prove once" in capsys.readouterr().out
+
+
+def test_prove_check_stales_a_proof_whose_formulas_changed(fakes, tmp_path, capsys):
+    fakes.tbl.updated = datetime(2026, 10, 25, tzinfo=timezone.utc)
+
+    assert cli.main(["prove", str(_file(tmp_path)), "--check"]) == 0
+
+    assert "the sheet's formulas or filters changed; re-prove" in (
+        capsys.readouterr().out
+    )
+
+
 # --- discover and usage ------------------------------------------------------
 
 
