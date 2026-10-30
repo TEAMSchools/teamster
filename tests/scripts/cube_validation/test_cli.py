@@ -1232,11 +1232,12 @@ def test_review_warns_when_the_body_nears_githubs_cap(
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
     assert "65,536" not in capsys.readouterr().err
 
-    monkeypatch.setattr(pipeline.report, "render_review_issue", lambda *a: "x" * 60_001)
+    long = pipeline.report.BODY_WARN_CHARS + 1
+    monkeypatch.setattr(pipeline.report, "render_review_issue", lambda *a: "x" * long)
     assert cli.main(["review", str(path), "--domain", "Registrar"]) == 0
     captured = capsys.readouterr()
-    assert captured.out.startswith("x" * 60_001)
-    assert "60,001 characters" in captured.err and "65,536" in captured.err
+    assert captured.out.startswith("x" * long)
+    assert f"{long:,} characters" in captured.err and "65,536" in captured.err
 
 
 def test_review_reads_the_run_written_last(fakes, tmp_path, capsys):

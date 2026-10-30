@@ -35,7 +35,6 @@ from .report import (
     _safe_reason,
     defined_comparisons,
     definition_text,
-    mask,
     question_parts,
     question_reason,
 )
@@ -85,19 +84,80 @@ class HandCheck:
     workbook: str | None = None
     sheet: str | None = None
     filters: dict[str, Any] = field(default_factory=dict)
+    # A cause's example that also holds other causes' rows: no cell held
+    # that cause's alone.
+    mixed: bool = False
 
 
-def example_cell(run: RunResult, comparison: str) -> dict | None:
+def cell_causes(
+    run: RunResult, cfg: ViewConfig, comparison: str, items: list[dict]
+) -> list[tuple[dict, frozenset[str]]]:
+    """Each differing cell of a comparison with the causes its rows carry.
+
+    A cell's rows lie in the groups whose columns agree with its dims and cut
+    (`confirm._in_cut`, `confirm._in_cells`, as `--cells` links them); each
+    group carries its triage item's causes (`triage.cause_key`), and a group
+    with none carries `""`.
+
+    Returns:
+        `[(cell, causes)]` in `run.diff_cells` order.
+    """
+    from . import confirm
+    from . import triage as triage_mod
+
+    spec = next((c for c in cfg.comparisons if c.id == comparison), None)
+    by_key = {
+        item.get("key"): frozenset(
+            triage_mod.cause_key(c.get("side", ""), c.get("label") or "")
+            for c in item.get("cause") or []
+        )
+        or frozenset({""})
+        for item in items
+        if item.get("kind") == "group"
+    }
+    groups = [
+        (key, g)
+        for key, g in triage_mod._groups_by_key(run).items()
+        if g.comparison_id == comparison
+    ]
+    out = []
+    for cell in run.diff_cells:
+        if cell["comparison"] != comparison:
+            continue
+        held = frozenset().union(
+            *(
+                by_key.get(key, frozenset({""}))
+                for key, g in groups
+                if confirm._in_cut(g, spec, cell.get("cut", "{}"))
+                and any(confirm._in_cells(g, cell))
+            )
+        )
+        out.append((cell, held))
+    return out
+
+
+def example_cell(
+    run: RunResult,
+    comparison: str,
+    cause: str | None = None,
+    cells: list | None = None,
+) -> dict | None:
     """Pick the differing cell an owner can check without seeing a person.
 
     Args:
         run: The saved run.
         comparison: The comparison id.
+        cause: A cause question's cause (`triage.cause_key`): the cell must
+            hold its rows, and one holding no other cause's wins.
+        cells: `cell_causes` for the comparison; without it, `cause` is
+            not used.
 
     Returns:
         The cell with the largest absolute difference whose dims are all
         reviewed columns and whose `n_students` is at least `MASK_BELOW`; ties
-        go to the lowest `key`. None when no cell qualifies.
+        go to the lowest `key`. With `cause`, among the cells holding only
+        that cause, else those holding it with others (`mixed` set). None
+        when no cell qualifies.
     """
     ok = [
         c
@@ -109,9 +169,17 @@ def example_cell(run: RunResult, comparison: str) -> dict | None:
         and c["dashboard"] is not None
         and c["cube"] is not None
     ]
+    mixed = False
+    if cause is not None and cells is not None:
+        held = {id(cell): causes for cell, causes in cells}
+        mine = [c for c in ok if cause in held.get(id(c), frozenset())]
+        ok = [c for c in mine if held[id(c)] == {cause}]
+        if not ok:
+            ok, mixed = mine, True
     if not ok:
         return None
-    return min(ok, key=lambda c: (-abs(c["dashboard"] - c["cube"]), c["key"]))
+    best = min(ok, key=lambda c: (-abs(c["dashboard"] - c["cube"]), c["key"]))
+    return {**best, "mixed": mixed}
 
 
 def _predicate(column: str, key: str) -> str:
@@ -145,7 +213,12 @@ def _pinned(sql: str, pairs: list[tuple[str, str]]) -> str:
 
 
 def hand_check(
-    run: RunResult, cfg: ViewConfig, comparison: str, now: datetime
+    run: RunResult,
+    cfg: ViewConfig,
+    comparison: str,
+    now: datetime,
+    cause: str | None = None,
+    cells: list | None = None,
 ) -> HandCheck | None:
     """Wrap each side's saved as-of SQL to return just the example cell.
 
@@ -157,12 +230,14 @@ def hand_check(
         cfg: The view's config, for the dashboard column names.
         comparison: The comparison id.
         now: The current time, to decide whether the as-of SQL still runs.
+        cause: For a cause question, its cause; see `example_cell`.
+        cells: `cell_causes` for the comparison, with `cause`.
 
     Returns:
         None when there is no example cell, no saved SQL or `cell_sql_usd`
         entry for its cut, or a dim the comparison does not map.
     """
-    cell = example_cell(run, comparison)
+    cell = example_cell(run, comparison, cause, cells)
     cmp = next((c for c in cfg.comparisons if c.id == comparison), None)
     sql = run.cell_sql.get(comparison, {}).get(cell["cut"]) if cell else None
     usd = run.cell_sql_usd.get(comparison, {}).get(cell["cut"]) if cell else None
@@ -194,6 +269,7 @@ def hand_check(
         workbook=cmp.workbook,
         sheet=cmp.sheet,
         filters=filters,
+        mixed=cell["mixed"],
     )
 
 
@@ -284,8 +360,12 @@ def reproduce_json(
     cfg: ViewConfig,
     source: ProofSource | None,
     now: datetime,
+    cells: list | None = None,
 ) -> dict:
     """How an owner reproduces one comparison's part of a cause question.
+
+    `cells` is `cell_causes` for the comparison: the example cell is then one
+    holding this cause's rows (`example_cell`).
 
     Returns:
         `comparison`, `cube` (the example cell as a `load` query and where to
@@ -298,13 +378,14 @@ def reproduce_json(
     from . import confirm
 
     cid = ask.decision.comparison
-    check = hand_check(run, cfg, cid, now)
+    check = hand_check(run, cfg, cid, now, _ask_cause(ask), cells)
     cube = None
     if check:
-        cube = {
-            "query": _cube_query(cfg, check),
-            "dashboard": _check_json(view, check),
-        }
+        # The hand check carries the pinned SQL; this is where to read the cell.
+        where = _check_json(view, check)
+        for key in ("dashboard_sql", "cube_sql", "dashboard_usd", "cube_usd"):
+            where.pop(key)
+        cube = {"query": _cube_query(cfg, check), "dashboard": where}
     file = source.view_file if source else f"<{view} validation file>"
     proofs = []
     for path, bucket in ask.proofs:
@@ -333,25 +414,50 @@ def reproduce_json(
     return {"view": view, "comparison": cid, "cube": cube, "proofs": proofs}
 
 
-def merged_reproduce(parts: list[dict]) -> dict:
+def _ask_cause(ask: CauseAsk) -> str:
+    """A cause question's cause, as `cell_causes` names it."""
+    from . import triage as triage_mod
+
+    cause = ask.decision.cause
+    return triage_mod.cause_key(cause.get("side", ""), cause.get("label") or "")
+
+
+def _rank(check: HandCheck) -> tuple:
+    """Order a cause's examples: its rows alone first, then the widest gap."""
+    gap = abs((check.dashboard or 0) - (check.cube or 0))
+    return (check.mixed, -gap, check.comparison)
+
+
+def merged_reproduce(
+    parts: list[dict], examples: set[tuple[str, str]] | None = None
+) -> dict:
     """A cause question's `reproduce_json` parts, each thing said once.
 
     Returns:
         `queries`: each distinct live count, as `bucket` and `sql`. `proofs`:
         per proof file and cause bucket, `bucket`, `query` (its index in
-        `queries`, None without one), `url` (or `path` without one) and
-        `confirm` (the command per comparison it proves). `cube`: per
-        comparison with an example cell, its `view`, `comparison`, `query`
-        and `dashboard`. `expires`, and `after` (the commands once it has
-        passed, per validation file).
+        `queries`, None without one), `path` (relative to the validation
+        file's directory) and `confirm` (the commands that re-prove it, which
+        the posted JSON leaves out). `blob`: the branch link `<blob>/<path>`
+        opens a proof file at, or None. `cube`: per
+        comparison with an example cell (only those in `examples`, as
+        `(view, comparison)`, when given), its `view`, `comparison` and
+        `query`; the question's hand check for that comparison says where to
+        read the dashboard's number. `expires`, and `after` (the commands once
+        it has passed, per validation file).
     """
     queries: list[dict] = []
     proofs: dict[tuple, dict] = {}
-    cube, after, expires = [], [], None
+    cube, after, expires, blob = [], [], None, None
     for part in parts:
-        if part["cube"]:
+        shown = examples is None or (part["view"], part["comparison"]) in examples
+        if part["cube"] and shown:
             cube.append(
-                {"view": part["view"], "comparison": part["comparison"], **part["cube"]}
+                {
+                    "view": part["view"],
+                    "comparison": part["comparison"],
+                    "query": part["cube"]["query"],
+                }
             )
         for p in part["proofs"]:
             query = None
@@ -360,10 +466,16 @@ def merged_reproduce(parts: list[dict]) -> dict:
                 if entry not in queries:
                     queries.append(entry)
                 query = queries.index(entry)
-            where = {"url": p["url"]} if p["url"] else {"path": p["path"]}
+            if p["url"]:
+                blob = p["url"][: -len(p["path"]) - 1]
             merged = proofs.setdefault(
                 (p["path"], p["bucket"]),
-                {"bucket": p["bucket"], "query": query, **where, "confirm": []},
+                {
+                    "bucket": p["bucket"],
+                    "query": query,
+                    "path": p["path"],
+                    "confirm": [],
+                },
             )
             if p["confirm"] not in merged["confirm"]:
                 merged["confirm"].append(p["confirm"])
@@ -372,6 +484,7 @@ def merged_reproduce(parts: list[dict]) -> dict:
     return {
         "queries": queries,
         "proofs": list(proofs.values()),
+        "blob": blob,
         "cube": cube,
         "expires": expires,
         "after": after,
@@ -411,13 +524,25 @@ def questions_json(
         `cube`, one `<comparison> in <view>: <text>` line each), `evidence`,
         `counts` (the masked parts of its bullet), `hand_checks` (one per
         comparison with an example cell, and per view 1 `none` entry listing
-        the `comparisons` without one, to find an example locally), and the
+        the `comparisons` without one, to find an example locally; a cause
+        question, one rule, has 1 example across its comparisons, or the
+        `none` entries), and the
         earliest `moment` among its views with when its pinned SQL `expires`
         and whether it has `expired`; a cause question also has `reproduce`
         (`merged_reproduce` over the comparisons it covers).
     """
     by_run = {r.view: r for r in runs}
     by_cfg = {c.view: c for c in configs}
+    held: dict[tuple[str, str], list] = {}
+
+    def cells_of(view: str, cid: str) -> list:
+        """`cell_causes` of a comparison, worked out once per review."""
+        if (view, cid) not in held:
+            held[view, cid] = cell_causes(
+                by_run[view], by_cfg[view], cid, triage.get(view, {}).get("items", [])
+            )
+        return held[view, cid]
+
     out = []
     for n, q in enumerate(_questions(runs, causes), start=1):
         views = list(dict.fromkeys(view for view, _ in q["decisions"]))
@@ -445,14 +570,37 @@ def questions_json(
             dict.fromkeys(_safe_reason(line, q["hidden"]) for line in lines)
         )
 
-        checks, none = [], {}
+        # A cause question's example holds that cause's rows.
+        asked = {
+            (view, ask.decision.comparison): _ask_cause(ask)
+            for view, ask in q.get("asks", [])
+        }
+        found, none = [], {}
         for view, cid, _ in q["comparisons"]:
             cfg = by_cfg.get(view)
-            check = hand_check(by_run[view], cfg, cid, now) if cfg else None
+            cause = asked.get((view, cid))
+            check = (
+                hand_check(
+                    by_run[view],
+                    cfg,
+                    cid,
+                    now,
+                    cause,
+                    cells_of(view, cid) if cause else None,
+                )
+                if cfg
+                else None
+            )
             if check:
-                checks.append(_check_json(view, check))
+                found.append((view, check))
             else:
                 none.setdefault(view, []).append(cid)
+        if asked and found:
+            # One rule asked once: one example, the cell holding the cause's
+            # rows alone if any comparison has one, then the widest gap.
+            found = [min(found, key=lambda vc: _rank(vc[1]))]
+            none = {}
+        checks = [_check_json(view, check) for view, check in found]
         checks += [
             {"none": NO_EXAMPLE, "view": view, "comparisons": cids}
             for view, cids in none.items()
@@ -471,10 +619,12 @@ def questions_json(
                         by_cfg[view],
                         (sources or {}).get(view),
                         now,
+                        cells_of(view, ask.decision.comparison),
                     )
                     for view, ask in q["asks"]
                     if view in by_cfg
-                ]
+                ],
+                {(c["view"], c["comparison"]) for c in checks if "none" not in c},
             )
         out.append(
             {

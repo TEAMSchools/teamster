@@ -1089,9 +1089,9 @@ def test_a_cause_reproduces_through_cube_a_live_count_and_the_proof(tmp_path):
     block = merged_reproduce([part])
     assert block["queries"] == [{"bucket": "C1", "sql": LIVE}]
     assert block["proofs"] == [
-        {"bucket": "C1", "query": 0, "url": f"https://x/blob/b/dir/{path}",
-         "confirm": [proof["confirm"]]},
+        {"bucket": "C1", "query": 0, "path": path, "confirm": [proof["confirm"]]},
     ]  # fmt: skip
+    assert block["blob"] == "https://x/blob/b/dir"
     text = "\n".join(_reproduce_lines("Q1", block))
     assert "<summary>Reproduce Q1</summary>" in text
     assert "With the Cube connector in Claude chat" in text
