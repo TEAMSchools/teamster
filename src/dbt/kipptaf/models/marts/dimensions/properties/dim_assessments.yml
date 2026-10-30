@@ -47,6 +47,22 @@ models:
         data_tests:
           - unique
 
+      # Set as a literal in each union branch, so a new source branch must
+      # name its family.
+      - name: assessment_family
+        data_type: string
+        description: >-
+          Kind of assessment, grouping type into 5 values — internal (illuminate
+          and apex, the KIPP-authored interims from Illuminate and Focus
+          Assessments); vendor_diagnostic (iready, dibels and star); state
+          (every NJ and FL state test type); college (SAT, ACT and PSAT,
+          Official and Practice); and ap.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [internal, vendor_diagnostic, state, college, ap]
+
       # NJ and FL state types stay separate so historical state assessments do
       # not collide on shared module_codes (for example ELA05).
       - name: type

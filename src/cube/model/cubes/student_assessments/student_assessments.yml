@@ -60,15 +60,14 @@ cubes:
         public: true
         meta:
           ai_context: >-
-            Use this member to select a source. For internal results in general,
-            filter is_internal_assessment instead: a school can move from
-            illuminate to apex between years, so filtering 1 of them drops that
-            school's other years. college, ap, state_nj_parcc, state_fl_fsa and
-            the _unknown fallbacks carry no scores on this view today, so zero
-            rows for them is coverage, not a failure; treat that list as
-            current, not closed. Flag any NJSLA or NJGPA comparison that crosses
-            spring 2026 as possibly comparing 2 scales; never present that trend
-            as settled.
+            Use this member to select a source. To select a kind of source,
+            filter assessment_family instead: a school can move from illuminate
+            to apex between years, so filtering 1 of them drops that school's
+            other years. college, ap, state_nj_parcc, state_fl_fsa and the
+            _unknown fallbacks carry no scores on this view today, so zero rows
+            for them is coverage, not a failure; treat that list as current, not
+            closed. Flag any NJSLA or NJGPA comparison that crosses spring 2026
+            as possibly comparing 2 scales; never present that trend as settled.
 
       - name: category
         description: >-
@@ -153,5 +152,24 @@ cubes:
           ai_context: >-
             Filter it to TRUE for internal results in any region or year, since
             a school's internal source can change between years. FALSE groups
-            vendor diagnostics with state tests, so filter assessment_type to
-            select an external source.
+            vendor diagnostics with state tests, so filter assessment_family to
+            select a kind of external source.
+
+      - name: assessment_family
+        description: >-
+          Kind of assessment, grouping type into 5 values — internal (illuminate
+          and apex, the KIPP-authored interims from Illuminate and Focus
+          Assessments); vendor_diagnostic (iready, dibels and star); state
+          (every NJ and FL state test type); college (SAT, ACT and PSAT,
+          Official and Practice); and ap.
+        sql: assessment_family
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Use this member to select a kind of source, such as
+            vendor_diagnostic for the i-Ready, DIBELS and STAR diagnostics
+            together, or state for every state test. Within a kind, filter
+            assessment_type to select 1 source. Rates from different sources
+            within a kind use different scales and bars, so report them per
+            source rather than pooled.
