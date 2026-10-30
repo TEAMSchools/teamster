@@ -900,6 +900,47 @@ def test_a_frozen_bucket_proves_as_the_rebuilt_one_and_freezes_once(
     assert "FROM frozen_1" in again_read
 
 
+@pytest.mark.parametrize("frozen", [None, {}])
+def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(
+    duck, tmp_path, offline, monkeypatch, frozen
+):
+    _tables(duck)
+    if frozen is not None:
+        monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 100)
+    proof = confirm.Proof(
+        tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
+        CAUSES, PROOF, {},
+    )  # fmt: skip
+    students: list[dict] = []
+
+    found = confirm.run_proof(
+        Wh(duck), CFG, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {},
+        frozen, students,
+    )  # fmt: skip
+
+    assert found["G1"].counts == {"C1": 2, "C2": 1}
+    (cut,) = [label for label, _, _ in pipeline.cut_flags(COMPARISON)]
+    assert sorted(students, key=lambda e: e["cause"]) == [
+        {"cause": triage.cause_key(*CAUSES["C1"]), "cut": cut,
+         "dims": [["abbreviation", "X"]], "n": 2},
+        {"cause": triage.cause_key(*CAUSES["C2"]), "cut": cut,
+         "dims": [["abbreviation", "X"]], "n": 1},
+    ]  # fmt: skip
+
+
+def test_kept_counts_take_the_larger_of_2_proofs_on_one_cell():
+    loaded: dict = {}
+    entry = {"cause": "c: x", "cut": "{}", "dims": [["a", "X"]], "n": 4}
+
+    confirm.keep_students(loaded, "m", [entry])
+    confirm.keep_students(loaded, "m", [{**entry, "n": 12}, {**entry, "cut": "k"}])
+
+    assert loaded["cause_students"]["m"] == [
+        {**entry, "n": 12},
+        {**entry, "cut": "k"},
+    ]
+
+
 def test_a_proof_that_fits_runs_inline_without_freezing(duck, tmp_path, offline):
     _tables(duck)
     proof = confirm.Proof(

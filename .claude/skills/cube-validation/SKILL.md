@@ -530,8 +530,14 @@ cause, do not retry around it.
     prints the body; it stops again whenever the questions changed or the file
     is not pushed as it stands. The JSON is masked like the body: read it before
     committing, as git keeps it. A hand check leaves out pinned SQL over 20,000
-    characters a side, giving its lengths. Each unanswered `domain_owner` cause
-    is one question, across the comparisons it is proven on, with its words, per
+    characters a side, giving its lengths. A cause question's example cell needs
+    10+ of the cause's own students in that cell and cut, as the proofs counted
+    them: each proof's counting query also counts distinct students per cause,
+    cell and cut, and `triage` and `triage confirm` keep the counts in
+    `triage.json` (`cause_students`). A triage saved before them falls back to a
+    floor from single-cause groups, which rarely reaches 10: run
+    `triage --no-trace` again first. Each unanswered `domain_owner` cause is one
+    question, across the comparisons it is proven on, with its words, per
     comparison the count of groups it decides and of the rows its proof
     attributes to it, and the model-doc leads; the owner's answer records onto
     every decision it lists. Every other call (`deliberate`, a `fix_`) is listed

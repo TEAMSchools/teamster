@@ -1111,8 +1111,9 @@ def run_triage(
             cfg, run, docs, values, traced.items if traced else None, doc_leads(cfg)
         )
         items = [_as_json(s) for s in found]
+        kept: dict = {}
         if proofs is not None:
-            confirm.apply_runs(run, items, ran, cfg)
+            confirm.apply_runs(run, items, ran, cfg, kept)
             items.sort(key=lambda i: SUGGESTIONS.index(i["suggestion"]))
         mark_decided(run, items, cfg.decisions, note=True)
         found = [_from_json(i) for i in items]
@@ -1126,6 +1127,9 @@ def run_triage(
                 "decisions_fingerprint": run.decisions_fingerprint,
                 "open": open_keys(run),
                 "items": items,
+                # Per comparison, each proven cause's students per cell and
+                # cut, from the proofs' counting queries (`review` examples).
+                "cause_students": kept.get("cause_students", {}),
             },
             indent=1,
         )

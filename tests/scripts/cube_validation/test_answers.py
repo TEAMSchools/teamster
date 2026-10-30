@@ -1026,6 +1026,20 @@ def test_pinned_sql_too_long_to_post_is_left_out_before_anything_else(monkeypatc
     assert '"sql_left_out":[5000,7000]' in body and '"dashboard_sql":null' in body
 
 
+def test_recorded_cause_students_are_used_as_counted():
+    g = Group("enrollment", tuple(map(tuple, DIMS)), "cube_only", 30, 25)
+    run = _floor_run([g], [_rows("cube_only", 30, 12)])
+    items = [{"key": it.key, "kind": "group", "cause": [{"side": "cube", "label": "C1"}]}
+             for it in triage_mod.open_items(run)]  # fmt: skip
+    counted = [{"cause": "cube: C1", "cut": CUT, "dims": DIMS, "n": 14}]
+
+    ((_, held),) = cell_causes(run, _cfg(), "enrollment", items, counted)
+    assert held == {"cube: C1": 14}
+    # Counted, and none in this cell: 0, though the group agrees with it.
+    ((_, held),) = cell_causes(run, _cfg(), "enrollment", items, [])
+    assert held == {"cube: C1": 0}
+
+
 def test_one_cause_on_several_comparisons_is_one_question():
     groups = [
         Group(cid, (("region", "Newark"),), "dashboard_only", 30, 12)

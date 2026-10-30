@@ -684,6 +684,13 @@ def frozen_sql(
     dims = pipeline.group_dims(comparison)
     # A `dims_differ` group also names the dashboard's cell, as `d:<column>`.
     extra += [f"CAST(d.{p.dashboard} AS STRING) AS __d_{p.cube}" for p in dims]
+    # Whether the row is in each cut, read on the side holding it, so the
+    # proof can count a cause's students per cell and cut.
+    flags = pipeline.cut_flags(comparison) or []
+    extra += [
+        f"COALESCE({pair[0] if side == 'c' else pair[1]}, FALSE) AS __cut{j}"
+        for j, (_, *pair) in enumerate(flags)
+    ]
     ctes, _ = compare._joined(
         pipeline.wrap_cube(
             sides.cube_rows_sql,
@@ -707,6 +714,7 @@ def frozen_sql(
         *(f"__d_{p.cube}" for p in dims),
         *(f"__g{i} AS {p.cube}" for i, p in enumerate(grain)),
         "__rn",
+        *(f"__cut{j}" for j in range(len(flags))),
     ]
     # trunk-ignore(bandit/B608): identifiers are validated in config.py; values are bound literals
     select = f"SELECT {', '.join(columns)}\nFROM joined WHERE bucket = '{bucket}'"
@@ -720,17 +728,46 @@ def _joined_column(dim: str) -> str:
     return dim
 
 
-def proof_query(ctes: str, select: str, body: str, literals: set[str]) -> str:
+@dataclass(frozen=True)
+class StudentCount:
+    """What `proof_query` needs to count a cause's students per cell and cut.
+
+    `source` holds `frozen_sql`'s rows (the session's table, or `__f`);
+    `student` is the first grain column; `dims` the cell's columns;
+    `moved` adds each `dims_differ` row to the dashboard's cell too; `cuts`
+    is how many `__cut<j>` flags the rows carry.
+    """
+
+    source: str
+    student: str
+    dims: tuple[str, ...]
+    moved: bool
+    cuts: int
+
+
+def proof_query(
+    ctes: str,
+    select: str,
+    body: str,
+    literals: set[str],
+    students: StudentCount | None = None,
+) -> str:
     """The proof inside the tool's own counting query.
 
     Only item keys, cause literals and counts come back: per item and cause,
     the rows, the rows the proof dropped (`missed`) or repeated (`doubled`),
     the rows whose cause is no string literal of the proof (`bad`), and the
-    proof's rows with a `__row` `{unmatched}` lacks (`stray`).
+    proof's rows with a `__row` `{unmatched}` lacks (`stray`). With
+    `students`, every row carries `__kind` `count`, and rows of `__kind`
+    `students` add per cause, cut (`__cut`, its index) and cell (`__cell`,
+    its dims as JSON) the distinct students the proof gives that cause
+    (`n_students`): counted in BigQuery, never listed.
     """
     allowed = ", ".join(pipeline._lit(v) for v in sorted(literals))
     proof = body.replace(PLACEHOLDER, "__u")
     head = f"{ctes},\n" if ctes else "WITH "
+    if students is not None:
+        return _with_students(head, select, proof, allowed, students)
     return (
         # trunk-ignore(bandit/B608): the proof is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline._lit
         f"{head}__u AS (\n{select}\n),\n__p AS (\n{proof}\n),\n"
@@ -749,6 +786,97 @@ def proof_query(ctes: str, select: str, body: str, literals: set[str]) -> str:
         "CROSS JOIN __stray AS s\n"
         "GROUP BY u.item_key, per.cause"
     )
+
+
+def _with_students(
+    head: str, select: str, proof: str, allowed: str, s: StudentCount
+) -> str:
+    """`proof_query` with the cause-student counts after the item counts."""
+
+    def placed(dim) -> str:
+        cols = ", ".join(f"CAST(f.{dim(d)} AS STRING) AS {d}" for d in s.dims)
+        flags = "".join(f", f.__cut{j}" for j in range(s.cuts))
+        return (
+            f"SELECT per.cause, {cols + ', ' if cols else ''}f.{s.student} AS __st"
+            f"{flags} FROM __per AS per JOIN {s.source} AS f ON f.__row = per.__row "
+            f"WHERE per.cause IN ({allowed}) AND per.__times = 1"
+        )
+
+    places = [placed(lambda d: d)]
+    if s.moved:
+        places.append(placed(lambda d: f"__d_{d}"))
+    cell = "TO_JSON_STRING(STRUCT(" + ", ".join(s.dims) + "))" if s.dims else "'{}'"
+    nulls = "CAST(NULL AS STRING) AS item_key, cause, " + ", ".join(
+        f"CAST(NULL AS INT64) AS {c}"
+        for c in ("n", "missed", "doubled", "bad", "stray")
+    )
+    per_cut = [
+        f"SELECT 'students' AS __kind, {nulls}, {j} AS __cut, {cell} AS __cell, "
+        f"COUNT(DISTINCT __st) AS n_students FROM __cs WHERE __cut{j} "
+        "GROUP BY cause, __cell"
+        for j in range(s.cuts)
+    ]
+    return (
+        # trunk-ignore(bandit/B608): the proof is the analyst's read-only SQL, vetted by check_sql; identifiers come from validated config
+        f"{head}__u AS (\n{select}\n),\n__p AS (\n{proof}\n),\n"
+        "__per AS (\n  SELECT __row, COUNT(*) AS __times, "
+        f"MIN(IF(cause IN ({allowed}), cause, NULL)) AS cause, "
+        f"COUNTIF(cause IS NULL OR cause NOT IN ({allowed})) AS __bad\n"
+        "  FROM __p GROUP BY __row\n),\n"
+        "__stray AS (\n  SELECT COUNT(*) AS n FROM __per "
+        "WHERE __row NOT IN (SELECT __row FROM __u)\n),\n"
+        f"__cs AS (\n  {' UNION ALL '.join(places)}\n)\n"
+        "SELECT 'count' AS __kind, u.item_key, per.cause, COUNT(*) AS n, "
+        "COUNTIF(per.__row IS NULL) AS missed, "
+        "COUNTIF(per.__times > 1) AS doubled, "
+        "COUNTIF(per.__bad > 0) AS bad, "
+        "ANY_VALUE(s.n) AS stray, CAST(NULL AS INT64) AS __cut, "
+        "CAST(NULL AS STRING) AS __cell, CAST(NULL AS INT64) AS n_students\n"
+        "FROM __u AS u LEFT JOIN __per AS per ON per.__row = u.__row "
+        "CROSS JOIN __stray AS s\n"
+        "GROUP BY u.item_key, per.cause" + "".join(f"\nUNION ALL\n{q}" for q in per_cut)
+    )
+
+
+def cause_students(
+    rows: list[dict], proof: Proof, comparison: Comparison
+) -> list[dict]:
+    """The `students` rows of `proof_query`, as triage keeps them: per cause
+    (`triage.cause_key`), cut label and cell (`dims` as [column, value]
+    pairs), `n` distinct students. Rows of causes the proof does not map are
+    left out (`outcomes` refuses those)."""
+    labels = [label for label, _, _ in pipeline.cut_flags(comparison) or []]
+    dims = [p.cube for p in pipeline.group_dims(comparison)]
+    out = []
+    for r in rows:
+        if r.get("__kind") != "students" or r["cause"] not in proof.causes:
+            continue
+        side, words = proof.causes[r["cause"]]
+        cell = json.loads(r["__cell"] or "{}")
+        out.append(
+            {
+                "cause": triage.cause_key(side, words),
+                "cut": labels[int(r["__cut"])],
+                "dims": [[d, cell.get(d)] for d in dims],
+                "n": int(r["n_students"]),
+            }
+        )
+    return out
+
+
+def keep_students(loaded: dict, comparison: str, found: list[dict]) -> None:
+    """Add a proof's cause-student counts to a triage, per comparison; a
+    count 2 proofs give the same cell keeps the larger (each is exact for
+    its own bucket's rows)."""
+    kept = loaded.setdefault("cause_students", {}).setdefault(comparison, [])
+    at = {(e["cause"], e["cut"], json.dumps(e["dims"])): e for e in kept}
+    for e in found:
+        key = (e["cause"], e["cut"], json.dumps(e["dims"]))
+        if key in at:
+            at[key]["n"] = max(at[key]["n"], e["n"])
+        else:
+            at[key] = dict(e)
+            kept.append(at[key])
 
 
 # --- one proof's outcome -----------------------------------------------------------
@@ -793,6 +921,8 @@ def outcomes(
     totals: Counter = Counter()
     unmapped: set[str] = set()
     for r in rows:
+        if r.get("__kind") == "students":
+            continue
         for what in ("missed", "doubled", "bad"):
             totals[what] += int(r[what] or 0)
         totals["stray"] = max(totals["stray"], int(r["stray"] or 0))
@@ -864,6 +994,7 @@ def run_proof(
     build: Build,
     moved: dict[str, bool] | None = None,
     frozen: dict[tuple[str, str], str] | None = None,
+    students: list[dict] | None = None,
 ) -> dict[str, Outcome]:
     """Check, pin, price and run a proof on the run's rows. Call inside `wh.budget`.
 
@@ -882,6 +1013,8 @@ def run_proof(
             first and reads the rows there; a shorter one runs inline, which
             is faster when 1 proof reads the bucket. A bucket already frozen
             is always read from its table.
+        students: Given, receives the proof's cause-student counts per cell
+            and cut (`cause_students`), for `triage.json`.
 
     Raises:
         pipeline.Refusal: The proof fails a check (see `check_sql` and
@@ -903,8 +1036,9 @@ def run_proof(
     key = (comparison.id, proof.bucket)
     try:
         table = (frozen or {}).get(key)
+        count = _student_count(comparison, proof.bucket, students)
         ctes, select = unmatched_sql(cfg, comparison, sides, proof.bucket, items, table)
-        sql = proof_query(ctes, select, body, literals)
+        sql = proof_query(ctes, select, body, literals, count(table))
         if frozen is not None and table is None and len(sql) > trace.MAX_QUERY_CHARS:
             print(
                 f"Proof {proof.path.name}: {len(sql):,} characters with both sides "
@@ -914,7 +1048,7 @@ def run_proof(
             ctes, select = unmatched_sql(
                 cfg, comparison, sides, proof.bucket, items, frozen[key]
             )
-            sql = proof_query(ctes, select, body, literals)
+            sql = proof_query(ctes, select, body, literals, count(frozen[key]))
         usd = wh.estimate(sql)
         wh.refuse_past_caps(usd)
         print(f"Proof {proof.path.name}: ${usd:.2f} (dry run).")
@@ -923,7 +1057,26 @@ def run_proof(
         raise pipeline.Refusal(
             f"{proof.path.name}: BigQuery refused it ({bigquery_said(exc)})"
         ) from exc
-    return outcomes(rows, proof, items, literals)
+    found = outcomes(rows, proof, items, literals)
+    if students is not None:
+        students += cause_students(rows, proof, comparison)
+    return found
+
+
+def _student_count(comparison: Comparison, bucket: str, wanted):
+    """For `run_proof`: the `StudentCount` for rows read from a table (None
+    for the reconcile's own `__f`), or None per table when not `wanted` or
+    the comparison's cuts cannot be told apart (`pipeline.cut_flags`)."""
+    flags = pipeline.cut_flags(comparison)
+    if wanted is None or not flags or comparison.rows is None:
+        return lambda table: None
+    return lambda table: StudentCount(
+        source=table or "__f",
+        student=comparison.rows.grain[0].cube,
+        dims=tuple(p.cube for p in pipeline.group_dims(comparison)),
+        moved=bucket == "dims_differ",
+        cuts=len(flags),
+    )
 
 
 def _freeze(
@@ -1363,6 +1516,8 @@ class Ran:
     items: list[tuple[str, Group]]
     found: dict[str, Outcome] | None = None
     why: str = ""
+    # Its cause-student counts per cell and cut (`cause_students`).
+    students: list[dict] = field(default_factory=list)
 
 
 def siblings(cfg: ViewConfig, comparison: Comparison) -> list[Comparison]:
@@ -1455,6 +1610,7 @@ def _run_one(
             run.moment,
             prepared.moved,
             prepared.frozen,
+            ran.students,
         )
     except (
         pipeline.Refusal,
@@ -1482,10 +1638,16 @@ def explained(runs: list[Ran]) -> set[tuple]:
 
 
 def apply_runs(
-    run: RunResult, items: list[dict], runs: list[Ran], cfg: ViewConfig
+    run: RunResult,
+    items: list[dict],
+    runs: list[Ran],
+    cfg: ViewConfig,
+    loaded: dict | None = None,
 ) -> None:
     """Sort the items by the proofs' runs, then link cell sets."""
     for r in runs:
+        if r.found is not None and loaded is not None:
+            keep_students(loaded, _comparison_of(r), r.students)
         if r.found is None:
             note(items, {i for i, _ in r.items}, r.why, r.proof.path.name)
         else:
@@ -1663,6 +1825,7 @@ def run_confirm(
                 ) from exc
             print(f"Reproduce {b}: dry run OK, ${usd:.2f} on today's tables.")
         prepared = trace.Prepared(schools=network_schools(wh))
+        students: list[dict] = []
         with wh.session():
             found = run_proof(
                 wh,
@@ -1674,6 +1837,7 @@ def run_confirm(
                 run.moment,
                 prepared.moved,
                 prepared.frozen,
+                students,
             )
             # The comparisons holding the same rows: the proof classifies
             # theirs too, unless one has its own. A refusal there keeps this
@@ -1687,7 +1851,8 @@ def run_confirm(
     stored.parent.mkdir(parents=True, exist_ok=True)
     stored.write_text(proof.text)
     apply_outcomes(all_items, proof, found)
-    apply_runs(run, all_items, shared, cfg)
+    keep_students(loaded, target.id, students)
+    apply_runs(run, all_items, shared, cfg, loaded)
     link_cells(run, all_items, comparison, cfg)
     _mark(run, all_items, cfg)
     _save_triage(path, loaded, all_items)
