@@ -233,8 +233,10 @@ cause, do not retry around it.
    needs `rows` on its comparison to be provable: add `rows` before `run`. For a
    count, the cell's difference must equal the groups' net rows. For a rate with
    1 value column, each side's cell rebuilt from its rows (the mean of the value
-   column) must show the run's value; a cell under a cut whose column the rows
-   are not grouped by cannot be sized and stays open. A run saved before
+   column) must show the run's value. The run keeps the sums per cut when every
+   caption the cuts set differently (a default all cuts share is skipped) is a
+   `rows` column on both sides; otherwise a cell under a cut whose column the
+   rows are not grouped by cannot be sized and stays open. A run saved before
    per-cell sums links without the rate check and says so: `run` again to check
    sizes. A member description, a cell pattern or a trace count is a lead, never
    a cause. A run saved before groups recorded their NULLs is refused ("this run

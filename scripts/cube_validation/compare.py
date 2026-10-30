@@ -146,6 +146,7 @@ def reconcile_sql(
     rows: RowSpec,
     group_by: list[ColumnPair],
     filters: Sequence[tuple[str, str]] = (),
+    cuts: Sequence[tuple[str, str]] = (),
 ) -> str:
     """Build the query that classifies every row as match, differs or one-sided.
 
@@ -170,6 +171,9 @@ def reconcile_sql(
             column that says it keeps a row, and the label to name it by. A row
             one drops that Cube has reads `dashboard_filtered`, with the label
             in `__filter`; one Cube lacks too is a match.
+        cuts: Per cut, the predicate that keeps its rows on the Cube side and
+            on the dashboard side (over `c.` and `d.` columns), so the per-side
+            sums are also kept per cut (`__s_k<j>_c_rows`, ...).
 
     A row both sides hold with the same values whose group-by columns differ
     (Cube files it in one cell, the dashboard in another) reads `dims_differ`:
@@ -184,16 +188,31 @@ def reconcile_sql(
         column is returned.
     """
     ctes, group_names = _joined(
-        cube_rows_sql, dashboard_rows_sql, rows, group_by, filters, moved=True
+        cube_rows_sql,
+        dashboard_rows_sql,
+        rows,
+        group_by,
+        filters,
+        extra=[
+            f"COALESCE({pred}, FALSE) AS __{side}k{j}"
+            for j, pair in enumerate(cuts)
+            for side, pred in zip(("c", "d"), pair, strict=True)
+        ],
+        moved=True,
     )
     stats = []
-    for side in ("c", "d"):
-        stats.append(f"COUNTIF(__{side}in) AS {_STATS}{side}_rows")
-        for i in range(len(rows.values)):
-            stats += [
-                f"COUNT(__{side}v{i}) AS {_STATS}{side}_n{i}",
-                f"SUM(__{side}v{i}) AS {_STATS}{side}_sum{i}",
-            ]
+    for prefix, flag in [("", None), *((f"k{j}_", j) for j in range(len(cuts)))]:
+        for side in ("c", "d"):
+            keep = f"__{side}in" if flag is None else f"__{side}in AND __{side}k{flag}"
+            stats.append(f"COUNTIF({keep}) AS {_STATS}{prefix}{side}_rows")
+            for i in range(len(rows.values)):
+                value = f"__{side}v{i}"
+                if flag is not None:
+                    value = f"IF(__{side}k{flag}, {value}, NULL)"
+                stats += [
+                    f"COUNT({value}) AS {_STATS}{prefix}{side}_n{i}",
+                    f"SUM({value}) AS {_STATS}{prefix}{side}_sum{i}",
+                ]
     outer_select = ", ".join(
         ["bucket", *group_names, "COUNT(*) AS n_rows"]
         + ["COUNT(DISTINCT __student) AS n_students", *stats]
@@ -557,14 +576,37 @@ def _cell_dims(row: dict) -> list[tuple[str, Any]]:
 _RESERVED = {"bucket", "n_rows", "n_students", "__filter", _MOVED}
 
 
-def cell_rows_from(result_rows: list[dict]) -> list[dict]:
+def _side_stats(row: dict, prefix: str) -> dict:
+    """One side's `rows`, and per value column its non-null `n` and `sum`."""
+
+    def ordered(kind: str) -> list[str]:
+        return sorted(
+            (k for k in row if re.fullmatch(f"{re.escape(prefix)}{kind}\\d+", k)),
+            key=_index,
+        )
+
+    return {
+        "rows": int(row.get(f"{prefix}rows") or 0),
+        "n": [int(row[k] or 0) for k in ordered("n")],
+        "sum": [float(row[k] or 0) for k in ordered("sum")],
+    }
+
+
+def cell_rows_from(
+    result_rows: list[dict], cut_labels: Sequence[str] = ()
+) -> list[dict]:
     """Each result row's rows and value sums per side, for sizing a cell.
+
+    Args:
+        result_rows: Rows from `reconcile_sql`.
+        cut_labels: The label of each cut passed to it as `cuts`, in order.
 
     Returns:
         Per result row, matches included: `bucket`, `dims` (Cube's cell, as
         [column, value] pairs), `dash_dims` (the dashboard's cell when it
-        differs, else None), and `c` and `d` each as `rows`, `n` and `sum`
-        (per value column). Counts and sums only, never a row.
+        differs, else None), `c` and `d` each as `rows`, `n` and `sum` (per
+        value column) over every cut, and `cuts`: per cut label, the same
+        `c` and `d` over that cut's rows. Counts and sums only, never a row.
     """
     out = []
     for row in result_rows:
@@ -578,24 +620,22 @@ def cell_rows_from(result_rows: list[dict]) -> list[dict]:
                 for k, v in row.items()
                 if k.startswith("__d_")
             ]
-        sides = {}
-        for side in ("c", "d"):
-            n = [
-                int(row[k] or 0)
-                for k in sorted(row, key=_index)
-                if k.startswith(f"{_STATS}{side}_n")
-            ]
-            sums = [
-                float(row[k] or 0)
-                for k in sorted(row, key=_index)
-                if k.startswith(f"{_STATS}{side}_sum")
-            ]
-            sides[side] = {
-                "rows": int(row.get(f"{_STATS}{side}_rows") or 0),
-                "n": n,
-                "sum": sums,
+        sides = {side: _side_stats(row, f"{_STATS}{side}_") for side in ("c", "d")}
+        cuts = {
+            label: {
+                side: _side_stats(row, f"{_STATS}k{j}_{side}_") for side in ("c", "d")
             }
-        out.append({"bucket": row["bucket"], "dims": dims, "dash_dims": dash, **sides})
+            for j, label in enumerate(cut_labels)
+        }
+        out.append(
+            {
+                "bucket": row["bucket"],
+                "dims": dims,
+                "dash_dims": dash,
+                **sides,
+                "cuts": cuts,
+            }
+        )
     return out
 
 

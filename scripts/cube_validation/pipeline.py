@@ -201,6 +201,48 @@ def _any_cut_predicate(comparison: Comparison, with_filters: bool = True) -> str
     return preds[0] if len(preds) == 1 else " OR ".join(f"({p})" for p in preds)
 
 
+def cut_flags(comparison: Comparison) -> list[tuple[str, str, str]] | None:
+    """Per cut, its label and the predicates that keep its rows on each side
+    of the row reconcile (over `c.` and `d.` row columns), or None.
+
+    A caption with one value in every cut (a default no cut changes) cannot
+    split the cells, so it is left out. None when another caption's column is
+    not a row column on both sides: the reconcile cannot tell its cuts apart.
+    """
+    cuts = _cuts(comparison)
+    if comparison.rows is None:
+        return None
+    chosen = [effective_filters(comparison, cut) for cut in cuts]
+    captions = dict.fromkeys(c for f in chosen for c in f)
+    varying = [
+        c
+        for c in captions
+        if len({json.dumps(f.get(c), sort_keys=True, default=str) for f in chosen}) > 1
+    ]
+    pairs = _row_pairs(comparison)
+    cube_cols = {p.cube for p in pairs}
+    dash_cols = {p.dashboard for p in pairs}
+    for caption in varying:
+        pair = comparison.filters[caption]
+        if pair.cube not in cube_cols or pair.dashboard not in dash_cols:
+            return None
+    out = []
+    for cut, f in zip(cuts, chosen, strict=True):
+        sides = []
+        for side in ("cube", "dashboard"):
+            prefix = "c" if side == "cube" else "d"
+            parts = [
+                _column_predicate(
+                    f"{prefix}.{getattr(comparison.filters[c], side)}", f[c]
+                )
+                for c in varying
+                if c in f
+            ]
+            sides.append(" AND ".join(parts) or "TRUE")
+        out.append((cut_label(cut), sides[0], sides[1]))
+    return out
+
+
 def _any_cut_cube_filters(view: str, comparison: Comparison) -> list[dict]:
     per_cut = [_cut_cube_filters(view, comparison, cut) for cut in _cuts(comparison)]
     if any(not f for f in per_cut):
@@ -768,6 +810,7 @@ def _compare_one(
         # Unchanged between start and end, so the Cube side reads its shared
         # tables at the start: BigQuery refuses 1 table at 2 moments.
         cube_rows_sql = repin(cube_at.sql, shared, build.end, build.start)
+        flags = cut_flags(comparison) or []
         result = wh.rows(
             compare.reconcile_sql(
                 wrap_cube(cube_rows_sql, cfg.view, columns, dates, None),
@@ -775,10 +818,13 @@ def _compare_one(
                 comparison.rows,
                 group_dims(comparison),
                 filters=_filter_flags(comparison),
+                cuts=[(c, d) for _, c, d in flags],
             )
         )
         sides.groups += compare.groups_from(comparison.id, result)
-        sides.cell_rows[comparison.id] = compare.cell_rows_from(result)
+        sides.cell_rows[comparison.id] = compare.cell_rows_from(
+            result, [label for label, _, _ in flags]
+        )
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
         # Only a student column counts students; without one in the grain,
         # every cell's `n_students` stays None, so none is an example cell.
