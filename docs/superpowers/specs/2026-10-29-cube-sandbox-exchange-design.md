@@ -208,8 +208,8 @@ call.)
   Identity Federation setup. The workflow also takes `workflow_dispatch`, so the
   first deploy can run from the implementation branch and verification step 3
   happens before merge, not after. (My call.)
-- The implementation ships in PR #5267 with this design, so the sandbox and its
-  sign-in path go live together.
+- The implementation ships in its own PR, after this design merges with PR
+  #5267. (My call.)
 
 ## Cloud setup (decided: Charlie Bini)
 
@@ -281,3 +281,26 @@ same fields. Rejections log the status and reason only.
 - **Registering apps in AuthKit.** Each Builder Brain app needs its own AuthKit
   application and redirect URIs. That procedure is operational, not code, and
   needs a named owner and turnaround on the data team.
+
+## Revision 2026-10-30: the session token's issuer is per application
+
+The `@workos-inc/authkit-nextjs` 4.6.2 README, in its `WORKOS_ISSUER` note,
+contradicts _Verifying the AuthKit token_ above: a session token's `iss` is
+`https://api.workos.com/user_management/<client id>`, or
+`https://<auth domain>/user_management/<client id>` with a custom authentication
+domain. It is not one value shared by every application. The issuer's
+`/.well-known/openid-configuration` document names it and the key set.
+
+So the exchange no longer checks `iss` against one configured value. It:
+
+- reads the unverified `client_id` and requires it on the allowlist, as before;
+- derives the expected issuer from that client id and a configured base,
+  `AUTHKIT_ISSUER_BASE`, defaulting to `https://api.workos.com` (set only if the
+  tenant uses a custom authentication domain);
+- takes that client's key set from the `jwks_uri` in the issuer's discovery
+  document, fetched once per registered client and cached;
+- then verifies signature, issuer and expiry as before.
+
+Task 1's real token still confirms this before the verifier is built. The same
+README also shows an app can run with no WorkOS API key (public client mode),
+which the exchange neither needs nor sees.

@@ -90,13 +90,16 @@ not adapt the code.
       is present and equals the app's client id, and whether an `email` claim is
       present (yes/no, never the value).
 - [ ] **Step 3: Check the key set.** The same script fetches
-      `https://api.workos.com/sso/jwks/<client_id>` and prints whether the
-      token's `kid` is in it.
+      `<iss>/.well-known/openid-configuration`, prints its `issuer` and
+      `jwks_uri`, fetches that `jwks_uri`, and prints whether the token's `kid`
+      is in it.
 
-Pass: `alg` is `RS256`; `iss` is `https://api.workos.com/` (or the tenant's
-custom auth domain: record which, Task 6 needs it); `client_id` is present;
-`email` is present; the `kid` is in that key set. Record the `iss` value and the
-client id in the task ledger.
+Pass (see the spec's _Revision 2026-10-30_): `alg` is `RS256`; `iss` is
+`<base>/user_management/<client id>` where `<base>` is `https://api.workos.com`
+or the tenant's custom auth domain (record which: Task 6 needs it); the
+discovery document's `issuer` equals `iss`; `client_id` is present; `email` is
+present; the `kid` is in the discovered key set. Record `iss`, `jwks_uri` and
+the client id in the task ledger.
 
 ### Task 2: Plain-language persona summaries
 
@@ -251,12 +254,21 @@ which is safer than a live revision answering 500.
 - Consumes: `Builder`, `Rejected`, `NETWORK_EMAIL_DOMAINS`,
   `load_registered_apps`, `create_app` from Task 3.
 - Produces:
+  - Task 3's `Settings.issuer` and required `AUTHKIT_ISSUER` become
+    `Settings.issuer_base` read from optional `AUTHKIT_ISSUER_BASE`, default
+    `https://api.workos.com` (trailing slash stripped). Only
+    `CUBE_SANDBOX_API_SECRET` stays required; update
+    `test_settings_names_every_missing_variable` to match.
+  - `expected_issuer(issuer_base: str, client_id: str) -> str`:
+    `f"{issuer_base}/user_management/{client_id}"`.
   - `class SessionTokenVerifier`, constructed with
-    `(issuer: str, registered_apps: dict[str, str], signing_key: Callable[[str, str], Any] | None = None)`.
-    `signing_key(client_id, token)` returns the public key. The default builds
-    one
-    `jwt.PyJWKClient("https://api.workos.com/sso/jwks/<client_id>", cache_keys=True, lifespan=3600)`
-    per registered client id, lazily. Tests pass their own.
+    `(issuer_base: str, registered_apps: dict[str, str], signing_key: Callable[[str, str], Any] | None = None)`.
+    `signing_key(client_id, token)` returns the public key. The default, per
+    registered client id and lazily: GET
+    `<expected_issuer>/.well-known/openid-configuration` once, then one
+    `jwt.PyJWKClient(<its jwks_uri>, cache_keys=True, lifespan=3600)`. A failed
+    discovery fetch is the same 503 as an unreachable key set. Tests pass their
+    own `signing_key`.
   - `SessionTokenVerifier.__call__(request: Request) -> Builder`, so it is the
     `authenticate` argument of `create_app`.
   - `log_event(event: str, **fields: object) -> None`: one JSON line to stdout
@@ -274,7 +286,7 @@ Checks, in order, each a `Rejected`:
    401; acceptable, since the reply reveals nothing.
 4. Fetching keys raises `jwt.PyJWKClientConnectionError`: 503 "Could not reach
    WorkOS to check the sign-in. Try again in a minute."
-5. `jwt.decode(..., algorithms=["RS256"], issuer=issuer, leeway=30, options={"verify_aud": False})`:
+5. `jwt.decode(..., algorithms=["RS256"], issuer=expected_issuer(issuer_base, client_id), leeway=30, options={"verify_aud": False})`:
    `ExpiredSignatureError` is 401 "The AuthKit token has expired. Get a fresh
    one from the session."; `InvalidIssuerError` is 401 naming the expected
    issuer; any other `PyJWTError` is 401 "The AuthKit token's signature did not
@@ -309,7 +321,8 @@ and `reason`.
     rejection line has `status` and `reason` and no `builder`.
 - [ ] **Step 2: Run** the test file. Expected: the new tests FAIL.
 - [ ] **Step 3: Implement**, and wire `main()`:
-      `create_app(settings, SessionTokenVerifier(settings.issuer, apps))`, then
+      `create_app(settings, SessionTokenVerifier(settings.issuer_base, apps))`,
+      then
       `uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8080")), proxy_headers=True, forwarded_allow_ips="*")`.
       `proxy_headers` makes `request.base_url` `https://` behind Cloud Run.
 - [ ] **Step 4: Run** the test file. Expected: all pass.
@@ -340,10 +353,10 @@ and `reason`.
       `docker build -t cube-sandbox-exchange:dev -f src/cube/sandbox_exchange/Dockerfile src/cube/ 2>&1 | tail -n 5`.
       Expected: success.
 - [ ] **Step 2: Smoke it.** Run the image with a placeholder
-      `CUBE_SANDBOX_API_SECRET` and `AUTHKIT_ISSUER=https://api.workos.com/`,
-      port 8080; `curl -s localhost:8080/personas` lists 7 personas;
-      `curl -s -X POST localhost:8080/token` returns 401 JSON. Then run it with
-      no secret set: the container exits non-zero and names the variable.
+      `CUBE_SANDBOX_API_SECRET`, port 8080; `curl -s localhost:8080/personas`
+      lists 7 personas; `curl -s -X POST localhost:8080/token` returns 401 JSON.
+      Then run it with no secret set: the container exits non-zero and names the
+      variable.
 - [ ] **Step 3: Commit** `build(cube): containerize the sandbox token exchange`.
 
 ### Task 6: Deploy workflow and documentation, including Charlie's runbook
@@ -362,7 +375,8 @@ and `reason`.
   - deploy with the runtime account from _Global Constraints_,
     `--max-instances=3`, `--memory=256Mi`, `--allow-unauthenticated` (the
     AuthKit check is the gate, as for the MCP server),
-    `--set-env-vars=AUTHKIT_ISSUER=<Task 1's iss>`,
+    `--set-env-vars=AUTHKIT_ISSUER_BASE=<base>` only if Task 1 found a custom
+    auth domain (otherwise omit it and the default applies),
     `--set-secrets=CUBE_SANDBOX_API_SECRET=cube-sandbox-api-secret:latest`
   - same Workload Identity provider line (`vars.GCP_PROJECT_NUMBER`)
 - Modify: `docs/reference/cube-sandbox.md`: a new `## Token exchange` section
