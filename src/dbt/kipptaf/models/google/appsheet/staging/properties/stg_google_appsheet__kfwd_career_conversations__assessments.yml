@@ -96,6 +96,75 @@ models:
                 quote: false
               config:
                 severity: warn
+      - name: career_ready_rubric_key
+        data_type: string
+        description: >-
+          Rubric key for the Career Ready level, such as career_ready_3. Null
+          when the level is missing. A key with no row on the Rubric tab of the
+          Career Launch Scoring Rubric sheet scores 0 points; add or fix the row
+          there, or fix the level in the AppSheet app.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__kfwd__career_launch_rubric")
+                field: rubric_key
+              config:
+                severity: warn
+      - name: active_search_rubric_key
+        data_type: string
+        description: >-
+          Rubric key for the Active Search level, such as active_search_3. Null
+          when the level is missing. A key with no row on the Rubric tab of the
+          Career Launch Scoring Rubric sheet scores 0 points; add or fix the row
+          there, or fix the level in the AppSheet app.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__kfwd__career_launch_rubric")
+                field: rubric_key
+              config:
+                severity: warn
+      - name: internship_experience_rubric_key
+        data_type: string
+        description: >-
+          Rubric key for the Internship / Experience level, such as
+          internship_experience_3. Null when the level is missing. A key with no
+          row on the Rubric tab of the Career Launch Scoring Rubric sheet scores
+          0 points; add or fix the row there, or fix the level in the AppSheet
+          app.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__kfwd__career_launch_rubric")
+                field: rubric_key
+              config:
+                severity: warn
+      - name: network_rubric_key
+        data_type: string
+        description: >-
+          Rubric key for the Network level, such as network_3. Null when the
+          level is missing. A key with no row on the Rubric tab of the Career
+          Launch Scoring Rubric sheet scores 0 points; add or fix the row there,
+          or fix the level in the AppSheet app.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__kfwd__career_launch_rubric")
+                field: rubric_key
+              config:
+                severity: warn
       - name: assessed_at
         data_type: datetime
         description: When the Career Conversation took place, in local time.

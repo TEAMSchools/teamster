@@ -10,6 +10,13 @@ select
     coaching_focus,
     next_action,
     notes,
+
+    concat('career_ready_', career_ready_level) as career_ready_rubric_key,
+    concat('active_search_', active_search_level) as active_search_rubric_key,
+    concat(
+        'internship_experience_', internship_experience_level
+    ) as internship_experience_rubric_key,
+    concat('network_', network_level) as network_rubric_key,
 from
     {{
         source(

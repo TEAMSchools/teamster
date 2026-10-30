@@ -1,27 +1,4 @@
 with
-    assessments as (
-        select
-            assessment_id,
-            contact_id,
-            assessed_at,
-            assessed_by,
-            career_ready_level,
-            active_search_level,
-            internship_experience_level,
-            network_level,
-            coaching_focus,
-            next_action,
-            notes,
-
-            concat('career_ready_', career_ready_level) as career_ready_rubric_key,
-            concat('active_search_', active_search_level) as active_search_rubric_key,
-            concat(
-                'internship_experience_', internship_experience_level
-            ) as internship_experience_rubric_key,
-            concat('network_', network_level) as network_rubric_key,
-        from {{ ref("stg_google_appsheet__kfwd_career_conversations__assessments") }}
-    ),
-
     scored as (
         select
             a.assessment_id,
@@ -60,7 +37,9 @@ with
                 true,
                 false
             ) as has_all_levels,
-        from assessments as a
+        from
+            {{ ref("stg_google_appsheet__kfwd_career_conversations__assessments") }}
+            as a
         left join
             {{ ref("stg_google_sheets__kfwd__career_launch_rubric") }} as cr
             on a.career_ready_rubric_key = cr.rubric_key

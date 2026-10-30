@@ -17,66 +17,6 @@ models:
           - unique:
               config:
                 severity: error
-      - name: career_ready_points
-        data_type: int64
-        description: >-
-          Rubric points for the Career Ready level. Null when the level is
-          missing or matches no rubric row. A level with no rubric row scores 0
-          points; add or fix its row on the Rubric tab of the Career Launch
-          Scoring Rubric sheet.
-        config:
-          meta:
-            contains_pii: true
-        data_tests:
-          - not_null:
-              config:
-                where: career_ready_level is not null
-                severity: warn
-      - name: active_search_points
-        data_type: int64
-        description: >-
-          Rubric points for the Active Search level. Null when the level is
-          missing or matches no rubric row. A level with no rubric row scores 0
-          points; add or fix its row on the Rubric tab of the Career Launch
-          Scoring Rubric sheet.
-        config:
-          meta:
-            contains_pii: true
-        data_tests:
-          - not_null:
-              config:
-                where: active_search_level is not null
-                severity: warn
-      - name: internship_experience_points
-        data_type: int64
-        description: >-
-          Rubric points for the Internship / Experience level. Null when the
-          level is missing or matches no rubric row. A level with no rubric row
-          scores 0 points; add or fix its row on the Rubric tab of the Career
-          Launch Scoring Rubric sheet.
-        config:
-          meta:
-            contains_pii: true
-        data_tests:
-          - not_null:
-              config:
-                where: internship_experience_level is not null
-                severity: warn
-      - name: network_points
-        data_type: int64
-        description: >-
-          Rubric points for the Network level. Null when the level is missing or
-          matches no rubric row. A level with no rubric row scores 0 points; add
-          or fix its row on the Rubric tab of the Career Launch Scoring Rubric
-          sheet.
-        config:
-          meta:
-            contains_pii: true
-        data_tests:
-          - not_null:
-              config:
-                where: network_level is not null
-                severity: warn
       - name: contact_id
         data_type: string
         description: Salesforce contact id of the alumnus assessed.
@@ -131,6 +71,38 @@ models:
       - name: notes
         data_type: string
         description: Free-text notes from the conversation.
+        config:
+          meta:
+            contains_pii: true
+      - name: career_ready_points
+        data_type: int64
+        description: >-
+          Rubric points for the Career Ready level. Null when the level is
+          missing or matches no rubric row.
+        config:
+          meta:
+            contains_pii: true
+      - name: active_search_points
+        data_type: int64
+        description: >-
+          Rubric points for the Active Search level. Null when the level is
+          missing or matches no rubric row.
+        config:
+          meta:
+            contains_pii: true
+      - name: internship_experience_points
+        data_type: int64
+        description: >-
+          Rubric points for the Internship / Experience level. Null when the
+          level is missing or matches no rubric row.
+        config:
+          meta:
+            contains_pii: true
+      - name: network_points
+        data_type: int64
+        description: >-
+          Rubric points for the Network level. Null when the level is missing or
+          matches no rubric row.
         config:
           meta:
             contains_pii: true
@@ -192,19 +164,26 @@ unit_tests:
               3 as network_level,
               cast(null as string) as coaching_focus,
               cast(null as string) as next_action,
-              cast(null as string) as notes
+              cast(null as string) as notes,
+              'career_ready_4' as career_ready_rubric_key,
+              'active_search_4' as active_search_rubric_key,
+              'internship_experience_4' as internship_experience_rubric_key,
+              'network_3' as network_rubric_key
           union all
           select
               'a2', 'c1', datetime '2026-10-15 10:00:00', 'staff', 4, 4, 3, 3,
-              null, null, null
+              null, null, null, 'career_ready_4', 'active_search_4',
+              'internship_experience_3', 'network_3'
           union all
           select
               'a3', 'c2', datetime '2026-10-15 10:00:00', 'staff', 4, 4, 4, null,
-              null, null, null
+              null, null, null, 'career_ready_4', 'active_search_4',
+              'internship_experience_4', null
           union all
           select
               'a4', 'c3', datetime '2026-10-15 10:00:00', 'staff', 5, 1, 1, 1,
-              null, null, null
+              null, null, null, 'career_ready_5', 'active_search_1',
+              'internship_experience_1', 'network_1'
       - input: ref('stg_google_sheets__kfwd__career_launch_rubric')
         format: sql
         rows: |
