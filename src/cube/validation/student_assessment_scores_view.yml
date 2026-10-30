@@ -3,6 +3,9 @@
 view: student_assessment_scores_view
 fact: kipptaf_marts.fct_assessment_scores_enrollment_scoped
 time_dimension: assessment_date
+tasks:
+  cube_fix: https://github.com/TEAMSchools/teamster/issues/5668
+  dashboard_fix: https://app.asana.com/1/913513768672/project/1213735218595734/task/1213823831345180
 shared:
   # DKI - Assessment Mastery Grid shows Grade/Subject (a calc) by Week Start
   # Monday, Module Code and School. Neither the calc nor the week has a Cube
