@@ -70,8 +70,12 @@ switch.
 
 ### The 2025-26 prototype
 
-A static 2025-26 persistence report already exists. It runs on hand-built views
-in the personal development dataset `teamster-332318.ldesimon_dev`:
+A static 2025-26 persistence report already exists: the
+[2025-26 Student Persistence report](https://claude.ai/artifact/9wQRjFLgVFNz6kEaCFkixk?sk=Mc8DrGDC2VSPgtHoKXqtdg#all)
+(KTAF sign-in required). KTAF shared the report and used it for the TC, Region,
+and DSO stepbacks on student persistence in October 2026. The report rolls up
+hand-built views in the personal development dataset
+`teamster-332318.ldesimon_dev`:
 
 - `student_retention_base`: one row per student enrolled on October 1, with
   `is_retained`.
@@ -336,6 +340,54 @@ How the dashboard uses the model:
 - **Late-joiner rate:** the same calculation, filtered to `is_late_joiner`.
 - **Roster export:** the whole table, with each user limited to their region.
 
+## Dashboard mockup
+
+A first
+[dashboard mockup](https://claude.ai/artifact/7QnpNGutb3yfQANxqtWxQa?sk=JPpYZlzAhVWAcmoK2xOcbw#play-15dd8cd198dd)
+(KTAF sign-in required) shows how Tableau could use this view. It is a mockup
+with made-up data, and the team will refine it. Press Play on its first board to
+try the controls.
+
+Key elements:
+
+- **Tab 1, Overview.**
+  - Filters for school year, region, school, and grade, plus a "View by"
+    control: region, school, grade, region and grade, school and grade, network,
+    IEP, ML, gender, or years at KIPP.
+  - Network and region tiles: the persistence rate, students still with KIPP,
+    students who left, and how many left this week and this month.
+  - The persistence rate by the "View by" choice, as bars or as a color-stepped
+    grade grid.
+  - "Why did students leave?": each exit category's share of leavers, with a
+    click-through to the reasons inside it, and a chart of where reasons came
+    from.
+  - Students who left, by week or month since October 1, split by total, region
+    (stacked bars), or school (bubble grid).
+- **Tab 2, Students.**
+  - A late-joiner panel: how many joined after October 1, how many left, and how
+    many are still enrolled, by region. Late joiners stay out of the headline
+    rate.
+  - A student roster that shows leavers by default, with filters for who to show
+    (for example, "left this week" or "late joiners only"), exit category, and
+    reason source, plus a CSV download.
+- **Build notes.** A board that ties every number to a field and lists gaps,
+  rules to confirm, and ideas.
+
+Where the mockup and this design differ:
+
+- The mockup shows "SIS code" as a reason source. Under decision 5, reasons come
+  from Finalsite or stay blank, so that chart and filter become Finalsite
+  against no reason.
+- The mockup counts a student at the school they attended on October 1. This
+  design counts them at their last school of the year. See open question 5.
+- The mockup asks for roster access by school (its gap 2). This design plans
+  region-level row security (see _Access and PII_), which is coarser.
+
+This design already covers 3 of the mockup's gaps and ideas: `student_name` (gap
+1), `is_attrition` for late joiners (gap 5), and `is_controllable` for its
+"controllable vs not" idea. Its gap 3, a "recorded on" date, is in open
+question 6.
+
 ## Testing and acceptance
 
 Tests built into the models:
@@ -469,11 +521,23 @@ Should the topline Student Retention metric and
 `int_students__persistence`? Approach A allows that move but does not include
 it.
 
-### 5. Smaller items
+### 5. Which school a student counts at
+
+This design counts each student at their last school of the year, as the
+prototype does. The mockup counts them at the school they attended on October 1.
+Few students change schools after October 1 (14 in 2025-26), but the rate a
+school sees depends on the rule. The view could carry both schools and let the
+dashboard choose.
+
+### 6. Smaller items
 
 - "Active" is a working label.
 - The "End of year" timing bucket relies on New Jersey's rollover comment
   convention in PowerSchool.
+- The "this week" and "this month" counts use the withdrawal date, so a past
+  week's count grows when a school enters a withdrawal late. A "recorded on"
+  date, for example from Finalsite status timestamps, would keep past weeks
+  stable.
 
 ## Out of scope
 
