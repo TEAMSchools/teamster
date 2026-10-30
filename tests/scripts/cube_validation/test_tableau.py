@@ -927,3 +927,134 @@ def test_set_shelves_drop_removes_a_rule_it_empties_beside_one_already_empty():
     assert "<style-rule element='axis'>\n          </style-rule>" in grid
     assert "<style-rule element='mark'>" not in grid
     assert "<style-rule element='header'>" not in grid
+
+
+# --- a session Tableau ends mid-run (another sign-in with the shared token) ----------
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation import tableau as tableau_mod  # noqa: E402
+from tableauserverclient.server.endpoint.exceptions import (  # noqa: E402
+    FailedSignInError,
+)
+
+
+def _unauthorized():
+    return FailedSignInError("401002", "Unauthorized Access", "")
+
+
+class _Calls(list):
+    """A call log that answers 401 at the named calls, once each, after
+    letting the first `skip` of them through."""
+
+    def __init__(self, fail_on, skip=0):
+        super().__init__()
+        self.fail_on = list(fail_on)
+        self.skip = skip
+
+    def append(self, call):
+        super().append(call)
+        if call[0] in self.fail_on:
+            if self.skip:
+                self.skip -= 1
+                return
+            self.fail_on.remove(call[0])
+            raise _unauthorized()
+
+
+class RevokedServer(FakeServer):
+    """A FakeServer whose session Tableau ends at the named calls."""
+
+    def __init__(self, twb, fail_on=(), csv_fails=False, skip=0, **kw):
+        super().__init__(twb, **kw)
+        self.calls = _Calls(fail_on, skip)
+        self.signed_out = 0
+        self.auth = SimpleNamespace(sign_out=self._sign_out)
+        if csv_fails:
+            # The CSV is fetched as it is read: the 401 comes on the read.
+            def populate_csv(view, opts):
+                def read():
+                    raise _unauthorized()
+                    yield b""
+
+                view.csv = read()
+
+            self.views.populate_csv = populate_csv
+
+    def _sign_out(self):
+        self.signed_out += 1
+        raise _unauthorized()  # the ended session cannot sign out either
+
+
+def _signer(servers):
+    made = []
+
+    def sign_in():
+        made.append(servers.pop(0))
+        return made[-1]
+
+    return sign_in, made
+
+
+def test_a_401_mid_capture_signs_in_again_and_retries_that_call(capsys):
+    jobs = [[_job("Sample Dashboard", T0)]]
+    first = RevokedServer(_twb(), fail_on=["download"], jobs=jobs)
+    second = RevokedServer(_twb(), jobs=jobs)
+    sign_in, made = _signer([second])
+    tab = Tableau(first, now=lambda: NOW, sign_in=sign_in)
+
+    snap = tab.capture("wb-luid", "Rate by Region", [{}], lambda xml: xml)
+
+    assert made == [second] and first.signed_out == 1
+    # The failed download ran again on the new session, and everything after it.
+    names = [c[0] for c in second.calls]
+    assert names[0] == "download" and "populate_csv" in names
+    assert len(second.published) == 1 and first.published == []
+    assert snap.copy_luid == "copy-luid" and len(snap.exports[0]) == 2
+    assert "signing in again" in capsys.readouterr().err
+
+
+def test_a_401_while_reading_the_csv_retries_the_export():
+    first = RevokedServer(_twb(), csv_fails=True)
+    second = RevokedServer(_twb())
+    sign_in, _ = _signer([second])
+
+    rows = Tableau(first, sign_in=sign_in).export("copy-luid", "Rate by Region", {})
+
+    assert rows == [
+        {"Region": "North", "Rate": "0.9123"},
+        {"Region": "South", "Rate": "0.85"},
+    ]
+
+
+def test_a_second_401_in_a_row_ends_the_run():
+    first = RevokedServer(_twb(), fail_on=["get_by_id"])
+    second = RevokedServer(_twb(), fail_on=["get_by_id"])
+    sign_in, _ = _signer([second])
+
+    with pytest.raises(tableau_mod.SessionEnded, match="again .*right after a new"):
+        Tableau(first, sign_in=sign_in).workbook_updated("wb-luid")
+
+
+def test_a_refused_new_sign_in_ends_the_run():
+    def sign_in():
+        raise _unauthorized()
+
+    with pytest.raises(tableau_mod.SessionEnded, match="refused the new sign-in"):
+        Tableau(
+            RevokedServer(_twb(), fail_on=["get_by_id"]), sign_in=sign_in
+        ).workbook_updated("wb-luid")
+
+
+def test_a_session_signs_in_again_at_most_a_few_times():
+    # Each new session answers the retried call, then ends on the next call.
+    servers = [RevokedServer(_twb(), fail_on=["get_by_id"])] + [
+        RevokedServer(_twb(), fail_on=["get_by_id"], skip=1)
+        for _ in range(tableau_mod.MAX_RECONNECTS)
+    ]
+    sign_in, _ = _signer(servers[1:])
+    tab = Tableau(servers[0], sign_in=sign_in)
+
+    for _ in range(tableau_mod.MAX_RECONNECTS):
+        assert tab.workbook_updated("wb-luid") == T0
+    with pytest.raises(tableau_mod.SessionEnded, match="at most"):
+        tab.workbook_updated("wb-luid")

@@ -526,7 +526,8 @@ def _dispatch(args: argparse.Namespace) -> int:
             refused = _each(
                 args.comparison,
                 tbl,
-                lambda cid: pipeline.prove(
+                resume=f"prove {args.view}",
+                step=lambda cid: pipeline.prove(
                     cfg,
                     args.view,
                     cid,
@@ -826,40 +827,44 @@ def _inventory(catalog: Path, slug: str, review: Path, asana: Path) -> int:
     return 0
 
 
-def _each(ids: list[str], tbl: tableau.Tableau, step) -> int:
+def _each(ids: list[str], tbl: tableau.Tableau, step, resume: str = "") -> int:
     """Run `step` per comparison id and count the refusals.
 
-    One comparison's refusal or Tableau error does not stop the others. A 401
-    (Tableau ended the session) signs in again and retries that id once.
+    One comparison's refusal or Tableau error does not stop the others. Each
+    finished comparison is already written, so when Tableau ends the session
+    for good (`tableau.SessionEnded`) the run stops and names the ids left,
+    with the command that proves only those.
+
+    Args:
+        ids: The comparison ids, in order.
+        tbl: The Tableau session; each call signs in again once after a 401.
+        step: Proves one id.
+        resume: The command before its `--comparison` flags, for the ids left.
+
+    Raises:
+        pipeline.Refusal: Tableau ended the session for good.
     """
     refused = 0
-    for cid in ids:
-        for attempt in (1, 2):
-            try:
-                step(cid)
-            except TSC.ServerResponseError as exc:
-                if attempt == 1 and str(exc.code).startswith("401"):
-                    print(
-                        f"Tableau ended the session ({exc.code}) during {cid}; "
-                        "signing in again",
-                        file=sys.stderr,
-                    )
-                    try:
-                        tbl.reconnect()
-                    except TSC.ServerResponseError as again:
-                        raise pipeline.Refusal(
-                            f"Tableau refused the sign-in: {again.code} {again.summary}"
-                        ) from again
-                    continue
-                print(
-                    f"refused: {cid}: Tableau answered {exc.code} {exc.summary}",
-                    file=sys.stderr,
-                )
-                refused += 1
-            except REFUSALS as exc:
-                print(f"refused: {exc}", file=sys.stderr)
-                refused += 1
-            break
+    for n, cid in enumerate(ids):
+        try:
+            step(cid)
+        except tableau.SessionEnded as exc:
+            done = ids[:n]
+            left = " ".join(f"--comparison {i}" for i in ids[n:])
+            raise pipeline.Refusal(
+                f"{exc} during {cid}. "
+                + (f"Proven and kept: {', '.join(done)}. " if done else "")
+                + (f"Prove the rest with: {resume} {left}" if resume else "")
+            ) from exc
+        except TSC.ServerResponseError as exc:
+            print(
+                f"refused: {cid}: Tableau answered {exc.code} {exc.summary}",
+                file=sys.stderr,
+            )
+            refused += 1
+        except REFUSALS as exc:
+            print(f"refused: {exc}", file=sys.stderr)
+            refused += 1
     return refused
 
 
