@@ -324,8 +324,9 @@ the manifest reads.
 
 ### The first real load
 
-Everything up to the load runs anywhere. The load needs the sandbox service
-account key and nothing else; it never touches `teamster-332318`.
+Everything up to the load runs anywhere. The isolation test needs the sandbox
+service account key. The load runs as your own Google account, because that key
+is read-only on purpose; the load never touches `teamster-332318`.
 
 ```bash
 # 1. Both isolation legs, as the sandbox service account. A failure here
@@ -343,7 +344,8 @@ uv run python -m teamster.cube_sandbox.coverage --avro-dir build/cube_sandbox/ti
 # 4. The realistic profile, then the load: GCS upload, CREATE OR REPLACE TABLE
 #    from the pinned snapshot, load, and a column-and-type check against it.
 uv run python -m teamster.cube_sandbox.generate --scale realistic
-uv run python -m teamster.cube_sandbox.load --avro-dir build/cube_sandbox/realistic
+gcloud auth print-access-token | uv run python -m teamster.cube_sandbox.load \
+  --avro-dir build/cube_sandbox/realistic --token-stdin
 
 # 5. Assert the result.
 uv run python -m teamster.cube_sandbox.sentinel
@@ -354,11 +356,13 @@ uv run python -m teamster.cube_sandbox.divergence
 The sentinel needs `CUBE_SANDBOX_REST_URL` and `CUBE_SANDBOX_API_SECRET`, the
 sandbox deployment's `CUBEJS_API_SECRET`.
 
-Step 4 needs `GOOGLE_APPLICATION_CREDENTIALS` pointing at the sandbox service
-account key, and the `teamster-cube-sandbox-staging` bucket to exist. Step 5
-needs `CUBE_SANDBOX_SQL_HOST` and `CUBE_SANDBOX_SQL_PASSWORD`, and runs against
-the sandbox deployment's **production** environment — never a Dev Mode one,
-which returns zero rows where production denies
+Step 4 runs as the account `gcloud auth list` marks active, which needs write
+access to `teamster-cube-sandbox.kipptaf_marts`. It also needs the
+`teamster-cube-sandbox-staging` bucket; until that exists (it needs billing),
+add `--direct`, which skips Cloud Storage. Step 5 needs `CUBE_SANDBOX_SQL_HOST`
+and `CUBE_SANDBOX_SQL_PASSWORD`, and runs against the sandbox deployment's
+**production** environment — never a Dev Mode one, which returns zero rows where
+production denies
 ([#4605](https://github.com/TEAMSchools/teamster/issues/4605)).
 
 !!! warning "BigQuery ignores a load job's schema for AVRO"
