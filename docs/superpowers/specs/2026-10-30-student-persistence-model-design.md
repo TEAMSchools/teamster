@@ -6,13 +6,32 @@ Status: proposal for team review. Nothing is built yet.
 
 ## Summary
 
-We propose a set of dbt models that drive a new Tableau student persistence
-dashboard. The dashboard replaces the "Attrition Analysis - Reasons" tab of the
-Ops Dashboard. The Ops Dashboard keeps its enrollment reporting, which is being
-rebuilt separately.
+We propose a single Tableau reporting view, `rpt_tableau__student_persistence`,
+to drive a new, simpler student persistence dashboard. The view replaces the Ops
+Dashboard's "Attrition Analysis - Reasons" tab as the source for student
+persistence reporting.
 
-The new dashboard answers 3 questions at the network, region, school, grade,
-IEP, multilingual learner (ML), gender, and years-at-KIPP levels, with a student
+The case for a separate view:
+
+- **Enrollment reporting is moving.** A new ADE dashboard is being built to take
+  over the Ops Dashboard's enrollment and ADE reporting. One all-in-one
+  reporting view made sense while a single workbook served enrollment and
+  persistence. Persistence now needs a source built for it.
+- **Tableau holds the key metrics today.** `rpt_tableau__ops_dashboard` is an
+  enrollment roster. Tableau calculations on top of it decide who counts as
+  attrition, which exit date and code apply, how codes group, and which year
+  shows. No one can test those calculations, and any other report that needs
+  persistence has to rebuild them.
+- **Exit reasons have a new source.** Finalsite withdrawal forms are now the
+  source of truth for exit reasons and categories, not PowerSchool or Focus. The
+  Ops reporting view carries only the SIS exit fields.
+
+In the new view, dbt makes every student-level judgment: `is_attrition`, the
+persistence status, the exit reason and category, and when the student left. The
+dashboard only counts, filters, and exports, so it stays simple and direct.
+
+The dashboard answers 3 questions at the network, region, school, grade, IEP,
+multilingual learner (ML), gender, and years-at-KIPP levels, with a student
 roster export:
 
 - How many students persisted, and what percent?
@@ -20,31 +39,34 @@ roster export:
 - When did they leave (mid-year, end of year, summer, or the start of the next
   year)?
 
-The model makes every student-level judgment, including `is_attrition`. Tableau
-only counts and filters.
-
-Two changes drive the rebuild:
-
-- Exit reasons move to a new source. Finalsite withdrawal forms are now the
-  source of truth for exit reasons and categories, not PowerSchool or Focus.
-- Persistence reporting and enrollment reporting need different shapes. One
-  all-in-one view made sense once, but it no longer does.
+Tableau reads one view. Behind that view, 2 intermediate dbt models do the work
+(see _Design_), so each rule can be tested on its own.
 
 ## What exists today
 
 ### The Ops Dashboard tab
 
-The tab reads `rpt_tableau__ops_dashboard`, an enrollment-shaped model, and
-computes attrition in Tableau calculations. We compared its 2025-26 numbers with
-the prototype below, student by student. They agree on every student except 392,
-and all 392 are grade 12 graduates: Newark 298 and Camden 94.
+The tab reads `rpt_tableau__ops_dashboard`, which has one row per student per
+year with next-year enrollment columns attached. Tableau calculations on top of
+that view hold the persistence metrics:
 
-| Problem                                                                                                                                                           | Effect                                                                                                                                        |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| The tab treats a student as a graduate only when PowerSchool writes a next-year "Graduated Students" record. Nearly all of the 392 graduates have no such record. | It shows 24.5% attrition (2,474 students) for Newark, Camden, and Miami. The correct figure for the same 3 regions is 20.6% (2,082 students). |
-| The tab matches a KIPP exit code only when its date equals the exit date exactly.                                                                                 | Summer codes miss. About 46% of leavers show "(Code Missing)" in the tab's exit code chart.                                                   |
-| The tab excludes Paterson, and a hard-coded filter pins it to 2025-26.                                                                                            | It shows 3 regions and 1 year.                                                                                                                |
-| Tableau calculations hold all of the attrition logic.                                                                                                             | No other tool can reuse or test that logic.                                                                                                   |
+- An `Attrition Status` calculation decides attrition from next-year enrollment
+  and the PowerSchool "Graduated Students" school.
+- "Most recent" calculations pick the exit date, exit code, and exit comment
+  from this year's or next year's record.
+- Groups sort exit codes into controllable and non-controllable, and into
+  mid-year, end-of-year, and summer buckets.
+- A filter selects the academic year.
+
+### How the two sources compare
+
+We compared the tab's 2025-26 numbers with the prototype below, student by
+student. They agree on every student except 392 grade 12 graduates (Newark 298,
+Camden 94). The tab counts those graduates as leavers because PowerSchool wrote
+no next-year graduate record for them. A workbook change could close that gap,
+and the new view handles graduates through its terminal-grade rule. The gap
+matters mostly as a note for anyone who compares the 2 dashboards during the
+switch.
 
 ### The 2025-26 prototype
 
