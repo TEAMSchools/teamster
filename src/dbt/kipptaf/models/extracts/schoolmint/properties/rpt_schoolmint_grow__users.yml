@@ -260,9 +260,7 @@ unit_tests:
               cast(
                   null as array<struct<`_id` string, name string>>
               ) as roles,
-              cast(
-                  null as array<struct<name string, `_id` string>>
-              ) as regional_admin_schools
+              ['sch-z', 'sch-a'] as regional_admin_schools
       - input: ref('stg_schoolmint_grow__generic_tags')
         format: sql
         rows: |
@@ -280,6 +278,7 @@ unit_tests:
             role_names: [],
             role_ids: [],
             group_type: "",
+            regional_admin_school_ids_ws: [sch-a, sch-z],
           }
 
   - name: unit_grow_users_norole_no_account_not_emitted
@@ -371,9 +370,7 @@ unit_tests:
               cast(
                   null as array<struct<`_id` string, name string>>
               ) as roles,
-              cast(
-                  null as array<struct<name string, `_id` string>>
-              ) as regional_admin_schools
+              cast(null as array<string>) as regional_admin_schools
       - input: ref('stg_schoolmint_grow__generic_tags')
         format: sql
         rows: |
@@ -512,9 +509,7 @@ unit_tests:
               cast(
                   null as array<struct<`_id` string, name string>>
               ) as roles,
-              cast(
-                  null as array<struct<name string, `_id` string>>
-              ) as regional_admin_schools
+              cast(null as array<string>) as regional_admin_schools
       - input: ref('stg_schoolmint_grow__generic_tags')
         format: sql
         rows: |
@@ -677,9 +672,7 @@ unit_tests:
               cast(
                   null as array<struct<`_id` string, name string>>
               ) as roles,
-              cast(
-                  null as array<struct<name string, `_id` string>>
-              ) as regional_admin_schools
+              cast(null as array<string>) as regional_admin_schools
           union all
           select
               'usr-107', 107, cast(null as string), cast(null as string),
@@ -687,7 +680,7 @@ unit_tests:
               cast(null as string), cast(null as string),
               cast(null as string),
               cast(null as array<struct<`_id` string, name string>>),
-              cast(null as array<struct<name string, `_id` string>>)
+              cast(null as array<string>)
       - input: ref('stg_schoolmint_grow__generic_tags')
         format: sql
         rows: |
@@ -803,9 +796,7 @@ unit_tests:
               cast(
                   null as array<struct<`_id` string, name string>>
               ) as roles,
-              cast(
-                  null as array<struct<name string, `_id` string>>
-              ) as regional_admin_schools
+              cast(null as array<string>) as regional_admin_schools
           from unnest([1])
           where false
       - input: ref('stg_schoolmint_grow__generic_tags')
@@ -920,9 +911,7 @@ unit_tests:
               cast(
                   null as array<struct<`_id` string, name string>>
               ) as roles,
-              cast(
-                  null as array<struct<name string, `_id` string>>
-              ) as regional_admin_schools
+              cast(null as array<string>) as regional_admin_schools
           from unnest([1])
           where false
       - input: ref('stg_schoolmint_grow__generic_tags')
@@ -1061,9 +1050,7 @@ unit_tests:
               cast(
                   null as array<struct<`_id` string, name string>>
               ) as roles,
-              cast(
-                  null as array<struct<name string, `_id` string>>
-              ) as regional_admin_schools
+              cast(null as array<string>) as regional_admin_schools
           from unnest([1])
           where false
       - input: ref('stg_schoolmint_grow__generic_tags')
@@ -1215,9 +1202,7 @@ unit_tests:
               cast(
                   null as array<struct<`_id` string, name string>>
               ) as roles,
-              cast(
-                  null as array<struct<name string, `_id` string>>
-              ) as regional_admin_schools
+              cast(null as array<string>) as regional_admin_schools
           from unnest([1])
           where false
       - input: ref('stg_schoolmint_grow__generic_tags')

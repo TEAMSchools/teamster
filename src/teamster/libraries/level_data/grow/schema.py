@@ -690,7 +690,7 @@ class User(UserRef, Timestamp):
 
     districtData: list[DistrictDatum | None] | None = None
     externalIntegrations: list[ExternalIntegration | None] | None = None
-    regionalAdminSchools: list[Ref | None] | None = None
+    regionalAdminSchools: list[str | None] | None = None
     roles: list[Role | None] | None = None
 
 
