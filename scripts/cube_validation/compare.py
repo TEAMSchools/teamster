@@ -184,8 +184,9 @@ def reconcile_sql(
         One query returning `bucket`, each group-by column, `n_rows`,
         `n_students` (distinct values of the first grain pair), and per side
         (`c`, `d`) its rows and each value column's non-null count and sum
-        (`__s_c_rows`, `__s_c_n0`, `__s_c_sum0`, ...). No grain or value
-        column is returned.
+        (`__s_c_rows`, `__s_c_n0`, `__s_c_sum0`, ...). The dashboard side
+        counts only the rows its filters keep, so a `dashboard_filtered`
+        row adds to Cube's cell alone. No grain or value column is returned.
     """
     ctes, group_names = _joined(
         cube_rows_sql,
@@ -197,18 +198,29 @@ def reconcile_sql(
             f"COALESCE({pred}, FALSE) AS __{side}k{j}"
             for j, pair in enumerate(cuts)
             for side, pred in zip(("c", "d"), pair, strict=True)
-        ],
+        ]
+        # The dashboard shows only the rows its filters keep.
+        + (
+            [" AND ".join(f"d.{flag}" for flag, _ in filters) + " AS __dkeep"]
+            if filters
+            else []
+        ),  # fmt: skip
         moved=True,
     )
     stats = []
     for prefix, flag in [("", None), *((f"k{j}_", j) for j in range(len(cuts)))]:
         for side in ("c", "d"):
-            keep = f"__{side}in" if flag is None else f"__{side}in AND __{side}k{flag}"
+            shown = [f"__{side}in"]
+            if side == "d" and filters:
+                shown.append("__dkeep")
+            if flag is not None:
+                shown.append(f"__{side}k{flag}")
+            keep = " AND ".join(shown)
             stats.append(f"COUNTIF({keep}) AS {_STATS}{prefix}{side}_rows")
             for i in range(len(rows.values)):
                 value = f"__{side}v{i}"
-                if flag is not None:
-                    value = f"IF(__{side}k{flag}, {value}, NULL)"
+                if len(shown) > 1:
+                    value = f"IF({' AND '.join(shown[1:])}, {value}, NULL)"
                 stats += [
                     f"COUNT({value}) AS {_STATS}{prefix}{side}_n{i}",
                     f"SUM({value}) AS {_STATS}{prefix}{side}_sum{i}",
@@ -611,8 +623,6 @@ def cell_rows_from(
     out = []
     for row in result_rows:
         dims = [[k, None if v is None else str(v)] for k, v in _cell_dims(row)]
-        if row.get("__filter") is not None:
-            continue
         dash = None
         if row.get(_MOVED):
             dash = [

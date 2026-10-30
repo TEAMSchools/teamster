@@ -388,6 +388,32 @@ GAP_DECISION = """\
 """
 
 
+VALUES = "        - { dashboard: is_present, cube: attendance_value }\n"
+
+
+def test_rows_take_a_dashboard_side_scope(tmp_path):
+    scope = "      dashboard_scope:\n        - { dashboard: iep_status, values: [No IEP] }\n"
+    text = EXAMPLE.replace(VALUES, VALUES + scope, 1)
+
+    rows = load_view_config(_write(tmp_path, text)).comparisons[0].rows
+
+    assert rows.dashboard_scope == [
+        {"dashboard": "iep_status", "operator": "equals", "values": ["No IEP"]}
+    ]
+
+
+def test_rows_dashboard_scope_defaults_to_none(tmp_path):
+    rows = load_view_config(_write(tmp_path, EXAMPLE)).comparisons[0].rows
+    assert rows.dashboard_scope == []
+
+
+def test_rows_dashboard_scope_takes_only_a_column_name(tmp_path):
+    scope = '      dashboard_scope:\n        - { dashboard: "x; DROP", values: [1] }\n'
+    text = EXAMPLE.replace(VALUES, VALUES + scope, 1)
+    with pytest.raises(ConfigError, match="dashboard_scope"):
+        load_view_config(_write(tmp_path, text))
+
+
 def test_sheet_field_and_split_rows_load(tmp_path):
     text = EXAMPLE.replace(
         SHAPE, SHAPE + '    sheet_field: "# Tardy"\n    split_rows: sum\n'

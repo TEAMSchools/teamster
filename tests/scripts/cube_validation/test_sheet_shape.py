@@ -299,6 +299,26 @@ def test_dashboard_rows_keep_filtered_rows_with_a_flag():
     assert "WHERE" in sql and "enroll_status IN (0)" not in sql.split("WHERE", 1)[1]
 
 
+def test_dashboard_rows_take_the_rows_scope_and_the_probe_does_not():
+    from dataclasses import replace
+
+    base = _filtered()
+    scoped = replace(
+        base,
+        rows=replace(
+            base.rows,
+            dashboard_scope=[
+                {"dashboard": "iep_status", "operator": "equals", "values": ["No IEP"]}
+            ],
+        ),
+    )
+
+    where = pipeline.dashboard_rows_sql(_cfg(), scoped).split("WHERE", 1)[1]
+
+    assert "(CAST(iep_status AS STRING) IN ('No IEP'))" in where
+    assert "iep_status" not in pipeline.probe_sql(_cfg(), scoped, {})
+
+
 def test_unfiltered_probe_drops_only_the_dashboard_filters():
     comparison = _filtered()
     assert "enroll_status IN (0)" in pipeline.probe_sql(_cfg(), comparison, {})

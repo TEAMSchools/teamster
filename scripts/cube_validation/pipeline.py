@@ -310,7 +310,8 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
 
     Rows a `dashboard_filters` entry drops stay in, with a flag per entry
     (`__df0`, ...) that says whether it keeps the row, so the reconcile can
-    count them apart from rows Cube alone has.
+    count them apart from rows Cube alone has. Rows outside `rows.dashboard_scope`
+    are left out.
     """
     dates = _date_cubes(cfg)
     seen: dict[str, bool] = {}
@@ -324,10 +325,13 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
             comparison.dashboard_filters, _filter_flags(comparison), strict=True
         )
     ]
+    where = _any_cut_predicate(comparison, with_filters=False)
+    if scope := comparison.rows.dashboard_scope if comparison.rows else []:
+        parts = [where, *map(_dashboard_filter_sql, scope)]
+        where = " AND ".join(f"({p})" for p in parts)
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
-        f"SELECT {', '.join(cols)} FROM {_dashboard_ref(comparison)} "
-        f"WHERE {_any_cut_predicate(comparison, with_filters=False)}"
+        f"SELECT {', '.join(cols)} FROM {_dashboard_ref(comparison)} WHERE {where}"
     )
 
 

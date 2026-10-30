@@ -91,6 +91,11 @@ class ColumnPair:
 class RowSpec:
     grain: list[ColumnPair]
     values: list[ColumnPair]
+    # Dashboard-side row filters (`dashboard_filters` entries) for the
+    # reconcile's dashboard rows only, mirroring a `scope` Cube applies: the
+    # probe and the cells keep every row, so a cell with no rows in scope
+    # still shows (blank) on both.
+    dashboard_scope: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -341,7 +346,12 @@ def _comparison(reader: _Reader) -> Comparison:
     if reader.data.get("rows") is not None:
         rows_reader = reader.child("rows", reader.data["rows"])
         rows = RowSpec(
-            grain=_pairs(rows_reader, "grain"), values=_pairs(rows_reader, "values")
+            grain=_pairs(rows_reader, "grain"),
+            values=_pairs(rows_reader, "values"),
+            dashboard_scope=[
+                _filter_entry(r, "dashboard")
+                for r in _list_of(rows_reader, "dashboard_scope")
+            ],
         )
 
     proof = None

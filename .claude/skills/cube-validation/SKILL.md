@@ -146,12 +146,19 @@ cause, do not retry around it.
      dashboard side only (`{dashboard: enroll_status, values: [0]}`). The run
      result names it, since rows it drops read as Cube-only. Use it instead of
      writing the filter into `probe_sql`.
-   - `scope` and `dashboard_filters` take `equals` (the default), `not_equals`,
-     `gt`, `gte`, `lt` and `lte` (exactly 1 number), or `set` (not null). A
-     dashboard filter compares a date to the coming Sunday (Tableau's
-     `TODAY() + 8 - weekday`) with `days_from_week_end: <days after it>` and a
-     compare operator in place of `values`; it runs at the run's moment (see
-     _Gotchas_ for the Saturday-evening window).
+   - `rows.dashboard_scope`: the dashboard's half of a `scope`, for the row
+     reconcile only (`[{dashboard: iep_status, values: [No IEP]}]` beside
+     `scope` on `is_iep`). Without it, every row of the other status reads
+     dashboard-only. Not a `dashboard_filters` entry: that one filters the probe
+     too, which loses every cell with no rows in scope while the sheet still
+     shows it blank.
+   - `scope`, `dashboard_filters` and `rows.dashboard_scope` take `equals` (the
+     default), `not_equals`, `gt`, `gte`, `lt` and `lte` (exactly 1 number), or
+     `set` (not null). A dashboard filter compares a date to the coming Sunday
+     (Tableau's `TODAY() + 8 - weekday`) with
+     `days_from_week_end: <days after it>` and a compare operator in place of
+     `values`; it runs at the run's moment (see _Gotchas_ for the
+     Saturday-evening window).
    - `parameters: {<caption>: <member>}`: a field the sheet shows only behind a
      parameter value (Chronic Absenteeism under "Attendance Metric"). The proof
      copy carries that value, so the REST export shows the field. Put the

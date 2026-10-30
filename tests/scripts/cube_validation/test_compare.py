@@ -571,6 +571,40 @@ def test_the_reconcile_keeps_each_side_s_rows_and_sums_per_cell(duck):
     assert rows[("cube_only", (("grade_c", "2"),))]["d"]["rows"] == 0
 
 
+def test_rows_the_dashboard_filters_out_count_on_cube_s_side_only(duck):
+    from cube_validation.compare import cell_rows_from
+
+    # Student 1 matches; the dashboard drops student 2 (Cube keeps it) and
+    # student 4 (Cube lacks it too); student 3 is Cube's only.
+    duck.table(
+        "cube_t",
+        "lea BIGINT, aid VARCHAR, grade_c VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "1", True), (2, "a", "1", False), (3, "a", "1", False)],
+    )
+    duck.table(
+        "dash_t",
+        "student BIGINT, item VARCHAR, grade_d VARCHAR, ok_d BOOLEAN, __df0 BOOLEAN",
+        [(1, "a", "1", True, True), (2, "a", "1", False, False),
+         (4, "a", "1", True, False)],
+    )  # fmt: skip
+    result = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            MOVED_ROWS,
+            MOVED_BY,
+            filters=[("__df0", "future")],
+        )
+    )
+
+    by = {r["bucket"]: r for r in cell_rows_from(result)}
+    assert set(by) == {"match", "dashboard_filtered", "cube_only"}
+    assert by["dashboard_filtered"]["c"] == {"rows": 1, "n": [1], "sum": [0.0]}
+    assert by["dashboard_filtered"]["d"] == {"rows": 0, "n": [0], "sum": [0.0]}
+    # Student 4 shares the match row's group but neither side shows it.
+    assert by["match"]["c"] == by["match"]["d"] == {"rows": 1, "n": [1], "sum": [1.0]}
+
+
 def test_the_reconcile_keeps_sums_per_cut(duck):
     from cube_validation.compare import cell_rows_from
 
