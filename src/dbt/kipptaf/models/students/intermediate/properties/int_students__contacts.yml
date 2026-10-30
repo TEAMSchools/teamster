@@ -6,7 +6,7 @@ models:
       the Finalsite `int_finalsite__student_contacts` model, crosswalked to a
       PowerSchool student number and scoped to students that have one. When more
       than 1 Finalsite record carries the same student number, only the record
-      flagged `is_latest_powerschool_student_number` contributes; Miami sources
+      flagged `is_latest_powerschool_student_number` contributes. Miami sources
       from Focus, mapping the sort_order 1 contact to `contact_1` and every
       emergency-flagged contact to `emergency_1` through `emergency_4` ranked by
       sort_order. The Focus emergency ranking deliberately includes the

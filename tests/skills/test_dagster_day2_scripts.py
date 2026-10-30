@@ -150,6 +150,49 @@ def test_logging_read_follows_page_tokens(monkeypatch):
     assert "pageToken" not in sent[0] and sent[1]["pageToken"] == "t1"
 
 
+def test_alerts_bucket_window_prior_day_and_older(monkeypatch):
+    pages = [
+        {
+            "alerts": [
+                {"name": "in", "state": "CLOSED", "openTime": "2026-10-29T22:00:00Z"},
+                {
+                    "name": "prior",
+                    "state": "CLOSED",
+                    "openTime": "2026-10-28T22:00:00Z",
+                },
+            ],
+            "nextPageToken": "t1",
+        },
+        {
+            "alerts": [
+                {"name": "old", "state": "CLOSED", "openTime": "2026-10-20T00:00:00Z"},
+                {"name": "stuck", "state": "OPEN", "openTime": "2026-10-01T00:00:00Z"},
+            ]
+        },
+    ]
+    sent: list[dict] = []
+
+    class Resp:
+        status_code = 200
+
+        def __init__(self, body: dict) -> None:
+            self._body = body
+
+        def json(self) -> dict:
+            return self._body
+
+    def fake_get(_url, headers, params, timeout):
+        sent.append(params)
+        return Resp(pages[len(sent) - 1])
+
+    monkeypatch.setattr(dc, "gcp_token", lambda: "t")
+    monkeypatch.setattr(dc.httpx, "get", fake_get)
+    got = dc.step_11_alerts("2026-10-29T21:00:00Z")
+    assert [a["name"] for a in got["alerts"]] == ["in", "stuck"]
+    assert [a["name"] for a in got["priorDay"]] == ["prior"]
+    assert sent[1]["pageToken"] == "t1"
+
+
 def test_logging_read_retries_quota_429(monkeypatch):
     codes = [429, 429, 200]
     waits: list[int] = []

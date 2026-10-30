@@ -1214,19 +1214,30 @@ def step_11_alerts(utc_start: str) -> dict:
     incidents, which reach it through the log-based `Confirmed relevant
     incidents` policy.
     """
-    resp = httpx.get(
-        f"https://monitoring.googleapis.com/v3/projects/{PROJECT_ID}/alerts",
-        headers={"Authorization": f"Bearer {gcp_token()}"},
-        params={"pageSize": 50, "orderBy": "open_time desc"},
-        timeout=30.0,
-    )
-    if resp.status_code >= 400:
-        raise RuntimeError(f"monitoring HTTP {resp.status_code}: {resp.text[:300]}")
     prior_start = (
         datetime.fromisoformat(utc_start.replace("Z", "+00:00")) - timedelta(days=1)
     ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Follow every page: an OPEN alert older than the lookback can sort past page 1.
+    alerts, token = [], None
+    while True:
+        params = {"pageSize": 50, "orderBy": "open_time desc"}
+        if token:
+            params["pageToken"] = token
+        resp = httpx.get(
+            f"https://monitoring.googleapis.com/v3/projects/{PROJECT_ID}/alerts",
+            headers={"Authorization": f"Bearer {gcp_token()}"},
+            params=params,
+            timeout=30.0,
+        )
+        if resp.status_code >= 400:
+            raise RuntimeError(f"monitoring HTTP {resp.status_code}: {resp.text[:300]}")
+        data = resp.json()
+        alerts.extend(data.get("alerts", []))
+        token = data.get("nextPageToken")
+        if not token:
+            break
     out, prior = [], []
-    for a in resp.json().get("alerts", []):
+    for a in alerts:
         open_time = a.get("openTime") or ""
         if open_time >= utc_start or a.get("state") == "OPEN":
             bucket = out

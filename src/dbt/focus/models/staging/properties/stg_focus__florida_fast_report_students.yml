@@ -30,8 +30,8 @@ models:
           name: stg_focus__florida_fast_report_students__student_syear_subject_unique
           description: >-
             Focus's FAST report has more than 1 row for a student, school year
-            and subject. Downstream, models read only the row flagged
-            `is_current_report_row`. Ask Focus support to remove the duplicate
+            and subject. Consumers must filter on `is_current_report_row` to
+            read only the newest row. Ask Focus support to remove the duplicate
             FAST report row for the student.
           arguments:
             combination_of_columns:
@@ -79,9 +79,9 @@ models:
                 severity: error
       - name: is_current_report_row
         description: >-
-          True on the one row per student, school year and subject that
-          consumers should read — the highest `id`. False on older duplicate
-          rows Focus has repeated.
+          True on the one row per student, school year and subject with the
+          highest `id`. False on older duplicate rows Focus has repeated.
+          Consumers must filter on it.
         data_type: bool
       - name: school_id
         description: Focus school id (internal integer, not the Florida code).
