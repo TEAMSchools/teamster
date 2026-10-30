@@ -92,8 +92,9 @@ models:
       - name: ecc
         data_type: numeric
         description: >-
-          Adjusted six-year minority graduation rate of the college at the
-          alumnus's ECC enrollment. Context next to GPA; not scored.
+          Adjusted six-year minority graduation rate of the college the alumnus
+          graduated from. Null when they have not graduated. Context next to
+          GPA; not scored.
         config:
           meta:
             contains_pii: true

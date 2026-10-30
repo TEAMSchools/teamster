@@ -51,9 +51,11 @@ models:
       - name: ecc
         data_type: numeric
         description: >-
-          Adjusted six-year minority graduation rate of the college at the
-          contact's ECC enrollment, from int_kippadb__enrollment_pivot. Context
-          next to GPA; not scored.
+          Adjusted six-year minority graduation rate of the college the contact
+          graduated from: the postsecondary enrollment
+          int_kippadb__enrollment_pivot picks as completed (BA, then AA, then
+          CTE), when its status is Graduated. Null when the contact has not
+          graduated. Context next to GPA; not scored.
         config:
           meta:
             contains_pii: true

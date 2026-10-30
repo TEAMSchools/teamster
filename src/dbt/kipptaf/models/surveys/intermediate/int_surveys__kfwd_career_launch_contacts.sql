@@ -59,9 +59,13 @@ select
 
     b.label as gpa_band,
 
-    p.ecc_adjusted_6_year_minority_graduation_rate as ecc,
-
     coalesce(b.points, 0) as gpa_points,
+
+    if(
+        p.postsec_completed_status = 'Graduated',
+        p.postsec_completed_adjusted_6_year_minority_graduation_rate,
+        null
+    ) as ecc,
 from contacts as c
 left join gpa_sources as s on c.contact_id = s.contact_id and s.rn_source = 1
 left join
