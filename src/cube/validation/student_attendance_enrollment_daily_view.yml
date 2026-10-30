@@ -72,9 +72,10 @@ comparisons:
     proof:
       fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
       cells: 45
-      proven_at: "2026-10-28T13:59:49.206900+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      proven_at: "2026-10-30T20:24:33.882874+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 28af4c06c3dd84e8cf5de3b573ac16b1f75ddf04c84d5116b8d15d3aaf007c32
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -93,11 +94,21 @@ comparisons:
         - Schoolid
         - is_self_contained
         - ms_attended
-      restricting_filters:
-        - Iep Status
-        - Region [Filter]
-        - School Level
-        - is_self_contained
+      restricting_filters: []
+      filter_notes:
+        Region [Filter]: copy of Region
+      missing_columns:
+        School: school_abbreviation
+        NJ Overall Student Tier: nj_overall_student_tier
+        ms_attended: ms_attended
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
+        Ethnicity: ethnicity
+        School Level: school_level
+        is_self_contained: is_self_contained
+        C 504 Status: c_504_status
   - id: ada-y1-es
     measure: avg_daily_attendance
     confirmed: true
@@ -137,9 +148,10 @@ comparisons:
     proof:
       fingerprint: 79d4b006007bc63f46c3a249d3fa3a4a53d857e3b783d33866cea8c458f46c9a
       cells: 50
-      proven_at: "2026-10-28T14:00:37.450985+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      proven_at: "2026-10-30T20:25:06.781513+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 30348b10ac3f0593ead06bec66157451e066ea4cb398edb33119692e1da5b0a7
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -154,8 +166,17 @@ comparisons:
         - NJ Overall Student Tier
         - Schoolid
         - ms_attended
-      restricting_filters:
-        - Iep Status
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        NJ Overall Student Tier: nj_overall_student_tier
+        ms_attended: ms_attended
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
+        Ethnicity: ethnicity
+        C 504 Status: c_504_status
   - id: ada-y1-ms
     measure: avg_daily_attendance
     confirmed: true
@@ -195,9 +216,10 @@ comparisons:
     proof:
       fingerprint: c0a4a97faefd141d3c8ee03593e23706cbbd71dfc2a95e25ce32437140c71a3c
       cells: 40
-      proven_at: "2026-10-28T14:01:21.920276+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      proven_at: "2026-10-30T20:25:33.665137+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 245763dfbafcd75642395ab21e2dcc00561501d3d63cfb899d4b07aa0238d478
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -213,9 +235,18 @@ comparisons:
         - School Level - OOD FIlter Set
         - Schoolid
         - ms_attended
-      restricting_filters:
-        - Iep Status
-        - School Level - OOD FIlter Set
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        NJ Overall Student Tier: nj_overall_student_tier
+        ms_attended: ms_attended
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
+        Ethnicity: ethnicity
+        School Level - OOD FIlter Set: School Level - OOD FIlter Set
+        C 504 Status: c_504_status
   - id: students-y1-region
     measure: count_students
     confirmed: true
@@ -249,9 +280,10 @@ comparisons:
     proof:
       fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
       cells: 45
-      proven_at: "2026-10-28T14:02:06.181649+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      proven_at: "2026-10-30T20:26:00.203939+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 27a8e807bf279af39995eab75af4167f66d59798e5c57e1517f8a298d2710d58
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -270,11 +302,21 @@ comparisons:
         - Schoolid
         - is_self_contained
         - ms_attended
-      restricting_filters:
-        - Iep Status
-        - Region [Filter]
-        - School Level
-        - is_self_contained
+      restricting_filters: []
+      filter_notes:
+        Region [Filter]: copy of Region
+      missing_columns:
+        School: school_abbreviation
+        NJ Overall Student Tier: nj_overall_student_tier
+        ms_attended: ms_attended
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
+        Ethnicity: ethnicity
+        School Level: school_level
+        is_self_contained: is_self_contained
+        C 504 Status: c_504_status
   - id: ontime-grade-rollup
     <<: *enrolled
     measure: pct_ontime
@@ -294,9 +336,10 @@ comparisons:
     proof:
       fingerprint: 1f0bf42a77c8b8b6cf663e930582ac115d26618d2185e3c1af8de5bb9645b81d
       cells: 23
-      proven_at: "2026-10-28T14:02:27.396986+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      proven_at: "2026-10-30T20:26:04.814493+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 1cea72f6ffcfb9a0813336073a896f0365702e59ba0d4993abf29404ed5299de
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -310,6 +353,12 @@ comparisons:
         - Schoolid
       restricting_filters:
         - Enroll Status
+      filter_notes: {}
+      missing_columns:
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        School: school_abbreviation
+        Iep Status: iep_status
   - id: tardy-roster
     <<: *roster
     measure: count_tardy_days
@@ -324,10 +373,11 @@ comparisons:
         - { dashboard: att_code, cube: attendance_code }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11053
-      proven_at: "2026-10-28T14:03:20.559915+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      cells: 11032
+      proven_at: "2026-10-30T20:26:31.170710+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 9668d3e0503aa82187449d18b13d4974e26c342a685a0a46603514d6d412ed96
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -349,6 +399,18 @@ comparisons:
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        Team: team
+        NJ Overall Student Tier: nj_overall_student_tier
+        School: school_abbreviation
+        Lastfirst: lastfirst
+        Teacher Name: teacher_name
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
   - id: absences-roster
     <<: *roster
     measure: count_absent_days
@@ -364,10 +426,11 @@ comparisons:
         - { dashboard: is_absent, cube: is_absent }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11053
-      proven_at: "2026-10-28T14:04:28.687116+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      cells: 11032
+      proven_at: "2026-10-30T20:27:17.195268+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 58259a69041974ec46c6a7c532940b94887b28b967e6e4758fba5c6d97b51ec5
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -389,6 +452,18 @@ comparisons:
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        Team: team
+        NJ Overall Student Tier: nj_overall_student_tier
+        School: school_abbreviation
+        Lastfirst: lastfirst
+        Teacher Name: teacher_name
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
   - id: iss-roster
     <<: *roster
     measure: count_iss_days
@@ -400,10 +475,11 @@ comparisons:
         - { dashboard: att_code, cube: attendance_code }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11053
-      proven_at: "2026-10-28T14:04:51.293911+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      cells: 11032
+      proven_at: "2026-10-30T20:27:22.916363+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 37467abb0db2ef48db6bf2d8b1caef656bc0d9cba93d1292cde696a025420aff
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -425,6 +501,18 @@ comparisons:
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        Team: team
+        NJ Overall Student Tier: nj_overall_student_tier
+        School: school_abbreviation
+        Lastfirst: lastfirst
+        Teacher Name: teacher_name
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
   - id: oss-roster
     <<: *roster
     measure: count_oss_days
@@ -439,10 +527,11 @@ comparisons:
         - { dashboard: att_code, cube: attendance_code }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11053
-      proven_at: "2026-10-28T14:05:13.343025+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      cells: 11032
+      proven_at: "2026-10-30T20:27:29.031443+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: edd95448c255b479e94e1faab0d0212769bc2fc1d84decc1e41a0da2ff21c355
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -464,6 +553,18 @@ comparisons:
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        Team: team
+        NJ Overall Student Tier: nj_overall_student_tier
+        School: school_abbreviation
+        Lastfirst: lastfirst
+        Teacher Name: teacher_name
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
   - id: present-roster
     <<: *roster
     measure: sum_attendance_value
@@ -475,10 +576,11 @@ comparisons:
         - { dashboard: is_present, cube: attendance_value }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11053
-      proven_at: "2026-10-28T14:06:27.606135+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      cells: 11032
+      proven_at: "2026-10-30T20:27:35.107906+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: d58d8cffbf2ac05244a612bd570570b833ae264b06692918c4a2c18c3c497a26
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -500,6 +602,18 @@ comparisons:
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        Team: team
+        NJ Overall Student Tier: nj_overall_student_tier
+        School: school_abbreviation
+        Lastfirst: lastfirst
+        Teacher Name: teacher_name
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
   # Membershipvalue is a column beside Measure Names, not a Measure Names
   # value, and sheet_field cannot name it in a long export yet.
   - id: membership-roster
@@ -513,10 +627,11 @@ comparisons:
         - { dashboard: membershipvalue, cube: membership_value }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11053
-      proven_at: "2026-10-28T14:07:30.100658+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      cells: 11032
+      proven_at: "2026-10-30T20:27:41.516160+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 40c6f32e2148a65732e124fab40e7f1cc405eb14ea8c4e4c7e7304f8a3b43395
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -538,6 +653,18 @@ comparisons:
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        Team: team
+        NJ Overall Student Tier: nj_overall_student_tier
+        School: school_abbreviation
+        Lastfirst: lastfirst
+        Teacher Name: teacher_name
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
   - id: absent-weighted-roster
     <<: *roster
     measure: count_absent_days_weighted
@@ -550,10 +677,11 @@ comparisons:
         - { dashboard: is_tardy, cube: is_tardy }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11053
-      proven_at: "2026-10-28T14:11:43.072064+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      cells: 11032
+      proven_at: "2026-10-30T20:27:48.521506+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 059a17a608ad578ac6c0c9b6f4397b9696fd355b329034ab394fc238b70cc7e8
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -575,6 +703,18 @@ comparisons:
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        Team: team
+        NJ Overall Student Tier: nj_overall_student_tier
+        School: school_abbreviation
+        Lastfirst: lastfirst
+        Teacher Name: teacher_name
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
   - id: days-to-90-roster
     <<: *roster
     measure: days_to_90_percent
@@ -587,10 +727,11 @@ comparisons:
         - { dashboard: is_absent, cube: is_absent }
     proof:
       fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
-      cells: 11053
-      proven_at: "2026-10-28T14:09:29.561524+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      cells: 11032
+      proven_at: "2026-10-30T20:27:54.408580+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 4864eecd951208f2f2f677e11958050d894b628a73e608aa820149ad165e66c0
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -612,6 +753,18 @@ comparisons:
       restricting_filters:
         - Enroll Status
         - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        Team: team
+        NJ Overall Student Tier: nj_overall_student_tier
+        School: school_abbreviation
+        Lastfirst: lastfirst
+        Teacher Name: teacher_name
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
   # Attendance Pts is shown only on Team Counts (on the Detail sheet it only
   # sorts). The sheet splits by homeroom, which Cube lacks, so homeroom rows
   # sum to one cell per term.
@@ -671,9 +824,10 @@ comparisons:
     proof:
       fingerprint: 36a08c1fe0afe77165db65f279d1ec8b552d16b06c085ff1934f75ec3fa95393
       cells: 8
-      proven_at: "2026-10-28T14:10:38.207447+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      proven_at: "2026-10-30T20:28:00.630273+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 3580ec2107756e117a8ca4c7c142e3e50b85e17f969f8c8a3781f4fa1598eac4
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -689,8 +843,16 @@ comparisons:
         - School
         - School Level - OOD FIlter Set
       restricting_filters:
-        - Iep Status
         - School Level - OOD FIlter Set
+      filter_notes: {}
+      missing_columns:
+        School: school_abbreviation
+        Is Counselingservices: is_counselingservices
+        Enroll Status: enroll_status
+        Iep Status: iep_status
+        Ethnicity: ethnicity
+        School Level - OOD FIlter Set: School Level - OOD FIlter Set
+        C 504 Status: c_504_status
 identities:
   - name: ada-is-attendance-over-membership
     left: avg_daily_attendance

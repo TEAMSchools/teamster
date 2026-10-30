@@ -52,9 +52,10 @@ comparisons:
     proof:
       fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
       cells: 45
-      proven_at: "2026-10-28T13:57:05.946497+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      proven_at: "2026-10-30T20:23:25.096941+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: eea90a028dd7db899ebada655888df104aed29c3c27045227feae977473d7a5e
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -76,11 +77,22 @@ comparisons:
         - Schoolid
         - is_self_contained
         - ms_attended
-      restricting_filters:
-        - Iep Status
-        - Region [Filter]
-        - School Level
-        - is_self_contained
+      restricting_filters: []
+      filter_notes:
+        Region [Filter]: copy of Region
+      missing_columns:
+        School: school_abbreviation
+        NJ Overall Student Tier: nj_overall_student_tier
+        Calendardate: calendardate
+        ms_attended: ms_attended
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
+        Ethnicity: ethnicity
+        School Level: school_level
+        is_self_contained: is_self_contained
+        C 504 Status: c_504_status
   - id: truant-y1-region
     <<: *y1_region
     measure: pct_truant
@@ -105,9 +117,10 @@ comparisons:
     proof:
       fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
       cells: 45
-      proven_at: "2026-10-28T13:57:54.731478+00:00"
-      workbook_updated_at: "2026-10-28T10:16:21+00:00"
+      proven_at: "2026-10-30T20:24:00.913845+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
       probe_fingerprint: 8f8f46da3f235f84ea37c494d8d44860520ed22752e2e9db17a5fa7ea29a7e70
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
       cuts:
         - "{}"
         - '{"Region": "Miami"}'
@@ -129,11 +142,22 @@ comparisons:
         - Schoolid
         - is_self_contained
         - ms_attended
-      restricting_filters:
-        - Iep Status
-        - Region [Filter]
-        - School Level
-        - is_self_contained
+      restricting_filters: []
+      filter_notes:
+        Region [Filter]: copy of Region
+      missing_columns:
+        School: school_abbreviation
+        NJ Overall Student Tier: nj_overall_student_tier
+        Calendardate: calendardate
+        ms_attended: ms_attended
+        Is Counselingservices: is_counselingservices
+        Schoolid: schoolid
+        Enroll Status: enroll_status
+        Iep Status: iep_status
+        Ethnicity: ethnicity
+        School Level: school_level
+        is_self_contained: is_self_contained
+        C 504 Status: c_504_status
 # Every call is domain_owner, with the same reason as the daily view's
 # decision wherever the question is the same.
 decisions:
