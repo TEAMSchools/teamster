@@ -67,14 +67,16 @@ validation files or runs the validator, and neither does this session.
       into the BigQuery console, with its dry-run price (`dashboard_usd`,
       `cube_usd`): it is pinned to the run's moment and returns only that cell.
       Tableau shows its last refresh, so a small difference may not match there.
-      An entry with `none` has no group cell to show: offer to find an example
-      under the owner's access, in this chat. For a cause question, then each
-      `reproduce` entry, which keeps working after the pinned SQL expires: its
-      `cube.query` for the owner to run with the Cube connector (Cube applies
-      their access) and compare with the dashboard cell `cube.dashboard` names;
-      each proof's `reproduce` SQL to paste into BigQuery, labeled today's data
-      whose counts drift from the run (or say it has none yet); and the proof
-      file's `url`.
+      An entry with `none` lists the `comparisons` with no group cell to show:
+      offer to find an example under the owner's access, in this chat. For a
+      cause question, then its `reproduce`, which keeps working after the pinned
+      SQL expires: each `cube` entry's `query` for the owner to run with the
+      Cube connector (Cube applies their access) and compare with the dashboard
+      cell its `dashboard` names; each `queries` entry's `sql` to paste into
+      BigQuery, labeled today's data whose counts drift from the run; and each
+      `proofs` entry's file (`url`), with its live count (its `query` index into
+      `queries`, or none yet). The issue's comments may repeat this as Reproduce
+      blocks; read it from the JSON.
    6. The choices, with what happens next, plus free text:
 
       | Choice                     | `call`          | What happens next                                 |

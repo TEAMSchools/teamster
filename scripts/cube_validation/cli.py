@@ -385,6 +385,7 @@ def _load(path: Path) -> ViewConfig:
 def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "review":
         configs = [_load(v) for v in args.views]
+        comments: list[str] = []
         print(
             pipeline.review(
                 configs,
@@ -392,8 +393,23 @@ def _dispatch(args: argparse.Namespace) -> int:
                 cache_root(),
                 now=utcnow(),
                 view_files=args.views,
+                comments=comments,
             )
         )
+        if comments:
+            folder = cache_root() / configs[0].view
+            folder.mkdir(parents=True, exist_ok=True)
+            paths = []
+            for n, text in enumerate(comments, start=1):
+                path = folder / f"review-comment-{n}.md"
+                path.write_text(text + "\n")
+                paths.append(str(path))
+            # stderr, so the note never lands in the issue body.
+            print(
+                "After posting the issue, post these as comments on it, in order: "
+                + ", ".join(paths),
+                file=sys.stderr,
+            )
         return 0
 
     if args.command == "describe":

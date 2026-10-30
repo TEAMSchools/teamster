@@ -836,3 +836,11 @@ def test_suppress_masks_until_the_masked_parts_hold_10_together():
     assert suppress(40, [25, 3, 2]) == ("40", ["masked", "<10", "<10"])
     assert suppress(50, [30, 11, 5, 4]) == ("50", ["30", "masked", "<10", "<10"])
     assert suppress(12, [11, 1]) == ("12", ["masked", "<10"])
+
+
+def test_a_hidden_value_is_redacted_only_as_a_whole_value():
+    from cube_validation.report import _safe_reason
+
+    text = _safe_reason("grade 1 lost 414 rows; see Q1 and 1.5", ["1"])
+
+    assert text == "grade <redacted> lost 414 rows; see Q1 and 1.5"

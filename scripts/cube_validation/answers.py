@@ -36,6 +36,7 @@ from .report import (
     defined_comparisons,
     definition_text,
     mask,
+    question_parts,
     question_reason,
 )
 
@@ -230,11 +231,6 @@ def _cause_evidence(asks: list[tuple[str, CauseAsk]]) -> list[str]:
     d = asks[0][1].decision
     return [
         f"cause ({d.cause.get('side')} side): {d.cause.get('label')}",
-        *(
-            f"`{a.decision.comparison}` in `{view}`: {mask(len(a.groups))} row "
-            f"groups, {mask(a.rows)} rows attributed to it"
-            for view, a in asks
-        ),
         *dict.fromkeys(a.lead for _, a in asks if a.lead),
     ]
 
@@ -337,6 +333,51 @@ def reproduce_json(
     return {"view": view, "comparison": cid, "cube": cube, "proofs": proofs}
 
 
+def merged_reproduce(parts: list[dict]) -> dict:
+    """A cause question's `reproduce_json` parts, each thing said once.
+
+    Returns:
+        `queries`: each distinct live count, as `bucket` and `sql`. `proofs`:
+        per proof file and cause bucket, `bucket`, `query` (its index in
+        `queries`, None without one), `url` (or `path` without one) and
+        `confirm` (the command per comparison it proves). `cube`: per
+        comparison with an example cell, its `view`, `comparison`, `query`
+        and `dashboard`. `expires`, and `after` (the commands once it has
+        passed, per validation file).
+    """
+    queries: list[dict] = []
+    proofs: dict[tuple, dict] = {}
+    cube, after, expires = [], [], None
+    for part in parts:
+        if part["cube"]:
+            cube.append(
+                {"view": part["view"], "comparison": part["comparison"], **part["cube"]}
+            )
+        for p in part["proofs"]:
+            query = None
+            if p["reproduce"]:
+                entry = {"bucket": p["bucket"], "sql": p["reproduce"]}
+                if entry not in queries:
+                    queries.append(entry)
+                query = queries.index(entry)
+            where = {"url": p["url"]} if p["url"] else {"path": p["path"]}
+            merged = proofs.setdefault(
+                (p["path"], p["bucket"]),
+                {"bucket": p["bucket"], "query": query, **where, "confirm": []},
+            )
+            if p["confirm"] not in merged["confirm"]:
+                merged["confirm"].append(p["confirm"])
+            after += [a for a in p["after"] if a not in after]
+            expires = min(expires or p["expires"], p["expires"])
+    return {
+        "queries": queries,
+        "proofs": list(proofs.values()),
+        "cube": cube,
+        "expires": expires,
+        "after": after,
+    }
+
+
 def questions_json(
     runs: list[RunResult],
     configs: list[ViewConfig],
@@ -369,10 +410,11 @@ def questions_json(
         `reason`, `decisions` (ids), `views`, `definitions` (`dashboard` and
         `cube`, one `<comparison> in <view>: <text>` line each), `evidence`,
         `counts` (the masked parts of its bullet), `hand_checks` (one per
-        comparison, or `none` saying to find an example locally), and the
+        comparison with an example cell, and per view 1 `none` entry listing
+        the `comparisons` without one, to find an example locally), and the
         earliest `moment` among its views with when its pinned SQL `expires`
-        and whether it has `expired`; a cause question also has `reproduce`,
-        one `reproduce_json` per comparison it covers.
+        and whether it has `expired`; a cause question also has `reproduce`
+        (`merged_reproduce` over the comparisons it covers).
     """
     by_run = {r.view: r for r in runs}
     by_cfg = {c.view: c for c in configs}
@@ -403,31 +445,37 @@ def questions_json(
             dict.fromkeys(_safe_reason(line, q["hidden"]) for line in lines)
         )
 
-        checks = []
+        checks, none = [], {}
         for view, cid, _ in q["comparisons"]:
             cfg = by_cfg.get(view)
             check = hand_check(by_run[view], cfg, cid, now) if cfg else None
             if check:
                 checks.append(_check_json(view, check))
             else:
-                checks.append({"view": view, "comparison": cid, "none": NO_EXAMPLE})
+                none.setdefault(view, []).append(cid)
+        checks += [
+            {"none": NO_EXAMPLE, "view": view, "comparisons": cids}
+            for view, cids in none.items()
+        ]
 
         moment = min((by_run[v].moment for v in views), key=lambda m: m.start)
         expires = moment.start + timedelta(days=TIME_TRAVEL_DAYS)
         extra = {}
         if "asks" in q:
-            extra["reproduce"] = [
-                reproduce_json(
-                    view,
-                    ask,
-                    by_run[view],
-                    by_cfg[view],
-                    (sources or {}).get(view),
-                    now,
-                )
-                for view, ask in q["asks"]
-                if view in by_cfg
-            ]
+            extra["reproduce"] = merged_reproduce(
+                [
+                    reproduce_json(
+                        view,
+                        ask,
+                        by_run[view],
+                        by_cfg[view],
+                        (sources or {}).get(view),
+                        now,
+                    )
+                    for view, ask in q["asks"]
+                    if view in by_cfg
+                ]
+            )
         out.append(
             {
                 "id": f"Q{n}",
@@ -436,7 +484,7 @@ def questions_json(
                 "views": views,
                 "definitions": defs,
                 "evidence": evidence,
-                "counts": list(q["parts"]),
+                "counts": question_parts(q),
                 "hand_checks": checks,
                 "moment": {
                     "start": moment.start.isoformat(),
