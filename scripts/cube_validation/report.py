@@ -463,15 +463,17 @@ def _with_task(reason: str, task: str) -> str:
     return f"{reason} Task: {task}" if task else reason
 
 
-def _by_reason(pairs) -> list[tuple[list[Decision], list]]:
+def _by_reason(pairs, owner: bool = True) -> list[tuple[list[Decision], list]]:
     """Domain-owner decisions grouped by their reason and task, each with the
     items they cover, in first-seen order: one shared reason, one question.
+    With `owner` False, every other decision, grouped by call too.
     """
-    out: dict[tuple[str, str], tuple[list[Decision], list]] = {}
+    out: dict[tuple[str, ...], tuple[list[Decision], list]] = {}
     for decision, item in pairs:
-        if decision.call != "domain_owner":
+        if (decision.call == "domain_owner") != owner:
             continue
-        decisions, items = out.setdefault((decision.reason, decision.task), ([], []))
+        key = (decision.reason, decision.task, "" if owner else decision.call)
+        decisions, items = out.setdefault(key, ([], []))
         if decision not in decisions:
             decisions.append(decision)
         items.append(item)
@@ -693,6 +695,67 @@ def _questions(
     return list(questions.values())
 
 
+# A call in the owner's words, for the decisions the review only reports.
+CALL_WORDS = {
+    "deliberate": "an intended difference; later runs stay quiet on it",
+    "fix_cube": "Cube gets fixed",
+    "fix_dashboard": "the dashboard gets fixed",
+    "fix_source": "the source data gets fixed",
+}
+
+
+def also_decided(
+    runs: list[RunResult], decided: dict[str, list[CauseAsk]] | None = None
+) -> list[str]:
+    """One line per decision the analyst made that the owner only sees.
+
+    Every call but `domain_owner`, masked like the questions: what it covers
+    (a cause once across its comparisons, else the question's part), the call,
+    the reason and the task. `decided` is per view, `triage.cause_asks` for
+    those calls. Never part of the questions JSON, so `record-answers` cannot
+    take one for an answer.
+    """
+    lines: dict[tuple, dict] = {}
+
+    def add(key, head, where, d, hidden) -> None:
+        entry = lines.setdefault(key, {"head": head, "where": [], "d": d, "hidden": []})
+        entry["where"] += [w for w in where if w not in entry["where"]]
+        entry["hidden"] += hidden
+
+    for run in runs:
+        for ask in (decided or {}).get(run.view, []):
+            d = ask.decision
+            _, hidden = _cause_part(run.view, ask)
+            key = ("cause", d.cause.get("side"), d.cause.get("label"), d.call,
+                   d.reason, d.task)  # fmt: skip
+            add(key, _cause_head(ask), [(run.view, d.comparison)], d, hidden)
+        for decisions, groups in _by_reason(run.applied.quiet, owner=False):
+            part, hidden = _group_part(run.view, decisions, groups)
+            d = decisions[0]
+            add(("group", run.view, part, d.call), part, [], d, hidden)
+        for decisions, diffs in _by_reason(run.applied.quiet_cells, owner=False):
+            part = (
+                f"{', '.join(f'`{c.comparison_id}`' for c in diffs)} in "
+                f"`{run.view}`: cell differences"
+            )
+            add(("cells", part, decisions[0].call), part, [], decisions[0], [])
+        for decisions, gaps in _by_reason(run.applied.quiet_gaps, owner=False):
+            part = _gap_part(run.view, gaps)
+            add(("gap", part, decisions[0].call), part, [], decisions[0], [])
+    out = []
+    for e in lines.values():
+        d = e["d"]
+        views: dict[str, list[str]] = {}
+        for view, cid in e["where"]:
+            views.setdefault(view, []).append(f"`{cid}`")
+        where = "; ".join(f"{', '.join(c)} in `{v}`" for v, c in views.items())
+        where = f" ({where})" if where else ""
+        call = CALL_WORDS.get(d.call, d.call)
+        reason = _with_task(_safe_reason(d.reason, e["hidden"]), d.task)
+        out.append(f"{e['head']}{where}: {call} (`{d.call}`). Reason: {reason}")
+    return out
+
+
 def question_reason(q: dict) -> str:
     """The question's reason as the issue shows it, without its task."""
     return _safe_reason(q["reason"], q["hidden"])
@@ -848,6 +911,7 @@ def render_review_issue(
     questions: list[dict] | None = None,
     causes: dict[str, list[CauseAsk]] | None = None,
     comments: list[str] | None = None,
+    decided: dict[str, list[CauseAsk]] | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -867,6 +931,8 @@ def render_review_issue(
             every cause question's Reproduce block, the blocks move out of
             the body into this list instead, as follow-up comments each under
             the cap, in question order; the body says they follow.
+        decided: Per view, the cause decisions with any other call
+            (`triage.cause_asks` with `owner=False`), for `also_decided`.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -909,9 +975,10 @@ def render_review_issue(
         block = _reproduce_lines(q["id"], q["reproduce"]) if q.get("reproduce") else []
         check_lines += hand + block
         reproduce.append((q["id"], block))
+    also = also_decided(runs, decided)
     body = _review_body(
         domain, question_lines, anchor_lines, definition_lines, check_lines,
-        asked_ids, kinds, questions, moved=False,
+        asked_ids, kinds, questions, also, moved=False,
     )  # fmt: skip
     if (
         comments is None
@@ -928,7 +995,7 @@ def render_review_issue(
     comments += _comment_chunks([(qid, b) for qid, b in reproduce if b])
     return _review_body(
         domain, question_lines, anchor_lines, definition_lines, kept,
-        asked_ids, kinds, questions, moved=True,
+        asked_ids, kinds, questions, also, moved=True,
     )  # fmt: skip
 
 
@@ -961,6 +1028,7 @@ def _review_body(
     asked_ids: list[str],
     kinds: list[str],
     questions: list[dict] | None,
+    also: list[str],
     moved: bool,
 ) -> str:
     """The review body from its rendered parts; `moved` says the Reproduce
@@ -978,6 +1046,13 @@ def _review_body(
         "",
     ]
     out += _bullets(question_lines + anchor_lines, "Nothing needs review.")
+    if also:
+        out += [
+            "",
+            "Also decided (no answer needed): the analyst's calls on the other "
+            "differences, for you to see.",
+            "",
+        ] + _bullets(also)
     if definition_lines:
         out += ["", "Definitions side by side:", ""] + _bullets(definition_lines)
     if check_lines:

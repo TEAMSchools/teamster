@@ -1722,8 +1722,13 @@ def review(
         causes,
         sources,
     )
+    # The analyst's other calls, which the body reports without asking.
+    decided = {
+        run.view: triage.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
+        for run, cfg in zip(runs, configs, strict=True)
+    }
     body = report.render_review_issue(
-        domain, runs, definitions, questions, causes, comments
+        domain, runs, definitions, questions, causes, comments, decided
     )
     if len(body) > BODY_WARN_CHARS:
         # stderr, so the warning never lands in the issue body.

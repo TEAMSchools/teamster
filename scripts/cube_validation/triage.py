@@ -494,17 +494,19 @@ def cause_asks(
     loaded: dict,
     recorded: list[Decision],
     leads: dict[str, str] | None = None,
+    owner: bool = True,
 ) -> list[CauseAsk]:
     """What `review` asks the owner: each unanswered owner cause and its groups.
 
     Reads items `mark_decided` marked. A cause's rows are only those its
     proof attributes to it, so a group split across causes counts in each
-    question only by its own share.
+    question only by its own share. With `owner` False, the cause decisions
+    the analyst made with any other call instead, which `review` only reports.
     """
     groups = _groups_by_key(run)
     out = []
     for d in recorded:
-        if not d.cause or d.call != "domain_owner" or d.answer:
+        if not d.cause or d.answer or (d.call == "domain_owner") != owner:
             continue
         mine, rows, proofs = [], 0, {}
         for item in loaded.get("items", []):

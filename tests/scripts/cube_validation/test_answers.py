@@ -879,6 +879,46 @@ def test_a_long_body_moves_the_reproduce_blocks_to_comments(monkeypatch):
     assert render_review_issue("Registrar", [run], DEFS, questions, causes) == inline
 
 
+def test_other_calls_show_once_each_as_also_decided_never_as_questions():
+    groups, items = _ddi()
+    calls = [("deliberate", "", "Intended, as the schools agreed"),
+             ("fix_cube", "#5668", "Cube drops these")]  # fmt: skip
+    approved = [
+        {**_ok(f"c-{i}", item["id"], call=call, reason=reason),
+         **({"task": task} if task else {})}
+        for i, (item, (call, task, reason)) in enumerate(zip(items, calls))
+    ]  # fmt: skip
+    decisions = [
+        Decision(**d) for d in approved_decisions(approved, {"items": items}, CAUSE_FPS)
+    ]
+    run = _run([])
+    run.applied = apply(decisions, groups, CAUSE_FPS)
+    run.fingerprints = CAUSE_FPS
+    triage_mod.mark_decided(run, items, decisions)
+    loaded = {"view": "enrollment", "items": items}
+    causes = {"enrollment": triage_mod.cause_asks(run, loaded, decisions)}
+    decided = {"enrollment": triage_mod.cause_asks(run, loaded, decisions, owner=False)}
+    questions = questions_json(
+        [run], [_cfg()], DEFS, {"enrollment": loaded}, START, causes
+    )
+
+    body = render_review_issue(
+        "Registrar", [run], DEFS, questions, causes, decided=decided
+    )
+
+    assert questions == [] and "Nothing needs review." in body
+    also = [x for x in body.splitlines() if x.startswith("- cause ")]
+    assert also == [
+        f"- cause `{NO_SECTION}` on the cube side (`enrollment` in `enrollment`): "
+        "an intended difference; later runs stay quiet on it (`deliberate`). "
+        "Reason: Intended, as the schools agreed.",
+        "- cause `score dated after week <n>` on the cube side (`enrollment` in "
+        "`enrollment`): Cube gets fixed (`fix_cube`). Reason: Cube drops these. "
+        "Task: #5668",
+    ]
+    assert "Also decided (no answer needed)" in body
+
+
 def test_one_cause_on_several_comparisons_is_one_question():
     groups = [
         Group(cid, (("region", "Newark"),), "dashboard_only", 30, 12)

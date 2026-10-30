@@ -412,9 +412,18 @@ def test_review_issue_carries_domain_owner_missing_cuts():
     assert "Missing cuts and filters: 1." in body
 
 
-def test_review_issue_leaves_out_other_missing_cut_calls():
+def test_review_issue_reports_other_missing_cut_calls_without_asking():
     run = _run(applied=Applied(quiet_gaps=[(_gap_decision("fix_cube"), GAP_TEAM)]))
-    assert "`Team`" not in render_review_issue("Registrar", [run])
+
+    body = render_review_issue("Registrar", [run])
+
+    asked, also = body.split("Also decided (no answer needed)")
+    assert "`Team`" not in asked and "Missing cuts and filters: 0." in body
+    assert (
+        "- `Team` on `Roster` in `enrollment_view`: a sheet cut Cube has no member "
+        "for: Cube gets fixed (`fix_cube`). Reason: owner decides the cut. "
+        "Task: #6150"
+    ) in also
 
 
 def test_scoped_run_says_scope_narrows_the_measure():
