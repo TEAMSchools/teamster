@@ -332,6 +332,9 @@ models:
           the KIPP Forward Career Launch AppSheet app. The assessment columns
           that follow come from that same assessment, and all are NULL when the
           alumnus has never been assessed.
+        config:
+          meta:
+            contains_pii: true
       - name: career_ready_level
         data_type: int64
         description: Career Ready level, 1 to 4, on the latest assessment.
@@ -409,6 +412,9 @@ models:
           True when the latest assessment has all four indicator levels. A
           missing level counts as 0 points, so filter on this before comparing
           scores.
+        config:
+          meta:
+            contains_pii: true
       - name: coaching_focus
         data_type: string
         description: Coaching focus agreed on the latest assessment.

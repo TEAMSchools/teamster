@@ -99,6 +99,9 @@ models:
       - name: assessed_at
         data_type: datetime
         description: When the Career Conversation took place, in local time.
+        config:
+          meta:
+            contains_pii: true
       - name: assessed_by
         data_type: string
         description: Staff member who recorded the assessment.

@@ -10,6 +10,7 @@ with
 
     college_gpa_records as (
         select
+            g.id,
             g.student as contact_id,
             g.`source`,
             g.transcript_date,
@@ -30,7 +31,7 @@ with
 
             row_number() over (
                 partition by c.contact_id
-                order by r.transcript_date desc, r.last_modified_date desc
+                order by r.transcript_date desc, r.last_modified_date desc, r.id desc
             ) as rn_source,
         from contacts as c
         inner join
