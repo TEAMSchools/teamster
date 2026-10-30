@@ -797,6 +797,7 @@ def _with_students(
         cols = ", ".join(f"CAST(f.{dim(d)} AS STRING) AS {d}" for d in s.dims)
         flags = "".join(f", f.__cut{j}" for j in range(s.cuts))
         return (
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; cause literals are quoted by pipeline._lit
             f"SELECT per.cause, {cols + ', ' if cols else ''}f.{s.student} AS __st"
             f"{flags} FROM __per AS per JOIN {s.source} AS f ON f.__row = per.__row "
             f"WHERE per.cause IN ({allowed}) AND per.__times = 1"
@@ -811,6 +812,7 @@ def _with_students(
         for c in ("n", "missed", "doubled", "bad", "stray")
     )
     per_cut = [
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; no values are interpolated
         f"SELECT 'students' AS __kind, {nulls}, {j} AS __cut, {cell} AS __cell, "
         f"COUNT(DISTINCT __st) AS n_students FROM __cs WHERE __cut{j} "
         "GROUP BY cause, __cell"

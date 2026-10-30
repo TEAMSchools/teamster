@@ -971,7 +971,7 @@ def test_other_calls_show_once_each_as_also_decided_never_as_questions():
     approved = [
         {**_ok(f"c-{i}", item["id"], call=call, reason=reason),
          **({"task": task} if task else {})}
-        for i, (item, (call, task, reason)) in enumerate(zip(items, calls))
+        for i, (item, (call, task, reason)) in enumerate(zip(items, calls, strict=False))
     ]  # fmt: skip
     decisions = [
         Decision(**d) for d in approved_decisions(approved, {"items": items}, CAUSE_FPS)
