@@ -527,6 +527,20 @@ cause, do not retry around it.
     comment; never edit the saved body to make it pass. The validation issue
     closes when every question has a decision and every fix has its issue, PR or
     Asana task.
+12. Tell Cube's users why a number differs on purpose. Run `describe <files>`
+    (no credentials, writes nothing): per measure, every `deliberate` decision
+    (the analyst's, or an owner's answer) as what differs and its reason, and a
+    draft `meta.ai_context` sentence ("Differs from <dashboard> on purpose:
+    ..."). The MCP chat reads `ai_context`, so an analyst asking why Cube does
+    not match the dashboard gets the answer. Show the analyst the draft and
+    reword it with them: plain words, no student or staff value, under Cube's
+    2,000-character cap. Then, on a branch of its own off `origin/main`, Read
+    `.claude/rules/cube-authoring.md` and add the sentence to the member's
+    `ai_context` (the view's, for a note on reading the whole view; a view
+    override restates the member's own), keeping any text already there.
+    `description:` takes it only when it defines the raw column. Run
+    `uv run pytest tests/cube/`, open the PR (`Refs` the validation issue), and
+    merge it with the validation PR or after it.
 
 ## Gotchas
 
