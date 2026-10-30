@@ -33,7 +33,7 @@ shared:
     # Sunday. Cube has no such member.
     dashboard_filters:
       - { dashboard: administered_at, operator: lte, days_from_week_end: 0 }
-    rows:
+    rows: &dki_rows
       grain:
         - { dashboard: student_number, cube: lea_student_identifier }
         - { dashboard: assessment_id, cube: source_assessment_id }
@@ -198,9 +198,10 @@ comparisons:
       - { cube: is_internal_assessment, values: [true] }
       - { cube: is_iep, values: [false] }
     probe: avg(if(iep_status != 'Has IEP', is_mastery_int, null))
-    # T22: rows has no dashboard-side scope yet, so the row check would
-    # count every row of the other IEP status. Off until it lands.
-    rows: null
+    # The row check keeps the dashboard rows of the probe's IEP status only.
+    rows:
+      <<: *dki_rows
+      dashboard_scope: [{ dashboard: iep_status, values: [No IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
       cells: 2335
@@ -266,9 +267,10 @@ comparisons:
       - { cube: is_internal_assessment, values: [true] }
       - { cube: is_iep, values: [true] }
     probe: avg(if(iep_status = 'Has IEP', is_mastery_int, null))
-    # T22: rows has no dashboard-side scope yet, so the row check would
-    # count every row of the other IEP status. Off until it lands.
-    rows: null
+    # The row check keeps the dashboard rows of the probe's IEP status only.
+    rows:
+      <<: *dki_rows
+      dashboard_scope: [{ dashboard: iep_status, values: [Has IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
       cells: 2335
@@ -334,9 +336,10 @@ comparisons:
       - { cube: is_internal_assessment, values: [true] }
       - { cube: is_iep, values: [false] }
     probe: avg(if(iep_status != 'Has IEP', is_mastery_int, null))
-    # T22: rows has no dashboard-side scope yet, so the row check would
-    # count every row of the other IEP status. Off until it lands.
-    rows: null
+    # The row check keeps the dashboard rows of the probe's IEP status only.
+    rows:
+      <<: *dki_rows
+      dashboard_scope: [{ dashboard: iep_status, values: [No IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
       cells: 437
@@ -401,9 +404,10 @@ comparisons:
       - { cube: is_internal_assessment, values: [true] }
       - { cube: is_iep, values: [true] }
     probe: avg(if(iep_status = 'Has IEP', is_mastery_int, null))
-    # T22: rows has no dashboard-side scope yet, so the row check would
-    # count every row of the other IEP status. Off until it lands.
-    rows: null
+    # The row check keeps the dashboard rows of the probe's IEP status only.
+    rows:
+      <<: *dki_rows
+      dashboard_scope: [{ dashboard: iep_status, values: [Has IEP] }]
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
       cells: 437
