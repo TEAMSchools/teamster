@@ -566,6 +566,7 @@ decisions:
       The dashboard keeps a score only if the student was enrolled at the end of
       the week it was given (is_enrolled_week_end); Cube has no such rule. Which
       eligibility rule should hold?
+    task: "#6211"
     fingerprints:
       {
         cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
@@ -584,6 +585,7 @@ decisions:
       The same != 'WPP' filter also drops assessments with a blank module_type,
       since a blank fails the comparison; Cube keeps them. Is leaving them off
       the dashboard intended?
+    task: "#6211"
     fingerprints:
       {
         cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
@@ -597,6 +599,7 @@ decisions:
     reason:
       The dashboard drops scores from weeks the student was out of district;
       Cube keeps them. Should out-of-district weeks count?
+    task: "#6211"
     fingerprints:
       {
         cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
@@ -618,6 +621,7 @@ decisions:
       academic year while Cube dates it by its canonical administered date, so
       the dashboard's academic-year join misses it. Which date is right? If the
       rollup's is wrong, this becomes a source fix.
+    task: "#6211"
     fingerprints:
       {
         cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
@@ -636,6 +640,7 @@ decisions:
       "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
       marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
       leave WPP out?"
+    task: "#6211"
     fingerprints:
       {
         cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
@@ -656,6 +661,7 @@ decisions:
       The assessment was given before the student's first enrollment week, so
       the dashboard's week join finds no row; Cube counts the score. Should
       scores from before a student's first week count?
+    task: "#6211"
     fingerprints:
       {
         cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
@@ -677,6 +683,7 @@ decisions:
       anchor date (its scheduled administration date), and no homeroom does, so
       Cube's section resolver drops the score; the dashboard keeps it. Should
       such a score count?
+    task: "#6211"
     fingerprints:
       {
         cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
@@ -697,6 +704,7 @@ decisions:
       "Cube's score anchors drop replacement scores (not is_replacement); the
       dashboard counts them. Decided in #5885, which asks whether scores from
       another grade's assessment count."
+    task: "#6211"
     fingerprints:
       {
         cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
@@ -738,6 +746,7 @@ decisions:
       The student has no section in the subject and no homeroom on the anchor
       date, so Cube's section resolver drops the score; the dashboard keeps it.
       Should Cube count scores with no section?
+    task: "#6211"
     fingerprints:
       {
         cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
@@ -761,6 +770,7 @@ decisions:
       by the enrollment week it was given in, so it lands in a different cell on
       each side. Which should decide? Also seen: the enrollment-weeks model can
       show the later grade for weeks before that enrollment began."
+    task: "#6211"
     fingerprints:
       {
         cube: 7a70a68082223aefc80fc6fe4a6269531b7e188cdc3a74d6f2a4d4709dc06e9d,
@@ -782,6 +792,7 @@ decisions:
       academic year while Cube dates it by its canonical administered date, so
       the dashboard's academic-year join misses it. Which date is right? If the
       rollup's is wrong, this becomes a source fix.
+    task: "#6211"
     fingerprints:
       {
         cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
@@ -802,6 +813,7 @@ decisions:
       The dashboard keeps a score only if the student was enrolled at the end of
       the week it was given (is_enrolled_week_end); Cube has no such rule. Which
       eligibility rule should hold?
+    task: "#6211"
     fingerprints:
       {
         cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
@@ -820,6 +832,7 @@ decisions:
       "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
       marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
       leave WPP out?"
+    task: "#6211"
     fingerprints:
       {
         cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
@@ -838,6 +851,7 @@ decisions:
       The same != 'WPP' filter also drops assessments with a blank module_type,
       since a blank fails the comparison; Cube keeps them. Is leaving them off
       the dashboard intended?
+    task: "#6211"
     fingerprints:
       {
         cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
@@ -858,6 +872,7 @@ decisions:
       The assessment was given before the student's first enrollment week, so
       the dashboard's week join finds no row; Cube counts the score. Should
       scores from before a student's first week count?
+    task: "#6211"
     fingerprints:
       {
         cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
@@ -871,6 +886,7 @@ decisions:
     reason:
       The dashboard drops scores from weeks the student was out of district;
       Cube keeps them. Should out-of-district weeks count?
+    task: "#6211"
     fingerprints:
       {
         cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
@@ -891,6 +907,7 @@ decisions:
       "Cube's score anchors drop replacement scores (not is_replacement); the
       dashboard counts them. Decided in #5885, which asks whether scores from
       another grade's assessment count."
+    task: "#6211"
     fingerprints:
       {
         cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
@@ -912,6 +929,7 @@ decisions:
       anchor date (its scheduled administration date), and no homeroom does, so
       Cube's section resolver drops the score; the dashboard keeps it. Should
       such a score count?
+    task: "#6211"
     fingerprints:
       {
         cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
@@ -953,6 +971,7 @@ decisions:
       The student has no section in the subject and no homeroom on the anchor
       date, so Cube's section resolver drops the score; the dashboard keeps it.
       Should Cube count scores with no section?
+    task: "#6211"
     fingerprints:
       {
         cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
@@ -976,6 +995,7 @@ decisions:
       by the enrollment week it was given in, so it lands in a different cell on
       each side. Which should decide? Also seen: the enrollment-weeks model can
       show the later grade for weeks before that enrollment began."
+    task: "#6211"
     fingerprints:
       {
         cube: ad96753797f5da2c43c257175a1e6a96d5079fac713124b526926b603e379614,
@@ -996,6 +1016,7 @@ decisions:
       The dashboard keeps a score only if the student was enrolled at the end of
       the week it was given (is_enrolled_week_end); Cube has no such rule. Which
       eligibility rule should hold?
+    task: "#6211"
     fingerprints:
       {
         cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
@@ -1014,6 +1035,7 @@ decisions:
       The same != 'WPP' filter also drops assessments with a blank module_type,
       since a blank fails the comparison; Cube keeps them. Is leaving them off
       the dashboard intended?
+    task: "#6211"
     fingerprints:
       {
         cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
@@ -1035,6 +1057,7 @@ decisions:
       academic year while Cube dates it by its canonical administered date, so
       the dashboard's academic-year join misses it. Which date is right? If the
       rollup's is wrong, this becomes a source fix.
+    task: "#6211"
     fingerprints:
       {
         cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
@@ -1053,6 +1076,7 @@ decisions:
       "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
       marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
       leave WPP out?"
+    task: "#6211"
     fingerprints:
       {
         cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
@@ -1073,6 +1097,7 @@ decisions:
       The assessment was given before the student's first enrollment week, so
       the dashboard's week join finds no row; Cube counts the score. Should
       scores from before a student's first week count?
+    task: "#6211"
     fingerprints:
       {
         cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
@@ -1094,6 +1119,7 @@ decisions:
       academic year while Cube dates it by its canonical administered date, so
       the dashboard's academic-year join misses it. Which date is right? If the
       rollup's is wrong, this becomes a source fix.
+    task: "#6211"
     fingerprints:
       {
         cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
@@ -1114,6 +1140,7 @@ decisions:
       The dashboard keeps a score only if the student was enrolled at the end of
       the week it was given (is_enrolled_week_end); Cube has no such rule. Which
       eligibility rule should hold?
+    task: "#6211"
     fingerprints:
       {
         cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
@@ -1132,6 +1159,7 @@ decisions:
       "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
       marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
       leave WPP out?"
+    task: "#6211"
     fingerprints:
       {
         cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
@@ -1150,6 +1178,7 @@ decisions:
       The same != 'WPP' filter also drops assessments with a blank module_type,
       since a blank fails the comparison; Cube keeps them. Is leaving them off
       the dashboard intended?
+    task: "#6211"
     fingerprints:
       {
         cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
@@ -1170,6 +1199,7 @@ decisions:
       The assessment was given before the student's first enrollment week, so
       the dashboard's week join finds no row; Cube counts the score. Should
       scores from before a student's first week count?
+    task: "#6211"
     fingerprints:
       {
         cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
@@ -1191,6 +1221,7 @@ decisions:
       anchor date (its scheduled administration date), and no homeroom does, so
       Cube's section resolver drops the score; the dashboard keeps it. Should
       such a score count?
+    task: "#6211"
     fingerprints:
       {
         cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
@@ -1232,6 +1263,7 @@ decisions:
       "Cube's score anchors drop replacement scores (not is_replacement); the
       dashboard counts them. Decided in #5885, which asks whether scores from
       another grade's assessment count."
+    task: "#6211"
     fingerprints:
       {
         cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
@@ -1252,6 +1284,7 @@ decisions:
       The student has no section in the subject and no homeroom on the anchor
       date, so Cube's section resolver drops the score; the dashboard keeps it.
       Should Cube count scores with no section?
+    task: "#6211"
     fingerprints:
       {
         cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
@@ -1272,6 +1305,7 @@ decisions:
       "Cube's score anchors drop replacement scores (not is_replacement); the
       dashboard counts them. Decided in #5885, which asks whether scores from
       another grade's assessment count."
+    task: "#6211"
     fingerprints:
       {
         cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
@@ -1293,6 +1327,7 @@ decisions:
       anchor date (its scheduled administration date), and no homeroom does, so
       Cube's section resolver drops the score; the dashboard keeps it. Should
       such a score count?
+    task: "#6211"
     fingerprints:
       {
         cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
@@ -1334,6 +1369,7 @@ decisions:
       The student has no section in the subject and no homeroom on the anchor
       date, so Cube's section resolver drops the score; the dashboard keeps it.
       Should Cube count scores with no section?
+    task: "#6211"
     fingerprints:
       {
         cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
@@ -1357,6 +1393,7 @@ decisions:
       by the enrollment week it was given in, so it lands in a different cell on
       each side. Which should decide? Also seen: the enrollment-weeks model can
       show the later grade for weeks before that enrollment began."
+    task: "#6211"
     fingerprints:
       {
         cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
@@ -1380,6 +1417,7 @@ decisions:
       by the enrollment week it was given in, so it lands in a different cell on
       each side. Which should decide? Also seen: the enrollment-weeks model can
       show the later grade for weeks before that enrollment began."
+    task: "#6211"
     fingerprints:
       {
         cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
@@ -1398,6 +1436,7 @@ decisions:
       The same != 'WPP' filter also drops assessments with a blank module_type,
       since a blank fails the comparison; Cube keeps them. Is leaving them off
       the dashboard intended?
+    task: "#6211"
     fingerprints:
       {
         cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
@@ -1411,6 +1450,7 @@ decisions:
     reason:
       The dashboard drops scores from weeks the student was out of district;
       Cube keeps them. Should out-of-district weeks count?
+    task: "#6211"
     fingerprints:
       {
         cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
@@ -1432,6 +1472,7 @@ decisions:
       academic year while Cube dates it by its canonical administered date, so
       the dashboard's academic-year join misses it. Which date is right? If the
       rollup's is wrong, this becomes a source fix.
+    task: "#6211"
     fingerprints:
       {
         cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
@@ -1450,6 +1491,7 @@ decisions:
       "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
       marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
       leave WPP out?"
+    task: "#6211"
     fingerprints:
       {
         cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
@@ -1470,6 +1512,7 @@ decisions:
       The assessment was given before the student's first enrollment week, so
       the dashboard's week join finds no row; Cube counts the score. Should
       scores from before a student's first week count?
+    task: "#6211"
     fingerprints:
       {
         cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
@@ -1490,6 +1533,7 @@ decisions:
       The dashboard keeps a score only if the student was enrolled at the end of
       the week it was given (is_enrolled_week_end); Cube has no such rule. Which
       eligibility rule should hold?
+    task: "#6211"
     fingerprints:
       {
         cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
@@ -1511,6 +1555,7 @@ decisions:
       academic year while Cube dates it by its canonical administered date, so
       the dashboard's academic-year join misses it. Which date is right? If the
       rollup's is wrong, this becomes a source fix.
+    task: "#6211"
     fingerprints:
       {
         cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
@@ -1529,6 +1574,7 @@ decisions:
       "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP',
       marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still
       leave WPP out?"
+    task: "#6211"
     fingerprints:
       {
         cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
@@ -1549,6 +1595,7 @@ decisions:
       The dashboard keeps a score only if the student was enrolled at the end of
       the week it was given (is_enrolled_week_end); Cube has no such rule. Which
       eligibility rule should hold?
+    task: "#6211"
     fingerprints:
       {
         cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
@@ -1567,6 +1614,7 @@ decisions:
       The same != 'WPP' filter also drops assessments with a blank module_type,
       since a blank fails the comparison; Cube keeps them. Is leaving them off
       the dashboard intended?
+    task: "#6211"
     fingerprints:
       {
         cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
@@ -1587,6 +1635,7 @@ decisions:
       The assessment was given before the student's first enrollment week, so
       the dashboard's week join finds no row; Cube counts the score. Should
       scores from before a student's first week count?
+    task: "#6211"
     fingerprints:
       {
         cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
@@ -1600,6 +1649,7 @@ decisions:
     reason:
       The dashboard drops scores from weeks the student was out of district;
       Cube keeps them. Should out-of-district weeks count?
+    task: "#6211"
     fingerprints:
       {
         cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
@@ -1621,6 +1671,7 @@ decisions:
       anchor date (its scheduled administration date), and no homeroom does, so
       Cube's section resolver drops the score; the dashboard keeps it. Should
       such a score count?
+    task: "#6211"
     fingerprints:
       {
         cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
@@ -1641,6 +1692,7 @@ decisions:
       "Cube's score anchors drop replacement scores (not is_replacement); the
       dashboard counts them. Decided in #5885, which asks whether scores from
       another grade's assessment count."
+    task: "#6211"
     fingerprints:
       {
         cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
@@ -1661,6 +1713,7 @@ decisions:
       The student has no section in the subject and no homeroom on the anchor
       date, so Cube's section resolver drops the score; the dashboard keeps it.
       Should Cube count scores with no section?
+    task: "#6211"
     fingerprints:
       {
         cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
@@ -1702,6 +1755,7 @@ decisions:
       "Cube's score anchors drop replacement scores (not is_replacement); the
       dashboard counts them. Decided in #5885, which asks whether scores from
       another grade's assessment count."
+    task: "#6211"
     fingerprints:
       {
         cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
@@ -1723,6 +1777,7 @@ decisions:
       anchor date (its scheduled administration date), and no homeroom does, so
       Cube's section resolver drops the score; the dashboard keeps it. Should
       such a score count?
+    task: "#6211"
     fingerprints:
       {
         cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
@@ -1743,6 +1798,7 @@ decisions:
       The student has no section in the subject and no homeroom on the anchor
       date, so Cube's section resolver drops the score; the dashboard keeps it.
       Should Cube count scores with no section?
+    task: "#6211"
     fingerprints:
       {
         cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
@@ -1787,6 +1843,7 @@ decisions:
       resolved section belongs to, the dashboard from the enrollment week, so
       the score falls in a different IEP group on each side. Which record should
       decide?
+    task: "#6211"
     fingerprints:
       {
         cube: 7f950ad5980e48d93d2b117bffb11649a38c48e2a7371c7ef331597ba86ed658,
@@ -1810,6 +1867,7 @@ decisions:
       resolved section belongs to, the dashboard from the enrollment week, so
       the score falls in a different IEP group on each side. Which record should
       decide?
+    task: "#6211"
     fingerprints:
       {
         cube: b5bfd4aea4c933842cda95442541e428574fdeab83ed4566b339cf8365650b4b,
@@ -1833,6 +1891,7 @@ decisions:
       resolved section belongs to, the dashboard from the enrollment week, so
       the score falls in a different IEP group on each side. Which record should
       decide?
+    task: "#6211"
     fingerprints:
       {
         cube: e2a7275b7f79e28b5c7e9e4e7101e11d58a06fcf8f0f80c082cf1e659b0613c4,
@@ -1856,6 +1915,7 @@ decisions:
       resolved section belongs to, the dashboard from the enrollment week, so
       the score falls in a different IEP group on each side. Which record should
       decide?
+    task: "#6211"
     fingerprints:
       {
         cube: fc66af09dc194aca8613d7415d7bb3ae690eba724e5cb2918c7872f29eb0b1cd,
