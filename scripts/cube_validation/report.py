@@ -104,6 +104,9 @@ class RunResult:
     diff_cells: list[dict] = field(default_factory=list)
     cell_sql: dict[str, dict[str, list[str]]] = field(default_factory=dict)
     cell_sql_usd: dict[str, dict[str, list[float]]] = field(default_factory=dict)
+    # Per comparison with `rows`, each reconcile row's rows and value sums per
+    # side (`compare.cell_rows_from`), to size a rate cell; counts only.
+    cell_rows: dict[str, list[dict]] = field(default_factory=dict)
 
 
 def mask(n: int) -> str:

@@ -49,7 +49,7 @@ from .trace import TIMEOUT_S, TRACED, _failure
 
 # The buckets a stored proof classifies: the one-sided rows the trace leads on,
 # and rows both sides hold whose values differ.
-PROVABLE = (*TRACED, "value_differs")
+PROVABLE = (*TRACED, "value_differs", "dims_differ")
 
 PLACEHOLDER = "{unmatched}"
 # Enough of a BigQuery message to name the table and the reason.
@@ -625,6 +625,8 @@ def unmatched_sql(
         for i, p in enumerate(grain)
     ]
     dims = pipeline.group_dims(comparison)
+    # A `dims_differ` group also names the dashboard's cell, as `d:<column>`.
+    extra += [f"CAST(d.{p.dashboard} AS STRING) AS __d_{p.cube}" for p in dims]
     ctes, _ = compare._joined(
         pipeline.wrap_cube(
             sides.cube_rows_sql,
@@ -644,9 +646,9 @@ def unmatched_sql(
     for item_id, g in items:
         nulls = set(g.nulls)
         test = " AND ".join(
-            f"{column} IS NULL"
+            f"{_joined_column(column)} IS NULL"
             if column in nulls
-            else f"{column} = {pipeline._lit(value)}"
+            else f"{_joined_column(column)} = {pipeline._lit(value)}"
             for column, value in g.dims
         )
         whens.append(f"WHEN {test or 'TRUE'} THEN {pipeline._lit(item_id)}")
@@ -663,6 +665,13 @@ def unmatched_sql(
     # trunk-ignore(bandit/B608): identifiers are validated in config.py; values are bound literals
     select = f"SELECT {', '.join(columns)}\nFROM joined WHERE bucket = '{bucket}'"
     return ctes, select
+
+
+def _joined_column(dim: str) -> str:
+    """The `joined` column a group's dim reads: a `d:` dim is the dashboard's."""
+    if dim.startswith(compare.DASH_PREFIX):
+        return f"__d_{dim[len(compare.DASH_PREFIX) :]}"
+    return dim
 
 
 def proof_query(ctes: str, select: str, body: str, literals: set[str]) -> str:
@@ -961,6 +970,85 @@ def _in_cut(g: Group, comparison: Comparison | None, cut: str) -> bool:
 _SIGN = {"cube_only": 1, "dashboard_filtered": 1, "dashboard_only": -1}
 
 
+def _agrees(values, dims) -> bool:
+    """Whether a cell's dims agree with a group's columns (`values(col)`); a
+    column the group does not split by agrees with any value."""
+    return all(
+        values(col) is None or pipeline._key(values(col)) == pipeline._key(value)
+        for col, value in dims
+    )
+
+
+def _dash_value(g: Group, column: str) -> str | None:
+    return g.value_of(f"{compare.DASH_PREFIX}{column}")
+
+
+def _in_cells(g: Group, cell: dict) -> tuple[bool, bool]:
+    """Whether a group's rows sit in a cell on the Cube side, the dashboard's.
+
+    A `dims_differ` group's rows sit in Cube's cell (its own columns) on one
+    side and the dashboard's (its `d:` columns) on the other.
+    """
+    cube = _agrees(g.value_of, cell["dims"])
+    if g.bucket != "dims_differ":
+        return cube, cube
+    return cube, _agrees(lambda col: _dash_value(g, col), cell["dims"])
+
+
+def _sizable(spec: Comparison | None, entries: list[dict], cell: dict) -> bool:
+    """Whether the run's per-cell sums can rebuild this cell from its rows.
+
+    Needs 1 value column, the cell's every dim among the reconcile's group
+    columns, and each cut's captions among them too, or a single cut: the
+    reconcile counts the rows of every cut together.
+    """
+    if not (spec and spec.rows and len(spec.rows.values) == 1 and entries):
+        return False
+    columns = {col for col, _ in entries[0]["dims"]}
+    if any(col not in columns for col, _ in cell["dims"]):
+        return False
+    cuts = pipeline._cuts(spec)
+    if len(cuts) == 1:
+        return True
+    for cut in cuts:
+        for caption in {**spec.defaults, **cut}:
+            pair = spec.filters.get(caption)
+            if pair is None or pair.cube not in columns:
+                return False
+    return True
+
+
+def _rebuilt(spec: Comparison, entries: list[dict], cell: dict) -> tuple:
+    """Each side's mean of the value column over the cell's rows, or None."""
+    out = []
+    for side in ("c", "d"):
+        n = total = 0.0
+        for e in entries:
+            dims = e["dash_dims"] if side == "d" and e["dash_dims"] else e["dims"]
+            values = dict(dims)
+            held = Group(
+                spec.id, tuple((k, v or "") for k, v in dims), e["bucket"], 0, 0
+            )
+            if not e[side]["rows"] or not _agrees(values.get, cell["dims"]):
+                continue
+            if not _in_cut(held, spec, cell.get("cut", "{}")):
+                continue
+            n += e[side]["n"][0]
+            total += e[side]["sum"][0]
+        out.append(total / n if n else None)
+    return tuple(out)
+
+
+def _reproduces(spec: Comparison, entries: list[dict], cell: dict) -> bool:
+    """Whether both sides' cells, rebuilt from their rows, show the run's values."""
+    cube, dashboard = _rebuilt(spec, entries, cell)
+    decimals = spec.decimals or 0
+    return (
+        compare.cell_verdict(cell.get("cube"), cube, decimals) == "pass"
+        and compare.cell_verdict(cell.get("dashboard"), dashboard, decimals) == "pass"
+    )
+
+
 def link_cells(
     run: RunResult,
     items: list[dict],
@@ -970,11 +1058,20 @@ def link_cells(
     """Move each cell set whose differing cells' rows all lie in proven groups.
 
     A cell's rows lie in the open groups of its comparison whose columns agree
-    with the cell's dims and its cut. A cell no open group agrees with, or one
-    a group outside `cause` agrees with, is not linked. For a comparison that
-    counts its rows, the cell's difference (Cube minus dashboard) must also
-    equal the linked groups' net rows (Cube-only and dashboard-filtered rows
-    add, dashboard-only rows take away); otherwise the cell is not linked.
+    with the cell's dims and its cut (a `dims_differ` group's in both its
+    cells). A cell no open group agrees with, or one a group outside `cause`
+    agrees with, is not linked. Its size is checked too:
+
+    - A comparison that counts its rows: the cell's difference (Cube minus
+      dashboard) must equal the linked groups' net rows (Cube-only and
+      dashboard-filtered rows add, dashboard-only rows take away; a
+      `dims_differ` group adds to Cube's cell and takes from the dashboard's).
+    - Any other comparison with 1 value column: each side's cell, rebuilt as
+      the mean of that column over the cell's rows from the run's per-cell
+      sums (`RunResult.cell_rows`), must show the run's value. A cell the sums
+      cannot rebuild (another value column count, a dim or cut column the
+      reconcile does not group by) is not linked. A run saved before those
+      sums links as before, and says its sizes went unchecked.
 
     Returns:
         Per cell-set item id: the differing cells not linked, all of them, and
@@ -995,28 +1092,39 @@ def link_cells(
             if isinstance(g, Group) and g.comparison_id == item.comparison
         ]
         cells = [c for c in run.diff_cells if c["comparison"] == item.comparison]
-        unlinked, used, gap = 0, {}, 0.0
+        entries = run.cell_rows.get(item.comparison)
+        unlinked, used, gap, unsized, unbuilt = 0, {}, 0.0, 0, 0
         for cell in cells:
             match = [
-                (gid, g)
+                (gid, g, sides)
                 for gid, g in groups
                 if _in_cut(g, spec, cell.get("cut", "{}"))
-                and all(
-                    g.value_of(col) is None
-                    or pipeline._key(g.value_of(col)) == pipeline._key(value)
-                    for col, value in cell["dims"]
-                )
+                and any(sides := _in_cells(g, cell))
             ]
-            proven = [gid for gid, _ in match if by_id[gid]["suggestion"] == "cause"]
+            proven = [gid for gid, _, _ in match if by_id[gid]["suggestion"] == "cause"]
             if not match or len(proven) < len(match):
                 unlinked += 1
                 continue
             if counts:
-                net = sum(_SIGN.get(g.bucket, 0) * g.n_rows for _, g in match)
+                net = 0
+                for _, g, (in_cube, in_dash) in match:
+                    if g.bucket == "dims_differ":
+                        net += g.n_rows * (int(in_cube) - int(in_dash))
+                    else:
+                        net += _SIGN.get(g.bucket, 0) * g.n_rows
                 differs = (cell.get("cube") or 0) - (cell.get("dashboard") or 0)
                 if abs(differs - net) > 1e-9:
                     unlinked += 1
                     gap += abs(differs - net)
+                    continue
+            elif entries is not None:
+                if not _sizable(spec, entries, cell):
+                    unlinked += 1
+                    unsized += 1
+                    continue
+                if not _reproduces(spec, entries, cell):
+                    unlinked += 1
+                    unbuilt += 1
                     continue
             used |= dict.fromkeys(proven)
         out[item.id] = (unlinked, len(cells), gap)
@@ -1031,6 +1139,8 @@ def link_cells(
             line = (
                 f"every differing cell's rows lie in proven groups: {', '.join(used)}"
             )
+            if not counts and entries is None:
+                line += "; cell sizes not checked: the run predates per-cell sums"
             target.update(
                 suggestion="cause",
                 cause=list(merged.values()),
@@ -1052,6 +1162,18 @@ def link_cells(
                 if gap:
                     line += f"; their differences exceed the proven rows by {gap:g}"
                     posted += "; their differences exceed the proven rows"
+                if unbuilt:
+                    line += (
+                        f"; {unbuilt} do not rebuild from their rows (the mean of "
+                        "the value column over each side's rows is not the cell)"
+                    )
+                    posted += "; some do not rebuild from their rows"
+                if unsized:
+                    line += (
+                        f"; {unsized} cannot be sized from the run's per-cell sums "
+                        "(a dim or cut column the reconcile does not group by)"
+                    )
+                    posted += "; some cannot be sized"
             target["evidence"] = [line, *_unlinked(target.get("evidence"))]
             target["evidence_posted"] = [
                 posted,

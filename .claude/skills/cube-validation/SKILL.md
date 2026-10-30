@@ -222,16 +222,23 @@ cause, do not retry around it.
 
    Nothing goes to the owner without a cause proven row by row. A row group
    reaches `cause` only through a stored proof (below), including one whose
-   values differ on rows both sides hold (`--bucket value_differs`). A missing
+   values differ on rows both sides hold (`--bucket value_differs`) and one
+   whose rows both sides hold in different cells (`--bucket dims_differ`: the
+   group's columns are Cube's cell, its `d:` columns the dashboard's). A missing
    cut or filter reaches it from the workbook (`sheet filter <caption>` or
    `sheet cut`), and rows a `dashboard_filters` entry drops ("dashboard
    filtered") from the run's own reconcile, as the cause
    `sheet filter <caption>`. A cell set reaches it when every differing cell's
-   rows lie in groups in `cause`, so a cell set needs `rows` on its comparison
-   to be provable: add `rows` before `run`. A member description, a cell pattern
-   or a trace count is a lead, never a cause. A run saved before groups recorded
-   their NULLs is refused ("this run predates NULL-aware groups"):
-   `run --moment <its moment>` again.
+   rows lie in groups in `cause` and the cell's size checks out, so a cell set
+   needs `rows` on its comparison to be provable: add `rows` before `run`. For a
+   count, the cell's difference must equal the groups' net rows. For a rate with
+   1 value column, each side's cell rebuilt from its rows (the mean of the value
+   column) must show the run's value; a cell under a cut whose column the rows
+   are not grouped by cannot be sized and stays open. A run saved before
+   per-cell sums links without the rate check and says so: `run` again to check
+   sizes. A member description, a cell pattern or a trace count is a lead, never
+   a cause. A run saved before groups recorded their NULLs is refused ("this run
+   predates NULL-aware groups"): `run --moment <its moment>` again.
 
    The trace leads. `triage` relaxes each step of the other side's SQL (WHERE
    and HAVING conjuncts, INNER JOINs, required LEFT JOINs, down 3 dbt models)
@@ -301,7 +308,7 @@ cause, do not retry around it.
         ON r.assessment_id = u.assessment_id
       ```
 
-   7. `triage confirm <file> --comparison <id> --bucket <cube_only|dashboard_only|value_differs> --sql <draft.sql> --cause C1=dashboard:<plain words> ...`
+   7. `triage confirm <file> --comparison <id> --bucket <cube_only|dashboard_only|value_differs|dims_differ> --sql <draft.sql> --cause C1=dashboard:<plain words> ...`
       (through the runner) needs a `--cause` for every cause literal the query
       returns. The tool counts the rows itself, joining the proof back to
       `{unmatched}`, and refuses a row the proof drops or repeats, a cause that
@@ -320,7 +327,8 @@ cause, do not retry around it.
       printout only. After an edit, run it again without `--sql`.
       `--cells --comparison <id>` confirms a cell set, or refuses with the count
       of cells outside proven groups and, for a count, the gap between the
-      cells' differences and the proven rows.
+      cells' differences and the proven rows; for a rate, how many cells do not
+      rebuild from their rows or cannot be sized.
    8. Show the analyst the proof file and the per-cause counts `confirm`
       printed, and wait for an OK before the file is kept for commit. On a no,
       delete the file and run `triage --no-trace` again.

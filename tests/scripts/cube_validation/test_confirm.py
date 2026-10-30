@@ -1149,3 +1149,145 @@ def test_confirm_refuses_a_reproduce_query_bigquery_refuses(
             Refusing(duck),
         )
     assert not (tmp_path / "validation").exists()
+
+
+# --- sizing a rate cell from its rows; rows that sit in another cell ------------------
+
+RATE = Comparison(
+    id="mastery",
+    measure="pct",
+    dims=[ColumnPair("school", "abbreviation")],
+    rows=RowSpec(grain=ROWS.grain, values=[ColumnPair("ok", "ok")]),
+    decimals=2,
+)
+RATE_CFG = ViewConfig(view="v", fact="m.fct", comparisons=[RATE])
+
+
+def _side(rows, n, total):
+    return {"rows": rows, "n": [n], "sum": [float(total)]}
+
+
+def _entry(bucket, school, c, d, dash=None):
+    return {"bucket": bucket, "dims": [["abbreviation", school]],
+            "dash_dims": dash, "c": c, "d": d}  # fmt: skip
+
+
+# Synthetic school X: 1 matched row (1 on both sides) and 3 rows only Cube
+# holds (0 each): Cube's cell is 1/4, the dashboard's 1/1.
+X_ROWS = [
+    _entry("match", "X", _side(1, 1, 1), _side(1, 1, 1)),
+    _entry("cube_only", "X", _side(3, 3, 0), _side(0, 0, 0)),
+]
+
+
+def _rate_run(cube, dashboard, cell_rows=X_ROWS, groups=None):
+    from dataclasses import replace
+
+    run = _run(
+        groups or [_group(3)],
+        cells=CELLS_RUN["cells"],
+        diff_cells=[{**CELLS_RUN["diff_cells"][0], "cube": cube,
+                     "dashboard": dashboard}],
+    )  # fmt: skip
+    return replace(run, cell_rows={} if cell_rows is None else {"mastery": cell_rows})
+
+
+def test_a_rate_cell_links_when_its_rows_rebuild_both_sides(tmp_path, monkeypatch):
+    cells = _cells(tmp_path, monkeypatch, run=_rate_run(0.25, 1.0), cfg=RATE_CFG)
+
+    assert cells["suggestion"] == "cause"
+
+
+def test_a_rate_cell_its_rows_do_not_rebuild_stays_open(tmp_path, monkeypatch):
+    # The proven Cube-only rows explain 1/4, but Cube shows 0.20: other rows
+    # (moved, or outside the reconcile) changed the cell too.
+    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
+        _cells(tmp_path, monkeypatch, run=_rate_run(0.20, 1.0), cfg=RATE_CFG)
+
+
+def test_a_run_saved_before_cell_sums_links_and_says_sizes_went_unchecked(
+    tmp_path, monkeypatch
+):
+    run = _rate_run(0.20, 1.0, cell_rows=None)
+
+    cells = _cells(tmp_path, monkeypatch, run=run, cfg=RATE_CFG)
+
+    assert cells["suggestion"] == "cause"
+    assert "cell sizes not checked" in cells["evidence"][0]
+
+
+def test_a_rate_cell_under_a_cut_the_reconcile_does_not_group_by_stays_open(
+    tmp_path, monkeypatch
+):
+    from dataclasses import replace
+
+    by_region = replace(
+        RATE,
+        cuts=[{}, {"Region": "R"}],
+        filters={"Region": ColumnPair("region", "region")},
+    )
+    cfg = ViewConfig(view="v", fact="m.fct", comparisons=[by_region])
+
+    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
+        _cells(tmp_path, monkeypatch, run=_rate_run(0.25, 1.0), cfg=cfg)
+
+
+def test_a_moved_group_sits_in_cube_s_cell_and_the_dashboard_s():
+    moved = Group(
+        "mastery",
+        (("abbreviation", "X"), ("d:abbreviation", "Y")),
+        "dims_differ",
+        2,
+        2,
+    )
+
+    assert confirm._in_cells(moved, {"dims": [["abbreviation", "X"]]}) == (True, False)
+    assert confirm._in_cells(moved, {"dims": [["abbreviation", "Y"]]}) == (False, True)
+    assert confirm._in_cells(moved, {"dims": []}) == (True, True)
+
+
+def test_a_count_cell_takes_moved_rows_out_of_the_dashboard_s_cell(
+    tmp_path, monkeypatch
+):
+    moved = Group(
+        "mastery",
+        (("abbreviation", "Y"), ("d:abbreviation", "X")),
+        "dims_differ",
+        3,
+        3,
+    )
+    # In cell X the dashboard holds 3 rows Cube files under Y: Cube shows 3 fewer.
+    run = _run(
+        [moved],
+        cells=CELLS_RUN["cells"],
+        diff_cells=[{**CELLS_RUN["diff_cells"][0], "cube": 1.0, "dashboard": 4.0}],
+    )
+
+    cells = _cells(tmp_path, monkeypatch, run=run)
+
+    assert cells["suggestion"] == "cause"
+
+
+def test_a_proof_classifies_rows_that_sit_in_another_cell(duck, tmp_path, offline):
+    # Synthetic: Cube files the row under school X, the dashboard under Y.
+    _tables(duck, cube_rows=[(1, "a", "X")], fact_rows=[(1, "a", "Y", True, True)])
+    moved = Group(
+        "mastery", (("abbreviation", "X"), ("d:abbreviation", "Y")), "dims_differ", 1, 1
+    )
+    run = _run([moved])
+    items = _items(run)
+    directory = tmp_path / "proofs" / "v"
+    directory.mkdir(parents=True)
+    confirm.proof_path(directory, "mastery", "dims_differ").write_text(
+        confirm.compose(
+            {"C1": ("dashboard", "the dashboard files the row under another school")},
+            "SELECT u.__row, CASE WHEN u.side = 'both' THEN 'C1' "
+            "ELSE 'UNEXPLAINED' END AS cause FROM {unmatched} AS u",
+        )
+    )
+
+    _stored(run, items, directory, Wh(duck))
+
+    (item,) = items
+    assert item["suggestion"] == "cause"
+    assert item["cause"][0]["n_rows"] == 1

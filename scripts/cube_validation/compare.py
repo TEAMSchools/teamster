@@ -15,9 +15,15 @@ from typing import Any, Literal
 
 from .config import ColumnPair, Comparison, RowSpec
 
-BUCKETS = ("match", "value_differs", "dashboard_only", "cube_only")
+BUCKETS = ("match", "value_differs", "dims_differ", "dashboard_only", "cube_only")
 _RN = "__rn"
 _IN = "__in"
+# A `dims_differ` row's group-by values on the dashboard side, as `d:<column>`
+# dims of its group; its own dims are Cube's.
+DASH_PREFIX = "d:"
+_MOVED = "__moved"
+# Per group and side, its rows and each value column's non-null count and sum.
+_STATS = "__s_"
 
 Verdict = Literal["pass", "differs", "dashboard_only", "cube_only"]
 
@@ -165,17 +171,32 @@ def reconcile_sql(
             one drops that Cube has reads `dashboard_filtered`, with the label
             in `__filter`; one Cube lacks too is a match.
 
+    A row both sides hold with the same values whose group-by columns differ
+    (Cube files it in one cell, the dashboard in another) reads `dims_differ`:
+    its group columns are Cube's, and `__moved` with a `__d_<column>` per
+    group-by column gives the dashboard's.
+
     Returns:
-        One query returning `bucket`, each group-by column, `n_rows` and
-        `n_students` (distinct values of the first grain pair). No grain or
-        value column is returned.
+        One query returning `bucket`, each group-by column, `n_rows`,
+        `n_students` (distinct values of the first grain pair), and per side
+        (`c`, `d`) its rows and each value column's non-null count and sum
+        (`__s_c_rows`, `__s_c_n0`, `__s_c_sum0`, ...). No grain or value
+        column is returned.
     """
     ctes, group_names = _joined(
-        cube_rows_sql, dashboard_rows_sql, rows, group_by, filters
+        cube_rows_sql, dashboard_rows_sql, rows, group_by, filters, moved=True
     )
+    stats = []
+    for side in ("c", "d"):
+        stats.append(f"COUNTIF(__{side}in) AS {_STATS}{side}_rows")
+        for i in range(len(rows.values)):
+            stats += [
+                f"COUNT(__{side}v{i}) AS {_STATS}{side}_n{i}",
+                f"SUM(__{side}v{i}) AS {_STATS}{side}_sum{i}",
+            ]
     outer_select = ", ".join(
         ["bucket", *group_names, "COUNT(*) AS n_rows"]
-        + ["COUNT(DISTINCT __student) AS n_students"]
+        + ["COUNT(DISTINCT __student) AS n_students", *stats]
     )
     group_clause = ", ".join(["bucket", *group_names])
     return (
@@ -195,12 +216,15 @@ def _joined(
     filters: Sequence[tuple[str, str]],
     keys: bool = False,
     extra: Sequence[str] = (),
+    moved: bool = False,
 ) -> tuple[str, list[str]]:
     """The `c`, `d` and `joined` CTEs of `reconcile_sql`, and the group columns.
 
     With `keys`, `joined` also carries each one-sided row's grain keys
     (`__k0`, ...) and duplicate number (`__rn`), for `trace_sql`. `extra`
-    adds select expressions over `c` and `d` to `joined`.
+    adds select expressions over `c` and `d` to `joined`. With `moved`, the
+    group columns add a `dims_differ` row's dashboard cell (`__moved`,
+    `__d_<column>`).
     """
     cube_grain = [p.cube for p in rows.grain]
     dash_grain = [p.dashboard for p in rows.grain]
@@ -215,6 +239,11 @@ def _joined(
     ]
     same = [_pair_matches(f"d.{p.dashboard}", f"c.{p.cube}") for p in rows.values]
     all_same = " AND ".join(same) or "TRUE"
+    dims_same = (
+        " AND ".join(_pair_matches(f"d.{p.dashboard}", f"c.{p.cube}") for p in group_by)
+        or "TRUE"
+    )
+    both = f"c.{_IN} IS NOT NULL AND d.{_IN} IS NOT NULL"
 
     group_cols = [
         f"COALESCE(CAST(c.{p.cube} AS STRING), CAST(d.{p.dashboard} AS STRING)) "
@@ -222,6 +251,13 @@ def _joined(
         for p in group_by
     ]
     group_names = [p.cube for p in group_by]
+    if group_by and moved:
+        differ = f"{both} AND {all_same} AND NOT ({dims_same})"
+        group_cols += [f"IF({differ}, TRUE, NULL) AS {_MOVED}"] + [
+            f"IF({differ}, CAST(d.{p.dashboard} AS STRING), NULL) AS __d_{p.cube}"
+            for p in group_by
+        ]
+        group_names += [_MOVED, *(f"__d_{p.cube}" for p in group_by)]
     first = rows.grain[0]
 
     kept = " AND ".join(f"d.{flag}" for flag, _ in filters)
@@ -245,7 +281,8 @@ def _joined(
             f"WHEN d.{_IN} IS NULL THEN 'cube_only' "
             + "".join(filtered)
             + f"WHEN NOT ({all_same}) THEN 'value_differs' "
-            "ELSE 'match' END AS bucket",
+            + (f"WHEN NOT ({dims_same}) THEN 'dims_differ' " if group_by else "")
+            + "ELSE 'match' END AS bucket",
             f"COALESCE(CAST(c.{first.cube} AS STRING), "
             f"CAST(d.{first.dashboard} AS STRING)) AS __student",
             *group_cols,
@@ -263,6 +300,16 @@ def _joined(
                 + [f"COALESCE(c.{_RN}, d.{_RN}) AS {_RN}"]
                 if keys
                 else []
+            ),
+            f"c.{_IN} AS __cin",
+            f"d.{_IN} AS __din",
+            *(
+                f"SAFE_CAST({_bool_text(f'{side}.{name}')} AS FLOAT64) AS __{side}v{i}"
+                for side, names in (
+                    ("c", [p.cube for p in rows.values]),
+                    ("d", [p.dashboard for p in rows.values]),
+                )
+                for i, name in enumerate(names)
             ),
             *extra,
         ]
@@ -468,29 +515,93 @@ def groups_from(comparison_id: str, result_rows: list[dict]) -> list[Group]:
         query order, so a row's students are counted once. A NULL value
         becomes an empty string, and its column is listed in `nulls`.
     """
-    reserved = {"bucket", "n_rows", "n_students", "__filter"}
-    return [
-        Group(
-            comparison_id=comparison_id,
-            # The dashboard-only filter that dropped the rows, on its rows only.
-            dims=(
-                (("dashboard_filter", str(row["__filter"])),)
-                if row.get("__filter") is not None
-                else ()
-            )
-            + tuple(
-                (k, "" if v is None else str(v))
+    out = []
+    for row in result_rows:
+        if row["bucket"] == "match":
+            continue
+        dims = _cell_dims(row)
+        if row.get(_MOVED):
+            dims += [
+                (f"{DASH_PREFIX}{k[4:]}", v)
                 for k, v in row.items()
-                if k not in reserved
-            ),
-            bucket=row["bucket"],
-            n_rows=int(row["n_rows"]),
-            n_students=int(row["n_students"]),
-            nulls=tuple(k for k, v in row.items() if k not in reserved and v is None),
+                if k.startswith("__d_") and not k.startswith(_STATS)
+            ]
+        out.append(
+            Group(
+                comparison_id=comparison_id,
+                # The dashboard-only filter that dropped the rows, on its rows only.
+                dims=(
+                    (("dashboard_filter", str(row["__filter"])),)
+                    if row.get("__filter") is not None
+                    else ()
+                )
+                + tuple((k, "" if v is None else str(v)) for k, v in dims),
+                bucket=row["bucket"],
+                n_rows=int(row["n_rows"]),
+                n_students=int(row["n_students"]),
+                nulls=tuple(k for k, v in dims if v is None),
+            )
         )
-        for row in result_rows
-        if row["bucket"] != "match"
+    return out
+
+
+def _cell_dims(row: dict) -> list[tuple[str, Any]]:
+    """A result row's own group-by columns, in query order."""
+    return [
+        (k, v)
+        for k, v in row.items()
+        if k not in _RESERVED and not k.startswith(("__d_", _STATS))
     ]
+
+
+_RESERVED = {"bucket", "n_rows", "n_students", "__filter", _MOVED}
+
+
+def cell_rows_from(result_rows: list[dict]) -> list[dict]:
+    """Each result row's rows and value sums per side, for sizing a cell.
+
+    Returns:
+        Per result row, matches included: `bucket`, `dims` (Cube's cell, as
+        [column, value] pairs), `dash_dims` (the dashboard's cell when it
+        differs, else None), and `c` and `d` each as `rows`, `n` and `sum`
+        (per value column). Counts and sums only, never a row.
+    """
+    out = []
+    for row in result_rows:
+        dims = [[k, None if v is None else str(v)] for k, v in _cell_dims(row)]
+        if row.get("__filter") is not None:
+            continue
+        dash = None
+        if row.get(_MOVED):
+            dash = [
+                [k[4:], None if v is None else str(v)]
+                for k, v in row.items()
+                if k.startswith("__d_")
+            ]
+        sides = {}
+        for side in ("c", "d"):
+            n = [
+                int(row[k] or 0)
+                for k in sorted(row, key=_index)
+                if k.startswith(f"{_STATS}{side}_n")
+            ]
+            sums = [
+                float(row[k] or 0)
+                for k in sorted(row, key=_index)
+                if k.startswith(f"{_STATS}{side}_sum")
+            ]
+            sides[side] = {
+                "rows": int(row.get(f"{_STATS}{side}_rows") or 0),
+                "n": n,
+                "sum": sums,
+            }
+        out.append({"bucket": row["bucket"], "dims": dims, "dash_dims": dash, **sides})
+    return out
+
+
+def _index(key: str) -> int:
+    digits = re.search(r"(\d+)$", key)
+    return int(digits[1]) if digits else -1
 
 
 # Config operator names that Cube spells differently.

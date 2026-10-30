@@ -662,6 +662,7 @@ class _Sides:
     cell_sql_usd: dict[str, dict[str, list[float]]] = dataclasses.field(
         default_factory=dict
     )
+    cell_rows: dict[str, list[dict]] = dataclasses.field(default_factory=dict)
     # Per comparison with `rows`, distinct students by (cut label, cell key).
     students: dict[str, dict[tuple[str, tuple[str, ...]], int]] = dataclasses.field(
         default_factory=dict
@@ -776,6 +777,7 @@ def _compare_one(
             )
         )
         sides.groups += compare.groups_from(comparison.id, result)
+        sides.cell_rows[comparison.id] = compare.cell_rows_from(result)
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
         # Only a student column counts students; without one in the grain,
         # every cell's `n_students` stays None, so none is an example cell.
@@ -1315,6 +1317,7 @@ def run(
         diff_cells=_diff_cells(sides),
         cell_sql=sides.cell_sql,
         cell_sql_usd=sides.cell_sql_usd,
+        cell_rows=sides.cell_rows,
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells, findings)
     print(text)
@@ -1423,6 +1426,7 @@ def _run_from_json(data: dict) -> RunResult:
         diff_cells=data.get("diff_cells", []),
         cell_sql=data.get("cell_sql", {}),
         cell_sql_usd=data.get("cell_sql_usd", {}),
+        cell_rows=data.get("cell_rows", {}),
         cube_host=data.get("cube_host", ""),
         fact=data.get("fact", ""),
     )

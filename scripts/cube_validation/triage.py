@@ -674,6 +674,11 @@ NO_ROWS = (
     "`triage confirm --bucket value_differs`"
 )
 NO_GRAIN = "not traced: the comparison has no `rows` grain"
+MOVED_ROWS = (
+    "rows both sides hold sit in different cells (Cube's columns, then the "
+    "dashboard's as `d:`): no trace; prove them with "
+    "`triage confirm --bucket dims_differ`"
+)
 
 
 def suggest(
@@ -787,6 +792,8 @@ def suggest(
                     found = (NOT_TRACED,)
                 elif source.bucket == "value_differs":
                     found = (NO_ROWS,)
+                elif source.bucket == "dims_differ":
+                    found = (MOVED_ROWS,)
                 else:
                     found = (NO_GRAIN,)
 
