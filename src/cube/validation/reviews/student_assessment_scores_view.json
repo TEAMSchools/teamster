@@ -1,0 +1,1191 @@
+[
+  {
+    "id": "Q1",
+    "reason": "The dashboard keeps a score only if the student was enrolled at the end of the week it was given (is_enrolled_week_end); Cube has no such rule. Which eligibility rule should hold?",
+    "decisions": [
+      "school-c5-not-enrolled-week-end",
+      "region-c5-not-enrolled-week-end",
+      "gened-school-c5-not-enrolled-week-end",
+      "gened-region-c5-not-enrolled-week-end",
+      "iep-school-c5-not-enrolled-week-end",
+      "iep-region-c5-not-enrolled-week-end"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (dashboard side): the student was not enrolled at the end of the week the assessment was given",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `the student was not enrolled at the end of the week the assessment was given` on the dashboard side",
+      "`mastery-dki-school` (cube_only): 58 row groups, 414 rows",
+      "`mastery-dki-region` (cube_only): 48 row groups, 414 rows",
+      "`mastery-gened-dki-school` (cube_only): 54 row groups, 388 rows",
+      "`mastery-gened-dki-region` (cube_only): 47 row groups, 388 rows",
+      "`mastery-iep-dki-school` (cube_only): <10 row groups, 26 rows",
+      "`mastery-iep-dki-region` (cube_only): <10 row groups, 26 rows"
+    ],
+    "hand_checks": [
+      {
+        "none": "no group cell with 10+ students differs; find an example under your own access",
+        "view": "student_assessment_scores_view",
+        "comparisons": [
+          "mastery-dki-school",
+          "mastery-dki-region",
+          "mastery-gened-dki-school",
+          "mastery-gened-dki-region",
+          "mastery-iep-dki-school",
+          "mastery-iep-dki-region"
+        ]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "C5",
+          "sql": "WITH scores AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup`\n  WHERE academic_year = 2026 AND is_internal_assessment AND module_type != 'WPP')\nSELECT r.region, COUNT(*) AS n_rows\nFROM scores AS r\nWHERE EXISTS (\n    SELECT w.region FROM `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks` AS w\n    WHERE w.student_number = r.student_number AND w.academic_year = r.academic_year\n      AND w.region = r.region AND r.administered_at BETWEEN w.week_start_monday AND w.week_end_sunday)\n  AND NOT EXISTS (\n    SELECT w.region FROM `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks` AS w\n    WHERE w.student_number = r.student_number AND w.academic_year = r.academic_year\n      AND w.region = r.region AND r.administered_at BETWEEN w.week_start_monday AND w.week_end_sunday\n      AND w.is_enrolled_week_end)\nGROUP BY r.region"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "C5",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C5",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-gened-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C5",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-iep-dki-school__cube_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  },
+  {
+    "id": "Q2",
+    "reason": "The same != 'WPP' filter also drops assessments with a blank module_type, since a blank fails the comparison; Cube keeps them. Is leaving them off the dashboard intended?",
+    "decisions": [
+      "school-c2-blank-module",
+      "region-c2-blank-module",
+      "gened-school-c2-blank-module",
+      "gened-region-c2-blank-module",
+      "iep-school-c2-blank-module",
+      "iep-region-c2-blank-module"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (dashboard side): assessments with a blank module_type are left off the dashboard",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `assessments with a blank module_type are left off the dashboard` on the dashboard side",
+      "`mastery-dki-school` (cube_only): 15 row groups, 5534 rows",
+      "`mastery-dki-region` (cube_only): 10 row groups, 5534 rows",
+      "`mastery-gened-dki-school` (cube_only): 15 row groups, 4819 rows",
+      "`mastery-gened-dki-region` (cube_only): 10 row groups, 4819 rows",
+      "`mastery-iep-dki-school` (cube_only): 15 row groups, 715 rows",
+      "`mastery-iep-dki-region` (cube_only): 10 row groups, 715 rows"
+    ],
+    "hand_checks": [
+      {
+        "view": "student_assessment_scores_view",
+        "comparison": "mastery-dki-region",
+        "cut": "{\"Response Type\": \"standard\"}",
+        "dims": [
+          ["region_name", "Miami"],
+          ["grade_level", "6"],
+          ["academic_subject", "Text Study"]
+        ],
+        "dashboard": "0.367011",
+        "cube": "0.353731",
+        "dashboard_sql": null,
+        "cube_sql": null,
+        "workbook": "6d82b643-59a8-4106-b2f9-97ddf7f638e7",
+        "sheet": "DKI - Assessment Mastery Grid",
+        "filters": {
+          "Academic Year": "2026",
+          "Response Type": "standard"
+        },
+        "mixed": true,
+        "cause_students": 171,
+        "sql_left_out": [70024, 16125]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "C2",
+          "sql": "SELECT r.region, COUNT(*) AS n_rows\nFROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup` AS r\nWHERE r.academic_year = 2026 AND r.is_internal_assessment AND r.module_type IS NULL\nGROUP BY r.region"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "C2",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C2",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-gened-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C2",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-iep-dki-school__cube_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [
+        {
+          "view": "student_assessment_scores_view",
+          "comparison": "mastery-dki-region",
+          "query": {
+            "measures": ["student_assessment_scores_view.pct_proficient"],
+            "dimensions": [
+              "student_assessment_scores_view.region_name",
+              "student_assessment_scores_view.grade_level",
+              "student_assessment_scores_view.academic_subject"
+            ],
+            "filters": [
+              {
+                "member": "student_assessment_scores_view.academic_year",
+                "operator": "equals",
+                "values": ["2026"]
+              },
+              {
+                "member": "student_assessment_scores_view.response_type",
+                "operator": "equals",
+                "values": ["standard"]
+              },
+              {
+                "member": "student_assessment_scores_view.is_internal_assessment",
+                "operator": "equals",
+                "values": ["true"]
+              },
+              {
+                "member": "student_assessment_scores_view.region_name",
+                "operator": "equals",
+                "values": ["Miami"]
+              },
+              {
+                "member": "student_assessment_scores_view.grade_level",
+                "operator": "equals",
+                "values": ["6"]
+              },
+              {
+                "member": "student_assessment_scores_view.academic_subject",
+                "operator": "equals",
+                "values": ["Text Study"]
+              }
+            ]
+          }
+        }
+      ],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  },
+  {
+    "id": "Q3",
+    "reason": "The dashboard drops scores from weeks the student was out of district; Cube keeps them. Should out-of-district weeks count?",
+    "decisions": [
+      "school-c5o-out-of-district",
+      "region-c5o-out-of-district",
+      "iep-school-c5o-out-of-district",
+      "iep-region-c5o-out-of-district"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (dashboard side): the student was out of district that week",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `the student was out of district that week` on the dashboard side",
+      "`mastery-dki-school` (cube_only): <10 row group, <10 rows",
+      "`mastery-dki-region` (cube_only): <10 row group, <10 rows",
+      "`mastery-iep-dki-school` (cube_only): <10 row group, <10 rows",
+      "`mastery-iep-dki-region` (cube_only): <10 row group, <10 rows"
+    ],
+    "hand_checks": [
+      {
+        "none": "no group cell with 10+ students differs; find an example under your own access",
+        "view": "student_assessment_scores_view",
+        "comparisons": [
+          "mastery-dki-school",
+          "mastery-dki-region",
+          "mastery-iep-dki-school",
+          "mastery-iep-dki-region"
+        ]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "C5O",
+          "sql": "WITH scores AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup`\n  WHERE academic_year = 2026 AND is_internal_assessment AND module_type != 'WPP'),\neligible AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks`\n  WHERE is_enrolled_week_end AND enroll_status IN (0, 2, 3))\nSELECT r.region, COUNT(*) AS n_rows\nFROM scores AS r\nWHERE EXISTS (\n    SELECT w.region FROM eligible AS w\n    WHERE w.student_number = r.student_number AND w.academic_year = r.academic_year\n      AND w.region = r.region AND r.administered_at BETWEEN w.week_start_monday AND w.week_end_sunday\n      AND w.is_out_of_district)\n  AND NOT EXISTS (\n    SELECT w.region FROM eligible AS w\n    WHERE w.student_number = r.student_number AND w.academic_year = r.academic_year\n      AND w.region = r.region AND r.administered_at BETWEEN w.week_start_monday AND w.week_end_sunday\n      AND NOT w.is_out_of_district)\nGROUP BY r.region"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "C5O",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C5O",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-iep-dki-school__cube_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  },
+  {
+    "id": "Q4",
+    "reason": "int_assessments__response_rollup dates the administration in a prior academic year while Cube dates it by its canonical administered date, so the dashboard's academic-year join misses it. Which date is right? If the rollup's is wrong, this becomes a source fix",
+    "decisions": [
+      "school-c3-prior-year",
+      "region-c3-prior-year",
+      "gened-school-c3-prior-year",
+      "gened-region-c3-prior-year",
+      "iep-school-c3-prior-year",
+      "iep-region-c3-prior-year"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (dashboard side): the response rollup dates the administration in a prior academic year, so the dashboard cannot place it in 2026",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `the response rollup dates the administration in a prior academic year, so the dashboard cannot place it in 2026` on the dashboard side",
+      "`mastery-dki-school` (cube_only): 14 row groups, 1689 rows",
+      "`mastery-dki-region` (cube_only): <10 row groups, 1689 rows",
+      "`mastery-gened-dki-school` (cube_only): 13 row groups, 1530 rows",
+      "`mastery-gened-dki-region` (cube_only): <10 row groups, 1530 rows",
+      "`mastery-iep-dki-school` (cube_only): 10 row groups, 159 rows",
+      "`mastery-iep-dki-region` (cube_only): <10 row groups, 159 rows"
+    ],
+    "hand_checks": [
+      {
+        "view": "student_assessment_scores_view",
+        "comparison": "mastery-dki-region",
+        "cut": "{\"Response Type\": \"overall\"}",
+        "dims": [
+          ["region_name", "Newark"],
+          ["grade_level", "1"],
+          ["academic_subject", "Mathematics"]
+        ],
+        "dashboard": "0.691705",
+        "cube": "0.737008",
+        "dashboard_sql": null,
+        "cube_sql": null,
+        "workbook": "6d82b643-59a8-4106-b2f9-97ddf7f638e7",
+        "sheet": "DKI - Assessment Mastery Grid",
+        "filters": {
+          "Academic Year": "2026",
+          "Response Type": "overall"
+        },
+        "mixed": true,
+        "cause_students": 388,
+        "sql_left_out": [70025, 16126]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "C3",
+          "sql": "SELECT r.region, COUNT(*) AS n_rows\nFROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup` AS r\nINNER JOIN `teamster-332318`.`kipptaf_assessments`.`int_assessments__assessments_members` AS m\n  ON r.source = m.source AND r.assessment_id = m.assessment_id\nINNER JOIN `teamster-332318`.`kipptaf_assessments`.`int_assessments__assessments_canonical` AS c\n  ON m.source = c.source AND m.canonical_assessment_id = c.canonical_assessment_id\nWHERE r.is_internal_assessment AND r.module_type != 'WPP' AND r.academic_year < 2026\n  AND COALESCE(c.administered_date, r.date_taken) >= DATE '2026-07-01'\nGROUP BY r.region"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "C3",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C3",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-gened-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C3",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-iep-dki-school__cube_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [
+        {
+          "view": "student_assessment_scores_view",
+          "comparison": "mastery-dki-region",
+          "query": {
+            "measures": ["student_assessment_scores_view.pct_proficient"],
+            "dimensions": [
+              "student_assessment_scores_view.region_name",
+              "student_assessment_scores_view.grade_level",
+              "student_assessment_scores_view.academic_subject"
+            ],
+            "filters": [
+              {
+                "member": "student_assessment_scores_view.academic_year",
+                "operator": "equals",
+                "values": ["2026"]
+              },
+              {
+                "member": "student_assessment_scores_view.response_type",
+                "operator": "equals",
+                "values": ["overall"]
+              },
+              {
+                "member": "student_assessment_scores_view.is_internal_assessment",
+                "operator": "equals",
+                "values": ["true"]
+              },
+              {
+                "member": "student_assessment_scores_view.region_name",
+                "operator": "equals",
+                "values": ["Newark"]
+              },
+              {
+                "member": "student_assessment_scores_view.grade_level",
+                "operator": "equals",
+                "values": ["1"]
+              },
+              {
+                "member": "student_assessment_scores_view.academic_subject",
+                "operator": "equals",
+                "values": ["Mathematics"]
+              }
+            ]
+          }
+        }
+      ],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  },
+  {
+    "id": "Q5",
+    "reason": "rpt_tableau__ddi_dashboard drops WPP assessments (r.module_type != 'WPP', marked TODO: Remove SY26); Cube keeps them. Should the DDI Suite still leave WPP out?",
+    "decisions": [
+      "school-c1-wpp",
+      "region-c1-wpp",
+      "gened-school-c1-wpp",
+      "gened-region-c1-wpp",
+      "iep-school-c1-wpp",
+      "iep-region-c1-wpp"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (dashboard side): WPP assessments are left off the dashboard (module_type = WPP)",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `WPP assessments are left off the dashboard (module_type = WPP)` on the dashboard side",
+      "`mastery-dki-school` (cube_only): 29 row groups, 12324 rows",
+      "`mastery-dki-region` (cube_only): 13 row groups, 12324 rows",
+      "`mastery-gened-dki-school` (cube_only): 29 row groups, 10759 rows",
+      "`mastery-gened-dki-region` (cube_only): 13 row groups, 10759 rows",
+      "`mastery-iep-dki-school` (cube_only): 29 row groups, 1565 rows",
+      "`mastery-iep-dki-region` (cube_only): 13 row groups, 1565 rows"
+    ],
+    "hand_checks": [
+      {
+        "view": "student_assessment_scores_view",
+        "comparison": "mastery-dki-region",
+        "cut": "{\"Response Type\": \"overall\"}",
+        "dims": [
+          ["region_name", "Newark"],
+          ["grade_level", "2"],
+          ["academic_subject", "Text Study"]
+        ],
+        "dashboard": "0.562934",
+        "cube": "0.550881",
+        "dashboard_sql": null,
+        "cube_sql": null,
+        "workbook": "6d82b643-59a8-4106-b2f9-97ddf7f638e7",
+        "sheet": "DKI - Assessment Mastery Grid",
+        "filters": {
+          "Academic Year": "2026",
+          "Response Type": "overall"
+        },
+        "mixed": true,
+        "cause_students": 506,
+        "sql_left_out": [70024, 16125]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "C1",
+          "sql": "SELECT r.region, COUNT(*) AS n_rows\nFROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup` AS r\nWHERE r.academic_year = 2026 AND r.is_internal_assessment AND r.module_type = 'WPP'\nGROUP BY r.region"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "C1",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C1",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-gened-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C1",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-iep-dki-school__cube_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [
+        {
+          "view": "student_assessment_scores_view",
+          "comparison": "mastery-dki-region",
+          "query": {
+            "measures": ["student_assessment_scores_view.pct_proficient"],
+            "dimensions": [
+              "student_assessment_scores_view.region_name",
+              "student_assessment_scores_view.grade_level",
+              "student_assessment_scores_view.academic_subject"
+            ],
+            "filters": [
+              {
+                "member": "student_assessment_scores_view.academic_year",
+                "operator": "equals",
+                "values": ["2026"]
+              },
+              {
+                "member": "student_assessment_scores_view.response_type",
+                "operator": "equals",
+                "values": ["overall"]
+              },
+              {
+                "member": "student_assessment_scores_view.is_internal_assessment",
+                "operator": "equals",
+                "values": ["true"]
+              },
+              {
+                "member": "student_assessment_scores_view.region_name",
+                "operator": "equals",
+                "values": ["Newark"]
+              },
+              {
+                "member": "student_assessment_scores_view.grade_level",
+                "operator": "equals",
+                "values": ["2"]
+              },
+              {
+                "member": "student_assessment_scores_view.academic_subject",
+                "operator": "equals",
+                "values": ["Text Study"]
+              }
+            ]
+          }
+        }
+      ],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  },
+  {
+    "id": "Q6",
+    "reason": "The assessment was given before the student's first enrollment week, so the dashboard's week join finds no row; Cube counts the score. Should scores from before a student's first week count?",
+    "decisions": [
+      "school-c4-before-first-week",
+      "region-c4-before-first-week",
+      "gened-school-c4-before-first-week",
+      "gened-region-c4-before-first-week",
+      "iep-school-c4-before-first-week",
+      "iep-region-c4-before-first-week"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (dashboard side): the assessment was given before the student's first enrollment week, so no week row covers it",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `the assessment was given before the student's first enrollment week, so no week row covers it` on the dashboard side",
+      "`mastery-dki-school` (cube_only): <10 row groups, 248 rows",
+      "`mastery-dki-region` (cube_only): <10 row group, 248 rows",
+      "`mastery-gened-dki-school` (cube_only): <10 row groups, 215 rows",
+      "`mastery-gened-dki-region` (cube_only): <10 row group, 215 rows",
+      "`mastery-iep-dki-school` (cube_only): <10 row groups, 33 rows",
+      "`mastery-iep-dki-region` (cube_only): <10 row group, 33 rows"
+    ],
+    "hand_checks": [
+      {
+        "view": "student_assessment_scores_view",
+        "comparison": "mastery-dki-region",
+        "cut": "{\"Response Type\": \"overall\"}",
+        "dims": [
+          ["region_name", "Newark"],
+          ["grade_level", "12"],
+          ["academic_subject", "CCR 4"]
+        ],
+        "dashboard": "0.846975",
+        "cube": "0.895833",
+        "dashboard_sql": null,
+        "cube_sql": null,
+        "workbook": "6d82b643-59a8-4106-b2f9-97ddf7f638e7",
+        "sheet": "DKI - Assessment Mastery Grid",
+        "filters": {
+          "Academic Year": "2026",
+          "Response Type": "overall"
+        },
+        "mixed": true,
+        "cause_students": 248,
+        "sql_left_out": [70020, 16121]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "C4",
+          "sql": "WITH scores AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup`\n  WHERE academic_year = 2026 AND is_internal_assessment AND module_type != 'WPP')\nSELECT r.region, COUNT(*) AS n_rows\nFROM scores AS r\nWHERE NOT EXISTS (\n  SELECT w.region FROM `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks` AS w\n  WHERE w.student_number = r.student_number AND w.academic_year = r.academic_year\n    AND w.region = r.region AND w.week_start_monday <= r.administered_at)\nGROUP BY r.region"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "C4",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C4",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-gened-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "C4",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-iep-dki-school__cube_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [
+        {
+          "view": "student_assessment_scores_view",
+          "comparison": "mastery-dki-region",
+          "query": {
+            "measures": ["student_assessment_scores_view.pct_proficient"],
+            "dimensions": [
+              "student_assessment_scores_view.region_name",
+              "student_assessment_scores_view.grade_level",
+              "student_assessment_scores_view.academic_subject"
+            ],
+            "filters": [
+              {
+                "member": "student_assessment_scores_view.academic_year",
+                "operator": "equals",
+                "values": ["2026"]
+              },
+              {
+                "member": "student_assessment_scores_view.response_type",
+                "operator": "equals",
+                "values": ["overall"]
+              },
+              {
+                "member": "student_assessment_scores_view.is_internal_assessment",
+                "operator": "equals",
+                "values": ["true"]
+              },
+              {
+                "member": "student_assessment_scores_view.region_name",
+                "operator": "equals",
+                "values": ["Newark"]
+              },
+              {
+                "member": "student_assessment_scores_view.grade_level",
+                "operator": "equals",
+                "values": ["12"]
+              },
+              {
+                "member": "student_assessment_scores_view.academic_subject",
+                "operator": "equals",
+                "values": ["CCR 4"]
+              }
+            ]
+          }
+        }
+      ],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  },
+  {
+    "id": "Q7",
+    "reason": "The student has a section in the subject, but none spans the assessment's anchor date (its scheduled administration date), and no homeroom does, so Cube's section resolver drops the score; the dashboard keeps it. Should such a score count?",
+    "decisions": [
+      "school-d2-anchor-outside-section",
+      "region-d2-anchor-outside-section",
+      "gened-school-d2-anchor-outside-section",
+      "gened-region-d2-anchor-outside-section",
+      "iep-school-d2-anchor-outside-section",
+      "iep-region-d2-anchor-outside-section"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (cube side): the student has a section in the subject, but none spans the assessment's anchor date, and no homeroom does",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `the student has a section in the subject, but none spans the assessment's anchor date, and no homeroom does` on the cube side",
+      "`mastery-dki-school` (dashboard_only): 24 row groups, 1202 rows",
+      "`mastery-dki-region` (dashboard_only): 15 row groups, 1202 rows",
+      "`mastery-gened-dki-school` (dashboard_only): 20 row groups, 1097 rows",
+      "`mastery-gened-dki-region` (dashboard_only): 14 row groups, 1097 rows",
+      "`mastery-iep-dki-school` (dashboard_only): 14 row groups, 105 rows",
+      "`mastery-iep-dki-region` (dashboard_only): 10 row groups, 105 rows"
+    ],
+    "hand_checks": [
+      {
+        "view": "student_assessment_scores_view",
+        "comparison": "mastery-gened-dki-school",
+        "cut": "{\"Response Type\": \"overall\"}",
+        "dims": [
+          ["abbreviation", "Courage"],
+          ["grade_level", "8"],
+          ["academic_subject", "Science"],
+          ["module_code", "ET1"]
+        ],
+        "dashboard": "0.58871",
+        "cube": "0.65625",
+        "dashboard_sql": null,
+        "cube_sql": null,
+        "workbook": "6d82b643-59a8-4106-b2f9-97ddf7f638e7",
+        "sheet": "DKI - Assessment Mastery Grid",
+        "filters": {
+          "Academic Year": "2026",
+          "Response Type": "overall"
+        },
+        "mixed": false,
+        "cause_students": 28,
+        "sql_left_out": [70097, 457534]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "D2",
+          "sql": "WITH anchors AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__score_anchors`\n  WHERE source_type = 'internal' AND anchor_date >= DATE '2026-07-01'),\nsections AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__course_enrollments` WHERE cc_dcid IS NOT NULL),\nhomerooms AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__course_enrollments` WHERE cc_dcid IS NOT NULL AND courses_credittype = 'HR')\nSELECT s._dbt_source_project, COUNT(*) AS n_scores\nFROM anchors AS s\nWHERE EXISTS (\n    SELECT ce.subject_area FROM sections AS ce\n    WHERE ce.student_number = s.student_number AND ce._dbt_source_project = s._dbt_source_project\n      AND ce.subject_area = s.subject_area)\n  AND NOT EXISTS (\n    SELECT ce.subject_area FROM sections AS ce\n    WHERE ce.student_number = s.student_number AND ce._dbt_source_project = s._dbt_source_project\n      AND ce.subject_area = s.subject_area\n      AND s.anchor_date >= ce.cc_dateenrolled AND s.anchor_date < ce.cc_dateleft)\n  AND NOT EXISTS (\n    SELECT h.subject_area FROM homerooms AS h\n    WHERE h.student_number = s.student_number AND h._dbt_source_project = s._dbt_source_project\n      AND s.anchor_date >= h.cc_dateenrolled AND s.anchor_date < h.cc_dateleft)\nGROUP BY s._dbt_source_project"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "D2",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-dki-school__dashboard_only.sql"
+        },
+        {
+          "bucket": "D2",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-gened-dki-school__dashboard_only.sql"
+        },
+        {
+          "bucket": "D2",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-iep-dki-school__dashboard_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [
+        {
+          "view": "student_assessment_scores_view",
+          "comparison": "mastery-gened-dki-school",
+          "query": {
+            "measures": ["student_assessment_scores_view.pct_proficient"],
+            "dimensions": [
+              "student_assessment_scores_view.abbreviation",
+              "student_assessment_scores_view.grade_level",
+              "student_assessment_scores_view.academic_subject",
+              "student_assessment_scores_view.module_code"
+            ],
+            "filters": [
+              {
+                "member": "student_assessment_scores_view.academic_year",
+                "operator": "equals",
+                "values": ["2026"]
+              },
+              {
+                "member": "student_assessment_scores_view.response_type",
+                "operator": "equals",
+                "values": ["overall"]
+              },
+              {
+                "member": "student_assessment_scores_view.is_internal_assessment",
+                "operator": "equals",
+                "values": ["true"]
+              },
+              {
+                "member": "student_assessment_scores_view.is_iep",
+                "operator": "equals",
+                "values": ["false"]
+              },
+              {
+                "member": "student_assessment_scores_view.abbreviation",
+                "operator": "equals",
+                "values": ["Courage"]
+              },
+              {
+                "member": "student_assessment_scores_view.grade_level",
+                "operator": "equals",
+                "values": ["8"]
+              },
+              {
+                "member": "student_assessment_scores_view.academic_subject",
+                "operator": "equals",
+                "values": ["Science"]
+              },
+              {
+                "member": "student_assessment_scores_view.module_code",
+                "operator": "equals",
+                "values": ["ET1"]
+              }
+            ]
+          }
+        }
+      ],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  },
+  {
+    "id": "Q8",
+    "reason": "Cube's score anchors drop replacement scores (not is_replacement); the dashboard counts them. Decided in #5885, which asks whether scores from another grade's assessment count",
+    "decisions": [
+      "school-d1-replacement",
+      "region-d1-replacement",
+      "gened-school-d1-replacement",
+      "gened-region-d1-replacement",
+      "iep-school-d1-replacement",
+      "iep-region-d1-replacement"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (cube side): replacement scores (is_replacement) are left out of Cube's score anchors",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `replacement scores (is_replacement) are left out of Cube's score anchors` on the cube side",
+      "`mastery-dki-school` (dashboard_only): 29 row groups, 691 rows",
+      "`mastery-dki-region` (dashboard_only): 23 row groups, 691 rows",
+      "`mastery-gened-dki-school` (dashboard_only): 17 row groups, 434 rows",
+      "`mastery-gened-dki-region` (dashboard_only): 16 row groups, 434 rows",
+      "`mastery-iep-dki-school` (dashboard_only): 15 row groups, 257 rows",
+      "`mastery-iep-dki-region` (dashboard_only): 10 row groups, 257 rows"
+    ],
+    "hand_checks": [
+      {
+        "view": "student_assessment_scores_view",
+        "comparison": "mastery-gened-dki-region",
+        "cut": "{\"Response Type\": \"overall\"}",
+        "dims": [
+          ["region_name", "Newark"],
+          ["grade_level", "4"],
+          ["academic_subject", "Science"]
+        ],
+        "dashboard": "0.665362",
+        "cube": "0.647182",
+        "dashboard_sql": null,
+        "cube_sql": null,
+        "workbook": "6d82b643-59a8-4106-b2f9-97ddf7f638e7",
+        "sheet": "DKI - Assessment Mastery Grid",
+        "filters": {
+          "Academic Year": "2026",
+          "Response Type": "overall"
+        },
+        "mixed": false,
+        "cause_students": 32,
+        "sql_left_out": [70056, 457351]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "D1",
+          "sql": "SELECT d.school, COUNT(*) AS n_rows\nFROM `teamster-332318`.`kipptaf_tableau`.`rpt_tableau__ddi_dashboard` AS d\nWHERE d.academic_year = 2026 AND d.is_replacement\nGROUP BY d.school"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "D1",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-dki-school__dashboard_only.sql"
+        },
+        {
+          "bucket": "D1",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-gened-dki-school__dashboard_only.sql"
+        },
+        {
+          "bucket": "D1",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-iep-dki-school__dashboard_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [
+        {
+          "view": "student_assessment_scores_view",
+          "comparison": "mastery-gened-dki-region",
+          "query": {
+            "measures": ["student_assessment_scores_view.pct_proficient"],
+            "dimensions": [
+              "student_assessment_scores_view.region_name",
+              "student_assessment_scores_view.grade_level",
+              "student_assessment_scores_view.academic_subject"
+            ],
+            "filters": [
+              {
+                "member": "student_assessment_scores_view.academic_year",
+                "operator": "equals",
+                "values": ["2026"]
+              },
+              {
+                "member": "student_assessment_scores_view.response_type",
+                "operator": "equals",
+                "values": ["overall"]
+              },
+              {
+                "member": "student_assessment_scores_view.is_internal_assessment",
+                "operator": "equals",
+                "values": ["true"]
+              },
+              {
+                "member": "student_assessment_scores_view.is_iep",
+                "operator": "equals",
+                "values": ["false"]
+              },
+              {
+                "member": "student_assessment_scores_view.region_name",
+                "operator": "equals",
+                "values": ["Newark"]
+              },
+              {
+                "member": "student_assessment_scores_view.grade_level",
+                "operator": "equals",
+                "values": ["4"]
+              },
+              {
+                "member": "student_assessment_scores_view.academic_subject",
+                "operator": "equals",
+                "values": ["Science"]
+              }
+            ]
+          }
+        }
+      ],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  },
+  {
+    "id": "Q9",
+    "reason": "The student has no section in the subject and no homeroom on the anchor date, so Cube's section resolver drops the score; the dashboard keeps it. Should Cube count scores with no section?",
+    "decisions": [
+      "school-d3-no-section",
+      "region-d3-no-section",
+      "gened-school-d3-no-section",
+      "gened-region-d3-no-section",
+      "iep-school-d3-no-section",
+      "iep-region-d3-no-section"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (cube side): the student has no section in the subject and no homeroom on the anchor date",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `the student has no section in the subject and no homeroom on the anchor date` on the cube side",
+      "`mastery-dki-school` (dashboard_only): <10 row groups, 159 rows",
+      "`mastery-dki-region` (dashboard_only): <10 row groups, 159 rows",
+      "`mastery-gened-dki-school` (dashboard_only): <10 row groups, 84 rows",
+      "`mastery-gened-dki-region` (dashboard_only): <10 row groups, 84 rows",
+      "`mastery-iep-dki-school` (dashboard_only): <10 row groups, 75 rows",
+      "`mastery-iep-dki-region` (dashboard_only): <10 row groups, 75 rows"
+    ],
+    "hand_checks": [
+      {
+        "none": "no group cell with 10+ students differs; find an example under your own access",
+        "view": "student_assessment_scores_view",
+        "comparisons": [
+          "mastery-dki-school",
+          "mastery-dki-region",
+          "mastery-gened-dki-school",
+          "mastery-gened-dki-region",
+          "mastery-iep-dki-school",
+          "mastery-iep-dki-region"
+        ]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "D3",
+          "sql": "WITH anchors AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__score_anchors`\n  WHERE source_type = 'internal' AND anchor_date >= DATE '2026-07-01'),\nsections AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__course_enrollments` WHERE cc_dcid IS NOT NULL),\nhomerooms AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__course_enrollments` WHERE cc_dcid IS NOT NULL AND courses_credittype = 'HR')\nSELECT s._dbt_source_project, COUNT(*) AS n_scores\nFROM anchors AS s\nWHERE NOT EXISTS (\n    SELECT ce.subject_area FROM sections AS ce\n    WHERE ce.student_number = s.student_number AND ce._dbt_source_project = s._dbt_source_project\n      AND ce.subject_area = s.subject_area)\n  AND NOT EXISTS (\n    SELECT h.subject_area FROM homerooms AS h\n    WHERE h.student_number = s.student_number AND h._dbt_source_project = s._dbt_source_project\n      AND s.anchor_date >= h.cc_dateenrolled AND s.anchor_date < h.cc_dateleft)\nGROUP BY s._dbt_source_project"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "D3",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-dki-school__dashboard_only.sql"
+        },
+        {
+          "bucket": "D3",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-gened-dki-school__dashboard_only.sql"
+        },
+        {
+          "bucket": "D3",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-iep-dki-school__dashboard_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  },
+  {
+    "id": "Q10",
+    "reason": "The student's enrollment changed mid-year (grade or school). Cube files the score by the enrollment its resolved section belongs to, the dashboard by the enrollment week it was given in, so it lands in a different cell on each side. Which should decide? Also seen: the enrollment-weeks model can show the later grade for weeks before that enrollment began",
+    "decisions": [
+      "school-m1-enrollment-changed",
+      "region-m1-enrollment-changed",
+      "gened-school-m1-enrollment-changed",
+      "gened-region-m1-enrollment-changed"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (dashboard side): the student's enrollment changed (grade or school): Cube files the score by the enrollment its resolved section belongs to, the dashboard by the enrollment week it was given in, and the two disagree",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `the student's enrollment changed (grade or school): Cube files the score by the enrollment its resolved section belongs to, the dashboard by the enrollment week it was given in, and the two disagree` on the dashboard side",
+      "`mastery-dki-school` (dims_differ): <10 row groups, 31 rows",
+      "`mastery-dki-region` (dims_differ): <10 row groups, 25 rows",
+      "`mastery-gened-dki-school` (dims_differ): <10 row groups, 31 rows",
+      "`mastery-gened-dki-region` (dims_differ): <10 row groups, 25 rows"
+    ],
+    "hand_checks": [
+      {
+        "none": "no group cell with 10+ students differs; find an example under your own access",
+        "view": "student_assessment_scores_view",
+        "comparisons": [
+          "mastery-dki-school",
+          "mastery-dki-region",
+          "mastery-gened-dki-school",
+          "mastery-gened-dki-region"
+        ]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "M1",
+          "sql": "WITH cube_enrollment AS (\n  SELECT r.student_number, r.canonical_assessment_id, se.grade_level, l.abbreviation AS school\n  FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__resolved_section_enrollments` AS r\n  INNER JOIN `teamster-332318`.`kipptaf_marts`.`dim_student_section_enrollments` AS sse\n    ON r.student_section_enrollment_key = sse.student_section_enrollment_key\n  INNER JOIN `teamster-332318`.`kipptaf_marts`.`dim_student_enrollments` AS se\n    ON sse.student_enrollment_key = se.student_enrollment_key\n  INNER JOIN `teamster-332318`.`kipptaf_marts`.`dim_locations` AS l\n    ON se.location_key = l.location_key\n  WHERE r.source_type = 'internal'),\nscores AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup`\n  WHERE academic_year = 2026 AND is_internal_assessment),\neligible_weeks AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks`\n  WHERE is_enrolled_week_end AND enroll_status IN (0, 2, 3) AND NOT is_out_of_district)\nSELECT w.school, COUNT(*) AS n_rows\nFROM scores AS s\nINNER JOIN cube_enrollment AS c\n  ON c.student_number = s.student_number AND c.canonical_assessment_id = s.assessment_id\nINNER JOIN eligible_weeks AS w\n  ON w.student_number = s.student_number AND w.academic_year = s.academic_year\n  AND w.region = s.region AND s.administered_at BETWEEN w.week_start_monday AND w.week_end_sunday\nWHERE c.grade_level != w.grade_level OR c.school != w.school\nGROUP BY w.school"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "M1",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-dki-school__dims_differ.sql"
+        },
+        {
+          "bucket": "M1",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-gened-dki-school__dims_differ.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  },
+  {
+    "id": "Q11",
+    "reason": "The student's IEP status changed. Cube reads it from the enrollment its resolved section belongs to, the dashboard from the enrollment week, so the score falls in a different IEP group on each side. Which record should decide?",
+    "decisions": [
+      "gened-school-i1-iep-status-differs",
+      "gened-region-i1-iep-status-differs",
+      "iep-school-i1-iep-status-differs",
+      "iep-region-i1-iep-status-differs"
+    ],
+    "views": ["student_assessment_scores_view"],
+    "definitions": {
+      "dashboard": [],
+      "cube": []
+    },
+    "evidence": [
+      "cause (cube side): the student's IEP status differs: Cube reads no IEP from the enrollment its resolved section belongs to, the dashboard reads Has IEP from the enrollment week, so the score falls in a different IEP scope on each side",
+      "lead: read docs/models/ddi-stack-data-model.md (mentions rpt_tableau__ddi_dashboard, fct_assessment_scores_enrollment_scoped), docs/models/dibels-dashboard-data-model.md (mentions fct_assessment_scores_enrollment_scoped)"
+    ],
+    "counts": [
+      "cause `the student's IEP status differs: Cube reads no IEP from the enrollment its resolved section belongs to, the dashboard reads Has IEP from the enrollment week, so the score falls in a different IEP scope on each side` on the cube side",
+      "`mastery-gened-dki-school` (cube_only): <10 row groups, 11 rows",
+      "`mastery-gened-dki-region` (cube_only): <10 row groups, 11 rows",
+      "`mastery-iep-dki-school` (dashboard_only): <10 row groups, 11 rows",
+      "`mastery-iep-dki-region` (dashboard_only): <10 row groups, 11 rows"
+    ],
+    "hand_checks": [
+      {
+        "none": "no group cell with 10+ students differs; find an example under your own access",
+        "view": "student_assessment_scores_view",
+        "comparisons": [
+          "mastery-gened-dki-school",
+          "mastery-gened-dki-region",
+          "mastery-iep-dki-school",
+          "mastery-iep-dki-region"
+        ]
+      }
+    ],
+    "moment": {
+      "start": "2026-10-30T04:37:45.366000+00:00",
+      "end": "2026-10-30T04:37:55.988000+00:00",
+      "job_id": "4a209ae8-93d5-4e4a-8e9d-83795eb3b051"
+    },
+    "expires": "2026-11-06T04:37:45.366000+00:00",
+    "expired": false,
+    "reproduce": {
+      "queries": [
+        {
+          "bucket": "I1",
+          "sql": "WITH cube_iep AS (\n  SELECT r.student_number, r.canonical_assessment_id, es.is_iep\n  FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__resolved_section_enrollments` AS r\n  INNER JOIN `teamster-332318`.`kipptaf_marts`.`dim_student_section_enrollments` AS sse\n    ON r.student_section_enrollment_key = sse.student_section_enrollment_key\n  LEFT JOIN `teamster-332318`.`kipptaf_marts`.`dim_student_enrollment_status` AS es\n    ON sse.student_enrollment_key = es.student_enrollment_key\n  WHERE r.source_type = 'internal'),\nscores AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_assessments`.`int_assessments__response_rollup`\n  WHERE academic_year = 2026 AND is_internal_assessment),\niep_weeks AS (\n  SELECT * FROM `teamster-332318`.`kipptaf_extracts`.`int_extracts__student_enrollments_weeks`\n  WHERE is_enrolled_week_end AND enroll_status IN (0, 2, 3) AND NOT is_out_of_district\n    AND iep_status = 'Has IEP')\nSELECT w.school, COUNT(*) AS n_rows\nFROM scores AS s\nINNER JOIN cube_iep AS c\n  ON c.student_number = s.student_number AND c.canonical_assessment_id = s.assessment_id\nINNER JOIN iep_weeks AS w\n  ON w.student_number = s.student_number AND w.academic_year = s.academic_year\n  AND w.region = s.region AND s.administered_at BETWEEN w.week_start_monday AND w.week_end_sunday\nWHERE NOT COALESCE(c.is_iep, FALSE)\nGROUP BY w.school"
+        }
+      ],
+      "proofs": [
+        {
+          "bucket": "I1",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-gened-dki-school__cube_only.sql"
+        },
+        {
+          "bucket": "I1",
+          "query": 0,
+          "path": "proofs/student_assessment_scores_view/mastery-iep-dki-school__dashboard_only.sql"
+        }
+      ],
+      "blob": "https://github.com/TEAMSchools/teamster/blob/cristinabaldor/test/claude-ddi-cube-validation/src/cube/validation",
+      "cube": [],
+      "expires": "2026-11-06T04:37:45.366000+00:00"
+    }
+  }
+]
