@@ -1862,3 +1862,12 @@ decisions:
         dashboard: 354182e9cd9e3a5b2f1cd17f35e791ca04a53a608e9c943a69375f20a42a92a6,
         proof: dd65228d15db36d98a17a787bb6723eaa9baf4e2aa463a0e795e32ffee798862,
       }
+  - {
+      id: view-c6-future-filter,
+      missing_filter: Exclude Future Assessments,
+      call: deliberate,
+      reason:
+        "The sheet's Exclude Future Assessments filter hides assessments
+        administered after the coming Sunday. It is a display filter on the
+        sheet, not a different definition; Cube has no such member.",
+    }
