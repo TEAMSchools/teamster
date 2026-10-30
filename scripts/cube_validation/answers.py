@@ -104,10 +104,19 @@ _ROWS_SIDE = {
 
 
 def cell_causes(
-    run: RunResult, cfg: ViewConfig, comparison: str, items: list[dict]
+    run: RunResult,
+    cfg: ViewConfig,
+    comparison: str,
+    items: list[dict],
+    recorded: list[dict] | None = None,
 ) -> list[tuple[dict, dict[str, int]]]:
     """Each differing cell of a comparison, with the causes its rows carry and
-    the fewest students each surely has in it.
+    how many students each has in it.
+
+    `recorded` is the triage's `cause_students` for the comparison: the
+    proofs' own distinct-student counts per cause, cell and cut, used as
+    they are. A triage saved before them gives None, and the count is then
+    the floor below.
 
     A cell's rows lie in the groups whose columns agree with its dims and cut
     (`confirm._in_cut`, `confirm._in_cells`, as `--cells` links them); each
@@ -171,11 +180,25 @@ def cell_causes(
         for key, g in triage_mod._groups_by_key(run).items()
         if g.comparison_id == comparison
     ]
+    counted: dict[tuple, dict[str, int]] = {}
+    for e in recorded or []:
+        key = (e["cut"], tuple(pipeline._key(v) for _, v in e["dims"]))
+        counted.setdefault(key, {})[e["cause"]] = int(e["n"])
     out = []
     for cell in run.diff_cells:
         if cell["comparison"] != comparison:
             continue
         held: dict[str, int] = {}
+        if recorded is not None:
+            dims = {k: v for k, v in cell["dims"]}
+            names = [p.cube for p in pipeline.group_dims(spec)] if spec else []
+            key = (
+                cell.get("cut", "{}"),
+                tuple(pipeline._key(dims.get(n)) for n in names),
+            )
+            # Only a cell whose dims are the counted columns has a count.
+            if set(dims) == set(names):
+                held = dict(counted.get(key, {}))
         for key, g in groups:
             if not (
                 confirm._in_cut(g, spec, cell.get("cut", "{}"))
@@ -185,7 +208,7 @@ def cell_causes(
             causes = by_key.get(key, frozenset({""}))
             for cause in causes:
                 held.setdefault(cause, 0)
-            if len(causes) == 1 and whole_in(g, cell):
+            if recorded is None and len(causes) == 1 and whole_in(g, cell):
                 (cause,) = causes
                 held[cause] = max(held[cause], g.n_students)
         out.append((cell, held))
@@ -612,8 +635,14 @@ def questions_json(
     def cells_of(view: str, cid: str) -> list:
         """`cell_causes` of a comparison, worked out once per review."""
         if (view, cid) not in held:
+            loaded = triage.get(view, {})
+            recorded = (
+                loaded["cause_students"].get(cid, [])
+                if "cause_students" in loaded
+                else None
+            )
             held[view, cid] = cell_causes(
-                by_run[view], by_cfg[view], cid, triage.get(view, {}).get("items", [])
+                by_run[view], by_cfg[view], cid, loaded.get("items", []), recorded
             )
         return held[view, cid]
 
