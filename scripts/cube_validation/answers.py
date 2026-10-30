@@ -37,6 +37,7 @@ from .report import (
     definition_text,
     question_parts,
     question_reason,
+    without_sql,
 )
 
 # BigQuery keeps table history this long, so an as-of query stops working then.
@@ -61,6 +62,9 @@ class ProofSource:
     blob: str | None = None
 
 
+# A hand check whose pinned SQL is longer on either side leaves it out: too
+# long to paste into the BigQuery console, or to keep in the review file.
+MAX_POSTED_SQL = 20_000
 NO_EXAMPLE = (
     "no group cell with 10+ students differs; find an example under your own access"
 )
@@ -601,6 +605,12 @@ def questions_json(
             found = [min(found, key=lambda vc: _rank(vc[1]))]
             none = {}
         checks = [_check_json(view, check) for view, check in found]
+        checks = [
+            without_sql(c)
+            if max(len(c["dashboard_sql"]), len(c["cube_sql"])) > MAX_POSTED_SQL
+            else c
+            for c in checks
+        ]
         checks += [
             {"none": NO_EXAMPLE, "view": view, "comparisons": cids}
             for view, cids in none.items()

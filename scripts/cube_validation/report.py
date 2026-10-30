@@ -940,6 +940,7 @@ def render_review_issue(
     causes: dict[str, list[CauseAsk]] | None = None,
     comments: list[str] | None = None,
     decided: dict[str, list[CauseAsk]] | None = None,
+    json_link: str | None = None,
 ) -> str:
     """Render the issue body asking a domain owner to judge open items.
 
@@ -961,6 +962,8 @@ def render_review_issue(
             the cap, in question order; the body says they follow.
         decided: Per view, the cause decisions with any other call
             (`triage.cause_asks` with `owner=False`), for `also_decided`.
+        json_link: Where the questions JSON is committed (`posted_json` of
+            `questions`); the body links it instead of carrying the block.
 
     Returns:
         Markdown in the feature-request structure. Every count is masked and
@@ -1021,6 +1024,7 @@ def render_review_issue(
         body = _review_body(
             domain, question_lines, anchor_lines, definition_lines, check_lines,
             asked_ids, kinds, shown, also, moved=moved if blocks else 0,
+            json_link=json_link,
         )  # fmt: skip
         return body, _comment_chunks(blocks, moved) if moved and blocks else []
 
@@ -1039,7 +1043,7 @@ def render_review_issue(
     return body
 
 
-def _posted_json(questions: list[dict]) -> list[dict]:
+def posted_json(questions: list[dict]) -> list[dict]:
     """The questions as the owner's session reads them: a cause question's
     reproduce without the analyst's commands (`confirm`, `after`), which only
     the prose shows."""
@@ -1056,38 +1060,31 @@ def _posted_json(questions: list[dict]) -> list[dict]:
     return out
 
 
-def _without_pinned_sql(questions: list[dict]) -> list[dict]:
-    """The questions with each hand check's pinned SQL left out.
+def without_sql(check: dict) -> dict:
+    """A hand check with its pinned SQL left out, saying how long each side's
+    is, so the owner checks Cube with the Reproduce block's query and asks the
+    analyst for the SQL. A check with none, or none left, is kept as is."""
+    if check.get("dashboard_sql") is None:
+        return check
+    kept = {
+        k: v
+        for k, v in check.items()
+        if k not in ("dashboard_usd", "cube_usd", "expires", "expired")
+    }
+    return {
+        **kept,
+        "dashboard_sql": None,
+        "cube_sql": None,
+        "sql_left_out": [len(check["dashboard_sql"]), len(check["cube_sql"])],
+    }
 
-    A check keeps where to read both numbers, and says how long each side's
-    SQL is, so the owner checks Cube with the Reproduce block's query and
-    asks the analyst for the SQL.
-    """
-    out = []
-    for q in questions:
-        checks = []
-        for check in q["hand_checks"]:
-            if check.get("dashboard_sql") is None:
-                checks.append(check)
-                continue
-            kept = {
-                k: v
-                for k, v in check.items()
-                if k not in ("dashboard_usd", "cube_usd", "expires", "expired")
-            }
-            checks.append(
-                {
-                    **kept,
-                    "dashboard_sql": None,
-                    "cube_sql": None,
-                    "sql_left_out": [
-                        len(check["dashboard_sql"]),
-                        len(check["cube_sql"]),
-                    ],
-                }
-            )
-        out.append({**q, "hand_checks": checks})
-    return out
+
+def _without_pinned_sql(questions: list[dict]) -> list[dict]:
+    """The questions with each hand check's pinned SQL left out."""
+    return [
+        {**q, "hand_checks": [without_sql(c) for c in q["hand_checks"]]}
+        for q in questions
+    ]
 
 
 def _comment_chunks(blocks: list[tuple[str, list[str]]], moved: int = 1) -> list[str]:
@@ -1123,6 +1120,7 @@ def _review_body(
     questions: list[dict] | None,
     also: list[str],
     moved: int,
+    json_link: str | None = None,
 ) -> str:
     """The review body from its rendered parts; `moved` says the Reproduce
     blocks follow in comments (2: the hand checks too); `questions` is the
@@ -1193,14 +1191,20 @@ def _review_body(
         "</details>",
         "",
     ]
-    if questions is not None:
+    if questions is not None and json_link:
+        out += [
+            f"Questions for Claude (JSON): [{json_link.rsplit('/', 1)[-1]}]"
+            f"({json_link}). The owner's Claude session reads them there.",
+            "",
+        ]
+    elif questions is not None:
         out += [
             "<details>",
             "<summary>Questions for Claude (JSON)</summary>",
             "",
             "```json",
             # Compact: GitHub caps an issue body at 65,536 characters.
-            json.dumps(_posted_json(questions), separators=(",", ":")),
+            json.dumps(posted_json(questions), separators=(",", ":")),
             "```",
             "",
             "</details>",

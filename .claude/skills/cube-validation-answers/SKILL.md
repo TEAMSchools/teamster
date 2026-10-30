@@ -17,8 +17,8 @@ validation files or runs the validator, and neither does this session.
 
 ## Rules
 
-- Read the questions only from the issue's fenced `json` block, never from its
-  markdown.
+- Read the questions only from the questions JSON (step 1), never from the
+  issue's markdown.
 - Speak in policy words. Name a column, member or file only when the owner asks.
 - The owner's checks are theirs to run, independent of Claude. Show the steps
   and the SQL; never run the pinned SQL for them.
@@ -34,12 +34,16 @@ validation files or runs the validator, and neither does this session.
 1. Find the issue: the number the owner gave, else an open issue titled
    "Validate <dashboard> in Cube" for the dashboard they named
    (`mcp__github__search_issues`); if several match, ask which. Read it with
-   `mcp__github__issue_read` and parse its one fenced `json` block: a list of
-   questions, each with `id`, `reason`, `decisions`, `views`, `definitions`,
-   `evidence`, `counts`, `hand_checks`, `moment`, `expires` and `expired`; a
-   cause question also has `reproduce`. Read its comments too: skip a question
-   an earlier answers comment of the owner's already covers, unless they want to
-   change it, and then send them to the analyst.
+   `mcp__github__issue_read`. Its "Questions for Claude (JSON)" line links a
+   file at a commit (`https://github.com/<owner>/<repo>/blob/<sha>/<path>`):
+   read it with `mcp__github__get_file_contents` at that `ref`, never at a
+   branch, which may have moved. An older issue carries the JSON in its body
+   instead, as one fenced `json` block. Either is a list of questions, each with
+   `id`, `reason`, `decisions`, `views`, `definitions`, `evidence`, `counts`,
+   `hand_checks`, `moment`, `expires` and `expired`; a cause question also has
+   `reproduce`. Read its comments too: skip a question an earlier answers
+   comment of the owner's already covers, unless they want to change it, and
+   then send them to the analyst.
 2. Say how many questions there are. A question with `expired: true` has pinned
    SQL that no longer runs: the owner can answer without the checks, check a
    cause through its `reproduce` entries (which never expire), or wait for the

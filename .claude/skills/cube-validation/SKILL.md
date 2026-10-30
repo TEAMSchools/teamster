@@ -522,9 +522,16 @@ cause, do not retry around it.
    decision and a `group` decision on one group with different calls refuse.
 
 10. `review <files> --domain <domain>` prints the validation issue's body: the
-    numbered questions, each with the owner's hand checks, and a closing JSON
-    block the owner's session reads. Each unanswered `domain_owner` cause is one
-    question, across the comparisons it is proven on, with its words, per
+    numbered questions, each with the owner's hand checks, and a link to the
+    questions JSON the owner's session reads. It runs twice. The first run
+    writes the JSON to `reviews/<view>.json` beside the validation file
+    (`reviews/<domain>.json` across views) and stops: commit it as a
+    validation-file change and push. The next run links it at that commit and
+    prints the body; it stops again whenever the questions changed or the file
+    is not pushed as it stands. The JSON is masked like the body: read it before
+    committing, as git keeps it. A hand check leaves out pinned SQL over 20,000
+    characters a side, giving its lengths. Each unanswered `domain_owner` cause
+    is one question, across the comparisons it is proven on, with its words, per
     comparison the count of groups it decides and of the rows its proof
     attributes to it, and the model-doc leads; the owner's answer records onto
     every decision it lists. Every other call (`deliberate`, a `fix_`) is listed
@@ -536,14 +543,13 @@ cause, do not retry around it.
     `-- reproduce` count once (labeled today's data), then per proof file a
     branch link and the `triage confirm` that re-proves it at the run's moment,
     and the `run` plus `triage` after time travel ends. Commit and push the
-    proofs before posting, or the link finds nothing. When the Reproduce blocks
-    would take the body past GitHub's 65,536-character cap, they move out of it
-    into numbered comment files that stderr names: post the issue, then each
-    file as a comment, in order (the JSON in the body still holds everything the
-    owner's session reads). If stderr still warns that the body is too long,
-    review fewer views at a time. It refuses unless every file's view has a
-    triage with nothing in `investigate`. stderr names any question with no
-    triage evidence: `triage` that view and render again before posting. The
+    proofs before posting, or the link finds nothing. When the checks and
+    Reproduce blocks would take the body past GitHub's 65,536-character cap,
+    they move out of it into numbered comment files that stderr names: post the
+    issue, then each file as a comment, in order (the linked JSON holds
+    everything the owner's session reads). It refuses unless every file's view
+    has a triage with nothing in `investigate`. stderr names any question with
+    no triage evidence: `triage` that view and render again before posting. The
     footnote promises that identifiers of students and staff are hidden, which
     holds only if no reason or definition names a person: read them first. Show
     the draft to the analyst, then post it with `mcp__github__issue_write`,

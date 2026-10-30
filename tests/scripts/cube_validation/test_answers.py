@@ -1193,3 +1193,54 @@ def test_a_proof_source_outside_git_has_no_link(tmp_path):
     source = pipeline_mod.proof_source(view)
 
     assert source.blob is None and source.base == tmp_path
+
+
+def test_the_review_file_is_linked_only_once_committed_and_pushed(tmp_path):
+    import subprocess
+
+    def git(*args):
+        return subprocess.run(
+            ["git", "-C", str(tmp_path), *args], check=True, capture_output=True,
+            text=True,
+        ).stdout.strip()  # fmt: skip
+
+    git("init", "-q", "-b", "feat/x")
+    git("config", "user.email", "t@example.org")
+    git("config", "user.name", "t")
+    git("remote", "add", "origin", "https://github.com/org/repo.git")
+    view = tmp_path / "src" / "v.yml"
+    view.parent.mkdir()
+    view.write_text("")
+    cfg = ViewConfig(view="v", fact="d.t", comparisons=[])
+    path = pipeline_mod.review_file([view], [cfg], "DDI")
+    assert path == tmp_path / "src" / "reviews" / "v.json"
+    data = [{"id": "Q1", "counts": ["<10 rows"]}]
+
+    with pytest.raises(pipeline_mod.Refusal, match="wrote .*commit and push it"):
+        pipeline_mod._review_file(path, data)
+    assert json.loads(path.read_text()) == data
+    with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
+        pipeline_mod._review_file(path, data)
+
+    git("add", ".")
+    git("commit", "-q", "-m", "review")
+    with pytest.raises(pipeline_mod.Refusal, match="not committed and pushed"):
+        pipeline_mod._review_file(path, data)  # committed, not pushed
+
+    git("update-ref", "refs/remotes/origin/feat/x", "HEAD")
+    sha = git("rev-parse", "HEAD")
+    link = f"https://github.com/org/repo/blob/{sha}/src/reviews/v.json"
+    assert pipeline_mod._review_file(path, data) == link
+    # The commit hook's formatting is no change; other questions are.
+    path.write_text(json.dumps(data, indent=4))
+    git("commit", "-q", "-am", "fmt")
+    git("update-ref", "refs/remotes/origin/feat/x", "HEAD")
+    assert pipeline_mod._review_file(path, data).endswith("/src/reviews/v.json")
+    with pytest.raises(pipeline_mod.Refusal, match="wrote"):
+        pipeline_mod._review_file(path, [{"id": "Q2"}])
+
+
+def test_a_review_across_views_is_named_for_its_domain(tmp_path):
+    cfgs = [ViewConfig(view=v, fact="d.t", comparisons=[]) for v in ("a", "b")]
+    path = pipeline_mod.review_file([tmp_path / "a.yml"], cfgs, "Data & Analytics")
+    assert path == tmp_path / "reviews" / "data-analytics.json"
