@@ -861,6 +861,10 @@ def approved_decisions(
         task = _text(entry, "task", where, required=False)
         fp: dict[str, str] = {}
         comparison = str(stub.get("comparison") or item.get("comparison") or "")
+        # A missing cut or filter covers the view, wherever triage found it and
+        # whatever pile it sits in: no comparison, no fingerprints.
+        if stub.get("missing_cut") or stub.get("missing_filter"):
+            comparison = ""
         if comparison:
             fp = fingerprints.get(comparison) or {}
             if not (fp.get("cube") and fp.get("dashboard")):

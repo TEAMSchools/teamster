@@ -547,6 +547,26 @@ def test_approved_decisions_take_the_stub_and_the_run_fingerprints():
     assert cells["cells"] is True and cells["fingerprints"] == FPS["ada"]
 
 
+def test_a_missing_filter_in_cause_is_decided_across_the_view():
+    # As triage writes it: a comparison it was found on, and the sheet filter
+    # as its proven cause.
+    item = {
+        "id": "filter:Exclude Future", "kind": "gap", "suggestion": "cause",
+        "comparison": "ada", "stub": {"missing_filter": "Exclude Future"},
+        "cause": [{"side": "dashboard", "step": "sheet filter Exclude Future",
+                   "label": "sheet filter Exclude Future", "n_rows": None}],
+        "proof": {"kind": "workbook"},
+    }  # fmt: skip
+    approved = [{"id": "future", "call": "deliberate", "reason": "a display filter",
+                 "item": item["id"]}]  # fmt: skip
+
+    (decision,) = approved_decisions(approved, {"items": [item]}, FPS)
+
+    # No comparison and no fingerprints: the loader refuses either on one.
+    assert decision == {"id": "future", "missing_filter": "Exclude Future",
+                        "call": "deliberate", "reason": "a display filter"}  # fmt: skip
+
+
 @pytest.mark.parametrize(
     "entry, match",
     [
