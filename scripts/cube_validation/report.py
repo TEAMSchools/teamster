@@ -827,10 +827,11 @@ def _hand_check_lines(question_id: str, check: dict) -> list[str]:
         f"{', ' + dims if dims else ', the total'}: the dashboard shows "
         f"{check['dashboard']}, Cube shows {check['cube']}. "
     )
-    if check.get("mixed"):
+    if check.get("cause_students"):
         line += (
-            "No cell holds this cause's rows alone, so this one holds other "
-            "causes' rows too. "
+            f"At least {check['cause_students']} students' rows in it have "
+            "this cause"
+            + ("; other causes' rows are in it too. " if check.get("mixed") else ". ")
         )
     if check.get("dashboard_sql") is None:
         pass
