@@ -134,6 +134,24 @@ with
         }}
     ),
 
+    contact_gpa as (
+        select
+            id as contact_id, round(current_college_cumulative_gpa, 2) as gpa_rounded,
+        from {{ ref("stg_kippadb__contact") }}
+    ),
+
+    college_gpa_sources as (
+        select cg.contact_id, g.`source`,
+        from contact_gpa as cg
+        inner join
+            {{ ref("stg_kippadb__gpa") }} as g
+            on cg.contact_id = g.student
+            and cg.gpa_rounded = g.gpa_rounded
+        inner join
+            {{ ref("stg_kippadb__record_type") }} as rt on g.record_type_id = rt.id
+        where rt.name = 'Cumulative College' and g.rn_student_record_type_gpa = 1
+    ),
+
     roster as (
         select
             se._dbt_source_relation as exit_db_name,
@@ -320,6 +338,8 @@ with
             mal.award_letter__out_of_pocket as out_of_pocket_matriculated,
             mal.award_letter__unmet_need as unmet_need_matriculated,
 
+            gs.`source` as contact_current_college_cumulative_gpa_source,
+
             concat(
                 os.assigned_counselor__last_name,
                 ', ',
@@ -410,6 +430,7 @@ with
             and mpt.test_type = 'Military Physical Training'
             and mpt.rn_military_testing = 1
         left join matriculated_award_letter as mal on c.contact_id = mal.contact_id
+        left join college_gpa_sources as gs on c.contact_id = gs.contact_id
         -- TODO(#5181): Miami stays out until the KIPP Forward feeds downstream
         -- are reviewed for it.
         where
