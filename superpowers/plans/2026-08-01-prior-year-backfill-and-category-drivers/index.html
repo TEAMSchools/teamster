@@ -1,0 +1,2931 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Category drivers at Y1 and prior-year running backfill — Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#category-drivers-at-y1-and-prior-year-running-backfill-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Category drivers at Y1 and prior-year running backfill — Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-capture-the-pre-change-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Capture the pre-change baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-category-driver-columns-change-a-permanent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Category driver columns (Change A, permanent)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-prior-year-course-grade-backfill-change-b-part-1-temporary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Prior-year course-grade backfill (Change B part 1, temporary)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-prior-year-gpa-backfill-change-b-part-2-temporary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Prior-year GPA backfill (Change B part 2, temporary)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-whole-branch-verification-removal-task-and-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Whole-branch verification, removal task, and PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#not-in-this-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Not in this plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-08-01-prior-year-backfill-and-category-drivers.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="category-drivers-at-y1-and-prior-year-running-backfill-implementation-plan">Category drivers at Y1 and prior-year running backfill — Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+<code>superpowers:subagent-driven-development</code> (recommended) or
+<code>superpowers:executing-plans</code> to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Make <code>Category Driving Gap</code> resolve at the Y1 marking period, and
+temporarily populate prior-year running course grades and GPA so the drill-down
+is not blank during summer stakeholder training.</p>
+<p><strong>Architecture:</strong> Two independent changes to one model,
+<code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql</code>.
+Change A adds four student-course-grain category-driver columns via two new CTEs
+and one ungated join. Change B adds prior-year reconstructions via new CTEs
+consumed by the existing prior-year union branch (course grades) and by a
+year-gated join (GPA).</p>
+<p><strong>Tech Stack:</strong> dbt on BigQuery, kipptaf project. No Python, no unit tests —
+this repo validates dbt models with <code>dbt build</code> plus BigQuery MCP queries.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Spec:
+  <code>docs/superpowers/specs/2026-08-01-prior-year-backfill-and-category-drivers-design.md</code>.
+  Read it before Task 1.</li>
+<li>Worktree:
+  <code>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers</code>.
+  Branch <code>anthonygwalters/feat/claude-backfill-and-category-drivers</code>. Use
+  <code>git -C &lt;worktree&gt;</code> for every git call.</li>
+<li>Every dbt call:
+  <code>uv run dbt &lt;cmd&gt; --project-dir &lt;worktree&gt;/src/dbt/kipptaf --target dev --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod</code>.
+  Never bare <code>dbt</code>.</li>
+<li>Lint before every push:
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>,
+  run with cwd set to the worktree.</li>
+<li><strong>Current-year isolation is the first invariant.</strong> Any non-zero difference in
+  a current-year value of <code>gpa_y1</code>, <code>gpa_for_quarter</code>, <code>gpa_n_failing_y1</code> or
+  <code>y1_course_in_progress_*</code> between the dev build and prod means the change does
+  not ship.</li>
+<li><strong>Do NOT populate <code>courses_gradescaleid</code> in <code>quarter_grades</code> branch 3.</strong> The
+  <code>grade_scale_ladder</code> join keys off it, and it being null on prior-year rows is
+  the only thing keeping <code>need_next_*</code> null there. Populating it would light up
+  <code>need_next_letter_grade</code> while <code>need_next</code> stayed null.</li>
+<li>SQL conventions in <code>src/dbt/CLAUDE.md</code> are binding: no <code>QUALIFY</code>, no
+  <code>ORDER BY</code>, no subqueries against CTEs, max one level of function nesting,
+  ST06 column ordering, ST09 join-predicate ordering, trailing commas.</li>
+<li>Contract is enforced. Every new column needs a <code>data_type</code> and a <code>description</code>
+  in
+  <code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__student_course_grades.yml</code>.</li>
+<li>The model's composite uniqueness test warns at <strong>12</strong> — the pre-existing
+  <code>#3915</code> count. It must still read 12 after every task.</li>
+<li>Prod baseline: <strong>854,263 rows, 854,227 distinct</strong> composite keys, re-verified
+  during Task 3. AY2025 is 713,227 / 713,191; AY2026 is 141,036 / 141,036.
+  <strong>Prod drifts between sessions</strong> — the earlier 854,245 / 854,209 figure aged
+  out when 18 rows landed in the in-progress year. Always compare a dev build
+  against a prod read taken in the same session, never against a remembered
+  number.</li>
+</ul>
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Responsibility</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.../rpt_tableau__student_course_grades.sql</code></td>
+<td>all CTEs, joins, projections</td>
+<td>modified in Tasks 2, 3, 4</td>
+</tr>
+<tr>
+<td><code>.../properties/rpt_tableau__student_course_grades.yml</code></td>
+<td>contract + descriptions</td>
+<td>modified in Tasks 2, 3, 4</td>
+</tr>
+<tr>
+<td><code>.claude/scratch/4687-baseline.md</code></td>
+<td>pre-change numbers for isolation checks</td>
+<td>created in Task 1, never committed</td>
+</tr>
+</tbody>
+</table>
+<p>No new model files. Both changes belong in this model because both are
+extract-shaped presentation concerns, and the spec establishes that neither
+needs a <code>src/dbt/powerschool/</code> change.</p>
+<hr />
+<h3 id="task-1-capture-the-pre-change-baseline">Task 1: Capture the pre-change baseline</h3>
+<p>Every later isolation check compares against these numbers. Capture them before
+touching anything, because after the first edit the dev relation is no longer a
+clean control.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>.claude/scratch/4687-baseline.md</code> (gitignored, do not commit)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: nothing</li>
+<li>
+<p>Produces: the baseline numbers referenced by Tasks 2, 3, 4 and 5</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Record the current-year GPA control set</strong></p>
+</li>
+</ul>
+<p>Run via BigQuery MCP:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">  </span><span class="n">quarter</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_</span><span class="p">,</span>
+<span class="w">  </span><span class="n">round</span><span class="p">(</span><span class="k">sum</span><span class="p">(</span><span class="n">gpa_y1</span><span class="p">),</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sum_gpa_y1</span><span class="p">,</span>
+<span class="w">  </span><span class="n">round</span><span class="p">(</span><span class="k">sum</span><span class="p">(</span><span class="n">gpa_for_quarter</span><span class="p">),</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sum_gpa_for_quarter</span><span class="p">,</span>
+<span class="w">  </span><span class="k">sum</span><span class="p">(</span><span class="n">gpa_n_failing_y1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sum_n_failing</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">y1_course_in_progress_percent_grade_adjusted</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">has_running_pct</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__student_course_grades</span><span class="o">`</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+</code></pre></div>
+<p>Paste the full result into the scratch file under a heading
+<code>## Current-year GPA control set</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Record row-count and grain baseline</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">format</span><span class="p">(</span><span class="s1">'%T|%T|%T|%T|%T|%T'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">quarter</span><span class="p">,</span>
+<span class="w">    </span><span class="n">course_number</span><span class="p">,</span><span class="w"> </span><span class="n">category_name_code</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">distinct_key</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__student_course_grades</span><span class="o">`</span>
+</code></pre></div>
+<p>Expect <code>854245</code> / <code>854209</code>. If it differs, prod has moved — record the new
+numbers and use those as the control from here on.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Record the Category Driving Gap ground truth</strong></li>
+</ul>
+<p>This is the regression oracle for Task 2. It captures what the current Tableau
+logic produces at Q4, so the new column can be checked against known-good
+behaviour.</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="n">ranked</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span>
+<span class="w">    </span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sectionid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">category_name_code</span><span class="p">,</span>
+<span class="w">    </span><span class="n">category_quarter_percent_grade</span><span class="p">,</span>
+<span class="w">    </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">sectionid</span>
+<span class="w">      </span><span class="k">order</span><span class="w"> </span><span class="k">by</span>
+<span class="w">        </span><span class="p">(</span><span class="n">category_quarter_percent_grade</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span>
+<span class="w">        </span><span class="n">category_quarter_percent_grade</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span>
+<span class="w">        </span><span class="n">category_name_code</span><span class="w"> </span><span class="k">asc</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rn</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__student_course_grades</span><span class="o">`</span>
+<span class="w">  </span><span class="k">where</span>
+<span class="w">    </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Q4'</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">category_quarter_percent_grade</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="p">)</span>
+<span class="k">select</span>
+<span class="w">  </span><span class="n">category_name_code</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_sections</span>
+<span class="k">from</span><span class="w"> </span><span class="n">ranked</span>
+<span class="k">where</span><span class="w"> </span><span class="n">rn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Record the distribution. Task 2 must reproduce it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the letter-coverage gate</strong></li>
+</ul>
+<p><strong>This gate can fail the plan.</strong> The spec flags full-scale band coverage as
+unverified. If it fails, stop and report before writing any code — Task 3's
+letter derivation needs redesigning.</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="n">probe</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">generate_array</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">p</span><span class="p">),</span>
+<span class="k">scale</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">gradescale_name</span><span class="p">,</span><span class="w"> </span><span class="n">min_cutoffpercentage</span><span class="p">,</span><span class="w"> </span><span class="n">max_cutoffpercentage</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gradescaleitem_lookup</span><span class="o">`</span>
+<span class="p">)</span>
+<span class="k">select</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">n_matches</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">percents_with_no_rung</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">n_matches</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">percents_with_multiple_rungs</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">scale_percent_pairs</span>
+<span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">gradescale_name</span><span class="p">,</span><span class="w"> </span><span class="n">probe</span><span class="p">.</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_matches</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="k">scale</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">  </span><span class="k">cross</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">probe</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">probe</span><span class="p">.</span><span class="n">p</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">min_cutoffpercentage</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">max_cutoffpercentage</span>
+<span class="w">  </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><code>percents_with_multiple_rungs</code> must be <strong>0</strong> — anything else fans out Task 3's
+join. Record <code>percents_with_no_rung</code>; gaps are tolerable only if they fall
+outside 0–100 real grades, so report the number rather than judging it alone.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit nothing, report the baseline</strong></li>
+</ul>
+<p>The scratch file is gitignored by design. Report the four result sets in the
+task summary so the reviewer can see them without opening the file.</p>
+<hr />
+<h3 id="task-2-category-driver-columns-change-a-permanent">Task 2: Category driver columns (Change A, permanent)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__student_course_grades.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the <code>category_grades</code> CTE (ends at line 587), the baseline from Task
+  1 Step 3</li>
+<li>
+<p>Produces: columns <code>lowest_category_y1_name</code>, <code>lowest_category_y1_percent</code>,
+  <code>lowest_category_recent_term_name</code>, <code>lowest_category_recent_term_percent</code>, all
+  on every row including Y1. Tasks 3 and 4 do not depend on these.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the two CTEs</strong></p>
+</li>
+</ul>
+<p>Insert immediately after the <code>category_grades</code> CTE closes and before the final
+<code>select</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">category_ranked</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="cm">/* Ranking input for the lowest-category drivers. Rows where BOTH</span>
+<span class="cm">           percents are null are excluded so a term that exists but carries no</span>
+<span class="cm">           usable value cannot win rn_latest_term and blank out both drivers.</span>
+
+<span class="cm">           (percent is null) asc leads each order by because BigQuery sorts</span>
+<span class="cm">           NULLS FIRST ascending, which would otherwise hand "lowest" to a null.</span>
+<span class="cm">           category_name_code is the final tiebreaker so the pick is</span>
+<span class="cm">           reproducible across rebuilds. */</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">yearid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sectionid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">category_name_code</span><span class="p">,</span>
+<span class="w">            </span><span class="n">category_quarter_percent_grade</span><span class="p">,</span>
+<span class="w">            </span><span class="n">category_y1_percent_grade_running</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">dense_rank</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">sectionid</span>
+<span class="w">                </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">term</span><span class="w"> </span><span class="k">desc</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rn_latest_term</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">sectionid</span><span class="p">,</span><span class="w"> </span><span class="n">term</span>
+<span class="w">                </span><span class="k">order</span><span class="w"> </span><span class="k">by</span>
+<span class="w">                    </span><span class="p">(</span><span class="n">category_y1_percent_grade_running</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">category_y1_percent_grade_running</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">category_name_code</span><span class="w"> </span><span class="k">asc</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rn_lowest_y1</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">sectionid</span><span class="p">,</span><span class="w"> </span><span class="n">term</span>
+<span class="w">                </span><span class="k">order</span><span class="w"> </span><span class="k">by</span>
+<span class="w">                    </span><span class="p">(</span><span class="n">category_quarter_percent_grade</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">category_quarter_percent_grade</span><span class="w"> </span><span class="k">asc</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">category_name_code</span><span class="w"> </span><span class="k">asc</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rn_lowest_quarter</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">category_grades</span>
+<span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">category_quarter_percent_grade</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">            </span><span class="k">or</span><span class="w"> </span><span class="n">category_y1_percent_grade_running</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">category_drivers</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="cm">/* One row per student-section-year, so the join below cannot fan out.</span>
+<span class="cm">           Both drivers are read from the SAME latest term, so they describe one</span>
+<span class="cm">           moment rather than two. */</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">yearid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sectionid</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">max</span><span class="p">(</span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">rn_lowest_y1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">category_name_code</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lowest_category_y1_name</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">max</span><span class="p">(</span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">rn_lowest_y1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">category_y1_percent_grade_running</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lowest_category_y1_percent</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">max</span><span class="p">(</span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">rn_lowest_quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">category_name_code</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lowest_category_recent_term_name</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">max</span><span class="p">(</span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">rn_lowest_quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">category_quarter_percent_grade</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lowest_category_recent_term_percent</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">category_ranked</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">rn_latest_term</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">sectionid</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the join</strong></li>
+</ul>
+<p>Append after the <code>grade_scale_ladder as gsl</code> join and before the <code>where</code> clause
+at the end of the file. <strong>No term predicate</strong> — that omission is what puts the
+columns on Y1 rows:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">category_drivers</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cd</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">studentid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">yearid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">sectionid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">sectionid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the projections</strong></li>
+</ul>
+<p>Immediately after <code>c.category_quarter_average_all_courses,</code> (line 712), keeping
+the blank-line-between-source-tables convention:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">cd</span><span class="p">.</span><span class="n">lowest_category_y1_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">cd</span><span class="p">.</span><span class="n">lowest_category_y1_percent</span><span class="p">,</span>
+<span class="w">    </span><span class="n">cd</span><span class="p">.</span><span class="n">lowest_category_recent_term_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">cd</span><span class="p">.</span><span class="n">lowest_category_recent_term_percent</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add the contract entries</strong></li>
+</ul>
+<p>In the properties yml, after the <code>category_quarter_average_all_courses</code> entry:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lowest_category_y1_name</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Gradebook category code with the lowest year-running percent for this</span>
+<span class="w">    </span><span class="no">course, read from the latest term that holds category data. Present on every</span>
+<span class="w">    </span><span class="no">row including Y1, which is the point — the per-term category columns are</span>
+<span class="w">    </span><span class="no">null at Y1 because there is no Y1 category term.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lowest_category_y1_percent</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float64</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">The year-running percent belonging to lowest_category_y1_name.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lowest_category_recent_term_name</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Gradebook category code with the lowest single-quarter percent in the latest</span>
+<span class="w">    </span><span class="no">term that holds category data — Q4 on a completed year, the most recently</span>
+<span class="w">    </span><span class="no">posted quarter on a live one. Answers what the problem is right now, where</span>
+<span class="w">    </span><span class="no">lowest_category_y1_name answers what dragged the whole year down. The two</span>
+<span class="w">    </span><span class="no">can legitimately disagree.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lowest_category_recent_term_percent</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float64</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">The single-quarter percent belonging to lowest_category_recent_term_name.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>rpt_tableau__student_course_grades<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: <code>PASS=1 WARN=1</code>. The warn is the <code>#3915</code> uniqueness test at <strong>12</strong>.
+Any other number is a fan-out — stop.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify no fan-out and Y1 population</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="s1">'dev'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">which</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">format</span><span class="p">(</span><span class="s1">'%T|%T|%T|%T|%T|%T'</span><span class="p">,</span>
+<span class="w">    </span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">quarter</span><span class="p">,</span>
+<span class="w">    </span><span class="n">course_number</span><span class="p">,</span><span class="w"> </span><span class="n">category_name_code</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">distinct_key</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Y1'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">lowest_category_y1_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">y1_rows_with_driver</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">zz_anthonygwalters_kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__student_course_grades</span><span class="o">`</span>
+</code></pre></div>
+<p><code>rows_</code> and <code>distinct_key</code> must equal the Task 1 Step 2 baseline exactly.
+<code>y1_rows_with_driver</code> must be well above zero — it was 0 before.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Verify against the Task 1 regression oracle</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="n">lowest_category_recent_term_name</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">format</span><span class="p">(</span><span class="s1">'%T|%T'</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">sectionid</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_sections</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">zz_anthonygwalters_kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__student_course_grades</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2025</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Q4'</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Must reproduce the distribution recorded in Task 1 Step 3. A mismatch means the
+ranking differs from the behaviour the workbook already relies on.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__student_course_grades.yml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__student_course_grades.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dbt): add lowest-category driver columns resolving Category Driving Gap at Y1</span>
+
+<span class="s2">Four student-course-grain columns present on every row including Y1, where the</span>
+<span class="s2">per-term category columns are null because no Y1 category term exists. Scalar</span>
+<span class="s2">columns rather than attaching category rows to Y1, which would fan Y1 out</span>
+<span class="s2">roughly 3.9x. Reproduces the existing Q4 driver distribution exactly.</span>
+
+<span class="s2">Refs #4687"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-prior-year-course-grade-backfill-change-b-part-1-temporary">Task 3: Prior-year course-grade backfill (Change B part 1, temporary)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__student_course_grades.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 1 Step 4's coverage gate result</li>
+<li>
+<p>Produces: <code>y1_course_in_progress_percent_grade_adjusted</code> and
+  <code>y1_course_in_progress_letter_grade_adjusted</code> populated on prior-year rows.
+  Task 4 does not depend on these.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the reconstruction CTEs</strong></p>
+</li>
+</ul>
+<p>Insert before <code>quarter_grades</code>. Note the storecode ordering works because
+<code>'Q1' &lt; 'Q2' &lt; 'Q3' &lt; 'Q4'</code> lexically.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">backfill_quarter_running</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="cm">/* TODO(#4687): TEMPORARY. Delete this CTE, backfill_course_anchored,</span>
+<span class="cm">           backfill_running_course, and their use in quarter_grades branch 3</span>
+<span class="cm">           once the dashboard runs on current-year data. Tracked in Asana under</span>
+<span class="cm">           GPA and Gradebook Dashboard v3, Phase 4.</span>
+
+<span class="cm">           Reconstructs a running year-to-date course percent for the prior</span>
+<span class="cm">           year, which PowerSchool never stored. Q1 is exact by definition;</span>
+<span class="cm">           Q2 and Q3 are approximations; Q4 is replaced by the stored Y1 value</span>
+<span class="cm">           below so it matches exactly. Simple rather than credit-weighted</span>
+<span class="cm">           average because the two agree to within half a point on 97.0 percent</span>
+<span class="cm">           of courses. */</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">yearid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">course_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">storecode</span><span class="p">,</span>
+<span class="w">            </span><span class="n">gradescale_name_unweighted</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">avg</span><span class="p">(</span><span class="o">`</span><span class="n">percent</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">course_number</span>
+<span class="w">                </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">storecode</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">running_percent</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__storedgrades"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">storecode</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'Q1'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Q2'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Q3'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Q4'</span><span class="p">)</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">var</span><span class="p">(</span><span class="ss">"current_academic_year"</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">backfill_y1_stored</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="cm">/* TODO(#4687): TEMPORARY, see backfill_quarter_running. */</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">yearid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">course_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">gradescale_name_unweighted</span><span class="p">,</span>
+
+<span class="w">            </span><span class="o">`</span><span class="n">percent</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">y1_stored_percent</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__storedgrades"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">storecode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Y1'</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">var</span><span class="p">(</span><span class="ss">"current_academic_year"</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">backfill_course_anchored</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="cm">/* TODO(#4687): TEMPORARY, see backfill_quarter_running.</span>
+
+<span class="cm">           Q4 takes the stored Y1 percent verbatim so the reconstruction lands</span>
+<span class="cm">           exactly on the year grade. The Y1 storecode row is unioned in</span>
+<span class="cm">           carrying the same value, so the Y1 marking period and Q4 agree. */</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">yearid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">course_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">storecode</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">gradescale_name_unweighted</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">r</span><span class="p">.</span><span class="n">storecode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Q4'</span><span class="p">,</span><span class="w"> </span><span class="n">y1</span><span class="p">.</span><span class="n">y1_stored_percent</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">running_percent</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">anchored_percent</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">backfill_quarter_running</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">r</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="n">backfill_y1_stored</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">y1</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y1</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y1</span><span class="p">.</span><span class="n">studentid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y1</span><span class="p">.</span><span class="n">yearid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">course_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y1</span><span class="p">.</span><span class="n">course_number</span>
+
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">yearid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">course_number</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">'Y1'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">storecode</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">gradescale_name_unweighted</span><span class="p">,</span>
+<span class="w">            </span><span class="n">y1_stored_percent</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">anchored_percent</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">backfill_y1_stored</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p><code>UNION ALL</code> binds by position, so both branches list the same seven columns in
+the same order. <code>_dbt_source_relation</code> is deliberately absent — nothing
+downstream consumes it, and carrying a null through the Y1 branch would be dead
+weight. <code>backfill_quarter_running</code> still selects it because dropping it there
+would touch the window partitions; leave that alone.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">backfill_running_course</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="cm">/* TODO(#4687): TEMPORARY, see backfill_quarter_running.</span>
+
+<span class="cm">           Bands the reconstructed percent back to a letter on the course's own</span>
+<span class="cm">           scale. Joins on gradescale_name rather than gradescaleid, the pattern</span>
+<span class="cm">           int_powerschool__gpa_term and rpt_deanslist__transcript_gpas already</span>
+<span class="cm">           use for storedgrades, plus _dbt_source_project because scale</span>
+<span class="cm">           identifiers collide across districts. */</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">yearid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">course_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">storecode</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">anchored_percent</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">gsi</span><span class="p">.</span><span class="n">letter_grade</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">anchored_letter_grade</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">backfill_course_anchored</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_powerschool__gradescaleitem_lookup"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gsi</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gsi</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">gradescale_name_unweighted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gsi</span><span class="p">.</span><span class="n">gradescale_name</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">anchored_percent</span>
+<span class="w">            </span><span class="k">between</span><span class="w"> </span><span class="n">gsi</span><span class="p">.</span><span class="n">min_cutoffpercentage</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">gsi</span><span class="p">.</span><span class="n">max_cutoffpercentage</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Wire branch 3 to the reconstruction</strong></li>
+</ul>
+<p>In <code>quarter_grades</code> branch 3, alias the storedgrades ref as <code>sg</code>, prefix its
+bare column references with <code>sg.</code>, and replace the two null casts at lines
+472–473. <strong>Leave <code>cast(null as int64) as courses_gradescaleid</code> exactly as it
+is</strong> — see Global Constraints.</p>
+<p>Replace:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">float64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">y1_course_in_progress_percent_grade_adjusted</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">y1_course_in_progress_letter_grade_adjusted</span><span class="p">,</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">bfc</span><span class="p">.</span><span class="n">anchored_percent</span>
+<span class="w">            </span><span class="k">as</span><span class="w"> </span><span class="n">y1_course_in_progress_percent_grade_adjusted</span><span class="p">,</span>
+<span class="w">            </span><span class="n">bfc</span><span class="p">.</span><span class="n">anchored_letter_grade</span>
+<span class="w">            </span><span class="k">as</span><span class="w"> </span><span class="n">y1_course_in_progress_letter_grade_adjusted</span><span class="p">,</span>
+</code></pre></div>
+<p>and add the join after the <code>from</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="n">backfill_running_course</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bfc</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bfc</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bfc</span><span class="p">.</span><span class="n">studentid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bfc</span><span class="p">.</span><span class="n">yearid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">course_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bfc</span><span class="p">.</span><span class="n">course_number</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">storecode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bfc</span><span class="p">.</span><span class="n">storecode</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Update the two column descriptions</strong></li>
+</ul>
+<p>Both currently say current-year only, which stops being true. Replace both
+descriptions verbatim.</p>
+<p>For <code>y1_course_in_progress_percent_grade_adjusted</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Year-to-date course percent as of the row's marking period. For the year in</span>
+<span class="w">  </span><span class="no">progress this is the real running value from the gradebook. For the prior year</span>
+<span class="w">  </span><span class="no">it is RECONSTRUCTED from stored quarter grades — Q1 is exact, Q4 is anchored</span>
+<span class="w">  </span><span class="no">to the stored Y1 percent and is exact, Q2 and Q3 are approximations that agree</span>
+<span class="w">  </span><span class="no">with the year value to within half a point on 97.0 percent of courses. The</span>
+<span class="w">  </span><span class="no">reconstruction is temporary; see TODO(#4687) in the model.</span>
+</code></pre></div>
+<p>For <code>y1_course_in_progress_letter_grade_adjusted</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Year-to-date course letter as of the row's marking period. For the year in</span>
+<span class="w">  </span><span class="no">progress this comes from the gradebook. For the prior year it is RECONSTRUCTED</span>
+<span class="w">  </span><span class="no">by banding the reconstructed percent back through the course's own grade</span>
+<span class="w">  </span><span class="no">scale, so it inherits that percent's accuracy — Q1 and Q4 exact, Q2 and Q3</span>
+<span class="w">  </span><span class="no">approximate. Carries F and F* on the same prefix rule as</span>
+<span class="w">  </span><span class="no">quarter_course_letter_grade. Temporary; see TODO(#4687) in the model.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build</strong></li>
+</ul>
+<p>Same command as Task 2 Step 5. Expected <code>PASS=1 WARN=1</code>, warn at <strong>12</strong>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify the three hard invariants</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="n">sc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span>
+<span class="w">    </span><span class="n">quarter</span><span class="p">,</span>
+<span class="w">    </span><span class="n">concat</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">),</span><span class="w"> </span><span class="s1">'|'</span><span class="p">,</span><span class="w"> </span><span class="n">course_number</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sck</span><span class="p">,</span>
+<span class="w">    </span><span class="n">y1_course_in_progress_percent_grade_adjusted</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">running_pct</span><span class="p">,</span>
+<span class="w">    </span><span class="n">y1_course_in_progress_letter_grade_adjusted</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">running_letter</span><span class="p">,</span>
+<span class="w">    </span><span class="n">quarter_course_percent_grade</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">quarter_pct</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">zz_anthonygwalters_kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__student_course_grades</span><span class="o">`</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="p">),</span>
+<span class="n">y1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">sck</span><span class="p">,</span><span class="w"> </span><span class="n">running_pct</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">y1_pct</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">sc</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Y1'</span>
+<span class="p">)</span>
+<span class="k">select</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">sc</span><span class="p">.</span><span class="n">quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Q1'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">abs</span><span class="p">(</span><span class="n">sc</span><span class="p">.</span><span class="n">running_pct</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">quarter_pct</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">001</span><span class="p">)</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">q1_not_exact</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">sc</span><span class="p">.</span><span class="n">quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Q4'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">abs</span><span class="p">(</span><span class="n">sc</span><span class="p">.</span><span class="n">running_pct</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">y1</span><span class="p">.</span><span class="n">y1_pct</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">001</span><span class="p">)</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">q4_anchor_violations</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">sc</span><span class="p">.</span><span class="n">running_pct</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">running_letter</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">percent_with_no_letter</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">sc</span><span class="p">.</span><span class="n">running_pct</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">populated_rows</span>
+<span class="k">from</span><span class="w"> </span><span class="n">sc</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">y1</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">sck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y1</span><span class="p">.</span><span class="n">sck</span>
+</code></pre></div>
+<p><code>q1_not_exact</code>, <code>q4_anchor_violations</code> and <code>percent_with_no_letter</code> must all be
+<strong>0</strong>. <code>populated_rows</code> must be well above zero — it was 0 before.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify isolation and that <code>need_next_*</code> stayed null</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">  </span><span class="n">quarter</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_</span><span class="p">,</span>
+<span class="w">  </span><span class="n">round</span><span class="p">(</span><span class="k">sum</span><span class="p">(</span><span class="n">gpa_y1</span><span class="p">),</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sum_gpa_y1</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">y1_course_in_progress_percent_grade_adjusted</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">has_running_pct</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">need_next_letter_grade</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">has_need_next_letter</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">zz_anthonygwalters_kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__student_course_grades</span><span class="o">`</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+</code></pre></div>
+<p>Current-year <code>sum_gpa_y1</code> and <code>rows_</code> must match the Task 1 Step 1 baseline
+exactly. <code>has_need_next_letter</code> must remain <strong>0 for academic_year 2025</strong> — if it
+is non-zero, <code>courses_gradescaleid</code> was populated in branch 3 against the Global
+Constraints and must be reverted.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint and commit</strong></li>
+</ul>
+<p>Lint as in Task 2 Step 8, then:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__student_course_grades.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dbt): backfill prior-year running course grades, temporarily</span>
+
+<span class="s2">TEMPORARY, tracked by TODO(#4687). Reconstructs the year-to-date course grade</span>
+<span class="s2">for the prior year, which PowerSchool never stored, so the drill-down is not</span>
+<span class="s2">blank during summer training. Q1 exact, Q4 anchored to the stored Y1 and exact,</span>
+<span class="s2">Q2 and Q3 approximate.</span>
+
+<span class="s2">Confined to quarter_grades branch 3, which filters to the prior year, so it</span>
+<span class="s2">cannot reach a current-year row. need_next_* stays null on prior years because</span>
+<span class="s2">courses_gradescaleid is deliberately left null there.</span>
+
+<span class="s2">Refs #4687"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-prior-year-gpa-backfill-change-b-part-2-temporary">Task 4: Prior-year GPA backfill (Change B part 2, temporary)</h3>
+<p>This is the task where isolation is not free. Read the spec's <em>Isolation from
+the current year</em> section before starting.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__student_course_grades.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 1 Step 1 baseline</li>
+<li>
+<p>Produces: <code>gpa_y1</code> populated with a running value on prior-year rows. No later
+  task depends on it.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the reconstruction CTE</strong></p>
+</li>
+</ul>
+<p>Insert before <code>student_roster</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">backfill_running_gpa</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="cm">/* TODO(#4687): TEMPORARY. Delete this CTE, its join in student_roster,</span>
+<span class="cm">           and the coalesce on gpa_y1 once the dashboard runs on current-year</span>
+<span class="cm">           data. Tracked in Asana under GPA and Gradebook Dashboard v3, Phase 4.</span>
+
+<span class="cm">           Running credit-weighted GPA through each term, accumulated from the</span>
+<span class="cm">           same components the real gpa_y1 uses. Deliberately NOT anchored to</span>
+<span class="cm">           the stored Y1: anchoring would insert a step at Q4 that the data does</span>
+<span class="cm">           not contain, which is the shape a stakeholder builds a narrative</span>
+<span class="cm">           around. Unanchored, AY2025 high school reads 45.1, 46.7, 46.6, 48.2</span>
+<span class="cm">           percent at or above 3.0 against a stored Y1 of 48.9 — a rising</span>
+<span class="cm">           trajectory that stops slightly short of the year value. */</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">yearid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">term_name</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">round</span><span class="p">(</span>
+<span class="w">                </span><span class="n">safe_divide</span><span class="p">(</span>
+<span class="w">                    </span><span class="k">sum</span><span class="p">(</span><span class="n">weighted_gpa_points_term</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                        </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">schoolid</span><span class="p">,</span><span class="w"> </span><span class="n">yearid</span>
+<span class="w">                        </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">term_name</span>
+<span class="w">                    </span><span class="p">),</span>
+<span class="w">                    </span><span class="k">sum</span><span class="p">(</span><span class="n">total_credit_hours_term</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                        </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">schoolid</span><span class="p">,</span><span class="w"> </span><span class="n">yearid</span>
+<span class="w">                        </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">term_name</span>
+<span class="w">                    </span><span class="p">)</span>
+<span class="w">                </span><span class="p">),</span>
+<span class="w">                </span><span class="mi">2</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gpa_y1_running</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_powerschool__gpa_term"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">var</span><span class="p">(</span><span class="ss">"current_academic_year"</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1991</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the year-gated join</strong></li>
+</ul>
+<p>In <code>student_roster</code>, after the <code>gtq</code> join (which ends at line 247). The final
+predicate is the gate and is <strong>not optional</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="n">backfill_running_gpa</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bfg</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bfg</span><span class="p">.</span><span class="n">studentid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bfg</span><span class="p">.</span><span class="n">yearid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bfg</span><span class="p">.</span><span class="n">schoolid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bfg</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">term</span><span class="p">.</span><span class="n">quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bfg</span><span class="p">.</span><span class="n">term_name</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">var</span><span class="p">(</span><span class="ss">"current_academic_year"</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Coalesce into the existing expression</strong></li>
+</ul>
+<p>Replace line 197:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">term</span><span class="p">.</span><span class="n">quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Y1'</span><span class="p">,</span><span class="w"> </span><span class="n">gty</span><span class="p">.</span><span class="n">gpa_y1</span><span class="p">,</span><span class="w"> </span><span class="n">gtq</span><span class="p">.</span><span class="n">gpa_y1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gpa_y1</span><span class="p">,</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">bfg</span><span class="p">.</span><span class="n">gpa_y1_running</span><span class="p">,</span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">term</span><span class="p">.</span><span class="n">quarter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Y1'</span><span class="p">,</span><span class="w"> </span><span class="n">gty</span><span class="p">.</span><span class="n">gpa_y1</span><span class="p">,</span><span class="w"> </span><span class="n">gtq</span><span class="p">.</span><span class="n">gpa_y1</span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gpa_y1</span><span class="p">,</span>
+</code></pre></div>
+<p>The gate makes <code>bfg.gpa_y1_running</code> null on every current-year row, so the
+coalesce falls through to the untouched original there. <strong>Do not touch
+<code>gpa_for_quarter</code> on line 195 or <code>gpa_n_failing_y1</code> on line 201.</strong></p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Update the <code>gpa_y1</code> description</strong></li>
+</ul>
+<p>Append to the existing description:</p>
+<div class="highlight"><pre><span></span><code><span class="l l-Scalar l-Scalar-Plain">For the prior year this is RECONSTRUCTED as a running credit-weighted GPA</span>
+<span class="l l-Scalar l-Scalar-Plain">through each term, because PowerSchool stores only the end-of-year value. It is</span>
+<span class="l l-Scalar l-Scalar-Plain">deliberately not anchored to that stored value, so the Q4 reading will not equal</span>
+<span class="l l-Scalar l-Scalar-Plain">the Y1 reading. Temporary; see TODO(#4687).</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build</strong></li>
+</ul>
+<p>Same command as Task 2 Step 5. Expected <code>PASS=1 WARN=1</code>, warn at <strong>12</strong>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Prove isolation — the gating check</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">  </span><span class="n">quarter</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_</span><span class="p">,</span>
+<span class="w">  </span><span class="n">round</span><span class="p">(</span><span class="k">sum</span><span class="p">(</span><span class="n">gpa_y1</span><span class="p">),</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sum_gpa_y1</span><span class="p">,</span>
+<span class="w">  </span><span class="n">round</span><span class="p">(</span><span class="k">sum</span><span class="p">(</span><span class="n">gpa_for_quarter</span><span class="p">),</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sum_gpa_for_quarter</span><span class="p">,</span>
+<span class="w">  </span><span class="k">sum</span><span class="p">(</span><span class="n">gpa_n_failing_y1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sum_n_failing</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">zz_anthonygwalters_kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__student_course_grades</span><span class="o">`</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+</code></pre></div>
+<p>Every <strong>academic_year 2026</strong> figure must be byte-identical to the Task 1 Step 1
+baseline. <code>gpa_for_quarter</code> and <code>gpa_n_failing_y1</code> must be identical in <strong>both</strong>
+years, since neither was touched. Any difference means the gate leaked — revert
+and stop.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Verify the prior year now moves</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="n">sq</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">quarter</span><span class="p">,</span><span class="w"> </span><span class="k">max</span><span class="p">(</span><span class="n">gpa_y1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gpa_y1</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">zz_anthonygwalters_kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__student_course_grades</span><span class="o">`</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2025</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">school_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'HS'</span>
+<span class="w">  </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+<span class="p">)</span>
+<span class="k">select</span>
+<span class="w">  </span><span class="n">quarter</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">students</span><span class="p">,</span>
+<span class="w">  </span><span class="n">round</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">countif</span><span class="p">(</span><span class="n">gpa_y1</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">3</span><span class="p">.</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">))</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">pct_at_or_above_3_0</span>
+<span class="k">from</span><span class="w"> </span><span class="n">sq</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Expected roughly <code>45.1 / 46.7 / 46.6 / 48.2</code> at Q1 through Q4, and <code>48.9</code> at Y1.
+The four quarters must <strong>differ from each other</strong> — that is the entire purpose.
+If all five come back identical, the coalesce is not firing.</p>
+<p><strong>Corrected figures.</strong> An earlier version of this step expected
+<code>50.1 / 48.4 / 46.1 / 47.7</code> against <code>50.4</code>. Those were AY2024, produced by
+querying <code>int_powerschool__gpa_term</code> at <code>yearid = 34</code> when the convention is
+<code>yearid = academic_year - 1990</code>, making AY2025 yearid 35. The same off-by-one
+appeared in Step 1's <code>where</code> clause and is corrected there.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Lint and commit</strong></li>
+</ul>
+<p>Lint as in Task 2 Step 8, then:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__student_course_grades.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dbt): backfill prior-year running GPA, temporarily and unanchored</span>
+
+<span class="s2">TEMPORARY, tracked by TODO(#4687). gpa_y1 is the final year value repeated on</span>
+<span class="s2">every prior-year quarter row, so M1's distribution is flat across marking</span>
+<span class="s2">periods. Reconstructs a running credit-weighted GPA from the per-term</span>
+<span class="s2">components.</span>
+
+<span class="s2">Deliberately unanchored, unlike the course-grade backfill. Anchoring Q4 to the</span>
+<span class="s2">stored value produced a step at Q4 that the data does not contain.</span>
+
+<span class="s2">Isolation is structural, not conditional: the join carries an academic_year gate</span>
+<span class="s2">in ON, so current-year rows get NULL and the coalesce falls through to the</span>
+<span class="s2">original expression. Verified byte-identical current-year gpa_y1,</span>
+<span class="s2">gpa_for_quarter and gpa_n_failing_y1.</span>
+
+<span class="s2">Refs #4687"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-whole-branch-verification-removal-task-and-pr">Task 5: Whole-branch verification, removal task, and PR</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>No code changes unless verification fails</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: everything from Tasks 1 through 4</li>
+<li>
+<p>Produces: an open PR and an Asana removal task</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Full-graph build</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>rpt_tableau__student_course_grades<span class="w"> </span>int_powerschool__gradescaleitem_lookup<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: all tests pass except the <code>#3915</code> warn at 12. The
+<code>int_powerschool__gradescaleitem_lookup</code> uniqueness test added in #4686 must
+still PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Final row-count and isolation sweep</strong></li>
+</ul>
+<p>Re-run Task 1 Step 2 and Task 4 Step 6 against the dev relation one final time,
+with all four tasks applied. Row count, distinct key, and every current-year GPA
+figure must match the Task 1 baseline.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Confirm every TODO is present and greppable</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-n<span class="w"> </span><span class="s2">"TODO(#4687)"</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers/src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql
+</code></pre></div>
+<p>Expected: at least five hits — four in the course CTEs, one in the GPA CTE. Zero
+hits in the Task 2 category CTEs, which are permanent.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint the full diff</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-category-drivers<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="k">$(</span>git<span class="w"> </span>diff<span class="w"> </span>--name-only<span class="w"> </span>origin/main...HEAD<span class="k">)</span><span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Create the Asana removal task</strong></li>
+</ul>
+<p>In project <code>GPA and Gradebook Dashboard v3 (SY27 Rebuild)</code>, GID
+<code>1214228736201477</code>, section <code>Phase 4</code>, GID <code>1214243570943810</code>. Title:
+<code>Remove the temporary prior-year grade and GPA backfill</code>. The notes must name
+the five CTEs to delete — <code>backfill_quarter_running</code>, <code>backfill_y1_stored</code>,
+<code>backfill_course_anchored</code>, <code>backfill_running_course</code>, <code>backfill_running_gpa</code> —
+state that the Task 2 category driver columns are permanent and must NOT be
+removed, and link the PR.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Push and open the PR</strong></li>
+</ul>
+<p>Use <code>.github/pull_request_template.md</code>. Body must reference <code>Refs #4687</code>, state
+which half is temporary, and record the isolation proof. Create via
+<code>gh api -X POST repos/TEAMSchools/teamster/pulls -F body=@&lt;file&gt;</code> rather than
+the GitHub MCP, which HTML-sanitises angle brackets.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Report</strong></li>
+</ul>
+<p>Summarise: the four hard invariants and their measured values, the row-count
+proof, the <code>need_next_*</code>-stayed-null proof, and the Asana task URL.</p>
+<hr />
+<h2 id="not-in-this-plan">Not in this plan</h2>
+<p><strong>The Tableau workbook changes.</strong> The spec's Change A deletes two calcs —
+<code>Lowest Category % (course)</code> and the <code>MIN(IF ...)</code> form of
+<code>Category Driving Gap</code> — and rewrites the latter as a plain field reference.
+That work happens in <code>new_gpa_dash_20260801.twbx</code>, which lives in
+<code>.claude/scratch/</code> and is not in this repo, so it cannot be a task here. It is
+also <strong>blocked on this PR merging</strong>, because the columns have to exist in the
+published extract first.</p>
+<p>The same applies to pointing M1 and M2 at <code>y1_course_in_progress_*</code>, which is
+the change that motivated the backfill in the first place. Hand both off after
+merge; neither is a code task.</p>
+<p><strong>Everything under the spec's <em>Out of scope</em> heading</strong>, in particular moving the
+category-code decode into the model and the as-of labelling work tracked
+separately in Asana.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

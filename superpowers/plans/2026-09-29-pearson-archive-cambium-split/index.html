@@ -1,0 +1,2566 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Pearson Archive and Cambium Split Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pearson-archive-and-cambium-split-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Pearson Archive and Cambium Split Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Focus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review Focus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-int_cambium__all_assessments-in-the-cambium-package" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: int_cambium__all_assessments in the cambium package
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-freeze-pearson-scores-in-the-district-projects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Freeze Pearson scores in the district projects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-open-pr-1-and-hand-off-the-between-pr-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Open PR 1 and hand off the between-PR steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-int_assessments__state_nj_scores-in-kipptaf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: int_assessments__state_nj_scores in kipptaf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-repoint-the-readers-whose-output-doesnt-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Repoint the readers whose output doesn't change
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-int_students__graduation_pathway_scores-and-its-unit-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: int_students__graduation_pathway_scores and its unit tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-tests-analysis-yaml-references-and-the-retirement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Tests, analysis, YAML references and the retirement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-open-pr-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Open PR 2
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-09-29-pearson-archive-cambium-split.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="pearson-archive-and-cambium-split-implementation-plan">Pearson Archive and Cambium Split Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Freeze Pearson New Jersey state scores in the district projects, move
+the Cambium mapping into the <code>cambium</code> package, and serve both through a new
+kipptaf <code>int_assessments__state_nj_scores</code> under neutral column names.</p>
+<p><strong>Architecture:</strong> Two PRs. PR 1 adds <code>int_cambium__all_assessments</code> to the
+<code>cambium</code> package and disables the district Pearson score models, leaving their
+tables frozen in place. PR 2 adds <code>int_assessments__state_nj_scores</code> in kipptaf
+over the frozen district Pearson tables and the district Cambium tables, then
+repoints the 10 readers of <code>int_pearson__all_assessments</code> and disables it.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), <code>dbt_utils.union_relations</code>, Dagster dbt assets,
+BigQuery MCP (<code>execute_sql_readonly</code>) for verification.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-09-29-pearson-archive-cambium-split-design.md</code> (the
+column map, the reader table and the verification list live there; this plan
+does not repeat them).</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree:
+  <code>/workspaces/teamster/.claude/worktrees/cbini/refactor/claude-split-pearson-cambium</code>
+  (PR 1). PR 2 gets its own worktree, created in Task 4. Every call uses
+  <code>git -C &lt;worktree&gt;</code> and absolute paths; dbt runs as
+  <code>uv run dbt &lt;cmd&gt; --project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code>.</li>
+<li>Run <code>uv run dbt deps --project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code> once per
+  project before its first dbt command, in its own Bash call.</li>
+<li>Column names follow the spec's map exactly. 25 renames; every other column
+  keeps its current name.</li>
+<li>Retire by disable, never delete. Disabling a model does not disable its tests:
+  disable each test by its generated name too.</li>
+<li>SQL follows <code>.claude/rules/dbt-sql.md</code>: enumerated positional <code>union all</code>, no
+  <code>select *</code> in union branches, no <code>qualify</code>, no <code>group by all</code>, no <code>order by</code>.</li>
+<li>Every verification query reports counts only. No row values from student-level
+  columns go into commits, PR bodies or comments.</li>
+<li><code>--target staging</code> builds and <code>dbt clone --target staging</code> are shared writes:
+  hand them to the user or get their consent in the turn before, one command per
+  Bash call.</li>
+<li>New and modified models carry a description on the model and every column. PII
+  tags use column-level <code>config.meta.contains_pii: true</code>, tiers 1-3 of
+  <code>.claude/rules/ferpa-pii.md</code> (names, ids, scores, demographics).</li>
+<li>Before each push:
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>
+  from inside the worktree.</li>
+</ul>
+<h2 id="review-focus">Review Focus</h2>
+<ol>
+<li>Paterson has no <code>stg_cambium__njgpa</code> or <code>stg_cambium__eoc</code>: the package model
+   must compile and build there with only <code>stg_cambium__njsla</code>. Task 1 builds it
+   in Paterson.</li>
+<li>AY2025 NJGPA exists in both vendors: the second grain test must run on the
+   union in <code>int_assessments__state_nj_scores</code>, not per vendor. Task 4 runs it.</li>
+<li><code>_dbt_source_relation</code> on Cambium rows must keep today's values, or the
+   <code>%cambium%</code>-scoped tests and <code>_dbt_source_project</code> break silently. The
+   package model produces it with <code>dbt_utils.union_relations</code> (including the
+   NJGPA branch), and Task 1's <code>EXCEPT DISTINCT</code> covers it.</li>
+<li>The prelim gates must keep turning off for Cambium years: Task 5 compares
+   both gated models row for row against prod.</li>
+<li>Dagster: kipptaf's <code>kipp*_pearson.int_pearson__all_assessments</code> sources point
+   at district asset keys that stop existing after PR 1. The kipptaf code
+   location must still load. Task 3 checks the PR 1 branch deployment, and Task
+   8 checks PR 2's.</li>
+</ol>
+<hr />
+<h3 id="task-1-int_cambium__all_assessments-in-the-cambium-package">Task 1: <code>int_cambium__all_assessments</code> in the <code>cambium</code> package</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/cambium/models/intermediate/int_cambium__all_assessments.sql</code></li>
+<li>Create:
+  <code>src/dbt/cambium/models/intermediate/properties/int_cambium__all_assessments.yml</code></li>
+<li>Modify: <code>src/dbt/cambium/dbt_project.yml</code> (<code>vars:</code>)</li>
+<li>Modify: <code>src/dbt/kipppaterson/dbt_project.yml</code> (<code>vars:</code>)</li>
+<li>Source to port:
+  <code>src/dbt/kipptaf/models/pearson/intermediate/int_pearson__all_assessments.sql</code>
+  CTEs <code>cambium_njsla</code> through <code>cambium</code> (lines 72-491)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces: relation <code>&lt;district&gt;_cambium.int_cambium__all_assessments</code> in
+  Newark, Camden and Paterson, one row per <code>student_test_uuid</code>. Its columns are
+  the Cambium branch of today's model under the spec's new names, plus
+  <code>_dbt_source_relation</code>. It has no <code>_dbt_source_project</code> and no crosswalk
+  (kipptaf adds both in Task 4).</li>
+<li>
+<p>Produces: package var <code>cambium_state_assessment_relations</code>, which defaults to
+  <code>[stg_cambium__njsla, stg_cambium__eoc, stg_cambium__njgpa]</code>. Paterson
+  overrides it to <code>[stg_cambium__njsla]</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the comparison query (the failing test)</strong></p>
+</li>
+</ul>
+<p>Save it to the session scratchpad as <code>cambium_compare.sql</code>. It runs one
+  district at a time:
+  - Left side: the dev relation
+    <code>zz_&lt;github_user&gt;_&lt;district&gt;_cambium.int_cambium__all_assessments</code>,
+    left-joined to
+    <code>kipptaf_google_sheets.stg_google_sheets__pearson__student_crosswalk</code> on
+    <code>student_test_uuid</code>, with <code>coalesce(x.student_number, student_number)</code> and
+    <code>cast(state_student_id as string)</code>.
+  - Right side: prod <code>kipptaf_pearson.int_pearson__all_assessments</code>, filtered to
+    <code>_dbt_source_relation like '%&lt;district&gt;_cambium%'</code>, with every column except
+    <code>_dbt_source_project</code> selected under its new name.
+  - Output: <code>count(*)</code> of each <code>EXCEPT DISTINCT</code> direction, plus the row count
+    by <code>_dbt_source_relation</code> on each side.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it and confirm it fails</strong></li>
+</ul>
+<p>Run it through <code>execute_sql_readonly</code>. Expected:
+  <code>Not found: Table ...int_cambium__all_assessments</code>.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the model</strong></p>
+</li>
+<li>
+<p>Port the 6 CTEs unchanged in logic, renaming output columns per the spec's
+    map.</p>
+</li>
+<li>Build <code>relations</code> from the var the way
+    <code>src/dbt/pearson/models/intermediate/int_pearson__all_assessments.sql</code> does
+    (a <code>ref()</code> inside the loop, so only the listed relations enter the graph).</li>
+<li>The NJSLA/EOC union takes the listed relations other than
+    <code>stg_cambium__njgpa</code>.</li>
+<li>Wrap the NJGPA branch, and its arm of the <code>cambium_aligned</code> <code>union all</code>, in
+    <code>{% if "stg_cambium__njgpa" in var("cambium_state_assessment_relations") %}</code>.</li>
+<li>Read NJGPA through
+    <code>dbt_utils.union_relations(relations=[ref("stg_cambium__njgpa")])</code>, so it
+    carries <code>_dbt_source_relation</code> like the other branch.</li>
+<li>
+<p>Keep the existing <code>test_status = 'completed'</code> filter and the existing casts.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Write the properties YAML</strong></p>
+</li>
+<li>
+<p>Description adapted from the Cambium half of today's
+    <code>int_pearson__all_assessments.yml</code>, including the <code>test_status</code> rationale.</p>
+</li>
+<li>Model-level <code>unique_combination_of_columns(student_test_uuid)</code>.</li>
+<li>Move today's Cambium-scoped tests with it. <code>test_grade</code> gets <code>not_null</code> with
+    <code>where: raw_subject not in ('Algebra I', 'Algebra II', 'Geometry')</code>, plus
+    <code>accepted_values [3, 4, 5, 6, 7, 8, 9, 11]</code>. <code>assessment_version</code> and
+    <code>assessment_type</code> each get <code>not_null</code> and <code>accepted_values</code> limited to
+    Cambium's values.</li>
+<li>
+<p>A description and a PII tag on every column.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Add the vars</strong></p>
+</li>
+<li>
+<p><code>src/dbt/cambium/dbt_project.yml</code>: add <code>cambium_state_assessment_relations</code>
+    with the 3-model default, and a comment that mirrors the <code>pearson</code> one.</p>
+</li>
+<li>
+<p><code>src/dbt/kipppaterson/dbt_project.yml</code>: override it with
+    <code>[stg_cambium__njsla]</code>, next to <code>pearson_state_assessment_relations</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build in all 3 districts</strong></p>
+</li>
+</ul>
+<p>For each of <code>kippnewark</code>, <code>kippcamden</code> and <code>kipppaterson</code>, run in its own Bash
+  call:
+  <code>uv run dbt build --select int_cambium__all_assessments --defer --favor-state --state &lt;worktree&gt;/src/dbt/&lt;district&gt;/target/prod --project-dir &lt;worktree&gt;/src/dbt/&lt;district&gt; 2&gt;&amp;1 | tail -n 30</code>.
+  Invoke the <code>dbt-local-dev</code> skill first for the <code>--state</code> path. Expected: model
+  and tests PASS in all 3. Paterson compiles with no NJGPA branch.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Run the comparison and confirm it passes</strong></li>
+</ul>
+<p>Run Step 1's query for each district. Expected: 0 rows in both directions. The
+  counts by source table sum to 11893 <code>stg_cambium__njsla</code>, 813
+  <code>stg_cambium__njgpa</code> and 504 <code>stg_cambium__eoc</code> across the 3 districts.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Commit</strong></li>
+</ul>
+<p><code>git -C &lt;worktree&gt; add</code> the 4 files by name, then commit
+  <code>feat(dbt): add int_cambium__all_assessments to the cambium package</code>.</p>
+<h3 id="task-2-freeze-pearson-scores-in-the-district-projects">Task 2: Freeze Pearson scores in the district projects</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kippnewark/dbt_project.yml</code> (<code>models: pearson:</code>,
+  <code>data_tests:</code>)</li>
+<li>Modify: <code>src/dbt/kippcamden/dbt_project.yml</code> (<code>models: pearson:</code>,
+  <code>data_tests:</code>)</li>
+<li>Modify: <code>src/dbt/kipppaterson/dbt_project.yml</code> (<code>models: pearson:</code>,
+  <code>data_tests:</code>)</li>
+<li>Modify:
+  <code>src/dbt/kipppaterson/models/pearson/intermediate/properties/int_pearson__njsla.yml</code>,
+  <code>int_pearson__njsla_science.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: nothing from Task 1.</li>
+<li>Produces: <code>&lt;district&gt;_pearson.int_pearson__all_assessments</code> tables left frozen
+  in all 3 districts. Task 4 reads them.</li>
+</ul>
+<p>To disable, per district:</p>
+<table>
+<thead>
+<tr>
+<th>District</th>
+<th>Models</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Newark</td>
+<td><code>int_pearson__all_assessments</code>, <code>stg_pearson__njgpa</code>, <code>stg_pearson__njsla</code>, <code>stg_pearson__njsla_science</code>, <code>stg_pearson__parcc</code></td>
+</tr>
+<tr>
+<td>Camden</td>
+<td>same as Newark</td>
+</tr>
+<tr>
+<td>Paterson</td>
+<td><code>int_pearson__all_assessments</code>, <code>stg_pearson__njsla</code>, <code>stg_pearson__njsla_science</code>, <code>int_pearson__njsla</code>, <code>int_pearson__njsla_science</code></td>
+</tr>
+</tbody>
+</table>
+<p>Leave <code>stg_pearson__student_list_report</code>, <code>int_pearson__student_list_report</code> and
+<code>stg_pearson__student_test_update</code> enabled.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Capture the baseline node list</strong></li>
+</ul>
+<p>In each district, on <code>origin/main</code> (the main checkout is fine), run
+  <code>uv run dbt ls --resource-type model test --output name</code> after a
+  <code>dbt parse --no-partial-parse</code>. Save the output to the scratchpad as
+  <code>nodes-&lt;district&gt;-main.txt</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Disable the models</strong></li>
+</ul>
+<p>Add <code>+enabled: false</code> for each model in the table, under the existing
+  <code>models: pearson: staging:</code> and <code>pearson: intermediate:</code> blocks. For
+  Paterson's own <code>int_pearson__njsla*</code>, set <code>config: enabled: false</code> in their
+  properties YAML.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Disable their tests</strong></li>
+</ul>
+<p>List the tests attached to each disabled model with
+  <code>uv run dbt ls --resource-type test --select &lt;model&gt; --output name</code>, run on
+  main. Add <code>+enabled: false</code> for each test name under <code>data_tests:</code>, following
+  the existing Paterson <code>cambium: staging: properties:</code> block, with the same
+  explanatory comment.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the diff of enabled nodes</strong></li>
+</ul>
+<p>Re-run Step 1 on the branch with <code>--no-partial-parse</code> and <code>diff</code> it against
+  the baseline. Expected: only the table's models and their tests disappear;
+  <code>int_pearson__student_list_report</code> is still listed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<p>Commit <code>refactor(dbt): freeze Pearson state score models in the districts</code>.</p>
+<h3 id="task-3-open-pr-1-and-hand-off-the-between-pr-steps">Task 3: Open PR 1 and hand off the between-PR steps</h3>
+<p><strong>Files:</strong> none beyond Tasks 1-2.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Run trunk check on every changed file (see Global
+      Constraints), push, and open the PR with
+      <code>.github/pull_request_template.md</code>. Put <code>Refs #5591</code> in the body and the
+      Task 1 and Task 2 verification counts in the "For Claude" fold. Watch CI,
+      and process the <code>claude-review</code> findings per <code>pr-ci-review</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Confirm the branch deployment's <code>dagster-cloud-deploy</code> check
+      loads every code location. That covers Review Focus 5 for the district
+      side.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: After merge</strong>, confirm with
+      <code>mcp__dagster__get_asset_materializations</code> that
+      <code>&lt;district&gt;/cambium/int_cambium__all_assessments</code> has materialized in all
+      3 districts. If it hasn't within a day, report that to the user rather
+      than launching runs.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Hand the user the 3 staging clone commands from the spec (one
+      per district), and wait for them to confirm they ran.</li>
+</ul>
+<h3 id="task-4-int_assessments__state_nj_scores-in-kipptaf">Task 4: <code>int_assessments__state_nj_scores</code> in kipptaf</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Worktree: after PR 1 merges, create it with
+  <code>gh issue develop 5591 --name cbini/refactor/claude-state-nj-scores</code>, then
+  <code>git worktree add /workspaces/teamster/.claude/worktrees/cbini/refactor/claude-state-nj-scores cbini/refactor/claude-state-nj-scores</code>.
+  Copy the spec and plan in, since they live on PR 1's branch; if PR 1 already
+  merged them into <code>main</code>, they arrive with it.</li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/assessments/intermediate/int_assessments__state_nj_scores.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/assessments/intermediate/properties/int_assessments__state_nj_scores.yml</code></li>
+<li>Modify: <code>src/dbt/kipptaf/models/cambium/sources-kippnewark.yml</code>,
+  <code>sources-kippcamden.yml</code>, <code>sources-kipppaterson.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 1's <code>int_cambium__all_assessments</code> and Task 2's frozen district
+  <code>int_pearson__all_assessments</code> tables.</li>
+<li>
+<p>Produces: <code>kipptaf_assessments.int_assessments__state_nj_scores</code>, a table. Its
+  columns are today's 56 under their new names, in today's order. Every task
+  after this one reads it.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the comparison query (the failing test)</strong></p>
+</li>
+</ul>
+<p>Save it to the scratchpad as <code>nj_compare.sql</code>:
+  - Dev <code>int_assessments__state_nj_scores</code>, <code>EXCEPT DISTINCT</code> against prod
+    <code>kipptaf_pearson.int_pearson__all_assessments</code> with old names aliased to
+    new.
+  - The same in the reverse direction.
+  - Row counts split by vendor (<code>_dbt_source_relation like '%cambium%'</code>).</p>
+<p>Run it. Expected: <code>Not found</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the source entries</strong></li>
+</ul>
+<p>Add an <code>int_cambium__all_assessments</code> table to each
+  <code>models/cambium/sources-kipp*.yml</code>, with a <code>meta.dagster</code> <code>group: cambium</code> and
+  <code>asset_key: [&lt;district&gt;, cambium, int_cambium__all_assessments]</code>, matching the
+  siblings.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the model</strong></p>
+</li>
+<li>
+<p><code>pearson</code> CTE: move today's <code>pearson</code> CTE unchanged, including
+    <code>source_column_name="_dbt_source_relation_2"</code> and the explicit <code>include</code>
+    list.</p>
+</li>
+<li><code>pearson_renamed</code> CTE: select every column, renaming per the spec's map.</li>
+<li><code>cambium</code> CTE: <code>dbt_utils.union_relations</code> over the 3
+    <code>source("kipp*_cambium", "int_cambium__all_assessments")</code>, also with
+    <code>source_column_name="_dbt_source_relation_2"</code> and an explicit <code>include</code>
+    list.</li>
+<li><code>unioned</code> CTE: positional <code>union all</code> of the two, with enumerated columns in
+    the same order.</li>
+<li>
+<p>Outer select: today's outer select (cast <code>state_student_id</code> to string,
+    coalesce <code>student_number</code> from the crosswalk on <code>student_test_uuid</code>,
+    <code>extract_source_project("u")</code>), written with enumerated columns rather than
+    <code>* replace</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Write the properties YAML</strong></p>
+</li>
+<li>
+<p><code>config: materialized: table</code>.</p>
+</li>
+<li>Both grain tests from today's YAML, renamed: <code>(student_test_uuid)</code>, and
+    <code>(student_number, academic_year, aligned_test_code, administration_round)</code>
+    with <code>where: student_number is not null</code> and <code>severity: error</code>.</li>
+<li>Move today's <code>assessment_version</code> and <code>assessment_type</code> tests with all
+    values.</li>
+<li>
+<p>Descriptions ported and renamed, and PII tags per Global Constraints.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build and run the comparison</strong></p>
+</li>
+</ul>
+<p><code>uv run dbt build --select int_assessments__state_nj_scores --defer --favor-state --state &lt;kipptaf prod state&gt; --project-dir &lt;worktree&gt;/src/dbt/kipptaf 2&gt;&amp;1 | tail -n 30</code>.
+  Expected: PASS, both grain tests included.</p>
+<p>Then run <code>nj_compare.sql</code>. Expected: 0 rows in both directions, 71208 Pearson
+  rows and 13210 Cambium rows, or prod's current count if it has grown.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<p>Commit <code>feat(dbt): add int_assessments__state_nj_scores</code>.</p>
+<h3 id="task-5-repoint-the-readers-whose-output-doesnt-change">Task 5: Repoint the readers whose output doesn't change</h3>
+<p><strong>Files (modify):</strong></p>
+<ul>
+<li><code>src/dbt/kipptaf/models/assessments/intermediate/int_assessments__state_scores.sql:1-45</code></li>
+<li><code>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__state_test_scores.sql</code></li>
+<li><code>src/dbt/kipptaf/models/marts/dimensions/dim_assessments.sql</code> (CTE
+  <code>state_nj_assessments</code>)</li>
+<li><code>src/dbt/kipptaf/models/marts/dimensions/dim_assessment_administrations.sql</code>
+  (CTE <code>state_nj_administrations</code>)</li>
+<li><code>src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__state_assessments_demographic_comps.sql</code>
+  (CTE <code>valid_prelim_assessments</code>)</li>
+<li><code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__state_assessments_dashboard.sql</code>
+  (CTE <code>valid_prelim_assessments</code>)</li>
+</ul>
+<p><strong>Interfaces:</strong> Consumes Task 4's model. Every output column name of these 6
+models stays as it is.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the comparison query (the failing test)</strong></li>
+</ul>
+<p>Save a scratchpad query that, for each of the 6 models, counts full-row
+  <code>EXCEPT DISTINCT</code> in both directions (via <code>to_json_string(t)</code>) between the dev
+  and prod relations. It also counts the key-set <code>EXCEPT DISTINCT</code> of
+  <code>assessment_score_key</code> between dev and prod
+  <code>fct_assessment_scores_enrollment_scoped</code>.</p>
+<p>Run it before building: every dev relation is still missing or stale.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Make the edits</strong></li>
+</ul>
+<p>In each file, swap <code>ref("int_pearson__all_assessments")</code> for
+  <code>ref("int_assessments__state_nj_scores")</code> and rename the columns it reads per
+  the spec's reader table. In <code>int_assessments__state_scores</code>, the New Jersey
+  branch then selects the columns under their shared names, and keeps <code>season</code>
+  from <code>administration_round</code>. Update the prelim-gate comment text that names
+  the old model.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build the models and run the comparison</strong></li>
+</ul>
+<p><code>uv run dbt build --select int_assessments__state_scores rpt_deanslist__state_test_scores dim_assessments dim_assessment_administrations int_tableau__state_assessments_demographic_comps rpt_tableau__state_assessments_dashboard fct_assessment_scores_enrollment_scoped --defer --favor-state ...</code>.
+  Expected: PASS.</p>
+<p>Then run Step 1's query. Expected: 0 rows in every direction for every model.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<p>Commit
+  <code>refactor(dbt): read NJ state scores from int_assessments__state_nj_scores</code>.</p>
+<h3 id="task-6-int_students__graduation_pathway_scores-and-its-unit-tests">Task 6: <code>int_students__graduation_pathway_scores</code> and its unit tests</h3>
+<p><strong>Files (modify):</strong></p>
+<ul class="task-list">
+<li><code>src/dbt/kipptaf/models/students/intermediate/int_students__graduation_pathway_scores.sql</code>
+  (alias <code>n</code> in CTE <code>scores</code>)</li>
+<li>
+<p><code>src/dbt/kipptaf/models/students/intermediate/properties/int_students__graduation_pathway_scores.yml</code>
+  (fixtures near lines 242 and 419)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Rewrite the fixtures, then run them and confirm they fail</strong></p>
+</li>
+</ul>
+<p>In both unit-test fixtures, change <code>input:</code> to
+  <code>ref('int_assessments__state_nj_scores')</code> and rename the mocked columns:
+  <code>localstudentidentifier</code>, <code>testscalescore</code>, <code>testcode</code> and
+  <code>testscorecomplete</code>. <code>discipline</code>, <code>assessment_name</code> and <code>assessment_version</code>
+  keep their names. Run
+  <code>uv run dbt test --select "test_type:unit,int_students__graduation_pathway_scores" ...</code>.
+  Expected: FAIL, because the model still reads the old ref.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Make the model edit</strong></li>
+</ul>
+<p>Swap the ref and the 4 column names in the model.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run the tests and confirm they pass</strong></li>
+</ul>
+<p>Re-run Step 1's unit tests (expected PASS). Then build the model with
+  <code>--defer</code>, and run a full-row <code>EXCEPT DISTINCT</code> in both directions against
+  prod. Expected: 0 and 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<p>Commit
+  <code>refactor(dbt): read graduation pathway scores from the NJ state score union</code>.</p>
+<h3 id="task-7-tests-analysis-yaml-references-and-the-retirement">Task 7: Tests, analysis, YAML references and the retirement</h3>
+<p><strong>Files (modify):</strong></p>
+<ul class="task-list">
+<li><code>src/dbt/kipptaf/tests/test_incorrect_student_number_pearson.sql</code>, and its
+  <code>meta.dagster.ref.name</code> in <code>src/dbt/kipptaf/tests/properties.yml:266</code></li>
+<li><code>src/dbt/kipptaf/tests/stg_google_sheets__assessments__vendor_subject_crosswalk__covers_all_sources.sql</code></li>
+<li><code>src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql</code> (CTE
+  <code>gaps</code>)</li>
+<li><code>src/dbt/kipptaf/models/assessments/intermediate/properties/int_assessments__score_anchors.yml:76,86</code>
+  and <code>int_assessments__resolved_section_enrollments.yml:55,77,87</code></li>
+<li>Description text in <code>int_assessments__state_scores.yml</code>,
+  <code>dim_assessment_administrations.yml</code>,
+  <code>stg_google_sheets__assessments__vendor_subject_crosswalk.yml</code>, and
+  <code>models/cambium/staging/properties/stg_cambium__{njgpa,eoc,njsla}.yml</code></li>
+<li>
+<p><code>src/dbt/kipptaf/models/pearson/intermediate/properties/int_pearson__all_assessments.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Record the prod baseline</strong></p>
+</li>
+</ul>
+<p>Record today's failing-row counts from prod for
+  <code>test_incorrect_student_number_pearson</code> and the crosswalk-coverage test. Read
+  them from the stored-failure views in the kipptaf <code>dbt_test__audit</code> dataset,
+  or by compiling each test on main and counting its rows. Save the counts to
+  the scratchpad.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Make the SQL edits</strong></li>
+</ul>
+<p>Swap the ref and rename the columns in the 2 tests and the analysis, per the
+  spec's reader table.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Make the YAML edits</strong></p>
+</li>
+<li>
+<p>Point the 4 <code>source_column</code> strings at
+    <code>int_assessments__state_nj_scores.&lt;col&gt;</code>. Both columns keep their names.</p>
+</li>
+<li>Set the test's <code>meta.dagster.ref.name</code> to
+    <code>int_assessments__state_nj_scores</code>.</li>
+<li>
+<p>Update the description text so it names the new models.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Retire the old model</strong></p>
+</li>
+</ul>
+<p>In <code>int_pearson__all_assessments.yml</code>, add <code>config: enabled: false</code> to the
+  model and to every test on it: the 2 model-level tests and the column tests on
+  <code>assessment_version</code>, <code>assessment_type</code> and <code>test_grade</code>.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify</strong></p>
+</li>
+<li>
+<p>The 2 tests return the same failing-row counts as the Step 1 baseline.</p>
+</li>
+<li><code>uv run dbt compile --select analysis:state_assessment_tiered_crosswalk_match</code>
+    compiles.</li>
+<li><code>rg 'int_pearson__all_assessments' &lt;worktree&gt;/src/dbt/kipptaf --glob '*.{sql,yml,md}'</code>
+    finds only the disabled model's own 2 files and the 3
+    <code>models/pearson/sources-kipp*.yml</code> entries.</li>
+<li>
+<p>A <code>dbt parse --no-partial-parse</code> diff of enabled nodes against main shows
+    <code>int_pearson__all_assessments</code> and its tests gone, and
+    <code>int_assessments__state_nj_scores</code> and its tests added.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></p>
+</li>
+</ul>
+<p>Commit <code>refactor(dbt): retire kipptaf int_pearson__all_assessments</code>.</p>
+<h3 id="task-8-open-pr-2">Task 8: Open PR 2</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Run trunk check on every changed file, push, and open the PR
+      with <code>Closes #5591</code> and the Task 4-7 verification counts in the "For
+      Claude" fold.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Watch CI. Expect the wide <code>state:modified+</code> selection that
+      #5366 warned about, and before blaming this change for a failure, count
+      the same failure in prod.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Confirm <code>dagster-cloud-deploy</code> loads the kipptaf code location
+      (Review Focus 5), and process the <code>claude-review</code> findings per
+      <code>pr-ci-review</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

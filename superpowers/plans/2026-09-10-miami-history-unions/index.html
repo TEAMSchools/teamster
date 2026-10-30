@@ -1,0 +1,3063 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Miami History Unions Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#miami-history-unions-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Miami History Unions Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spec-amendment-recorded-here" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spec amendment recorded here
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pr-1-package-week-fields-and-archive-rebuild" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 1: package week fields and archive rebuild
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PR 1: package week fields and archive rebuild">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-add-week-columns-to-the-package-attendance-fact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Add week columns to the package attendance fact
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-re-include-the-package-in-kippmiami-for-the-rebuild" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Re-include the package in kippmiami for the rebuild
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-open-pr-1-and-hand-off-the-materialization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Open PR 1 and hand off the materialization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pr-1b-remove-the-package-again" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 1b: remove the package again
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PR 1b: remove the package again">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-4-drop-the-package-from-kippmiami" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Drop the package from kippmiami
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pr-2-kipptaf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2: kipptaf
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PR 2: kipptaf">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-5-drop-the-9-miami-relations-and-trim-the-source-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Drop the 9 Miami relations and trim the source file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-attendance-daily-reads-week-fields-from-both-branches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Attendance daily reads week fields from both branches
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-repoint-5-schools-readers-and-simplify-int_students__schools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Repoint 5 schools readers and simplify int_students__schools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-delete-exclude_frozen-and-inline-the-7-live-clever-gates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Delete exclude_frozen and inline the 7 live Clever gates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-delete-the-8-dead-literals-and-convert-the-crdc-regexps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Delete the 8 dead literals and convert the CRDC regexps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-10-full-downstream-build-and-history-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Full downstream build and history checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-11-docs-lint-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 11: Docs, lint, PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-12-record-verdicts-and-close-out-5012" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 12: Record verdicts and close out #5012
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-09-10-miami-history-unions.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="miami-history-unions-implementation-plan">Miami History Unions Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Keep 11 Miami PowerSchool history unions in kipptaf, drop the other 9,
+delete the <code>exclude_frozen</code> macro, and record a verdict for every Miami
+exclusion filter, closing #5193 and with it #5012.</p>
+<p><strong>Architecture:</strong> Three PRs in order. PR 1 adds 3 week columns to the package
+attendance fact so kipptaf's <code>int_students__attendance_daily</code> no longer needs a
+calendar-week join, then re-includes the package in <code>kippmiami</code> for one archive
+rebuild. PR 1b removes the package again. PR 2 does all kipptaf work: 9 union
+drops, 5 <code>schools</code> repoints, macro deletion, dead-filter deletion, docs.</p>
+<p><strong>Tech Stack:</strong> dbt 1.x on BigQuery via <code>uv run dbt</code>,
+<code>dbt_utils.union_relations</code>, Dagster+ for the archive materialization, trunk for
+lint.</p>
+<p>Spec: <code>docs/superpowers/specs/2026-09-10-miami-history-unions-design.md</code>.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>All paths are under the worktree
+  <code>/workspaces/teamster/.worktrees/cbini/chore/claude-miami-history-unions</code>.
+  Every git call is <code>git -C &lt;worktree&gt;</code>. Every dbt call is
+  <code>uv run dbt ... --project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code>.</li>
+<li>Never run bare <code>python</code>, <code>dbt</code>, or <code>dagster</code>. Always <code>uv run</code>.</li>
+<li>Warehouse DML (<code>update</code>, <code>delete</code>) never runs from Claude. The archive hooks
+  run under Dagster's credentials during the one materialization Charlie
+  launches from the Dagster UI.</li>
+<li>Before pushing SQL, YAML, or markdown:
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>
+  with cwd inside the worktree.</li>
+<li>Local dbt builds follow the <code>dbt-local-dev</code> skill: <code>--defer --favor-state</code>
+  against prod state, never <code>--empty</code>.</li>
+<li>Commit messages follow conventional commits and end with
+  <code>Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;</code>.</li>
+<li>Keep the <code>int_students__course_sections</code> and
+  <code>int_students__course_enrollments</code> cutover predicates. They are out of scope.</li>
+<li>The 6 internal-join readers and the 3 <code>base_powerschool__*</code> wrappers are out
+  of scope. File follow-ups, do not fix.</li>
+</ul>
+<h2 id="spec-amendment-recorded-here">Spec amendment recorded here</h2>
+<p>The spec says PR 1 removes the <code>int_students__calendar_week</code> join from
+<code>int_students__attendance_daily</code>. That join also serves the Focus branch, which
+has no week columns. Task 6 therefore gives the Focus branch its own join to
+<code>int_focus__calendar_week</code> inside <code>focus_conformed</code>, a Focus-internal join in
+the Focus staging layer, and removes the post-union join. Both branches then
+arrive with week columns and <code>int_students__calendar_week</code> has no attendance
+reader.</p>
+<hr />
+<h2 id="pr-1-package-week-fields-and-archive-rebuild">PR 1: package week fields and archive rebuild</h2>
+<p>Branch: <code>cbini/feat/claude-ps-adaadm-week-fields</code>, worktree
+<code>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields</code>,
+created with
+<code>gh issue develop 5193 --name cbini/feat/claude-ps-adaadm-week-fields</code> then
+<code>git worktree add /workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields cbini/feat/claude-ps-adaadm-week-fields</code>.</p>
+<h3 id="task-1-add-week-columns-to-the-package-attendance-fact">Task 1: Add week columns to the package attendance fact</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__ps_adaadm_daily_ctod.sql</code></li>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__ps_adaadm_daily_ctod.yml</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__ps_adaadm_daily_ctod.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: columns <code>week_start_monday date</code>, <code>week_end_sunday date</code>,
+  <code>week_number_academic_year int64</code> on every region's
+  <code>int_powerschool__ps_adaadm_daily_ctod</code> and on the kipptaf union of the same
+  name. Task 6 reads them as <code>mem.week_start_monday</code>, <code>mem.week_end_sunday</code>,
+  <code>mem.week_number_academic_year</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the calendar-week join to the package model</strong></p>
+</li>
+</ul>
+<p>In
+<code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__ps_adaadm_daily_ctod.sql</code>,
+after the <code>membershipvalue</code> expression (the last select item, ends
+<code>* mv.ontrack as membershipvalue,</code>), add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">cw</span><span class="p">.</span><span class="n">week_start_monday</span><span class="p">,</span>
+<span class="w">    </span><span class="n">cw</span><span class="p">.</span><span class="n">week_end_sunday</span><span class="p">,</span>
+<span class="w">    </span><span class="n">cw</span><span class="p">.</span><span class="n">week_number_academic_year</span><span class="p">,</span>
+</code></pre></div>
+<p>After the final <code>left join aci as aci_potential ...</code> block (last lines of the
+file), add:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_powerschool__calendar_week"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cw</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">mv</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">schoolid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">tac</span><span class="p">.</span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">yearid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">mv</span><span class="p">.</span><span class="n">calendardate</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">week_start_monday</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">week_end_sunday</span>
+</code></pre></div>
+<p>Left join on purpose: a membership day outside any calendar week keeps its row
+with null week fields. The kipptaf inner join it replaces dropped such rows
+silently; Task 6 counts them.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Declare the columns in the package YAML</strong></li>
+</ul>
+<p>Append to the <code>columns:</code> list in
+<code>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__ps_adaadm_daily_ctod.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">week_start_monday</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">week_end_sunday</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">week_number_academic_year</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Declare the columns in the kipptaf union YAML</strong></li>
+</ul>
+<p>In
+<code>src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__ps_adaadm_daily_ctod.yml</code>,
+before the <code>- name: _dbt_source_project</code> entry, add:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">week_start_monday</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Monday of the calendar week containing calendardate.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">week_end_sunday</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Sunday of the calendar week containing calendardate.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">week_number_academic_year</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1-based week index within the school's academic year.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Compile the package through one district</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--select<span class="w"> </span>int_powerschool__ps_adaadm_daily_ctod<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields/src/dbt/kippnewark
+</code></pre></div>
+<p>Expected: <code>Done.</code> with no errors. Then confirm the compiled SQL names all 3
+columns:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">"week_start_monday\|week_end_sunday\|week_number_academic_year"</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields/src/dbt/kippnewark/target/compiled/powerschool/models/sis/intermediate/int_powerschool__ps_adaadm_daily_ctod.sql
+</code></pre></div>
+<p>Expected: <code>6</code> (3 select items, 3 join predicates).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build in dev for Newark and check null rate</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_powerschool__ps_adaadm_daily_ctod<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>&lt;prod-state-dir&gt;<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields/src/dbt/kippnewark
+</code></pre></div>
+<p>Then in BigQuery MCP, against the dev schema the build printed:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_total</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">week_start_monday</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_no_week</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">-</span><span class="n">dataset</span><span class="o">&gt;</span><span class="p">.</span><span class="n">int_powerschool__ps_adaadm_daily_ctod</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: <code>rows_total</code> equals the prod count from
+<code>select count(*) from kippnewark_powerschool.int_powerschool__ps_adaadm_daily_ctod</code>,
+and <code>rows_no_week</code> is 0 or a handful. Record both numbers in the PR body.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__ps_adaadm_daily_ctod.sql<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__ps_adaadm_daily_ctod.yml<span class="w"> </span>src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__ps_adaadm_daily_ctod.yml<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(powerschool): carry calendar week fields on int_powerschool__ps_adaadm_daily_ctod</span>
+
+<span class="s2">Refs #5193</span>
+
+<span class="s2">Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<h3 id="task-2-re-include-the-package-in-kippmiami-for-the-rebuild">Task 2: Re-include the package in kippmiami for the rebuild</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kippmiami/packages.yml</code></li>
+<li>Modify: <code>src/dbt/kippmiami/dbt_project.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: nothing from Task 1 beyond being on the same branch.</li>
+<li>
+<p>Produces: a <code>kippmiami</code> project that builds the <code>powerschool</code> package with the
+  16 archive hooks, exactly as commit <code>ed848b22e9</code> did.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Restore the package and hooks from the last rebuild commit</strong></p>
+</li>
+</ul>
+<p>The last re-include is commit <code>ed848b22e9</code>. Its removal is <code>84ceb3a6d0</code>. Revert
+the removal onto this branch:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields<span class="w"> </span>revert<span class="w"> </span>--no-commit<span class="w"> </span>84ceb3a6d0
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields<span class="w"> </span>diff<span class="w"> </span>--cached<span class="w"> </span>--stat
+</code></pre></div>
+<p>Expected: exactly <code>src/dbt/kippmiami/dbt_project.yml</code> and
+<code>src/dbt/kippmiami/packages.yml</code> changed. If the revert conflicts, resolve to
+the content of <code>ed848b22e9</code> for those two files:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields<span class="w"> </span>show<span class="w"> </span>ed848b22e9:src/dbt/kippmiami/dbt_project.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields<span class="w"> </span>show<span class="w"> </span>ed848b22e9:src/dbt/kippmiami/packages.yml
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify the hook block is intact</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">"post-hook"</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields/src/dbt/kippmiami/dbt_project.yml
+grep<span class="w"> </span>-n<span class="w"> </span><span class="s2">"local: ../powerschool"</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields/src/dbt/kippmiami/packages.yml
+</code></pre></div>
+<p>Expected: <code>16</code> and one match.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Parse the kippmiami project</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields/src/dbt/kippmiami
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields/src/dbt/kippmiami
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>ls<span class="w"> </span>--select<span class="w"> </span>int_powerschool__ps_adaadm_daily_ctod<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields/src/dbt/kippmiami
+</code></pre></div>
+<p>Expected: parse succeeds; <code>ls</code> prints
+<code>powerschool.sis.intermediate.int_powerschool__ps_adaadm_daily_ctod</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"chore(kippmiami): re-include the powerschool package with the 16 archive hooks for the third rebuild</span>
+
+<span class="s2">Refs #5193</span>
+
+<span class="s2">Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<h3 id="task-3-open-pr-1-and-hand-off-the-materialization">Task 3: Open PR 1 and hand off the materialization</h3>
+<p><strong>Files:</strong> none new.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push and open the PR</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-ps-adaadm-week-fields<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/feat/claude-ps-adaadm-week-fields
+</code></pre></div>
+<p>Open with <code>mcp__github__create_pull_request</code>, body from
+<code>.github/pull_request_template.md</code>. Title:
+<code>feat(powerschool): carry calendar week fields on the attendance fact and rebuild the Miami archive (PR 1)</code>.
+Body states the Newark dev counts from Task 1 Step 5, <code>Refs #5193</code>, and the
+Dagster step below. End with
+<code>🤖 Generated with [Claude Code](https://claude.com/claude-code)</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Follow <code>pr-ci-review</code> until green, then hand off</strong></li>
+</ul>
+<p>After merge, Charlie materializes from the Dagster UI: code location
+<code>kippmiami</code>, asset group <code>powerschool</code> under <code>kippmiami_dbt_assets</code>, about 120
+models, as in #5231. Nothing else triggers it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify the archive after materialization</strong></li>
+</ul>
+<p>In BigQuery MCP:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_total</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">week_start_monday</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_no_week</span><span class="p">,</span>
+<span class="w">    </span><span class="k">max</span><span class="p">(</span><span class="n">calendardate</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">max_date</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippmiami_powerschool</span><span class="p">.</span><span class="n">int_powerschool__ps_adaadm_daily_ctod</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: <code>rows_total</code> equals the pre-build count taken before merge (record it
+in the PR body first), <code>max_date</code> is on or before 2026-06-30, <code>rows_no_week</code> is
+0 or a handful. Post the result as a PR comment.</p>
+<h2 id="pr-1b-remove-the-package-again">PR 1b: remove the package again</h2>
+<h3 id="task-4-drop-the-package-from-kippmiami">Task 4: Drop the package from kippmiami</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>src/dbt/kippmiami/packages.yml</code></li>
+<li>
+<p>Modify: <code>src/dbt/kippmiami/dbt_project.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: New branch from origin/main</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>issue<span class="w"> </span>develop<span class="w"> </span><span class="m">5193</span><span class="w"> </span>--name<span class="w"> </span>cbini/chore/claude-kippmiami-drop-powerschool-3
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster<span class="w"> </span>fetch<span class="w"> </span>origin<span class="w"> </span>cbini/chore/claude-kippmiami-drop-powerschool-3
+git<span class="w"> </span>worktree<span class="w"> </span>add<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/chore/claude-kippmiami-drop-powerschool-3<span class="w"> </span>cbini/chore/claude-kippmiami-drop-powerschool-3
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Re-apply the removal commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/chore/claude-kippmiami-drop-powerschool-3<span class="w"> </span>cherry-pick<span class="w"> </span>84ceb3a6d0
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/chore/claude-kippmiami-drop-powerschool-3<span class="w"> </span>show<span class="w"> </span>--stat<span class="w"> </span>HEAD
+</code></pre></div>
+<p>Expected: the two kippmiami files change and
+<code>grep -c post-hook src/dbt/kippmiami/dbt_project.yml</code> prints <code>0</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Parse, push, open PR 1b</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/chore/claude-kippmiami-drop-powerschool-3/src/dbt/kippmiami
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/chore/claude-kippmiami-drop-powerschool-3/src/dbt/kippmiami
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/chore/claude-kippmiami-drop-powerschool-3<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/chore/claude-kippmiami-drop-powerschool-3
+</code></pre></div>
+<p>Title:
+<code>chore(kippmiami): remove the powerschool package again after the third archive rebuild (PR 1b)</code>.
+Body: <code>Refs #5193</code>, one line saying the tables stay.</p>
+<h2 id="pr-2-kipptaf">PR 2: kipptaf</h2>
+<p>Branch: the existing worktree
+<code>/workspaces/teamster/.worktrees/cbini/chore/claude-miami-history-unions</code>
+(already holds the spec and this plan). Before starting, merge <code>origin/main</code> so
+PR 1's kipptaf YAML is present: invoke <code>resuming-a-branch</code>, then
+<code>git -C /workspaces/teamster/.worktrees/cbini/chore/claude-miami-history-unions merge origin/main</code>.</p>
+<p>All paths below are relative to <code>&lt;wt&gt;/src/dbt/kipptaf/</code> where <code>&lt;wt&gt;</code> is that
+worktree.</p>
+<h3 id="task-5-drop-the-9-miami-relations-and-trim-the-source-file">Task 5: Drop the 9 Miami relations and trim the source file</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>models/powerschool/staging/stg_powerschool__schools.sql:8</code></li>
+<li>Modify: <code>models/powerschool/staging/stg_powerschool__assignmentscore.sql:8</code></li>
+<li>Modify: <code>models/powerschool/staging/stg_powerschool__sectionteacher.sql:8</code></li>
+<li>Modify: <code>models/powerschool/staging/stg_powerschool__roledef.sql:8</code></li>
+<li>Modify: <code>models/powerschool/staging/stg_powerschool__calendar_day.sql:8</code></li>
+<li>Modify: <code>models/powerschool/intermediate/int_powerschool__teachers.sql:8</code></li>
+<li>Modify: <code>models/powerschool/intermediate/int_powerschool__calendar_day.sql:8</code></li>
+<li>Modify:
+  <code>models/powerschool/intermediate/int_powerschool__calendar_week.sql:12</code></li>
+<li>Modify:
+  <code>models/powerschool/intermediate/int_powerschool__calendar_rollup.sql:12-14</code></li>
+<li>Modify: <code>models/powerschool/sources-kippmiami.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: 9 unions with no <code>kippmiami</code> rows. Tasks 7 and 9 delete filters that
+  depended on those rows.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Delete the 9 source lines</strong></p>
+</li>
+</ul>
+<p>In each of the 9 SQL files, delete the one line (or, for <code>calendar_rollup</code>, the
+3-line <code>source(</code> block) that names <code>"kippmiami_powerschool"</code>. Verify:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf/models<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>grep<span class="w"> </span>-l<span class="w"> </span><span class="s1">'"kippmiami_powerschool"'</span><span class="w"> </span>powerschool/staging/stg_powerschool__<span class="o">{</span>schools,assignmentscore,sectionteacher,roledef,calendar_day<span class="o">}</span>.sql<span class="w"> </span>powerschool/intermediate/int_powerschool__<span class="o">{</span>teachers,calendar_day,calendar_week,calendar_rollup<span class="o">}</span>.sql
+</code></pre></div>
+<p>Expected: no output.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm exactly 11 unions still name the archive</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf/models<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>grep<span class="w"> </span>-rl<span class="w"> </span><span class="s1">'"kippmiami_powerschool"'</span><span class="w"> </span>--include<span class="o">=</span><span class="s1">'*.sql'</span><span class="w"> </span>.<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort
+</code></pre></div>
+<p>Expected, exactly these 11:</p>
+<div class="highlight"><pre><span></span><code>./powerschool/base/base_powerschool__final_grades.sql
+./powerschool/intermediate/int_powerschool__ada.sql
+./powerschool/intermediate/int_powerschool__attendance_streak.sql
+./powerschool/intermediate/int_powerschool__course_enrollments_union.sql
+./powerschool/intermediate/int_powerschool__final_grades_rollup.sql
+./powerschool/intermediate/int_powerschool__gpa_cumulative.sql
+./powerschool/intermediate/int_powerschool__gpa_term.sql
+./powerschool/intermediate/int_powerschool__ps_adaadm_daily_ctod.sql
+./powerschool/intermediate/int_powerschool__sections_union.sql
+./powerschool/staging/stg_powerschool__courses.sql
+./powerschool/staging/stg_powerschool__storedgrades.sql
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Trim <code>sources-kippmiami.yml</code> to the 11 kept tables</strong></li>
+</ul>
+<p>The source tables the 11 unions read are: <code>stg_powerschool__storedgrades</code>,
+<code>stg_powerschool__courses</code>, <code>base_powerschool__final_grades</code>,
+<code>base_powerschool__sections</code>, <code>base_powerschool__course_enrollments</code>,
+<code>int_powerschool__final_grades_rollup</code>, <code>int_powerschool__gpa_term</code>,
+<code>int_powerschool__gpa_cumulative</code>, <code>int_powerschool__ps_adaadm_daily_ctod</code>,
+<code>int_powerschool__ada</code>, <code>int_powerschool__attendance_streak</code>. Delete every other
+<code>- name:</code> entry (each is a 9-line block). Replace the <code>description:</code> with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Miami's PowerSchool archive (final ODBC pull 2026-07-01; Miami's SIS moved to</span>
+<span class="w">  </span><span class="no">Focus). Permanent history source for stored grades, attendance, and the course</span>
+<span class="w">  </span><span class="no">enrollments they hang off (#5193). Rebuilt from the frozen externals with the</span>
+<span class="w">  </span><span class="no">8400 Focus prefix on student_number and an AY2025 bound applied (#5012). The</span>
+<span class="w">  </span><span class="no">dataset must not be dropped. Declared BQ-native (plain schema, no target</span>
+<span class="w">  </span><span class="no">branch) so every target reads the prod tables directly.</span>
+</code></pre></div>
+<p>Verify:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">"      - name: "</span><span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf/models/powerschool/sources-kippmiami.yml
+</code></pre></div>
+<p>Expected: <code>11</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Parse</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: success. A <code>Source ... not found</code> error names a union whose source
+entry was deleted by mistake; restore that entry.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"refactor(kipptaf): drop Miami from 9 PowerSchool unions, keep the 11 history sources</span>
+
+<span class="s2">Refs #5193</span>
+
+<span class="s2">Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<h3 id="task-6-attendance-daily-reads-week-fields-from-both-branches">Task 6: Attendance daily reads week fields from both branches</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>models/students/intermediate/int_students__attendance_daily.sql</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>week_start_monday</code>, <code>week_end_sunday</code>, <code>week_number_academic_year</code>
+  on the kipptaf <code>int_powerschool__ps_adaadm_daily_ctod</code> union (Task 1) and on
+  <code>int_focus__calendar_week</code>.</li>
+<li>
+<p>Produces: the same 3 output columns as today, now sourced from <code>mem</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the week join to the Focus branch</strong></p>
+</li>
+</ul>
+<p>In <code>focus_conformed</code>, after
+<code>if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,</code> add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">fcw</span><span class="p">.</span><span class="n">week_start_monday</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fcw</span><span class="p">.</span><span class="n">week_end_sunday</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fcw</span><span class="p">.</span><span class="n">week_number_academic_year</span><span class="p">,</span>
+</code></pre></div>
+<p>After the line
+<code>inner join focus_schools as fs on ad.schoolid = fs.focus_school_id</code> add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_focus__calendar_week"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fcw</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">ad</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fcw</span><span class="p">.</span><span class="n">schoolid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">ad</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fcw</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">ad</span><span class="p">.</span><span class="n">school_date</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">fcw</span><span class="p">.</span><span class="n">week_start_monday</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">fcw</span><span class="p">.</span><span class="n">week_end_sunday</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">ad</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fcw</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+</code></pre></div>
+<p><code>ad.schoolid</code> and <code>fcw.schoolid</code> are both the Focus internal school id, so no
+<code>focus_schools</code> translation is needed on this join.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Switch the 3 output columns and remove the post-union join</strong></li>
+</ul>
+<p>At lines 170 to 172 change:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">week_start_monday</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">week_end_sunday</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cw</span><span class="p">.</span><span class="n">week_number_academic_year</span><span class="p">,</span>
+</code></pre></div>
+<p>to:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">mem</span><span class="p">.</span><span class="n">week_start_monday</span><span class="p">,</span>
+<span class="w">            </span><span class="n">mem</span><span class="p">.</span><span class="n">week_end_sunday</span><span class="p">,</span>
+<span class="w">            </span><span class="n">mem</span><span class="p">.</span><span class="n">week_number_academic_year</span><span class="p">,</span>
+</code></pre></div>
+<p>Delete the block at lines 238 to 243:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_students__calendar_week"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cw</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">mem</span><span class="p">.</span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">yearid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">mem</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">schoolid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">mem</span><span class="p">.</span><span class="n">calendardate</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">week_start_monday</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">week_end_sunday</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">mem</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cw</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+</code></pre></div>
+<p>Verify no <code>cw.</code> remains:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">"cw\."</span><span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf/models/students/intermediate/int_students__attendance_daily.sql
+</code></pre></div>
+<p>Expected: <code>0</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and compare to prod</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_students__attendance_daily<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>&lt;prod-state-dir&gt;<span class="w"> </span>--project-dir<span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>Then in BigQuery MCP, with <code>&lt;dev&gt;</code> the dev dataset the build printed:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">dev</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">2025</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_hist</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="n">int_students__attendance_daily</span><span class="o">`</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">prod</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">2025</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_hist</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_students</span><span class="p">.</span><span class="n">int_students__attendance_daily</span><span class="o">`</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">dev</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">project</span><span class="p">,</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">dev</span><span class="p">.</span><span class="n">is_hist</span><span class="p">,</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">is_hist</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_hist</span><span class="p">,</span>
+<span class="w">    </span><span class="n">prod</span><span class="p">.</span><span class="n">n</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">prod_n</span><span class="p">,</span>
+<span class="w">    </span><span class="n">dev</span><span class="p">.</span><span class="n">n</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dev_n</span><span class="p">,</span>
+<span class="w">    </span><span class="n">dev</span><span class="p">.</span><span class="n">n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">n</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">delta</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">dev</span>
+<span class="k">full</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">prod</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">is_hist</span><span class="p">)</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+</code></pre></div>
+<p>Expected: <code>delta</code> is 0 or a small positive number on every row. A positive delta
+is a day that the old inner join dropped and the left join keeps.
+<code>kippmiami, is_hist=true</code> must show <code>prod_n = 793259</code> and <code>dev_n &gt;= 793259</code>. Any
+negative delta stops the task.</p>
+<p>Also confirm null weeks are rare:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">week_start_monday</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">no_week</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="n">int_students__attendance_daily</span><span class="o">`</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Expected: <code>no_week</code> equals the positive <code>delta</code> from the query above, per
+project.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"refactor(students): read attendance week fields from the SIS facts, drop the calendar_week join</span>
+
+<span class="s2">Refs #5193</span>
+
+<span class="s2">Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<h3 id="task-7-repoint-5-schools-readers-and-simplify-int_students__schools">Task 7: Repoint 5 schools readers and simplify int_students__schools</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>models/students/intermediate/int_students__schools.sql</code></li>
+<li>Modify:
+  <code>models/assessments/intermediate/int_assessments__academic_goals.sql:14-18</code></li>
+<li>Modify:
+  <code>models/google/sheets/intermediate/int_google_sheets__topline_aggregate_goals.sql:35</code></li>
+<li>Modify:
+  <code>models/finance/intermediate/int_finance__enrollment_targets.sql:18-21</code></li>
+<li>Modify:
+  <code>models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql:99-102</code></li>
+<li>Modify: <code>models/kippadb/intermediate/int_kippadb__roster.sql:19-23</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Consumes: <code>int_students__schools</code> columns <code>school_number</code>, <code>name</code>,
+  <code>abbreviation</code>, <code>school_level</code>, <code>location_key</code>, <code>_dbt_source_project</code>,
+  <code>_dbt_source_relation</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Simplify <code>int_students__schools</code></strong></p>
+</li>
+</ul>
+<p>Replace lines 19 to 26:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">powerschool_filtered</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__schools"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">p</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'kippmiami'</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">powerschool_filtered</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">powerschool_schools</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__schools"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">powerschool_schools</span>
+</code></pre></div>
+<p>The <code>stg_powerschool__schools</code> union no longer carries Miami after Task 5, so
+the filter is a no-op. Keeping a named CTE keeps the
+<code>full union all corresponding</code> shape unchanged.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Repoint <code>int_assessments__academic_goals</code></strong></li>
+</ul>
+<p>Line 18, change <code>{{ ref("stg_powerschool__schools") }}</code> to
+<code>{{ ref("int_students__schools") }}</code>. Line 16 keeps
+<code>regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')</code>; the Focus relation is
+<code>...kippmiami_focus...</code> so <code>region</code> still resolves to <code>Miami</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Repoint <code>int_google_sheets__topline_aggregate_goals</code></strong></li>
+</ul>
+<p>Line 35, change <code>{{ ref("stg_powerschool__schools") }}</code> to
+<code>{{ ref("int_students__schools") }}</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Repoint <code>int_finance__enrollment_targets</code></strong></li>
+</ul>
+<p>Line 21, change <code>{{ ref("stg_powerschool__schools") }}</code> to
+<code>{{ ref("int_students__schools") }}</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Repoint <code>int_tableau__gradebook_audit_teacher_scaffold</code></strong></li>
+</ul>
+<p>Line 100, change <code>{{ ref("stg_powerschool__schools") }}</code> to
+<code>{{ ref("int_students__schools") }}</code>. The join already matches on
+<code>_dbt_source_project</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Repoint <code>int_kippadb__roster</code></strong></li>
+</ul>
+<p>Line 21, change <code>{{ ref("stg_powerschool__schools") }}</code> to
+<code>{{ ref("int_students__schools") }}</code>. The join already matches on
+<code>_dbt_source_project</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Build the 6 models and compare Miami and NJ counts</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_students__schools<span class="w"> </span>int_assessments__academic_goals<span class="w"> </span>int_google_sheets__topline_aggregate_goals<span class="w"> </span>int_finance__enrollment_targets<span class="w"> </span>int_tableau__gradebook_audit_teacher_scaffold<span class="w"> </span>int_kippadb__roster<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>&lt;prod-state-dir&gt;<span class="w"> </span>--project-dir<span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>For each of the 5 repointed models, in BigQuery MCP (substitute the model and
+its prod dataset; <code>region</code>-keyed models use <code>region = 'Miami'</code>, the rest use
+<code>_dbt_source_project = 'kippmiami'</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="s1">'prod'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">miami</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">nj</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="o">&lt;</span><span class="n">prod_dataset</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="n">model</span><span class="o">&gt;`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'dev'</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="p">),</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="p">),</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="n">model</span><span class="o">&gt;`</span>
+</code></pre></div>
+<p>Expected per model: <code>nj</code> identical between prod and dev. <code>miami</code> on dev is
+greater than or equal to prod (Focus adds the 3 newest schools where the sheet
+has rows) and never less. Prod baselines measured 2026-09-10:
+<code>int_google_sheets__topline_aggregate_goals</code> 101 Miami rows,
+<code>int_finance__enrollment_targets</code> 59, <code>int_assessments__academic_goals</code> 36.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"refactor(kipptaf): read Miami school attributes from int_students__schools</span>
+
+<span class="s2">Refs #5193</span>
+
+<span class="s2">Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<h3 id="task-8-delete-exclude_frozen-and-inline-the-7-live-clever-gates">Task 8: Delete exclude_frozen and inline the 7 live Clever gates</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>macros/utils.sql:11-19</code> (delete)</li>
+<li>Modify: <code>dbt_project.yml:38-43</code> (delete)</li>
+<li>Modify: <code>models/extracts/clever/rpt_clever__enrollments.sql:17,32</code> (delete)</li>
+<li>Modify: <code>models/extracts/clever/rpt_clever__schools.sql:25</code> (delete)</li>
+<li>Modify: <code>models/extracts/clever/rpt_clever__staff.sql:20,40,59</code></li>
+<li>Modify: <code>models/extracts/clever/rpt_clever__teachers.sql:26,49</code></li>
+<li>Modify: <code>models/extracts/clever/rpt_clever__sections.sql:15,39,94,110</code></li>
+<li>
+<p>Modify: <code>models/extracts/clever/rpt_clever__students.sql:92</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Delete the macro and var</strong></p>
+</li>
+</ul>
+<p>In <code>macros/utils.sql</code> delete lines 11 to 19 (the comment block starting
+<code>{# Drops code locations whose PowerSchool instance is frozen</code> through
+<code>{%- endmacro %}</code>).</p>
+<p>In <code>dbt_project.yml</code> delete lines 38 to 43 (the 5 comment lines starting
+<code># Code locations whose PowerSchool instance is frozen</code> and
+<code>frozen_powerschool_code_locations: [kippmiami]</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: <code>rpt_clever__enrollments</code>, delete 2 dead calls</strong></li>
+</ul>
+<p>Line 15 to 17 become:</p>
+<div class="highlight"><pre><span></span><code><span class="k">where</span><span class="w"> </span><span class="n">cc</span><span class="p">.</span><span class="n">dateleft</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="k">current_date</span><span class="p">(</span><span class="s1">'{{ var("local_timezone") }}'</span><span class="p">)</span>
+</code></pre></div>
+<p>Line 32 becomes:</p>
+<div class="highlight"><pre><span></span><code><span class="k">where</span><span class="w"> </span><span class="n">enroll_status</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: <code>rpt_clever__schools</code>, delete 1 dead call</strong></li>
+</ul>
+<p>Line 25 becomes:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: <code>rpt_clever__staff</code>, inline 2, delete 1</strong></li>
+</ul>
+<p>Line 20: <code>and {{ exclude_frozen("home_work_location_dagster_code_location") }}</code>
+becomes <code>and home_work_location_dagster_code_location != 'kippmiami'</code>.</p>
+<p>Line 40: <code>{{ exclude_frozen("dagster_code_location") }}</code> becomes
+<code>dagster_code_location != 'kippmiami'</code>.</p>
+<p>Lines 57 to 59 (the <code>schools</code> gate) become:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: <code>rpt_clever__teachers</code>, inline 2</strong></li>
+</ul>
+<p>Line 26: <code>and {{ exclude_frozen("home_work_location_dagster_code_location") }}</code>
+becomes <code>and home_work_location_dagster_code_location != 'kippmiami'</code>.</p>
+<p>Line 49: <code>{{ exclude_frozen("dagster_code_location") }}</code> becomes
+<code>dagster_code_location != 'kippmiami'</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: <code>rpt_clever__sections</code>, inline 2, delete 1, unwrap 1</strong></li>
+</ul>
+<p>Line 15:
+<code>and {{ exclude_frozen("sr.home_work_location_dagster_code_location") }}</code>
+becomes <code>and sr.home_work_location_dagster_code_location != 'kippmiami'</code>.</p>
+<p>Lines 37 to 39 (the <code>schools</code> gate) become:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+<p>Line 94: <code>from {{ ref("base_powerschool__sections") }} as sec</code> becomes
+<code>from {{ ref("int_students__course_sections") }} as sec</code>.</p>
+<p>Line 110: <code>and {{ exclude_frozen("sec._dbt_source_project") }}</code> becomes
+<code>and sec._dbt_source_project != 'kippmiami'</code>. Add the comment line above it:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="c1">-- Miami rosters into Clever from Focus, not from this feed</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: <code>rpt_clever__students</code>, inline 1</strong></li>
+</ul>
+<p>Line 92: <code>and {{ exclude_frozen("sr._dbt_source_project") }}</code> becomes
+<code>and sr._dbt_source_project != 'kippmiami'</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Verify nothing references the macro or var</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;wt&gt;<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">"exclude_frozen\|frozen_powerschool_code_locations"</span><span class="w"> </span>src/dbt/<span class="w"> </span>--include<span class="o">=</span><span class="s1">'*.sql'</span><span class="w"> </span>--include<span class="o">=</span><span class="s1">'*.yml'</span><span class="w"> </span>--include<span class="o">=</span><span class="s1">'*.md'</span>
+</code></pre></div>
+<p>Expected: no output. Any <code>.md</code> hit under <code>src/dbt/</code> is a doc to update in the
+same commit.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Build the 6 Clever feeds and diff NJ against prod</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>rpt_clever__enrollments<span class="w"> </span>rpt_clever__schools<span class="w"> </span>rpt_clever__staff<span class="w"> </span>rpt_clever__teachers<span class="w"> </span>rpt_clever__sections<span class="w"> </span>rpt_clever__students<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>&lt;prod-state-dir&gt;<span class="w"> </span>--project-dir<span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>For each feed, in BigQuery MCP:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_extracts</span><span class="p">.</span><span class="o">&lt;</span><span class="n">feed</span><span class="o">&gt;`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">prod_n</span><span class="p">,</span>
+<span class="w">    </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="n">feed</span><span class="o">&gt;`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dev_n</span><span class="p">,</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_extracts</span><span class="p">.</span><span class="o">&lt;</span><span class="n">feed</span><span class="o">&gt;`</span>
+<span class="w">            </span><span class="k">except</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="n">feed</span><span class="o">&gt;`</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">prod_not_dev</span><span class="p">,</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="n">feed</span><span class="o">&gt;`</span>
+<span class="w">            </span><span class="k">except</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_extracts</span><span class="p">.</span><span class="o">&lt;</span><span class="n">feed</span><span class="o">&gt;`</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dev_not_prod</span>
+</code></pre></div>
+<p>Expected: all four differences are 0 for every feed. Clever never received Miami
+rows, so the whole output must be identical.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 10: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"refactor(clever): delete exclude_frozen, inline the 7 live Miami gates</span>
+
+<span class="s2">Refs #5193</span>
+<span class="s2">Closes #4670</span>
+
+<span class="s2">Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<h3 id="task-9-delete-the-8-dead-literals-and-convert-the-crdc-regexps">Task 9: Delete the 8 dead literals and convert the CRDC regexps</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>models/extracts/illuminate/rpt_illuminate__roles.sql:20-23</code></li>
+<li>Modify: <code>models/extracts/illuminate/rpt_illuminate__sites.sql:41-42</code></li>
+<li>Modify:
+  <code>models/extracts/tableau/intermediate/int_tableau__fresh_enrollment_scaffold.sql:16</code></li>
+<li>Modify: <code>models/extracts/parentsquare/rpt_parentsquare__staff.sql:10</code></li>
+<li>Modify: <code>models/extracts/parentsquare/rpt_parentsquare__schools.sql:33-36</code></li>
+<li>Modify:
+  <code>models/powerschool/intermediate/int_powerschool__gradebook_assignment_scores_rollup.sql:43</code></li>
+<li>Modify: <code>models/extracts/deanslist/rpt_deanslist__missing_assignments.sql:13</code></li>
+<li>
+<p>Modify: <code>models/extracts/tableau/rpt_tableau__crdc_roster.sql:164,181,247</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: <code>rpt_illuminate__roles</code></strong></p>
+</li>
+</ul>
+<p>Lines 19 to 23 become:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">sch</span><span class="p">.</span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+<p>Delete the 2 comment lines about Miami leaving Illuminate along with the
+predicate.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: <code>rpt_illuminate__sites</code></strong></li>
+</ul>
+<p>Lines 41 to 42 become:</p>
+<div class="highlight"><pre><span></span><code><span class="k">where</span><span class="w"> </span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: <code>int_tableau__fresh_enrollment_scaffold</code></strong></li>
+</ul>
+<p>Line 16 becomes:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: <code>rpt_parentsquare__staff</code></strong></li>
+</ul>
+<p>Line 10 becomes:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: <code>rpt_parentsquare__schools</code></strong></li>
+</ul>
+<p>Lines 33 to 36: delete the 3 comment lines that explain the Miami carve-out and
+change the predicate to:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: <code>int_powerschool__gradebook_assignment_scores_rollup</code></strong></li>
+</ul>
+<p>Delete line 43, <code>where _dbt_source_project != 'kippmiami'</code>. The <code>from</code> line is
+followed directly by <code>group by</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: <code>rpt_deanslist__missing_assignments</code></strong></li>
+</ul>
+<p>Delete line 13, <code>and _dbt_source_project != 'kippmiami'</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: <code>rpt_tableau__crdc_roster</code></strong></li>
+</ul>
+<p>Line 164: <code>from {{ ref("base_powerschool__course_enrollments") }} as c</code> becomes
+<code>from {{ ref("int_students__course_enrollments") }} as c</code>.</p>
+<p>Line 181:
+<code>and regexp_extract(c._dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'</code>
+becomes <code>and c._dbt_source_project != 'kippmiami'</code>.</p>
+<p>Line 247:
+<code>and regexp_extract(_dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'</code> becomes
+<code>and _dbt_source_project != 'kippmiami'</code>.</p>
+<p>The <code>-- miami does their own submission</code> comments stay; both filters are live
+because <code>storedgrades</code> keeps Miami.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Confirm the literal inventory</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf/models<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">"not like '%kippmiami%'\|!= 'kippmiami'\|region != 'Miami'"</span><span class="w"> </span>--include<span class="o">=</span><span class="s1">'*.sql'</span><span class="w"> </span>.<span class="w"> </span><span class="p">|</span><span class="w"> </span>wc<span class="w"> </span>-l
+</code></pre></div>
+<p>Expected: <code>50</code> (51 on <code>main</code>, minus 8 deleted, plus 7 inlined from the macro).
+Also:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">"regexp_extract([a-z._]*_dbt_source_relation, r'(kipp\\\\w+)_') != 'kippmiami'"</span><span class="w"> </span>--include<span class="o">=</span><span class="s1">'*.sql'</span><span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf/models
+</code></pre></div>
+<p>Expected: no output.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 10: Build the 8 touched models and check Miami counts</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>rpt_illuminate__roles<span class="w"> </span>rpt_illuminate__sites<span class="w"> </span>int_tableau__fresh_enrollment_scaffold<span class="w"> </span>rpt_parentsquare__staff<span class="w"> </span>rpt_parentsquare__schools<span class="w"> </span>int_powerschool__gradebook_assignment_scores_rollup<span class="w"> </span>rpt_deanslist__missing_assignments<span class="w"> </span>rpt_tableau__crdc_roster<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>&lt;prod-state-dir&gt;<span class="w"> </span>--project-dir<span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>For each, the same prod-versus-dev row-count query as Task 8 Step 9. Expected:
+identical for all 8. For <code>rpt_tableau__crdc_roster</code> additionally:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">miami</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="n">rpt_tableau__crdc_roster</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: <code>0</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 11: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"refactor(kipptaf): delete 8 dead Miami literals, read CRDC project from _dbt_source_project</span>
+
+<span class="s2">Refs #5193</span>
+
+<span class="s2">Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<h3 id="task-10-full-downstream-build-and-history-checks">Task 10: Full downstream build and history checks</h3>
+<p><strong>Files:</strong> none.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Build everything downstream of the changed models</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>state:modified+<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>&lt;prod-state-dir&gt;<span class="w"> </span>--project-dir<span class="w"> </span>&lt;wt&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: no errors. A compile error naming a column that came only from a
+dropped Miami relation is a reader that needs a verdict; add it to the PR body
+and fix in place.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Course-enrollment history intact</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sections</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="k">c</span><span class="p">.</span><span class="n">course_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">no_course</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="n">dim_course_sections</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="n">dim_courses</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">c</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">course_key</span><span class="p">)</span>
+<span class="k">where</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">terms_academic_year</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">2025</span>
+</code></pre></div>
+<p>Expected: <code>sections = 3433</code>, <code>no_course = 0</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Dropped unions carry no Miami rows</strong></li>
+</ul>
+<p>For each of the 9 dropped unions, in its dev dataset:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="k">union</span><span class="o">&gt;`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span>
+</code></pre></div>
+<p>Expected: <code>0</code> for all 9.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Kept unions match prod</strong></li>
+</ul>
+<p>For each of the 11 kept unions:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="o">&lt;</span><span class="n">prod_dataset</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="k">union</span><span class="o">&gt;`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">prod_miami</span><span class="p">,</span>
+<span class="w">    </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="k">union</span><span class="o">&gt;`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dev_miami</span>
+</code></pre></div>
+<p>Expected: equal for all 11.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: <code>dim_school_calendars</code> Miami history is gone as accepted</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">academic_year</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">2025</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">hist</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2026</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cur</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">dev</span><span class="o">&gt;</span><span class="p">.</span><span class="n">dim_school_calendars</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span>
+</code></pre></div>
+<p>Expected: <code>hist = 0</code>, <code>cur &gt; 0</code>. Record both in the PR body as the accepted
+loss.</p>
+<h3 id="task-11-docs-lint-pr">Task 11: Docs, lint, PR</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify:
+  <code>docs/superpowers/specs/2026-09-08-miami-powerschool-retirement-design.md</code>
+  (append a revision note)</li>
+<li>
+<p>Modify: <code>src/dbt/kipptaf/CLAUDE.md</code> if it mentions <code>exclude_frozen</code> (check
+  with grep; on <code>main</code> it does not)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Revision note on the 2026-09-08 spec</strong></p>
+</li>
+</ul>
+<p>Append after the last line of
+<code>docs/superpowers/specs/2026-09-08-miami-powerschool-retirement-design.md</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="gu">## Revision 2026-09-10 (#5193)</span>
+
+Steps 4 and 5 are superseded by <span class="sb">`2026-09-10-miami-history-unions-design.md`</span>. 11
+unions keep the <span class="sb">`kippmiami`</span> relation permanently: stored grades, attendance, and
+course enrollments. The other 9 dropped it. <span class="sb">`exclude_frozen`</span> and its var were
+deleted; the 7 live call sites are inline literals.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Lint every changed file</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;wt&gt;<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="k">$(</span>git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>diff<span class="w"> </span>--name-only<span class="w"> </span>origin/main<span class="k">)</span><span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: <code>No issues</code>. Fix anything reported; markdownlint MD rules fire only
+here and in CI.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit, push, open PR 2</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs: record the Miami history union decision on the retirement spec</span>
+
+<span class="s2">Refs #5193</span>
+
+<span class="s2">Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;"</span>
+git<span class="w"> </span>-C<span class="w"> </span>&lt;wt&gt;<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/chore/claude-miami-history-unions
+</code></pre></div>
+<p>Title:
+<code>refactor(kipptaf): keep 11 Miami history unions, drop 9, delete exclude_frozen (PR 2)</code>.
+Body from <code>.github/pull_request_template.md</code>, with the Task 6, 7, 8, 9, 10
+counts, <code>Closes #5193</code>, <code>Refs #5012</code>, <code>Closes #4670</code>. End with
+<code>🤖 Generated with [Claude Code](https://claude.com/claude-code)</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Follow <code>pr-ci-review</code> to green and squash merge</strong></li>
+</ul>
+<h3 id="task-12-record-verdicts-and-close-out-5012">Task 12: Record verdicts and close out #5012</h3>
+<p><strong>Files:</strong> none in the repo.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Post the verdict comment on #5193</strong></li>
+</ul>
+<p>After PR 2 merges, post with <code>mcp__github__add_issue_comment</code>, one line per
+paragraph, no hard wraps. Content: the three tables from the spec ("Keep, 11",
+"Drop, 9", "Filters that stay, 50") plus the deleted list (8 literals, 5 calls,
+7 inlined), each with file and final line number taken from <code>main</code> after merge
+via the inventory greps:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/models<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">"not like '%kippmiami%'\|!= 'kippmiami'\|region != 'Miami'"</span><span class="w"> </span>--include<span class="o">=</span><span class="s1">'*.sql'</span><span class="w"> </span>.<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Comment on #5012</strong></li>
+</ul>
+<p>State that steps 4 and 5 are done under the revised scope, name the 11 permanent
+unions, and link the spec. Then close #5012 with <code>state_reason: completed</code> via
+<code>mcp__github__issue_write</code> once #5193 is closed by PR 2.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: File the follow-up issue</strong></li>
+</ul>
+<p><code>mcp__github__issue_write</code>, structured on
+<code>.github/ISSUE_TEMPLATE/feature_request.md</code>, title
+<code>refactor(dbt): move 6 PowerSchool-internal joins from kipptaf into the powerschool package</code>.
+Body lists <code>rpt_tableau__student_course_grades</code>,
+<code>rpt_deanslist__transcript_grades</code>, <code>bridge_course_section_teachers</code>,
+<code>rpt_clever__sections</code>, <code>int_powerschool__gradebook_assignments_scores</code>,
+<code>rpt_tableau__gradebook_assignments</code>, with the join each rebuilds. Labels:
+<code>refactor</code>, <code>dbt</code>, <code>powerschool</code>. <code>Refs #5012</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Widen #3999</strong></li>
+</ul>
+<p>Comment on #3999 that <code>base_powerschool__sections</code> (9 readers) and
+<code>base_powerschool__course_enrollments</code> (39 readers) are the same passthrough
+pattern and belong in its scope.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

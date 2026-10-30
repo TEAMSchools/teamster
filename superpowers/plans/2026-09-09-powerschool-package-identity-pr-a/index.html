@@ -1,0 +1,2992 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>PowerSchool Package Identity, PR A Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#powerschool-package-identity-pr-a-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              PowerSchool Package Identity, PR A Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-pass-identity-and-school-columns-through-base_powerschool__final_grades" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Pass identity and school columns through base_powerschool__final_grades
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-add-identity-and-school-columns-to-the-3-gpa-intermediates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Add identity and school columns to the 3 GPA intermediates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-new-int_powerschool__calendar_day" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: New int_powerschool__calendar_day
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-entry_school_abbreviation-on-base_powerschool__student_enrollments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: entry_school_abbreviation on base_powerschool__student_enrollments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-build-the-6-changed-models-in-camden-and-paterson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Build the 6 changed models in Camden and Paterson
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-re-include-the-package-in-kippmiami-with-the-16-archive-hooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Re-include the package in kippmiami with the 16 archive hooks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-push-and-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Push and open the PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-09-09-powerschool-package-identity-pr-a.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="powerschool-package-identity-pr-a-implementation-plan">PowerSchool Package Identity, PR A Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Give the shared <code>powerschool</code> package's GPA, final grades, calendar
+day, and student enrollment models the student identity and school columns that
+kipptaf joins for today, and re-include the package in kippmiami so one prod
+build lands those columns in the Miami archive.</p>
+<p><strong>Architecture:</strong> Five package models change in <code>src/dbt/powerschool</code>: 3 GPA
+intermediates and the new <code>int_powerschool__calendar_day</code> gain left joins to
+<code>stg_powerschool__students</code> and <code>stg_powerschool__schools</code>; 2 base models pass
+columns through from joins they already make. <code>src/dbt/kippmiami</code> re-includes
+the package with the 16 archive hooks from #5201 and #5224, unchanged. kipptaf
+is untouched; PR B (spec section "kipptaf changes") reads the new columns after
+the user rebuilds the archive in prod.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), <code>uv run dbt</code>, dbt unit tests, trunk.</p>
+<p>Spec:
+<code>docs/superpowers/specs/2026-09-09-powerschool-package-identity-design.md</code>.
+Issue: #5228.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree:
+  <code>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity</code>.
+  Every file path is under it. Every git call is
+  <code>git -C /workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity</code>.
+  Below, <code>$WT</code> in prose means that path; type it out in commands, never as a
+  shell variable (uppercase variables are hook-blocked).</li>
+<li>Never run bare <code>dbt</code>; always
+  <code>uv run dbt ... --project-dir &lt;abs worktree path&gt;/src/dbt/&lt;project&gt;</code>. From a
+  worktree, <code>--state</code> must be the absolute main-checkout path
+  <code>/workspaces/teamster/src/dbt/&lt;project&gt;/target/prod</code>.</li>
+<li>New identity columns are named <code>students_dcid</code> and <code>students_student_number</code>.
+  New school columns are named <code>school_name</code>, <code>school_abbreviation</code>,
+  <code>school_level</code>. No other student or school columns.</li>
+<li>Every new join in a GPA model is a <code>left join</code>, so row counts stay identical
+  to prod. The parity checks below depend on that.</li>
+<li><code>students_student_number</code> is PII. Tag it <code>config.meta.contains_pii: true</code> in
+  the package YAML, under the column, in the shape
+  <code>stg_powerschool__students.yml</code> uses. Never paste student rows into a commit,
+  PR, or issue; counts only.</li>
+<li>dbt unit tests need every <code>ref()</code> the model uses listed under <code>given</code>, or the
+  test fails to compile with "node not found". A new join means a new <code>given</code>
+  entry, empty rows are fine.</li>
+<li>Package staging models are contract-enforced; base and intermediate are not.
+  Still list every new column in the model's properties file with <code>data_type</code>.</li>
+<li>YAML snippets in this plan are shown unindented by the formatter. Indent each
+  pasted block to match the surrounding <code>columns:</code> or <code>given:</code> list.</li>
+<li>Before pushing, run
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>
+  with cwd inside the worktree.</li>
+<li>Do not write the bare token <code>env</code> in any commit message, PR body, or issue
+  text; write "environment".</li>
+<li>Commit messages end with <code>Refs #5228</code> and the co-author line
+  <code>Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;</code>. Write the message
+  to <code>/workspaces/teamster/.claude/scratch/commit-msg.txt</code> and commit with <code>-F</code>,
+  so the hook never scans a <code>-m</code> string.</li>
+</ul>
+<h2 id="file-structure">File structure</h2>
+<p>Package, <code>src/dbt/powerschool/models/sis/</code>:</p>
+<ul>
+<li><code>base/base_powerschool__final_grades.sql</code> and
+  <code>base/properties/base_powerschool__final_grades.yml</code>: passthrough of 4 columns
+  from course enrollments.</li>
+<li><code>base/base_powerschool__student_enrollments.sql</code> and
+  <code>base/properties/base_powerschool__student_enrollments.yml</code>: one new column
+  from a second schools join.</li>
+<li><code>intermediate/int_powerschool__gpa_term.sql</code>,
+  <code>intermediate/int_powerschool__gpa_cumulative.sql</code>,
+  <code>intermediate/int_powerschool__gpa_cumulative_year.sql</code> and their
+  <code>intermediate/properties/*.yml</code>: identity and school joins on the final
+  select, YAML columns, PII tag, unit test inputs.</li>
+<li><code>intermediate/int_powerschool__calendar_day.sql</code> and
+  <code>intermediate/properties/int_powerschool__calendar_day.yml</code>: new model.</li>
+</ul>
+<p>kippmiami, <code>src/dbt/kippmiami/</code>:</p>
+<ul>
+<li><code>packages.yml</code>: add the package.</li>
+<li><code>dbt_project.yml</code>: the <code>models: powerschool:</code> block with 16 hooks and the
+  <code>sources: powerschool:</code> block, replayed from commit <code>409be13dc9</code>.</li>
+<li><code>CLAUDE.md</code>: one sentence recording the second rebuild.</li>
+</ul>
+<p>Dev builds go through <code>kippnewark</code> first (the consuming-district pattern in the
+<code>dbt-local-dev</code> skill), then Camden and Paterson, then kippmiami for the archive
+dry run. Dev tables land in <code>zz_cbini_&lt;district&gt;_powerschool</code>.</p>
+<hr />
+<h3 id="task-1-pass-identity-and-school-columns-through-base_powerschool__final_grades">Task 1: Pass identity and school columns through <code>base_powerschool__final_grades</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/base/base_powerschool__final_grades.sql</code></li>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/base/properties/base_powerschool__final_grades.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>base_powerschool__course_enrollments</code> columns <code>students_dcid</code>,
+  <code>students_student_number</code>, <code>school_abbreviation</code>, <code>school_level</code>, which it
+  already carries (the <code>sec.*</code> star brings the school columns, and the students
+  join brings the identity columns).</li>
+<li>
+<p>Produces: <code>base_powerschool__final_grades</code> with 4 new columns:
+  <code>students_dcid int64</code>, <code>students_student_number int64</code>,
+  <code>school_abbreviation string</code>, <code>school_level string</code>. Task 2's
+  <code>int_powerschool__gpa_term</code> reads <code>students_student_number</code> from here for its
+  current-year branch.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the 4 columns to the <code>enr_termbins</code> CTE</strong></p>
+</li>
+</ul>
+<p>In <code>base_powerschool__final_grades.sql</code>, the first CTE selects a column list
+from <code>enr</code>. After the line <code>enr.school_name,</code> add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">students_dcid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">students_student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">school_abbreviation</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">school_level</span><span class="p">,</span>
+</code></pre></div>
+<p>Every later CTE uses <code>et.*</code> or <code>*</code>, so the columns flow to the <code>y1</code> CTE with no
+further edit.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the 4 columns to the final select</strong></li>
+</ul>
+<p>In the final <code>select</code>, after the line <code>y1.school_name,</code> add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">y1</span><span class="p">.</span><span class="n">students_dcid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">y1</span><span class="p">.</span><span class="n">students_student_number</span><span class="p">,</span>
+<span class="w">    </span><span class="n">y1</span><span class="p">.</span><span class="n">school_abbreviation</span><span class="p">,</span>
+<span class="w">    </span><span class="n">y1</span><span class="p">.</span><span class="n">school_level</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the columns to the properties file</strong></li>
+</ul>
+<p>In <code>base_powerschool__final_grades.yml</code>, after the <code>- name: schoolid</code> block add:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">students_dcid</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">students_student_number</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">contains_pii</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_name</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_abbreviation</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_level</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<p><code>school_name</code> was already an output column with no YAML entry; this adds it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build in Newark dev and check parity</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippnewark
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippnewark<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippnewark/target/prod<span class="w"> </span>--select<span class="w"> </span>base_powerschool__final_grades
+</code></pre></div>
+<p>Expected: the model and its tests pass. Then via the BigQuery MCP:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="s1">'dev'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">side</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">students_student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_sn</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">school_level</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_level</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippnewark_powerschool</span><span class="p">.</span><span class="n">base_powerschool__final_grades</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'prod'</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippnewark_powerschool</span><span class="p">.</span><span class="n">base_powerschool__final_grades</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: the 2 counts are equal, and both null counts are 0. Course enrollments
+inner-joins students and sections, so no row can lack either. A count difference
+is live drift on a current-year table; re-run both sides within the same minute
+before treating it as a bug.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/dbt/powerschool/models/sis/base/base_powerschool__final_grades.sql<span class="w"> </span>src/dbt/powerschool/models/sis/base/properties/base_powerschool__final_grades.yml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Write <code>/workspaces/teamster/.claude/scratch/commit-msg.txt</code>:</p>
+<div class="highlight"><pre><span></span><code>feat(powerschool): pass student identity and school columns through base_powerschool__final_grades
+
+Refs #5228
+
+Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>add<span class="w"> </span>src/dbt/powerschool/models/sis/base/base_powerschool__final_grades.sql<span class="w"> </span>src/dbt/powerschool/models/sis/base/properties/base_powerschool__final_grades.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>commit<span class="w"> </span>-F<span class="w"> </span>/workspaces/teamster/.claude/scratch/commit-msg.txt
+</code></pre></div>
+<hr />
+<h3 id="task-2-add-identity-and-school-columns-to-the-3-gpa-intermediates">Task 2: Add identity and school columns to the 3 GPA intermediates</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_term.sql</code></li>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative.sql</code></li>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative_year.sql</code></li>
+<li>Modify: the 3 matching files under
+  <code>src/dbt/powerschool/models/sis/intermediate/properties/</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: <code>stg_powerschool__students</code> (<code>id</code>, <code>dcid</code>, <code>student_number</code>) and
+  <code>stg_powerschool__schools</code> (<code>school_number</code>, <code>name</code>, <code>abbreviation</code>,
+  <code>school_level</code>).</li>
+<li>Produces: each of the 3 models gains <code>students_dcid int64</code>,
+  <code>students_student_number int64</code>, <code>school_name string</code>,
+  <code>school_abbreviation string</code>, <code>school_level string</code>. Grain is unchanged:
+  <code>(studentid, schoolid, yearid, term_name)</code>, <code>(studentid, schoolid)</code>, and
+  <code>(studentid, schoolid, academic_year)</code>. PR B's kipptaf readers join on
+  <code>students_student_number</code>.</li>
+</ul>
+<p><code>int_powerschool__gpa_term_current</code> and <code>int_powerschool__gpa_term_pivot</code> list
+their columns explicitly and do not change. No kipptaf reader needs identity on
+them.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: <code>int_powerschool__gpa_term</code>, join on the final select</strong></li>
+</ul>
+<p><code>stg_powerschool__students</code> also has <code>schoolid</code> and <code>yearid</code> columns, so every
+unqualified column in the final select must take the <code>gc</code> alias or BigQuery
+reports "Column name schoolid is ambiguous". Replace the final
+<code>select ... from gpa_calcs</code> block (everything after the <code>gpa_calcs</code> CTE's
+closing parenthesis) with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">yearid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">storecode</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">semester</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">is_current</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">gpa_points_total_term</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">gpa_term</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">gpa_points_total_y1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">gpa_y1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">gpa_y1_unweighted</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">n_failing_y1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">total_credit_hours_term</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gc</span><span class="p">.</span><span class="n">total_credit_hours_y1</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">dcid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">students_dcid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">students_student_number</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_abbreviation</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">school_level</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">round</span><span class="p">(</span><span class="n">gc</span><span class="p">.</span><span class="n">grade_avg_term</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_avg_term</span><span class="p">,</span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span><span class="n">gc</span><span class="p">.</span><span class="n">grade_avg_y1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_avg_y1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span><span class="n">gc</span><span class="p">.</span><span class="n">weighted_gpa_points_term</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">weighted_gpa_points_term</span><span class="p">,</span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span><span class="n">gc</span><span class="p">.</span><span class="n">weighted_gpa_points_y1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">weighted_gpa_points_y1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="n">gc</span><span class="p">.</span><span class="n">weighted_gpa_points_y1_unweighted</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">weighted_gpa_points_y1_unweighted</span><span class="p">,</span>
+
+<span class="w">    </span><span class="cm">/* gpa semester */</span>
+<span class="w">    </span><span class="k">sum</span><span class="p">(</span><span class="n">gc</span><span class="p">.</span><span class="n">gpa_points_total_term</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">semester</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gpa_points_total_semester</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="k">sum</span><span class="p">(</span><span class="n">gc</span><span class="p">.</span><span class="n">weighted_gpa_points_term</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">semester</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">weighted_gpa_points_semester</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="k">sum</span><span class="p">(</span><span class="n">gc</span><span class="p">.</span><span class="n">total_credit_hours_y1</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">semester</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">total_credit_hours_semester</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="k">avg</span><span class="p">(</span><span class="n">gc</span><span class="p">.</span><span class="n">grade_avg_term</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">semester</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_avg_semester</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="n">safe_divide</span><span class="p">(</span>
+<span class="w">            </span><span class="k">sum</span><span class="p">(</span><span class="n">gc</span><span class="p">.</span><span class="n">weighted_gpa_points_term</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">semester</span>
+<span class="w">            </span><span class="p">),</span>
+<span class="w">            </span><span class="k">sum</span><span class="p">(</span><span class="n">gc</span><span class="p">.</span><span class="n">total_credit_hours_term</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">yearid</span><span class="p">,</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">semester</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gpa_semester</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">gpa_calcs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gc</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__students"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">id</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__schools"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sch</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">gc</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sch</span><span class="p">.</span><span class="n">school_number</span>
+</code></pre></div>
+<p>The window expressions are unchanged except for the <code>gc.</code> prefix. <code>students.id</code>
+is unique and <code>schools.school_number</code> is unique, so the joins add no rows.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: <code>int_powerschool__gpa_cumulative</code>, join on the final select</strong></li>
+</ul>
+<p>Replace the final <code>select ... from needed_gpa</code> block with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">ng</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ng</span><span class="p">.</span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ng</span><span class="p">.</span><span class="n">earned_credits_cum</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ng</span><span class="p">.</span><span class="n">potential_credits_cum</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ng</span><span class="p">.</span><span class="n">earned_credits_cum_projected</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ng</span><span class="p">.</span><span class="n">earned_credits_cum_projected_s1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ng</span><span class="p">.</span><span class="n">potentialcrhrs_projected</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">potential_gpa_credits_cum_projected</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ng</span><span class="p">.</span><span class="n">potentialcrhrs_current</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">potential_gpa_credits_current_year</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">dcid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">students_dcid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">students_student_number</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_abbreviation</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">school_level</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">round</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">ng</span><span class="p">.</span><span class="n">weighted_points</span><span class="p">,</span><span class="w"> </span><span class="n">ng</span><span class="p">.</span><span class="n">potentialcrhrs</span><span class="p">),</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cumulative_y1_gpa</span><span class="p">,</span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="n">safe_divide</span><span class="p">(</span><span class="n">ng</span><span class="p">.</span><span class="n">unweighted_points</span><span class="p">,</span><span class="w"> </span><span class="n">ng</span><span class="p">.</span><span class="n">potentialcrhrs</span><span class="p">),</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cumulative_y1_gpa_unweighted</span><span class="p">,</span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="n">safe_divide</span><span class="p">(</span><span class="n">ng</span><span class="p">.</span><span class="n">weighted_points_projected</span><span class="p">,</span><span class="w"> </span><span class="n">ng</span><span class="p">.</span><span class="n">potentialcrhrs_projected</span><span class="p">),</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cumulative_y1_gpa_projected</span><span class="p">,</span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="n">safe_divide</span><span class="p">(</span>
+<span class="w">            </span><span class="n">ng</span><span class="p">.</span><span class="n">weighted_points_projected_s1</span><span class="p">,</span><span class="w"> </span><span class="n">ng</span><span class="p">.</span><span class="n">potentialcrhrs_projected_s1</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cumulative_y1_gpa_projected_s1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="n">safe_divide</span><span class="p">(</span>
+<span class="w">            </span><span class="n">ng</span><span class="p">.</span><span class="n">weighted_points_projected_s1_unweighted</span><span class="p">,</span>
+<span class="w">            </span><span class="n">ng</span><span class="p">.</span><span class="n">potentialcrhrs_projected_s1</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cumulative_y1_gpa_projected_s1_unweighted</span><span class="p">,</span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="n">safe_divide</span><span class="p">(</span>
+<span class="w">            </span><span class="n">ng</span><span class="p">.</span><span class="n">weighted_points_projected_unweighted</span><span class="p">,</span><span class="w"> </span><span class="n">ng</span><span class="p">.</span><span class="n">potentialcrhrs_projected</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cumulative_y1_gpa_projected_unweighted</span><span class="p">,</span>
+<span class="w">    </span><span class="n">round</span><span class="p">(</span>
+<span class="w">        </span><span class="n">safe_divide</span><span class="p">(</span><span class="n">ng</span><span class="p">.</span><span class="n">weighted_points_core</span><span class="p">,</span><span class="w"> </span><span class="n">ng</span><span class="p">.</span><span class="n">potentialcrhrs_core</span><span class="p">),</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">core_cumulative_y1_gpa</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">round</span><span class="p">(</span><span class="n">ng</span><span class="p">.</span><span class="n">gpa_needed_raw</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gpa_needed_for_cumulative_3_0</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">round</span><span class="p">(</span><span class="n">ng</span><span class="p">.</span><span class="n">gpa_needed_raw</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+<span class="w">    </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">round</span><span class="p">(</span><span class="n">ng</span><span class="p">.</span><span class="n">gpa_max_current_raw</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_cumulative_3_0_attainable</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">needed_gpa</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ng</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__students"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">ng</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">id</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__schools"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sch</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">ng</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sch</span><span class="p">.</span><span class="n">school_number</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: <code>int_powerschool__gpa_cumulative_year</code>, wrap the union</strong></li>
+</ul>
+<p>The model ends in a <code>union all</code> of 2 CTEs. Turn that union into a CTE and join
+on a new final select. Replace everything from the first <code>select</code> after the
+<code>projected_current_year</code> CTE's closing parenthesis to the end of the file with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">unioned</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">grade_level</span><span class="p">,</span>
+<span class="w">            </span><span class="n">earned_credits_cum</span><span class="p">,</span>
+<span class="w">            </span><span class="n">potential_gpa_credits_cum</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cumulative_y1_gpa</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cumulative_y1_gpa_unweighted</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_projected</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">completed_years</span>
+
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">grade_level</span><span class="p">,</span>
+<span class="w">            </span><span class="n">earned_credits_cum</span><span class="p">,</span>
+<span class="w">            </span><span class="n">potential_gpa_credits_cum</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cumulative_y1_gpa</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cumulative_y1_gpa_unweighted</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_projected</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">projected_current_year</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">grade_level</span><span class="p">,</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">earned_credits_cum</span><span class="p">,</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">potential_gpa_credits_cum</span><span class="p">,</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">cumulative_y1_gpa</span><span class="p">,</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">cumulative_y1_gpa_unweighted</span><span class="p">,</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">is_projected</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">dcid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">students_dcid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">students_student_number</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_abbreviation</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">school_level</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">unioned</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">u</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__students"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">id</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__schools"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sch</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sch</span><span class="p">.</span><span class="n">school_number</span>
+</code></pre></div>
+<p>The <code>projected_current_year</code> CTE's closing <code>)</code> must become <code>),</code> so <code>unioned</code>
+chains onto the <code>with</code> list.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Properties files, columns and PII</strong></li>
+</ul>
+<p>In each of the 3 properties files, after the <code>- name: schoolid</code> block, add:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">students_dcid</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">students_student_number</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">contains_pii</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_name</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_abbreviation</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_level</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Unit test inputs</strong></li>
+</ul>
+<p><code>int_powerschool__gpa_cumulative.yml</code> has unit test
+<code>unit_gpa_cumulative_needed_gpa</code> and <code>int_powerschool__gpa_cumulative_year.yml</code>
+has <code>unit_gpa_cumulative_year_running_and_projected</code>. In each, under <code>given:</code>,
+add 2 empty inputs after the existing ones:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('stg_powerschool__students')</span>
+<span class="w">  </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('stg_powerschool__schools')</span>
+<span class="w">  </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+</code></pre></div>
+<p>The joins are left joins, so the empty inputs leave every expected row intact.
+The <code>expect</code> rows do not list the new columns, and dbt compares only the columns
+an expected row names, so no <code>expect</code> edit is needed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build in Newark dev, run the unit tests, check parity</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippnewark<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippnewark/target/prod<span class="w"> </span>--select<span class="w"> </span>int_powerschool__gpa_term<span class="w"> </span>int_powerschool__gpa_cumulative<span class="w"> </span>int_powerschool__gpa_cumulative_year
+</code></pre></div>
+<p>Expected: 3 models, their data tests, and both unit tests pass. <code>dbt build</code> runs
+unit tests before the model. A unit test failure that names
+<code>stg_powerschool__students</code> or <code>stg_powerschool__schools</code> as "node not found"
+means Step 5 missed a file.</p>
+<p>Then, one query per model, via the BigQuery MCP:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="s1">'dev'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">side</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">format</span><span class="p">(</span><span class="s1">'%T|%T'</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">schoolid</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_keys</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">students_student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_sn</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">school_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_school</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippnewark_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gpa_cumulative</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="s1">'prod'</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">format</span><span class="p">(</span><span class="s1">'%T|%T'</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">schoolid</span><span class="p">)),</span>
+<span class="w">    </span><span class="k">null</span><span class="p">,</span>
+<span class="w">    </span><span class="k">null</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippnewark_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gpa_cumulative</span><span class="o">`</span>
+</code></pre></div>
+<p>For <code>gpa_term</code> the key is
+<code>format('%T|%T|%T|%T', studentid, schoolid, yearid, term_name)</code>; for
+<code>gpa_cumulative_year</code> it is
+<code>format('%T|%T|%T', studentid, schoolid, academic_year)</code>.</p>
+<p>Expected: <code>n</code> and <code>n_keys</code> equal across sides for all 3 models. <code>null_sn</code> is 0.
+<code>null_school</code> may be small but non-zero on <code>gpa_term</code> and <code>gpa_cumulative_year</code>:
+a stored grade can carry a <code>schoolid</code> that is not in <code>schools</code> (transfer
+credit). Record the count; a non-zero value is not a failure. If <code>null_sn</code> is
+non-zero, a <code>studentid</code> on stored grades has no students row, which is a data
+problem to report, not fix.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_term.sql<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative.sql<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative_year.sql<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gpa_term.yml<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gpa_cumulative.yml<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gpa_cumulative_year.yml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Commit message:</p>
+<div class="highlight"><pre><span></span><code>feat(powerschool): carry student identity and school columns on the GPA intermediates
+
+Left joins to students and schools on gpa_term, gpa_cumulative, and
+gpa_cumulative_year; grain unchanged. Unit tests gain empty inputs for the 2
+new refs.
+
+Refs #5228
+
+Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>add<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_term.sql<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative.sql<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative_year.sql<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gpa_term.yml<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gpa_cumulative.yml<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gpa_cumulative_year.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>commit<span class="w"> </span>-F<span class="w"> </span>/workspaces/teamster/.claude/scratch/commit-msg.txt
+</code></pre></div>
+<hr />
+<h3 id="task-3-new-int_powerschool__calendar_day">Task 3: New <code>int_powerschool__calendar_day</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__calendar_day.sql</code></li>
+<li>Create:
+  <code>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__calendar_day.yml</code></li>
+<li>Read only:
+  <code>src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__calendar_day.yml</code>
+  for the staging column list and types.</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>stg_powerschool__calendar_day</code> (every column),
+  <code>stg_powerschool__terms</code> (<code>schoolid</code>, <code>firstday</code>, <code>lastday</code>, <code>isyearrec</code>,
+  <code>yearid</code>, <code>academic_year</code>), <code>stg_powerschool__schools</code> (<code>school_number</code>,
+  <code>name</code>, <code>abbreviation</code>, <code>school_level</code>, <code>schoolcity</code>).</li>
+<li>
+<p>Produces: one row per staging calendar day, same <code>id</code>, plus <code>yearid int64</code>,
+  <code>academic_year int64</code>, <code>school_name string</code>, <code>school_abbreviation string</code>,
+  <code>school_level string</code>, <code>schoolcity string</code>. PR B's
+  <code>int_students__calendar_day</code> and <code>int_google_sheets__dibels_pm_expectations</code>
+  read these.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model</strong></p>
+</li>
+</ul>
+<p><code>int_powerschool__calendar_day.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">cd</span><span class="p">.</span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">yearid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_abbreviation</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">school_level</span><span class="p">,</span>
+<span class="w">    </span><span class="n">sch</span><span class="p">.</span><span class="n">schoolcity</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__calendar_day"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cd</span>
+<span class="cm">/* left join: a day with no covering year term keeps flowing with a null year,</span>
+<span class="cm">   which is what kipptaf's int_students__calendar_day does today */</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__terms"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">t</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">schoolid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">date_value</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">firstday</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">lastday</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">isyearrec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__schools"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sch</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sch</span><span class="p">.</span><span class="n">school_number</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the properties file</strong></li>
+</ul>
+<p>Copy the <code>columns:</code> list from <code>stg_powerschool__calendar_day.yml</code> (names and
+<code>data_type</code> only; drop descriptions if any are long) and append the 6 new
+columns. The file:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_powerschool__calendar_day</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">One row per PowerSchool calendar day with the covering year term and the</span>
+<span class="w">      </span><span class="no">school's name, abbreviation, level, and city attached, so consumers do not</span>
+<span class="w">      </span><span class="no">join terms or schools themselves. Left joins: a day outside every year</span>
+<span class="w">      </span><span class="no">term has a null yearid and academic_year.</span>
+<span class="w">    </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">unique</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">column_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">          </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># every column of stg_powerschool__calendar_day, copied from its</span>
+<span class="w">      </span><span class="c1"># properties file, then:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">yearid</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">academic_year</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_abbreviation</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_level</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schoolcity</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<p>Replace the comment with the real copied list before committing. The <code>unique</code>
+test on <code>id</code> is the grain guard: if 2 year terms ever overlap for one school and
+date, the join fans out and the test errors.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build in Newark dev and check the count</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippnewark<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippnewark/target/prod<span class="w"> </span>--select<span class="w"> </span>int_powerschool__calendar_day
+</code></pre></div>
+<p>Expected: the model and the <code>unique</code> test pass. Then:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="s1">'dev'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">side</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">yearid</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_year</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">school_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_school</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippnewark_powerschool</span><span class="p">.</span><span class="n">int_powerschool__calendar_day</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'prod_staging'</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippnewark_powerschool</span><span class="p">.</span><span class="n">stg_powerschool__calendar_day</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: equal <code>n</code>. <code>null_year</code> may be non-zero (days outside any year term);
+record it. <code>null_school</code> should be 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__calendar_day.sql<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__calendar_day.yml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Commit message:</p>
+<div class="highlight"><pre><span></span><code>feat(powerschool): add int_powerschool__calendar_day with year term and school columns
+
+Refs #5228
+
+Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>add<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__calendar_day.sql<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__calendar_day.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>commit<span class="w"> </span>-F<span class="w"> </span>/workspaces/teamster/.claude/scratch/commit-msg.txt
+</code></pre></div>
+<hr />
+<h3 id="task-4-entry_school_abbreviation-on-base_powerschool__student_enrollments">Task 4: <code>entry_school_abbreviation</code> on <code>base_powerschool__student_enrollments</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/base/base_powerschool__student_enrollments.sql</code></li>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/base/properties/base_powerschool__student_enrollments.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>entry_schoolid</code> from the <code>with_boy_status_window</code> CTE, and
+  <code>stg_powerschool__schools.abbreviation</code>.</li>
+<li>
+<p>Produces: <code>entry_school_abbreviation string</code>, null when <code>entry_schoolid</code> is
+  null. PR B's <code>int_kippadb__roster</code> reads it in place of its own schools join.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the column and the second schools join</strong></p>
+</li>
+</ul>
+<p>In the final select, after the line <code>sch.abbreviation as school_abbreviation,</code>
+add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">entry_sch</span><span class="p">.</span><span class="n">abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">entry_school_abbreviation</span><span class="p">,</span>
+</code></pre></div>
+<p>After the existing join</p>
+<div class="highlight"><pre><span></span><code><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__schools"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sch</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sch</span><span class="p">.</span><span class="n">school_number</span>
+</code></pre></div>
+<p>add:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__schools"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">entry_sch</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">entry_schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">entry_sch</span><span class="p">.</span><span class="n">school_number</span>
+</code></pre></div>
+<p><code>entry_schoolid</code> is a per-student max over the window CTE, one value per
+student, so the join is 1:1 and adds no rows.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Properties file</strong></li>
+</ul>
+<p>After the <code>- name: school_abbreviation</code> block add:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">entry_school_abbreviation</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Abbreviation of the school the student first enrolled in within the network</span>
+<span class="w">    </span><span class="no">(entry_schoolid). Null when entry_schoolid is null.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build in Newark dev and check parity</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippnewark<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippnewark/target/prod<span class="w"> </span>--select<span class="w"> </span>base_powerschool__student_enrollments
+</code></pre></div>
+<p>Expected: the model and its tests pass. Then:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="s1">'dev'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">side</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">entry_schoolid</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">entry_school_abbreviation</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">unmapped</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippnewark_powerschool</span><span class="p">.</span><span class="n">base_powerschool__student_enrollments</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'prod'</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippnewark_powerschool</span><span class="p">.</span><span class="n">base_powerschool__student_enrollments</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: equal <code>n</code>; <code>unmapped</code> is 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/dbt/powerschool/models/sis/base/base_powerschool__student_enrollments.sql<span class="w"> </span>src/dbt/powerschool/models/sis/base/properties/base_powerschool__student_enrollments.yml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Commit message:</p>
+<div class="highlight"><pre><span></span><code>feat(powerschool): add entry_school_abbreviation to base_powerschool__student_enrollments
+
+Refs #5228
+
+Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>add<span class="w"> </span>src/dbt/powerschool/models/sis/base/base_powerschool__student_enrollments.sql<span class="w"> </span>src/dbt/powerschool/models/sis/base/properties/base_powerschool__student_enrollments.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>commit<span class="w"> </span>-F<span class="w"> </span>/workspaces/teamster/.claude/scratch/commit-msg.txt
+</code></pre></div>
+<hr />
+<h3 id="task-5-build-the-6-changed-models-in-camden-and-paterson">Task 5: Build the 6 changed models in Camden and Paterson</h3>
+<p><strong>Files:</strong> none modified. Verification only.</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the 6 models from Tasks 1 to 4.</li>
+<li>
+<p>Produces: parity evidence for the PR body.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Camden</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippcamden
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippcamden<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippcamden/target/prod<span class="w"> </span>--select<span class="w"> </span>base_powerschool__final_grades<span class="w"> </span>base_powerschool__student_enrollments<span class="w"> </span>int_powerschool__gpa_term<span class="w"> </span>int_powerschool__gpa_cumulative<span class="w"> </span>int_powerschool__gpa_cumulative_year<span class="w"> </span>int_powerschool__calendar_day
+</code></pre></div>
+<p>Expected: 6 models, tests, and 2 unit tests pass. Run the Task 1, 2, 3, and 4
+parity queries with <code>kippcamden</code> in place of <code>kippnewark</code> in both dataset names.
+Expected: same pattern of results.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Paterson</strong></li>
+</ul>
+<p>Same 2 commands with <code>kipppaterson</code>. Paterson disables
+<code>int_powerschool__section_grade_config</code>; none of the 6 models read it. Expected:
+same results.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Record</strong></li>
+</ul>
+<p>Write every count pair to <code>/workspaces/teamster/.claude/scratch/pr-a-parity.md</code>
+(gitignored), one table per region. Counts only. Task 7 quotes them.</p>
+<hr />
+<h3 id="task-6-re-include-the-package-in-kippmiami-with-the-16-archive-hooks">Task 6: Re-include the package in kippmiami with the 16 archive hooks</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kippmiami/packages.yml</code></li>
+<li>Modify: <code>src/dbt/kippmiami/dbt_project.yml</code></li>
+<li>Modify: <code>src/dbt/kippmiami/CLAUDE.md</code> (the PowerSchool paragraph)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the <code>powerschool</code> package with the ODBC staging variant and the 58
+  frozen externals at
+  <code>gs://teamster-kippmiami/dagster/kippmiami/powerschool/&lt;table&gt;/*</code>.</li>
+<li>
+<p>Produces: about 120 <code>kippmiami_powerschool.*</code> tables once the user
+  materializes in prod, now including <code>int_powerschool__calendar_day</code> and the
+  new columns on the other 5 models.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the package</strong></p>
+</li>
+</ul>
+<p>In <code>src/dbt/kippmiami/packages.yml</code>, under <code>packages:</code>, after
+<code>- local: ../focus</code> add:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">local</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../powerschool</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Replay the <code>models:</code> and <code>sources:</code> blocks from commit
+      <code>409be13dc9</code></strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>show<span class="w"> </span>409be13dc9<span class="w"> </span>--<span class="w"> </span>src/dbt/kippmiami/dbt_project.yml<span class="w"> </span>&gt;<span class="w"> </span>/workspaces/teamster/.claude/scratch/pr1-hooks.diff
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>apply<span class="w"> </span>/workspaces/teamster/.claude/scratch/pr1-hooks.diff
+</code></pre></div>
+<p>If <code>apply</code> fails because the surrounding lines moved, apply it by hand: the diff
+adds a <code>powerschool:</code> block under <code>models:</code> (sibling of <code>focus:</code> and
+<code>renlearn:</code>) and a top-level <code>sources:</code> block. Then add the 16th hook. In the
+<code>odbc:</code> block, after the <code>stg_powerschool__terms:</code> hook, add:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">stg_powerschool__calendar_day</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">+post-hook</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">delete from {{ this }} where date_value &gt;= '2026-07-01'</span>
+</code></pre></div>
+<p>This is the hook <code>src/dbt/kippmiami/CLAUDE.md</code> records as missing from the first
+rebuild (#5224 deleted those rows by hand).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Install and parse</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippmiami
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippmiami<span class="w"> </span>--target<span class="w"> </span>dev
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>ls<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippmiami<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--resource-type<span class="w"> </span>model<span class="w"> </span>--output<span class="w"> </span>path<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">'sis/staging/odbc/'</span>
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>ls<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippmiami<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--resource-type<span class="w"> </span>model<span class="w"> </span>--output<span class="w"> </span>name<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">'int_powerschool__calendar_day'</span>
+</code></pre></div>
+<p>Expected: parse succeeds; the first count is the same as PR 1 reported (82 ODBC
+staging models enabled minus the ones the replayed block disables); the second
+count is 1.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Stage the externals into your dev schema and build the package</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>run-operation<span class="w"> </span>stage_external_sources<span class="w"> </span>--args<span class="w"> </span><span class="s2">"select: powerschool_odbc"</span><span class="w"> </span>--vars<span class="w"> </span><span class="s1">'{ext_full_refresh: true}'</span><span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippmiami
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippmiami<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--select<span class="w"> </span>package:powerschool
+</code></pre></div>
+<p>This lands in <code>zz_cbini_kippmiami_powerschool</code>, so prod is untouched. Expected:
+every model builds; <code>severity: warn</code> data tests may warn on frozen data, record
+any warning for the PR body. Run in the foreground; it takes several minutes.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify the new columns against the dev archive</strong></li>
+</ul>
+<p>Identity check, expected <code>bare</code> 0 and <code>null_sn</code> 0 on all 3:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="s1">'gpa_term'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">students_student_number</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">8400000000</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bare</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">students_student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_sn</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippmiami_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gpa_term</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="s1">'gpa_cumulative'</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">students_student_number</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">8400000000</span><span class="p">),</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">students_student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">),</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippmiami_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gpa_cumulative</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="s1">'gpa_cumulative_year'</span><span class="p">,</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">students_student_number</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">8400000000</span><span class="p">),</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">students_student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">),</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippmiami_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gpa_cumulative_year</span><span class="o">`</span>
+</code></pre></div>
+<p>Row parity against prod for the 3 GPA tables plus <code>calendar_day</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="s1">'dev'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">side</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippmiami_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gpa_term</span><span class="o">`</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'prod'</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippmiami_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gpa_term</span><span class="o">`</span>
+</code></pre></div>
+<p>Repeat for <code>int_powerschool__gpa_cumulative</code>,
+<code>int_powerschool__gpa_cumulative_year</code>, and compare
+<code>int_powerschool__calendar_day</code> (dev) to <code>stg_powerschool__calendar_day</code> (prod).
+Expected: equal counts (prod values on 2026-09-09: 16,512 / 3,053 / 5,975).</p>
+<p>Bound check on the 16th hook, expected 0:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">date_value</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="s1">'2026-07-01'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">over_bound</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kippmiami_powerschool</span><span class="p">.</span><span class="n">stg_powerschool__calendar_day</span><span class="o">`</span>
+</code></pre></div>
+<p>Append every result to <code>/workspaces/teamster/.claude/scratch/pr-a-parity.md</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Confirm the Dagster code location loads</strong></li>
+</ul>
+<p>Write <code>tests/dagster/test_zz_kippmiami_defs.py</code> in the worktree:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_kippmiami_definitions_validate</span><span class="p">():</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="s2">"uv"</span><span class="p">,</span>
+            <span class="s2">"run"</span><span class="p">,</span>
+            <span class="s2">"dagster"</span><span class="p">,</span>
+            <span class="s2">"definitions"</span><span class="p">,</span>
+            <span class="s2">"validate"</span><span class="p">,</span>
+            <span class="s2">"-m"</span><span class="p">,</span>
+            <span class="s2">"teamster.code_locations.kippmiami.definitions"</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="n">cwd</span><span class="o">=</span><span class="s2">"/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity"</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+<p>Run from the worktree:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/dagster/test_zz_kippmiami_defs.py<span class="w"> </span>-s
+</code></pre></div>
+<p>Expected: pass. Delete the test file after it passes. If validation fails on the
+external asset keys, stop and report; do not add producer assets.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Record the second rebuild in kippmiami CLAUDE.md</strong></li>
+</ul>
+<p>In <code>src/dbt/kippmiami/CLAUDE.md</code>, in the PowerSchool paragraph, replace the
+sentence beginning "The rebuild ran 2026-09-09 (#5012)" so the paragraph reads
+that the archive was rebuilt on 2026-09-09 (#5012) and again after #5228 to add
+identity and school columns to the GPA, final grades, calendar day, and student
+enrollment models; the package is re-included for each rebuild and removed
+after. Replace the trailing "A 16th hook belongs in that recipe" sentences with
+one sentence saying the 16th hook (<code>stg_powerschool__calendar_day</code>, delete
+<code>date_value &gt;= '2026-07-01'</code>) is now in the recipe. Keep the rest of the
+paragraph. In the "Source Packages" section, the sentence "Miami does not use
+<code>edplan</code>, <code>overgrad</code>, <code>pearson</code>, <code>powerschool</code>, or <code>titan</code>" stays true after PR
+B removes the package again, so leave it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/dbt/kippmiami/packages.yml<span class="w"> </span>src/dbt/kippmiami/dbt_project.yml<span class="w"> </span>src/dbt/kippmiami/CLAUDE.md<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Commit message:</p>
+<div class="highlight"><pre><span></span><code>chore(kippmiami): re-include the powerschool package with the 16 archive hooks for the second rebuild
+
+Refs #5228
+
+Co-Authored-By: Claude Fable 5.1 &lt;noreply@anthropic.com&gt;
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>add<span class="w"> </span>src/dbt/kippmiami/packages.yml<span class="w"> </span>src/dbt/kippmiami/dbt_project.yml<span class="w"> </span>src/dbt/kippmiami/CLAUDE.md<span class="w"> </span>src/dbt/kippmiami/package-lock.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>commit<span class="w"> </span>-F<span class="w"> </span>/workspaces/teamster/.claude/scratch/commit-msg.txt
+</code></pre></div>
+<p><code>package-lock.yml</code> changes when <code>dbt deps</code> adds the package; commit it, as PR 1
+did.</p>
+<hr />
+<h3 id="task-7-push-and-open-the-pr">Task 7: Push and open the PR</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Create: <code>/workspaces/teamster/.claude/scratch/pr-a-body.md</code> (gitignored)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity<span class="w"> </span>push
+</code></pre></div>
+<p>The branch tracks <code>origin</code> already.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the PR body from the template</strong></li>
+</ul>
+<p>Copy <code>.github/pull_request_template.md</code> to
+<code>/workspaces/teamster/.claude/scratch/pr-a-body.md</code> and fill it in. Keep every
+template line. One line per paragraph, no hard wraps. Summary:</p>
+<blockquote>
+<p>When merged, this pull request will give the shared <code>powerschool</code> package's
+GPA, final grades, calendar day, and student enrollment models the student
+identity and school columns that kipptaf joins for today
+(<code>students_student_number</code>, <code>school_name</code>, <code>school_abbreviation</code>,
+<code>school_level</code>, and <code>entry_school_abbreviation</code>), and re-include the package
+in <code>kippmiami</code> with the 16 archive hooks so one prod build lands those columns
+in the Miami archive. kipptaf is unchanged here; PR B (#5228) reads the new
+columns, drops Miami from <code>stg_powerschool__students</code> and 14 more unions, and
+removes the package from kippmiami again.</p>
+</blockquote>
+<p>Reviewer Notes, one line each: every new join is a left join and every changed
+model's row count equals prod in all 3 NJ regions;
+<code>int_powerschool__calendar_day</code> is new and guarded by a <code>unique</code> test on <code>id</code>;
+the 2 GPA unit tests gain empty inputs for the 2 new refs; the hooks are the</p>
+<h1 id="5201-set-plus-the-calendar_day-bound-5224-recorded-dbt-cloud-ci-builds">5201 set plus the <code>calendar_day</code> bound #5224 recorded; dbt Cloud CI builds</h1>
+<p>kipptaf only and proves nothing here.</p>
+<p>PII: <code>students_student_number</code> is tagged on 4 package models; state that.</p>
+<p>"For Claude": paste the count tables from
+<code>/workspaces/teamster/.claude/scratch/pr-a-parity.md</code>, any <code>severity: warn</code>
+output from Task 6 Step 4, and the null-school and null-year counts from Tasks 2
+and 3. Check the self-review boxes that apply. Leave
+<code>stage_external_sources --target staging</code> unchecked and say why: the kippmiami
+externals are prod-only and CI does not build kippmiami.</p>
+<p>End the body with <code>Refs #5228</code> and <code>Refs #5012</code>, then the line
+<code>🤖 Generated with [Claude Code](https://claude.com/claude-code)</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Open the PR</strong></li>
+</ul>
+<p>Use <code>mcp__github__create_pull_request</code> with <code>owner: TEAMSchools</code>,
+<code>repo: teamster</code>, <code>head: cbini/refactor/claude-powerschool-package-identity</code>,
+<code>base: main</code>, title
+<code>feat(powerschool): carry student identity and school columns on the package facts and rebuild the Miami archive (PR A)</code>,
+and the body from Step 2. Confirm the returned title and body match.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Watch CI and review</strong></li>
+</ul>
+<p>Invoke <code>pr-ci-review</code>. Expected: Trunk passes; dbt Cloud CI passes with no
+kipptaf models selected; the Dagster Cloud branch deployments for the 4
+districts build. When <code>claude-review</code> posts, invoke
+<code>superpowers:receiving-code-review</code> before acting on it.</p>
+<hr />
+<h2 id="after-merge-user-run-not-part-of-this-plans-commits">After merge (user-run, not part of this plan's commits)</h2>
+<ol>
+<li>NJ regions: the 6 changed models materialize on each region's next upstream
+   update. Confirm in Dagster that
+   <code>kippnewark/powerschool/int_powerschool__calendar_day</code> and the 5 others have
+   a materialization in each region.</li>
+<li>Miami: Dagster UI, code location <code>kippmiami</code>, asset group <code>powerschool</code>,
+   materialize all. Branch deployments read <code>gs://teamster-test</code>, so this runs
+   on prod.</li>
+<li>Claude re-runs the Task 6 Step 5 queries against <code>kippmiami_powerschool</code>.
+   Expected: identical to dev. Then PR B, with its own plan.</li>
+</ol>
+<h2 id="self-review-notes">Self-review notes</h2>
+<ul>
+<li>Spec coverage: "Package changes (PR A)" table rows map to Tasks 1 to 4; the
+  PII line is in Tasks 1 and 2; the kippmiami include is Task 6; "Delivery" step
+  1 is Task 7 and step 2 is "After merge". The spec's kipptaf sections are PR B.</li>
+<li>Spec correction folded in here: the spec says <code>gpa_term_pivot</code> and
+  <code>gpa_term_current</code> "inherit" the new columns. Both list columns explicitly and
+  do not. No kipptaf reader needs identity on them, so they are unchanged.</li>
+<li>Type consistency: the 5 new column names are identical in every task and in
+  the spec. <code>entry_school_abbreviation</code> appears only in Task 4 and the spec.</li>
+<li>The Miami archive dry run in Task 6 covers the spec's "Miami archive" checks
+  in dev; the same queries run in prod after merge.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
