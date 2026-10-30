@@ -23,4 +23,8 @@ select
     cast(
         _2025_pm3_scale_score_expanded_standard_scorex as int64
     ) as pm3_2025_scale_score,
+
+    -- Focus has repeated a student's row for one year and subject
+    row_number() over (partition by student_id, syear, subject order by id desc)
+    = 1 as is_current_report_row,
 from {{ source("focus", "florida_fast_report_students") }}

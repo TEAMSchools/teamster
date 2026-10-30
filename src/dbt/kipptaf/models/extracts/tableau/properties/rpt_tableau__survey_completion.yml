@@ -76,6 +76,14 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: manager_name
+        data_type: string
+        description: >-
+          Formatted name of the staff member's current manager, from
+          int_people__staff_roster. Null where the roster records no manager.
+        config:
+          meta:
+            contains_pii: true
       - name: reports_to_mail
         data_type: string
         config:

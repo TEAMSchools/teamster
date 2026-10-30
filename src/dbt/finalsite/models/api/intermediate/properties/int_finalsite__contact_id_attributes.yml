@@ -31,14 +31,91 @@ models:
               config:
                 where: focus_student_id_prefixed is not null
                 severity: warn
-      - name: power_school_contact_id
-        data_type: string
-        description: PowerSchool contact id from the `id_attributes` array.
       - name: powerschool_student_number
         data_type: string
         description: PowerSchool student number from the `id_attributes` array.
+        data_tests:
+          - unique:
+              name: int_finalsite__contact_id_attributes__powerschool_student_number_unique
+              description: >-
+                More than 1 Finalsite record carries the same PowerSchool
+                student number, usually a returning student who re-applied under
+                a new record. Downstream, contact models keep only the record
+                flagged `is_latest_powerschool_student_number`. Merge the
+                duplicate records, or clear the PowerSchool student number on
+                the wrong one, in Finalsite.
+              config:
+                where: powerschool_student_number is not null
+                severity: warn
+      - name: power_school_contact_id
+        data_type: string
+        description: PowerSchool contact id from the `id_attributes` array.
+      - name: is_latest_powerschool_student_number
+        data_type: boolean
+        description:
+          True on the one record per PowerSchool student number that consumers
+          should use — the newest `school_year_start`, then the latest
+          `application_submit_date`, then the highest `finalsite_enrollment_id`.
+          False on older duplicates, and on every record with no PowerSchool
+          student number.
       - name: focus_student_id
         data_type: string
         description:
           Finalsite-minted Focus student id from the `id_attributes` array,
           without the FLDOE district prefix.
+
+unit_tests:
+  - name: test_contact_id_attributes_latest_powerschool_student_number
+    description:
+      Two records share a PowerSchool student number. The one with the newer
+      school_year_start is flagged latest, even though the older one was
+      submitted later. Two records in the same year fall back to the later
+      application_submit_date. A record with no student number is never flagged.
+    model: int_finalsite__contact_id_attributes
+    given:
+      - input: ref('stg_finalsite__contacts')
+        format: sql
+        rows: |
+          select
+            'old' as finalsite_enrollment_id,
+            2025 as school_year_start,
+            '2026-01-15' as application_submit_date,
+            [struct('powerschool_student_number' as field_name, struct('1001' as string_value) as value)] as id_attributes
+          union all
+          select
+            'new', 2026, '2025-11-01',
+            [struct('powerschool_student_number' as field_name, struct('1001' as string_value) as value)]
+          union all
+          select
+            'early', 2026, '2025-10-01',
+            [struct('powerschool_student_number' as field_name, struct('1002' as string_value) as value)]
+          union all
+          select
+            'late', 2026, '2025-12-01',
+            [struct('powerschool_student_number' as field_name, struct('1002' as string_value) as value)]
+          union all
+          select
+            'none', 2026, '2025-12-01',
+            [struct('focus_student_id' as field_name, struct('77' as string_value) as value)]
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: old,
+            is_latest_powerschool_student_number: false,
+          }
+        - {
+            finalsite_enrollment_id: new,
+            is_latest_powerschool_student_number: true,
+          }
+        - {
+            finalsite_enrollment_id: early,
+            is_latest_powerschool_student_number: false,
+          }
+        - {
+            finalsite_enrollment_id: late,
+            is_latest_powerschool_student_number: true,
+          }
+        - {
+            finalsite_enrollment_id: none,
+            is_latest_powerschool_student_number: false,
+          }

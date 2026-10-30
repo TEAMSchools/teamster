@@ -118,9 +118,12 @@ models:
       - name: contact_name
         data_type: string
         description:
-          Contact's name — the relationship's `rel_name` for `contact_1` and
-          `contact_2`, or the concatenated first/last name from the matching
-          `emrg_N_name_*` fields for an emergency slot.
+          Contact's name — first and last name joined with a space, from the
+          related person's own Finalsite contact record for a parent slot, or
+          from the matching `emrg_N_name_*` fields for an emergency slot. A
+          parent slot never uses the relationship's `rel_name`, which is a copy
+          of the name stored per student and can differ between siblings, so the
+          same person would carry 2 names.
         config:
           meta:
             contains_pii: true
@@ -231,7 +234,8 @@ unit_tests:
       phone_primary regardless of type. phone_3 carries a number with no type
       label, the case that reaches none of the typed columns. Phones arrive
       already normalized to E.164 from `stg_finalsite__contacts`; this model
-      passes them through unchanged.
+      passes them through unchanged. The relationship's `rel_name` differs from
+      the contact record's name, and contact_name takes the record's.
     model: int_finalsite__student_contacts
     given:
       - input: ref('stg_finalsite__contact_relationships')
@@ -241,7 +245,7 @@ unit_tests:
             'stu1' as finalsite_enrollment_id,
             'rel1' as relationship_id,
             'con1' as rel_id,
-            'Jane Doe' as rel_name,
+            'Janie Q Doe' as rel_name,
             'parent' as rel_type,
             true as is_primary,
             true as is_financial,
