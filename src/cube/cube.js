@@ -237,7 +237,7 @@ async function resolveAccess(email) {
 function jwtRejectionReason(err) {
   if (err?.name === "TokenExpiredError") {
     return String(err.message).includes("maxAge")
-      ? "Token too old: exceeds the 12h maxAge cap measured from `iat`. Re-mint it (in the Playground, clear localhost local storage or re-save the security context)."
+      ? "Token too old: exceeds the 12h maxAge cap measured from `iat`. Re-mint it: mint a new token for each request rather than reusing one."
       : "Token expired: past its own `exp`.";
   }
   if (err?.name === "JsonWebTokenError") {
@@ -363,50 +363,53 @@ module.exports = {
     // `auth` is the raw bearer token STRING (a custom checkAuth replaces Cube's
     // default JWT verify+decode). Verify the HS256 signature against
     // CUBEJS_API_SECRET ourselves, then resolve identity from the email claim.
-    // An invalid/expired token → clean 403 (see catch below). A request with no
-    // Authorization header intentionally resolves to the empty default-deny
-    // context (200 + zero rows), NOT a 403: the data is fully protected either
-    // way, and this lets an unauthenticated capability probe get a no-access
-    // context rather than an error. The 403 is reserved for a token that is
-    // present but invalid.
+    // An invalid/expired token → clean 403 (see catch below). No token at all
+    // is a 401: resolving it to the empty default-deny context instead reached
+    // the caller as a 500 "You requested hidden member" on every view, which
+    // reads as an outage and tells the caller to edit the model.
+    if (!auth) {
+      throw new CubejsHandlerError(
+        401,
+        "Unauthorized",
+        "No Authorization header. Send a signed token as `Authorization: <token>`.",
+      );
+    }
     let payload;
-    if (auth) {
-      try {
-        // maxAge is a defense-in-depth cap independent of the token's own
-        // `exp`: it derives from `iat` (issued-at) instead, so a compromised
-        // or misconfigured minter can't extend a token's life by inflating
-        // `exp` alone — jsonwebtoken rejects any token missing `iat` once
-        // maxAge is set (fails closed). `mcp/server.py`'s `_mint_token` sets
-        // both `iat` and a 5-minute `exp`, so this 12h ceiling is a backstop,
-        // not the primary control.
-        payload = jwt.verify(auth, process.env.CUBEJS_API_SECRET, {
-          algorithms: ["HS256"],
-          maxAge: "12h",
-          // Absorb minor minter/server clock skew so a short-lived (5-min) token
-          // isn't spuriously 403'd near its edges. Small relative to the token
-          // life, and it fails closed — an expired token past the tolerance is
-          // still rejected.
-          clockTolerance: 30,
-        });
-      } catch (err) {
-        // Mirror Cube's default checkAuth: a bad/expired token is a clean 403,
-        // not a bare-Error 500 (only CubejsHandlerError carries a status).
-        //
-        // Say WHICH check failed. A single "Invalid token" for every failure is
-        // what makes the maxAge cap a trap rather than a control: a Playground
-        // token cached over 12h denies every view, and the symptom is
-        // indistinguishable from a wrong secret or a missing one — so it reads as
-        // an access-policy bug and costs an hour. The status stays 403 and the
-        // control is unchanged; only the message differs. This leaks nothing
-        // useful: a caller already knows their own token's age, and learning
-        // "too old" versus "bad signature" does not help forge a signature.
-        throw new CubejsHandlerError(
-          403,
-          "Forbidden",
-          jwtRejectionReason(err),
-          err,
-        );
-      }
+    try {
+      // maxAge is a defense-in-depth cap independent of the token's own
+      // `exp`: it derives from `iat` (issued-at) instead, so a compromised
+      // or misconfigured minter can't extend a token's life by inflating
+      // `exp` alone — jsonwebtoken rejects any token missing `iat` once
+      // maxAge is set (fails closed). `mcp/server.py`'s `_mint_token` sets
+      // both `iat` and a 5-minute `exp`, so this 12h ceiling is a backstop,
+      // not the primary control.
+      payload = jwt.verify(auth, process.env.CUBEJS_API_SECRET, {
+        algorithms: ["HS256"],
+        maxAge: "12h",
+        // Absorb minor minter/server clock skew so a short-lived (5-min) token
+        // isn't spuriously 403'd near its edges. Small relative to the token
+        // life, and it fails closed — an expired token past the tolerance is
+        // still rejected.
+        clockTolerance: 30,
+      });
+    } catch (err) {
+      // Mirror Cube's default checkAuth: a bad/expired token is a clean 403,
+      // not a bare-Error 500 (only CubejsHandlerError carries a status).
+      //
+      // Say WHICH check failed. A single "Invalid token" for every failure is
+      // what makes the maxAge cap a trap rather than a control: a Playground
+      // token cached over 12h denies every view, and the symptom is
+      // indistinguishable from a wrong secret or a missing one — so it reads as
+      // an access-policy bug and costs an hour. The status stays 403 and the
+      // control is unchanged; only the message differs. This leaks nothing
+      // useful: a caller already knows their own token's age, and learning
+      // "too old" versus "bad signature" does not help forge a signature.
+      throw new CubejsHandlerError(
+        403,
+        "Forbidden",
+        jwtRejectionReason(err),
+        err,
+      );
     }
     // Admin-gated emulation (#4526): an approved impersonator may pass an
     // `act_as` claim and get that target's real HR-derived context. For anyone

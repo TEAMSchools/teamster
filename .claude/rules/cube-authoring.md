@@ -319,10 +319,10 @@ access policies above). `cube.js` exports exactly `driverFactory`,
 - **`checkAuth` (REST/MCP)** receives the RAW bearer token STRING — a custom
   `checkAuth` replaces Cube's default JWT verify+decode. It verifies the HS256
   signature against `CUBEJS_API_SECRET` itself, reads the `email` claim, and
-  sets `req.securityContext = await resolveAccess(email)`. No/invalid token →
-  `jwt.verify` throws → Cube rejects the request; no `Authorization` header
-  resolves to the empty default-deny context. **It runs in developer mode too**,
-  so the local REST Playground resolves a pasted `{"email": ...}`; do not assume
+  sets `req.securityContext = await resolveAccess(email)`. An invalid token →
+  `jwt.verify` throws → Cube rejects the request with a 403; no `Authorization`
+  header is a 401. **It runs in developer mode too**, so the local REST
+  Playground resolves a pasted `{"email": ...}`; do not assume
   `NODE_ENV=production` is needed. `jwt.verify` also enforces `maxAge: "12h"`
   derived from `iat`, which rejects a stale cached Playground token and any
   token with no `iat` at all. Cube Cloud's `iss: "cubecloud"` context never
