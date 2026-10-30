@@ -1291,3 +1291,27 @@ def test_a_proof_classifies_rows_that_sit_in_another_cell(duck, tmp_path, offlin
     (item,) = items
     assert item["suggestion"] == "cause"
     assert item["cause"][0]["n_rows"] == 1
+
+
+def test_two_cell_sets_link_on_a_run_saved_before_cell_sums():
+    # A run with no per-cell sums used to crash on the second cell set.
+    sib = Group("mastery-b", (("abbreviation", "X"),), "cube_only", 3, 3)
+    cell = CELLS_RUN["diff_cells"][0]
+    run = _run(
+        [_group(3), sib],
+        cells=[
+            CellDiff("mastery", {"differs": 1}),
+            CellDiff("mastery-b", {"differs": 1}),
+        ],
+        diff_cells=[cell, {**cell, "comparison": "mastery-b"}],
+    )
+    items = _items2(run)
+    for item in items:
+        if item["kind"] == "group":
+            item.update(suggestion="cause", cause=[{"side": "dashboard",
+                        "step": "C1", "label": "fails ok1", "n_rows": 3}])  # fmt: skip
+
+    linked = confirm.link_cells(run, items, cfg=CFG2)
+
+    assert set(linked) == {"mastery:cells", "mastery-b:cells"}
+    assert {i["suggestion"] for i in items if i["kind"] == "cells"} == {"cause"}

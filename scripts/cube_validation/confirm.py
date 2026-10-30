@@ -1092,7 +1092,7 @@ def link_cells(
             if isinstance(g, Group) and g.comparison_id == item.comparison
         ]
         cells = [c for c in run.diff_cells if c["comparison"] == item.comparison]
-        entries = run.cell_rows.get(item.comparison)
+        sums = run.cell_rows.get(item.comparison)
         unlinked, used, gap, unsized, unbuilt = 0, {}, 0.0, 0, 0
         for cell in cells:
             match = [
@@ -1117,12 +1117,12 @@ def link_cells(
                     unlinked += 1
                     gap += abs(differs - net)
                     continue
-            elif entries is not None:
-                if not _sizable(spec, entries, cell):
+            elif sums is not None:
+                if not _sizable(spec, sums, cell):
                     unlinked += 1
                     unsized += 1
                     continue
-                if not _reproduces(spec, entries, cell):
+                if not _reproduces(spec, sums, cell):
                     unlinked += 1
                     unbuilt += 1
                     continue
@@ -1139,7 +1139,7 @@ def link_cells(
             line = (
                 f"every differing cell's rows lie in proven groups: {', '.join(used)}"
             )
-            if not counts and entries is None:
+            if not counts and sums is None:
                 line += "; cell sizes not checked: the run predates per-cell sums"
             target.update(
                 suggestion="cause",
