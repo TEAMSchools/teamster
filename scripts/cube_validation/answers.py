@@ -44,7 +44,7 @@ from .report import (
 TIME_TRAVEL_DAYS = 7
 
 NO_REPRODUCE = (
-    "no live count yet: the proof has no `-- reproduce {bucket}:` block for it"
+    "no count query yet: the proof has no `-- reproduce {bucket}:` block for it"
 )
 
 
@@ -531,7 +531,7 @@ def merged_reproduce(
     """A cause question's `reproduce_json` parts, each thing said once.
 
     Returns:
-        `queries`: each distinct live count, as `bucket` and `sql`. `proofs`:
+        `queries`: each distinct count query, as `bucket` and `sql`. `proofs`:
         per proof file and cause bucket, `bucket`, `query` (its index in
         `queries`, None without one), `path` (relative to the validation
         file's directory) and `confirm` (the commands that re-prove it, which

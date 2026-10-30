@@ -23,6 +23,7 @@ from cube_validation.moment import Build
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import (
+    CauseAsk,
     MeasureResult,
     RunResult,
     mask,
@@ -424,6 +425,26 @@ def test_review_issue_reports_other_missing_cut_calls_without_asking():
         "for: Cube gets fixed (`fix_cube`). Reason: owner decides the cut. "
         "Task: #6150"
     ) in also
+
+
+def test_a_cause_and_a_missing_filter_decided_alike_show_as_one_line():
+    gap = _gap_decision("deliberate")
+    cause = dataclasses.replace(
+        gap, id="c1", comparison="enrollment", missing_cut=None,
+        cause={"side": "dashboard", "label": "sheet filter team"},
+    )  # fmt: skip
+    run = _run(applied=Applied(quiet_gaps=[(gap, GAP_TEAM)]))
+    decided = {"enrollment_view": [CauseAsk(cause, [], 0)]}
+
+    body = render_review_issue("Registrar", [run], decided=decided)
+
+    also = [x for x in body.split("Also decided")[1].splitlines() if "Reason" in x]
+    assert also == [
+        "- cause `sheet filter team` on the dashboard side (`enrollment` in "
+        "`enrollment_view`) and `Team` on `Roster` in `enrollment_view`: a sheet "
+        "cut Cube has no member for: an intended difference; later runs stay "
+        "quiet on it (`deliberate`). Reason: owner decides the cut. Task: #6150"
+    ]
 
 
 def test_scoped_run_says_scope_narrows_the_measure():
