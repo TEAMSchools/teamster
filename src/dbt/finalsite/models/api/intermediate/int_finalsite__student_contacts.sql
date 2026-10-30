@@ -9,7 +9,6 @@ with
             r.finalsite_enrollment_id,
             r.relationship_id,
             r.rel_id,
-            r.rel_name,
             r.rel_type,
 
             coalesce(r.is_primary, false) as is_primary,
@@ -40,7 +39,6 @@ with
         select
             c.finalsite_enrollment_id,
             c.rel_id,
-            c.rel_name,
             c.rel_type,
 
             row_number() over (
@@ -69,7 +67,6 @@ with
         select
             p.finalsite_enrollment_id,
             p.contact_slot,
-            p.rel_name,
             p.rel_type,
 
             cp.finalsite_enrollment_id as finalsite_contact_id,
@@ -123,7 +120,6 @@ with
             home_address,
             first_name as contact_first_name,
             last_name as contact_last_name,
-            rel_name as contact_name,
             rel_type as relationship,
             phone_1_number as phone_primary,
 
@@ -133,6 +129,8 @@ with
             cast(null as boolean) as is_pickup,
             cast(null as boolean) as is_custodial,
             cast(null as boolean) as is_household_member,
+
+            array_to_string([first_name, last_name], ' ') as contact_name,
         from parents_typed
     ),
 
