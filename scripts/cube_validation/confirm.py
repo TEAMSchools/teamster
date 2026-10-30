@@ -535,6 +535,10 @@ def check_reproduce(sql: str, grain: set[str], student: set[str] = frozenset()) 
                 "count by school, grade or another column that names no one"
             )
     for node in tree.find_all(exp.Predicate):
+        # An EXISTS is no comparison: each comparison inside it is tested on
+        # its own, as find_all reaches it.
+        if isinstance(node, exp.Exists):
+            continue
         leaves = list(_leaves(node))
         if any(
             isinstance(c, exp.Column) and _identifies(c.name, student) for c in leaves

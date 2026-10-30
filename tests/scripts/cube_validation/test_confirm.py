@@ -1377,3 +1377,23 @@ def test_a_rate_cell_under_a_cut_is_sized_by_that_cut_s_sums(tmp_path, monkeypat
     cells = _cells(tmp_path, monkeypatch, run=run, cfg=cfg)
 
     assert cells["suggestion"] == "cause"
+
+
+EXISTS_REPRODUCE = """SELECT r.school, COUNT(*) AS n_rows
+FROM d.fact AS r
+WHERE EXISTS (
+  SELECT 1 FROM d.enrollments AS e
+  WHERE e.student_number = r.student_number AND e.academic_year = {year}
+)
+GROUP BY r.school"""
+
+
+def test_check_reproduce_tests_each_comparison_inside_exists_on_its_own():
+    # The literal and the identifying join sit in different comparisons.
+    confirm.check_reproduce(EXISTS_REPRODUCE.format(year="2026"), {"student"})
+
+    with pytest.raises(pipeline.Refusal, match="identifying column"):
+        confirm.check_reproduce(
+            EXISTS_REPRODUCE.replace("= r.student_number", "= 123").format(year="2026"),
+            {"student"},
+        )
