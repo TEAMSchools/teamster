@@ -1,0 +1,125 @@
+models:
+  - name: stg_google_appsheet__kfwd_career_conversations__assessments
+    description: >-
+      Career Launch readiness assessments entered in the KIPP Forward Career
+      Launch AppSheet app, one row per Career Conversation. Staff record a level
+      from 1 to 4 for each of four indicators. Points, the launch score, and the
+      stage come from the Career Launch rubric sheet in
+      int_surveys__kfwd_career_launch_assessments, so a rubric change reaches
+      every past assessment.
+    columns:
+      - name: assessment_id
+        data_type: string
+        description: AppSheet key for the assessment.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: contact_id
+        data_type: string
+        description: >-
+          Salesforce contact id of the alumnus assessed, saved by the app's Ref
+          to the roster. A blank or unmatched id drops the assessment from the
+          dashboard. In the AppSheet app, make contact_id required and key the
+          roster table on contact_id, not _RowNumber.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - relationships:
+              arguments:
+                to: ref("stg_kippadb__contact")
+                field: id
+              config:
+                severity: warn
+      - name: career_ready_level
+        data_type: int64
+        description: >-
+          Career Ready level, 1 to 4. A level outside 1 to 4 matches no rubric
+          row and scores 0 points; fix it on the assessment in the AppSheet app.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+                quote: false
+              config:
+                severity: warn
+      - name: active_search_level
+        data_type: int64
+        description: >-
+          Active Search level, 1 to 4. A level outside 1 to 4 matches no rubric
+          row and scores 0 points; fix it on the assessment in the AppSheet app.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+                quote: false
+              config:
+                severity: warn
+      - name: internship_experience_level
+        data_type: int64
+        description: >-
+          Internship / Experience level, 1 to 4. A level outside 1 to 4 matches
+          no rubric row and scores 0 points; fix it on the assessment in the
+          AppSheet app.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+                quote: false
+              config:
+                severity: warn
+      - name: network_level
+        data_type: int64
+        description: >-
+          Network level, 1 to 4. A level outside 1 to 4 matches no rubric row
+          and scores 0 points; fix it on the assessment in the AppSheet app.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+                quote: false
+              config:
+                severity: warn
+      - name: assessed_at
+        data_type: datetime
+        description: When the Career Conversation took place, in local time.
+      - name: assessed_by
+        data_type: string
+        description: Staff member who recorded the assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: coaching_focus
+        data_type: string
+        description: Coaching focus agreed in the conversation.
+        config:
+          meta:
+            contains_pii: true
+      - name: next_action
+        data_type: string
+        description: Next step agreed in the conversation.
+        config:
+          meta:
+            contains_pii: true
+      - name: notes
+        data_type: string
+        description: Free-text notes from the conversation.
+        config:
+          meta:
+            contains_pii: true

@@ -1,0 +1,27 @@
+models:
+  - name: stg_google_sheets__kfwd__career_launch_stages
+    description: >-
+      Career Launch stages and the lowest launch score in each, from the Stages
+      tab of the Career Launch Scoring Rubric sheet. A stage runs from its
+      min_score up to, not including, the next stage's min_score.
+    columns:
+      - name: stage_key
+        data_type: string
+        description: Stable key for the stage.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: min_score
+        data_type: int64
+        description: Lowest launch score in the stage, inclusive.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: stage
+        data_type: string
+        description: Stage name shown to staff.

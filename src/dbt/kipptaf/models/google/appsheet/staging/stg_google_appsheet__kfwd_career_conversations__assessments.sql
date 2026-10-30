@@ -1,0 +1,19 @@
+select
+    assessment_id,
+    contact_id,
+    assessed_at,
+    assessed_by,
+    career_ready_level,
+    active_search_level,
+    internship_experience_level,
+    network_level,
+    coaching_focus,
+    next_action,
+    notes,
+from
+    {{
+        source(
+            "google_appsheet",
+            "src_google_appsheet__kfwd_career_conversations__assessments",
+        )
+    }}

@@ -83,9 +83,17 @@ select
 
     ss.latest_survey_date,
 
+    clc.current_college_cumulative_gpa_source,
+    clc.gpa_band,
+    clc.gpa_points,
+    clc.ecc,
+
     coalesce(ss.survey_response_count, 0) as survey_response_count,
 
     if(r.advising_provider = 'KIPP NYC', 'Collab', r.contact_owner) as advisor,
 from roster as r
 left join current_enrollment as ce on r.contact_id = ce.student
 left join survey_stats as ss on r.contact_id = ss.contact_id
+left join
+    {{ ref("int_surveys__kfwd_career_launch_contacts") }} as clc
+    on r.contact_id = clc.contact_id

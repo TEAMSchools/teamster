@@ -1,0 +1,67 @@
+models:
+  - name: int_surveys__kfwd_career_launch_contacts
+    description: >-
+      One row per Salesforce contact with the Career Launch inputs that come
+      from Salesforce rather than the AppSheet app: the current college GPA, the
+      GPA record it came from, its GPA band and points, and ECC. GPA points use
+      the GPA Bands tab of the Career Launch Scoring Rubric sheet. They use
+      today's GPA, so a past assessment's launch score changes when the GPA
+      does. A contact with no current college GPA scores 0 GPA points.
+    config:
+      meta:
+        standard_exempt:
+          A5: >-
+            The rn_source pick is the business rule for which Salesforce GPA
+            record backs the contact's current college GPA (the latest
+            Cumulative College record with the same value), not source-duplicate
+            masking.
+    columns:
+      - name: contact_id
+        data_type: string
+        description: Salesforce contact id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: current_college_cumulative_gpa
+        data_type: numeric
+        description: Current cumulative college GPA from the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
+      - name: current_college_cumulative_gpa_source
+        data_type: string
+        description: >-
+          Source__c of the Salesforce GPA record behind the current college GPA,
+          such as Unofficial Transcript or Student Portal. Picked from the
+          contact's Cumulative College GPA records whose GPA matches the contact
+          GPA to 2 decimals, latest transcript date first. Null when the contact
+          has no current college GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_band
+        data_type: string
+        description: >-
+          GPA band label the current college GPA falls in. Null when the contact
+          has no current college GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: ecc
+        data_type: numeric
+        description: >-
+          Adjusted six-year minority graduation rate of the college at the
+          contact's ECC enrollment, from int_kippadb__enrollment_pivot. Context
+          next to GPA; not scored.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_points
+        data_type: int64
+        description: >-
+          Points the GPA band adds to the launch score. 0 when the contact has
+          no current college GPA.
+        config:
+          meta:
+            contains_pii: true

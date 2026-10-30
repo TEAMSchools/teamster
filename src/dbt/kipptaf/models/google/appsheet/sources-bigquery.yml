@@ -104,6 +104,16 @@ sources:
                 - google
                 - appsheet
                 - src_kfwd_career_conversations__output
+      - name: src_google_appsheet__kfwd_career_conversations__assessments
+        identifier: src_kfwd_career_conversations__assessments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - appsheet
+                - src_kfwd_career_conversations__assessments
   # Separate source name from google_appsheet so the
   # bigquery_table_modified_sensor, whose asset selection is built from
   # source_name == google_appsheet, does not watch these relations.
