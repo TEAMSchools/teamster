@@ -13,13 +13,14 @@ import dataclasses
 import hashlib
 import json
 import re
+import subprocess
 import sys
 
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import Counter
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -27,13 +28,20 @@ from typing import Any
 
 import tableauserverclient as TSC
 
-from . import checks, compare, decisions
+from . import answers, checks, compare, decisions
 from . import discover as finder
-from . import report, tableau
+from . import report, tableau, triage
 from .bq import Warehouse
 from .checks import CheckResult, Finding
 from .compare import CellDiff, Gap, Group
-from .config import ColumnPair, Comparison, Decision, ViewConfig, write_proof
+from .config import (
+    WEEK_END_KEY,
+    ColumnPair,
+    Comparison,
+    Decision,
+    ViewConfig,
+    write_proof,
+)
 from .cube_client import (
     Compiled,
     Cube,
@@ -138,11 +146,28 @@ _SQL_COMPARE = {"gt": ">", "gte": ">=", "lt": "<", "lte": "<="}
 _SCOPE_WORDS = {"equals": "in", "notEquals": "not in", **_SQL_COMPARE}
 
 
+# The coming Sunday in New York, as Tableau's `TODAY() + 8 - weekday` (Sunday is
+# 1 in both). `pin_clock` pins CURRENT_DATE to the run's moment. This assumes
+# Tableau Server's TODAY() is Eastern; if its clock is not, the two disagree on
+# the week from 8 pm ET Saturday to midnight, so the runbook says not to start a
+# run then.
+_TODAY = "CURRENT_DATE('America/New_York')"
+_WEEK_END = f"8 - EXTRACT(DAYOFWEEK FROM {_TODAY})"
+
+
+def _week_end_sql(days: int) -> str:
+    """The coming Sunday plus `days`, as a BigQuery date."""
+    offset = f" {'+' if days > 0 else '-'} {abs(days)}" if days else ""
+    return f"DATE_ADD({_TODAY}, INTERVAL {_WEEK_END}{offset} DAY)"
+
+
 def _dashboard_filter_sql(entry: dict[str, Any]) -> str:
     """One `dashboard_filters` entry as SQL; `not_equals` keeps nulls, as Cube's does."""
     column, operator = entry["dashboard"], entry["operator"]
     if operator == "set":
         return f"{column} IS NOT NULL"
+    if (days := entry.get(WEEK_END_KEY)) is not None:
+        return f"{column} {_SQL_COMPARE[operator]} {_week_end_sql(days)}"
     if operator in _SQL_COMPARE:
         return f"{column} {_SQL_COMPARE[operator]} {_lit(entry['values'][0])}"
     match = _column_predicate(column, entry["values"])
@@ -174,6 +199,48 @@ def _any_cut_predicate(comparison: Comparison, with_filters: bool = True) -> str
     if "TRUE" in preds:
         return "TRUE"
     return preds[0] if len(preds) == 1 else " OR ".join(f"({p})" for p in preds)
+
+
+def cut_flags(comparison: Comparison) -> list[tuple[str, str, str]] | None:
+    """Per cut, its label and the predicates that keep its rows on each side
+    of the row reconcile (over `c.` and `d.` row columns), or None.
+
+    A caption with one value in every cut (a default no cut changes) cannot
+    split the cells, so it is left out. None when another caption's column is
+    not a row column on both sides: the reconcile cannot tell its cuts apart.
+    """
+    cuts = _cuts(comparison)
+    if comparison.rows is None:
+        return None
+    chosen = [effective_filters(comparison, cut) for cut in cuts]
+    captions = dict.fromkeys(c for f in chosen for c in f)
+    varying = [
+        c
+        for c in captions
+        if len({json.dumps(f.get(c), sort_keys=True, default=str) for f in chosen}) > 1
+    ]
+    pairs = _row_pairs(comparison)
+    cube_cols = {p.cube for p in pairs}
+    dash_cols = {p.dashboard for p in pairs}
+    for caption in varying:
+        pair = comparison.filters[caption]
+        if pair.cube not in cube_cols or pair.dashboard not in dash_cols:
+            return None
+    out = []
+    for cut, f in zip(cuts, chosen, strict=True):
+        sides = []
+        for side in ("cube", "dashboard"):
+            prefix = "c" if side == "cube" else "d"
+            parts = [
+                _column_predicate(
+                    f"{prefix}.{getattr(comparison.filters[c], side)}", f[c]
+                )
+                for c in varying
+                if c in f
+            ]
+            sides.append(" AND ".join(parts) or "TRUE")
+        out.append((cut_label(cut), sides[0], sides[1]))
+    return out
 
 
 def _any_cut_cube_filters(view: str, comparison: Comparison) -> list[dict]:
@@ -243,7 +310,8 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
 
     Rows a `dashboard_filters` entry drops stay in, with a flag per entry
     (`__df0`, ...) that says whether it keeps the row, so the reconcile can
-    count them apart from rows Cube alone has.
+    count them apart from rows Cube alone has. Rows outside `rows.dashboard_scope`
+    are left out.
     """
     dates = _date_cubes(cfg)
     seen: dict[str, bool] = {}
@@ -257,10 +325,39 @@ def dashboard_rows_sql(cfg: ViewConfig, comparison: Comparison) -> str:
             comparison.dashboard_filters, _filter_flags(comparison), strict=True
         )
     ]
+    where = _any_cut_predicate(comparison, with_filters=False)
+    if scope := comparison.rows.dashboard_scope if comparison.rows else []:
+        parts = [where, *map(_dashboard_filter_sql, scope)]
+        where = " AND ".join(f"({p})" for p in parts)
     return (
         # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
-        f"SELECT {', '.join(cols)} FROM {_dashboard_ref(comparison)} "
-        f"WHERE {_any_cut_predicate(comparison, with_filters=False)}"
+        f"SELECT {', '.join(cols)} FROM {_dashboard_ref(comparison)} WHERE {where}"
+    )
+
+
+def _students_sql(cfg: ViewConfig, comparison: Comparison, student: str) -> str:
+    """Return distinct `student` values per cell, one `UNION ALL` branch per cut.
+
+    Each branch reads exactly the rows its cut's cells come from: the cut's
+    predicate with the `dashboard_filters`, grouped by the dims as
+    `probe_sql` groups them. `__cut` is the cut's index in `_cuts`.
+    """
+    # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
+    rows = f"SELECT * FROM {_dashboard_ref(comparison)}"
+    dates = _date_cubes(cfg)
+    dims = [
+        f"DATE({d.dashboard}) AS {d.dashboard}" if d.cube in dates else d.dashboard
+        for d in comparison.dims
+    ]
+    group = (
+        " GROUP BY " + ", ".join(str(i + 2) for i in range(len(dims))) if dims else ""
+    )
+    count = f"COUNT(DISTINCT {student}) AS n_students"
+    return " UNION ALL ".join(
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py and values are bound or literal-escaped
+        f"(SELECT {', '.join([f'{i} AS __cut', *dims, count])} FROM ({rows}) "
+        f"WHERE {dashboard_predicate(comparison, cut)}{group})"
+        for i, cut in enumerate(_cuts(comparison))
     )
 
 
@@ -512,6 +609,16 @@ def candidate_causes(
     return out
 
 
+def row_group_cause(n_groups: int) -> str:
+    """The cause line a row-level comparison adds: its row groups, or none."""
+    return (
+        f"{n_groups} row groups on this comparison (see Triage) may explain part of it"
+        if n_groups
+        else "every row matches on the grain and values, so the 2 definitions or "
+        "their filters differ"
+    )
+
+
 def _cell_diffs(
     cfg: ViewConfig, comparisons: list[Comparison], sides: "_Sides", cube: Cube
 ) -> list[CellDiff]:
@@ -531,13 +638,7 @@ def _cell_diffs(
         causes = candidate_causes(comparison, differing, comparison.decimals or 0, expr)
         if comparison.rows is not None:
             groups = [g for g in sides.groups if g.comparison_id == comparison.id]
-            causes.append(
-                f"{len(groups)} row groups on this comparison (see Triage) may "
-                "explain part of it"
-                if groups
-                else "every row matches on the grain and values, so the 2 "
-                "definitions or their filters differ"
-            )
+            causes.append(row_group_cause(len(groups)))
         out.append(
             CellDiff(
                 comparison.id,
@@ -571,6 +672,8 @@ def probe_fingerprint(cfg: ViewConfig, comparison: Comparison) -> str:
         extras.append(f"split_rows={comparison.split_rows}")
     if comparison.parameters:
         extras.append(f"parameters={json.dumps(comparison.parameters, sort_keys=True)}")
+    if comparison.shelves:
+        extras.append(f"shelves={json.dumps(comparison.shelves, sort_keys=True)}")
     if not extras:
         return base
     return hashlib.sha256("\n".join([base, *extras]).encode()).hexdigest()
@@ -601,6 +704,16 @@ class _Sides:
     sql: dict[str, tuple[str, str]] = dataclasses.field(default_factory=dict)
     fingerprints: dict[str, dict[str, str]] = dataclasses.field(default_factory=dict)
     moved: dict[str, bool] = dataclasses.field(default_factory=dict)
+    # Per comparison and cut label, the [dashboard, Cube] SQL run and its price.
+    cell_sql: dict[str, dict[str, list[str]]] = dataclasses.field(default_factory=dict)
+    cell_sql_usd: dict[str, dict[str, list[float]]] = dataclasses.field(
+        default_factory=dict
+    )
+    cell_rows: dict[str, list[dict]] = dataclasses.field(default_factory=dict)
+    # Per comparison with `rows`, distinct students by (cut label, cell key).
+    students: dict[str, dict[tuple[str, tuple[str, ...]], int]] = dataclasses.field(
+        default_factory=dict
+    )
 
 
 def _cube_sql(
@@ -654,9 +767,14 @@ def _compare_one(
         dash_at = at(probe_sql(cfg, comparison, cut), build.start)
         sides.cube_tables |= cube_at.tables
         sides.live |= cube_at.live | dash_at.live
-        cube_rows = wh.rows(
-            wrap_cube(cube_at.sql, cfg.view, dims, dates, comparison.measure)
-        )
+        wrapped = wrap_cube(cube_at.sql, cfg.view, dims, dates, comparison.measure)
+        label = cut_label(cut)
+        sides.cell_sql.setdefault(comparison.id, {})[label] = [dash_at.sql, wrapped]
+        sides.cell_sql_usd.setdefault(comparison.id, {})[label] = [
+            wh.estimate(dash_at.sql),
+            wh.estimate(wrapped),
+        ]
+        cube_rows = wh.rows(wrapped)
         dash_rows = wh.rows(dash_at.sql)
         unfiltered = None
         if comparison.dashboard_filters:
@@ -696,6 +814,7 @@ def _compare_one(
         # Unchanged between start and end, so the Cube side reads its shared
         # tables at the start: BigQuery refuses 1 table at 2 moments.
         cube_rows_sql = repin(cube_at.sql, shared, build.end, build.start)
+        flags = cut_flags(comparison) or []
         result = wh.rows(
             compare.reconcile_sql(
                 wrap_cube(cube_rows_sql, cfg.view, columns, dates, None),
@@ -703,15 +822,132 @@ def _compare_one(
                 comparison.rows,
                 group_dims(comparison),
                 filters=_filter_flags(comparison),
+                cuts=[(c, d) for _, c, d in flags],
             )
         )
         sides.groups += compare.groups_from(comparison.id, result)
+        sides.cell_rows[comparison.id] = compare.cell_rows_from(
+            result, [label for label, _, _ in flags]
+        )
         sides.sql[comparison.id] = (dash_at.sql, cube_at.sql)
+        # Only a student column counts students; without one in the grain,
+        # every cell's `n_students` stays None, so none is an example cell.
+        student = next(
+            (
+                p.dashboard
+                for p in comparison.rows.grain
+                if "student" in p.dashboard.lower()
+            ),
+            None,
+        )
+        if student:
+            cuts = _cuts(comparison)
+            count_sql = _students_sql(cfg, comparison, student)
+            sides.students[comparison.id] = {
+                (
+                    cut_label(cuts[int(r["__cut"])]),
+                    tuple(_key(r[d.dashboard]) for d in comparison.dims),
+                ): r["n_students"]
+                for r in wh.rows(at(count_sql, build.start).sql)
+            }
 
     sides.fingerprints[comparison.id] = {
         "cube": decisions.sql_fingerprint(sort_school_filters("\n".join(cube_parts))),
         "dashboard": decisions.sql_fingerprint("\n".join(dash_parts)),
     }
+
+
+@dataclasses.dataclass(frozen=True)
+class RowSides:
+    """The row SQL a run reconciled for one comparison, rebuilt for a trace.
+
+    `cube_rows_sql` is Cube's rows read as of the build end, with the tables
+    both sides read moved to the build start, as `run` reconciled them;
+    `columns` are the Cube members `wrap_cube` names.
+    """
+
+    cube: AsOf
+    dashboard: AsOf
+    cube_rows_sql: str
+    columns: list[str]
+
+
+def row_sides(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    *,
+    wh: Warehouse,
+    cube: Cube,
+    build: Build,
+    schools: set[str],
+    fingerprints: dict[str, str],
+) -> RowSides:
+    """Rebuild the row SQL a run reconciled, refusing when it is not the same SQL.
+
+    Args:
+        cfg: The view's config.
+        comparison: A comparison with `rows`.
+        wh: The warehouse, for view history.
+        cube: Cube, for the compiled SQL.
+        build: The run's moment.
+        schools: The network's school abbreviations (`network_schools`).
+        fingerprints: The run's `cube` and `dashboard` fingerprints for it.
+
+    Raises:
+        Refusal: The comparison has no rows, or either side's SQL (cells and
+            rows, expanded as of the moment) differs from what the run ran.
+    """
+    if comparison.rows is None:
+        raise Refusal(f"comparison {comparison.id!r} has no rows to trace")
+
+    def cube_sql(query: dict, rows: bool = False) -> str:
+        return _cube_sql(cfg, cube, query, schools, rows=rows)
+
+    cube_at = _as_of(cube_sql(row_query(cfg.view, comparison), True), build.end, wh)
+    dash_at = _as_of(dashboard_rows_sql(cfg, comparison), build.start, wh)
+    now = {
+        "cube": decisions.sql_fingerprint(
+            sort_school_filters(
+                "\n".join(
+                    [
+                        _masked(
+                            _as_of(
+                                cube_sql(cell_query(cfg.view, comparison, {})),
+                                build.end,
+                                wh,
+                            ),
+                            build.end,
+                        ),
+                        _masked(cube_at, build.end),
+                    ]
+                )
+            )
+        ),
+        "dashboard": decisions.sql_fingerprint(
+            "\n".join(
+                [
+                    _masked(
+                        _as_of(probe_sql(cfg, comparison, {}), build.start, wh),
+                        build.start,
+                    ),
+                    _masked(dash_at, build.start),
+                ]
+            )
+        ),
+    }
+    changed = sorted(k for k in now if now[k] != fingerprints.get(k))
+    if changed:
+        raise Refusal(
+            f"comparison {comparison.id!r}: the {' and '.join(changed)} SQL is not "
+            "the SQL the run reconciled; `run` again, then trace"
+        )
+    shared = sorted(cube_at.tables & dash_at.tables)
+    return RowSides(
+        cube=cube_at,
+        dashboard=dash_at,
+        cube_rows_sql=repin(cube_at.sql, shared, build.end, build.start),
+        columns=_unique(p.cube for p in _row_pairs(comparison)),
+    )
 
 
 def _clauses(comparison: Comparison, groups: list[Group], sides: _Sides) -> list[str]:
@@ -807,6 +1043,24 @@ def _anchors_and_identities(
     return findings, results
 
 
+def _open_counts(
+    comparisons: list[Comparison],
+    open_groups: list[Group],
+    open_gaps: list[Gap],
+    open_cells: list[CellDiff],
+) -> tuple[Counter, Counter, Counter]:
+    """Open groups, gaps and cell differences per measure."""
+    measure_of = {c.id: c.measure for c in comparisons}
+    groups = Counter(measure_of.get(g.comparison_id) for g in open_groups)
+    gaps = Counter(
+        measure
+        for g in open_gaps
+        for measure in {measure_of.get(c) for c in g.comparisons}
+    )
+    cells = Counter(measure_of.get(d.comparison_id) for d in open_cells)
+    return groups, gaps, cells
+
+
 def _measures(
     comparisons: list[Comparison],
     cells: list[Cell],
@@ -818,7 +1072,6 @@ def _measures(
     """The verdict reads cells only; open groups and gaps are counted beside it."""
     results: dict[str, list[CheckResult]] = {}
     counts: dict[str, Counter] = {}
-    measure_of = {c.id: c.measure for c in comparisons}
     for comparison in comparisons:
         mine = [c for c in cells if c.comparison == comparison.id]
         # A cell only a dashboard-only filter drops is explained; it is counted
@@ -832,13 +1085,9 @@ def _measures(
         counts.setdefault(comparison.measure, Counter()).update(c.verdict for c in mine)
     for measure, found in other.items():
         results.setdefault(measure, []).extend(found)
-    groups = Counter(measure_of.get(g.comparison_id) for g in open_groups)
-    gaps = Counter(
-        measure
-        for g in open_gaps
-        for measure in {measure_of.get(c) for c in g.comparisons}
+    groups, gaps, open_cell_counts = _open_counts(
+        comparisons, open_groups, open_gaps, open_cells
     )
-    open_cell_counts = Counter(measure_of.get(d.comparison_id) for d in open_cells)
     return [
         MeasureResult(
             measure,
@@ -917,6 +1166,34 @@ def _unproven_totals(comparisons: list[Comparison]) -> list[str]:
     return out
 
 
+def reshape_text(
+    shelves: dict[str, Any], reshaped: tableau.Reshaped | None = None
+) -> str:
+    """`dropped A; added C to rows, D to columns; cleared the filters on E`,
+    for a `shelves:` key. With the `reshaped` copy, also the table calcs the
+    drop removed and the kept ones that recompute along a changed shelf.
+    """
+    parts = []
+    if shelves.get("drop"):
+        parts.append(f"dropped {', '.join(shelves['drop'])}")
+    added = [
+        f"{', '.join(captions)} to {tableau.SHELF_NAMES[shelf]}"
+        for shelf, captions in shelves.get("add", {}).items()
+    ]
+    if added:
+        parts.append(f"added {', '.join(added)}")
+    if shelves.get("clear_filters"):
+        parts.append(f"cleared the filters on {', '.join(shelves['clear_filters'])}")
+    if reshaped is not None:
+        if reshaped.removed:
+            parts.append(f"removed the table calcs {', '.join(reshaped.removed)}")
+        parts += [
+            f"recomputes along the new {shelf}: {', '.join(captions)}"
+            for shelf, captions in reshaped.recomputed.items()
+        ]
+    return "; ".join(parts)
+
+
 def _gaps(comparisons: list[Comparison]) -> tuple[list[Gap], list[str]]:
     """Missing cuts and filters across the proofs, one per kind and field.
 
@@ -962,8 +1239,12 @@ def run(
     requested: datetime | None,
     max_usd: float,
     cache_root: Path,
+    cube_host: str = "",
 ) -> RunResult:
     """Validate one view at one fact build and print the result.
+
+    `cube_host` is printed with `cfg.fact` so the result says what it was
+    proven against.
 
     Raises:
         Refusal: A confirmed comparison has no proof, its probe changed
@@ -1046,6 +1327,8 @@ def run(
     result = RunResult(
         view=cfg.view,
         moment=build,
+        cube_host=cube_host,
+        fact=cfg.fact,
         measures=_measures(
             comparisons,
             sides.cells,
@@ -1077,10 +1360,15 @@ def run(
         proofs={c.id: c.proof.proven_at for c in comparisons if c.proof},
         browser_cuts=_browser_cuts(comparisons),
         totals=totals,
+        reshaped={c.id: reshape_text(c.shelves) for c in comparisons if c.shelves},
         clauses={k: v for k, v in clauses.items() if v},
         fingerprints=sides.fingerprints,
         decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
         gaps_unknown=gaps_unknown,
+        diff_cells=_diff_cells(sides),
+        cell_sql=sides.cell_sql,
+        cell_sql_usd=sides.cell_sql_usd,
+        cell_rows=sides.cell_rows,
     )
     text = report.render_local(result) + "\n" + _extra_sections(sides.cells, findings)
     print(text)
@@ -1092,6 +1380,25 @@ def run(
     return result
 
 
+def _diff_cells(sides: _Sides) -> list[dict]:
+    """Every cell that neither passes nor is dashboard-filtered, for run.json."""
+    return [
+        {
+            "comparison": c.comparison,
+            "cut": c.cut,
+            "key": c.key,
+            "dims": [list(d) for d in c.dims],
+            "dashboard": c.dashboard,
+            "cube": c.cube,
+            "n_students": sides.students.get(c.comparison, {}).get(
+                (c.cut, tuple(v for _, v in c.dims))
+            ),
+        }
+        for c in sides.cells
+        if c.verdict not in ("pass", "dashboard_filtered")
+    ]
+
+
 def _json_default(value: Any) -> Any:
     if isinstance(value, (datetime, date)):
         return value.isoformat()
@@ -1100,7 +1407,13 @@ def _json_default(value: Any) -> Any:
 
 def _group(data: dict) -> Group:
     """JSON stores `dims` as lists; a group compares by tuples."""
-    return Group(**{**data, "dims": tuple(tuple(d) for d in data["dims"])})
+    return Group(
+        **{
+            **data,
+            "dims": tuple(tuple(d) for d in data["dims"]),
+            "nulls": tuple(data.get("nulls") or ()),
+        }
+    )
 
 
 def _gap(data: dict) -> Gap:
@@ -1145,6 +1458,7 @@ def _run_from_json(data: dict) -> RunResult:
             quiet_gaps=[
                 (Decision(**d), _gap(g)) for d, g in applied.get("quiet_gaps", [])
             ],
+            causes=[Decision(**d) for d in applied.get("causes", [])],
         ),
         findings=[Finding(**f) for f in data["findings"]],
         live_sources=data["live_sources"],
@@ -1154,55 +1468,291 @@ def _run_from_json(data: dict) -> RunResult:
         proofs=data["proofs"],
         browser_cuts=data["browser_cuts"],
         totals=data.get("totals", []),
+        reshaped=data.get("reshaped", {}),
         clauses=data["clauses"],
         fingerprints=data.get("fingerprints", {}),
         decisions_fingerprint=data.get("decisions_fingerprint", ""),
         gaps_unknown=data.get("gaps_unknown", []),
         dashboard_filters=data.get("dashboard_filters", []),
+        diff_cells=data.get("diff_cells", []),
+        cell_sql=data.get("cell_sql", {}),
+        cell_sql_usd=data.get("cell_sql_usd", {}),
+        cell_rows=data.get("cell_rows", {}),
+        cube_host=data.get("cube_host", ""),
+        fact=data.get("fact", ""),
     )
+
+
+# What `reapply` rebuilds the run's full findings from; a run saved without
+# any of them predates re-applying.
+_REAPPLY_KEYS = (
+    "open",
+    "quiet",
+    "open_gaps",
+    "quiet_gaps",
+    "open_cells",
+    "quiet_cells",
+)
+
+
+def _saved_run(cfg: ViewConfig, cache_root: Path) -> tuple[dict, Path]:
+    """The latest `run.json` as JSON, and its path.
+
+    The latest run is the `run.json` written last, whatever moment it read.
+    """
+    saved = sorted(
+        (cache_root / cfg.view).glob("*/run.json"), key=lambda p: p.stat().st_mtime
+    )
+    if not saved:
+        raise Refusal(f"{cfg.view}: no saved run; `run` it first")
+    return json.loads(saved[-1].read_text()), saved[-1]
+
+
+def _older(cfg: ViewConfig, run_json: Path) -> Refusal:
+    return Refusal(
+        f"{cfg.view}: the saved run {run_json} was written by an older "
+        "validator; `run` it again"
+    )
+
+
+def _require_nulls(data: dict) -> None:
+    """Refuse a run saved before groups recorded which values were NULL.
+
+    Such a run reads a NULL group-by value as empty text, so a proof finds
+    none of that group's rows: the run, not the proof, is at fault.
+    """
+    applied = data.get("applied") or {}
+    groups = [*applied.get("open", []), *(g for _, g in applied.get("quiet", []))]
+    if any("nulls" not in g for g in groups):
+        moment = (data.get("moment") or {}).get("start", "<moment>")
+        raise Refusal(
+            f"this run predates NULL-aware groups; run again (`run --moment {moment}`)"
+        )
+
+
+def _reapplicable(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
+    """The latest saved run, refused when it lacks what re-applying reads."""
+    data, run_json = _saved_run(cfg, cache_root)
+    if "fingerprints" not in data or any(
+        k not in data.get("applied", {}) for k in _REAPPLY_KEYS
+    ):
+        raise _older(cfg, run_json)
+    try:
+        return _run_from_json(data), run_json
+    except (KeyError, TypeError) as exc:
+        raise _older(cfg, run_json) from exc
+
+
+def _apply_saved(cfg: ViewConfig, saved: RunResult) -> Applied:
+    """Sort everything the saved run found by the file's decisions."""
+    was = saved.applied
+    try:
+        return decisions.apply(
+            cfg.decisions,
+            was.open + [g for _, g in was.quiet],
+            saved.fingerprints,
+            gaps=was.open_gaps + [g for _, g in was.quiet_gaps],
+            cell_diffs=was.open_cells + [d for _, d in was.quiet_cells],
+        )
+    except ValueError as exc:
+        raise Refusal(str(exc)) from exc
+
+
+def check_claims(cfg: ViewConfig, cache_root: Path) -> None:
+    """Refuse decisions that would claim one item twice in the saved run.
+
+    Called before decisions are written, since a file whose decisions overlap
+    makes both `run` and `reapply` refuse. With no saved run this validator
+    can re-apply to, there is nothing to check against and nothing refuses.
+
+    Raises:
+        Refusal: Two decisions claim the same group, gap or cells.
+    """
+    try:
+        saved, _ = _reapplicable(cfg, cache_root)
+    except Refusal:
+        return
+    _apply_saved(cfg, saved)
+
+
+def reapply(cfg: ViewConfig, cache_root: Path) -> RunResult:
+    """Apply the file's decisions to the view's latest saved run, offline.
+
+    Recording a decision changes no data, so the saved run's groups, gaps,
+    cell differences and SQL fingerprints are re-sorted by the current
+    decisions as `run` would sort them; a decision whose fingerprints differ
+    from the run's still lands in `reconfirm`. Rewrites `run.json` and
+    `result.md` and runs no query. The verdict reads cells only, so it stays.
+    Clauses stay as the run computed them, over the groups open then, so a
+    group a deleted decision reopens may show no clause until the next `run`.
+
+    Raises:
+        Refusal: The view has no saved run, the run predates what re-applying
+            needs, or two decisions claim the same item.
+    """
+    saved, run_json = _reapplicable(cfg, cache_root)
+    applied = _apply_saved(cfg, saved)
+
+    groups, gaps, cells = _open_counts(
+        cfg.comparisons, applied.open, applied.open_gaps, applied.open_cells
+    )
+    result = dataclasses.replace(
+        saved,
+        applied=applied,
+        measures=[
+            dataclasses.replace(
+                m,
+                open_groups=groups.get(m.measure, 0),
+                open_gaps=gaps.get(m.measure, 0),
+                open_cells=cells.get(m.measure, 0),
+            )
+            for m in saved.measures
+        ],
+        decisions_fingerprint=decisions.decisions_fingerprint(cfg.decisions),
+    )
+    # The cells and anchors sections need every cell the run held; decisions
+    # never change them, so the saved report's copy is kept.
+    old = run_json.with_name("result.md")
+    old_text = old.read_text() if old.exists() else ""
+    at = old_text.find("\n## Cells\n")
+    tail = old_text[at + 1 :] if at != -1 else ""
+    text = report.render_local(result) + ("\n" + tail if tail else "")
+    report.save_local(result, text, root=cache_root).with_name("run.json").write_text(
+        json.dumps(dataclasses.asdict(result), default=_json_default, indent=1)
+    )
+    return result
 
 
 # --- review ------------------------------------------------------------------
 
 
-def review(configs: list[ViewConfig], domain: str, cache_root: Path) -> str:
-    """Return the review-issue body from each view's latest saved run.
+def latest_run(cfg: ViewConfig, cache_root: Path) -> tuple[RunResult, Path]:
+    """Return the view's latest saved run and the `run.json` it came from.
 
     The latest run is the `run.json` written last, whatever moment it read.
-    Reads only the local cache; nothing is posted.
 
     Raises:
-        Refusal: A view has no saved run, its saved run is in a shape this
-            validator cannot read, or its decisions changed since the run (a
-            run saved before runs recorded them counts as changed).
+        Refusal: The view has no saved run, its saved run is in a shape this
+            validator cannot read or predates NULL-aware groups, or its
+            decisions changed since the run (a run saved before runs recorded
+            them counts as changed).
     """
-    runs = []
-    for cfg in configs:
-        saved = sorted(
-            (cache_root / cfg.view).glob("*/run.json"), key=lambda p: p.stat().st_mtime
+    data, run_json = _saved_run(cfg, cache_root)
+    try:
+        run_result = _run_from_json(data)
+    except (KeyError, TypeError) as exc:
+        raise _older(cfg, run_json) from exc
+    _require_nulls(data)
+    if run_result.decisions_fingerprint != decisions.decisions_fingerprint(
+        cfg.decisions
+    ):
+        raise Refusal(
+            f"{cfg.view}: the decisions changed since the saved run "
+            f"{run_json}; `reapply` it, or `run` it again"
         )
-        if not saved:
-            raise Refusal(f"{cfg.view}: no saved run; `run` it first")
-        try:
-            run_result = _run_from_json(json.loads(saved[-1].read_text()))
-        except (KeyError, TypeError) as exc:
-            raise Refusal(
-                f"{cfg.view}: the saved run {saved[-1]} was written by an older "
-                "validator; `run` it again"
-            ) from exc
-        if run_result.decisions_fingerprint != decisions.decisions_fingerprint(
-            cfg.decisions
-        ):
-            raise Refusal(
-                f"{cfg.view}: the decisions changed since the saved run "
-                f"{saved[-1]}; `run` it again"
-            )
-        runs.append(run_result)
+    return run_result, run_json
+
+
+BODY_WARN_CHARS = report.BODY_WARN_CHARS
+
+
+def review(
+    configs: list[ViewConfig],
+    domain: str,
+    cache_root: Path,
+    now: datetime | None = None,
+    view_files: list[Path] | None = None,
+    comments: list[str] | None = None,
+    json_file: Path | None = None,
+) -> str:
+    """Return the review-issue body from each view's latest saved run.
+
+    Reads only the local cache: each run and its triage (see
+    `triage.proven_triage`), matching triage items to decisions by their stubs,
+    and to cause decisions by the causes the triage proved.
+    Nothing is posted; a question with no triage evidence, and a body near
+    GitHub's cap, are named on stderr.
+
+    Args:
+        configs: The views to review.
+        domain: The domain whose owner reviews.
+        cache_root: The run cache.
+        now: The current time, to say whether a hand check's pinned SQL still
+            runs; defaults to the clock.
+        view_files: Each config's validation file, in order: stored proof
+            paths are relative to its directory.
+        comments: Given, receives the follow-up comments a long body's
+            Reproduce blocks move to (`report.render_review_issue`).
+        json_file: Given, the questions JSON is written there (`reviews/`
+            beside the validation file) and the body links it at the commit
+            that holds it, instead of carrying it.
+
+    Raises:
+        Refusal: A view has no usable saved run (see `latest_run`), or its
+            triage is missing, stale, unreadable, holds an unproven item, or
+            has a cause decision and a `group` decision disagreeing (see
+            `triage.proven_triage`). With `json_file`: the file is new or
+            changed, or its commit is not pushed (it is written; commit and
+            push it, then review again).
+    """
+    saved = [latest_run(cfg, cache_root) for cfg in configs]
+    runs = [run for run, _ in saved]
+    # Stored proof paths are relative to each validation file's directory.
+    bases = [f.parent for f in view_files] if view_files else [None] * len(configs)
+    proven = {
+        run.view: triage.proven_triage(run, run_json, cfg.decisions, base)
+        for (run, run_json), cfg, base in zip(saved, configs, bases, strict=True)
+    }
+    found = {view: triage.posted_triage(loaded) for view, loaded in proven.items()}
+    # One question per unanswered owner cause, over the groups it decides.
+    causes = {
+        run.view: triage.cause_asks(
+            run, proven[run.view], cfg.decisions, triage.doc_leads(cfg)
+        )
+        for run, cfg in zip(runs, configs, strict=True)
+    }
     definitions = {
         cfg.view: {c.id: c.definitions for c in cfg.comparisons if c.definitions}
         for cfg in configs
     }
-    body = report.render_review_issue(domain, runs, definitions)
+    sources = {
+        cfg.view: proof_source(f)
+        for cfg, f in zip(configs, view_files or [], strict=False)
+    }
+    questions = answers.questions_json(
+        runs,
+        configs,
+        definitions,
+        found,
+        now or datetime.now(timezone.utc),
+        causes,
+        sources,
+    )
+    # The analyst's other calls, which the body reports without asking.
+    decided = {
+        run.view: triage.cause_asks(run, proven[run.view], cfg.decisions, owner=False)
+        for run, cfg in zip(runs, configs, strict=True)
+    }
+    link = None
+    if json_file is not None:
+        link = _review_file(Path(json_file), report.posted_json(questions))
+    body = report.render_review_issue(
+        domain, runs, definitions, questions, causes, comments, decided, link
+    )
+    if len(body) > BODY_WARN_CHARS:
+        # stderr, so the warning never lands in the issue body.
+        print(
+            f"warning: the body is {len(body):,} characters; GitHub refuses an "
+            "issue body over 65,536, so review fewer views at a time",
+            file=sys.stderr,
+        )
+    for q in questions:
+        if not q["evidence"]:
+            # stderr, so the note never lands in the issue body.
+            print(
+                f"{q['id']}: no triage evidence; `triage` the view to add it",
+                file=sys.stderr,
+            )
     if waiting := report.untasked(d for cfg in configs for d in cfg.decisions):
         # stderr, so the reminder never lands in the issue body.
         print(
@@ -1210,6 +1760,110 @@ def review(configs: list[ViewConfig], domain: str, cache_root: Path) -> str:
             file=sys.stderr,
         )
     return body
+
+
+def review_file(view_files: list[Path], configs: list[ViewConfig], domain: str) -> Path:
+    """Where a review's questions JSON is kept: `reviews/` beside the first
+    validation file, named for its view, or for the domain across views."""
+    name = configs[0].view if len(configs) == 1 else _slug(domain)
+    return Path(view_files[0]).parent / "reviews" / f"{name}.json"
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "review"
+
+
+def _review_file(path: Path, data: list[dict]) -> str:
+    """The questions JSON's link at the commit that holds it.
+
+    Compared by content, so the commit hook's formatting is no change.
+
+    Raises:
+        Refusal: The file was new or held other questions (now written), or
+            it is not committed and pushed as it stands.
+    """
+    try:
+        held = json.loads(path.read_text())
+    except (OSError, ValueError):
+        held = None
+    if held != data:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2) + "\n")
+        raise Refusal(
+            f"wrote {path}: commit and push it, then run `review` again; the "
+            "issue links it at that commit"
+        )
+    link = committed_link(path)
+    if link is None:
+        raise Refusal(
+            f"{path} is not committed and pushed as it stands: commit and push "
+            "it, then run `review` again"
+        )
+    return link
+
+
+def committed_link(path: Path) -> str | None:
+    """The GitHub link to `path` at HEAD, or None.
+
+    None unless the file is tracked with no change since HEAD and HEAD is on
+    a remote branch (a pushed commit), so the link opens once posted and
+    keeps opening after the branch is gone.
+    """
+    base = path.parent
+    try:
+        top = Path(_git(base, "rev-parse", "--show-toplevel"))
+        changed = _git(base, "status", "--porcelain", "--", path.name)
+        tracked = _git(base, "ls-files", "--", path.name)
+        sha = _git(base, "rev-parse", "HEAD")
+        pushed = _git(base, "branch", "-r", "--contains", sha)
+        remote = _git(base, "remote", "get-url", "origin")
+        relative = path.resolve().relative_to(top.resolve())
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        return None
+    found = _GITHUB.search(remote)
+    if changed or not tracked or not pushed or not found:
+        return None
+    return f"https://github.com/{found['repo']}/blob/{sha}/{relative.as_posix()}"
+
+
+_GITHUB = re.compile(r"github\.com[:/](?P<repo>[\w.-]+/[\w.-]+?)(?:\.git)?/?$")
+
+
+def _git(directory: Path, *args: str) -> str:
+    # trunk-ignore(bandit/B603,bandit/B607): git from PATH with a static argv and no shell
+    done = subprocess.run(
+        ["git", "-C", str(directory), *args],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return done.stdout.strip()
+
+
+def proof_source(view_file: Path) -> answers.ProofSource:
+    """Where a validation file's stored proofs live: its repo path and the
+    branch URL of its directory, for an owner's Reproduce block.
+
+    Outside a git checkout, a GitHub remote or a branch, the link is left out.
+    The remote's address is read for its `owner/repo` only, never copied.
+    """
+    view_file = Path(view_file)
+    base = view_file.parent
+    try:
+        top = Path(_git(base, "rev-parse", "--show-toplevel"))
+        branch = _git(base, "branch", "--show-current")
+        remote = _git(base, "remote", "get-url", "origin")
+        relative = view_file.resolve().relative_to(top.resolve())
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        return answers.ProofSource(str(view_file), base)
+    found = _GITHUB.search(remote)
+    blob = None
+    if found and branch:
+        blob = (
+            f"https://github.com/{found['repo']}/blob/{branch}/"
+            f"{relative.parent.as_posix()}"
+        )
+    return answers.ProofSource(relative.as_posix(), base, blob)
 
 
 # --- check-api ---------------------------------------------------------------
@@ -1406,6 +2060,42 @@ class SheetGaps:
     cuts: list[str]
     filters: list[str]
     restricting: list[str]
+    # Caption to why the field needs no Cube member: `copy of <mapped caption>`
+    # or `display switch on <parameter caption>`.
+    notes: dict[str, str] = dataclasses.field(default_factory=dict)
+    # Caption to the datasource column, for a plain field (never a calculation).
+    columns: dict[str, str] = dataclasses.field(default_factory=dict)
+
+
+_WHOLE_REF = re.compile(r"\[(?P<name>[^\]]+)\]")
+_PARAMETER_REF = re.compile(r"\[Parameters\]\.\[(?P<name>[^\]]+)\]")
+_STRING_LITERAL = re.compile(r"'[^']*'|\"[^\"]*\"")
+_FIELD_REF = re.compile(r"\[[^\]]+\]")
+_COMMENT = re.compile(r"//[^\n]*")
+
+
+def _parameter_only(formula: str) -> re.Match | None:
+    """The first parameter a formula reads, when it reads no other field.
+
+    Comments go before string literals, so an apostrophe in a comment cannot
+    pair with one on a later line and hide the field between them.
+    """
+    bare = _STRING_LITERAL.sub("", _COMMENT.sub("", formula))
+    if _FIELD_REF.search(_PARAMETER_REF.sub("", bare)):
+        return None
+    return _PARAMETER_REF.search(bare)
+
+
+def _parameter_captions(twb_xml: str) -> dict[str, str]:
+    """Map each parameter's bare name to its caption."""
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    root = ET.fromstring(twb_xml)
+    return {
+        (col.get("name") or "").strip("[]"): col.get("caption") or ""
+        for ds in root.iter("datasource")
+        if ds.get("name") == "Parameters"
+        for col in ds.findall("column")
+    }
 
 
 def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
@@ -1414,6 +2104,10 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     A field counts as having one when the comparison maps it anywhere: a dim,
     a filter, or a row grain or value. Aggregated fields, `Measure Names`,
     user filters and fields built on the viewer's identity are skipped.
+
+    Also returns `notes` (a plain copy of a mapped field, or a calculation that
+    reads only parameters) and `columns` (the datasource column behind each
+    plain missing field).
     """
     # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
     ws = finder.worksheet(ET.fromstring(twb_xml), comparison.sheet or "")
@@ -1425,12 +2119,13 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     mapped = {p.dashboard for p in pairs}
     mapped_captions = set(comparison.filters)
     caption, personal = finder.sheet_fields(ws)
+    groups = finder.group_fields(ws)
+    mapped_caption_of = {p.dashboard: c for c, p in comparison.filters.items()}
 
     def field_of(ref: str) -> str | None:
-        m = finder.FIELD_REF.search(ref)
-        if m is None or finder.is_value(m):
+        name = finder.filter_field(ref, groups)
+        if name is None:
             return None
-        name = m["name"]
         if name in mapped or name in personal or caption.get(name) in mapped_captions:
             return None
         return name
@@ -1453,7 +2148,28 @@ def sheet_gaps(twb_xml: str, comparison: Comparison) -> SheetGaps:
     def captions(names: set[str]) -> list[str]:
         return sorted({caption.get(n, n) for n in names})
 
-    return SheetGaps(captions(cuts), captions(filters), captions(restricting))
+    calcs = {c.name.strip("[]"): c.formula for c in finder.calculated_fields(twb_xml)}
+    parameters = _parameter_captions(twb_xml)
+    notes: dict[str, str] = {}
+    columns: dict[str, str] = {}
+    for name in cuts | filters:
+        formula = (calcs.get(name) or "").strip()
+        # A group or bin is no datasource column: triage cannot value-check it.
+        if name not in calcs and name not in groups:
+            columns[caption.get(name, name)] = name
+        elif (param := _parameter_only(formula)) is not None:
+            notes[caption.get(name, name)] = (
+                f"display switch on {parameters.get(param['name']) or param['name']}"
+            )
+        elif (whole := _WHOLE_REF.fullmatch(formula)) is not None:
+            ref = whole["name"]
+            if ref in mapped or caption.get(ref) in mapped_captions:
+                shown = mapped_caption_of.get(ref) or caption.get(ref, ref)
+                notes[caption.get(name, name)] = f"copy of {shown}"
+
+    return SheetGaps(
+        captions(cuts), captions(filters), captions(restricting), notes, columns
+    )
 
 
 TOTAL_LABEL = "All"
@@ -1544,17 +2260,26 @@ def _capture(
     comparison: Comparison,
     tbl: tableau.Tableau,
     captures: dict[tuple, tableau.Snapshot] | None,
-) -> tuple[str, list[ET.Element], list[dict], list[dict], tableau.Snapshot]:
-    """Export a comparison's sheet once per (workbook, sheet, cuts).
+) -> tuple[str, str, list[ET.Element], list[dict], list[dict], tableau.Snapshot]:
+    """Export a comparison's sheet once per workbook, sheet, cuts, parameter
+    values and reshape.
 
     Returns:
-        The workbook XML, the sheet's columns, the cuts a REST export takes,
-        the cuts only a browser can prove, and the snapshot.
+        The workbook XML, the same with the sheet reshaped (`shelves`), the
+        reshaped sheet's columns, the cuts a REST export takes, the cuts only
+        a browser can prove, and the snapshot.
     """
     _require(comparison, "workbook", "sheet")
     workbook, sheet = comparison.workbook or "", comparison.sheet or ""
     twb = tbl.download_twb(workbook)
-    columns = _sheet_columns(twb, sheet)
+    parameters, shelves = comparison.parameters, comparison.shelves
+    try:
+        if parameters:
+            tableau.set_parameters(twb, parameters)
+        shaped = tableau.set_shelves(twb, sheet, shelves).xml if shelves else twb
+    except ValueError as exc:
+        raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
+    columns = _sheet_columns(shaped, sheet)
     measures = [c.get("name") or "" for c in columns if c.get("role") == "measure"]
     if not measures:
         raise Refusal(f"sheet {sheet!r} lists no measure")
@@ -1562,14 +2287,10 @@ def _capture(
     if not exportable:
         raise Refusal(f"comparison {comparison.id!r} has no cut a REST export can take")
     captures = {} if captures is None else captures
-    parameters = comparison.parameters
-    if parameters:
-        try:
-            tableau.set_parameters(twb, parameters)
-        except ValueError as exc:
-            raise Refusal(f"comparison {comparison.id!r}: {exc}") from exc
 
     def edit(x: str) -> str:
+        # The reshape goes first, so the format drop sees any column it copied.
+        x = tableau.set_shelves(x, sheet, shelves).xml if shelves else x
         x = tableau.expose_sheet(tableau.drop_number_formats(x, measures), sheet)
         # A field shown only behind a parameter value exports once the copy
         # carries that value.
@@ -1580,13 +2301,14 @@ def _capture(
         sheet,
         tuple(cut_label(cut) for cut in exportable),
         tuple(sorted(parameters.items())),
+        json.dumps(shelves, sort_keys=True),
     )
     if key not in captures:
         try:
             captures[key] = tbl.capture(workbook, sheet, exportable, edit)
         except (LookupError, tableau.RefreshMovedError) as exc:
             raise Refusal(f"cannot export {sheet!r}: {exc}") from exc
-    return twb, columns, exportable, browser, captures[key]
+    return twb, shaped, columns, exportable, browser, captures[key]
 
 
 def prove_headers(
@@ -1598,10 +2320,21 @@ def prove_headers(
     captures: dict[tuple, tableau.Snapshot] | None = None,
 ) -> None:
     """Print each exported cut's column headers, and the fields a long export
-    names, without probing or writing anything.
+    names, without probing or writing anything. A reshaped comparison first
+    prints the copy's rows and columns.
     """
     comparison = _comparison_by_id(cfg, path, comparison_id)
-    _, _, exportable, _, snap = _capture(comparison, tbl, captures)
+    twb, shaped, _, exportable, _, snap = _capture(comparison, tbl, captures)
+    if comparison.shelves:
+        sheet = comparison.sheet or ""
+        shape = finder.sheet_shape(shaped, sheet)
+        reshaped = tableau.set_shelves(twb, sheet, comparison.shelves)
+        calcs = reshape_text({}, reshaped)
+        print(
+            f"{comparison.id} reshaped: rows {', '.join(shape.rows) or 'none'}; "
+            f"columns {', '.join(shape.cols) or 'none'}"
+            + (f"; {calcs}" if calcs else "")
+        )
     for cut, rows in zip(exportable, snap.exports, strict=True):
         headers = list(rows[0]) if rows else []
         print(
@@ -1637,7 +2370,9 @@ def prove(
     """
     comparison = _comparison_by_id(cfg, path, comparison_id)
     _require(comparison, "workbook", "sheet", "dashboard_view", "decimals")
-    twb, columns, exportable, browser, snap = _capture(comparison, tbl, captures)
+    twb, shaped, columns, exportable, browser, snap = _capture(
+        comparison, tbl, captures
+    )
     if snap.refresh_started < now - PROOF_WINDOW:
         raise Refusal(
             f"the extract refreshed at {snap.refresh_started}, outside the 7 days "
@@ -1687,7 +2422,8 @@ def prove(
         _print_failures(comparison.id, proof.failures, failures_dir)
         raise Refusal(f"comparison {comparison.id!r} is not proven; nothing written")
 
-    gaps = sheet_gaps(twb, comparison)
+    # The copy's shelves: a dropped field is no longer a missing cut.
+    gaps = sheet_gaps(shaped, comparison)
     for kind, names in (("cuts", gaps.cuts), ("filters", gaps.filters)):
         if names:
             print(f"Sheet {kind} with no Cube member: {', '.join(names)}")
@@ -1703,6 +2439,11 @@ def prove(
                 comparison.workbook or ""
             ).isoformat(),
             "probe_fingerprint": probe_fingerprint(cfg, comparison),
+            # `prove --check` reads a republish that changed neither this nor
+            # `fingerprint` as no change to the sheet.
+            "source_fingerprint": tableau.source_fingerprint(
+                twb, comparison.sheet or ""
+            ),
             # `run` lists every other cut as one to prove in the browser.
             "cuts": [cut_label(cut) for cut in exportable],
             # `run` lists these rows as totals no proof covered.
@@ -1713,10 +2454,17 @@ def prove(
                 if comparison.parameters
                 else {}
             ),
+            # The reshape the copy carried; `run` names it, since the proof
+            # covers the reshaped grain, not the sheet's own.
+            **({"shelves": comparison.shelves} if comparison.shelves else {}),
             # `run` lists these as missing cuts and filters to triage.
             "missing_cuts": gaps.cuts,
             "missing_filters": gaps.filters,
             "restricting_filters": gaps.restricting,
+            # Triage reads these offline: a copy or display switch needs no
+            # member; a plain column can be value-checked.
+            "filter_notes": gaps.notes,
+            "missing_columns": gaps.columns,
         },
     )
     print(f"Proved {comparison.id}: {proof.cells} cells; wrote proof to {path}.")
@@ -1753,8 +2501,17 @@ def _print_failures(
 
 
 def prove_check(cfg: ViewConfig, *, tbl: tableau.Tableau) -> list[str]:
-    """List comparisons whose workbook was published after their proof."""
+    """List comparisons whose sheet changed since their proof.
+
+    A workbook published after the proof is downloaded once and its sheet
+    compared by what the proof covers: `fingerprint` (the sheet's formulas
+    and filters) and `source_fingerprint` (its datasources' connection and
+    filters). A republish that changed neither is reported and kept current.
+    A proof without `source_fingerprint` cannot rule out a datasource change,
+    so it is stale after any republish.
+    """
     stale = []
+    twbs: dict[str, str] = {}
     for comparison in cfg.comparisons:
         if not comparison.workbook:
             continue
@@ -1765,10 +2522,40 @@ def prove_check(cfg: ViewConfig, *, tbl: tableau.Tableau) -> list[str]:
         updated = tbl.workbook_updated(comparison.workbook)
         if not proof.workbook_updated_at:
             stale.append(f"{comparison.id}: proof has no workbook_updated_at; re-prove")
-        elif updated > datetime.fromisoformat(proof.workbook_updated_at):
+            continue
+        if updated <= datetime.fromisoformat(proof.workbook_updated_at):
+            continue
+        published = (
+            f"workbook published {updated.isoformat()}, after the proof's "
+            f"{proof.workbook_updated_at}"
+        )
+        if comparison.workbook not in twbs:
+            twbs[comparison.workbook] = tbl.download_twb(comparison.workbook)
+        twb, sheet = twbs[comparison.workbook], comparison.sheet or ""
+        try:
+            formulas = tableau.formula_fingerprint(twb, sheet)
+            sources = tableau.source_fingerprint(twb, sheet)
+        except ValueError as exc:
+            stale.append(f"{comparison.id}: {published}, and {exc}; re-prove")
+            continue
+        if formulas != proof.fingerprint:
             stale.append(
-                f"{comparison.id}: workbook published {updated.isoformat()}, after "
-                f"the proof's {proof.workbook_updated_at}; re-prove"
+                f"{comparison.id}: {published}; the sheet's formulas or filters "
+                "changed; re-prove"
+            )
+        elif not proof.source_fingerprint:
+            stale.append(
+                f"{comparison.id}: {published}; the sheet's formulas are unchanged, "
+                "but the proof predates the datasource check; re-prove once"
+            )
+        elif sources != proof.source_fingerprint:
+            stale.append(
+                f"{comparison.id}: {published}; a datasource's connection or "
+                "filters changed; re-prove"
+            )
+        else:
+            print(
+                f"{comparison.id}: republished {updated.isoformat()}, sheet unchanged"
             )
     for line in stale:
         print(line)
@@ -1780,9 +2567,43 @@ def prove_check(cfg: ViewConfig, *, tbl: tableau.Tableau) -> list[str]:
 # --- discover ----------------------------------------------------------------
 
 
+def _outer_from(sql: str) -> int:
+    """Index of the first `FROM` outside parentheses and quoted text, or -1.
+
+    `EXTRACT(YEAR FROM x)` and `TRIM(BOTH ' ' FROM x)` hold a `FROM` of their
+    own that does not start the query's FROM clause.
+    """
+    depth = 0
+    quote = ""
+    i = 0
+
+    while i < len(sql):
+        ch = sql[i]
+
+        if quote:
+            if ch == "\\":
+                i += 1
+            elif ch == quote:
+                quote = ""
+        elif ch in "'\"`":
+            quote = ch
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif depth == 0 and re.match(r"FROM\b", sql[i:], re.IGNORECASE):
+            if i == 0 or not (sql[i - 1].isalnum() or sql[i - 1] == "_"):
+                return i
+
+        i += 1
+
+    return -1
+
+
 def _measure_expression(sql: str, view: str, measure: str) -> str:
     """The SELECT expression of a measure-only compiled query, alias dropped."""
-    head = re.split(r"\bFROM\b", sql, maxsplit=1, flags=re.IGNORECASE)[0]
+    end = _outer_from(sql)
+    head = sql if end < 0 else sql[:end]
     head = re.sub(r"^\s*SELECT\s+", "", head, flags=re.IGNORECASE)
     return head.replace(f"`{view}__{measure}`", "").strip()
 
@@ -1792,53 +2613,39 @@ def discover(
     measure: str,
     *,
     cube: Cube,
-    tbl: tableau.Tableau,
+    tbl: tableau.Tableau | None,
     exposures_path: Path,
     only: list[str],
     caption: str | None = None,
     limit: int | None = finder.TOP_N,
+    twb_path: Path | None = None,
 ) -> list[finder.Candidate]:
     """Print workbook fields ranked against a measure, then each listed sheet's
     shape: shelves, export form, displayed decimals and filters.
 
     Calculated fields and aggregated raw fields both rank; a formula that uses a
     code group shows its codes. `caption` boosts the dashboard's name for the
-    measure; `limit` None prints every candidate.
+    measure; `limit` None prints every candidate. With `twb_path` the one local
+    workbook is read instead of the exposures' downloads, and `tbl` is unused.
     """
     compiled = cube.compiled({"measures": [_member(cfg.view, measure)]})
     member_sql = _measure_expression(compiled.sql, cfg.view, measure)
 
-    exposures = finder.tableau_exposures(exposures_path)
-    if exposures.skipped:
-        print(
-            f"Skipped exposures without a luid or models: {', '.join(exposures.skipped)}"
-        )
-
     found: list[finder.Candidate] = []
     twbs: dict[str, str] = {}
-    for exposure in exposures:
-        if only and exposure.name not in only:
-            continue
-        if not exposure.luid:
-            print(f"Skipped {exposure.name}: empty luid")
-            continue
-        try:
-            twb = tbl.download_twb(exposure.luid)
-        except (
-            TSC.ServerResponseError,
-            zipfile.BadZipFile,
-            ValueError,
-            OSError,
-        ) as exc:
-            print(f"Could not read {exposure.label}: {type(exc).__name__}: {exc}")
-            continue
-        twbs[exposure.luid] = twb
+    workbooks = (
+        [(str(twb_path), twb_path.name, twb_path.read_text(encoding="utf-8"))]
+        if twb_path is not None
+        else _exposure_workbooks(tbl, exposures_path, only)
+    )
+    for luid, label, twb in workbooks:
+        twbs[luid] = twb
         found += finder.rank(
             measure,
             member_sql,
             finder.calculated_fields(twb) + finder.aggregated_fields(twb),
-            workbook_luid=exposure.luid,
-            workbook_label=exposure.label,
+            workbook_luid=luid,
+            workbook_label=label,
             caption=caption,
             limit=None,
         )
@@ -1857,6 +2664,36 @@ def discover(
         )
     _print_sheets(found, twbs)
     return found
+
+
+def _exposure_workbooks(
+    tbl: tableau.Tableau | None, exposures_path: Path, only: list[str]
+) -> Iterator[tuple[str, str, str]]:
+    """Download each Tableau exposure's workbook: luid, label and XML."""
+    if tbl is None:
+        raise Refusal("discover needs a Tableau session or a local --twb")
+    exposures = finder.tableau_exposures(exposures_path)
+    if exposures.skipped:
+        print(
+            f"Skipped exposures without a luid or models: {', '.join(exposures.skipped)}"
+        )
+    for exposure in exposures:
+        if only and exposure.name not in only:
+            continue
+        if not exposure.luid:
+            print(f"Skipped {exposure.name}: empty luid")
+            continue
+        try:
+            twb = tbl.download_twb(exposure.luid)
+        except (
+            TSC.ServerResponseError,
+            zipfile.BadZipFile,
+            ValueError,
+            OSError,
+        ) as exc:
+            print(f"Could not read {exposure.label}: {type(exc).__name__}: {exc}")
+            continue
+        yield exposure.luid, exposure.label, twb
 
 
 def _print_sheets(found: list[finder.Candidate], twbs: dict[str, str]) -> None:

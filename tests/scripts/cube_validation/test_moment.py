@@ -134,3 +134,13 @@ def test_changed_between_lists_differing_tables():
     t2 = datetime(2026, 10, 27, 11, tzinfo=timezone.utc)
 
     assert changed_between(Wh(), ["ds.a", "ds.b"], t1, t2) == ["ds.b"]
+
+
+def test_fact_builds_reads_a_dev_dataset():
+    wh = FakeWh([{"start_time": NOW, "end_time": NOW, "job_id": "j1"}])
+
+    out = fact_builds(wh, "zz_cbaldor_kipptaf_marts.fct_x", NOW - timedelta(days=5))
+
+    assert [b.job_id for b in out] == ["j1"]
+    assert "dataset_id = 'zz_cbaldor_kipptaf_marts'" in wh.sql[0]
+    assert "table_id = 'fct_x'" in wh.sql[0]

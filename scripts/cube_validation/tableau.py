@@ -20,6 +20,7 @@ import io
 import json
 import os
 import re
+import sys
 import tempfile
 
 # trunk-ignore(bandit/B405): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
@@ -33,6 +34,7 @@ from pathlib import Path
 from typing import Any
 
 import tableauserverclient as TSC
+from tableauserverclient.server.endpoint.exceptions import FailedSignInError
 
 from .compare import cell_verdict
 from .config import Comparison
@@ -47,6 +49,9 @@ ENV_VARS = (
     "TABLEAU_PERSONAL_ACCESS_TOKEN",
 )
 REFRESH_JOB_TYPES = ("refresh_extracts", "increment_extracts")
+# New sign-ins one session may make after Tableau ends it: the personal
+# access token is shared, and each other sign-in with it ends this session.
+MAX_RECONNECTS = 3
 JOB_LOOKBACK = timedelta(days=8)
 MAX_JOB_LOOKUPS = 200
 
@@ -69,6 +74,14 @@ _HIDDEN = re.compile(r"""\s+hidden=(?:'true'|"true")""")
 
 class RefreshMovedError(RuntimeError):
     """An extract refresh started while the exports were being taken, twice."""
+
+
+class SessionEnded(RuntimeError):
+    """Tableau ended the session and a new sign-in did not hold.
+
+    A 401 right after signing in again, a sign-in Tableau refused, or more
+    than `MAX_RECONNECTS` new sign-ins in one session.
+    """
 
 
 # --- workbook XML ------------------------------------------------------------
@@ -321,6 +334,46 @@ def formula_fingerprint(twb_xml: str, sheet: str) -> str:
     return hashlib.sha256(json.dumps(sorted(parts)).encode("utf-8")).hexdigest()
 
 
+def source_fingerprint(twb_xml: str, sheet: str) -> str:
+    """Fingerprint what feeds one sheet that `formula_fingerprint` leaves out.
+
+    Covers, for each datasource the sheet depends on (Parameters aside), its
+    connection (the table or custom SQL it reads, as canonical XML) and its
+    own filters (data source filters). Its extract is left out: a republish
+    rewrites the extract's refresh times without changing the data's logic.
+
+    Raises:
+        ValueError: The workbook has no worksheet of that name.
+    """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    root = ET.fromstring(twb_xml)
+    ws = next(
+        (w for w in root.iter("worksheet") if w.get("name") == sheet),
+        None,
+    )
+    if ws is None:
+        raise ValueError(f"the workbook has no worksheet {sheet!r}")
+    used = {d.get("datasource") or "" for d in ws.iter("datasource-dependencies")} - {
+        "Parameters",
+        "",
+    }
+    parts = []
+    for ds in root.findall("./datasources/datasource"):
+        name = ds.get("name") or ""
+        if name not in used:
+            continue
+        for child in ds:
+            if child.tag in ("connection", "filter"):
+                parts.append(
+                    [
+                        name,
+                        child.tag,
+                        ET.canonicalize(ET.tostring(child, encoding="unicode")),
+                    ]
+                )
+    return hashlib.sha256(json.dumps(sorted(parts)).encode("utf-8")).hexdigest()
+
+
 _PARAMETERS_DS = re.compile(
     r"<datasource\b(?=[^>]*\bname='Parameters')[^>]*[^/]>.*?</datasource>", re.DOTALL
 )
@@ -393,6 +446,644 @@ def set_parameters(twb_xml: str, values: dict[str, str]) -> str:
 
 def _unquote(text: str) -> str:
     return text[1:-1] if len(text) > 1 and text[0] == text[-1] == '"' else text
+
+
+# A shelf: `<rows onTop='true'>(A / (B / C))</rows>`, or empty as `<rows />`.
+_SHELF_TAG = re.compile(
+    r"<(?P<tag>rows|cols)(?P<attrs>(?:\s[^>]*?)?)\s*(?:/>|>(?P<body>[^<]*)</(?P=tag)>)"
+)
+_BRACKETED = r"\[(?:[^\]]|\]\])*\]"
+_SHELF_TOKEN = re.compile(
+    rf"\s*(?:(?P<ref>{_BRACKETED}(?:\.{_BRACKETED})?)"
+    r"|(?P<op>[/+])|(?P<open>\()|(?P<close>\)))"
+)
+_DEPENDENCIES = re.compile(
+    r"<datasource-dependencies\b[^>]*>.*?</datasource-dependencies>", re.DOTALL
+)
+_INSTANCE_SUFFIX = {"nominal": "nk", "ordinal": "ok", "quantitative": "qk"}
+SHELF_NAMES = {"rows": "rows", "cols": "columns"}
+
+
+@dataclass
+class _Group:
+    """A parenthesized shelf expression: fields nested (`/`) or side by side (`+`)."""
+
+    items: list[_Group | str]
+    ops: list[str]
+
+
+def _parse_shelf(text: str) -> _Group | str | None:
+    tokens = []
+    end = 0
+    for m in _SHELF_TOKEN.finditer(text):
+        if m.start() != end:
+            break
+        tokens.append((m.lastgroup, m[m.lastgroup or ""]))
+        end = m.end()
+    if text[end:].strip():
+        raise ValueError(f"cannot read the shelf {text!r}")
+    if not tokens:
+        return None
+    at = 0
+
+    def expect(kind: str) -> str:
+        nonlocal at
+        if at >= len(tokens) or tokens[at][0] != kind:
+            raise ValueError(f"cannot read the shelf {text!r}")
+        at += 1
+        return tokens[at - 1][1]
+
+    def operand() -> _Group | str:
+        if at < len(tokens) and tokens[at][0] == "open":
+            expect("open")
+            node = expression()
+            expect("close")
+            return node
+        return expect("ref")
+
+    def expression() -> _Group | str:
+        items, ops = [operand()], []
+        while at < len(tokens) and tokens[at][0] == "op":
+            ops.append(expect("op"))
+            items.append(operand())
+        return items[0] if len(items) == 1 else _Group(items, ops)
+
+    node = expression()
+    if at != len(tokens):
+        raise ValueError(f"cannot read the shelf {text!r}")
+    return node
+
+
+def _shelf_text(node: _Group | str) -> str:
+    if isinstance(node, str):
+        return node
+    out = _shelf_text(node.items[0])
+    for op, item in zip(node.ops, node.items[1:], strict=True):
+        out += f" {op} {_shelf_text(item)}"
+    return f"({out})"
+
+
+def _shelf_leaves(node: _Group | str | None) -> list[str]:
+    if node is None:
+        return []
+    if isinstance(node, str):
+        return [node]
+    return [leaf for item in node.items for leaf in _shelf_leaves(item)]
+
+
+def _without(
+    node: _Group | str | None, drop: Callable[[str], bool]
+) -> _Group | str | None:
+    """The shelf with every field `drop` matches taken out."""
+    if node is None or isinstance(node, str):
+        return None if node is None or drop(node) else node
+    items: list[_Group | str] = []
+    ops: list[str] = []
+    for i, item in enumerate(node.items):
+        kept = _without(item, drop)
+        if kept is None:
+            continue
+        if items:
+            ops.append(node.ops[i - 1])
+        items.append(kept)
+    if not items:
+        return None
+    return items[0] if len(items) == 1 else _Group(items, ops)
+
+
+def _nested_under(node: _Group | str | None, ref: str) -> _Group | str:
+    """The shelf with `ref` nested innermost, as Tableau writes `(A / (B / C))`."""
+    if node is None:
+        return ref
+    if isinstance(node, _Group) and set(node.ops) == {"/"}:
+        return _Group([*node.items[:-1], _nested_under(node.items[-1], ref)], node.ops)
+    return _Group([node, ref], ["/"])
+
+
+def _xml_attr(value: str) -> str:
+    for raw, escaped in (
+        ("&", "&amp;"), ("<", "&lt;"), (">", "&gt;"), ("'", "&apos;"),
+        ('"', "&quot;"), ("\n", "&#10;"), ("\r", "&#13;"),
+    ):  # fmt: skip
+        value = value.replace(raw, escaped)
+    return value
+
+
+def _xml_element(el: ET.Element, indent: str, nl: str) -> str:
+    """Write an element the way Tableau does: single quotes, 2-space nesting."""
+    if (el.text or "").strip() or any("{" in k for k in el.attrib):
+        raise ValueError(f"cannot copy <{el.tag} name={el.get('name')!r}>")
+    attrs = "".join(f" {k}='{_xml_attr(v)}'" for k, v in el.attrib.items())
+    children = list(el)
+    if not children:
+        return f"{indent}<{el.tag}{attrs} />"
+    inner = nl.join(_xml_element(c, indent + "  ", nl) for c in children)
+    return f"{indent}<{el.tag}{attrs}>{nl}{inner}{nl}{indent}</{el.tag}>"
+
+
+def _ref_column(ref: str) -> str:
+    """The column name of a shelf field, as the XML escapes it or not."""
+    return _field_column(html.unescape(ref))
+
+
+@dataclass(frozen=True)
+class TableCalc:
+    """A table calculation on a worksheet.
+
+    `ref` is its `[datasource].[instance]`, `ordering` Tableau's
+    `ordering-type` (`Rows`, `Columns`, `Field`, ...), `along` the captions of
+    the fields a `Field` ordering names, and `columns` every bare column its
+    attributes name.
+    """
+
+    ref: str
+    caption: str
+    ordering: str
+    along: tuple[str, ...]
+    columns: frozenset[str]
+
+    @property
+    def label(self) -> str:
+        """`Difference in Avg. X (along Week, Module)`, or `(along Rows)`."""
+        along = ", ".join(self.along) or self.ordering
+        return f"{self.caption} (along {along})" if along else self.caption
+
+
+# How Tableau names a table calculation in front of its field.
+_TABLE_CALC_WORDS = {
+    "Difference": "Difference in",
+    "PctDiff": "% Difference in",
+    "PctTotal": "% of Total",
+    "CumTotal": "Running",
+    "Rank": "Rank of",
+}
+
+
+def table_calcs(ws: ET.Element) -> list[TableCalc]:
+    """The worksheet's table calculations, in the order its dependencies list
+    them.
+    """
+    caption = {}
+    for col in ws.iter("column"):
+        name = _bare(col.get("name") or "")
+        caption.setdefault(name, col.get("caption") or name)
+    found = []
+    for deps in ws.iter("datasource-dependencies"):
+        for instance in deps.findall("column-instance"):
+            calc = instance.find("table-calc")
+            if calc is None:
+                continue
+            kind = calc.get("type") or ""
+            derivation = instance.get("derivation") or ""
+            agg = "" if derivation in ("", "None", "User") else f"{derivation}. "
+            column = _bare(instance.get("column") or "")
+            words = _TABLE_CALC_WORDS.get(kind, f"{kind} of")
+            found.append(
+                TableCalc(
+                    ref=f"[{deps.get('datasource')}].{instance.get('name')}",
+                    caption=f"{words} {agg}{caption.get(column, column)}",
+                    ordering=calc.get("ordering-type") or "",
+                    along=tuple(
+                        caption.get(c, c)
+                        for el in calc.iter("order")
+                        if (c := _field_column(el.get("field") or ""))
+                    ),
+                    columns=frozenset(
+                        _field_column(v)
+                        for el in calc.iter()
+                        for v in el.attrib.values()
+                        if "].[" in v
+                    ),
+                )
+            )
+    return found
+
+
+@dataclass(frozen=True)
+class Reshaped:
+    """A workbook with one worksheet reshaped.
+
+    `removed` labels the table calculations the drop took out (see
+    `TableCalc.label`); `recomputed` captions, by shelf (`rows`, `columns`, or
+    `rows and columns`), the kept ones whose numbers the reshape changes: one
+    that runs down or across a changed shelf, one along the table or pane when
+    any shelf changed, and one along named fields whose partition gains an
+    added field.
+    """
+
+    xml: str
+    removed: tuple[str, ...] = ()
+    recomputed: dict[str, tuple[str, ...]] = field(default_factory=dict)
+
+
+# The shelf a table calculation runs along, by its `ordering-type`. Any other
+# ordering but `Field` (table, pane, cell) runs along both.
+_ORDERING_SHELF = {"Rows": ("rows",), "Columns": ("cols",)}
+
+
+def set_shelves(twb_xml: str, sheet: str, shelves: dict[str, Any]) -> Reshaped:
+    """Reshape one worksheet's rows and columns, so it exports at a new grain.
+
+    Each `drop` caption leaves the sheet's rows and columns; each `add` caption
+    is nested innermost on its shelf as a dimension (`none`, the instance the
+    workbook already uses for that field when there is one). An added field the
+    sheet does not list joins its datasource dependencies, copied from the
+    datasource. Tableau recomputes every measure at the new grain. A dropped
+    field's sorts and formats go with it, and so does any table calculation
+    along it (see `_strip_dropped`); its filters stay. Each `clear_filters`
+    caption's filters are reset to keep every member. Only that worksheet's
+    text changes.
+
+    Args:
+        twb_xml: The workbook XML.
+        sheet: The worksheet name.
+        shelves: `{drop: [caption], add: {rows: [caption], cols: [caption]},
+            clear_filters: [caption]}`.
+
+    Returns:
+        The edited workbook, the table calculations the drop removed, and the
+        kept ones the new shelves recompute.
+
+    Raises:
+        ValueError: The workbook has no such worksheet, a dropped caption is
+            not on the sheet's rows or columns, an added caption names no
+            field of the sheet's datasources (or more than 1), names a
+            measure, a calculation the sheet does not list, or a field
+            already on the rows or columns, or a cleared caption names no
+            filter of the sheet or a filter not on members.
+    """
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    root = ET.fromstring(twb_xml)
+    ws = next((w for w in root.iter("worksheet") if w.get("name") == sheet), None)
+    blocks = [
+        m
+        for m in _WORKSHEET.finditer(twb_xml)
+        if _attrs(m[0].split(">", 1)[0]).get("name") == sheet
+    ]
+    if ws is None or len(blocks) != 1:
+        raise ValueError(f"the workbook has no worksheet {sheet!r}")
+    block = blocks[0]
+    text = block[0]
+    nl = "\r\n" if "\r\n" in twb_xml else "\n"
+
+    caption = {}
+    for col in ws.iter("column"):
+        name = _bare(col.get("name") or "")
+        caption.setdefault(name, col.get("caption") or name)
+
+    def shown(ref: str) -> str:
+        column = _ref_column(ref)
+        return caption.get(column, column.lstrip(":"))
+
+    found_tags = list(_SHELF_TAG.finditer(text))
+    tags = {m["tag"]: m for m in found_tags}
+    if len(tags) != len(found_tags):
+        raise ValueError(f"sheet {sheet!r} has more than 1 rows or cols shelf")
+    trees = {
+        tag: _parse_shelf(html.unescape(m["body"] or "")) for tag, m in tags.items()
+    }
+    on_shelves = [
+        shown(leaf) for tree in trees.values() for leaf in _shelf_leaves(tree)
+    ]
+
+    def is_named(ref: str, wanted: str) -> bool:
+        return wanted in (shown(ref), _ref_column(ref))
+
+    original = dict(trees)
+    before = {leaf for t in trees.values() for leaf in _shelf_leaves(t)}
+    for wanted in shelves.get("drop", []):
+        if not any(
+            is_named(leaf, wanted) for t in trees.values() for leaf in _shelf_leaves(t)
+        ):
+            raise ValueError(
+                f"{wanted!r} is not on the rows or columns of {sheet!r}; they "
+                f"hold {', '.join(dict.fromkeys(on_shelves)) or 'nothing'}"
+            )
+        trees = {
+            tag: _without(tree, lambda ref, w=wanted: is_named(ref, w))
+            for tag, tree in trees.items()
+        }
+    kept = {leaf for t in trees.values() for leaf in _shelf_leaves(t)}
+    dropped = {_ref_column(r) for r in before - kept} - {_ref_column(r) for r in kept}
+    on_sheet = table_calcs(ws)
+    calcs = {c.ref for c in on_sheet if c.columns & dropped}
+    trees = {
+        tag: _without(tree, lambda ref: ref in calcs) for tag, tree in trees.items()
+    }
+
+    top = root.find("datasources")
+    datasources = {
+        ds.get("name") or "": ds
+        for ds in ([] if top is None else top.findall("datasource"))
+    }
+    dependencies = {
+        deps.get("datasource") or "": deps
+        for deps in ws.iter("datasource-dependencies")
+    }
+    inserts: dict[str, list[ET.Element]] = {}
+    for tag, wanted_list in shelves.get("add", {}).items():
+        if tag not in tags:
+            raise ValueError(f"sheet {sheet!r} has no {SHELF_NAMES[tag]} shelf")
+        for wanted in wanted_list:
+            ds_name, col, listed = _added_column(
+                wanted, sheet, dependencies, datasources
+            )
+            name = _bare(col.get("name") or "")
+            if col.get("role") == "measure":
+                raise ValueError(f"{wanted!r} is a measure; add a dimension")
+            if col.find("calculation") is not None and not listed:
+                raise ValueError(
+                    f"{wanted!r} is a calculation {sheet!r} does not list; add a "
+                    "plain field or one the sheet uses"
+                )
+            if any(
+                _ref_column(leaf) == name
+                for t in trees.values()
+                for leaf in _shelf_leaves(t)
+            ):
+                raise ValueError(
+                    f"{wanted!r} is already on the rows or columns of {sheet!r}"
+                )
+            instance = _dimension_instance(root, ws, ds_name, col)
+            deps = dependencies[ds_name]
+            if not listed:
+                inserts.setdefault(ds_name, []).append(col)
+            if not any(
+                i.get("name") == instance.get("name")
+                for i in deps.findall("column-instance")
+            ):
+                inserts.setdefault(ds_name, []).append(instance)
+            ref = f"[{ds_name}].{instance.get('name')}"
+            trees[tag] = _nested_under(trees[tag], ref)
+
+    def with_inserts(m: re.Match) -> str:
+        ds_name = _attrs(m[0].split(">", 1)[0]).get("datasource", "")
+        added = inserts.pop(ds_name, [])
+        if not added:
+            return m[0]
+        head, close = m[0].rsplit("</datasource-dependencies>", 1)
+        indent = head[len(head.rstrip(" \t")) :]
+        lines = [_xml_element(el, indent + "  ", nl).lstrip(" \t") for el in added]
+        body = f"{nl}{indent}  ".join(lines)
+        return f"{head}  {body}{nl}{indent}</datasource-dependencies>{close}"
+
+    text = _DEPENDENCIES.sub(with_inserts, text)
+
+    def shelf(m: re.Match) -> str:
+        tree = trees[m["tag"]]
+        if tree == _parse_shelf(html.unescape(m["body"] or "")):
+            return m[0]
+        attrs = m["attrs"].rstrip()
+        if tree is None:
+            return f"<{m['tag']}{attrs} />"
+        body = _shelf_text(tree).replace("&", "&amp;").replace("<", "&lt;")
+        return f"<{m['tag']}{attrs}>{body.replace('>', '&gt;')}</{m['tag']}>"
+
+    text = _SHELF_TAG.sub(shelf, text)
+    text = _strip_dropped(text, dropped, calcs)
+    for wanted in shelves.get("clear_filters", []):
+        text = _clear_filter(text, wanted, sheet, shown, is_named)
+    out = twb_xml[: block.start()] + text + twb_xml[block.end() :]
+    # trunk-ignore(bandit/B314): workbook XML comes from the org's own Tableau server over authenticated REST; ElementTree resolves no external entities
+    ET.fromstring(out)
+    changed = {tag for tag in trees if trees[tag] != original[tag]}
+    added_columns = {
+        tag: {_ref_column(r) for r in _shelf_leaves(trees[tag])}
+        - {_ref_column(r) for r in _shelf_leaves(original[tag])}
+        for tag in trees
+    }
+    recomputed: dict[str, tuple[str, ...]] = {}
+    for c in on_sheet:
+        if c.ref in calcs:
+            continue
+        if c.ordering == "Field":
+            # A field added outside its ordering joins its partition.
+            hit = [t for t, cols in added_columns.items() if cols - c.columns]
+        else:
+            along = _ORDERING_SHELF.get(c.ordering, ("rows", "cols"))
+            hit = [t for t in along if t in changed]
+        if hit:
+            key = " and ".join(SHELF_NAMES[t] for t in ("rows", "cols") if t in hit)
+            if c.caption not in recomputed.get(key, ()):
+                recomputed[key] = (*recomputed.get(key, ()), c.caption)
+    removed = tuple(dict.fromkeys(c.label for c in on_sheet if c.ref in calcs))
+    return Reshaped(out, removed, recomputed)
+
+
+def _element(tag: str) -> re.Pattern:
+    """One `tag` element, empty or with a body, with the line it starts."""
+    return re.compile(
+        rf"(?:\r?\n[ \t]*)?<{tag}(?=[\s/>])[^>]*?(?:/>|>.*?</{tag}>)", re.DOTALL
+    )
+
+
+_EMPTY_ELEMENT = re.compile(r"(?:\r?\n[ \t]*)?<[\w:-]+(?=[\s/])[^>]*/>")
+_SLICE = re.compile(r"(?:\r?\n[ \t]*)?<column>([^<]*)</column>")
+# What sorts or formats one field, and goes when the field leaves the view.
+_PER_FIELD = {"natural-sort", "sort", "format"}
+# Containers an edit can empty, innermost first: a label whose runs all went
+# leaves an empty <formatted-text>, then an empty <customized-label>. No
+# reference shows any of them empty.
+_EMPTIABLE = (
+    "style-rule",
+    "formatted-text",
+    "customized-label",
+    "customized-tooltip",
+    "encodings",
+)
+
+
+def _emptied(tag: str) -> re.Pattern:
+    """One `tag` element holding only whitespace, with the line it starts."""
+    return re.compile(rf"(?:\r?\n[ \t]*)?<{tag}(?=[\s>])[^>]*(?<!/)>\s*</{tag}>")
+
+
+def _strip_dropped(text: str, dropped: set[str], calcs: set[str]) -> str:
+    """A reshaped worksheet without what still leans on a dropped field.
+
+    A sort (manual ones included) or format on a dropped column goes. A table
+    calculation along one goes entirely (its instance and every element with an
+    attribute naming it: encoding, format, computed sort, Measure Names member,
+    filter; and every label run and slice naming it), since along the
+    remaining fields it would mean something else. A container this leaves
+    empty goes too (see `_EMPTIABLE`). Filters on a dropped column stay: they
+    keep filtering, and the filter cards on the sheet and its dashboards name
+    them.
+    """
+
+    def on_dropped(attrs: dict[str, str]) -> bool:
+        ref = attrs.get("field") or attrs.get("column") or ""
+        return "].[" in ref and _field_column(ref) in dropped
+
+    def names_calc(attrs: dict[str, str]) -> bool:
+        # A Measure Names member quotes the ref, so match it inside the value.
+        return any(ref in value for value in attrs.values() for ref in calcs)
+
+    def head(element: str) -> tuple[str, dict[str, str]]:
+        tag = element.lstrip().split(">", 1)[0]
+        return tag[1:].split(None, 1)[0].rstrip("/"), _attrs(tag)
+
+    def empty(m: re.Match) -> str:
+        tag, attrs = head(m[0])
+        if names_calc(attrs) or (tag in _PER_FIELD and on_dropped(attrs)):
+            return ""
+        return m[0]
+
+    def dependencies(m: re.Match) -> str:
+        ds = _attrs(m[0].split(">", 1)[0]).get("datasource", "")
+        return _element("column-instance").sub(
+            lambda c: (
+                ""
+                if f"[{ds}].{_attrs(c[0].lstrip().split('>', 1)[0]).get('name')}"
+                in calcs
+                else c[0]
+            ),
+            m[0],
+        )
+
+    def body(m: re.Match) -> str:
+        tag, attrs = head(m[0])
+        if names_calc(attrs) or (tag in ("format", "sort") and on_dropped(attrs)):
+            return ""
+        return m[0]
+
+    def run(m: re.Match) -> str:
+        content = html.unescape(m[0])
+        return "" if any(ref in content for ref in calcs) else m[0]
+
+    # A container the sheet already had empty is set aside, so only one this
+    # edit empties goes.
+    kept_empty: list[str] = []
+
+    def set_aside(m: re.Match) -> str:
+        kept_empty.append(m[0])
+        return f"\x00{len(kept_empty) - 1}\x00"
+
+    for tag in _EMPTIABLE:
+        text = _emptied(tag).sub(set_aside, text)
+
+    out = _DEPENDENCIES.sub(dependencies, text)
+    out = _EMPTY_ELEMENT.sub(empty, out)
+    for tag in ("format", "sort", "filter"):
+        out = _element(tag).sub(body, out)
+    out = _element("run").sub(run, out)
+    out = _SLICE.sub(lambda m: "" if html.unescape(m[1]) in calcs else m[0], out)
+    for tag in _EMPTIABLE:
+        out = _emptied(tag).sub("", out)
+    return re.sub(r"\x00(\d+)\x00", lambda m: kept_empty[int(m[1])], out)
+
+
+def _clear_filter(
+    text: str,
+    wanted: str,
+    sheet: str,
+    shown: Callable[[str], str],
+    is_named: Callable[[str, str], bool],
+) -> str:
+    """A worksheet whose filters on `wanted` keep every member.
+
+    Each such filter keeps its element and attributes (a context filter stays
+    one, and its filter cards still name it); its members become the level's
+    every member, the form an untouched All filter takes.
+    """
+    nl = "\r\n" if "\r\n" in text else "\n"
+    found = 0
+
+    def clear(m: re.Match) -> str:
+        nonlocal found
+        element = m[0].lstrip()
+        lead = m[0][: len(m[0]) - len(element)]
+        opening = element.split(">", 1)[0]
+        column = _attrs(opening).get("column", "")
+        if not is_named(column, wanted):
+            return m[0]
+        found += 1
+        if _attrs(opening).get("class") != "categorical":
+            raise ValueError(
+                f"the filter on {wanted!r} on {sheet!r} is not on members; "
+                "only a member filter can be cleared"
+            )
+        indent = lead.lstrip("\r\n")
+        level = _xml_attr("[" + column.rsplit("].[", 1)[-1])
+        members = (
+            f"<groupfilter function='level-members' level='{level}' "
+            "user:ui-enumeration='all' user:ui-marker='enumerate' />"
+        )
+        opening = opening.rstrip("/").rstrip()
+        return f"{lead}{opening}>{nl}{indent}  {members}{nl}{indent}</filter>"
+
+    out = _element("filter").sub(clear, text)
+    if not found:
+        on_sheet = [
+            shown(_attrs(m[0].lstrip().split(">", 1)[0]).get("column", ""))
+            for m in _element("filter").finditer(text)
+        ]
+        raise ValueError(
+            f"{sheet!r} has no filter on {wanted!r}; it filters "
+            f"{', '.join(dict.fromkeys(on_sheet)) or 'nothing'}"
+        )
+    return out
+
+
+def _named(columns: list[ET.Element], wanted: str) -> list[ET.Element]:
+    return [
+        c for c in columns if wanted in (c.get("caption"), _bare(c.get("name") or ""))
+    ]
+
+
+def _added_column(
+    wanted: str,
+    sheet: str,
+    dependencies: dict[str, ET.Element],
+    datasources: dict[str, ET.Element],
+) -> tuple[str, ET.Element, bool]:
+    """Find a field to add: its datasource, its column, and whether the sheet
+    lists it. Only a datasource's own columns count, never its extract's.
+    """
+    found = []
+    for ds_name, deps in dependencies.items():
+        listed = _named(deps.findall("column"), wanted)
+        source = datasources.get(ds_name)
+        defined = [] if source is None else _named(source.findall("column"), wanted)
+        if listed or defined:
+            found.append((ds_name, (listed or defined)[0], bool(listed)))
+    if not found:
+        raise ValueError(
+            f"the workbook has no field {wanted!r} on the datasources of {sheet!r}"
+        )
+    if len(found) > 1:
+        raise ValueError(
+            f"{wanted!r} names a field on {len(found)} datasources of {sheet!r}"
+        )
+    return found[0]
+
+
+def _dimension_instance(
+    root: ET.Element, ws: ET.Element, ds_name: str, col: ET.Element
+) -> ET.Element:
+    """The `none` instance of a field: the sheet's own, the workbook's, or new."""
+    name = col.get("name") or ""
+    for scope in (ws, root):
+        for deps in scope.iter("datasource-dependencies"):
+            if deps.get("datasource") != ds_name:
+                continue
+            for instance in deps.findall("column-instance"):
+                if (
+                    instance.get("column") == name
+                    and instance.get("derivation") == "None"
+                ):
+                    return instance
+    kind = col.get("type") or "nominal"
+    return ET.Element(
+        "column-instance",
+        {
+            "column": name,
+            "derivation": "None",
+            "name": f"[none:{_bare(name)}:{_INSTANCE_SUFFIX.get(kind, 'nk')}]",
+            "pivot": "key",
+            "type": kind,
+        },
+    )
 
 
 def _parameter_names(twb_xml: str) -> set[str]:
@@ -671,6 +1362,7 @@ class Tableau:
         self._server = server
         self._now = now or (lambda: datetime.now(timezone.utc))
         self._sign_in = sign_in
+        self._reconnects = 0
 
     def sign_out(self) -> str | None:
         """Sign out; return why it failed instead of raising, so a failure here
@@ -694,12 +1386,55 @@ class Tableau:
         self.sign_out()
         self._server = self._sign_in()
 
+    def _call(self, fn: Callable[[Any], Any]) -> Any:
+        """Run `fn(server)`, signing in again once if Tableau ended the session.
+
+        Tableau answers 401 (`FailedSignInError`) when another sign-in with
+        the same token ended this session. The call is retried once on a new
+        session; `fn` must read everything it needs inside it, as a lazy
+        result (a job list, a CSV) fetches only when read.
+
+        Raises:
+            SessionEnded: The retry got a 401 too, the new sign-in failed, or
+                the session already signed in again `MAX_RECONNECTS` times.
+        """
+        try:
+            return fn(self._server)
+        except FailedSignInError as exc:
+            if self._sign_in is None or self._reconnects >= MAX_RECONNECTS:
+                raise SessionEnded(
+                    f"Tableau ended the session ({exc.code}) and this one signs in "
+                    f"again at most {MAX_RECONNECTS} times"
+                ) from exc
+            print(
+                f"Tableau ended the session ({exc.code}); signing in again",
+                file=sys.stderr,
+            )
+            self._reconnects += 1
+            try:
+                self.reconnect()
+            except (FailedSignInError, TSC.ServerResponseError) as refused:
+                raise SessionEnded(
+                    f"Tableau refused the new sign-in ({refused.code})"
+                ) from refused
+        try:
+            return fn(self._server)
+        except FailedSignInError as again:
+            raise SessionEnded(
+                f"Tableau ended the session again ({again.code}) right after a new "
+                "sign-in: another job keeps signing in with the same token"
+            ) from again
+
     def download_twb(self, luid: str) -> str:
         """Return a workbook's XML, downloaded without its extract."""
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(
-                self._server.workbooks.download(
-                    luid, filepath=str(Path(tmp) / "workbook"), include_extract=False
+                self._call(
+                    lambda s: s.workbooks.download(
+                        luid,
+                        filepath=str(Path(tmp) / "workbook"),
+                        include_extract=False,
+                    )
                 )
             )
             if zipfile.is_zipfile(path):
@@ -709,7 +1444,7 @@ class Tableau:
 
     def workbook_updated(self, luid: str) -> datetime:
         """Return when a workbook was last published."""
-        return self._server.workbooks.get_by_id(luid).updated_at
+        return self._call(lambda s: s.workbooks.get_by_id(luid).updated_at)
 
     def refresh_started(
         self, workbook_luid: str, since: datetime | None = None
@@ -734,24 +1469,34 @@ class Tableau:
                 newest `MAX_JOB_LOOKUPS` jobs.
         """
         since = since or self._now() - JOB_LOOKBACK
-        wb = self._server.workbooks.get_by_id(workbook_luid)
-        self._server.workbooks.populate_connections(wb)
+
+        def connections(s: Any) -> Any:
+            wb = s.workbooks.get_by_id(workbook_luid)
+            s.workbooks.populate_connections(wb)
+            return wb, list(wb.connections)
+
+        wb, conns = self._call(connections)
         source_ids = {
             c.datasource_id
-            for c in wb.connections
+            for c in conns
             if c.connection_type == "sqlproxy" and c.datasource_id
         }
 
         # The server parses only this form; str(datetime) is rejected.
         bound = since.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        candidates = sorted(
-            (
-                job
-                for job in self._server.jobs.filter(
+        jobs = self._call(
+            lambda s: list(
+                s.jobs.filter(
                     status="Success",
                     job_type__in=list(REFRESH_JOB_TYPES),
                     started_at__gte=bound,
                 )
+            )
+        )
+        candidates = sorted(
+            (
+                job
+                for job in jobs
                 if job.status == "Success"
                 and job.type in REFRESH_JOB_TYPES
                 and job.started_at is not None
@@ -760,7 +1505,7 @@ class Tableau:
             reverse=True,
         )
         for job in candidates[:MAX_JOB_LOOKUPS]:
-            detail = self._server.jobs.get_by_id(job.id)
+            detail = self._call(lambda s, job=job: s.jobs.get_by_id(job.id))
             if (
                 detail.workbook_id == workbook_luid
                 or detail.datasource_id in source_ids
@@ -799,8 +1544,8 @@ class Tableau:
                 landed elsewhere.
             ValueError: The edit is not well-formed XML or flattened CRLF.
         """
-        wb = self._server.workbooks.get_by_id(workbook_luid)
-        projects = list(self._server.projects.filter(name=TEMP_PROJECT))
+        wb = self._call(lambda s: s.workbooks.get_by_id(workbook_luid))
+        projects = self._call(lambda s: list(s.projects.filter(name=TEMP_PROJECT)))
         if len(projects) != 1 or projects[0].name != TEMP_PROJECT:
             raise RuntimeError(
                 f"expected 1 project named {TEMP_PROJECT}, found {len(projects)}; "
@@ -811,10 +1556,12 @@ class Tableau:
 
         with tempfile.TemporaryDirectory() as tmp:
             src = Path(
-                self._server.workbooks.download(
-                    workbook_luid,
-                    filepath=str(Path(tmp) / "base"),
-                    include_extract=True,
+                self._call(
+                    lambda s: s.workbooks.download(
+                        workbook_luid,
+                        filepath=str(Path(tmp) / "base"),
+                        include_extract=True,
+                    )
                 )
             )
             out = Path(tmp) / f"copy{src.suffix}"
@@ -834,8 +1581,11 @@ class Tableau:
             if project.name != TEMP_PROJECT or not name.startswith(COPY_PREFIX):
                 raise RuntimeError("the copy goes only to TEMP-CB as ZZ-VALIDATE")
             item = TSC.WorkbookItem(project_id=project.id, name=name)
-            published = self._server.workbooks.publish(
-                item, str(out), mode=TSC.Server.PublishMode.Overwrite
+            # Overwrite: a publish retried after a 401 replaces the same copy.
+            published = self._call(
+                lambda s: s.workbooks.publish(
+                    item, str(out), mode=TSC.Server.PublishMode.Overwrite
+                )
             )
 
         if published.project_id != project.id:
@@ -860,9 +1610,13 @@ class Tableau:
             LookupError: The sheet is not a view on the copy; a sheet hidden
                 in the workbook does not publish as a view.
         """
-        wb = self._server.workbooks.get_by_id(copy_luid)
-        self._server.workbooks.populate_views(wb)
-        view = next((v for v in wb.views if v.name == sheet), None)
+
+        def views(s: Any) -> list:
+            wb = s.workbooks.get_by_id(copy_luid)
+            s.workbooks.populate_views(wb)
+            return list(wb.views)
+
+        view = next((v for v in self._call(views) if v.name == sheet), None)
         if view is None:
             raise LookupError(
                 f"no view {sheet!r} on the copy; a hidden sheet is not published"
@@ -871,8 +1625,13 @@ class Tableau:
         opts = TSC.CSVRequestOptions()
         for caption, value in filters.items():
             opts.vf(caption, _vf_value(value))
-        self._server.views.populate_csv(view, opts)
-        text = b"".join(view.csv).decode("utf-8-sig")
+
+        def rows(s: Any) -> bytes:
+            # The CSV is fetched as it is read, so it is read inside the call.
+            s.views.populate_csv(view, opts)
+            return b"".join(view.csv)
+
+        text = self._call(rows).decode("utf-8-sig")
         return list(csv.DictReader(io.StringIO(text, newline="")))
 
     def capture(

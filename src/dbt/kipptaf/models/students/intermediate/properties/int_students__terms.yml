@@ -29,7 +29,9 @@ models:
       termbins carries the quarter and from the raw terms table's own quarter
       row where it does not; on the Focus arm they are derived from Focus's
       quarter-type marking periods. Consumers that need only the quarter grain
-      filter to term is not null at the call site.
+      filter to term is not null at the call site. Quarter rows also carry the
+      school-year bounds, in-session days, and clamped dates from the school's
+      calendar weeks.
     data_tests:
       # Two tests, because the two halves of the grain key on different
       # columns. Spine rows key on term, which int_powerschool__terms_spine
@@ -123,6 +125,32 @@ models:
         description: >-
           Whether today falls within the quarter's dates. Null outside the
           quarter rows.
+      - name: first_day_school_year
+        description: >-
+          Calendar Monday of the school's first school week of the year, from
+          int_students__calendar_week. Null outside the quarter rows, and on a
+          quarter with no calendar weeks.
+      - name: last_day_school_year
+        description: >-
+          Last instructional day of the school's year, from
+          int_students__calendar_week. Null outside the quarter rows, and on a
+          quarter with no calendar weeks.
+      - name: days_in_term
+        description: >-
+          In-session days in the quarter, summed from the school's calendar
+          weeks labelled with this quarter. Null outside the quarter rows, and
+          on a quarter with no calendar weeks; consumers that need a quarter the
+          calendar covers filter on this being not null.
+      - name: term_start_date_clamped
+        description: >-
+          term_start_date, moved up to first_day_school_year when the quarter
+          starts before the first school week. Null outside the quarter rows,
+          and on a quarter with no calendar weeks.
+      - name: term_end_date_clamped
+        description: >-
+          term_end_date, moved back to last_day_school_year when the quarter
+          ends after the last day of school. Null outside the quarter rows, and
+          on a quarter with no calendar weeks.
       - name: dcid
         description: >-
           Unique identifier for this term record in PowerSchool. Null on Focus

@@ -1,0 +1,121 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook original-version='18.1' source-build='2025.1.0' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource caption='Mastery Rows' inline='true' name='federated.0ddi (copy)' version='18.1'>
+      <connection class='federated'>
+        <relation name='Extract' table='[Extract].[Extract]' type='table'>
+          <columns>
+            <column datatype='string' name='subject_area' ordinal='0' />
+          </columns>
+        </relation>
+        <cols>
+          <map key='[subject_area]' value='[Extract].[subject_area]' />
+        </cols>
+      </connection>
+      <column caption='Grade Level' datatype='integer' name='[grade_level]' role='dimension' type='ordinal'>
+        <aliases>
+          <alias key='0' value='K' />
+        </aliases>
+      </column>
+      <column caption='Subject Area' datatype='string' name='[subject_area]' role='dimension' type='nominal' />
+      <column caption='Module Code' datatype='string' name='[module_code]' role='dimension' type='nominal' />
+      <column caption='School' datatype='string' name='[school]' role='dimension' type='nominal' />
+      <column caption='Week Start Monday' datatype='date' name='[week_start_monday]' role='dimension' type='ordinal' />
+      <column caption='Is Mastery Int' datatype='real' name='[is_mastery_int]' role='measure' type='quantitative' />
+      <column caption='Grade/Subject' datatype='string' name='[Calculation_4901]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='&apos;Grade &apos; + STR([grade_level]) + &apos; &apos; + [subject_area]' />
+      </column>
+      <column caption='Mastery Band' datatype='string' name='[Calculation_5000]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='IF [is_mastery_int] = 1 THEN &apos;Met&apos; END' />
+      </column>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Mastery Grid'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Mastery Rows' name='federated.0ddi (copy)' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0ddi (copy)'>
+            <column caption='Grade/Subject' datatype='string' name='[Calculation_4901]' role='dimension' type='nominal'>
+              <calculation class='tableau' formula='&apos;Grade &apos; + STR([grade_level]) + &apos; &apos; + [subject_area]' />
+            </column>
+            <column-instance column='[is_mastery_int]' derivation='Avg' name='[avg:is_mastery_int:qk]' pivot='key' type='quantitative' />
+            <column caption='Grade Level' datatype='integer' name='[grade_level]' role='dimension' type='ordinal'>
+              <aliases>
+                <alias key='0' value='K' />
+              </aliases>
+            </column>
+            <column caption='Is Mastery Int' datatype='real' name='[is_mastery_int]' role='measure' type='quantitative' />
+            <column caption='Module Code' datatype='string' name='[module_code]' role='dimension' type='nominal' />
+            <column-instance column='[Calculation_4901]' derivation='None' name='[none:Calculation_4901:nk]' pivot='key' type='nominal' />
+            <column-instance column='[grade_level]' derivation='None' name='[none:grade_level:ok]' pivot='key' type='ordinal' />
+            <column-instance column='[module_code]' derivation='None' name='[none:module_code:nk]' pivot='key' type='nominal' />
+            <column-instance column='[school]' derivation='None' name='[none:school:nk]' pivot='key' type='nominal' />
+            <column-instance column='[week_start_monday]' derivation='None' name='[none:week_start_monday:ok]' pivot='key' type='ordinal' />
+            <column caption='School' datatype='string' name='[school]' role='dimension' type='nominal' />
+            <column caption='Week Start Monday' datatype='date' name='[week_start_monday]' role='dimension' type='ordinal' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.0ddi (copy)].[none:grade_level:ok]'>
+            <groupfilter function='level-members' level='[none:grade_level:ok]' user:ui-enumeration='all' user:ui-marker='enumerate' />
+          </filter>
+          <aggregation value='true' />
+        </view>
+        <style />
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Square' />
+            <encodings>
+              <text column='[federated.0ddi (copy)].[avg:is_mastery_int:qk]' />
+            </encodings>
+          </pane>
+        </panes>
+        <rows onTop='true'>([federated.0ddi (copy)].[none:Calculation_4901:nk] / [federated.0ddi (copy)].[none:week_start_monday:ok])</rows>
+        <cols onLeft='true'>([federated.0ddi (copy)].[none:module_code:nk] / [federated.0ddi (copy)].[none:school:nk])</cols>
+      </table>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000a1}' />
+    </worksheet>
+    <worksheet name='Mastery by Week'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Mastery Rows' name='federated.0ddi (copy)' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0ddi (copy)'>
+            <column-instance column='[is_mastery_int]' derivation='Avg' name='[avg:is_mastery_int:qk]' pivot='key' type='quantitative' />
+            <column caption='Is Mastery Int' datatype='real' name='[is_mastery_int]' role='measure' type='quantitative' />
+            <column caption='Subject Area' datatype='string' name='[subject_area]' role='dimension' type='nominal' />
+            <column-instance column='[subject_area]' derivation='None' name='[none:subject_area:nk]' pivot='key' type='nominal' />
+            <column caption='Week Start Monday' datatype='date' name='[week_start_monday]' role='dimension' type='ordinal' />
+            <column-instance column='[week_start_monday]' derivation='None' name='[none:week_start_monday:ok]' pivot='key' type='ordinal' />
+          </datasource-dependencies>
+          <aggregation value='true' />
+        </view>
+        <style />
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+          </pane>
+        </panes>
+        <rows>[federated.0ddi (copy)].[none:week_start_monday:ok]</rows>
+        <cols>[federated.0ddi (copy)].[none:subject_area:nk]</cols>
+      </table>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000a2}' />
+    </worksheet>
+  </worksheets>
+  <windows>
+    <window class='worksheet' name='Mastery Grid'>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000a3}' />
+    </window>
+    <window class='worksheet' name='Mastery by Week'>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000a4}' />
+    </window>
+  </windows>
+</workbook>

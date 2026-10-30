@@ -108,6 +108,7 @@ class Calc:
     caption: str
     formula: str
     worksheets: list[str]
+    name: str = ""
 
 
 @dataclass(frozen=True)
@@ -194,7 +195,7 @@ def calculated_fields(twb_xml: str) -> list[Calc]:
             if not formula or name in found:
                 continue
             caption = column.get("caption") or name.strip("[]")
-            found[name] = Calc(caption, formula, sorted(used_by.get(name, set())))
+            found[name] = Calc(caption, formula, sorted(used_by.get(name, set())), name)
     return sorted(found.values(), key=lambda c: c.caption)
 
 
@@ -266,6 +267,7 @@ def aggregated_fields(twb_xml: str) -> list[Calc]:
                 f"{agg}({captions.get(column, _bare(column))})",
                 f"{agg}({column})",
                 sorted(sheets),
+                column,
             )
             for (agg, column), sheets in found.items()
         ),
@@ -278,6 +280,32 @@ def is_value(m: re.Match) -> bool:
     calculation over one (`[cum:ctd:student_number:qk]` nests a derivation).
     """
     return m["deriv"] in AGGREGATES or ":" in m["name"]
+
+
+# Calculation classes of a group (`categorical-bin`) or bin field. A filter
+# names one bare (`[ds].[Discipline]`), with no derivation prefix.
+GROUP_CLASSES = frozenset({"categorical-bin", "bin"})
+
+
+def group_fields(ws: ET.Element) -> set[str]:
+    """Bare names of the sheet's group and bin fields."""
+    return {
+        _bare(col.get("name") or "")
+        for col in ws.iter("column")
+        if (calc := col.find("calculation")) is not None
+        and calc.get("class") in GROUP_CLASSES
+    }
+
+
+def filter_field(column: str, groups: set[str]) -> str | None:
+    """The bare field a filter's column names, or None for a value or a ref
+    with no derivation prefix that names no group field.
+    """
+    m = FIELD_REF.search(column)
+    if m is not None:
+        return None if is_value(m) else m["name"]
+    name = column.rsplit("].[", 1)[-1].rstrip("]") if "].[" in column else ""
+    return name if name in groups else None
 
 
 def restricts(filter_el: ET.Element) -> bool:
@@ -343,6 +371,7 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
     if ws is None:
         raise ValueError(f"the workbook has no worksheet {sheet!r}")
     caption, personal = sheet_fields(ws)
+    groups = group_fields(ws)
 
     def shelf(tag: str) -> list[str]:
         text = " ".join(el.text or "" for el in ws.iter(tag))
@@ -368,15 +397,15 @@ def sheet_shape(twb_xml: str, sheet: str) -> SheetShape:
 
     filters = []
     for filter_el in ws.iter("filter"):
-        m = FIELD_REF.search(filter_el.get("column") or "")
-        if m is None or is_value(m) or m["name"] in personal:
+        field_name = filter_field(filter_el.get("column") or "", groups)
+        if field_name is None or field_name in personal:
             continue
-        name = caption.get(m["name"], m["name"])
+        name = caption.get(field_name, field_name)
         if not restricts(filter_el):
             filters.append(f"{name}: All")
         elif filter_el.get("class") == "quantitative":
             filters.append(f"{name}: a range (narrows the sheet)")
-        elif m["name"] in SHOWN_FILTER_FIELDS:
+        elif field_name in SHOWN_FILTER_FIELDS:
             top = filter_el.find("groupfilter")
             members = ", ".join(
                 _unquote(g.get("member")) for g in filter_el.iter("groupfilter")

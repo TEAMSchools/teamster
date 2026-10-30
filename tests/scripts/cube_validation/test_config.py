@@ -1,9 +1,16 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.config import ConfigError, load_view_config, write_proof
+from cube_validation.config import (
+    ConfigError,
+    load_view_config,
+    mask_digits,
+    write_decision,
+    write_proof,
+)
 
 EXAMPLE = """\
 view: student_attendance_enrollment_daily_view
@@ -381,6 +388,32 @@ GAP_DECISION = """\
 """
 
 
+VALUES = "        - { dashboard: is_present, cube: attendance_value }\n"
+
+
+def test_rows_take_a_dashboard_side_scope(tmp_path):
+    scope = "      dashboard_scope:\n        - { dashboard: iep_status, values: [No IEP] }\n"
+    text = EXAMPLE.replace(VALUES, VALUES + scope, 1)
+
+    rows = load_view_config(_write(tmp_path, text)).comparisons[0].rows
+
+    assert rows.dashboard_scope == [
+        {"dashboard": "iep_status", "operator": "equals", "values": ["No IEP"]}
+    ]
+
+
+def test_rows_dashboard_scope_defaults_to_none(tmp_path):
+    rows = load_view_config(_write(tmp_path, EXAMPLE)).comparisons[0].rows
+    assert rows.dashboard_scope == []
+
+
+def test_rows_dashboard_scope_takes_only_a_column_name(tmp_path):
+    scope = '      dashboard_scope:\n        - { dashboard: "x; DROP", values: [1] }\n'
+    text = EXAMPLE.replace(VALUES, VALUES + scope, 1)
+    with pytest.raises(ConfigError, match="dashboard_scope"):
+        load_view_config(_write(tmp_path, text))
+
+
 def test_sheet_field_and_split_rows_load(tmp_path):
     text = EXAMPLE.replace(
         SHAPE, SHAPE + '    sheet_field: "# Tardy"\n    split_rows: sum\n'
@@ -409,9 +442,15 @@ def test_proof_reads_missing_cuts_and_filters(tmp_path):
       missing_cuts: [Team]
       missing_filters: [Enroll Status, Term]
       restricting_filters: [Enroll Status]
+      filter_notes:
+        Grade Copy: copy of Grade
+      missing_columns:
+        Enroll Status: enroll_status
 """
     text = EXAMPLE.replace("    proof: null\n", proof)
     p = load_view_config(_write(tmp_path, text)).comparisons[0].proof
+    assert p.filter_notes == {"Grade Copy": "copy of Grade"}
+    assert p.missing_columns == {"Enroll Status": "enroll_status"}
     assert p.missing_cuts == ["Team"]
     assert p.missing_filters == ["Enroll Status", "Term"]
     assert p.restricting_filters == ["Enroll Status"]
@@ -423,6 +462,7 @@ def test_old_proof_reads_missing_lists_as_unknown(tmp_path):
     )
     p = load_view_config(_write(tmp_path, text)).comparisons[0].proof
     assert p.missing_cuts is None and p.missing_filters is None
+    assert p.filter_notes is None and p.missing_columns is None
 
 
 def test_gap_decision_loads_without_comparison_or_fingerprints(tmp_path):
@@ -501,6 +541,47 @@ def test_dashboard_filters_refuse_sql_in_the_column(tmp_path):
         + '    dashboard_filters:\n      - { dashboard: "x OR 1=1", values: [0] }\n',
     )
     with pytest.raises(ConfigError, match=r"dashboard_filters\[0\]\.dashboard"):
+        load_view_config(_write(tmp_path, text))
+
+
+def _dashboard_filter(tmp_path, entry):
+    text = EXAMPLE.replace(
+        SCOPE_LINE, SCOPE_LINE + f"    dashboard_filters:\n      - {entry}\n"
+    )
+    return load_view_config(_write(tmp_path, text)).comparisons[0]
+
+
+def test_dashboard_filter_loads_a_week_end_date(tmp_path):
+    first = _dashboard_filter(
+        tmp_path, "{ dashboard: administered_at, operator: lte, days_from_week_end: 0 }"
+    )
+    assert first.dashboard_filters == [
+        {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0}
+    ]
+
+
+@pytest.mark.parametrize(
+    "entry, match",
+    [
+        ("{ dashboard: d, operator: lte, days_from_week_end: '0' }", "must be int"),
+        ("{ dashboard: d, operator: lte, days_from_week_end: true }", "must be int"),
+        ("{ dashboard: d, operator: lte, days_from_week_end: 1.5 }", "must be int"),
+        ("{ dashboard: d, days_from_week_end: 0 }", "takes gt, gte, lt, lte; got 'equals'"),
+        ("{ dashboard: d, operator: set, days_from_week_end: 0 }", "got 'set'"),
+        ("{ dashboard: d, operator: lt, values: [1], days_from_week_end: 0 }", r"\.values: must be absent"),
+    ],
+)  # fmt: skip
+def test_dashboard_filter_week_end_is_checked(tmp_path, entry, match):
+    with pytest.raises(ConfigError, match=match):
+        _dashboard_filter(tmp_path, entry)
+
+
+def test_scope_refuses_a_week_end_date(tmp_path):
+    text = EXAMPLE.replace(
+        SCOPE_LINE,
+        "    scope:\n      - { cube: d, operator: lte, days_from_week_end: 0 }\n",
+    )
+    with pytest.raises(ConfigError, match="applies to dashboard_filters only"):
         load_view_config(_write(tmp_path, text))
 
 
@@ -622,3 +703,345 @@ def test_parameters_load_as_text(tmp_path):
     )
     first = load_view_config(_write(tmp_path, text)).comparisons[0]
     assert first.parameters == {"Attendance Metric": "Chronic Absenteeism"}
+
+
+def _shelves(tmp_path, shelves):
+    text = EXAMPLE.replace(SCOPE_LINE, SCOPE_LINE + f"    shelves: {shelves}\n")
+    return load_view_config(_write(tmp_path, text)).comparisons[0]
+
+
+def test_shelves_load_when_each_added_field_maps_to_a_dim(tmp_path):
+    # `Region` maps by its filters caption, `region` by the dim's own name.
+    first = _shelves(
+        tmp_path,
+        "{ drop: [Week Start Monday], add: { rows: [Region], cols: [region] } }",
+    )
+    assert first.shelves == {
+        "drop": ["Week Start Monday"],
+        "add": {"rows": ["Region"], "cols": ["region"]},
+    }
+
+
+def test_shelves_load_a_cleared_filter_alone(tmp_path):
+    first = _shelves(tmp_path, "{ clear_filters: [Discipline] }")
+    assert first.shelves == {"clear_filters": ["Discipline"]}
+
+
+@pytest.mark.parametrize(
+    "shelves, message",
+    [
+        (
+            "{ add: { rows: [Grade Level] } }",
+            r"shelves\.add: 'Grade Level' maps to no dim",
+        ),
+        ("{ add: { rows: [Academic Year] } }", "'Academic Year' maps to no dim"),
+        ("{ add: { pages: [Region] } }", r"shelves\.add: takes rows and cols"),
+        ("{ drop: Week }", r"shelves\.drop: must be list"),
+        ("{ drop: [2026] }", r"shelves\.drop: captions must be text"),
+        ("{ clear_filters: Discipline }", r"shelves\.clear_filters: must be list"),
+        ("{ keep: [Region] }", "shelves: takes drop, add and clear_filters"),
+        ("{}", "shelves: set drop, add or clear_filters"),
+    ],
+)
+def test_shelves_refuse_an_unmapped_add_and_a_bad_shape(tmp_path, shelves, message):
+    with pytest.raises(ConfigError, match=message):
+        _shelves(tmp_path, shelves)
+
+
+def test_fix_source_needs_a_task(tmp_path):
+    path = _write(tmp_path, EXAMPLE.replace("call: deliberate", "call: fix_source"))
+
+    with pytest.raises(ConfigError, match=r"decisions\[0\]\.task"):
+        load_view_config(path)
+
+
+def test_fix_source_takes_a_task(tmp_path):
+    text = EXAMPLE.replace("call: deliberate", "call: fix_source")
+    path = _write(tmp_path, text.replace('task: ""', 'task: "#6150"'))
+
+    assert load_view_config(path).decisions[0].call == "fix_source"
+
+
+def test_tasks_block_is_read(tmp_path):
+    text = EXAMPLE + (
+        "tasks:\n  cube_fix: '#6150'\n  dashboard_fix: https://app.asana.com/0/1/2\n"
+    )
+
+    cfg = load_view_config(_write(tmp_path, text))
+
+    assert cfg.tasks == {
+        "cube_fix": "#6150",
+        "dashboard_fix": "https://app.asana.com/0/1/2",
+    }
+
+
+def test_tasks_block_is_optional(tmp_path):
+    assert load_view_config(_write(tmp_path, EXAMPLE)).tasks == {}
+
+
+def test_tasks_block_accepts_only_known_keys(tmp_path):
+    path = _write(tmp_path, EXAMPLE + "tasks:\n  other_fix: '#6150'\n")
+
+    with pytest.raises(ConfigError, match=r"tasks\.other_fix"):
+        load_view_config(path)
+
+
+def test_tasks_block_values_must_be_links(tmp_path):
+    path = _write(tmp_path, EXAMPLE + "tasks:\n  cube_fix: see Asana\n")
+
+    with pytest.raises(ConfigError, match=r"tasks\.cube_fix.*https://"):
+        load_view_config(path)
+
+
+def test_write_decision_replaces_by_id_and_keeps_comments(tmp_path):
+    text = EXAMPLE.replace("decisions:\n", "# why each call was made\ndecisions:\n")
+    path = _write(tmp_path, text + "# tasks follow\n")
+
+    write_decision(
+        path,
+        {
+            "id": "example",
+            "comparison": "ada-y1-region",
+            "group": {"column": "grade_level", "values": ["9.50", "010", "no"]},
+            "call": "fix_cube",
+            "reason": "Cube: drops grade 9",
+            "task": "#6150",
+            "fingerprints": {"cube": "abc", "dashboard": "def"},
+        },
+    )
+
+    after = path.read_text()
+    assert "# why each call was made\ndecisions:\n" in after
+    assert after.endswith("# tasks follow\n")
+    assert after.split("decisions:", 1)[0] == text.split("decisions:", 1)[0]
+    (d,) = load_view_config(path).decisions
+    assert (d.id, d.call, d.task, d.reason) == (
+        "example",
+        "fix_cube",
+        "#6150",
+        "Cube: drops grade 9",
+    )
+    # Values YAML would rewrite are written quoted, so they load as text.
+    assert d.group == {"column": "grade_level", "values": ["9.50", "010", "no"]}
+
+
+def test_write_decision_appends_a_new_id(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    new = {"id": "no-team", "missing_cut": "Team", "call": "deliberate",
+           "reason": "homeroom label only"}  # fmt: skip
+
+    write_decision(path, new)
+
+    first, second = load_view_config(path).decisions
+    assert first.id == "example" and first.reason == "counted differently"
+    assert (second.id, second.missing_cut) == ("no-team", "Team")
+
+
+def test_write_decision_starts_a_decisions_block(tmp_path):
+    path = _write(tmp_path, EXAMPLE.split("decisions:")[0])
+
+    write_decision(
+        path, {"id": "a", "missing_filter": "Team", "call": "deliberate", "reason": "r"}
+    )
+
+    (d,) = load_view_config(path).decisions
+    assert (d.id, d.missing_filter) == ("a", "Team")
+
+
+def test_write_decision_restores_file_when_result_does_not_load(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    bad = {"id": "example", "comparison": "ada-y1-region", "call": "fix_cube",
+           "reason": "r", "fingerprints": {"cube": "abc", "dashboard": "def"}}  # fmt: skip
+
+    with pytest.raises(ConfigError, match=r"decisions\[0\]\.task"):
+        write_decision(path, bad)
+
+    assert path.read_text() == EXAMPLE
+
+
+def test_write_decision_refuses_an_id_it_cannot_find_by_its_line(tmp_path):
+    # `id` is not the item's first key, so a line edit could not replace it.
+    text = EXAMPLE.replace(
+        "  - id: example\n    comparison: ada-y1-region\n",
+        "  - comparison: ada-y1-region\n    id: example\n",
+    )
+    path = _write(tmp_path, text)
+
+    with pytest.raises(ConfigError, match="example"):
+        write_decision(
+            path,
+            {"id": "example", "missing_cut": "T", "call": "deliberate", "reason": "r"},
+        )
+
+    assert path.read_text() == text
+
+
+def test_write_decision_replaces_an_item_with_a_column_0_comment_inside(tmp_path):
+    text = EXAMPLE.replace(
+        "    reason: counted differently\n",
+        "# the owner asked about this\n    reason: counted differently\n",
+    )
+    path = _write(tmp_path, text)
+
+    write_decision(
+        path,
+        {
+            "id": "example",
+            "comparison": "ada-y1-region",
+            "group": {"column": "grade_level", "values": ["9"]},
+            "call": "fix_cube",
+            "reason": "Owner: Cube is wrong",
+            "task": "#6150",
+            "fingerprints": {"cube": "abc", "dashboard": "def"},
+        },  # fmt: skip
+    )
+
+    (d,) = load_view_config(path).decisions
+    assert (d.call, d.reason, d.task) == ("fix_cube", "Owner: Cube is wrong", "#6150")
+    assert "counted differently" not in path.read_text()
+
+
+def test_write_decision_restores_when_the_file_does_not_hold_what_was_asked(
+    tmp_path, monkeypatch
+):
+    path = _write(tmp_path, EXAMPLE)
+    asked = {"id": "example", "comparison": "ada-y1-region",
+             "group": {"column": "grade_level", "values": ["9"]},
+             "call": "deliberate", "reason": "asked",
+             "fingerprints": {"cube": "abc", "dashboard": "def"}}  # fmt: skip
+    real_dump = yaml.safe_dump
+    monkeypatch.setattr(
+        yaml,
+        "safe_dump",
+        lambda data, **kw: real_dump([{**data[0], "reason": "other"}], **kw),
+    )
+
+    with pytest.raises(ConfigError, match="reason"):
+        write_decision(path, asked)
+
+    assert path.read_text() == EXAMPLE
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "decisions: [{id: example, missing_cut: T, call: deliberate, reason: r}]",
+        "decisions: null",
+        "decisions: ~",
+    ],
+)
+def test_write_decision_refuses_a_decisions_key_it_cannot_extend(tmp_path, line):
+    text = EXAMPLE.split("decisions:")[0] + line + "\n"
+    path = _write(tmp_path, text)
+
+    with pytest.raises(ConfigError, match="decisions"):
+        write_decision(
+            path, {"id": "a", "missing_cut": "U", "call": "deliberate", "reason": "r"}
+        )
+
+    assert path.read_text() == text
+
+
+# --- cause decisions (T17) ---------------------------------------------------
+
+CAUSE_DECISION = """\
+  - id: no-section
+    comparison: ada-y1-region
+    cause:
+      side: cube
+      label: score has no section on the anchor date
+    call: domain_owner
+    reason: the owner says whether a score with no section counts
+    fingerprints: { cube: abc, dashboard: def, proof: "0f0f" }
+"""
+
+
+def test_cause_decision_loads(tmp_path):
+    d = load_view_config(_write(tmp_path, EXAMPLE + CAUSE_DECISION)).decisions[1]
+
+    assert (d.comparison, d.group, d.cells, d.answer) == (
+        "ada-y1-region",
+        {},
+        False,
+        "",
+    )
+    assert d.cause == {
+        "side": "cube",
+        "label": "score has no section on the anchor date",
+    }
+    assert d.fingerprints["proof"] == "0f0f"
+
+
+LABEL_LINE = "      label: score has no section on the anchor date\n"
+
+
+@pytest.mark.parametrize(
+    "old, new, match",
+    [
+        ("side: cube", "side: both", r"cause\.side.*dashboard, cube"),
+        (LABEL_LINE, "      label: ''\n", r"cause\.label.*words"),
+        (LABEL_LINE, "      label: term 20250701\n", r"cause\.label.*5 or more.*<n>"),
+        (LABEL_LINE, "      label: call 973-555-1234\n", r"cause\.label.*5 or more.*<n>"),
+        (LABEL_LINE, LABEL_LINE + "      groups: [a]\n", r"cause\.groups.*side and label"),
+        ("comparison: ada-y1-region\n    cause", "cause", r"comparison"),
+        ("    call: domain_owner\n", "    call: domain_owner\n    answer: maybe\n",
+         r"answer.*one of"),
+    ],
+)  # fmt: skip
+def test_cause_decision_shape_is_checked(tmp_path, old, new, match):
+    text = EXAMPLE + CAUSE_DECISION.replace(old, new)
+
+    with pytest.raises(ConfigError, match=match):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_only_a_cause_decision_takes_an_answer(tmp_path):
+    text = EXAMPLE.replace('    task: ""\n', '    task: ""\n    answer: fix_cube\n')
+
+    with pytest.raises(ConfigError, match=r"answer.*cause decision"):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_cause_decision_takes_no_group(tmp_path):
+    text = EXAMPLE + CAUSE_DECISION + "    group: { column: region, values: [x] }\n"
+
+    with pytest.raises(ConfigError, match="only one of group.*cause"):
+        load_view_config(_write(tmp_path, text))
+
+
+def test_write_decision_round_trips_a_cause_decision(tmp_path):
+    path = _write(tmp_path, EXAMPLE)
+    decision = {
+        "id": "no-section",
+        "comparison": "ada-y1-region",
+        "cause": {"side": "cube", "label": "term <n> has no section"},
+        "call": "fix_cube",
+        "reason": "r",
+        "task": "#1",
+        "answer": "fix_cube",
+        "fingerprints": {"cube": "abc", "dashboard": "def", "proof": "0f"},
+    }
+
+    write_decision(path, decision)
+
+    d = load_view_config(path).decisions[1]
+    assert (d.cause, d.answer) == (decision["cause"], "fix_cube")
+    assert d.fingerprints == decision["fingerprints"]
+
+
+@pytest.mark.parametrize(
+    "text, want",
+    [
+        ("term 20250701", "term <n>"),
+        ("call 973-555-1234 or 1,234,567", "call <n> or <n>"),
+        ("id 12.345", "id <n>"),
+        # Not ID-shaped: school years, a date, small numbers apart.
+        ("since 2024-25 and 2025-2026", "since 2024-25 and 2025-2026"),
+        ("after 2025-07-01", "after 2025-07-01"),
+        ("grades 9 10 11 12", "grades 9 10 11 12"),
+        ("grades 9, 10, 11 since 2024", "grades 9, 10, 11 since 2024"),
+        ("1234 5678", "1234 5678"),
+    ],
+)
+def test_mask_digits_masks_only_id_shaped_numbers(text, want):
+    assert mask_digits(text) == want

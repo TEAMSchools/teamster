@@ -3,7 +3,8 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
-from cube_validation.bq import CostCapError, ViewHistoryError, Warehouse
+from cube_validation.bq import JOB_ID, CostCapError, ViewHistoryError, Warehouse
+from google.api_core.exceptions import BadRequest
 
 TS = datetime(2026, 10, 22, 19, 0, 0, tzinfo=timezone.utc)
 TIB = 2**40
@@ -199,14 +200,84 @@ def test_budget_stops_past_cap():
         wh.price("select 2")
 
 
-def test_budget_guards_rows_before_running():
-    client = FakeClient(rows=[{"a": 1}], nbytes=10 * TIB)
+class LimitClient(FakeClient):
+    """Refuses a query over its `maximum_bytes_billed`, as BigQuery does."""
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.limits = []
+
+    def query(self, sql, job_config=None):
+        limit = getattr(job_config, "maximum_bytes_billed", None)
+        self.limits.append(limit)
+        job = super().query(sql, job_config)
+        if limit is not None and self.nbytes > int(limit):
+
+            def refuse():
+                raise BadRequest(
+                    "over", errors=[{"reason": "bytesBilledLimitExceeded"}]
+                )
+
+            job.result = refuse
+        else:
+            job.total_bytes_billed = self.nbytes
+        return job
+
+
+def test_rows_under_a_cap_bills_at_most_what_is_left_with_no_dry_run(tmp_path):
+    client = LimitClient(rows=[{"a": 1}], nbytes=int(1.0 / 6.25 * TIB))
+    wh = Warehouse(client=client)
+    wh.configure_local(tmp_path, daily_cap=3.0)
+
+    with wh.budget(2.0):
+        assert wh.rows("select 1") == [{"a": 1}]
+        # The run's $2.00 is tighter than the day's $3.00, then $1.00 is left.
+        wh.rows("select 2")
+
+    assert not any(dry for _, dry in client.queries)
+    assert [int(n) for n in client.limits] == [
+        int(2.0 / 6.25 * TIB),
+        int(1.0 / 6.25 * TIB),
+    ]
+    assert wh.spent_today() == pytest.approx(2.0, abs=0.001)
+
+
+def test_a_query_over_what_is_left_is_refused_by_bigquery_and_counts_nothing(
+    tmp_path,
+):
+    client = LimitClient(rows=[{"a": 1}], nbytes=10 * TIB)
+    wh = Warehouse(client=client)
+    wh.configure_local(tmp_path, daily_cap=3.0)
+
+    with pytest.raises(CostCapError, match=r"\$3\.00 left under the \$3\.00 daily"):
+        wh.rows("select 1")
+    assert wh.spent_today() == 0.0
+
+
+def test_nothing_left_under_a_cap_refuses_before_any_query():
+    client = LimitClient(rows=[{"a": 1}])
     wh = Warehouse(client=client)
 
-    with pytest.raises(CostCapError), wh.budget(5.0):
-        wh.rows("select 1")
+    with pytest.raises(CostCapError, match=r"nothing is left under the \$0\.00 cap"):
+        with wh.budget(0.0):
+            wh.rows("select 1")
+    assert client.queries == []
 
-    assert all(dry for _, dry in client.queries)
+
+def test_a_relation_is_looked_up_once():
+    calls = []
+
+    class Client(FakeClient):
+        def get_table(self, ref):
+            calls.append(ref)
+            return super().get_table(ref)
+
+    wh = Warehouse(client=Client(FakeTable("VIEW", "select 1", modified=TS)))
+    wh.table("ds", "v")
+    wh.table("ds", "v")
+    wh.view_sql_as_of("ds", "v", TS + timedelta(hours=1))
+
+    assert calls == ["teamster-332318.ds.v"]
 
 
 def test_view_sql_drops_trailing_semicolon():
@@ -290,6 +361,18 @@ def test_the_daily_cap_spans_runs_and_counts_no_refused_query(tmp_path):
     small.price("select 3")  # $0.60 + $0.30 fits: the refused $0.60 was not counted
 
 
+def test_estimate_does_not_count_against_the_daily_cap(tmp_path):
+    client = FakeClient(nbytes=int(2.0 / 6.25 * TIB))  # $2.00, over both caps
+    wh = Warehouse(client=client)
+    wh.configure_local(tmp_path, 1.0)
+
+    with wh.budget(1.0):
+        assert wh.estimate("select 1") == pytest.approx(2.0, abs=0.001)
+        assert wh.spent == 0.0
+    assert wh.spent_today() == 0.0
+    assert client.queries == [("select 1", True)]
+
+
 def test_billed_bytes_replace_the_estimate_after_a_query_runs(tmp_path):
     client = FakeClient(rows=[{"x": 1}], nbytes=int(1.0 / 6.25 * TIB))
     real = client.query
@@ -307,3 +390,151 @@ def test_billed_bytes_replace_the_estimate_after_a_query_runs(tmp_path):
         wh.rows("select 1")
         assert wh.spent == pytest.approx(0.25, abs=0.001)
     assert wh.spent_today() == pytest.approx(0.25, abs=0.001)
+
+
+def test_refuse_past_caps_counts_nothing_and_names_the_cap(tmp_path):
+    wh = Warehouse(client=FakeClient())
+    with wh.budget(1.0):
+        wh.refuse_past_caps(0.9)
+        with pytest.raises(CostCapError, match=r"\$1\.00 cap"):
+            wh.refuse_past_caps(1.1)
+        assert wh.spent == 0.0
+
+    wh.configure_local(tmp_path, daily_cap=0.5)
+    with pytest.raises(CostCapError, match="daily cap"):
+        wh.refuse_past_caps(0.6)
+
+
+def test_rows_can_bound_a_query_s_run_time():
+    configs = []
+
+    class Client(FakeClient):
+        def query(self, sql, job_config=None):
+            configs.append(job_config)
+            return super().query(sql, job_config)
+
+    wh = Warehouse(client=Client())
+    wh.rows("select 1")
+    wh.rows("select 2", timeout_s=90)
+
+    assert configs[0] is None
+    assert int(configs[1].job_timeout_ms) == 90_000 and not configs[1].dry_run
+
+
+def test_the_spend_ledger_can_live_apart_from_the_cache(tmp_path):
+    ledger = tmp_path / "default"
+    wh = Warehouse(client=FakeClient(nbytes=TIB // 100))
+    wh.configure_local(tmp_path / "copy", daily_cap=3.0, ledger_dir=ledger)
+
+    wh.price("select 1")
+
+    assert (ledger / "spend.json").exists()
+    assert not (tmp_path / "copy" / "spend.json").exists()
+    other = Warehouse(client=FakeClient())
+    other.configure_local(tmp_path / "another", daily_cap=3.0, ledger_dir=ledger)
+    assert other.spent_today() == pytest.approx(6.25 / 100)
+
+
+def test_a_failed_query_carries_its_job_id():
+    class Failing(FakeClient):
+        def query(self, sql, job_config=None):
+            job = super().query(sql, job_config)
+            setattr(job, JOB_ID, "job-1")
+
+            def boom():
+                raise BadRequest("Bad int64 value: 12345")
+
+            job.result = boom
+            return job
+
+    with pytest.raises(BadRequest) as caught:
+        Warehouse(client=Failing()).rows("select 1")
+
+    assert getattr(caught.value, JOB_ID) == "job-1"
+
+
+def test_a_query_that_fails_mid_run_still_counts_what_it_billed(tmp_path):
+    class Client(FakeClient):
+        def query(self, sql, job_config=None):
+            job = super().query(sql, job_config)
+
+            def boom():
+                raise BadRequest("timed out", errors=[{"reason": "timeout"}])
+
+            def reload():
+                job.total_bytes_billed = int(0.5 / 6.25 * TIB)
+
+            job.result, job.reload = boom, reload
+            return job
+
+    wh = Warehouse(client=Client())
+    wh.configure_local(tmp_path, daily_cap=3.0)
+
+    with pytest.raises(BadRequest), wh.budget(2.0):
+        wh.rows("select 1", timeout_s=1)
+
+    assert wh.spent_today() == pytest.approx(0.5, abs=0.001)
+
+
+# --- session temp tables --------------------------------------------------------------
+
+
+class SessionClient:
+    """Records each query's session settings; the first `create_session`
+    query opens session `s1`."""
+
+    def __init__(self):
+        self.queries: list[tuple[str, dict]] = []
+
+    def query(self, sql, job_config=None):
+        props = getattr(job_config, "connection_properties", None) or []
+        self.queries.append(
+            (
+                sql,
+                {
+                    "dry": bool(job_config and job_config.dry_run),
+                    "create": bool(job_config and job_config.create_session),
+                    "session": next((p.value for p in props), None),
+                },
+            )
+        )
+        job = FakeJob([], 0)
+        job.total_bytes_billed = 0
+        job.session_info = type("Info", (), {"session_id": "s1"})()
+        return job
+
+
+def test_freeze_opens_one_session_and_only_its_readers_join_it():
+    client = SessionClient()
+    wh = Warehouse(client=client)
+
+    with wh.session():
+        first = wh.freeze("SELECT 1 AS x")
+        second = wh.freeze("SELECT 2 AS x")
+        wh.estimate(f"SELECT * FROM {first}")
+        wh.rows(f"SELECT * FROM {second}")
+        wh.rows("SELECT 3")
+
+    assert first != second and first.startswith("_SESSION.")
+    (f1, s1), (f2, s2), (dry, sd), (read, sr), (plain, sp), (end, se) = client.queries
+    assert f1.startswith(f"CREATE TEMP TABLE {first} AS")
+    assert s1["create"] and s1["session"] is None
+    assert not s2["create"] and s2["session"] == "s1"
+    assert sd == {"dry": True, "create": False, "session": "s1"}
+    assert sr["session"] == "s1"
+    # A query that reads no temp table runs outside the session, so it may
+    # run beside another.
+    assert plain == "SELECT 3" and sp["session"] is None
+    assert end == "CALL BQ.ABORT_SESSION()" and se["session"] == "s1"
+
+
+def test_freeze_refuses_outside_a_session():
+    with pytest.raises(RuntimeError, match="open session"):
+        Warehouse(client=SessionClient()).freeze("SELECT 1")
+
+
+def test_a_session_that_froze_nothing_ends_without_a_query():
+    client = SessionClient()
+    with Warehouse(client=client).session():
+        pass
+    assert client.queries == []

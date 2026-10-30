@@ -7,6 +7,7 @@ from cube_validation.compare import (
     groups_from,
     reconcile_sql,
     scope_filters,
+    trace_sql,
 )
 from cube_validation.config import ColumnPair, Comparison, RowSpec
 
@@ -113,8 +114,23 @@ def test_groups_from_drops_match_and_keeps_counts():
 
     assert groups_from("c1", rows) == [
         Group("c1", (("grade_level_cube", "5"),), "cube_only", 3, 2),
-        Group("c1", (("grade_level_cube", ""),), "value_differs", 1, 1),
+        Group(
+            "c1", (("grade_level_cube", ""),), "value_differs", 1, 1,
+            nulls=("grade_level_cube",),
+        ),
+    ]  # fmt: skip
+
+
+def test_a_null_group_and_an_empty_string_group_stay_apart():
+    rows = [
+        {"bucket": "cube_only", "module": None, "n_rows": 3, "n_students": 2},
+        {"bucket": "cube_only", "module": "", "n_rows": 4, "n_students": 4},
     ]
+
+    null, empty = groups_from("c1", rows)
+
+    assert null.dims == empty.dims == (("module", ""),)
+    assert (null.nulls, empty.nulls) == (("module",), ())
 
 
 def test_groups_from_without_group_by_columns():
@@ -209,7 +225,50 @@ def test_reconcile_sql_grain_keys_join_across_numeric_types():
 
     key_c = "COALESCE(CAST(SAFE_CAST(CAST(c.lea_student_identifier AS STRING) AS FLOAT64) AS STRING), CAST(c.lea_student_identifier AS STRING))"
     key_d = "COALESCE(CAST(SAFE_CAST(CAST(d.student_number AS STRING) AS FLOAT64) AS STRING), CAST(d.student_number AS STRING))"
-    assert f"{key_c} = {key_d}" in join
+    assert f"\n    AND {key_c} = {key_d}" in join
+
+
+def _null_safe(col: str) -> str:
+    return f"IFNULL(CONCAT('=', COALESCE(CAST(SAFE_CAST(CAST({col} AS STRING)"
+
+
+def _plain(col: str) -> str:
+    return f"COALESCE(CAST(SAFE_CAST(CAST({col} AS STRING)"
+
+
+def test_reconcile_sql_later_null_grain_matches_null_but_no_value():
+    # A NULL keys as '' and any value, the empty string included, as '=<v>':
+    # NULL meets NULL, never a value. Still an equality, so the join hashes.
+    on = _sql().split("FULL OUTER JOIN", 1)[1].split("-- outer")[0].split("ON", 1)[1]
+    for col in ("c.attendance_date", "d.calendardate"):
+        assert _null_safe(col) in on
+    assert " OR " not in on
+    assert "IS NULL" not in on
+
+
+def test_reconcile_sql_null_student_never_matches():
+    # Rows with no student id would otherwise pair up by value order and read
+    # as matches; a plain key leaves NULL = NULL unknown, so they stay one-sided.
+    on = _sql().split("FULL OUTER JOIN", 1)[1].split("-- outer")[0].split("ON", 1)[1]
+    for col in ("c.lea_student_identifier", "d.student_number"):
+        assert _plain(col) in on
+        assert _null_safe(col) not in on
+
+
+def test_reconcile_sql_numbers_duplicates_on_the_join_keys():
+    # Each side partitions by the keys it joins on, so NULLs and 1 vs 1.0
+    # number alike on both sides.
+    sql = _sql()
+    c_part = sql.split("c AS (", 1)[1].split("d AS (", 1)[0]
+    d_part = sql.split("d AS (", 1)[1].split("joined AS (", 1)[0]
+    for part, student, later in (
+        (c_part, "lea_student_identifier", "attendance_date"),
+        (d_part, "student_number", "calendardate"),
+    ):
+        partition = part.split("PARTITION BY", 1)[1].split("ORDER BY", 1)[0]
+        assert partition.startswith(f" {_plain(student)}")
+        assert _null_safe(student) not in partition
+        assert _null_safe(later) in partition
 
 
 def test_groups_from_keeps_one_group_per_two_dim_row():
@@ -286,3 +345,305 @@ def test_groups_from_names_the_dropping_filter_only_on_its_rows():
               "dashboard_filtered", 50, 3),
         Group("c1", (("grade_level", "9"),), "cube_only", 2, 1),
     ]  # fmt: skip
+
+
+# --- trace_sql -----------------------------------------------------------------
+
+
+def _trace(**kw):
+    args = dict(
+        bucket="cube_only",
+        side="dashboard",
+        variants=[("dashboard:main:1", "SELECT 1 AS student_number")],
+    )
+    args.update(kw)
+    return trace_sql(
+        "SELECT 1 AS lea_student_identifier",
+        "SELECT 1 AS student_number",
+        ROWS,
+        GROUP_BY,
+        **args,
+    )
+
+
+def test_trace_sql_returns_group_columns_a_step_and_a_count_only():
+    for combine in (True, False):
+        outer = _trace(combine=combine).rsplit("-- outer", 1)[1]
+
+        select = outer.split("FROM", 1)[0]
+        assert (
+            select == "\nSELECT bucket, grade_level_cube, step_id, COUNT(*) AS n_rows\n"
+        )
+        for col in ("calendardate", "attendance_date", "student_number"):
+            assert col not in outer
+            assert "lea_student_identifier" not in outer
+
+
+def test_trace_sql_rebuilds_the_bucket_inside_the_query():
+    sql = _trace()
+
+    assert "FULL OUTER JOIN d" in sql
+    assert "FROM joined WHERE bucket = 'cube_only'" in sql
+    assert "'dashboard:main:1' AS step_id" in sql
+
+
+def test_trace_sql_names_the_side_s_grain_columns():
+    sql = _trace(side="cube", bucket="dashboard_only")
+
+    assert "CAST(lea_student_identifier AS STRING)" in sql.split("v0 AS", 1)[1]
+    assert "bucket = 'dashboard_only'" in sql
+
+
+# --- trace_sql, run offline ----------------------------------------------------
+
+DUCK_ROWS = RowSpec(
+    grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")], values=[]
+)
+DUCK_GROUP = [ColumnPair("school", "abbreviation")]
+
+
+def _tables(duck, cube, dash, relaxed):
+    duck.table("cube_t", "lea BIGINT, aid VARCHAR, abbreviation VARCHAR", cube)
+    duck.table("dash_t", "student BIGINT, item VARCHAR, school VARCHAR", dash)
+    duck.table(
+        "dash_all",
+        "student BIGINT, item VARCHAR, school VARCHAR, ok1 BOOLEAN, ok2 BOOLEAN",
+        relaxed,
+    )
+
+
+def _run(duck, variants, **kw):
+    sql = trace_sql(
+        "SELECT lea, aid, abbreviation FROM cube_t",
+        "SELECT student, item, school FROM dash_t",
+        DUCK_ROWS,
+        DUCK_GROUP,
+        bucket="cube_only",
+        side="dashboard",
+        variants=variants,
+        **kw,
+    )
+    return {(r["abbreviation"], r["step_id"]): r["n_rows"] for r in duck.rows(sql)}
+
+
+def _step(name, flag):
+    return (name, f"SELECT student, item, school FROM dash_all WHERE {flag}")
+
+
+def test_trace_sql_attributes_one_two_and_no_steps_row_by_row(duck):
+    _tables(
+        duck,
+        [(1, "a", "X"), (2, "b", "X"), (3, "c", "X"), (4, None, "X")],
+        [(9, "z", "X")],
+        [
+            (1, "a", "X", True, False),
+            (2, "b", "X", True, True),
+            (4, None, "X", True, False),
+        ],
+    )
+
+    out = _run(duck, [_step("s1", "ok1"), _step("s2", "ok2")])
+
+    # Row 1 one step; row 2 both, by name; row 3 none; row 4's NULL later
+    # grain column matches a NULL on the other side.
+    assert out[("X", "s1")] == 2
+    assert out[("X", "*s1|s2")] == 1
+    assert out[("X", "")] == 1
+    assert (out[("X", "+s1")], out[("X", "+s2")]) == (3, 1)
+
+
+def test_trace_sql_never_traces_a_grain_the_other_side_has_twice(duck):
+    _tables(
+        duck,
+        [(1, "a", "X"), (1, "a", "X")],
+        [(1, "a", "X")],
+        [(1, "a", "X", True, True)],
+    )
+
+    out = _run(duck, [_step("s1", "ok1")])
+
+    # The second copy is Cube-only; a step that fans out would "recover" it.
+    assert out == {("X", "="): 1}
+
+
+def test_trace_sql_leaves_out_excluded_rows_and_keeps_included_ones(duck):
+    _tables(
+        duck,
+        [(1, "a", "X"), (2, "b", "X"), (3, "c", "X")],
+        [],
+        [
+            (1, "a", "X", True, False),
+            (2, "b", "X", False, True),
+            (3, "c", "X", True, True),
+        ],
+    )
+    exclude = ["SELECT student, item, school FROM dash_all WHERE student = 1"]
+    include = ["SELECT student, item, school FROM dash_all WHERE student < 3"]
+
+    out = _run(duck, [_step("s2", "ok2")], exclude=exclude, include=include)
+
+    assert out == {("X", "s2"): 1, ("X", "+s2"): 1}
+
+
+def test_trace_sql_counts_a_presence_check_only_when_no_step_recovers(duck):
+    _tables(
+        duck,
+        [(1, "a", "X"), (2, "b", "X")],
+        [],
+        [(1, "a", "X", True, False), (2, "b", "X", False, False)],
+    )
+    present = ("#main", "SELECT student, item, school FROM dash_all")
+
+    out = _run(duck, [_step("s1", "ok1"), present])
+
+    assert out[("X", "s1")] == 1 and out[("X", "#main")] == 1
+
+
+def test_trace_sql_counts_by_step_when_split(duck):
+    _tables(
+        duck,
+        [(1, "a", "X"), (2, "b", "X")],
+        [],
+        [(1, "a", "X", True, True), (2, "b", "X", False, True)],
+    )
+
+    out = _run(duck, [_step("s1", "ok1"), _step("s2", "ok2")], combine=False)
+
+    assert out == {("X", "s1"): 1, ("X", "s2"): 2, ("X", ""): 2}
+
+
+# --- rows both sides hold in different cells -----------------------------------
+
+MOVED_ROWS = RowSpec(
+    grain=[ColumnPair("student", "lea"), ColumnPair("item", "aid")],
+    values=[ColumnPair("ok_d", "ok_c")],
+)
+MOVED_BY = [ColumnPair("grade_d", "grade_c")]
+
+
+def _moved(duck):
+    """Synthetic rows: student 1 matches in grade 1; student 2 is in grade 1 on
+    Cube and grade 2 on the dashboard; student 3 is Cube's only, in grade 2."""
+    duck.table(
+        "cube_t",
+        "lea BIGINT, aid VARCHAR, grade_c VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "1", True), (2, "a", "1", False), (3, "a", "2", True)],
+    )
+    duck.table(
+        "dash_t",
+        "student BIGINT, item VARCHAR, grade_d VARCHAR, ok_d BOOLEAN",
+        [(1, "a", "1", True), (2, "a", "2", False)],
+    )
+    return duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            MOVED_ROWS,
+            MOVED_BY,
+        )
+    )
+
+
+def test_a_row_in_another_cell_on_each_side_is_its_own_bucket(duck):
+    groups = groups_from("x", _moved(duck))
+
+    by = {g.bucket: g for g in groups}
+    assert set(by) == {"dims_differ", "cube_only"}
+    assert by["dims_differ"].dims == (("grade_c", "1"), ("d:grade_c", "2"))
+    assert by["dims_differ"].n_rows == 1
+    # A group of another bucket keeps its key: no dashboard-cell columns.
+    assert by["cube_only"].dims == (("grade_c", "2"),)
+
+
+def test_the_reconcile_keeps_each_side_s_rows_and_sums_per_cell(duck):
+    from cube_validation.compare import cell_rows_from
+
+    rows = {
+        (r["bucket"], tuple(map(tuple, r["dims"]))): r
+        for r in cell_rows_from(_moved(duck))
+    }
+
+    match = rows[("match", (("grade_c", "1"),))]
+    assert match["c"] == match["d"] == {"rows": 1, "n": [1], "sum": [1.0]}
+    moved = rows[("dims_differ", (("grade_c", "1"),))]
+    assert moved["dash_dims"] == [["grade_c", "2"]]
+    assert moved["c"] == moved["d"] == {"rows": 1, "n": [1], "sum": [0.0]}
+    assert rows[("cube_only", (("grade_c", "2"),))]["d"]["rows"] == 0
+
+
+def test_rows_the_dashboard_filters_out_count_on_cube_s_side_only(duck):
+    from cube_validation.compare import cell_rows_from
+
+    # Student 1 matches; the dashboard drops student 2 (Cube keeps it) and
+    # student 4 (Cube lacks it too); student 3 is Cube's only.
+    duck.table(
+        "cube_t",
+        "lea BIGINT, aid VARCHAR, grade_c VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "1", True), (2, "a", "1", False), (3, "a", "1", False)],
+    )
+    duck.table(
+        "dash_t",
+        "student BIGINT, item VARCHAR, grade_d VARCHAR, ok_d BOOLEAN, __df0 BOOLEAN",
+        [(1, "a", "1", True, True), (2, "a", "1", False, False),
+         (4, "a", "1", True, False)],
+    )  # fmt: skip
+    result = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            MOVED_ROWS,
+            MOVED_BY,
+            filters=[("__df0", "future")],
+        )
+    )
+
+    by = {r["bucket"]: r for r in cell_rows_from(result)}
+    assert set(by) == {"match", "dashboard_filtered", "cube_only"}
+    assert by["dashboard_filtered"]["c"] == {"rows": 1, "n": [1], "sum": [0.0]}
+    assert by["dashboard_filtered"]["d"] == {"rows": 0, "n": [0], "sum": [0.0]}
+    # Student 4 shares the match row's group but neither side shows it.
+    assert by["match"]["c"] == by["match"]["d"] == {"rows": 1, "n": [1], "sum": [1.0]}
+
+
+def test_the_reconcile_keeps_sums_per_cut(duck):
+    from cube_validation.compare import cell_rows_from
+
+    rows = RowSpec(
+        grain=[
+            ColumnPair("student", "lea"),
+            ColumnPair("item", "aid"),
+            ColumnPair("rtype_d", "rtype_c"),
+        ],
+        values=[ColumnPair("ok_d", "ok_c")],
+    )
+    duck.table(
+        "cube_t",
+        "lea BIGINT, aid VARCHAR, rtype_c VARCHAR, grade_c VARCHAR, ok_c BOOLEAN",
+        [(1, "a", "overall", "1", True), (1, "a", "standard", "1", False),
+         (2, "a", "standard", "1", True)],
+    )  # fmt: skip
+    duck.table(
+        "dash_t",
+        "student BIGINT, item VARCHAR, rtype_d VARCHAR, grade_d VARCHAR, ok_d BOOLEAN",
+        [(1, "a", "overall", "1", True), (1, "a", "standard", "1", False)],
+    )
+    cuts = [
+        ("c.rtype_c = 'overall'", "d.rtype_d = 'overall'"),
+        ("c.rtype_c = 'standard'", "d.rtype_d = 'standard'"),
+    ]
+    result = duck.rows(
+        reconcile_sql(
+            "SELECT * FROM `teamster-332318.m.cube_t`",
+            "SELECT * FROM `teamster-332318.d.dash_t`",
+            rows,
+            MOVED_BY,
+            cuts=cuts,
+        )
+    )
+
+    by = {r["bucket"]: r for r in cell_rows_from(result, ["overall", "standard"])}
+    match = by["match"]["cuts"]
+    assert match["overall"]["c"] == {"rows": 1, "n": [1], "sum": [1.0]}
+    assert match["standard"]["d"] == {"rows": 1, "n": [1], "sum": [0.0]}
+    only = by["cube_only"]["cuts"]
+    assert only["standard"]["c"]["rows"] == 1 and only["overall"]["c"]["rows"] == 0

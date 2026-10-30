@@ -1,3 +1,7 @@
+import dataclasses
+from datetime import datetime, timezone
+from pathlib import Path
+
 import pytest
 
 # trunk-ignore(pyright/reportAttributeAccessIssue): conftest.py registers cube_validation
@@ -5,6 +9,12 @@ from cube_validation import pipeline
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.config import ColumnPair, Comparison, RowSpec
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.discover import sheet_shape
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.timetravel import pin_clock
 
 DS = "[federated.x]"
 
@@ -195,6 +205,29 @@ def test_dashboard_filters_join_every_cut_predicate(entry, sql):
     assert pipeline._cut_cube_filters("v", comparison, {}) == []
 
 
+def test_dashboard_filter_relative_to_the_week_end_pins_to_the_run():
+    today = "CURRENT_DATE('America/New_York')"
+    week_end = f"8 - EXTRACT(DAYOFWEEK FROM {today})"
+    entries = [
+        {"dashboard": "administered_at", "operator": "lte", "days_from_week_end": 0},
+        {"dashboard": "administered_at", "operator": "gt", "days_from_week_end": -7},
+    ]
+    sql = pipeline.dashboard_predicate(_comparison(dashboard_filters=entries), {})
+
+    assert sql.endswith(
+        f"administered_at <= DATE_ADD({today}, INTERVAL {week_end} DAY) AND "
+        f"administered_at > DATE_ADD({today}, INTERVAL {week_end} - 7 DAY)"
+    )
+    pinned = pin_clock(sql, datetime(2026, 10, 29, 15, tzinfo=timezone.utc))
+    assert "CURRENT_DATE" not in pinned.upper()
+    assert (
+        pinned.count(
+            "date(timestamp '2026-10-29 15:00:00.000000+00:00', 'America/New_York')"
+        )
+        == 4
+    )
+
+
 def test_sheet_gaps_keep_a_dashboard_only_filter_as_missing():
     entry = {"dashboard": "enroll_status", "operator": "equals", "values": [0]}
     gaps = pipeline.sheet_gaps(TWB, _comparison(dashboard_filters=[entry]))
@@ -266,6 +299,26 @@ def test_dashboard_rows_keep_filtered_rows_with_a_flag():
     assert "WHERE" in sql and "enroll_status IN (0)" not in sql.split("WHERE", 1)[1]
 
 
+def test_dashboard_rows_take_the_rows_scope_and_the_probe_does_not():
+    from dataclasses import replace
+
+    base = _filtered()
+    scoped = replace(
+        base,
+        rows=replace(
+            base.rows,
+            dashboard_scope=[
+                {"dashboard": "iep_status", "operator": "equals", "values": ["No IEP"]}
+            ],
+        ),
+    )
+
+    where = pipeline.dashboard_rows_sql(_cfg(), scoped).split("WHERE", 1)[1]
+
+    assert "(CAST(iep_status AS STRING) IN ('No IEP'))" in where
+    assert "iep_status" not in pipeline.probe_sql(_cfg(), scoped, {})
+
+
 def test_unfiltered_probe_drops_only_the_dashboard_filters():
     comparison = _filtered()
     assert "enroll_status IN (0)" in pipeline.probe_sql(_cfg(), comparison, {})
@@ -296,6 +349,7 @@ def test_cells_the_dashboard_filter_drops_are_explained():
 
 
 def _cfg():
+    # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
     from cube_validation.config import ViewConfig
 
     return ViewConfig(view="v", fact="kipptaf_marts.fct_f", comparisons=[])
@@ -349,3 +403,123 @@ def test_sheet_gaps_skip_a_table_calculation():
         "{DS}.[none:team:nk] / {DS}.[rank:sum:x:qk]))</rows>".replace("{DS}", DS),
     )
     assert pipeline.sheet_gaps(twb, _comparison()).cuts == ["Last First", "Team"]
+
+
+NOTES_TWB = f"""<?xml version='1.0' encoding='utf-8' ?>
+<workbook xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource name='Parameters'>
+      <column caption='Metric' name='[Parameter 1]' role='measure' />
+    </datasource>
+    <datasource name='federated.x'>
+      <column caption='Grade Copy' name='[Calculation_2]'>
+        <calculation class='tableau' formula='[grade_level]' />
+      </column>
+      <column caption='Show Rate' name='[Calculation_3]'>
+        <calculation class='tableau' formula='[Parameters].[Parameter 1] = "ADA"' />
+      </column>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Roster'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.x'>
+            <column caption='Grade' name='[grade_level]' role='dimension' />
+            <column caption='Enroll Status' name='[enroll_status]' role='dimension' />
+            <column caption='Grade Copy' name='[Calculation_2]' role='dimension'>
+              <calculation class='tableau' formula='[grade_level]' />
+            </column>
+            <column caption='Show Rate' name='[Calculation_3]' role='dimension'>
+              <calculation class='tableau' formula='[Parameters].[Parameter 1] = "ADA"' />
+            </column>
+          </datasource-dependencies>
+          <filter class='categorical' column='{DS}.[none:Calculation_2:nk]'>
+            <groupfilter function='level-members' level='[none:Calculation_2:nk]' />
+          </filter>
+          <filter class='categorical' column='{DS}.[none:Calculation_3:nk]'>
+            <groupfilter function='level-members' level='[none:Calculation_3:nk]' />
+          </filter>
+          <filter class='categorical' column='{DS}.[none:enroll_status:nk]'>
+            <groupfilter function='level-members' level='[none:enroll_status:nk]' />
+          </filter>
+        </view>
+        <rows>{DS}.[none:grade_level:nk]</rows>
+      </table>
+    </worksheet>
+  </worksheets>
+</workbook>
+"""
+
+
+def test_sheet_gaps_notes_copies_and_display_switches():
+    base = _comparison()
+    comparison = dataclasses.replace(
+        base,
+        filters={
+            **base.filters,
+            "Grade": ColumnPair(dashboard="grade_level", cube="grade"),
+        },
+    )
+    gaps = pipeline.sheet_gaps(NOTES_TWB, comparison)
+    assert gaps.filters == ["Enroll Status", "Grade Copy", "Show Rate"]
+    assert gaps.notes == {
+        "Grade Copy": "copy of Grade",
+        "Show Rate": "display switch on Metric",
+    }
+    assert gaps.columns == {"Enroll Status": "enroll_status"}
+
+
+def test_an_apostrophe_in_a_comment_cannot_hide_a_field():
+    formula = "[Parameters].[A] = \"x\" // it's\nAND [grade]>1 // don't"
+
+    assert pipeline._parameter_only(formula) is None
+
+
+def test_sheet_gaps_note_nothing_when_a_parameter_mixes_with_a_field():
+    twb = NOTES_TWB.replace(
+        "formula='[Parameters].[Parameter 1] = \"ADA\"'",
+        "formula='IF [grade_level] &gt;= [Parameters].[Parameter 1] THEN 1 END'",
+    )
+    gaps = pipeline.sheet_gaps(twb, _comparison())
+    assert "Show Rate" in gaps.filters
+    assert "Show Rate" not in gaps.notes
+
+
+def test_sheet_gaps_copy_note_uses_the_sheet_caption_for_a_dim():
+    base = _comparison()
+    comparison = dataclasses.replace(
+        base,
+        dims=[*base.dims, ColumnPair(dashboard="grade_level", cube="grade")],
+    )
+    gaps = pipeline.sheet_gaps(NOTES_TWB, comparison)
+    assert gaps.notes["Grade Copy"] == "copy of Grade"
+
+
+DKI_TWB = (Path(__file__).parent / "fixtures" / "dki_grid.twb").read_text()
+
+
+def test_sheet_shape_and_gaps_list_a_filter_on_a_code_group():
+    # Discipline is a categorical bin over subject_area; its filter column has
+    # no derivation prefix.
+    shape = sheet_shape(DKI_TWB, "Mastery Grid")
+    assert (
+        "Discipline: chosen values hidden (narrows the sheet); decide whether "
+        "the probe needs it"
+    ) in shape.filters
+    assert not any("ELA" in f for f in shape.filters)
+
+    gaps = pipeline.sheet_gaps(
+        DKI_TWB, dataclasses.replace(_comparison(), sheet="Mastery Grid")
+    )
+    assert "Discipline" in gaps.filters and "Discipline" in gaps.restricting
+    # A group is no datasource column, so triage gets none to value-check.
+    assert "Discipline" not in gaps.columns
+
+
+def test_sheet_shape_lists_an_all_members_group_filter_as_all():
+    twb = DKI_TWB.replace(
+        "<groupfilter function='member' level='[Discipline]' member='&quot;ELA&quot;'",
+        "<groupfilter function='level-members' level='[Discipline]'",
+    )
+    assert "Discipline: All" in sheet_shape(twb, "Mastery Grid").filters

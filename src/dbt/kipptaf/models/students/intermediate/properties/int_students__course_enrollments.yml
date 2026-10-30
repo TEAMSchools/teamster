@@ -256,3 +256,8 @@ models:
           -- Focus dates a section to its marking period, so multiple sections
           in the same course commonly share both dates.
         data_type: int64
+      - name: courses_gradescale_name
+        description: >-
+          Name of the course's grade scale, from the scale's own PowerSchool
+          gradescaleitem row. Null for Focus.
+        data_type: string

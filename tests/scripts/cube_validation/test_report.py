@@ -1,20 +1,36 @@
 import dataclasses
+import json
+import re
 from datetime import datetime, timezone
 
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.answers import questions_json
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.checks import Finding
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.compare import CellDiff, Gap, Group
-from cube_validation.config import Decision
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.config import ColumnPair, Comparison, Decision, ViewConfig
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.decisions import Applied
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.moment import Build
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.report import (
+    CauseAsk,
     MeasureResult,
     RunResult,
     mask,
     render_local,
     render_review_issue,
     save_local,
+    suppress,
 )
 
 START = datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc)
@@ -213,7 +229,7 @@ def test_review_issue_bullets_stay_on_one_line():
         "Reason: line one line two line three" in b for b in bullets[:1]
     )
     assert "line two" in body and "\n  line two" not in body
-    assert "- `region` = `New ark`" in body
+    assert "- Q1. `region` = `New ark`" in body
 
 
 def test_columns_off_the_reviewed_list_redacted():
@@ -338,7 +354,7 @@ def test_review_issue_names_every_dim_and_masks_each():
         12,
     )
     body = _issue_with(g, reason="Camden SECRETVAL rows")
-    assert "- `regions_region_name` = `Camden` in enrollment" in body
+    assert "- Q1. `regions_region_name` = `Camden` in enrollment" in body
     assert "SECRETVAL" not in body
     assert "Reason: Camden <redacted> rows" in body
 
@@ -397,9 +413,38 @@ def test_review_issue_carries_domain_owner_missing_cuts():
     assert "Missing cuts and filters: 1." in body
 
 
-def test_review_issue_leaves_out_other_missing_cut_calls():
+def test_review_issue_reports_other_missing_cut_calls_without_asking():
     run = _run(applied=Applied(quiet_gaps=[(_gap_decision("fix_cube"), GAP_TEAM)]))
-    assert "`Team`" not in render_review_issue("Registrar", [run])
+
+    body = render_review_issue("Registrar", [run])
+
+    asked, also = body.split("Also decided (no answer needed)")
+    assert "`Team`" not in asked and "Missing cuts and filters: 0." in body
+    assert (
+        "- `Team` on `Roster` in `enrollment_view`: a sheet cut Cube has no member "
+        "for: Cube gets fixed (`fix_cube`). Reason: owner decides the cut. "
+        "Task: #6150"
+    ) in also
+
+
+def test_a_cause_and_a_missing_filter_decided_alike_show_as_one_line():
+    gap = _gap_decision("deliberate")
+    cause = dataclasses.replace(
+        gap, id="c1", comparison="enrollment", missing_cut=None,
+        cause={"side": "dashboard", "label": "sheet filter team"},
+    )  # fmt: skip
+    run = _run(applied=Applied(quiet_gaps=[(gap, GAP_TEAM)]))
+    decided = {"enrollment_view": [CauseAsk(cause, [], 0)]}
+
+    body = render_review_issue("Registrar", [run], decided=decided)
+
+    also = [x for x in body.split("Also decided")[1].splitlines() if "Reason" in x]
+    assert also == [
+        "- cause `sheet filter team` on the dashboard side (`enrollment` in "
+        "`enrollment_view`) and `Team` on `Roster` in `enrollment_view`: a sheet "
+        "cut Cube has no member for: an intended difference; later runs stay "
+        "quiet on it (`deliberate`). Reason: owner decides the cut. Task: #6150"
+    ]
 
 
 def test_scoped_run_says_scope_narrows_the_measure():
@@ -506,10 +551,10 @@ def test_review_issue_prints_one_bullet_per_decision():
     body = render_review_issue(
         "Registrar", [_run(applied=Applied(quiet=_enrolled_only()))]
     )
-    bullets = [x for x in body.splitlines() if x.startswith("- `dashboard_filter`")]
+    bullets = [x for x in body.splitlines() if x.startswith("- Q1. `dashboard_filter`")]
     assert bullets == [
-        "- `dashboard_filter` = `enroll_status` in tardy-roster of `enrollment_view` "
-        "(dashboard_filtered): 13 row groups, 130 rows, 130 students. "
+        "- Q1. `dashboard_filter` = `enroll_status` in tardy-roster of `enrollment_view` "
+        "(dashboard_filtered): 13 row groups, 130 rows, at least 10 students. "
         "Reason: " + ENROLLED_REASON + "."
     ]
 
@@ -563,7 +608,7 @@ def test_a_small_group_hides_its_value_in_the_reason_too():
                  {"column": "region", "values": ["Newark"]})  # fmt: skip
     g = Group("enrollment", (("region", "Newark"),), "cube_only", 39, 3)
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=[(d, g)]))])
-    assert "- `region` = `<redacted>`" in body
+    assert "- Q1. `region` = `<redacted>`" in body
     assert "Reason: Some <redacted> students moved." in body
     assert "Newark" not in body.split("## Proposed approach")[0]
 
@@ -576,7 +621,7 @@ def test_each_value_needs_10_students_of_its_own():
     body = render_review_issue(
         "Registrar", [_run(applied=Applied(quiet=[(d, big), (d, small)]))]
     )
-    assert "- `region` = `Newark, <redacted>`" in body
+    assert "- Q1. `region` = `Newark, <redacted>`" in body
     assert "Reason: Newark and <redacted> moved." in body
     assert "Camden" not in body.split("## Proposed approach")[0]
 
@@ -599,9 +644,9 @@ def test_review_issue_merges_decisions_that_share_a_reason():
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
     bullets = [x for x in body.splitlines() if LEFT in x]
     assert bullets == [
-        "- `dashboard_filter` = `enroll_status` in absences-roster, tardy-roster of "
+        "- Q1. `dashboard_filter` = `enroll_status` in absences-roster, tardy-roster of "
         "`enrollment_view` (dashboard_filtered): 2 row groups, 400 rows, "
-        "up to 20 students per comparison. "
+        "at least 20 students in one comparison. "
         "Reason: " + LEFT
     ]
     fold = body.split("<summary>For Claude</summary>", 1)[1]
@@ -620,7 +665,7 @@ def test_merged_values_still_need_10_students_each():
         (b, Group("c2", (("region", "Camden"),), "cube_only", 30, 3)),
     ]
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
-    assert "- `region` = `Newark, <redacted>` in c1, c2" in body
+    assert "- Q1. `region` = `Newark, <redacted>` in c1, c2" in body
     assert "Camden" not in body.split("## Proposed approach")[0]
 
 
@@ -630,7 +675,13 @@ def test_decisions_with_different_reasons_stay_apart():
                      {"column": "dashboard_filter", "values": ["enroll_status"]})  # fmt: skip
     quiet = [(a, g), (other, _left("absences-roster")[1])]
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
-    assert sum(x.startswith("- `dashboard_filter`") for x in body.splitlines()) == 2
+    assert (
+        sum(
+            re.match(r"- Q[12]\. `dashboard_filter`", x) is not None
+            for x in body.splitlines()
+        )
+        == 2
+    )
 
 
 def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
@@ -649,11 +700,11 @@ def test_review_issue_merges_missing_fields_and_cells_that_share_a_reason():
     run.findings = []
     body = render_review_issue("Registrar", [run])
     assert (
-        "- `Gender`, `Ethnicity` on `Roster` in `enrollment_view`: sheet filters "
+        "- Q2. `Gender`, `Ethnicity` on `Roster` in `enrollment_view`: sheet filters "
         "Cube has no member for. Reason: " + reason
     ) in body
     assert (
-        "- `tardy-roster`, `oss-roster` in `enrollment_view`: 60 cells differ "
+        "- Q1. `tardy-roster`, `oss-roster` in `enrollment_view`: 60 cells differ "
         "between Cube and the dashboard. Reason: Codes differ?"
     ) in body
     assert "owns the rule behind 2 questions" in body
@@ -674,7 +725,19 @@ def test_merged_comparisons_never_add_up_to_unmask_a_value():
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
     line = next(x for x in body.splitlines() if LEFT in x)
     assert "`dashboard_filter` = `<redacted>`" in line
-    assert "up to <10 students per comparison" in line
+    assert "at least <10 students in one comparison" in line
+
+
+def test_groups_of_one_value_never_add_up_to_unmask_it():
+    # 2 groups of 6 in one comparison can be the same 6 students (a student
+    # with rows in 2 buckets), not 12.
+    d, g = _left("tardy-roster", students=6)
+    other = Group("tardy-roster", g.dims, "cube_only", 60, 6)
+    quiet = [(d, g), (d, other)]
+    body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
+    line = next(x for x in body.splitlines() if LEFT in x)
+    assert "`dashboard_filter` = `<redacted>`" in line
+    assert "at least <10 students." in line
 
 
 OOD = "Board YOY leaves out out-of-district students"
@@ -696,7 +759,7 @@ def test_one_reason_across_decision_kinds_is_one_bullet():
     body = render_review_issue("Registrar", [run])
     bullets = [x for x in body.splitlines() if OOD in x]
     assert bullets == [
-        "- `region` = `Newark` in board of `enrollment_view` (cube_only): 1 row group, "
+        "- Q1. `region` = `Newark` in board of `enrollment_view` (cube_only): 1 row group, "
         "400 rows, 40 students; `board` in `enrollment_view`: <10 cells differ "
         "between Cube and the dashboard. Reason: " + OOD + "."
     ]
@@ -719,9 +782,107 @@ def test_one_reason_across_files_is_one_bullet():
     )
     bullets = [x for x in body.splitlines() if reason in x]
     assert bullets == [
-        "- `Enroll Status` on `Roster` in `daily_view`: a sheet filter Cube has no "
+        "- Q1. `Enroll Status` on `Roster` in `daily_view`: a sheet filter Cube has no "
         "member for; `Enroll Status` on `Roster` in `periods_view`: a sheet filter "
         "Cube has no member for. Reason: " + reason + "."
     ]
     fold = body.split("<summary>For Claude</summary>", 1)[1]
     assert "`daily_view-enroll`" in fold and "`periods_view-enroll`" in fold
+
+
+def test_review_footnote_names_students_and_staff():
+    body = render_review_issue("Registrar", [_run()])
+    assert (
+        "Counts under 10 show as `<10`, and identifiers of students and staff "
+        "are hidden." in body
+    )
+
+
+def test_review_issue_ends_with_fenced_json_in_details():
+    run = _run(
+        applied=Applied(quiet=[(_decision(), _run().applied.quiet[0][1])]),
+        diff_cells=[
+            {
+                "comparison": "enrollment",
+                "cut": "{}",
+                "key": "a",
+                "dims": [["regions_region_name", "Newark"]],
+                "dashboard": 40.0,
+                "cube": 52.0,
+                "n_students": 40,
+            }
+        ],
+        cell_sql={"enrollment": {"{}": ["SELECT 'dash' AS d", "SELECT 'cube' AS c"]}},
+        cell_sql_usd={"enrollment": {"{}": [0.01, 0.02]}},
+    )
+    cfg = ViewConfig(
+        view="enrollment_view",
+        fact="d.t",
+        comparisons=[
+            Comparison(
+                id="enrollment",
+                measure="enrolled",
+                dims=[ColumnPair("Region", "regions_region_name")],
+            )
+        ],
+    )
+    questions = questions_json([run], [cfg], {}, {}, START)
+
+    body = render_review_issue("Registrar", [run], None, questions)
+
+    tail = re.search(
+        r"<details>\n<summary>Questions for Claude \(JSON\)</summary>\n\n"
+        r"```json\n(.*)\n```\n\n</details>\n*\Z",
+        body,
+        re.DOTALL,
+    )
+    assert tail and json.loads(tail.group(1)) == questions
+    check = questions[0]["hand_checks"][0]
+    markdown = body[: tail.start()]
+    for sql in (check["dashboard_sql"], check["cube_sql"]):
+        block = markdown[: markdown.index(sql)].rsplit("<details>", 1)[1]
+        assert "</details>" not in block and "<summary>" in block
+    assert markdown.count("<details>") == 2  # the hand check and For Claude
+    assert "\nQ1, `enrollment` in `enrollment_view`, cut `{}`" in markdown
+    # A comparison with no sheet or filters named leaves the sheet as it is.
+    assert "On the dashboard: leave the sheet's filters as they are." in markdown
+    assert "- Q1. `region` = `Newark`" in markdown
+
+
+def test_suppress_hides_a_lone_small_part_and_its_next_smallest():
+    # 25 = 18 + 7: masking 7 alone leaves it as 25 - 18. With both masked,
+    # the total gives only their sum, which holds 10 or more.
+    assert suppress(25, [18, 7]) == ("25", ["masked", "<10"])
+
+
+def test_suppress_rules():
+    assert suppress(40, [20, 20]) == ("40", ["20", "20"])
+    assert suppress(48, [30, 13, 5]) == ("48", ["30", "masked", "<10"])
+    assert suppress(15, [9, 6]) == ("masked", ["<10", "<10"])
+    assert suppress(5, [5]) == ("<10", ["<10"])
+    assert suppress(120, [100, 20]) == ("120", ["100", "20"])
+
+
+def test_suppress_never_lets_a_sum_pin_the_small_parts():
+    # 18 over two `<10` parts is 9 and 9; 48 - 30 leaves 18 for two `<10`
+    # parts, the same. A `masked` part, or a hidden total, breaks the pin.
+    assert suppress(18, [9, 9]) == ("masked", ["<10", "<10"])
+    assert suppress(27, [9, 9, 9]) == ("masked", ["<10", "<10", "<10"])
+    assert suppress(48, [30, 9, 9]) == ("48", ["masked", "<10", "<10"])
+
+
+def test_suppress_masks_until_the_masked_parts_hold_10_together():
+    # Two `<10` parts summing to under 10: the total minus the shown parts
+    # would give their sum, so the next-smallest part is masked too.
+    assert suppress(30, [22, 4, 4]) == ("30", ["masked", "<10", "<10"])
+    assert suppress(40, [25, 3, 2]) == ("40", ["masked", "<10", "<10"])
+    assert suppress(50, [30, 11, 5, 4]) == ("50", ["30", "masked", "<10", "<10"])
+    assert suppress(12, [11, 1]) == ("12", ["masked", "<10"])
+
+
+def test_a_hidden_value_is_redacted_only_as_a_whole_value():
+    from cube_validation.report import _safe_reason
+
+    text = _safe_reason("grade 1 lost 414 rows; see Q1 and 1.5", ["1"])
+
+    assert text == "grade <redacted> lost 414 rows; see Q1 and 1.5"

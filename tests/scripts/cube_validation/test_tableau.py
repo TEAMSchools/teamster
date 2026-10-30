@@ -11,6 +11,9 @@ import pytest
 from cube_validation.config import ColumnPair, Comparison
 
 # trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation.discover import sheet_shape
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
 from cube_validation.tableau import (
     RefreshMovedError,
     Tableau,
@@ -19,6 +22,7 @@ from cube_validation.tableau import (
     expose_sheet,
     formula_fingerprint,
     prove,
+    set_shelves,
     split_cuts,
 )
 
@@ -632,3 +636,446 @@ def test_sign_out_returns_a_sign_in_error_instead_of_raising():
                 raise FailedSignInError("401002", "Unauthorized Access", "")
 
     assert "401002" in (Tableau(Server()).sign_out() or "")
+
+
+# --- shelves on the proof copy ---------------------------------------------------
+
+SHELVES_TWB = (Path(__file__).parent / "fixtures" / "shelves.twb").read_text()
+RESHAPE = {
+    "drop": ["Week Start Monday", "Grade/Subject"],
+    "add": {"rows": ["Grade Level", "Subject Area"]},
+}
+
+
+def _worksheets(xml: str) -> dict[str, str]:
+    return {
+        m[1]: m[0]
+        for m in re.finditer(r"<worksheet name='([^']*)'>.*?</worksheet>", xml, re.S)
+    }
+
+
+def test_set_shelves_reshapes_one_sheet_only():
+    for src in (SHELVES_TWB, SHELVES_TWB.replace("\n", "\r\n")):
+        out = set_shelves(src, "Mastery Grid", RESHAPE).xml
+
+        ET.fromstring(out)
+        shape = sheet_shape(out, "Mastery Grid")
+        assert shape.rows == ["Grade Level", "Subject Area"]
+        assert shape.cols == ["Module Code", "School"]
+        assert (
+            "<rows onTop='true'>([federated.0ddi (copy)].[none:grade_level:ok] / "
+            in out
+        )
+        before, after = _worksheets(src), _worksheets(out)
+        assert after["Mastery by Week"] == before["Mastery by Week"]
+        assert out.replace(after["Mastery Grid"], "") == src.replace(
+            before["Mastery Grid"], ""
+        )
+        # Subject Area was not on the sheet: its column and the instance the
+        # workbook already uses join the sheet's dependencies, line endings kept.
+        grid = after["Mastery Grid"]
+        assert grid.count("name='[subject_area]'") == 1
+        assert grid.count("name='[none:subject_area:nk]'") == 1
+        assert ("\r\n" in src) == ("\r\n" in grid) and "\r\r" not in grid
+        assert grid.count("name='[grade_level]'") == 1
+
+
+def test_set_shelves_fills_an_empty_shelf_and_keeps_its_attributes():
+    src = SHELVES_TWB.replace(
+        "<cols onLeft='true'>([federated.0ddi (copy)].[none:module_code:nk] / "
+        "[federated.0ddi (copy)].[none:school:nk])</cols>",
+        "<cols onLeft='true' />",
+    )
+    out = set_shelves(src, "Mastery Grid", {"add": {"cols": ["School"]}}).xml
+
+    assert "<cols onLeft='true'>[federated.0ddi (copy)].[none:school:nk]</cols>" in out
+
+
+def test_set_shelves_refuses_a_drop_off_the_shelves_and_an_unknown_add():
+    with pytest.raises(ValueError, match="'Subject Area' is not on .*Grade/Subject"):
+        set_shelves(SHELVES_TWB, "Mastery Grid", {"drop": ["Subject Area"]})
+    with pytest.raises(ValueError, match="no field 'Grade Band'"):
+        set_shelves(SHELVES_TWB, "Mastery Grid", {"add": {"rows": ["Grade Band"]}})
+    with pytest.raises(ValueError, match="no worksheet 'Nope'"):
+        set_shelves(SHELVES_TWB, "Nope", RESHAPE)
+
+
+def test_set_shelves_refuses_a_measure_and_an_unlisted_calculation():
+    with pytest.raises(ValueError, match="'Is Mastery Int' is a measure"):
+        set_shelves(SHELVES_TWB, "Mastery Grid", {"add": {"rows": ["Is Mastery Int"]}})
+    with pytest.raises(ValueError, match="'Mastery Band' is a calculation"):
+        set_shelves(SHELVES_TWB, "Mastery Grid", {"add": {"rows": ["Mastery Band"]}})
+
+
+DKI_TWB = (Path(__file__).parent / "fixtures" / "dki_grid.twb").read_text()
+DKI_DS = "[federated.0dki (copy)]"
+
+
+def test_set_shelves_drop_takes_the_sorts_formats_and_table_calcs_along_it():
+    out = set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
+
+    ET.fromstring(out)
+    before, after = _worksheets(DKI_TWB), _worksheets(out)
+    grid = after["Mastery Grid"]
+    week, calc = "none:week_start_monday:ok", "diff:avg:is_mastery_int:qk:2"
+    # The sort and the per-field formats on the dropped field go.
+    assert "<natural-sort" not in grid
+    assert f"field='{DKI_DS}.[{week}]'" not in grid
+    # The table calc ordered along the week goes everywhere it appears.
+    assert calc not in grid
+    # Filters on the week stay, with their slices; so does every other field's
+    # formats, the table calc along the rows, and the other label run.
+    assert grid.count(f"<filter class='categorical' column='{DKI_DS}.[") == 4
+    assert grid.count("<slices>") == 1 and grid.count("<column>[federated") == 4
+    assert f"field='{DKI_DS}.[none:school:nk]' value='12'" in grid
+    assert "name='[diff:avg:is_mastery_int:qk]'" in grid
+    assert f"<tooltip column='{DKI_DS}.[diff:avg:is_mastery_int:qk]' />" in grid
+    assert f"<![CDATA[<{DKI_DS}.[avg:is_mastery_int:qk]>]]>" in grid
+    # Rules the edit emptied (header, mark) go; the others stay.
+    assert "<style-rule element='mark'>" not in grid
+    assert "<style-rule element='header'>" not in grid
+    assert grid.count("<style-rule ") == 2
+    assert after["Mastery by Week"] == before["Mastery by Week"]
+    assert out.replace(grid, "") == DKI_TWB.replace(before["Mastery Grid"], "")
+
+
+def test_set_shelves_drop_keeps_a_table_calc_along_kept_fields():
+    out = set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["School"]}).xml
+
+    grid = _worksheets(out)["Mastery Grid"]
+    assert grid.count("diff:avg:is_mastery_int:qk:2") == DKI_TWB.count(
+        "diff:avg:is_mastery_int:qk:2"
+    )
+    assert f"field='{DKI_DS}.[none:school:nk]'" not in grid
+    assert "<natural-sort" in grid
+
+
+def test_set_shelves_clears_a_filter_on_one_sheet_only():
+    for src in (DKI_TWB, DKI_TWB.replace("\n", "\r\n")):
+        out = set_shelves(
+            src,
+            "Mastery Grid",
+            {"drop": ["Week Start Monday"], "clear_filters": ["Discipline"]},
+        ).xml
+
+        ET.fromstring(out)
+        before, after = _worksheets(src), _worksheets(out)
+        nl = "\r\n" if "\r\n" in src else "\n"
+        grid = after["Mastery Grid"]
+        assert (
+            f"<filter class='categorical' column='{DKI_DS}.[Discipline]' "
+            f"filter-group='94'>{nl}            <groupfilter function='level-members' "
+            "level='[Discipline]' user:ui-enumeration='all' "
+            f"user:ui-marker='enumerate' />{nl}          </filter>"
+        ) in grid
+        assert "&quot;ELA&quot;' user:ui-domain" not in grid
+        # The year filter still narrows; the other sheet keeps its own, though
+        # it shares the cleared filter's filter-group.
+        assert "member='2026'" in grid
+        assert "[Discipline]' filter-group='94'>" in before["Mastery by Week"]
+        assert after["Mastery by Week"] == before["Mastery by Week"]
+
+
+def test_set_shelves_refuses_to_clear_a_missing_or_range_filter():
+    with pytest.raises(ValueError, match="no filter on 'School'; it filters Disc"):
+        set_shelves(DKI_TWB, "Mastery Grid", {"clear_filters": ["School"]})
+    ranged = DKI_TWB.replace(
+        "<filter class='categorical' column='[federated.0dki (copy)].[none:academic",
+        "<filter class='quantitative' column='[federated.0dki (copy)].[none:academic",
+    )
+    with pytest.raises(ValueError, match="'Academic Year' .* is not on members"):
+        set_shelves(ranged, "Mastery Grid", {"clear_filters": ["Academic Year"]})
+
+
+WEEK_CALC = f"{DKI_DS}.[diff:avg:is_mastery_int:qk:2]"
+_NATURAL_SORT = (
+    f"<natural-sort column='{DKI_DS}.[none:week_start_monday:ok]' direction='DESC' />"
+)
+
+
+def _grid_with(extra: str) -> str:
+    """The DKI fixture with `extra` added after the grid's natural sort."""
+    assert DKI_TWB.count(_NATURAL_SORT) == 2
+    return DKI_TWB.replace(_NATURAL_SORT, _NATURAL_SORT + extra, 1)
+
+
+def test_set_shelves_drop_removes_every_attribute_naming_a_removed_calc():
+    src = _grid_with(
+        f"\n          <sort class='computed' column='{DKI_DS}.[none:module_code:nk]' "
+        f"direction='DESC' using='{WEEK_CALC}' />"
+        f"\n          <filter class='categorical' column='{DKI_DS}.[:Measure Names]'>"
+        "\n            <groupfilter function='union' user:op='manual'>"
+        "\n              <groupfilter function='member' level='[:Measure Names]' "
+        f"member='&quot;{DKI_DS}.[avg:is_mastery_int:qk]&quot;' />"
+        "\n              <groupfilter function='member' level='[:Measure Names]' "
+        f"member='&quot;{WEEK_CALC}&quot;' />"
+        "\n            </groupfilter>"
+        "\n          </filter>"
+    )
+
+    grid = _worksheets(
+        set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
+    )["Mastery Grid"]
+
+    assert "diff:avg:is_mastery_int:qk:2" not in grid
+    assert "<sort class='computed'" not in grid
+    assert f"member='&quot;{DKI_DS}.[avg:is_mastery_int:qk]&quot;'" in grid
+
+
+def test_set_shelves_drop_removes_a_manual_sort_on_the_dropped_field():
+    src = _grid_with(
+        f"\n          <sort class='manual' column='{DKI_DS}.[none:week_start_monday:ok]' "
+        "direction='ASC'>\n            <dictionary>\n              "
+        "<bucket>#2026-01-05#</bucket>\n            </dictionary>\n          </sort>"
+        f"\n          <sort class='manual' column='{DKI_DS}.[none:school:nk]' "
+        "direction='ASC'>\n            <dictionary>\n              "
+        "<bucket>&quot;A&quot;</bucket>\n            </dictionary>\n          </sort>"
+    )
+
+    out = set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
+
+    ET.fromstring(out)
+    grid = _worksheets(out)["Mastery Grid"]
+    assert "#2026-01-05#" not in grid
+    assert f"<sort class='manual' column='{DKI_DS}.[none:school:nk]'" in grid
+
+
+def test_set_shelves_drop_removes_a_label_and_encodings_it_emptied():
+    grid = _worksheets(DKI_TWB)["Mastery Grid"]
+    only_calc = grid.replace(
+        f"<tooltip column='{DKI_DS}.[diff:avg:is_mastery_int:qk]' />\n"
+        "              <text column='"
+        f"{DKI_DS}.[avg:is_mastery_int:qk]' />\n              ",
+        "",
+    ).replace(
+        "<run fontsize='12'><![CDATA[<"
+        f"{DKI_DS}.[avg:is_mastery_int:qk]>]]></run>\n"
+        "                <run>Æ&#10;</run>\n                ",
+        "",
+    )
+    assert only_calc.count("<text column=") == 1 and only_calc.count("<run") == 1
+    src = DKI_TWB.replace(grid, only_calc)
+
+    out = set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
+
+    ET.fromstring(out)
+    after = _worksheets(out)["Mastery Grid"]
+    assert "<encodings>" not in after
+    assert "<formatted-text>" not in after
+    assert "<customized-label>" not in after
+    assert "<mark class='Square' />" in after
+
+
+def test_set_shelves_names_the_table_calcs_it_removes_and_recomputes():
+    dropped = set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["Week Start Monday"]})
+
+    assert dropped.removed == (
+        "Difference in Avg. Is Mastery Int (along Week Start Monday, Module Code)",
+    )
+    # Only the columns changed; the kept calc runs down the rows.
+    assert dropped.recomputed == {}
+
+    reshaped = set_shelves(
+        DKI_TWB,
+        "Mastery Grid",
+        {"drop": ["Week Start Monday"], "add": {"rows": ["Subject Area"]}},
+    )
+
+    assert reshaped.recomputed == {"rows": ("Difference in Avg. Is Mastery Int",)}
+    assert set_shelves(DKI_TWB, "Mastery Grid", {"drop": ["School"]}).removed == ()
+
+
+def test_set_shelves_names_a_table_or_pane_calc_on_any_changed_shelf():
+    src = DKI_TWB.replace(
+        "ordering-type='Rows' type='Difference'",
+        "ordering-type='Table' type='Difference'",
+    )
+    assert src != DKI_TWB
+
+    dropped = set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]})
+
+    assert dropped.recomputed == {"columns": ("Difference in Avg. Is Mastery Int",)}
+
+
+def test_set_shelves_names_a_field_calc_whose_partition_gains_a_field():
+    added = set_shelves(DKI_TWB, "Mastery Grid", {"add": {"rows": ["Subject Area"]}})
+
+    # Both calcs share a caption: the Field one (partition gains Subject Area)
+    # and the Rows one (its rows changed); the caption is named once.
+    assert added.removed == ()
+    assert added.recomputed == {"rows": ("Difference in Avg. Is Mastery Int",)}
+    field_only = DKI_TWB.replace(
+        "ordering-type='Rows' type='Difference'",
+        "ordering-type='Field' type='Difference'",
+    )
+    added = set_shelves(field_only, "Mastery Grid", {"add": {"rows": ["Subject Area"]}})
+    assert added.recomputed == {"rows": ("Difference in Avg. Is Mastery Int",)}
+
+
+def test_set_shelves_drop_removes_a_rule_it_empties_beside_one_already_empty():
+    src = DKI_TWB.replace(
+        "<style-rule element='cell'>",
+        "<style-rule element='axis'>\n          </style-rule>\n"
+        "          <style-rule element='cell'>",
+        1,
+    )
+
+    grid = _worksheets(
+        set_shelves(src, "Mastery Grid", {"drop": ["Week Start Monday"]}).xml
+    )["Mastery Grid"]
+
+    assert "<style-rule element='axis'>\n          </style-rule>" in grid
+    assert "<style-rule element='mark'>" not in grid
+    assert "<style-rule element='header'>" not in grid
+
+
+# --- a session Tableau ends mid-run (another sign-in with the shared token) ----------
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py registers cube_validation
+from cube_validation import tableau as tableau_mod  # noqa: E402
+from tableauserverclient.server.endpoint.exceptions import (  # noqa: E402
+    FailedSignInError,
+)
+
+
+def _unauthorized():
+    return FailedSignInError("401002", "Unauthorized Access", "")
+
+
+class _Calls(list):
+    """A call log that answers 401 at the named calls, once each, after
+    letting the first `skip` of them through."""
+
+    def __init__(self, fail_on, skip=0):
+        super().__init__()
+        self.fail_on = list(fail_on)
+        self.skip = skip
+
+    def append(self, call):
+        super().append(call)
+        if call[0] in self.fail_on:
+            if self.skip:
+                self.skip -= 1
+                return
+            self.fail_on.remove(call[0])
+            raise _unauthorized()
+
+
+class RevokedServer(FakeServer):
+    """A FakeServer whose session Tableau ends at the named calls."""
+
+    def __init__(self, twb, fail_on=(), csv_fails=False, skip=0, **kw):
+        super().__init__(twb, **kw)
+        self.calls = _Calls(fail_on, skip)
+        self.signed_out = 0
+        self.auth = SimpleNamespace(sign_out=self._sign_out)
+        if csv_fails:
+            # The CSV is fetched as it is read: the 401 comes on the read.
+            def populate_csv(view, opts):
+                def read():
+                    raise _unauthorized()
+                    yield b""
+
+                view.csv = read()
+
+            self.views.populate_csv = populate_csv
+
+    def _sign_out(self):
+        self.signed_out += 1
+        raise _unauthorized()  # the ended session cannot sign out either
+
+
+def _signer(servers):
+    made = []
+
+    def sign_in():
+        made.append(servers.pop(0))
+        return made[-1]
+
+    return sign_in, made
+
+
+def test_a_401_mid_capture_signs_in_again_and_retries_that_call(capsys):
+    jobs = [[_job("Sample Dashboard", T0)]]
+    first = RevokedServer(_twb(), fail_on=["download"], jobs=jobs)
+    second = RevokedServer(_twb(), jobs=jobs)
+    sign_in, made = _signer([second])
+    tab = Tableau(first, now=lambda: NOW, sign_in=sign_in)
+
+    snap = tab.capture("wb-luid", "Rate by Region", [{}], lambda xml: xml)
+
+    assert made == [second] and first.signed_out == 1
+    # The failed download ran again on the new session, and everything after it.
+    names = [c[0] for c in second.calls]
+    assert names[0] == "download" and "populate_csv" in names
+    assert len(second.published) == 1 and first.published == []
+    assert snap.copy_luid == "copy-luid" and len(snap.exports[0]) == 2
+    assert "signing in again" in capsys.readouterr().err
+
+
+def test_a_401_while_reading_the_csv_retries_the_export():
+    first = RevokedServer(_twb(), csv_fails=True)
+    second = RevokedServer(_twb())
+    sign_in, _ = _signer([second])
+
+    rows = Tableau(first, sign_in=sign_in).export("copy-luid", "Rate by Region", {})
+
+    assert rows == [
+        {"Region": "North", "Rate": "0.9123"},
+        {"Region": "South", "Rate": "0.85"},
+    ]
+
+
+def test_a_second_401_in_a_row_ends_the_run():
+    first = RevokedServer(_twb(), fail_on=["get_by_id"])
+    second = RevokedServer(_twb(), fail_on=["get_by_id"])
+    sign_in, _ = _signer([second])
+
+    with pytest.raises(tableau_mod.SessionEnded, match="again .*right after a new"):
+        Tableau(first, sign_in=sign_in).workbook_updated("wb-luid")
+
+
+def test_a_refused_new_sign_in_ends_the_run():
+    def sign_in():
+        raise _unauthorized()
+
+    with pytest.raises(tableau_mod.SessionEnded, match="refused the new sign-in"):
+        Tableau(
+            RevokedServer(_twb(), fail_on=["get_by_id"]), sign_in=sign_in
+        ).workbook_updated("wb-luid")
+
+
+def test_a_session_signs_in_again_at_most_a_few_times():
+    # Each new session answers the retried call, then ends on the next call.
+    servers = [RevokedServer(_twb(), fail_on=["get_by_id"])] + [
+        RevokedServer(_twb(), fail_on=["get_by_id"], skip=1)
+        for _ in range(tableau_mod.MAX_RECONNECTS)
+    ]
+    sign_in, _ = _signer(servers[1:])
+    tab = Tableau(servers[0], sign_in=sign_in)
+
+    for _ in range(tableau_mod.MAX_RECONNECTS):
+        assert tab.workbook_updated("wb-luid") == T0
+    with pytest.raises(tableau_mod.SessionEnded, match="at most"):
+        tab.workbook_updated("wb-luid")
+
+
+def test_source_fingerprint_follows_the_connection_not_the_extract():
+    from cube_validation.tableau import source_fingerprint
+
+    def twb(table, refreshed, other="x"):
+        return f"""<workbook><datasources>
+<datasource name='federated.a'>
+  <connection class='federated'><relation name='r' table='[ds].[{table}]' type='table' /></connection>
+  <extract enabled='true'><connection class='hyper' update-time='{refreshed}' /></extract>
+</datasource>
+<datasource name='federated.b'><connection class='federated'><relation table='[ds].[{other}]' /></connection></datasource>
+</datasources><worksheets><worksheet name='S'><table><view>
+<datasource-dependencies datasource='federated.a' />
+</view></table></worksheet></worksheets></workbook>"""
+
+    base = source_fingerprint(twb("v1", "10/29/2026"), "S")
+
+    assert source_fingerprint(twb("v1", "10/30/2026"), "S") == base
+    assert source_fingerprint(twb("v1", "10/29/2026", other="y"), "S") == base
+    assert source_fingerprint(twb("v2", "10/29/2026"), "S") != base

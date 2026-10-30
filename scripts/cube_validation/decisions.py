@@ -1,7 +1,10 @@
 """Apply recorded decisions to the differences a run finds.
 
 A decision quiets the groups it names only while the SQL on both sides is the
-SQL it was made against. Pure: no I/O.
+SQL it was made against. A `group` decision names its groups by one column's
+value. A `cause` decision names a proven cause, never a group: the latest
+triage, which re-runs every stored proof, says which items it decides
+(`triage.mark_decided`), so `apply` only checks its SQL. Pure: no I/O.
 """
 
 from __future__ import annotations
@@ -28,6 +31,8 @@ class Applied:
     quiet_gaps: list[tuple[Decision, Gap]] = field(default_factory=list)
     open_cells: list[CellDiff] = field(default_factory=list)
     quiet_cells: list[tuple[Decision, CellDiff]] = field(default_factory=list)
+    # Cause decisions whose SQL still holds; the triage says what they cover.
+    causes: list[Decision] = field(default_factory=list)
 
 
 _OPEN = re.compile(r"(?i:rb|br|r|b)?('''|\"\"\"|'|\"|`)")
@@ -122,6 +127,28 @@ def decisions_fingerprint(decisions: list[Decision]) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
+def cause_state(d: Decision, proof: str, current: dict[str, str]) -> str:
+    """Whether a cause decision still holds for an item proven by `proof`.
+
+    Args:
+        d: A cause decision.
+        proof: The fingerprint of the stored proof the item's cause rests on.
+        current: The comparison's current `{cube, dashboard}` fingerprints.
+
+    Returns:
+        `holds`, `sql` (either side's SQL changed since the decision) or
+        `proof` (the proof file changed since the decision).
+    """
+    if any(
+        not d.fingerprints.get(side) or d.fingerprints[side] != current.get(side)
+        for side in ("cube", "dashboard")
+    ):
+        return "sql"
+    if not d.fingerprints.get("proof") or d.fingerprints["proof"] != proof:
+        return "proof"
+    return "holds"
+
+
 def _text(value: object) -> str:
     """A decision value as group text: `None` reads as empty, as NULL does."""
     return "" if value is None else str(value)
@@ -170,6 +197,16 @@ def apply(
     cell_claims: dict[str, Decision] = {}
 
     for decision in decisions:
+        if decision.cause:
+            # Its own proof stands in for the item's: here only the SQL, and
+            # that it has a proof at all, can fail.
+            state = cause_state(
+                decision,
+                decision.fingerprints.get("proof", ""),
+                fingerprints.get(decision.comparison) or {},
+            )
+            (applied.causes if state == "holds" else applied.reconfirm).append(decision)
+            continue
         if (named := _gap_of(decision)) is not None:
             gap = next((g for g in gaps if (g.kind, g.field) == named), None)
             if gap is None:

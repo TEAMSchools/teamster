@@ -1,7 +1,9 @@
 import base64
 import hashlib
 import hmac
+import http.server
 import json
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -16,6 +18,7 @@ from cube_validation.cube_client import (
     CubeRefusal,
     bind,
     drop_limit,
+    member_docs,
     mint_token,
     network_schools,
     refuse_unless_safe,
@@ -299,6 +302,116 @@ def test_base_url_that_is_not_https_is_refused(url):
         Cube(url, "s", "x@y")
 
 
+def test_http_allowed_only_for_loopback_hosts():
+    Cube("http://localhost:4000/cubejs-api/v1", "s", "e@x")
+    Cube("http://127.0.0.1:4000/cubejs-api/v1", "s", "e@x")
+    for bad in (
+        "http://localhost.evil.com/x",
+        "http://127.0.0.1@evil.com/x",
+        "http://user@localhost/x",
+        "http://cube.example.com/x",
+    ):
+        with pytest.raises(CubeError):
+            Cube(bad, "s", "e@x")
+
+
+def test_request_to_a_lookalike_loopback_url_is_refused_before_it_is_sent():
+    with pytest.raises(CubeError, match="https"):
+        urlopen_json("GET", "http://127.0.0.1@evil.com/x", {})
+
+
+def test_dev_fact_dataset_passes_when_the_view_expects_it():
+    sql = "SELECT 1 FROM `zz_cbaldor_kipptaf_marts`.`fct_a` WHERE abbreviation IN (?)"
+
+    refuse_unless_safe(
+        Compiled(sql, ["A"], []),
+        view_fact="zz_cbaldor_kipptaf_marts.fct_a",
+        network_schools={"A"},
+    )
+
+
+def test_prod_fact_is_refused_when_the_view_expects_a_dev_build():
+    sql = "SELECT 1 FROM `kipptaf_marts`.`fct_a` WHERE abbreviation IN (?)"
+
+    with pytest.raises(CubeRefusal, match="other than"):
+        refuse_unless_safe(
+            Compiled(sql, ["A"], []),
+            view_fact="zz_cbaldor_kipptaf_marts.fct_a",
+            network_schools={"A"},
+        )
+
+
+def test_dev_fact_is_refused_when_the_view_expects_prod():
+    sql = "SELECT 1 FROM zz_cbaldor_kipptaf_marts.fct_a WHERE abbreviation IN (?)"
+
+    with pytest.raises(CubeRefusal, match="other than"):
+        refuse_unless_safe(
+            Compiled(sql, ["A"], []),
+            view_fact="kipptaf_marts.fct_a",
+            network_schools={"A"},
+        )
+
+
+def test_second_fact_in_an_underscored_dev_dataset_is_refused():
+    sql = (
+        "SELECT 1 FROM `zz_a_b_kipptaf_marts`.`fct_other` "
+        "JOIN `zz_a_b_kipptaf_marts`.`fct_a` USING (k) "
+        "WHERE abbreviation IN (?)"
+    )
+
+    with pytest.raises(CubeRefusal, match="fct_other"):
+        refuse_unless_safe(
+            Compiled(sql, ["A"], []),
+            view_fact="zz_a_b_kipptaf_marts.fct_a",
+            network_schools={"A"},
+        )
+
+
+def test_project_prefixed_prod_sql_passes():
+    sql = (
+        "SELECT 1 FROM `teamster-332318`.`kipptaf_marts`.`fct_a` "
+        "WHERE abbreviation IN (?)"
+    )
+
+    refuse_unless_safe(
+        Compiled(sql, ["A"], []),
+        view_fact="kipptaf_marts.fct_a",
+        network_schools={"A"},
+    )
+
+
+def test_a_redirect_is_refused_and_the_token_is_not_forwarded():
+    seen: list[tuple[str, str | None]] = []
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            seen.append((self.path, self.headers.get("Authorization")))
+            if self.path == "/start":
+                self.send_response(302)
+                self.send_header("Location", "/elsewhere")
+                self.end_headers()
+            else:
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"{}")
+
+        def log_message(self, format, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{server.server_port}/start"
+        with pytest.raises(CubeError, match="redirect"):
+            urlopen_json("GET", url, {"Authorization": "token"})
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    assert seen == [("/start", "token")]
+
+
 def test_request_to_a_non_https_url_is_refused_before_it_is_sent():
     with pytest.raises(CubeError, match="https"):
         urlopen_json("GET", "file:///etc/passwd", {})
@@ -311,6 +424,55 @@ def test_network_failure_is_a_cube_error(monkeypatch, error):
     def fail(*args, **kwargs):
         raise error
 
-    monkeypatch.setattr(urllib.request, "urlopen", fail)
+    monkeypatch.setattr(urllib.request.OpenerDirector, "open", fail)
     with pytest.raises(CubeError, match="did not answer"):
         urlopen_json("GET", "https://cube.example/x", {})
+
+
+def test_meta_calls_meta_endpoint():
+    calls = []
+    cube = Cube(
+        "https://c/cubejs-api/v1",
+        "s",
+        "e@x",
+        fetch=lambda m, u, h, b: calls.append((m, u)) or {"cubes": []},
+    )
+
+    assert cube.meta() == {"cubes": []}
+    assert calls == [("GET", "https://c/cubejs-api/v1/meta")]
+
+
+def test_member_docs_reads_description_and_ai_context_for_one_view():
+    meta = {
+        "cubes": [
+            {
+                "name": "v",
+                "measures": [
+                    {
+                        "name": "v.pct_tardy",
+                        "title": "Pct Tardy",
+                        "description": "Share tardy.",
+                        "meta": {"ai_context": "Codes T*."},
+                    }
+                ],
+                "dimensions": [
+                    {"name": "v.grade_level", "title": "Grade", "description": "Grade."}
+                ],
+                "segments": [],
+            },
+            {
+                "name": "other",
+                "measures": [{"name": "other.x"}],
+                "dimensions": [],
+                "segments": [],
+            },
+        ]
+    }
+
+    docs = member_docs(meta, "v")
+
+    assert set(docs) == {"pct_tardy", "grade_level"}
+    assert docs["pct_tardy"].ai_context == "Codes T*."
+    assert docs["grade_level"].ai_context == ""
+    assert docs["grade_level"].kind == "dimension"
+    assert docs["pct_tardy"].kind == "measure"
