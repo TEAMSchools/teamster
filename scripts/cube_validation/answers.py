@@ -422,13 +422,27 @@ def _shown_number(x: float | None) -> str | None:
 
 
 def _check_json(view: str, check: HandCheck) -> dict:
-    """A hand check as JSON, its two numbers masked like the issue's counts."""
+    """A hand check as JSON, its two numbers masked like the issue's counts.
+
+    Two whole numbers that differ by under 10 both read `<masked>`: their
+    difference would post a small count of the cell's students.
+    """
+    dashboard, cube = _shown_number(check.dashboard), _shown_number(check.cube)
+    d, c = check.dashboard, check.cube
+    if (
+        d is not None
+        and c is not None
+        and float(d).is_integer()
+        and float(c).is_integer()
+        and 0 < abs(d - c) < MASK_BELOW
+    ):
+        dashboard = cube = "<masked>"
     return {
         "view": view,
         **asdict(check),
         "dims": [list(pair) for pair in check.dims],
-        "dashboard": _shown_number(check.dashboard),
-        "cube": _shown_number(check.cube),
+        "dashboard": dashboard,
+        "cube": cube,
         "expires": check.expires.isoformat(),
     }
 
@@ -494,7 +508,7 @@ def reproduce_json(
         proofs.append(
             {
                 "bucket": bucket,
-                "reproduce": (proof.reproduce.get(bucket) if proof else None),
+                "reproduce": _checked_reproduce(cfg, proof, bucket),
                 "confirm": (
                     f"triage confirm {file} --comparison "
                     f"{proof.comparison if proof else cid} --bucket "
@@ -509,6 +523,30 @@ def reproduce_json(
             }
         )
     return {"view": view, "comparison": cid, "cube": cube, "proofs": proofs}
+
+
+def _checked_reproduce(cfg: ViewConfig, proof, bucket: str) -> str | None:
+    """A proof's reproduce query for one bucket, checked again before it posts.
+
+    `triage confirm` checks it, but the block is comment lines, which a
+    proof's fingerprint ignores: an edit after confirm would post unchecked.
+    A query that fails the check is left out, as if the proof had none.
+    """
+    from . import confirm
+
+    sql = proof.reproduce.get(bucket) if proof else None
+    comparison = next(
+        (c for c in cfg.comparisons if proof and c.id == proof.comparison), None
+    )
+    if sql is None or comparison is None:
+        return None
+    try:
+        confirm.check_reproduce(
+            sql, confirm.grain_names(comparison), confirm.identifying(comparison)
+        )
+    except confirm.pipeline.Refusal:
+        return None
+    return sql
 
 
 def _ask_cause(ask: CauseAsk) -> str:

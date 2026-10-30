@@ -346,7 +346,7 @@ def _questions(run, cfg=None, triage=TRIAGE):
 
 
 def test_questions_json_matches_markdown_questions_one_to_one():
-    run = _owner_run([_cell()])
+    run = _owner_run([_cell(cube=25.0)])
     questions = _questions(run)
     body = render_review_issue("Registrar", [run], DEFS, questions)
     bullets = [x for x in body.split("## Proposed")[0].splitlines() if "Reason:" in x]
@@ -376,7 +376,7 @@ def test_questions_json_matches_markdown_questions_one_to_one():
     check = questions[0]["hand_checks"][0]
     assert check["comparison"] == "enrollment" and check["view"] == "enrollment"
     assert check["dims"] == [["regions_region_name", "Newark"], ["grade_level", "7"]]
-    assert (check["dashboard"], check["cube"]) == ("10", "12")
+    assert (check["dashboard"], check["cube"]) == ("10", "25")
     assert check["cube_sql"].endswith("SAFE_CAST(grade_level AS NUMERIC) = 7")
     assert (check["dashboard_usd"], check["cube_usd"]) == (0.01, 0.02)
     assert (check["workbook"], check["sheet"]) == ("Attendance", "Enrollment by Region")
@@ -400,7 +400,7 @@ def test_questions_json_hides_what_the_markdown_hides():
         ],
     )
     cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
-    run = _owner_run([_cell(dashboard=7.0, cube=12.0)])
+    run = _owner_run([_cell(dashboard=7.0, cube=25.0)])
 
     text = json.dumps(_questions(run, cfg))
 
@@ -411,7 +411,7 @@ def test_questions_json_hides_what_the_markdown_hides():
     assert "45 rows" in text and " 5 rows" not in text
     # A count measure's value under 10 is masked like any count.
     check = _questions(run, cfg)[0]["hand_checks"][0]
-    assert (check["dashboard"], check["cube"]) == ("<10", "12")
+    assert (check["dashboard"], check["cube"]) == ("<10", "25")
     assert "stub" not in text
 
 
@@ -443,14 +443,14 @@ def test_hand_check_values_under_10_are_masked_whatever_the_measure():
             ],
         )
         cfg = ViewConfig(view="enrollment", fact="d.t", comparisons=[cmp])
-        run = _owner_run([_cell(dashboard=7.0, cube=12.0)])
+        run = _owner_run([_cell(dashboard=7.0, cube=25.0)])
 
         questions = _questions(run, cfg)
         check = questions[0]["hand_checks"][0]
 
-        assert (check["dashboard"], check["cube"]) == ("<10", "12"), measure
+        assert (check["dashboard"], check["cube"]) == ("<10", "25"), measure
         body = render_review_issue("Registrar", [run], DEFS, questions)
-        assert "the dashboard shows <10, Cube shows 12" in body
+        assert "the dashboard shows <10, Cube shows 25" in body
 
     # A rate is no count: it prints as it is.
     run = _owner_run([_cell(dashboard=7.5, cube=0.25)])
@@ -1205,6 +1205,18 @@ def test_a_cause_reproduces_through_cube_a_count_query_and_the_proof(tmp_path):
     assert "live count" not in text.lower()
 
 
+def test_a_reproduce_block_edited_after_confirm_is_checked_before_it_posts(tmp_path):
+    # Comment lines never stale a proof, so `review` checks the block again.
+    path = _stored_proof(tmp_path, {"C1": "SELECT * FROM d.t"})
+    source = ProofSource("v.yml", tmp_path)
+
+    part = reproduce_json(
+        "enrollment", _ask(((path, "C1"),)), _run([]), _cause_cfg(), source, START
+    )
+
+    assert part["proofs"][0]["reproduce"] is None
+
+
 def test_a_cause_with_no_reproduce_block_says_so(tmp_path):
     path = _stored_proof(tmp_path, None)
     source = ProofSource("v.yml", tmp_path)
@@ -1299,3 +1311,25 @@ def test_a_review_across_views_is_named_for_its_domain(tmp_path):
     cfgs = [ViewConfig(view=v, fact="d.t", comparisons=[]) for v in ("a", "b")]
     path = pipeline_mod.review_file([tmp_path / "a.yml"], cfgs, "Data & Analytics")
     assert path == tmp_path / "reviews" / "data-analytics.json"
+
+
+@pytest.mark.parametrize(
+    ("dashboard", "cube", "shown"),
+    [
+        (120.0, 125.0, ("<masked>", "<masked>")),
+        (120.0, 130.0, ("120", "130")),
+        (120.0, 120.0, ("120", "120")),
+        (0.93, 0.95, ("0.93", "0.95")),
+        (4.0, 300.0, ("<10", "300")),
+    ],
+)
+def test_a_hand_check_never_posts_2_counts_whose_difference_is_under_10(
+    dashboard, cube, shown
+):
+    from cube_validation.answers import _check_json
+
+    check = HandCheck(
+        "enrollment", "{}", (), dashboard, cube, "", "", 0.0, 0.0, START, False
+    )
+    posted = _check_json("v", check)
+    assert (posted["dashboard"], posted["cube"]) == shown

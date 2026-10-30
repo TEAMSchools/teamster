@@ -922,23 +922,47 @@ def test_a_proof_counts_each_cause_s_students_per_cell_and_cut(
     (cut,) = [label for label, _, _ in pipeline.cut_flags(COMPARISON)]
     assert sorted(students, key=lambda e: e["cause"]) == [
         {"cause": triage.cause_key(*CAUSES["C1"]), "cut": cut,
-         "dims": [["abbreviation", "X"]], "n": 2},
+         "dims": [["abbreviation", "X"]], "n": 2, "bucket": "cube_only"},
         {"cause": triage.cause_key(*CAUSES["C2"]), "cut": cut,
-         "dims": [["abbreviation", "X"]], "n": 1},
+         "dims": [["abbreviation", "X"]], "n": 1, "bucket": "cube_only"},
     ]  # fmt: skip
 
 
-def test_kept_counts_take_the_larger_of_2_proofs_on_one_cell():
+def test_kept_counts_take_the_larger_of_2_buckets_proofs_on_one_cell():
     loaded: dict = {}
     entry = {"cause": "c: x", "cut": "{}", "dims": [["a", "X"]], "n": 4}
+    other = {**entry, "n": 12, "bucket": "value_differs"}
 
-    confirm.keep_students(loaded, "m", [entry])
-    confirm.keep_students(loaded, "m", [{**entry, "n": 12}, {**entry, "cut": "k"}])
+    confirm.keep_students(loaded, "m", "cube_only", [{**entry, "bucket": "cube_only"}])
+    confirm.keep_students(loaded, "m", "value_differs", [other, {**other, "cut": "k"}])
 
     assert loaded["cause_students"]["m"] == [
-        {**entry, "n": 12},
-        {**entry, "cut": "k"},
+        {**entry, "n": 12, "bucket": "cube_only"},
+        {**other, "cut": "k"},
     ]
+
+
+def test_a_re_run_proof_replaces_its_bucket_s_old_counts_even_when_smaller():
+    entry = {"cause": "c: x", "cut": "{}", "dims": [["a", "X"]]}
+    kept = {**entry, "n": 30, "bucket": "value_differs"}
+    loaded = {"cause_students": {"m": [
+        {**entry, "n": 14, "bucket": "cube_only"},
+        {**entry, "cut": "k", "n": 20},  # saved before counts had a bucket
+        kept,
+    ]}}  # fmt: skip
+
+    # The revised proof splits the cause: 4 students keep its words.
+    confirm.keep_students(
+        loaded, "m", "cube_only", [{**entry, "n": 4, "bucket": "cube_only"}]
+    )
+
+    assert loaded["cause_students"]["m"] == [{**kept}]
+    # The other bucket's 30 is larger, so the cell keeps it; alone, 4 stays 4.
+    del loaded["cause_students"]["m"][0]
+    confirm.keep_students(
+        loaded, "m", "cube_only", [{**entry, "n": 4, "bucket": "cube_only"}]
+    )
+    assert loaded["cause_students"]["m"] == [{**entry, "n": 4, "bucket": "cube_only"}]
 
 
 def test_a_proof_that_fits_runs_inline_without_freezing(duck, tmp_path, offline):

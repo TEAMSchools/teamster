@@ -494,7 +494,7 @@ def _group_part(
     """The row-group part of a question, and the values its reason must lose.
 
     The decision's column shows each value only for a reviewed column, and only
-    when that value's groups hold 10 or more students. A reason loses whatever
+    when one of that value's groups holds 10 or more students. A reason loses whatever
     the bullet hides: any other column's values, and each hidden value of the
     decision's own. Other dims of a group never show in the bullet; a reason
     is free text the analyst approves, so it must not name them for a small
@@ -505,19 +505,20 @@ def _group_part(
     column = columns.pop() if len(columns) == 1 else ""
     found = list(dict.fromkeys(g.value_of(column) or "" for g in groups))
     rows = sum(g.n_rows for g in groups)
-    # Students are counted within one comparison only: the same students sit in
-    # every comparison on a sheet, so a sum across them counts them again.
+    # Students are never summed across groups: one student can have rows in
+    # several buckets or cells, and in every comparison on a sheet. The largest
+    # single group is the count that is surely there.
     per_comparison: dict[str, int] = {}
     per_value: dict[tuple[str, str], int] = {}
     for g in groups:
         value = g.value_of(column) or ""
-        per_comparison[g.comparison_id] = (
-            per_comparison.get(g.comparison_id, 0) + g.n_students
+        per_comparison[g.comparison_id] = max(
+            per_comparison.get(g.comparison_id, 0), g.n_students
         )
         key = (g.comparison_id, value)
-        per_value[key] = per_value.get(key, 0) + g.n_students
+        per_value[key] = max(per_value.get(key, 0), g.n_students)
     students = max(per_comparison.values())
-    # A value shows only when one comparison alone has 10 of its students.
+    # A value shows only when one group alone has 10 of its students.
     shown = (
         set()
         if _is_identifier(column)
@@ -534,11 +535,12 @@ def _group_part(
         if str(v) not in shown
     ]
     plural = "group" if len(groups) == 1 else "groups"
-    who = (
-        f"{mask(students)} students"
-        if len(per_comparison) == 1
-        else f"up to {mask(students)} students per comparison"
-    )
+    if len(groups) == 1:
+        who = f"{mask(students)} students"
+    elif len(per_comparison) == 1:
+        who = f"at least {mask(students)} students"
+    else:
+        who = f"at least {mask(students)} students in one comparison"
     return (
         f"{where} in {', '.join(sorted(per_comparison))} of "
         f"`{view}` ({', '.join(sorted({g.bucket for g in groups}))}): "
