@@ -1205,6 +1205,19 @@ def test_a_rate_cell_its_rows_do_not_rebuild_stays_open(tmp_path, monkeypatch):
         _cells(tmp_path, monkeypatch, run=_rate_run(0.20, 1.0), cfg=RATE_CFG)
 
 
+def test_rows_the_dashboard_filters_out_rebuild_cube_s_cell_only():
+    # Synthetic: 7 of 20 match on both sides; Cube keeps 1 more row (0) the
+    # dashboard filters out, so Cube shows 7/21 and the dashboard 7/20.
+    entries = [
+        _entry("match", "X", _side(20, 20, 7), _side(20, 20, 7)),
+        _entry("dashboard_filtered", "X", _side(1, 1, 0), _side(0, 0, 0)),
+    ]
+    cell = {"dims": [["abbreviation", "X"]], "cube": 7 / 21, "dashboard": 0.35}
+
+    assert confirm._rebuilt(RATE, entries, cell) == (7 / 21, 0.35)
+    assert confirm._reproduces(RATE, entries, cell)
+
+
 def test_a_run_saved_before_cell_sums_links_and_says_sizes_went_unchecked(
     tmp_path, monkeypatch
 ):
