@@ -1,0 +1,349 @@
+view: student_attendance_enrollment_daily_view
+fact: kipptaf_marts.fct_student_attendance_enrollment_daily
+time_dimension: attendance_date
+
+shared:
+  base: &base
+    confirmed: true
+    workbook: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+    dashboard_view: kipptaf_tableau.rpt_tableau__attendance_dashboard
+    cuts: [{}]
+    rows:
+      grain:
+        - { dashboard: student_number, cube: lea_student_identifier }
+        - { dashboard: calendardate, cube: attendance_date }
+      values:
+        - { dashboard: is_present, cube: attendance_value }
+        - { dashboard: is_tardy, cube: is_tardy }
+        - { dashboard: att_code, cube: attendance_code }
+    proof: null
+
+  # Student Attendance Tracker sheets share the year, region and enroll
+  # status filters (filter groups 19, 35 and 5). Cube codes enrollment status
+  # as a label, so the dashboard's code 0 is a dashboard filter and Cube's
+  # "Currently Enrolled" a scope.
+  student_tracker: &student_tracker
+    <<: *base
+    filters:
+      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
+      Region: { dashboard: region, cube: regions_region_name }
+    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
+    dashboard_filters:
+      - { dashboard: enroll_status, values: [0] }
+    scope:
+      - { cube: enrollment_status, values: [Currently Enrolled] }
+
+  roster: &roster
+    <<: *student_tracker
+    sheet: Student - Attendance Roster
+    dims:
+      - { dashboard: student_number, cube: lea_student_identifier }
+      - { dashboard: grade_level, cube: grade_level }
+    shelves: { drop: [Lastfirst, Team, Teacher Name] }
+
+  team_counts: &team_counts
+    <<: *student_tracker
+    sheet: Student - Team Counts
+    dims:
+      - { dashboard: term, cube: terms_term_name }
+    shelves: { drop: [Homeroom] }
+
+  # Attendance Rollup: the Attendance Metric parameter picks the measure.
+  y1: &y1
+    <<: *base
+    sheet_field: Avg. Attendance Metric
+    filters:
+      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
+      Region: { dashboard: region, cube: regions_region_name }
+      Grade Level: { dashboard: grade_level, cube: grade_level }
+      School Level: { dashboard: school_level, cube: locations_grade_band }
+    defaults: { Academic Year: "2026", Region: [Camden, Newark, Paterson] }
+    dims:
+      - { dashboard: school_abbreviation, cube: locations_abbreviation }
+      - { dashboard: grade_level, cube: grade_level }
+
+comparisons:
+  # --- Student - Grade Rollup ------------------------------------------------
+  - id: ada-grade-rollup
+    <<: *student_tracker
+    measure: avg_daily_attendance
+    sheet: Student - Grade Rollup
+    sheet_field: "% ADA"
+    probe: avg(is_present)
+    decimals: 3
+    dims:
+      - { dashboard: grade_level, cube: grade_level }
+    definitions:
+      dashboard:
+        Average of is_present over the report's day rows, enrolled students
+        (enroll_status 0), NJ regions.
+      cube:
+        avg_daily_attendance, sum of attendance_value over full-membership days
+        with recorded attendance.
+
+  - id: ontime-grade-rollup
+    <<: *student_tracker
+    measure: pct_ontime
+    sheet: Student - Grade Rollup
+    sheet_field: "% On-Time"
+    probe: >-
+      avg(case when is_present = 0 then null else 1 - if(att_code in ('ET', 'T',
+      'T10', 'TLE'), 1, 0) end)
+    decimals: 3
+    dims:
+      - { dashboard: grade_level, cube: grade_level }
+    definitions:
+      dashboard:
+        Share of non-absent day rows whose att_code is not in the Tardy group
+        (ET, T, T10, TLE).
+      cube:
+        pct_ontime, on-time present days over present days; tardy is any
+        T-prefixed code.
+
+  # --- Student - Attendance Roster (one row per student) ---------------------
+  - id: ada-roster
+    <<: *roster
+    measure: avg_daily_attendance
+    sheet_field: "% Average Daily Attendance"
+    probe: avg(is_present)
+    decimals: 3
+
+  - id: present-roster
+    <<: *roster
+    measure: sum_attendance_value
+    sheet_field: "# Days Present"
+    probe: sum(is_present)
+    decimals: 0
+
+  - id: absences-roster
+    <<: *roster
+    measure: count_absent_days
+    sheet_field: "# Days Absent"
+    probe: sum(if(att_code in ('A', 'A-E', 'AD', 'D', 'X'), 1, 0))
+    decimals: 0
+    definitions:
+      dashboard:
+        Day rows whose att_code is in the Absent group (A, A-E, AD, D, X).
+      cube: count_absent_days, sum of is_absent where membership_value > 0.
+
+  - id: tardy-roster
+    <<: *roster
+    measure: count_tardy_days
+    sheet_field: "# Tardy"
+    probe: sum(if(att_code in ('ET', 'T', 'T10', 'TLE'), 1, 0))
+    decimals: 0
+    definitions:
+      dashboard:
+        Day rows whose att_code is in the Tardy group (ET, T, T10, TLE).
+      cube: count_tardy_days, sum of is_tardy (every T-prefixed code).
+
+  - id: iss-roster
+    <<: *roster
+    measure: count_iss_days
+    sheet_field: "# ISS"
+    probe: sum(if(att_code in ('ISS', 'S'), 1, 0))
+    decimals: 0
+
+  - id: oss-roster
+    <<: *roster
+    measure: count_oss_days
+    sheet_field: "# OSS"
+    probe: sum(if(att_code in ('OS', 'OSS', 'OSSP'), 1, 0))
+    decimals: 0
+
+  - id: weighted-roster
+    <<: *roster
+    measure: count_absent_days_weighted
+    sheet_field: "# Absent Weighted (HS)"
+    probe: sum(is_absent) + sum(is_tardy) / 3
+    decimals: 0
+
+  - id: days-to-90-roster
+    <<: *roster
+    measure: days_to_90_percent
+    sheet_field: Days to 90%
+    probe: ((sum(membershipvalue) * 0.105) - sum(is_absent)) / -0.105
+    decimals: 0
+    definitions:
+      dashboard:
+        ((sum of membershipvalue x 0.105) - sum of is_absent) / -0.105, over all
+        the student's report rows.
+      cube:
+        days_to_90_percent, the same algebra over full-membership days with
+        recorded attendance.
+
+  # --- Student - Team Counts (homeroom dropped; totals by term) ---------------
+  - id: points-team-counts
+    <<: *team_counts
+    measure: attendance_points
+    sheet_field: Attendance Pts
+    probe: >-
+      sum(case when att_code in ('A', 'AD') then 1 when att_code in ('T', 'T10')
+      then 1 / 3 else 0 end)
+    decimals: 0
+
+  - id: absences-team-counts
+    <<: *team_counts
+    measure: count_absent_days
+    sheet_field: "# Absences"
+    probe: sum(if(att_code in ('A', 'A-E', 'AD', 'D', 'X'), 1, 0))
+    decimals: 0
+
+  - id: tardy-team-counts
+    <<: *team_counts
+    measure: count_tardy_days
+    sheet_field: "# Tardy"
+    probe: sum(if(att_code in ('ET', 'T', 'T10', 'TLE'), 1, 0))
+    decimals: 0
+
+  # --- Attendance Rollup: Y1 ADA sheets ---------------------------------------
+  - id: ada-y1-es
+    <<: *y1
+    measure: avg_daily_attendance
+    sheet: Y1 ADA - ES
+    parameters: { Attendance Metric: ADA }
+    probe: avg(is_present)
+    decimals: 3
+    defaults:
+      Academic Year: "2026"
+      Region: [Camden, Newark, Paterson]
+      Grade Level: [0, 1, 2, 3, 4]
+
+  - id: ada-y1-ms
+    <<: *y1
+    measure: avg_daily_attendance
+    sheet: Y1 ADA - MS
+    parameters: { Attendance Metric: ADA }
+    probe: avg(is_present)
+    decimals: 3
+    defaults:
+      Academic Year: "2026"
+      Region: [Camden, Newark, Paterson]
+      Grade Level: [5, 6, 7, 8]
+    dashboard_filters:
+      - { dashboard: school_level, operator: not_equals, values: [OD] }
+
+  - id: ada-y1-hs
+    <<: *y1
+    measure: avg_daily_attendance
+    sheet: Y1 ADA - HS
+    parameters: { Attendance Metric: ADA }
+    probe: avg(is_present)
+    decimals: 3
+    defaults:
+      Academic Year: "2026"
+      Region: [Camden, Newark, Paterson]
+      School Level: HS
+
+  - id: ada-y1-region
+    <<: *y1
+    measure: avg_daily_attendance
+    sheet: Y1 ADA - Region
+    parameters: { Attendance Metric: ADA }
+    probe: avg(is_present)
+    decimals: 3
+    dims:
+      - { dashboard: region, cube: regions_region_name }
+      - { dashboard: grade_level, cube: grade_level }
+
+  - id: ontime-y1-es
+    <<: *y1
+    measure: pct_ontime
+    sheet: Y1 ADA - ES
+    parameters: { Attendance Metric: '\% On-Time' }
+    probe: >-
+      avg(case when is_present = 0 then null else 1 - if(att_code in ('ET', 'T',
+      'T10', 'TLE'), 1, 0) end)
+    decimals: 3
+    defaults:
+      Academic Year: "2026"
+      Region: [Camden, Newark, Paterson]
+      Grade Level: [0, 1, 2, 3, 4]
+
+  - id: ontime-y1-region
+    <<: *y1
+    measure: pct_ontime
+    sheet: Y1 ADA - Region
+    parameters: { Attendance Metric: '\% On-Time' }
+    probe: >-
+      avg(case when is_present = 0 then null else 1 - if(att_code in ('ET', 'T',
+      'T10', 'TLE'), 1, 0) end)
+    decimals: 3
+    dims:
+      - { dashboard: region, cube: regions_region_name }
+      - { dashboard: grade_level, cube: grade_level }
+
+  # --- Attendance Rollup: chronic absenteeism and truancy ---------------------
+  # Both are student-level LOD calcs in the workbook. The cut pins one school
+  # day, where each student's last date in the slice is that day, so rows pair
+  # 1:1 with Cube's daily rows and Cube's "as of the pinned date" rates apply.
+  - id: chronic-y1-region
+    <<: *y1
+    measure: pct_chronically_absent
+    sheet: Y1 ADA - Region
+    parameters: { Attendance Metric: Chronic Absenteeism }
+    filters:
+      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
+      Region: { dashboard: region, cube: regions_region_name }
+      Calendardate: { dashboard: calendardate, cube: attendance_date }
+    cuts: [{ Calendardate: "2026-10-29" }]
+    dims:
+      - { dashboard: region, cube: regions_region_name }
+      - { dashboard: grade_level, cube: grade_level }
+    probe_sql: >-
+      SELECT {dims}, AVG(v) AS value FROM (
+        SELECT *, CASE WHEN calendardate = MAX(calendardate) OVER (
+            PARTITION BY {dims}, student_number, academic_year)
+          THEN CASE WHEN ada_running IS NULL THEN NULL
+            WHEN academic_year = 2026 AND enroll_status = 2 THEN NULL
+            WHEN ada_running <= 0.9 THEN 1 ELSE 0 END END AS v
+        FROM ({rows}) WHERE {where})
+      GROUP BY {dims}
+    decimals: 3
+    definitions:
+      dashboard:
+        Share of students whose running ADA on their last date in the slice is
+        90% or lower; current-year transferred-out students are left out.
+      cube:
+        pct_chronically_absent, students at ADA tier 3 or 4 as of the pinned
+        date over students with recorded attendance.
+
+  - id: truant-y1-region
+    <<: *y1
+    measure: pct_truant
+    sheet: Y1 ADA - Region
+    parameters: { Attendance Metric: Truant/On Track for Truancy }
+    filters:
+      Academic Year: { dashboard: academic_year, cube: dates_academic_year }
+      Region: { dashboard: region, cube: regions_region_name }
+      Calendardate: { dashboard: calendardate, cube: attendance_date }
+    cuts: [{ Calendardate: "2026-10-29" }]
+    dims:
+      - { dashboard: region, cube: regions_region_name }
+      - { dashboard: grade_level, cube: grade_level }
+    rows:
+      grain:
+        - { dashboard: student_number, cube: lea_student_identifier }
+        - { dashboard: calendardate, cube: attendance_date }
+      values:
+        - { dashboard: is_truant, cube: is_truant }
+        - { dashboard: is_present, cube: attendance_value }
+    probe_sql: >-
+      SELECT {dims}, AVG(t) AS value FROM (
+        SELECT r.*, f.t FROM ({rows}) AS r
+        LEFT JOIN (
+          SELECT student_number AS sn, academic_year AS ay,
+            MAX(IF(calendardate = (SELECT MAX(calendardate) FROM ({rows}))
+              AND enroll_status = 0, CAST(is_truant AS INT64), NULL)) AS t
+          FROM ({rows}) GROUP BY 1, 2) AS f
+        ON f.sn = r.student_number AND f.ay = r.academic_year
+        WHERE {where})
+      GROUP BY {dims}
+    decimals: 3
+    definitions:
+      dashboard:
+        Each enrolled student's truancy flag on the report's latest date,
+        averaged over the slice's day rows.
+      cube:
+        pct_truant, students meeting the regional truancy rule as of the pinned
+        date over students with recorded attendance.
