@@ -134,22 +134,18 @@ with
         }}
     ),
 
-    contact_gpa as (
-        select
-            id as contact_id, round(current_college_cumulative_gpa, 2) as gpa_rounded,
-        from {{ ref("stg_kippadb__contact") }}
-    ),
-
     college_gpa_sources as (
-        select cg.contact_id, g.`source`,
-        from contact_gpa as cg
+        select c.id as contact_id, g.`source`,
+        from {{ ref("stg_kippadb__contact") }} as c
         inner join
             {{ ref("stg_kippadb__gpa") }} as g
-            on cg.contact_id = g.student
-            and cg.gpa_rounded = g.gpa_rounded
+            on c.id = g.student
+            and c.current_college_cumulative_gpa_rounded = g.gpa_rounded
+            and g.rn_student_record_type_gpa = 1
         inner join
-            {{ ref("stg_kippadb__record_type") }} as rt on g.record_type_id = rt.id
-        where rt.name = 'Cumulative College' and g.rn_student_record_type_gpa = 1
+            {{ ref("stg_kippadb__record_type") }} as rt
+            on g.record_type_id = rt.id
+            and rt.name = 'Cumulative College'
     ),
 
     roster as (
