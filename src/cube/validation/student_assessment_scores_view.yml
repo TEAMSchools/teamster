@@ -33,6 +33,14 @@ shared:
     # Sunday. Cube has no such member.
     dashboard_filters:
       - { dashboard: administered_at, operator: lte, days_from_week_end: 0 }
+    rows:
+      grain:
+        - { dashboard: student_number, cube: lea_student_identifier }
+        - { dashboard: assessment_id, cube: source_assessment_id }
+        - { dashboard: response_type, cube: response_type }
+        - { dashboard: response_type_code, cube: response_type_code }
+      values:
+        - { dashboard: is_mastery_int, cube: is_mastery }
   school: &school
     <<: *dki
     dims:
@@ -62,19 +70,11 @@ comparisons:
     measure: pct_proficient
     sheet_field: Avg. Is Mastery Int
     probe: avg(is_mastery_int)
-    rows:
-      grain:
-        - { dashboard: student_number, cube: lea_student_identifier }
-        - { dashboard: assessment_id, cube: source_assessment_id }
-        - { dashboard: response_type, cube: response_type }
-        - { dashboard: response_type_code, cube: response_type_code }
-      values:
-        - { dashboard: is_mastery_int, cube: is_mastery }
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2320
-      proven_at: "2026-10-29T02:30:55.284159+00:00"
-      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      cells: 2317
+      proven_at: "2026-10-29T14:23:09.399255+00:00"
+      workbook_updated_at: "2026-10-29T05:45:34+00:00"
       probe_fingerprint: 8cce34f2bea64e939a9602b9d87589092767700b09df9bfe33a340e2df35b104
       cuts:
         - '{"Response Type": "overall"}'
@@ -115,18 +115,18 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Week Start Monday: week_start_monday
+        is_sipps: is_sipps
         Dibels Most Recent Composite: dibels_most_recent_composite
         is_low_25_fl: is_low_25_fl
-        Head Of School: head_of_school
-        is_sipps: is_sipps
-        Student Tier: nj_student_tier
-        IEP Status: iep_status
-        Ml Status: ml_status
-        gifted_and_talented: gifted_and_talented
-        Term: term
-        state_test_proficiency: state_test_proficiency
         School Level: school_level
+        Ml Status: ml_status
+        Term: term
+        Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Student Tier: nj_student_tier
+        state_test_proficiency: state_test_proficiency
+        Head Of School: head_of_school
+        gifted_and_talented: gifted_and_talented
   - id: mastery-dki-region
     <<: *region
     measure: pct_proficient
@@ -135,8 +135,8 @@ comparisons:
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
       cells: 437
-      proven_at: "2026-10-29T02:21:22.542070+00:00"
-      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      proven_at: "2026-10-29T14:30:09.344171+00:00"
+      workbook_updated_at: "2026-10-29T05:45:34+00:00"
       probe_fingerprint: 169ffc2780ad5554bb33383ce97da9ce05e5b35e3a0cecd369af28f3e9e0ef8a
       cuts:
         - '{"Response Type": "overall"}'
@@ -176,18 +176,18 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        IEP Status: iep_status
-        is_sipps: is_sipps
-        Head Of School: head_of_school
-        Week Start Monday: week_start_monday
-        gifted_and_talented: gifted_and_talented
-        Student Tier: nj_student_tier
-        is_low_25_fl: is_low_25_fl
-        Ml Status: ml_status
         state_test_proficiency: state_test_proficiency
+        is_sipps: is_sipps
+        Week Start Monday: week_start_monday
         Dibels Most Recent Composite: dibels_most_recent_composite
-        School Level: school_level
+        is_low_25_fl: is_low_25_fl
         Term: term
+        Ml Status: ml_status
+        School Level: school_level
+        IEP Status: iep_status
+        Student Tier: nj_student_tier
+        Head Of School: head_of_school
+        gifted_and_talented: gifted_and_talented
   # Gen Ed is iep_status other than Has IEP; a blank iep_status counts in
   # neither, as a null is_iep does in Cube.
   - id: mastery-gened-dki-school
@@ -198,11 +198,14 @@ comparisons:
       - { cube: is_internal_assessment, values: [true] }
       - { cube: is_iep, values: [false] }
     probe: avg(if(iep_status != 'Has IEP', is_mastery_int, null))
+    # T22: rows has no dashboard-side scope yet, so the row check would
+    # count every row of the other IEP status. Off until it lands.
+    rows: null
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2320
-      proven_at: "2026-10-29T02:32:32.786983+00:00"
-      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      cells: 2317
+      proven_at: "2026-10-29T14:25:59.877367+00:00"
+      workbook_updated_at: "2026-10-29T05:45:34+00:00"
       probe_fingerprint: b73e3c91a61f6173c227c2a9dacdbc302d73de28b9cf92ae7a4ef86ef4d6aa37
       cuts:
         - '{"Response Type": "overall"}'
@@ -243,18 +246,18 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Week Start Monday: week_start_monday
+        is_sipps: is_sipps
         Dibels Most Recent Composite: dibels_most_recent_composite
         is_low_25_fl: is_low_25_fl
-        Head Of School: head_of_school
-        is_sipps: is_sipps
-        Student Tier: nj_student_tier
-        IEP Status: iep_status
-        Ml Status: ml_status
-        gifted_and_talented: gifted_and_talented
-        Term: term
-        state_test_proficiency: state_test_proficiency
         School Level: school_level
+        Ml Status: ml_status
+        Term: term
+        Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Student Tier: nj_student_tier
+        state_test_proficiency: state_test_proficiency
+        Head Of School: head_of_school
+        gifted_and_talented: gifted_and_talented
   - id: mastery-iep-dki-school
     <<: *school
     measure: pct_proficient
@@ -263,11 +266,14 @@ comparisons:
       - { cube: is_internal_assessment, values: [true] }
       - { cube: is_iep, values: [true] }
     probe: avg(if(iep_status = 'Has IEP', is_mastery_int, null))
+    # T22: rows has no dashboard-side scope yet, so the row check would
+    # count every row of the other IEP status. Off until it lands.
+    rows: null
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
-      cells: 2320
-      proven_at: "2026-10-29T02:33:04.224121+00:00"
-      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      cells: 2317
+      proven_at: "2026-10-29T14:27:37.503915+00:00"
+      workbook_updated_at: "2026-10-29T05:45:34+00:00"
       probe_fingerprint: edbb20c9ef90ad5c6787b32e5c3fb88a47ca984fab3fd7e6f2d682e88584a9e7
       cuts:
         - '{"Response Type": "overall"}'
@@ -308,18 +314,18 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        Week Start Monday: week_start_monday
+        is_sipps: is_sipps
         Dibels Most Recent Composite: dibels_most_recent_composite
         is_low_25_fl: is_low_25_fl
-        Head Of School: head_of_school
-        is_sipps: is_sipps
-        Student Tier: nj_student_tier
-        IEP Status: iep_status
-        Ml Status: ml_status
-        gifted_and_talented: gifted_and_talented
-        Term: term
-        state_test_proficiency: state_test_proficiency
         School Level: school_level
+        Ml Status: ml_status
+        Term: term
+        Week Start Monday: week_start_monday
+        IEP Status: iep_status
+        Student Tier: nj_student_tier
+        state_test_proficiency: state_test_proficiency
+        Head Of School: head_of_school
+        gifted_and_talented: gifted_and_talented
   - id: mastery-gened-dki-region
     <<: *region
     measure: pct_proficient
@@ -328,11 +334,14 @@ comparisons:
       - { cube: is_internal_assessment, values: [true] }
       - { cube: is_iep, values: [false] }
     probe: avg(if(iep_status != 'Has IEP', is_mastery_int, null))
+    # T22: rows has no dashboard-side scope yet, so the row check would
+    # count every row of the other IEP status. Off until it lands.
+    rows: null
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
       cells: 437
-      proven_at: "2026-10-29T02:26:51.750913+00:00"
-      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      proven_at: "2026-10-29T14:33:21.358463+00:00"
+      workbook_updated_at: "2026-10-29T05:45:34+00:00"
       probe_fingerprint: faa7892153b24abec7a0ac6bbe5f969153dddeb4f930d9de57118d050c2a3f25
       cuts:
         - '{"Response Type": "overall"}'
@@ -372,18 +381,18 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        IEP Status: iep_status
-        is_sipps: is_sipps
-        Head Of School: head_of_school
-        Week Start Monday: week_start_monday
-        gifted_and_talented: gifted_and_talented
-        Student Tier: nj_student_tier
-        is_low_25_fl: is_low_25_fl
-        Ml Status: ml_status
         state_test_proficiency: state_test_proficiency
+        is_sipps: is_sipps
+        Week Start Monday: week_start_monday
         Dibels Most Recent Composite: dibels_most_recent_composite
-        School Level: school_level
+        is_low_25_fl: is_low_25_fl
         Term: term
+        Ml Status: ml_status
+        School Level: school_level
+        IEP Status: iep_status
+        Student Tier: nj_student_tier
+        Head Of School: head_of_school
+        gifted_and_talented: gifted_and_talented
   - id: mastery-iep-dki-region
     <<: *region
     measure: pct_proficient
@@ -392,11 +401,14 @@ comparisons:
       - { cube: is_internal_assessment, values: [true] }
       - { cube: is_iep, values: [true] }
     probe: avg(if(iep_status = 'Has IEP', is_mastery_int, null))
+    # T22: rows has no dashboard-side scope yet, so the row check would
+    # count every row of the other IEP status. Off until it lands.
+    rows: null
     proof:
       fingerprint: 3c570b06fff00569956ab30062ec5971502aa895511df28e3e73d894b00496c6
       cells: 437
-      proven_at: "2026-10-29T02:28:37.419375+00:00"
-      workbook_updated_at: "2026-10-28T22:40:37+00:00"
+      proven_at: "2026-10-29T14:36:38.752719+00:00"
+      workbook_updated_at: "2026-10-29T05:45:34+00:00"
       probe_fingerprint: 1fda865df11b3a177d9d1c56514650b8c2cd479a56bdd3928cbbeb51b4a5b705
       cuts:
         - '{"Response Type": "overall"}'
@@ -436,15 +448,15 @@ comparisons:
         - Exclude Future Assessments
       filter_notes: {}
       missing_columns:
-        IEP Status: iep_status
-        is_sipps: is_sipps
-        Head Of School: head_of_school
-        Week Start Monday: week_start_monday
-        gifted_and_talented: gifted_and_talented
-        Student Tier: nj_student_tier
-        is_low_25_fl: is_low_25_fl
-        Ml Status: ml_status
         state_test_proficiency: state_test_proficiency
+        is_sipps: is_sipps
+        Week Start Monday: week_start_monday
         Dibels Most Recent Composite: dibels_most_recent_composite
-        School Level: school_level
+        is_low_25_fl: is_low_25_fl
         Term: term
+        Ml Status: ml_status
+        School Level: school_level
+        IEP Status: iep_status
+        Student Tier: nj_student_tier
+        Head Of School: head_of_school
+        gifted_and_talented: gifted_and_talented
