@@ -38,6 +38,7 @@ COUPA_API_INSTANCE_URL=op://Data Team/Coupa API/hostname
 COUPA_SFTP_HOST=op://Data Team/Coupa SFTP/host
 COUPA_SFTP_PASSWORD=op://Data Team/Coupa SFTP/password
 COUPA_SFTP_USERNAME=op://Data Team/Coupa SFTP/username
+CUBE_API_SECRET=op://Data Team/Cube Cloud REST API/credential
 DAGSTER_CLOUD_AGENT_TOKEN=op://Data Team/Dagster Cloud Agent/credential
 DAGSTER_CLOUD_API_TOKEN=op://Data Team/Dagster Cloud Agent/credential
 DEANSLIST_SFTP_HOST=op://Data Team/DeansList SFTP/host
@@ -167,3 +168,4 @@ ZENDESK_CLIENT_SECRET=op://oxdz2abwwpvwllhrj2f6aoyije/td3pwrkwbu7a3a4fekd5n3fnyq
 ZENDESK_EMAIL=op://Data Team/Zendesk API/email
 ZENDESK_SUBDOMAIN=op://Data Team/Zendesk API/subdomain
 ZENDESK_TOKEN=op://Data Team/Zendesk API/token
+
