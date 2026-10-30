@@ -3,6 +3,7 @@ select
     sr.survey_id,
     sr.survey_title,
     sr.survey_response_id,
+    sr.survey_question_id,
     sr.survey_response_link,
     sr.term_code as survey_code,
 
@@ -16,6 +17,8 @@ select
     sr.round_rn,
     sr.rated_department_code,
     sr.rated_department_name,
+    sr.term_start_date as survey_round_start_date,
+    sr.term_end_date as survey_round_end_date,
 
     eh.employee_number,
     eh.formatted_name as respondent_name,
@@ -63,6 +66,12 @@ select
 
     regexp_replace(sr.answer, r'<[^>]*>', '') as answer,
     regexp_replace(sr.question_title, r'<[^>]*>', '') as question_title,
+
+    coalesce(
+        current_date('{{ var("local_timezone") }}')
+        between sr.term_start_date and sr.term_end_date,
+        false
+    ) as is_survey_round_open,
 from {{ ref("int_surveys__survey_responses") }} as sr
 inner join
     {{ ref("int_people__staff_roster_history") }} as eh
