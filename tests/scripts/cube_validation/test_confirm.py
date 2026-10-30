@@ -106,6 +106,17 @@ class Wh:
     def budget(self, max_usd):
         yield
 
+    @contextlib.contextmanager
+    def session(self):
+        yield
+
+    def freeze(self, sql, timeout_s=None):
+        """A temp table, as BigQuery's session keeps one."""
+        self.frozen = getattr(self, "frozen", []) + [sql]
+        name = f"frozen_{len(self.frozen)}"
+        self.rows(f"CREATE TEMP TABLE {name} AS {sql}", timeout_s)
+        return name
+
 
 def _tables(duck, cube_rows=CUBE_ROWS, fact_rows=FACT_ROWS):
     duck.table("cube_t", "lea BIGINT, aid VARCHAR, abbreviation VARCHAR", cube_rows)
@@ -859,6 +870,53 @@ def test_check_sql_warns_of_a_table_read_live(capsys):
     assert "fact" not in out and " w " not in out
 
 
+def test_a_frozen_bucket_proves_as_the_rebuilt_one_and_freezes_once(
+    duck, tmp_path, offline, monkeypatch
+):
+    _tables(duck)
+    # Every proof query here is "too long", so the bucket freezes.
+    monkeypatch.setattr(trace, "MAX_QUERY_CHARS", 100)
+    proof = confirm.Proof(
+        tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
+        CAUSES, PROOF, {},
+    )  # fmt: skip
+    items = [("G1", _group(3))]
+
+    def prove(wh, frozen):
+        return confirm.run_proof(
+            wh, CFG, COMPARISON, SIDES, proof, items, BUILD, {}, frozen
+        )
+
+    rebuilt = prove(Wh(duck), None)
+    wh, frozen = Wh(duck), {}
+    first, again = prove(wh, frozen), prove(wh, frozen)
+
+    assert first == again == rebuilt
+    assert frozen == {("mastery", "cube_only"): "frozen_1"}
+    assert len(wh.frozen) == 1
+    (create, _), (read, _), (again_read, _) = wh.ran
+    assert create.startswith("CREATE TEMP TABLE frozen_1")
+    assert "FROM frozen_1" in read and "WITH c AS" not in read
+    assert "FROM frozen_1" in again_read
+
+
+def test_a_proof_that_fits_runs_inline_without_freezing(duck, tmp_path, offline):
+    _tables(duck)
+    proof = confirm.Proof(
+        tmp_path / "mastery__cube_only.sql", "mastery", "cube_only",
+        CAUSES, PROOF, {},
+    )  # fmt: skip
+    wh, frozen = Wh(duck), {}
+
+    confirm.run_proof(
+        wh, CFG, COMPARISON, SIDES, proof, [("G1", _group(3))], BUILD, {}, frozen
+    )
+
+    assert frozen == {} and not getattr(wh, "frozen", [])
+    ((sql, _),) = wh.ran
+    assert "WITH c AS" in sql
+
+
 def test_a_proof_classifies_value_differing_rows(duck, tmp_path, offline, monkeypatch):
     # Both sides hold every row; the dashboard's school differs for all 3.
     _tables(duck, fact_rows=[(1, "a", "Y", False, True), (2, "b", "Y", True, False),
@@ -1216,6 +1274,26 @@ def test_rows_the_dashboard_filters_out_rebuild_cube_s_cell_only():
 
     assert confirm._rebuilt(RATE, entries, cell) == (7 / 21, 0.35)
     assert confirm._reproduces(RATE, entries, cell)
+
+
+def test_a_cells_refusal_names_each_open_cell_and_why(tmp_path, monkeypatch, capsys):
+    with pytest.raises(pipeline.Refusal, match="1 of 1 differing cells"):
+        _cells(tmp_path, monkeypatch, run=_rate_run(0.20, 1.0), cfg=RATE_CFG)
+
+    out = capsys.readouterr().out
+    assert "mastery:cells: the cells left open (local only, not masked):" in out
+    assert "- abbreviation=X | cut {} | Cube 0.2, dashboard 1" in out
+    assert "cube_only (cause)" in out
+    assert "open: does not rebuild from its rows: rebuilt Cube 0.25, dashboard 1" in out
+
+
+def test_a_cell_with_an_unproven_group_says_so(tmp_path, monkeypatch, capsys):
+    with pytest.raises(pipeline.Refusal):
+        _cells(tmp_path, monkeypatch, proven=False)
+
+    out = capsys.readouterr().out
+    assert "cube_only (investigate)" in out
+    assert "open: 1 of its 1 groups are not in `cause`" in out
 
 
 def test_a_run_saved_before_cell_sums_links_and_says_sizes_went_unchecked(

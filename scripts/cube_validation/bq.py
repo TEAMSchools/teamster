@@ -1,6 +1,7 @@
 """Read-only BigQuery access: table kinds, view history, dry-run pricing.
 
-Only SELECTs and dry runs are issued. `Warehouse` is the catalog `as_of` needs.
+Only SELECTs, dry runs and session temp tables (`Warehouse.freeze`) are
+issued. `Warehouse` is the catalog `as_of` needs.
 """
 
 from __future__ import annotations
@@ -57,6 +58,10 @@ class Warehouse:
         self._cache_dir: Path | None = None
         self._ledger_dir: Path | None = None
         self._daily_cap: float | None = None
+        # The open session's id and its temp tables, inside `session`.
+        self._session_id: str | None = None
+        self._in_session = False
+        self._frozen = 0
 
     def configure_local(
         self, cache_dir: Path, daily_cap: float | None, ledger_dir: Path | None = None
@@ -198,9 +203,69 @@ class Warehouse:
         For a query someone else runs outside the validator; `price` is the
         one that counts.
         """
-        config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
+        config = bigquery.QueryJobConfig(
+            dry_run=True, use_query_cache=False, **self._session_settings(sql)
+        )
         job = self._client.query(sql, job_config=config)
         return (job.total_bytes_processed or 0) / _TIB * USD_PER_TIB
+
+    def _session_settings(self, sql: str) -> dict:
+        """The open session, for a query that reads one of its temp tables.
+
+        Only those join it: a session runs 1 query at a time, and the rest
+        (the trace's dry runs among them) run concurrently.
+        """
+        if self._session_id is None or _SESSION_REF not in sql:
+            return {}
+        return {
+            "connection_properties": [
+                bigquery.ConnectionProperty("session_id", self._session_id)
+            ]
+        }
+
+    @contextmanager
+    def session(self) -> Iterator[None]:
+        """Let `freeze` keep temp tables until the block ends, then drop them.
+
+        BigQuery ends an abandoned session itself after 24 hours idle.
+        """
+        self._in_session = True
+        try:
+            yield
+        finally:
+            self._in_session = False
+            session_id, self._session_id = self._session_id, None
+            if session_id is not None:
+                config = bigquery.QueryJobConfig(
+                    connection_properties=[
+                        bigquery.ConnectionProperty("session_id", session_id)
+                    ]
+                )
+                try:
+                    self._client.query(
+                        "CALL BQ.ABORT_SESSION()", job_config=config
+                    ).result()
+                except GoogleAPIError:
+                    pass
+
+    def freeze(self, sql: str, timeout_s: float | None = None) -> str:
+        """Save `sql`'s rows in a temp table of the session; return its name.
+
+        The rows stay in BigQuery and are read back by name in later queries
+        of the session (`rows`, `estimate`), each time without running `sql`
+        again. Call inside `session`, and price `sql` first: it bills as
+        `rows` does.
+
+        Raises:
+            RuntimeError: Called outside `session`.
+            CostCapError: As `rows`.
+        """
+        if not self._in_session:
+            raise RuntimeError("freeze needs an open session (Warehouse.session)")
+        self._frozen += 1
+        name = f"{_SESSION_REF}unmatched_{self._frozen}"
+        self.rows(f"CREATE TEMP TABLE {name} AS\n{sql}", timeout_s)
+        return name
 
     def price(self, sql: str) -> float:
         """Return the USD cost of `sql` from a dry run, without running it.
@@ -300,10 +365,15 @@ class Warehouse:
             if usd <= 0:
                 raise CostCapError(f"nothing is left under {which}")
             settings["maximum_bytes_billed"] = int(usd / USD_PER_TIB * _TIB)
+        settings |= self._session_settings(sql)
+        if self._in_session and self._session_id is None and _SESSION_REF in sql:
+            settings["create_session"] = True
         config = bigquery.QueryJobConfig(**settings) if settings else None
         job = self._client.query(sql, job_config=config)
         try:
             out = [dict(r.items()) for r in job.result()]
+            if settings.get("create_session"):
+                self._session_id = getattr(job.session_info, "session_id", None)
         except GoogleAPIError as exc:
             # A job stopped mid-run (a timeout) still bills what it read.
             self._count_billed(job)
@@ -362,6 +432,8 @@ class Warehouse:
 
 
 _VIEWS_FILE = "view-history.json"
+# How a query names a temp table of its session.
+_SESSION_REF = "_SESSION."
 # BigQuery's reason for a query over its `maximum_bytes_billed`.
 _OVER_LIMIT = "bytesBilledLimitExceeded"
 _SPEND_FILE = "spend.json"

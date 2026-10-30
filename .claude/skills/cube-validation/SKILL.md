@@ -213,7 +213,11 @@ cause, do not retry around it.
    trustworthy until it is explained.
 6. `prove <file> --check` before every `run`. `run` never reads the workbook, so
    only this catches a dashboard owner's edit; re-prove each proof it lists.
-   `run` warns when a proof is more than 7 days old.
+   After a republish it compares the sheet's formulas and filters and its
+   datasources' connection and filters with the proof's, and keeps a proof
+   neither changed ("republished ..., sheet unchanged"). A proof saved before
+   the datasource check is listed once ("re-prove once"). `run` warns when a
+   proof is more than 7 days old.
 7. `run <file>` (add `--moment <ISO time>` for a build within the last 7 days).
    It prices queries first and stops over `--max-usd`. Every run on this machine
    also shares a daily cap, `--max-usd-per-day` (UTC day), and view versions
@@ -343,7 +347,12 @@ cause, do not retry around it.
       opt-outs and its `-- cause <bucket> = <side>: <words>` block, and moves
       each item it fully explains (no `UNEXPLAINED`) to `cause`. The rest stay,
       with "proof <file> leaves N rows unexplained". `--items <ids>` narrows the
-      printout only. After an edit, run it again without `--sql`.
+      printout only. After an edit, run it again without `--sql`. A proof whose
+      query would pass 900K characters with both sides inline (BigQuery refuses
+      past 1,024K) first freezes its bucket's unmatched rows in a BigQuery
+      session temp table ("Froze ... unmatched rows"), which halves the query;
+      the rows never leave BigQuery. A shorter proof runs inline, which is
+      faster.
 
       Give each owner cause a live count the owner can run after time travel
       ends: a `-- reproduce <bucket>:` block in the proof's header, the query as
@@ -368,7 +377,10 @@ cause, do not retry around it.
       `--cells --comparison <id>` confirms a cell set, or refuses with the count
       of cells outside proven groups and, for a count, the gap between the
       cells' differences and the proven rows; for a rate, how many cells do not
-      rebuild from their rows or cannot be sized.
+      rebuild from their rows or cannot be sized. Before refusing it prints each
+      open cell: its dims, cut, both values, the groups it matched with their
+      bucket and pile, and why it stayed open (with the rebuilt values for a
+      rate). Those lines are unmasked: keep them out of GitHub.
 
    8. Show the analyst the proof file and the per-cause counts `confirm`
       printed, and wait for an OK before the file is kept for commit. On a no,

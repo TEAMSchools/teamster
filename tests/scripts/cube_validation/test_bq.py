@@ -474,3 +474,67 @@ def test_a_query_that_fails_mid_run_still_counts_what_it_billed(tmp_path):
         wh.rows("select 1", timeout_s=1)
 
     assert wh.spent_today() == pytest.approx(0.5, abs=0.001)
+
+
+# --- session temp tables --------------------------------------------------------------
+
+
+class SessionClient:
+    """Records each query's session settings; the first `create_session`
+    query opens session `s1`."""
+
+    def __init__(self):
+        self.queries: list[tuple[str, dict]] = []
+
+    def query(self, sql, job_config=None):
+        props = getattr(job_config, "connection_properties", None) or []
+        self.queries.append(
+            (
+                sql,
+                {
+                    "dry": bool(job_config and job_config.dry_run),
+                    "create": bool(job_config and job_config.create_session),
+                    "session": next((p.value for p in props), None),
+                },
+            )
+        )
+        job = FakeJob([], 0)
+        job.total_bytes_billed = 0
+        job.session_info = type("Info", (), {"session_id": "s1"})()
+        return job
+
+
+def test_freeze_opens_one_session_and_only_its_readers_join_it():
+    client = SessionClient()
+    wh = Warehouse(client=client)
+
+    with wh.session():
+        first = wh.freeze("SELECT 1 AS x")
+        second = wh.freeze("SELECT 2 AS x")
+        wh.estimate(f"SELECT * FROM {first}")
+        wh.rows(f"SELECT * FROM {second}")
+        wh.rows("SELECT 3")
+
+    assert first != second and first.startswith("_SESSION.")
+    (f1, s1), (f2, s2), (dry, sd), (read, sr), (plain, sp), (end, se) = client.queries
+    assert f1.startswith(f"CREATE TEMP TABLE {first} AS")
+    assert s1["create"] and s1["session"] is None
+    assert not s2["create"] and s2["session"] == "s1"
+    assert sd == {"dry": True, "create": False, "session": "s1"}
+    assert sr["session"] == "s1"
+    # A query that reads no temp table runs outside the session, so it may
+    # run beside another.
+    assert plain == "SELECT 3" and sp["session"] is None
+    assert end == "CALL BQ.ABORT_SESSION()" and se["session"] == "s1"
+
+
+def test_freeze_refuses_outside_a_session():
+    with pytest.raises(RuntimeError, match="open session"):
+        Warehouse(client=SessionClient()).freeze("SELECT 1")
+
+
+def test_a_session_that_froze_nothing_ends_without_a_query():
+    client = SessionClient()
+    with Warehouse(client=client).session():
+        pass
+    assert client.queries == []

@@ -52,6 +52,8 @@ def duck():
                 for arg in ("version", "catalog", "db"):
                     t.set(arg, None)
             cur = con.execute(tree.sql(dialect="duckdb"))
+            if cur.description is None:
+                return []
             names = [d[0] for d in cur.description]
             return [dict(zip(names, r, strict=True)) for r in cur.fetchall()]
 

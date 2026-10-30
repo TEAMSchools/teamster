@@ -27,6 +27,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -607,16 +608,68 @@ def unmatched_sql(
     sides: pipeline.RowSides,
     bucket: str,
     items: list[tuple[str, Group]],
+    frozen: str | None = None,
 ) -> tuple[str, str]:
     """Every unmatched row of the bucket, as the run's reconcile finds them.
 
+    Args:
+        frozen: A temp table holding `frozen_sql`'s rows of this comparison
+            and bucket, read in place of rebuilding both sides.
+
     Returns:
-        The reconcile's CTEs, and the SELECT over them that returns `__row`
-        (a row id from the grain keys and the duplicate number), `item_key`
-        (the triage item id of the row's group, NULL for a row no open group
-        holds), `side` (the side holding the row), the group-by columns as
-        text, the grain under its Cube names (as the side holding the row
-        types it), and `__rn`. A `value_differs` row's side reads `both`.
+        The reconcile's CTEs (none when `frozen`), and the SELECT that returns
+        `__row` (a row id from the grain keys and the duplicate number),
+        `item_key` (the triage item id of the row's group, NULL for a row no
+        open group holds), `side` (the side holding the row), the group-by
+        columns as text, the grain under its Cube names (as the side holding
+        the row types it), and `__rn`. A `value_differs` row's side reads
+        `both`.
+    """
+    if comparison.rows is None:
+        raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to prove")
+    dims = pipeline.group_dims(comparison)
+    grain = comparison.rows.grain
+    whens = []
+    for item_id, g in items:
+        nulls = set(g.nulls)
+        test = " AND ".join(
+            f"{_joined_column(column)} IS NULL"
+            if column in nulls
+            else f"{_joined_column(column)} = {pipeline._lit(value)}"
+            for column, value in g.dims
+        )
+        whens.append(f"WHEN {test or 'TRUE'} THEN {pipeline._lit(item_id)}")
+    key = f"CASE {' '.join(whens)} END" if whens else "CAST(NULL AS STRING)"
+    ctes = ""
+    if frozen is None:
+        ctes, rows = frozen_sql(cfg, comparison, sides, bucket)
+        ctes, frozen = f"{ctes},\n__f AS (\n{rows}\n)", "__f"
+    columns = [
+        "__row",
+        f"{key} AS item_key",
+        "side",
+        *(p.cube for p in dims),
+        *(p.cube for p in grain),
+        "__rn",
+    ]
+    # trunk-ignore(bandit/B608): the table is the reconcile's or the session's; values are bound literals
+    return ctes, f"SELECT {', '.join(columns)}\nFROM {frozen}"
+
+
+def frozen_sql(
+    cfg: ViewConfig,
+    comparison: Comparison,
+    sides: pipeline.RowSides,
+    bucket: str,
+) -> tuple[str, str]:
+    """The bucket's unmatched rows with every column a proof or item reads.
+
+    Returns:
+        The reconcile's CTEs, and the SELECT over them that returns
+        `unmatched_sql`'s columns but `item_key`, plus `__d_<column>` per
+        group-by column (the dashboard's cell, which a `dims_differ` group
+        names). Frozen once per session (`Warehouse.freeze`), it serves every
+        proof of the comparison and bucket with the items it holds.
     """
     if comparison.rows is None:
         raise pipeline.Refusal(f"comparison {comparison.id!r} has no rows to prove")
@@ -646,23 +699,12 @@ def unmatched_sql(
         keys=True,
         extra=extra,
     )
-    whens = []
-    for item_id, g in items:
-        nulls = set(g.nulls)
-        test = " AND ".join(
-            f"{_joined_column(column)} IS NULL"
-            if column in nulls
-            else f"{_joined_column(column)} = {pipeline._lit(value)}"
-            for column, value in g.dims
-        )
-        whens.append(f"WHEN {test or 'TRUE'} THEN {pipeline._lit(item_id)}")
-    key = f"CASE {' '.join(whens)} END" if whens else "CAST(NULL AS STRING)"
     keys = ", ".join(f"__k{i}" for i in range(len(grain)))
     columns = [
         f"FARM_FINGERPRINT(TO_JSON_STRING(STRUCT({keys}, __rn))) AS __row",
-        f"{key} AS item_key",
         f"'{held}' AS side",
         *(p.cube for p in dims),
+        *(f"__d_{p.cube}" for p in dims),
         *(f"__g{i} AS {p.cube}" for i, p in enumerate(grain)),
         "__rn",
     ]
@@ -688,9 +730,10 @@ def proof_query(ctes: str, select: str, body: str, literals: set[str]) -> str:
     """
     allowed = ", ".join(pipeline._lit(v) for v in sorted(literals))
     proof = body.replace(PLACEHOLDER, "__u")
+    head = f"{ctes},\n" if ctes else "WITH "
     return (
         # trunk-ignore(bandit/B608): the proof is the analyst's read-only SQL, vetted by check_sql; cause literals are quoted by pipeline._lit
-        f"{ctes},\n__u AS (\n{select}\n),\n__p AS (\n{proof}\n),\n"
+        f"{head}__u AS (\n{select}\n),\n__p AS (\n{proof}\n),\n"
         "__per AS (\n  SELECT __row, COUNT(*) AS __times, "
         f"MIN(IF(cause IN ({allowed}), cause, NULL)) AS cause, "
         f"COUNTIF(cause IS NULL OR cause NOT IN ({allowed})) AS __bad\n"
@@ -820,6 +863,7 @@ def run_proof(
     items: list[tuple[str, Group]],
     build: Build,
     moved: dict[str, bool] | None = None,
+    frozen: dict[tuple[str, str], str] | None = None,
 ) -> dict[str, Outcome]:
     """Check, pin, price and run a proof on the run's rows. Call inside `wh.budget`.
 
@@ -831,6 +875,13 @@ def run_proof(
     Args:
         moved: The tables already checked for a change during the build, and
             whether they changed; shared across the proofs of one triage.
+        frozen: The session's temp table of each comparison bucket's unmatched
+            rows, shared across the proofs of one process (inside
+            `wh.session`). Given, a proof whose query would pass
+            `trace.MAX_QUERY_CHARS` with both sides inline freezes its bucket
+            first and reads the rows there; a shorter one runs inline, which
+            is faster when 1 proof reads the bucket. A bucket already frozen
+            is always read from its table.
 
     Raises:
         pipeline.Refusal: The proof fails a check (see `check_sql` and
@@ -849,9 +900,21 @@ def run_proof(
         wh,
         doing=f"read in {proof.path.name}",
     )
-    ctes, select = unmatched_sql(cfg, comparison, sides, proof.bucket, items)
-    sql = proof_query(ctes, select, body, literals)
+    key = (comparison.id, proof.bucket)
     try:
+        table = (frozen or {}).get(key)
+        ctes, select = unmatched_sql(cfg, comparison, sides, proof.bucket, items, table)
+        sql = proof_query(ctes, select, body, literals)
+        if frozen is not None and table is None and len(sql) > trace.MAX_QUERY_CHARS:
+            print(
+                f"Proof {proof.path.name}: {len(sql):,} characters with both sides "
+                "inline; freezing its rows first."
+            )
+            frozen[key] = _freeze(wh, cfg, comparison, sides, proof.bucket)
+            ctes, select = unmatched_sql(
+                cfg, comparison, sides, proof.bucket, items, frozen[key]
+            )
+            sql = proof_query(ctes, select, body, literals)
         usd = wh.estimate(sql)
         wh.refuse_past_caps(usd)
         print(f"Proof {proof.path.name}: ${usd:.2f} (dry run).")
@@ -861,6 +924,31 @@ def run_proof(
             f"{proof.path.name}: BigQuery refused it ({bigquery_said(exc)})"
         ) from exc
     return outcomes(rows, proof, items, literals)
+
+
+def _freeze(
+    wh: Warehouse,
+    cfg: ViewConfig,
+    comparison: Comparison,
+    sides: pipeline.RowSides,
+    bucket: str,
+) -> str:
+    """Price and freeze a comparison bucket's unmatched rows; return the table.
+
+    The rows never leave BigQuery: the session's temp table holds them.
+    """
+    ctes, select = frozen_sql(cfg, comparison, sides, bucket)
+    sql = f"{ctes}\n{select}"
+    usd = wh.estimate(sql)
+    wh.refuse_past_caps(usd)
+    start = time.monotonic()
+    table = wh.freeze(sql, timeout_s=TIMEOUT_S)
+    took = time.monotonic() - start
+    print(
+        f"Froze {comparison.id} {bucket} unmatched rows: ${usd:.2f} (dry run), "
+        f"{took:.0f} s."
+    )
+    return table
 
 
 # --- re-sorting triage items -------------------------------------------------------
@@ -1072,6 +1160,7 @@ def link_cells(
     items: list[dict],
     comparison: str | None = None,
     cfg: ViewConfig | None = None,
+    open_cells: dict[str, list[dict]] | None = None,
 ) -> dict[str, tuple[int, int, float]]:
     """Move each cell set whose differing cells' rows all lie in proven groups.
 
@@ -1090,6 +1179,12 @@ def link_cells(
       cannot rebuild (another value column count, a dim or cut column the
       reconcile does not group by) is not linked. A run saved before those
       sums links as before, and says its sizes went unchecked.
+
+    Args:
+        open_cells: Filled, per cell-set item id, with each cell not linked:
+            the cell, the groups it matched (`[id, bucket, suggestion]`) and
+            `why`. For the terminal only: a cell's dims and values are not
+            masked.
 
     Returns:
         Per cell-set item id: the differing cells not linked, all of them, and
@@ -1112,6 +1207,7 @@ def link_cells(
         cells = [c for c in run.diff_cells if c["comparison"] == item.comparison]
         sums = run.cell_rows.get(item.comparison)
         unlinked, used, gap, unsized, unbuilt = 0, {}, 0.0, 0, 0
+        left: list[dict] = []
         for cell in cells:
             match = [
                 (gid, g, sides)
@@ -1120,8 +1216,16 @@ def link_cells(
                 and any(sides := _in_cells(g, cell))
             ]
             proven = [gid for gid, _, _ in match if by_id[gid]["suggestion"] == "cause"]
+            said = [[gid, g.bucket, by_id[gid]["suggestion"]] for gid, g, _ in match]
             if not match or len(proven) < len(match):
                 unlinked += 1
+                why = (
+                    f"{len(match) - len(proven)} of its {len(match)} groups are not "
+                    "in `cause`"
+                    if match
+                    else "no open group agrees with the cell"
+                )
+                left.append({"cell": cell, "groups": said, "why": why})
                 continue
             if counts:
                 net = 0
@@ -1134,18 +1238,36 @@ def link_cells(
                 if abs(differs - net) > 1e-9:
                     unlinked += 1
                     gap += abs(differs - net)
+                    why = (
+                        f"size gap: the cell differs by {differs:g}, its groups' "
+                        f"net rows are {net:g}"
+                    )
+                    left.append({"cell": cell, "groups": said, "why": why})
                     continue
             elif sums is not None:
                 if not _sizable(spec, sums, cell):
                     unlinked += 1
                     unsized += 1
+                    why = (
+                        "cannot be sized: not 1 value column, or a dim or cut "
+                        "column the reconcile does not group by"
+                    )
+                    left.append({"cell": cell, "groups": said, "why": why})
                     continue
                 if not _reproduces(spec, sums, cell):
                     unlinked += 1
                     unbuilt += 1
+                    cube, dash = _rebuilt(spec, sums, cell)
+                    why = (
+                        f"does not rebuild from its rows: rebuilt Cube {_shown(cube)}, "
+                        f"dashboard {_shown(dash)}"
+                    )
+                    left.append({"cell": cell, "groups": said, "why": why})
                     continue
             used |= dict.fromkeys(proven)
         out[item.id] = (unlinked, len(cells), gap)
+        if open_cells is not None and left:
+            open_cells[item.id] = left
         target = by_id[item.id]
         if cells and not unlinked:
             merged: dict[tuple, dict] = {}
@@ -1198,6 +1320,30 @@ def link_cells(
                 *_unlinked(target.get("evidence_posted")),
             ]
     return out
+
+
+def _shown(value: float | None) -> str:
+    return "nothing" if value is None else f"{value:.4g}"
+
+
+def open_cell_lines(left: list[dict]) -> list[str]:
+    """Each cell a cell set left open, for the terminal: its cut, its dims,
+    both sides' values, the groups it matched and why it stayed open."""
+    lines = []
+    for o in left:
+        cell = o["cell"]
+        dims = ", ".join(f"{k}={v}" for k, v in cell["dims"]) or "(no dims)"
+        groups = (
+            "; ".join(f"{gid} {bucket} ({said})" for gid, bucket, said in o["groups"])
+            or "none"
+        )
+        lines += [
+            f"- {dims} | cut {cell.get('cut', '{}')} | Cube "
+            f"{_shown(cell.get('cube'))}, dashboard {_shown(cell.get('dashboard'))}",
+            f"  groups: {groups}",
+            f"  open: {o['why']}",
+        ]
+    return lines
 
 
 def _unlinked(lines: list[str] | None) -> list[str]:
@@ -1264,17 +1410,20 @@ def run_stored(
     by_id = {c.id: c for c in cfg.comparisons}
     prepared = prepared or trace.Prepared()
     out = []
-    for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
-        try:
-            proof = read_proof(path)
-        except (OSError, pipeline.Refusal) as exc:
-            print(f"Proof {path.name} skipped: {exc}")
-            continue
-        if (own := by_id.get(proof.comparison)) is None:
-            continue
-        for comparison in [own, *_shared(cfg, directory, proof, own)]:
-            if ran := _run_one(cfg, run, comparison, proof, wh, cube, prepared):
-                out.append(ran)
+    with wh.session():
+        for path in sorted(directory.glob("*__*.sql")) if directory.is_dir() else []:
+            try:
+                proof = read_proof(path)
+            except (OSError, pipeline.Refusal) as exc:
+                print(f"Proof {path.name} skipped: {exc}")
+                continue
+            if (own := by_id.get(proof.comparison)) is None:
+                continue
+            for comparison in [own, *_shared(cfg, directory, proof, own)]:
+                if ran := _run_one(cfg, run, comparison, proof, wh, cube, prepared):
+                    out.append(ran)
+        # The session's temp tables end with it.
+        prepared.frozen.clear()
     return out
 
 
@@ -1305,6 +1454,7 @@ def _run_one(
             bucket_items,
             run.moment,
             prepared.moved,
+            prepared.frozen,
         )
     except (
         pipeline.Refusal,
@@ -1451,11 +1601,14 @@ def run_confirm(
     wanted = set(items or []) or None
 
     if cells:
-        linked = link_cells(run, all_items, comparison, cfg)
+        left: dict[str, list[dict]] = {}
+        linked = link_cells(run, all_items, comparison, cfg, left)
         if not linked:
             raise pipeline.Refusal(f"{comparison}: no open cell set to confirm")
         for item_id, (unlinked, total, gap) in linked.items():
             if unlinked:
+                print(f"{item_id}: the cells left open (local only, not masked):")
+                print("\n".join(open_cell_lines(left.get(item_id, []))))
                 over = (
                     f"; their differences exceed the proven rows by {gap:g}"
                     if gap
@@ -1510,23 +1663,26 @@ def run_confirm(
                 ) from exc
             print(f"Reproduce {b}: dry run OK, ${usd:.2f} on today's tables.")
         prepared = trace.Prepared(schools=network_schools(wh))
-        found = run_proof(
-            wh,
-            cfg,
-            target,
-            prepared.row_sides(cfg, target, run, wh, cube),
-            proof,
-            bucket_items,
-            run.moment,
-            prepared.moved,
-        )
-        # The comparisons holding the same rows: the proof classifies theirs
-        # too, unless one has its own. A refusal there keeps this proof.
-        shared = [
-            r
-            for c in _shared(cfg, stored.parent, proof, target)
-            if (r := _run_one(cfg, run, c, proof, wh, cube, prepared))
-        ]
+        with wh.session():
+            found = run_proof(
+                wh,
+                cfg,
+                target,
+                prepared.row_sides(cfg, target, run, wh, cube),
+                proof,
+                bucket_items,
+                run.moment,
+                prepared.moved,
+                prepared.frozen,
+            )
+            # The comparisons holding the same rows: the proof classifies
+            # theirs too, unless one has its own. A refusal there keeps this
+            # proof.
+            shared = [
+                r
+                for c in _shared(cfg, stored.parent, proof, target)
+                if (r := _run_one(cfg, run, c, proof, wh, cube, prepared))
+            ]
 
     stored.parent.mkdir(parents=True, exist_ok=True)
     stored.write_text(proof.text)
