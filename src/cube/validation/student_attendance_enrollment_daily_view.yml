@@ -16,6 +16,10 @@ shared:
         - { dashboard: is_present, cube: attendance_value }
         - { dashboard: is_tardy, cube: is_tardy }
         - { dashboard: att_code, cube: attendance_code }
+    # The fact keeps a row for every enrolled break day; the dashboard keeps
+    # school days only.
+    scope:
+      - { cube: is_in_session_day, values: [true] }
     proof: null
 
   # Student Attendance Tracker sheets share the year, region and enroll
@@ -31,6 +35,7 @@ shared:
     dashboard_filters:
       - { dashboard: enroll_status, values: [0] }
     scope:
+      - { cube: is_in_session_day, values: [true] }
       - { cube: enrollment_status, values: [Currently Enrolled] }
 
   roster: &roster
@@ -41,6 +46,9 @@ shared:
       - { dashboard: grade_level, cube: grade_level }
     shelves: { drop: [Lastfirst, Team, Teacher Name] }
 
+  # Exclude HRs (a set on the Homeroom calc) drops homerooms from this sheet,
+  # and Cube has no homeroom member to map it to. Whether those homerooms
+  # belong in the counts is an owner question for the review.
   team_counts: &team_counts
     <<: *student_tracker
     sheet: Student - Team Counts
@@ -80,6 +88,33 @@ comparisons:
       cube:
         avg_daily_attendance, sum of attendance_value over full-membership days
         with recorded attendance.
+    proof:
+      fingerprint: 1f0bf42a77c8b8b6cf663e930582ac115d26618d2185e3c1af8de5bb9645b81d
+      cells: 13
+      proven_at: "2026-10-31T00:01:32.842474+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: d9da557dc13628af139773ffa540d01427e9eee0336891b9535f4155ba914057
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 1
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Iep Status
+        - Is Truant Current
+        - School
+        - Schoolid
+        - Term
+      restricting_filters:
+        - Enroll Status
+      filter_notes: {}
+      missing_columns:
+        Enroll Status: enroll_status
+        Term: term
+        School: school_abbreviation
+        Schoolid: schoolid
+        Iep Status: iep_status
 
   - id: ontime-grade-rollup
     <<: *student_tracker
@@ -99,6 +134,33 @@ comparisons:
       cube:
         pct_ontime, on-time present days over present days; tardy is any
         T-prefixed code.
+    proof:
+      fingerprint: 1f0bf42a77c8b8b6cf663e930582ac115d26618d2185e3c1af8de5bb9645b81d
+      cells: 13
+      proven_at: "2026-10-31T00:02:08.807538+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: e0d33d82b345280178fcedcc6942a493a74fcde81249dc0c6188d97fcca61430
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 1
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Iep Status
+        - Is Truant Current
+        - School
+        - Schoolid
+        - Term
+      restricting_filters:
+        - Enroll Status
+      filter_notes: {}
+      missing_columns:
+        Enroll Status: enroll_status
+        Term: term
+        School: school_abbreviation
+        Schoolid: schoolid
+        Iep Status: iep_status
 
   # --- Student - Attendance Roster (one row per student) ---------------------
   - id: ada-roster
@@ -107,6 +169,48 @@ comparisons:
     sheet_field: "% Average Daily Attendance"
     probe: avg(is_present)
     decimals: 3
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 9546
+      proven_at: "2026-10-31T00:02:12.039230+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: dd8873c8a76928f0311cbc0cac78ade1687bfcce220512302bac7984358055e6
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Lastfirst
+          - Team
+          - Teacher Name
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Teacher Name
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        NJ Overall Student Tier: nj_overall_student_tier
+        Enroll Status: enroll_status
+        School: school_abbreviation
+        Schoolid: schoolid
+        Is Counselingservices: is_counselingservices
+        Term: term
+        Iep Status: iep_status
+        Teacher Name: teacher_name
 
   - id: present-roster
     <<: *roster
@@ -114,6 +218,48 @@ comparisons:
     sheet_field: "# Days Present"
     probe: sum(is_present)
     decimals: 0
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 9546
+      proven_at: "2026-10-31T00:02:51.366430+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 49a14f1c2279e796f68e1166abe52c084685be6c434395c7ad6eebaff098b4e3
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Lastfirst
+          - Team
+          - Teacher Name
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Teacher Name
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        NJ Overall Student Tier: nj_overall_student_tier
+        Enroll Status: enroll_status
+        School: school_abbreviation
+        Schoolid: schoolid
+        Is Counselingservices: is_counselingservices
+        Term: term
+        Iep Status: iep_status
+        Teacher Name: teacher_name
 
   - id: absences-roster
     <<: *roster
@@ -125,6 +271,48 @@ comparisons:
       dashboard:
         Day rows whose att_code is in the Absent group (A, A-E, AD, D, X).
       cube: count_absent_days, sum of is_absent where membership_value > 0.
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 9546
+      proven_at: "2026-10-31T00:02:54.664660+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 8491c40521d77dde6693d6335a3875f7266b1bf2dece2cff9baa39d4061fcbe1
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Lastfirst
+          - Team
+          - Teacher Name
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Teacher Name
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        NJ Overall Student Tier: nj_overall_student_tier
+        Enroll Status: enroll_status
+        School: school_abbreviation
+        Schoolid: schoolid
+        Is Counselingservices: is_counselingservices
+        Term: term
+        Iep Status: iep_status
+        Teacher Name: teacher_name
 
   - id: tardy-roster
     <<: *roster
@@ -136,6 +324,48 @@ comparisons:
       dashboard:
         Day rows whose att_code is in the Tardy group (ET, T, T10, TLE).
       cube: count_tardy_days, sum of is_tardy (every T-prefixed code).
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 9546
+      proven_at: "2026-10-31T00:02:58.230221+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: c69e90d3b70fb47d89338167e855685a6da555d49c1d6bab4775037029423e81
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Lastfirst
+          - Team
+          - Teacher Name
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Teacher Name
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        NJ Overall Student Tier: nj_overall_student_tier
+        Enroll Status: enroll_status
+        School: school_abbreviation
+        Schoolid: schoolid
+        Is Counselingservices: is_counselingservices
+        Term: term
+        Iep Status: iep_status
+        Teacher Name: teacher_name
 
   - id: iss-roster
     <<: *roster
@@ -143,6 +373,48 @@ comparisons:
     sheet_field: "# ISS"
     probe: sum(if(att_code in ('ISS', 'S'), 1, 0))
     decimals: 0
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 9546
+      proven_at: "2026-10-31T00:03:01.377456+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 6283704f791e61140904798df3f07e1e124d93bbf8a1e4071f631cd891373c7c
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Lastfirst
+          - Team
+          - Teacher Name
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Teacher Name
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        NJ Overall Student Tier: nj_overall_student_tier
+        Enroll Status: enroll_status
+        School: school_abbreviation
+        Schoolid: schoolid
+        Is Counselingservices: is_counselingservices
+        Term: term
+        Iep Status: iep_status
+        Teacher Name: teacher_name
 
   - id: oss-roster
     <<: *roster
@@ -150,6 +422,48 @@ comparisons:
     sheet_field: "# OSS"
     probe: sum(if(att_code in ('OS', 'OSS', 'OSSP'), 1, 0))
     decimals: 0
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 9546
+      proven_at: "2026-10-31T00:03:05.277465+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 8d1a323e9632c12a9b6c5c5909ae0763cf01dbd2ed9fe194a4dce50793167e55
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Lastfirst
+          - Team
+          - Teacher Name
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Teacher Name
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        NJ Overall Student Tier: nj_overall_student_tier
+        Enroll Status: enroll_status
+        School: school_abbreviation
+        Schoolid: schoolid
+        Is Counselingservices: is_counselingservices
+        Term: term
+        Iep Status: iep_status
+        Teacher Name: teacher_name
 
   - id: weighted-roster
     <<: *roster
@@ -157,6 +471,48 @@ comparisons:
     sheet_field: "# Absent Weighted (HS)"
     probe: sum(is_absent) + sum(is_tardy) / 3
     decimals: 0
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 9546
+      proven_at: "2026-10-31T00:03:08.506013+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: b0b913d8885601d8f0d5d24fb55689d9e321d46611bd8db51b7658ed02a4cf7a
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Lastfirst
+          - Team
+          - Teacher Name
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Teacher Name
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        NJ Overall Student Tier: nj_overall_student_tier
+        Enroll Status: enroll_status
+        School: school_abbreviation
+        Schoolid: schoolid
+        Is Counselingservices: is_counselingservices
+        Term: term
+        Iep Status: iep_status
+        Teacher Name: teacher_name
 
   - id: days-to-90-roster
     <<: *roster
@@ -171,30 +527,89 @@ comparisons:
       cube:
         days_to_90_percent, the same algebra over full-membership days with
         recorded attendance.
+    proof:
+      fingerprint: 4b1f4ce7783178fd18233d7840a7edaa1d0b8c25e563647edf0191b99ff9f0b4
+      cells: 9546
+      proven_at: "2026-10-31T00:03:12.333421+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: d218484cbbbfb46d6a635c2071c22a4a6c8935f67d3d7605dd4e3ddc04d7aca4
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 0
+      shelves:
+        drop:
+          - Lastfirst
+          - Team
+          - Teacher Name
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Filter - Death of Student
+        - Homeroom
+        - Iep Status
+        - Is Counselingservices
+        - Is Truant Current
+        - NJ Overall Student Tier
+        - School
+        - Schoolid
+        - Teacher Name
+        - Term
+      restricting_filters:
+        - Enroll Status
+        - Filter - Death of Student
+      filter_notes:
+        Filter - Death of Student: copy of Student Number
+      missing_columns:
+        NJ Overall Student Tier: nj_overall_student_tier
+        Enroll Status: enroll_status
+        School: school_abbreviation
+        Schoolid: schoolid
+        Is Counselingservices: is_counselingservices
+        Term: term
+        Iep Status: iep_status
+        Teacher Name: teacher_name
 
   # --- Student - Team Counts (homeroom dropped; totals by term) ---------------
-  - id: points-team-counts
-    <<: *team_counts
-    measure: attendance_points
-    sheet_field: Attendance Pts
-    probe: >-
-      sum(case when att_code in ('A', 'AD') then 1 when att_code in ('T', 'T10')
-      then 1 / 3 else 0 end)
-    decimals: 0
-
-  - id: absences-team-counts
-    <<: *team_counts
-    measure: count_absent_days
-    sheet_field: "# Absences"
-    probe: sum(if(att_code in ('A', 'A-E', 'AD', 'D', 'X'), 1, 0))
-    decimals: 0
-
+  # Attendance Pts and # Absences wait on a Cube homeroom member: Exclude HRs
+  # drops absences from this sheet, and a set filter cannot be cleared on the
+  # proof copy. # Tardy proves with it on, since it drops no tardies.
   - id: tardy-team-counts
     <<: *team_counts
     measure: count_tardy_days
     sheet_field: "# Tardy"
     probe: sum(if(att_code in ('ET', 'T', 'T10', 'TLE'), 1, 0))
     decimals: 0
+    proof:
+      fingerprint: 45b8528764a2550e2a209c266059677fe0983e83eab620f791161a75ed981767
+      cells: 1
+      proven_at: "2026-10-31T00:03:45.856573+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 7e5cd61b7309b74f5ce98ae160b8a7288a5a44962a26e1e02736185b42b5fe70
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 1
+      shelves:
+        drop:
+          - Homeroom
+      missing_cuts: []
+      missing_filters:
+        - Enroll Status
+        - Grade Level
+        - Iep Status
+        - Is Truant Current
+        - School
+        - Schoolid
+      restricting_filters:
+        - Enroll Status
+      filter_notes: {}
+      missing_columns:
+        Enroll Status: enroll_status
+        Iep Status: iep_status
+        School: school_abbreviation
+        Grade Level: grade_level
+        Schoolid: schoolid
 
   # --- Attendance Rollup: Y1 ADA sheets ---------------------------------------
   - id: ada-y1-es
@@ -208,6 +623,45 @@ comparisons:
       Academic Year: "2026"
       Region: [Camden, Newark, Paterson]
       Grade Level: [0, 1, 2, 3, 4]
+    proof:
+      fingerprint: 79d4b006007bc63f46c3a249d3fa3a4a53d857e3b783d33866cea8c458f46c9a
+      cells: 40
+      proven_at: "2026-10-31T00:03:48.834331+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 1098f400b502a71a4d4815f1f3a5afe4ca5c228c95b3ceeab4137242a4128da6
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 14
+      parameters:
+        Attendance Metric: ADA
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - Schoolid
+        - Term
+        - ms_attended
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        Enroll Status: enroll_status
+        ms_attended: ms_attended
+        Schoolid: schoolid
+        C 504 Status: c_504_status
+        Gender: gender
+        Is Counselingservices: is_counselingservices
+        Ethnicity: ethnicity
+        Term: term
+        Lep Status: lep_status
+        Iep Status: iep_status
+        NJ Overall Student Tier: nj_overall_student_tier
 
   - id: ada-y1-ms
     <<: *y1
@@ -220,8 +674,47 @@ comparisons:
       Academic Year: "2026"
       Region: [Camden, Newark, Paterson]
       Grade Level: [5, 6, 7, 8]
-    dashboard_filters:
-      - { dashboard: school_level, operator: not_equals, values: [OD] }
+    proof:
+      fingerprint: c0a4a97faefd141d3c8ee03593e23706cbbd71dfc2a95e25ce32437140c71a3c
+      cells: 34
+      proven_at: "2026-10-31T00:09:25.412735+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 33d64ecc07a01c3489af28ddb5b18359fe45727ff179caf90e4678c4a1744d40
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 14
+      parameters:
+        Attendance Metric: ADA
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - School Level - OOD FIlter Set
+        - Schoolid
+        - Term
+        - ms_attended
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        ms_attended: ms_attended
+        Schoolid: schoolid
+        Ethnicity: ethnicity
+        NJ Overall Student Tier: nj_overall_student_tier
+        Is Counselingservices: is_counselingservices
+        Enroll Status: enroll_status
+        Lep Status: lep_status
+        Iep Status: iep_status
+        C 504 Status: c_504_status
+        School Level - OOD FIlter Set: School Level - OOD FIlter Set
+        Term: term
+        Gender: gender
 
   - id: ada-y1-hs
     <<: *y1
@@ -234,6 +727,45 @@ comparisons:
       Academic Year: "2026"
       Region: [Camden, Newark, Paterson]
       School Level: HS
+    proof:
+      fingerprint: 80f5f569fe4e42412e2f993edbc0c35587854c5e449b745d5397eba7f5650a4a
+      cells: 12
+      proven_at: "2026-10-31T00:04:39.722312+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 488f1522426843565ecd0498577ae59f770a54073de0f819eeafdefeab5ea91c
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 8
+      parameters:
+        Attendance Metric: ADA
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - Schoolid
+        - Term
+        - ms_attended
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        Enroll Status: enroll_status
+        ms_attended: ms_attended
+        Schoolid: schoolid
+        C 504 Status: c_504_status
+        Gender: gender
+        Is Counselingservices: is_counselingservices
+        Ethnicity: ethnicity
+        Term: term
+        Lep Status: lep_status
+        Iep Status: iep_status
+        NJ Overall Student Tier: nj_overall_student_tier
 
   - id: ada-y1-region
     <<: *y1
@@ -245,6 +777,51 @@ comparisons:
     dims:
       - { dashboard: region, cube: regions_region_name }
       - { dashboard: grade_level, cube: grade_level }
+    proof:
+      fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
+      cells: 35
+      proven_at: "2026-10-31T00:05:05.927506+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 73bc7cceaa3792370c9fd7df35ecfca5e31f2453f131124a01982ae8368e938b
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 17
+      parameters:
+        Attendance Metric: ADA
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - Region [Filter]
+        - School
+        - Schoolid
+        - Term
+        - is_self_contained
+        - ms_attended
+      restricting_filters: []
+      filter_notes:
+        Region [Filter]: copy of Region
+      missing_columns:
+        Enroll Status: enroll_status
+        ms_attended: ms_attended
+        School: school_abbreviation
+        Schoolid: schoolid
+        C 504 Status: c_504_status
+        Gender: gender
+        Is Counselingservices: is_counselingservices
+        Ethnicity: ethnicity
+        is_self_contained: is_self_contained
+        Term: term
+        Lep Status: lep_status
+        Iep Status: iep_status
+        NJ Overall Student Tier: nj_overall_student_tier
 
   - id: ontime-y1-es
     <<: *y1
@@ -259,6 +836,45 @@ comparisons:
       Academic Year: "2026"
       Region: [Camden, Newark, Paterson]
       Grade Level: [0, 1, 2, 3, 4]
+    proof:
+      fingerprint: 79d4b006007bc63f46c3a249d3fa3a4a53d857e3b783d33866cea8c458f46c9a
+      cells: 40
+      proven_at: "2026-10-31T00:05:32.728542+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 7f06b946ae0968763beba084dbe37985739a10019c01a217ca6b91ca51d0bcce
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 14
+      parameters:
+        Attendance Metric: \% On-Time
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - Schoolid
+        - Term
+        - ms_attended
+      restricting_filters: []
+      filter_notes: {}
+      missing_columns:
+        Enroll Status: enroll_status
+        ms_attended: ms_attended
+        Schoolid: schoolid
+        C 504 Status: c_504_status
+        Gender: gender
+        Is Counselingservices: is_counselingservices
+        Ethnicity: ethnicity
+        Term: term
+        Lep Status: lep_status
+        Iep Status: iep_status
+        NJ Overall Student Tier: nj_overall_student_tier
 
   - id: ontime-y1-region
     <<: *y1
@@ -272,6 +888,51 @@ comparisons:
     dims:
       - { dashboard: region, cube: regions_region_name }
       - { dashboard: grade_level, cube: grade_level }
+    proof:
+      fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
+      cells: 35
+      proven_at: "2026-10-31T00:05:59.984552+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: dc01551b6db2230177372549d97ab363a7a0e7a610aa17f603f9f146fd5e4902
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - "{}"
+      totals_skipped: 17
+      parameters:
+        Attendance Metric: \% On-Time
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - Region [Filter]
+        - School
+        - Schoolid
+        - Term
+        - is_self_contained
+        - ms_attended
+      restricting_filters: []
+      filter_notes:
+        Region [Filter]: copy of Region
+      missing_columns:
+        Enroll Status: enroll_status
+        ms_attended: ms_attended
+        School: school_abbreviation
+        Schoolid: schoolid
+        C 504 Status: c_504_status
+        Gender: gender
+        Is Counselingservices: is_counselingservices
+        Ethnicity: ethnicity
+        is_self_contained: is_self_contained
+        Term: term
+        Lep Status: lep_status
+        Iep Status: iep_status
+        NJ Overall Student Tier: nj_overall_student_tier
 
   # --- Attendance Rollup: chronic absenteeism and truancy ---------------------
   # Both are student-level LOD calcs in the workbook. The cut pins one school
@@ -307,6 +968,53 @@ comparisons:
       cube:
         pct_chronically_absent, students at ADA tier 3 or 4 as of the pinned
         date over students with recorded attendance.
+    proof:
+      fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
+      cells: 35
+      proven_at: "2026-10-31T00:06:26.781195+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: eb880ca2fc0529c9f5eca964efe51a4ee2afcdcadd6443dd9567f8eb4dc733b6
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - '{"Calendardate": "2026-10-29"}'
+      totals_skipped: 17
+      parameters:
+        Attendance Metric: Chronic Absenteeism
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - Region [Filter]
+        - School
+        - School Level
+        - Schoolid
+        - Term
+        - is_self_contained
+        - ms_attended
+      restricting_filters: []
+      filter_notes:
+        Region [Filter]: copy of Region
+      missing_columns:
+        Enroll Status: enroll_status
+        ms_attended: ms_attended
+        School: school_abbreviation
+        Schoolid: schoolid
+        C 504 Status: c_504_status
+        Gender: gender
+        Is Counselingservices: is_counselingservices
+        Ethnicity: ethnicity
+        is_self_contained: is_self_contained
+        Term: term
+        Lep Status: lep_status
+        Iep Status: iep_status
+        School Level: school_level
+        NJ Overall Student Tier: nj_overall_student_tier
 
   - id: truant-y1-region
     <<: *y1
@@ -347,3 +1055,50 @@ comparisons:
       cube:
         pct_truant, students meeting the regional truancy rule as of the pinned
         date over students with recorded attendance.
+    proof:
+      fingerprint: 4c3c569aa99d615df55fe7939d966b4fd1d76f3de2acc77ce418d5e47fc29b1c
+      cells: 35
+      proven_at: "2026-10-31T00:06:53.933839+00:00"
+      workbook_updated_at: "2026-10-30T19:15:07+00:00"
+      probe_fingerprint: 9acae0e53775729db028498f7bdc99683a2b35e59ac504ddb7a48a5b06933f51
+      source_fingerprint: d23a125a36dda494e2bd783996f887680171ac3b37b4d8fbc650381c73a60562
+      cuts:
+        - '{"Calendardate": "2026-10-29"}'
+      totals_skipped: 17
+      parameters:
+        Attendance Metric: Truant/On Track for Truancy
+      missing_cuts: []
+      missing_filters:
+        - C 504 Status
+        - Enroll Status
+        - Ethnicity
+        - Gender
+        - Iep Status
+        - Is Counselingservices
+        - Lep Status
+        - NJ Overall Student Tier
+        - Region [Filter]
+        - School
+        - School Level
+        - Schoolid
+        - Term
+        - is_self_contained
+        - ms_attended
+      restricting_filters: []
+      filter_notes:
+        Region [Filter]: copy of Region
+      missing_columns:
+        Enroll Status: enroll_status
+        ms_attended: ms_attended
+        School: school_abbreviation
+        Schoolid: schoolid
+        C 504 Status: c_504_status
+        Gender: gender
+        Is Counselingservices: is_counselingservices
+        Ethnicity: ethnicity
+        is_self_contained: is_self_contained
+        Term: term
+        Lep Status: lep_status
+        Iep Status: iep_status
+        School Level: school_level
+        NJ Overall Student Tier: nj_overall_student_tier
