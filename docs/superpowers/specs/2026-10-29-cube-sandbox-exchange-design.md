@@ -304,3 +304,24 @@ So the exchange no longer checks `iss` against one configured value. It:
 Task 1's real token still confirms this before the verifier is built. The same
 README also shows an app can run with no WorkOS API key (public client mode),
 which the exchange neither needs nor sees.
+
+## Revision 2026-11-02: one issuer per WorkOS environment
+
+This supersedes _Revision 2026-10-30_. The data team's WorkOS admin checked the
+Staging environment, where the sandbox apps are registered: every application in
+an environment shares one issuer and one key set. The client id inside the
+issuer belongs to the environment's default application, and the discovery
+document returns the same issuer when fetched under another application's client
+id. Deriving the issuer per client id would have rejected every real token.
+
+So the exchange returns to the original design in _Verifying the AuthKit token_:
+
+- `AUTHKIT_ISSUER` is required and holds the environment's issuer;
+- the key set comes from the `jwks_uri` in that issuer's discovery document,
+  fetched once and cached;
+- the exchange tells applications apart by the token's `client_id` claim,
+  checked against `registered_apps.yml`.
+
+Staging also has no custom authentication domain, puts no `aud` claim on session
+tokens, and adds the `email` claim for every application. Task 1's real token
+still confirms `iss`, `client_id` and `email` before the verifier is built.
