@@ -23,13 +23,26 @@ with
             r.contact_current_college_cumulative_gpa_source
             as current_college_cumulative_gpa_source,
 
+            clc.gpa_band,
+            clc.gpa_points,
+            clc.ecc,
+            clc.is_career_launch_active,
+
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
+
+            if(
+                clc.is_career_launch_active or cla.contact_id is not null, true, false
+            ) as is_listed,
         from {{ ref("int_kippadb__roster") }} as r
-        where
-            r.ktc_status in ('HSG', 'TAF')
-            and r.contact_id is not null
-            and r.ktc_cohort <= {{ var("current_academic_year") }}
+        left join
+            {{ ref("int_surveys__kfwd_career_launch_contacts") }} as clc
+            on r.contact_id = clc.contact_id
+        left join
+            {{ ref("int_surveys__kfwd_career_launch_assessments") }} as cla
+            on r.contact_id = cla.contact_id
+            and cla.is_latest_assessment
+        where r.ktc_status in ('HSG', 'TAF') and r.contact_id is not null
     ),
 
     survey_responses as (
@@ -61,6 +74,7 @@ with
             or r.sf_secondary_email = su.respondent_user_principal_name
             or r.contact_id = su.reconciled_contact_id
             or r.contact_id = su.respondent_salesforce_id
+        where r.is_listed
         group by r.contact_id
     )
 
@@ -80,15 +94,15 @@ select
     r.contact_owner,
     r.postsec_advisor,
     r.current_college_cumulative_gpa_source,
+    r.gpa_band,
+    r.gpa_points,
+    r.ecc,
+    r.is_career_launch_active,
 
     ce.pursuing_degree_type,
     ce.major,
 
     ss.latest_survey_date,
-
-    clc.gpa_band,
-    clc.gpa_points,
-    clc.ecc,
 
     coalesce(ss.survey_response_count, 0) as survey_response_count,
 
@@ -96,6 +110,4 @@ select
 from roster as r
 left join current_enrollment as ce on r.contact_id = ce.student
 left join survey_stats as ss on r.contact_id = ss.contact_id
-left join
-    {{ ref("int_surveys__kfwd_career_launch_contacts") }} as clc
-    on r.contact_id = clc.contact_id
+where r.is_listed
