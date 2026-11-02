@@ -4,10 +4,10 @@ models:
       Summary tab of the KIPP Forward early apps tracker. N (current seniors at
       the tracker's high schools whose Overgrad Is ED/EA flag is Yes) and the
       count in each GPA band come first, then 2 rows per goal, "% of N" and "%
-      of band". The goals come from the early_application_criteria macro, plus a
-      "met both" row for each band with more than 1 goal. Display columns read
-      like 3% (1/40); a 0 denominator shows "-". Numeric met, denominator, and
-      percent columns sit beside them for charting.
+      of band". The goals come from int_students__early_application_criteria,
+      plus a "met both" row for each band with more than 1 goal. Display columns
+      read like 3% (1/40); a 0 denominator shows "-". Numeric met, denominator,
+      and percent columns sit beside them for charting.
     columns:
       - name: row_sort
         data_type: int64
@@ -23,8 +23,8 @@ models:
         data_type: string
         description:
           'Readable row name, for example "1 ED, full need, 80%+ URM: % of
-          band". Goal rows take their label from the early_application_criteria
-          macro.'
+          band". Goal rows take their label from
+          int_students__early_application_criteria.'
       - name: cooper_norcross
         data_type: string
         description: Display value for KIPP Cooper Norcross High School.
@@ -99,6 +99,18 @@ unit_tests:
       Counts flagged seniors only, divides by N or by the band count, shows "-"
       for a 0 denominator, and adds the 3 schools into the All column.
     given:
+      - input: ref("int_students__early_application_criteria")
+        format: sql
+        rows: |
+          select 'ed_80_full_need' as criterion_code, 1 as criterion_sort, '3.75+' as gpa_band, '1 ED, full need, 80%+ URM' as criterion_label
+          union all
+          select 'ea_78', 2, '3.75+', '2 EA, 78%+ URM'
+          union all
+          select 'early_80_full_need', 3, '3.50-3.74', '1 ED/EA, full need, 80%+ URM'
+          union all
+          select 'additional_68', 4, '3.50-3.74', '2 additional early, 68%+ URM'
+          union all
+          select 'early_68', 5, '3.00-3.49', '3 early, 68%+ URM'
       - input: ref("int_students__early_applications_rollup")
         format: sql
         rows: |

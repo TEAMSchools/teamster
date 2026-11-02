@@ -125,6 +125,19 @@ unit_tests:
       both goals. A senior with a 78.2% ED college and 1 EA college at 78%+
       misses both, and both are near misses.
     given:
+      - &early_application_criteria
+        input: ref("int_students__early_application_criteria")
+        format: sql
+        rows: |
+          select 'ed_80_full_need' as criterion_code, 1 as criterion_sort, '3.75+' as gpa_band, '1 ED, full need, 80%+ URM' as criterion_label, 'ED' as required_type, 'ED' as type_label, 80 as urm_bar, 1 as required_count, true as requires_full_need, false as sets_aside_full_need
+          union all
+          select 'ea_78', 2, '3.75+', '2 EA, 78%+ URM', 'EA', 'EA', 78, 2, false, false
+          union all
+          select 'early_80_full_need', 3, '3.50-3.74', '1 ED/EA, full need, 80%+ URM', 'any', 'ED or EA', 80, 1, true, false
+          union all
+          select 'additional_68', 4, '3.50-3.74', '2 additional early, 68%+ URM', 'any', 'early', 68, 2, false, true
+          union all
+          select 'early_68', 5, '3.00-3.49', '3 early, 68%+ URM', 'any', 'early', 68, 3, false, false
       - input: ref("int_students__early_applications_rollup")
         format: sql
         rows: |
@@ -192,6 +205,7 @@ unit_tests:
       On the 3-college goal, a near-bar college counts toward a near miss only
       when it would close the gap.
     given:
+      - *early_application_criteria
       - input: ref("int_students__early_applications_rollup")
         format: sql
         rows: |
@@ -233,6 +247,7 @@ unit_tests:
       For 3.50-3.74, the alphabetically first full-need 80%+ college is set
       aside, and a second full-need college counts as additional.
     given:
+      - *early_application_criteria
       - input: ref("int_students__early_applications_rollup")
         format: sql
         rows: |
@@ -267,6 +282,7 @@ unit_tests:
       under is neither, a college with no rate never counts, and a senior with
       no GPA gets no rows.
     given:
+      - *early_application_criteria
       - input: ref("int_students__early_applications_rollup")
         format: sql
         rows: |

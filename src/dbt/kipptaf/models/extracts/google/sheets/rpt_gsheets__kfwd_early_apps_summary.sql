@@ -54,14 +54,9 @@ with
             ) as school_key
     ),
 
-    criteria as (
-        select criterion_code, criterion_sort, gpa_band, criterion_label,
-        from unnest({{ early_application_criteria() }})
-    ),
-
     bands as (
         select gpa_band, min(criterion_sort) as band_sort, count(*) as goal_count,
-        from criteria
+        from {{ ref("int_students__early_application_criteria") }}
         group by gpa_band
     ),
 
@@ -73,7 +68,7 @@ with
             c.criterion_sort as within_band_sort,
 
             b.band_sort,
-        from criteria as c
+        from {{ ref("int_students__early_application_criteria") }} as c
         inner join bands as b on c.gpa_band = b.gpa_band
 
         union all

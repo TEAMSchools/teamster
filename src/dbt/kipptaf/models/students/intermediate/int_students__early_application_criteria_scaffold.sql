@@ -1,19 +1,4 @@
 with
-    criteria as (
-        select
-            criterion_code,
-            criterion_sort,
-            gpa_band,
-            criterion_label,
-            required_type,
-            type_label,
-            urm_bar,
-            required_count,
-            requires_full_need,
-            sets_aside_full_need,
-        from unnest({{ early_application_criteria() }})
-    ),
-
     submitted_colleges as (
         select
             _dbt_source_project,
@@ -32,9 +17,12 @@ with
 
     set_aside_bars as (
         select a.gpa_band, f.urm_bar,
-        from criteria as a
-        inner join criteria as f on a.gpa_band = f.gpa_band
-        where a.sets_aside_full_need and f.requires_full_need
+        from {{ ref("int_students__early_application_criteria") }} as a
+        inner join
+            {{ ref("int_students__early_application_criteria") }} as f
+            on a.gpa_band = f.gpa_band
+            and f.requires_full_need
+        where a.sets_aside_full_need
     ),
 
     full_need_set_aside as (
@@ -69,7 +57,9 @@ with
 
             fa.set_aside_university_id,
         from {{ ref("int_students__early_applications_rollup") }} as r
-        inner join criteria as c on r.gpa_band = c.gpa_band
+        inner join
+            {{ ref("int_students__early_application_criteria") }} as c
+            on r.gpa_band = c.gpa_band
         left join
             full_need_set_aside as fa
             on r.overgrad_student_id = fa.overgrad_student_id
