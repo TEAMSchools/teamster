@@ -87,10 +87,9 @@ def _executor_name(asset_count: int, schedule_name: str, **kwargs) -> str:
         **kwargs,
     )
 
-    job_name = kwargs.get("job_name", schedule_name.removesuffix("_schedule"))
     defs = Definitions(assets=assets, schedules=[schedule])
 
-    return defs.resolve_job_def(job_name).executor_def.name
+    return defs.resolve_job_def(schedule.job_name).executor_def.name
 
 
 def test_deanslist_single_asset_runs_in_process():
