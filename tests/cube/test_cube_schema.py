@@ -668,7 +668,7 @@ PHRASES.update(
         "student_assessments.is_internal_assessment": [
             "KIPP-authored interims, Illuminate and Focus Assessments",
             "internal source can change between years",
-            "filter assessment_family to select a kind of external source",
+            "Filter assessment_family instead to select any kind of source",
         ],
         "student_assessments.assessment_family": [
             "vendor_diagnostic (iready, dibels and star)",
