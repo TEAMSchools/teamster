@@ -65,20 +65,20 @@ def test_deanslist_schedule_lookback_months():
     assert dates(1) == ["2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01"]
 
 
-def _executor_name(asset_count: int, schedule_name: str, **kwargs) -> str:
+def _resolve_job(asset_count: int, schedule_name: str, **kwargs):
     from dagster import Definitions, StaticPartitionsDefinition, asset
 
     from teamster.libraries.deanslist.schedules import build_deanslist_job_schedule
 
     partitions_def = StaticPartitionsDefinition(["1"])
 
-    @asset(partitions_def=partitions_def)
-    def a1(): ...
+    def _make(name: str):
+        @asset(name=name, partitions_def=partitions_def)
+        def _a(): ...
 
-    @asset(partitions_def=partitions_def)
-    def a2(): ...
+        return _a
 
-    assets = [a1, a2][:asset_count]
+    assets = [_make(f"a{i}") for i in range(asset_count)]
     schedule = build_deanslist_job_schedule(
         schedule_name=schedule_name,
         cron_schedule="0 0 * * *",
@@ -89,7 +89,30 @@ def _executor_name(asset_count: int, schedule_name: str, **kwargs) -> str:
 
     defs = Definitions(assets=assets, schedules=[schedule])
 
-    return defs.resolve_job_def(schedule.job_name).executor_def.name
+    return defs.resolve_job_def(schedule.job_name)
+
+
+def _executor_name(asset_count: int, schedule_name: str, **kwargs) -> str:
+    return _resolve_job(asset_count, schedule_name, **kwargs).executor_def.name
+
+
+def test_deanslist_wide_run_gets_more_memory():
+    from dagster_k8s.job import get_user_defined_k8s_config
+
+    job = _resolve_job(3, "x__deanslist__static_partitioned_asset_job_schedule")
+
+    # parse the tag the way the run launcher does
+    config = get_user_defined_k8s_config(job.tags)
+    assert config.container_config["resources"] == {
+        "requests": {"memory": "3.5Gi"},
+        "limits": {"memory": "4.0Gi"},
+    }
+
+
+def test_deanslist_two_asset_run_keeps_default_memory():
+    job = _resolve_job(2, "x__deanslist__year_partitioned_asset_job_schedule")
+
+    assert "dagster-k8s/config" not in job.tags
 
 
 def test_deanslist_single_asset_runs_in_process():

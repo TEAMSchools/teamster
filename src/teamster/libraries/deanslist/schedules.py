@@ -30,10 +30,25 @@ def build_deanslist_job_schedule(
 ):
     # One pod per run instead of one per asset: GKE preempts pods on nodes it
     # adds during the midnight burst (#6225). Multi-asset runs keep their steps
-    # parallel inside the run pod.
+    # parallel inside the run pod. Each step's child process re-imports the code
+    # location, so runs wider than 2 assets outgrow the default run pod memory.
     job = define_asset_job(
         name=job_name or schedule_name.removesuffix("_schedule"),
         selection=asset_selection,
+        tags=(
+            {
+                "dagster-k8s/config": {
+                    "container_config": {
+                        "resources": {
+                            "requests": {"memory": "3.5Gi"},
+                            "limits": {"memory": "4.0Gi"},
+                        }
+                    }
+                }
+            }
+            if len(asset_selection) > 2
+            else None
+        ),
         executor_def=(
             in_process_executor
             if len(asset_selection) == 1
