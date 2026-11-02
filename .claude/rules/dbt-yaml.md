@@ -252,7 +252,8 @@ query the rebuilt `zz_<user>_*` table.
 
 Never judge CURRENT sheet content from the prod `stg_*` table — it is a table
 frozen at the last prod build, not a live read, so it reports pre-edit values
-indefinitely. Rebuild into dev (or query the external directly) first.
+indefinitely. Rebuild into dev, or read the sheet with the Google Sheets MCP,
+first.
 
 ### BigQuery type synonyms in contracts
 

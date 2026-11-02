@@ -9,11 +9,10 @@ Three identities reach BigQuery here, and they differ in what they can read:
   runs as the signed-in USER over OAuth with the `bigquery` scope only, so it
   reads everything that user can, PII included. Default for warehouse
   inspection. Cannot read GOOGLE_SHEETS external tables.
-- **ADC from Python** — carries Drive scope and does not expire. The only client
-  that reads a sheet-backed external live, and the client for shell contexts
-  such as Monitor poll loops: a Monitor script cannot call an MCP tool, and a
-  loop on `bq` dies when its creds expire. Put the query in a scratchpad script
-  and run it with `uv run python <script.py>` each iteration.
+- **ADC from Python** — does not expire. The client for shell contexts such as
+  Monitor poll loops: a Monitor script cannot call an MCP tool, and a loop on
+  `bq` dies when its creds expire. Put the query in a scratchpad script and run
+  it with `uv run python <script.py>` each iteration.
 - **`bq` CLI** — gcloud USER creds that expire mid-session: SELECTs that worked
   early fail later with "Reauthentication failed" or "You do not currently have
   an active account selected" (non-interactive can't `gcloud auth login`); both
@@ -44,17 +43,12 @@ Three identities reach BigQuery here, and they differ in what they can read:
 The MCP cannot read GOOGLE_SHEETS external tables:
 `Access Denied: BigQuery BigQuery: Permission denied while getting Drive credentials`.
 Its OAuth token carries the `bigquery` scope only, and sharing the file does not
-change that. ADC does have Drive scope, so query the external directly from a
-Python client instead — no dbt build, no `stage_external_sources`, and it reads
-the sheet live, so a paste is verifiable seconds after it happens. Run the
-script with `uv run python <script.py>`:
-
-```python
-from google.cloud import bigquery
-
-client = bigquery.Client(project="teamster-332318")
-rows = client.query("select ... from `teamster-332318`.<dataset>.<src_table>")
-```
+change that. ADC can fail the same way when its credentials lack Drive scope.
+Read the sheet itself instead, with `mcp__claude_ai_Google_Sheets__get_values`:
+the spreadsheet id is in the source's `external.options.uris` and the range is
+its `sheet_range`. It reads the sheet live, so a paste is verifiable seconds
+after it happens. A full range overflows to a spill file; filter it with `jq`
+(`.values[0]` is the header row).
 
 Build into a dev/staging table only when something downstream must read it, not
 to look at rows.
