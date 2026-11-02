@@ -41,15 +41,15 @@ def google_forms_asset_job_schedule(
         dynamic_partitions_store=context.instance
     )
 
+    # the public property raises when no tick time is set (manual evaluation)
+    tick = context._scheduled_execution_time or datetime.now(timezone.utc)
+    cutoff = (tick - timedelta(hours=25)).timestamp()
+
     # A new response does not change a form's Drive modifiedTime; only an edit
     # to the form does. Look up partition keys, not the shared folder: some
     # forms with responses live in personal My Drives.
     # shortcut: a failed form run is not retried the next night unless the form
     # is edited again; materialize it by hand.
-    # the public property raises when no tick time is set (manual evaluation)
-    tick = context._scheduled_execution_time or datetime.now(timezone.utc)
-    cutoff = (tick - timedelta(hours=25)).timestamp()
-
     # Fail open: a lost tick drops that night's edits for good, and tick
     # failures do not alert. Any batch error means pull every form tonight.
     try:
