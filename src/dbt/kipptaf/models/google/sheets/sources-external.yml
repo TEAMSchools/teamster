@@ -2312,6 +2312,26 @@ sources:
                 - sheets
                 - kfwd
                 - career_launch_gpa_bands
+      - name: src_google_sheets__kfwd__career_launch_caseloads
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1vk6gkwZnh-Q_5uuOftkzt38hC3xyeTpHwSEUfzhfGIc
+            sheet_range: career_launch_caseloads_v1
+            skip_leading_rows: 1
+        columns:
+          - name: advisor_name
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - career_launch_caseloads
       - name: src_google_sheets__focus__language_code_crosswalk
         external:
           options:
