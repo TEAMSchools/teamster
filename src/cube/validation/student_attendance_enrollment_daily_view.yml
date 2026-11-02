@@ -827,7 +827,7 @@ comparisons:
     <<: *y1
     measure: pct_ontime
     sheet: Y1 ADA - ES
-    parameters: { Attendance Metric: '\% On-Time' }
+    parameters: { Attendance Metric: \% On-Time }
     probe: >-
       avg(case when is_present = 0 then null else 1 - if(att_code in ('ET', 'T',
       'T10', 'TLE'), 1, 0) end)
@@ -880,7 +880,7 @@ comparisons:
     <<: *y1
     measure: pct_ontime
     sheet: Y1 ADA - Region
-    parameters: { Attendance Metric: '\% On-Time' }
+    parameters: { Attendance Metric: \% On-Time }
     probe: >-
       avg(case when is_present = 0 then null else 1 - if(att_code in ('ET', 'T',
       'T10', 'TLE'), 1, 0) end)
