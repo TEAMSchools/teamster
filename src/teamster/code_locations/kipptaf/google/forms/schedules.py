@@ -49,9 +49,16 @@ def google_forms_asset_job_schedule(
     # the public property raises when no tick time is set (manual evaluation)
     tick = context._scheduled_execution_time or datetime.now(timezone.utc)
     cutoff = (tick - timedelta(hours=25)).timestamp()
-    modified_times = google_drive.get_modified_times(
-        file_ids=list(partition_keys), logger=context.log
-    )
+
+    # Fail open: a lost tick drops that night's edits for good, and tick
+    # failures do not alert. Any batch error means pull every form tonight.
+    try:
+        modified_times = google_drive.get_modified_times(
+            file_ids=list(partition_keys), logger=context.log
+        )
+    except Exception as e:
+        context.log.warning(f"Drive modifiedTime lookup failed, pulling all: {e}")
+        modified_times = {}
 
     for form_id in partition_keys:
         # a failed lookup is omitted from modified_times: pull the form anyway

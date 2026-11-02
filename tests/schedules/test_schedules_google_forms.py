@@ -25,7 +25,7 @@ def test_schedule():
         context.log.info(o)
 
 
-def _forms_run_keys(modified: dict[str, float], tick=None) -> list[str]:
+def _forms_run_keys(modified: dict[str, float] | None, tick=None) -> list[str]:
     from collections.abc import Iterator
     from types import SimpleNamespace
     from typing import cast
@@ -39,7 +39,12 @@ def _forms_run_keys(modified: dict[str, float], tick=None) -> list[str]:
         google_forms_asset_job_schedule,
     )
 
-    drive = SimpleNamespace(get_modified_times=lambda file_ids, logger=None: modified)
+    def get_modified_times(file_ids, logger=None):
+        if modified is None:
+            raise ConnectionError("Drive batch failed")
+        return modified
+
+    drive = SimpleNamespace(get_modified_times=get_modified_times)
 
     # the schedule context needs a persistent instance, not an ephemeral one
     with instance_for_test() as instance:
@@ -99,3 +104,7 @@ def test_forms_schedule_runs_in_process():
     )
     assert google_forms_asset_job.executor_def is not None
     assert google_forms_asset_job.executor_def.name == "in_process"
+
+
+def test_forms_schedule_requests_every_form_when_drive_batch_fails():
+    assert _forms_run_keys(None) == ["a", "b", "c"]
