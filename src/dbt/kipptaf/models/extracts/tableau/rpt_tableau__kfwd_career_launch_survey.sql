@@ -119,6 +119,22 @@ with
 
             ccd.last_ccr_date,
 
+            cla.assessed_at as launch_assessed_at,
+            cla.career_ready_level,
+            cla.active_search_level,
+            cla.internship_experience_level,
+            cla.network_level,
+            cla.career_ready_points,
+            cla.active_search_points,
+            cla.internship_experience_points,
+            cla.network_points,
+            cla.gpa_points,
+            cla.launch_score,
+            cla.launch_stage,
+            cla.has_all_levels,
+            cla.coaching_focus,
+            cla.next_action,
+
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
 
@@ -213,6 +229,10 @@ with
             on r.contact_id = cc.contact_id
         left join career_conversations as ccr on r.contact_id = ccr.contact_id
         left join career_conversation_dates as ccd on r.contact_id = ccd.contact_id
+        left join
+            {{ ref("int_surveys__kfwd_career_launch_assessments") }} as cla
+            on r.contact_id = cla.contact_id
+            and cla.is_latest_assessment
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.ktc_cohort <= {{ var("current_academic_year") }}
@@ -385,6 +405,21 @@ select
     r.career_conversation_items_complete_count,
     r.is_career_conversation_complete,
     r.last_ccr_date,
+    r.launch_assessed_at,
+    r.career_ready_level,
+    r.active_search_level,
+    r.internship_experience_level,
+    r.network_level,
+    r.career_ready_points,
+    r.active_search_points,
+    r.internship_experience_points,
+    r.network_points,
+    r.gpa_points,
+    r.launch_score,
+    r.launch_stage,
+    r.has_all_levels,
+    r.coaching_focus,
+    r.next_action,
 
     sp.survey_id,
     sp.survey_title,

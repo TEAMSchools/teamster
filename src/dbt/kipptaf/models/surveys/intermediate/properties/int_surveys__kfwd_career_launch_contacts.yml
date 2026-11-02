@@ -1,0 +1,52 @@
+models:
+  - name: int_surveys__kfwd_career_launch_contacts
+    description: >-
+      One row per Salesforce contact with the Career Launch inputs that come
+      from Salesforce rather than the AppSheet app: the current college GPA, its
+      GPA band and points, and ECC. GPA points use the GPA Bands tab of the
+      Career Launch Scoring Rubric sheet. They use today's GPA, so a past
+      assessment's launch score changes when the GPA does. A contact with no
+      current college GPA scores 0 GPA points. The Salesforce record behind the
+      GPA is contact_current_college_cumulative_gpa_source on
+      int_kippadb__roster.
+    columns:
+      - name: contact_id
+        data_type: string
+        description: Salesforce contact id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: current_college_cumulative_gpa
+        data_type: numeric
+        description: Current cumulative college GPA from the Salesforce contact.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_band
+        data_type: string
+        description: >-
+          GPA band label the current college GPA falls in. Null when the contact
+          has no current college GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: ecc
+        data_type: numeric
+        description: >-
+          Adjusted six-year minority graduation rate of the college the contact
+          graduated from: the postsecondary enrollment
+          int_kippadb__enrollment_pivot picks as completed (BA, then AA, then
+          CTE), when its status is Graduated. Null when the contact has not
+          graduated. Context next to GPA; not scored.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_points
+        data_type: int64
+        description: >-
+          Points the GPA band adds to the launch score. 0 when the contact has
+          no current college GPA.
+        config:
+          meta:
+            contains_pii: true

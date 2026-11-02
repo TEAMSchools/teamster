@@ -292,7 +292,10 @@ legitimately-superseded inactive rows that repeat the key.
   an explicit severity silently degrade to warnings and won't fail CI. Set
   `error`, except on a ticketed test (#5558): it runs at `warn` on the earliest
   model that can route its ticket, which is often a staging model. Intermediate
-  tests may omit the override where a warning is acceptable.
+  tests may omit the override where a warning is acceptable. A warning is not
+  acceptable on the uniqueness test `.claude/rules/dbt-models.md` requires: it
+  is the model's grain backstop, so set `error`, with the source-defect
+  exception in the _Grain_ bullet under _Tests on marts and `rpt_` models_.
 - Tests on marts and `rpt_` models follow _Tests on marts and `rpt_` models_ at
   the end of this file.
 - Removing a `severity: warn` override reverts to the project default: `warn` in
@@ -468,7 +471,9 @@ Sort each test by what it guards:
   `severity: warn` on that one test with a `TODO(#N)` comment, and still flip
   the folder. A kipptaf `rpt_` model listed on
   [#5990](https://github.com/TEAMSchools/teamster/issues/5990) has no grain test
-  yet: add one in any PR that modifies it, and check it off there.
+  yet: add one in any PR that modifies it, and check it off there. The grain
+  test is also the guard against join fan-out. A unit test cannot anticipate a
+  join that does not exist yet, so do not add fan-out fixtures.
 - A `relationships` test from a mart or `rpt_` model to another model is not a
   regression test. Key drift is the key macros' job (A7). When two models must
   cover the same population, have both read one shared upstream model. A test

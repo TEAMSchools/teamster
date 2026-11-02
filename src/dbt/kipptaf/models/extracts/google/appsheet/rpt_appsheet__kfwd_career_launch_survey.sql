@@ -20,6 +20,8 @@ with
             r.contact_expected_college_graduation as expected_college_grad_date,
             r.contact_owner_name as contact_owner,
             r.contact_postsec_advisor as postsec_advisor,
+            r.contact_current_college_cumulative_gpa_source
+            as current_college_cumulative_gpa_source,
 
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
@@ -77,11 +79,16 @@ select
     r.expected_college_grad_date,
     r.contact_owner,
     r.postsec_advisor,
+    r.current_college_cumulative_gpa_source,
 
     ce.pursuing_degree_type,
     ce.major,
 
     ss.latest_survey_date,
+
+    clc.gpa_band,
+    clc.gpa_points,
+    clc.ecc,
 
     coalesce(ss.survey_response_count, 0) as survey_response_count,
 
@@ -89,3 +96,6 @@ select
 from roster as r
 left join current_enrollment as ce on r.contact_id = ce.student
 left join survey_stats as ss on r.contact_id = ss.contact_id
+left join
+    {{ ref("int_surveys__kfwd_career_launch_contacts") }} as clc
+    on r.contact_id = clc.contact_id

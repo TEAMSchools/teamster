@@ -325,3 +325,105 @@ models:
           Contact note date of the alumnus's most recent Career Conversation
           (CC1 through CC5) record in Salesforce, across all academic years.
           NULL when no Career Conversation note is logged.
+      - name: launch_assessed_at
+        data_type: datetime
+        description: >-
+          When the alumnus's latest Career Launch assessment took place, from
+          the KIPP Forward Career Launch AppSheet app. The assessment columns
+          that follow come from that same assessment, and all are NULL when the
+          alumnus has never been assessed.
+        config:
+          meta:
+            contains_pii: true
+      - name: career_ready_level
+        data_type: int64
+        description: Career Ready level, 1 to 4, on the latest assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: active_search_level
+        data_type: int64
+        description: Active Search level, 1 to 4, on the latest assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: internship_experience_level
+        data_type: int64
+        description:
+          Internship / Experience level, 1 to 4, on the latest assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: network_level
+        data_type: int64
+        description: Network level, 1 to 4, on the latest assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: career_ready_points
+        data_type: int64
+        description: Rubric points for the Career Ready level.
+        config:
+          meta:
+            contains_pii: true
+      - name: active_search_points
+        data_type: int64
+        description: Rubric points for the Active Search level.
+        config:
+          meta:
+            contains_pii: true
+      - name: internship_experience_points
+        data_type: int64
+        description: Rubric points for the Internship / Experience level.
+        config:
+          meta:
+            contains_pii: true
+      - name: network_points
+        data_type: int64
+        description: Rubric points for the Network level.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_points
+        data_type: int64
+        description: >-
+          GPA points from the alumnus's current college GPA; 0 when they have
+          none. NULL when the alumnus has never been assessed.
+        config:
+          meta:
+            contains_pii: true
+      - name: launch_score
+        data_type: int64
+        description: >-
+          Career Launch score out of 100 on the latest assessment: the four
+          indicator points plus GPA points, scored with today's rubric and GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: launch_stage
+        data_type: string
+        description: Career Launch stage for the launch score.
+        config:
+          meta:
+            contains_pii: true
+      - name: has_all_levels
+        data_type: boolean
+        description: >-
+          True when the latest assessment has all four indicator levels. A
+          missing level counts as 0 points, so filter on this before comparing
+          scores.
+        config:
+          meta:
+            contains_pii: true
+      - name: coaching_focus
+        data_type: string
+        description: Coaching focus agreed on the latest assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: next_action
+        data_type: string
+        description: Next step agreed on the latest assessment.
+        config:
+          meta:
+            contains_pii: true

@@ -87,6 +87,25 @@ def test_other_step_captured_logs_do_not_count():
     assert _category(events) == "K8s pre-start kill"
 
 
+def _run_category(start: float, end: float, max_runtime: str) -> str:
+    run = {
+        "runId": "r",
+        "startTime": start,
+        "endTime": end,
+        "tags": [{"key": "dagster/max_runtime", "value": max_runtime}],
+    }
+    events = [{"__typename": "RunFailureEvent", "message": "", "error": None}]
+    return asyncio.run(dc.fetch_failure_detail(FakeGQL(events), run))["category"]
+
+
+def test_run_at_its_cap_is_max_runtime():
+    assert _run_category(0.0, 603.0, "600") == "Max runtime"
+
+
+def test_run_under_its_cap_keeps_its_category():
+    assert _run_category(0.0, 300.0, "600") == "Unclassified"
+
+
 RUN_ID = "e9e0067b-b503-4919-8ab2-33811557d6f0"
 
 
@@ -129,6 +148,49 @@ def test_logging_read_follows_page_tokens(monkeypatch):
     monkeypatch.setattr(dc, "sleep", lambda _s: None)
     assert dc.logging_read("q", "a", "b") == [{"n": 1}, {"n": 2}]
     assert "pageToken" not in sent[0] and sent[1]["pageToken"] == "t1"
+
+
+def test_alerts_bucket_window_prior_day_and_older(monkeypatch):
+    pages = [
+        {
+            "alerts": [
+                {"name": "in", "state": "CLOSED", "openTime": "2026-10-29T22:00:00Z"},
+                {
+                    "name": "prior",
+                    "state": "CLOSED",
+                    "openTime": "2026-10-28T22:00:00Z",
+                },
+            ],
+            "nextPageToken": "t1",
+        },
+        {
+            "alerts": [
+                {"name": "old", "state": "CLOSED", "openTime": "2026-10-20T00:00:00Z"},
+                {"name": "stuck", "state": "OPEN", "openTime": "2026-10-01T00:00:00Z"},
+            ]
+        },
+    ]
+    sent: list[dict] = []
+
+    class Resp:
+        status_code = 200
+
+        def __init__(self, body: dict) -> None:
+            self._body = body
+
+        def json(self) -> dict:
+            return self._body
+
+    def fake_get(_url, headers, params, timeout):
+        sent.append(params)
+        return Resp(pages[len(sent) - 1])
+
+    monkeypatch.setattr(dc, "gcp_token", lambda: "t")
+    monkeypatch.setattr(dc.httpx, "get", fake_get)
+    got = dc.step_11_alerts("2026-10-29T21:00:00Z")
+    assert [a["name"] for a in got["alerts"]] == ["in", "stuck"]
+    assert [a["name"] for a in got["priorDay"]] == ["prior"]
+    assert sent[1]["pageToken"] == "t1"
 
 
 def test_logging_read_retries_quota_429(monkeypatch):
