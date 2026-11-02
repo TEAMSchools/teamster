@@ -338,7 +338,7 @@ def main(argv: list[str] | None = None) -> int:
         placed = place(
             read_plan(a.plan), a.start, closures, calendar_end(a.breaks, a.school_year)
         )
-    except ValueError as exc:
+    except (ValueError, OSError) as exc:
         print(exc, file=sys.stderr)
         return 2
     print("| workstream | name | kind | due | rule | note |")

@@ -248,7 +248,7 @@ with
             if(u.inactive, 1, 0) as inactive_ws,
 
             array(
-                select s._id from unnest(u.regional_admin_schools) as s order by s._id
+                select s, from unnest(u.regional_admin_schools) as s order by s
             ) as regional_admin_school_ids_ws,
 
             array(

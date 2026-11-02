@@ -20,7 +20,16 @@ edited in the original.
 
 PROJECT CHARTER rows, in order: Project Name, Project Owner, Project Manager,
 Start Date, Target End Date, Goal, Why this matters, Scope, Key milestones and
-dates, Estimated budget and budget source, Known risks or dependencies.
+dates, Estimated budget and budget source, Known risks or dependencies. The
+short rows have a label cell and a value cell. Goal, Why this matters, Scope,
+Key milestones and Known risks are one cell merged across both columns, with the
+label paragraph followed by empty paragraphs: the answer goes in the last empty
+paragraph of that cell. The title rows of every table are merged the same way.
+
+Writes go through `mcp__claude_ai_Google_Docs__update_doc`, guarded by the
+revision id from the read that computed the positions. The read spills to a file
+shaped `{content: <document>}`; unwrap `.content` before running the
+google-workspace skill's `docs_index.py` on it.
 
 ## Steps
 

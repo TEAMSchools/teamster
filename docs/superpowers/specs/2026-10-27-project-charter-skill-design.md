@@ -447,6 +447,23 @@ decision record or the doc needs a dated change log; how many edits before the
 skill proposes a charter revision and a re-sign; whether the scheduled digest is
 worth a scheduled-agent PII review.
 
+## Revision 2026-10-28: the Asana project template
+
+The first live run showed the template the skill pointed at was the Data team's
+product template, built for a data product after launch: eight sections, 25
+placeholder tasks, a project-local Priority field. A chartered project starts
+and ends, so the skill now creates from a template made for that: three fixed
+sections (`0 · Governance`, `Handoff`, `Parking lot and outside the core set`),
+eight standing tasks drawn from the handbook (charter signed, kickoff, weekly
+team meeting, status update, close and lessons learned; name the owner after
+close, help article or training, comms to affected staff), the three network
+fields, and no workstream sections. Phase 3's plan carries the governance and
+handoff rows as standard rows; phase 4 dates the standing tasks in place, adds
+the workstream sections through the project update call, and creates only the
+plan's own milestones and tasks. The template's import file lives with the skill
+as `references/asana-template.csv`. The product template keeps its role for
+products in service; the handoff section points at it.
+
 ## Out of scope
 
 - Budget tables beyond the charter's one line.

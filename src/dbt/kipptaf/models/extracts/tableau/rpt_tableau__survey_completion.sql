@@ -55,6 +55,7 @@ select
     sr2.user_principal_name,
     sr2.sam_account_name,
 
+    sr2.reports_to_formatted_name as manager_name,
     sr2.reports_to_mail,
     sr2.reports_to_sam_account_name,
 
