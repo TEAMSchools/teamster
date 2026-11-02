@@ -73,7 +73,7 @@ Fixed means:
    deployment-wide across districts.
 2. **Fewer pods per run.** Drop step pods where they buy no parallelism. Cuts
    the burst by roughly half without slowing anything.
-3. **Combined (chosen):** pre-provision nodes before midnight, cut pods per run,
+3. **Combined (chosen):** cut pods per run, pre-provision nodes before midnight,
    and gate ADP staging on a complete sweep. Caps stay in reserve.
 
 Approach 3 attacks both causes: fewer nodes are needed (2), and the ones that
@@ -82,9 +82,54 @@ nodes holding only placeholders.
 
 ## Design
 
-Three phases, each its own PR, shipped in order. Measure after each.
+Three phases, each its own PR, shipped in order. Measure after each. Fewer pods
+goes first so the warm nodes are sized to the smaller burst.
 
-### Phase 1: pre-provisioning
+### Phase 1: fewer pods per run
+
+Single-step runs (one asset per run) gain nothing from a step pod. Run them
+in-process in the run pod.
+
+| Job                                    | Assets per run | Executor                |
+| -------------------------------------- | -------------- | ----------------------- |
+| ADP workers (`kipptaf`)                | 1              | in-process              |
+| Forms `form` schedule (`kipptaf`)      | 1              | in-process              |
+| DeansList month and midday (districts) | 1              | in-process              |
+| DeansList static (5) and year (2)      | 2–5            | `multiprocess_executor` |
+
+- Set the executor on these jobs only (`define_asset_job(executor_def=...)` or
+  the equivalent where each schedule builds its job). Code locations keep
+  `zombie_aware_k8s_job_executor` as the default for everything else.
+- Each ADP partition stays its own run, so the sweep stays parallel across run
+  pods. Multiprocess keeps the static and year steps parallel inside one pod.
+- Run and step pods share `runK8sConfig` (500m / 2 GiB requests, 1750m / 2.5 GiB
+  limits). In-process runs do the same work a step pod did, so the same size
+  fits. Multiprocess runs hold up to 5 steps at once: measure peak memory on a
+  branch deployment and, if needed, raise it with a `dagster-k8s/config` tag on
+  those jobs (`resources` is an allowed field under
+  `onlyAllowUserDefinedK8sConfigFields`).
+- No recovery is lost. Today a run pod lost mid-run fails the run ("Execution
+  was interrupted unexpectedly"; 96 of the 141 matched preemption failures), so
+  run resume is not saving runs. Runs that lost a run pod and still succeeded
+  lost it before starting, and Kubernetes started a replacement (4 of 4
+  sampled); that path is unchanged in-process. Run retries cover the rest as
+  today.
+
+Forms: pull only edited forms. A new response does not change a form's Drive
+`modifiedTime`; only edits do. The `form` schedule:
+
+- gains the `google_drive` resource;
+- calls `GoogleDriveResource.get_modified_times()` on the dynamic partition keys
+  (not the folder listing; some forms with responses now live in personal My
+  Drives);
+- yields a `RunRequest` only for forms modified in the last 25 hours.
+
+Limit: a failed form run is not retried the next night unless the form is edited
+again. Write that as a `shortcut:` comment.
+
+Estimated pods: DeansList about 400 → 150, ADP 90 → 45, Forms 44 → 0–4.
+
+### Phase 2: pre-provisioning
 
 Placeholder pods hold nodes warm before the bursts. Our pods preempt them when
 they need room, so Autopilot adds nodes (and admits balloon pods) before the
@@ -129,50 +174,6 @@ Autopilot scaling idle placeholder nodes down before the burst. Either would
 show as node adds at 00:00 despite the placeholders.
 
 Billing: placeholders bill per pod, N × (500m, 2 GiB) × 90 minutes nightly.
-
-### Phase 2: fewer pods per run
-
-Single-step runs (one asset per run) gain nothing from a step pod. Run them
-in-process in the run pod.
-
-| Job                                    | Assets per run | Executor                |
-| -------------------------------------- | -------------- | ----------------------- |
-| ADP workers (`kipptaf`)                | 1              | in-process              |
-| Forms `form` schedule (`kipptaf`)      | 1              | in-process              |
-| DeansList month and midday (districts) | 1              | in-process              |
-| DeansList static (5) and year (2)      | 2–5            | `multiprocess_executor` |
-
-- Set the executor on these jobs only (`define_asset_job(executor_def=...)` or
-  the equivalent where each schedule builds its job). Code locations keep
-  `zombie_aware_k8s_job_executor` as the default for everything else.
-- Each ADP partition stays its own run, so the sweep stays parallel across run
-  pods. Multiprocess keeps the static and year steps parallel inside one pod.
-- Run and step pods share `runK8sConfig` (500m / 2 GiB requests, 1750m / 2.5 GiB
-  limits). In-process runs do the same work a step pod did, so the same size
-  fits. Multiprocess runs hold up to 5 steps at once: measure peak memory on a
-  branch deployment and, if needed, raise it with a `dagster-k8s/config` tag on
-  those jobs (`resources` is an allowed field under
-  `onlyAllowUserDefinedK8sConfigFields`).
-- No recovery is lost. Today a run pod lost mid-run fails the run ("Execution
-  was interrupted unexpectedly"; 96 of the 141 matched preemption failures), so
-  run resume is not saving runs. Runs that lost a run pod and still succeeded
-  lost it before starting, and Kubernetes started a replacement (4 of 4
-  sampled); that path is unchanged in-process. Run retries cover the rest as
-  today.
-
-Forms: pull only edited forms. A new response does not change a form's Drive
-`modifiedTime`; only edits do. The `form` schedule:
-
-- gains the `google_drive` resource;
-- calls `GoogleDriveResource.get_modified_times()` on the dynamic partition keys
-  (not the folder listing; some forms with responses now live in personal My
-  Drives);
-- yields a `RunRequest` only for forms modified in the last 25 hours.
-
-Limit: a failed form run is not retried the next night unless the form is edited
-again. Write that as a `shortcut:` comment.
-
-Estimated pods: DeansList about 400 → 150, ADP 90 → 45, Forms 44 → 0–4.
 
 ### Phase 3: ADP staging waits for the complete sweep
 
@@ -230,17 +231,18 @@ and existing limits are unconfirmed.
 ## Success metric
 
 Target: zero preemption-caused failed runs (the three categories above) from
-00:00 to 01:00 over the two weeks after Phase 2 ships. Any such failure in that
-window after two weeks triggers the reserve caps. The midday window is reported
-but not judged. Baseline: 10/21–11/02 excluding 10/22. Collect with the day-2
-collector (`--since`). Also report pods started per 10 minutes from 00:00 to
-01:00, and for Phase 3, nights when staging built after 01:15.
+00:00 to 01:00 over the two weeks after Phase 2 (warm nodes) ships. Any such
+failure in that window after two weeks triggers the reserve caps. The midday
+window is reported but not judged. Baseline: 10/21–11/02 excluding 10/22.
+Collect with the day-2 collector (`--since`). Also report pods started per 10
+minutes from 00:00 to 01:00, and for Phase 3, nights when staging built after
+01:15.
 
 ## Left to the builder
 
 - N placeholder pods per CronJob: enough run-pod-sized pods to hold the node
   counts above (about 30 at midnight, about 10 at 00:30), from pods per node in
-  the same metrics. Re-size after Phase 2 shrinks the burst.
+  the same metrics, measured after Phase 1 shrinks the burst.
 - Which Phase 3 mechanism, settled by the decision test.
 - Multiprocess pod sizing, from a branch-deployment measurement.
 - Where each DeansList job's executor is set in `libraries/deanslist/`.
