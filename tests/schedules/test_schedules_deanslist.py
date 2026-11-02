@@ -65,6 +65,59 @@ def test_deanslist_schedule_lookback_months():
     assert dates(1) == ["2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01"]
 
 
+def _executor_name(asset_count: int, schedule_name: str, **kwargs) -> str:
+    from dagster import Definitions, StaticPartitionsDefinition, asset
+
+    from teamster.libraries.deanslist.schedules import build_deanslist_job_schedule
+
+    partitions_def = StaticPartitionsDefinition(["1"])
+
+    @asset(partitions_def=partitions_def)
+    def a1(): ...
+
+    @asset(partitions_def=partitions_def)
+    def a2(): ...
+
+    assets = [a1, a2][:asset_count]
+    schedule = build_deanslist_job_schedule(
+        schedule_name=schedule_name,
+        cron_schedule="0 0 * * *",
+        execution_timezone="America/New_York",
+        asset_selection=assets,
+        **kwargs,
+    )
+
+    job_name = kwargs.get("job_name", schedule_name.removesuffix("_schedule"))
+    defs = Definitions(assets=assets, schedules=[schedule])
+
+    return defs.resolve_job_def(job_name).executor_def.name
+
+
+def test_deanslist_single_asset_runs_in_process():
+    assert (
+        _executor_name(1, "x__deanslist__month_partitioned_asset_job_schedule")
+        == "in_process"
+    )
+
+
+def test_deanslist_multi_asset_runs_multiprocess():
+    assert (
+        _executor_name(2, "x__deanslist__static_partitioned_asset_job_schedule")
+        == "multiprocess"
+    )
+
+
+def test_deanslist_explicit_job_name():
+    assert (
+        _executor_name(
+            1,
+            "x__deanslist__midday_commlog_job",
+            job_name="x__deanslist__midday_commlog_asset_job",
+        )
+        == "in_process"
+    )
+
+
 def test_deanslist_static_partitioned_assets_job_schedule_kippcamden():
     from teamster.code_locations.kippcamden.deanslist.schedules import (
         deanslist_static_partitioned_assets_job_schedule,

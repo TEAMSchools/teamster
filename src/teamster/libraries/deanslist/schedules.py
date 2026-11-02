@@ -8,6 +8,9 @@ from dagster import (
     RunRequest,
     ScheduleEvaluationContext,
     StaticPartitionsDefinition,
+    define_asset_job,
+    in_process_executor,
+    multiprocess_executor,
     schedule,
 )
 from dagster_shared import check
@@ -23,12 +26,28 @@ def build_deanslist_job_schedule(
     asset_selection: list[AssetsDefinition],
     current_fiscal_year: FiscalYear | None = None,
     lookback_months: int = 0,
+    job_name: str | None = None,
 ):
+    # One pod per run instead of one per asset: GKE preempts pods on nodes it
+    # adds during the midnight burst (#6225). Multi-asset runs keep their steps
+    # parallel inside the run pod.
+    job = define_asset_job(
+        name=job_name or schedule_name.removesuffix("_schedule"),
+        selection=asset_selection,
+        executor_def=(
+            in_process_executor
+            if len(asset_selection) == 1
+            else multiprocess_executor.configured(
+                {"max_concurrent": len(asset_selection)}
+            )
+        ),
+    )
+
     @schedule(
         name=schedule_name,
         cron_schedule=cron_schedule,
         execution_timezone=execution_timezone,
-        target=asset_selection,
+        target=job,
     )
     def _schedule(context: ScheduleEvaluationContext):
         run_request_kwargs = []
