@@ -26,9 +26,11 @@ def test_schedule():
 
 
 def _forms_run_keys(modified: dict[str, float], tick=None) -> list[str]:
+    from collections.abc import Iterator
     from types import SimpleNamespace
+    from typing import cast
 
-    from dagster import instance_for_test
+    from dagster import RunRequest, instance_for_test
 
     from teamster.code_locations.kipptaf.google.forms.assets import (
         GOOGLE_FORMS_PARTITIONS_DEF,
@@ -51,11 +53,11 @@ def _forms_run_keys(modified: dict[str, float], tick=None) -> list[str]:
             scheduled_execution_time=tick,
         )
 
-        return sorted(
-            # trunk-ignore(pyright/reportOptionalIterable,pyright/reportGeneralTypeIssues)
-            str(r.partition_key)
-            for r in google_forms_asset_job_schedule(context=context)
+        run_requests = cast(
+            "Iterator[RunRequest]", google_forms_asset_job_schedule(context=context)
         )
+
+        return sorted(str(r.partition_key) for r in run_requests)
 
 
 def test_forms_schedule_requests_only_recent_edits():
