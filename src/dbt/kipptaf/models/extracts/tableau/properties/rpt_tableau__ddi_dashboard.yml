@@ -29,9 +29,7 @@ models:
               - response_type_description
               - is_replacement
           config:
-            # TODO(#6167): duplicate academic goals rows repeat assessment rows;
-            # flip to error once the goals fan-out is fixed.
-            severity: warn
+            severity: error
     columns:
       - name: region
         data_type: string
