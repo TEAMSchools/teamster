@@ -218,6 +218,60 @@ partition is rerun, staging builds and the roster catches up.
 Timing: ADP landed 00:34–00:39 on 11/02 and the downstream chain took about 12
 minutes, so staging at ~00:40 puts the roster around 00:52, inside 01:15.
 
+#### Revision 2026-11-03: hold staging while any ADP partition is failed
+
+The premise above was wrong. Staging does not build on the first partition: the
+table condition's `~any_deps_in_progress()` holds it while any ADP partition is
+queued or running (unpartitioned staging maps to every ADP partition through
+`AllPartitionMapping`, and a run logs its planned materializations at creation).
+Staging built once a night at about 00:45 on every recent night. The real gap is
+a pull that finishes incomplete: on 11/01, partitions 10/20 and 10/22 failed
+their retries, staging built at 00:45 over the 2 stale partitions, freshness
+passed, and nothing alerted until a manual rerun at 13:11. This replaces the two
+mechanisms and the decision test above. The freshness and alerting bullets
+stand.
+
+Approaches considered:
+
+- **A (chosen): guard on failed deps.** Add
+  `~AutomationCondition.any_deps_match(AutomationCondition.execution_failed())`
+  to staging's existing table condition. Stock Dagster, scoped to one model, and
+  the rerun that clears the failure re-arms the existing "ADP updated" trigger,
+  so staging rebuilds with no extra logic.
+- B: custom "every window partition landed since the 00:30 tick" condition. Also
+  catches a date the schedule never attempted, at the cost of window-and-tick
+  logic and its edge cases.
+- C: the schedule launches one backfill of all 45 partitions plus staging. Needs
+  staging's own condition switched off, and reshapes the pool cap and retries
+  tuned in #6227.
+
+The user chose A: smallest, stock, and it covers both observed incidents (11/01
+and 9/20), which were tried-and-failed partitions.
+
+Decided:
+
+- Opt-in per model through dbt meta, beside the existing cron override:
+  `config.meta.dagster.automation_condition.block_on_failed_deps: true` on
+  `stg_adp_workforce_now__workers`. Tables only, like the cron override. The
+  guard composes with whichever table condition the model gets.
+- Staging stays frozen on its last complete build for as long as any ADP
+  partition's latest attempt is failed, however many nights that takes. The user
+  chose frozen over a mostly-fresh roster.
+- Alerting: a freshness failure on staging degrades its asset health, and the
+  existing `asset_alert__degraded` Dagster+ policy posts it to
+  `#dagster-alerts`. No new policy.
+
+Not covered: a date the schedule never attempted. A whole missed tick is caught
+(staging does not rebuild, freshness fails); a partly created tick has not been
+seen.
+
+Tests: the translator returns the guarded condition only for a flagged table
+model; an ephemeral-instance evaluation shows no request while 1 parent
+partition is failed and 1 request after that partition rematerializes.
+
+Left to the builder: the condition's label and where the guard is composed
+(translator or `core/automation_conditions.py`).
+
 ### Reserve: tag-concurrency caps
 
 Only if Phases 1–2 miss the target after two weeks. Before sizing an ADP cap,
