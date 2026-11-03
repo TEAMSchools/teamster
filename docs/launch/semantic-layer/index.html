@@ -1147,8 +1147,12 @@
         }
         const msName = (m) => (m.code ? `${m.code} ${m.name}` : m.name);
         // Domain milestones carry a phase and no code; numbered ones from
-        // older data carry only a code.
-        const phaseOf = (m) => m.phase ?? Number(m.code.slice(1).split(".")[0]);
+        // older data carry only a code. data.js comes from outside this repo,
+        // and the phase lands in HTML, so anything but an integer is 0.
+        const phaseOf = (m) => {
+          const n = Number(m.phase ?? m.code?.slice(1).split(".")[0]);
+          return Number.isInteger(n) ? n : 0;
+        };
         function grouped(items, isDim) {
           return (
             [...ORDER, "tableau_only"]
