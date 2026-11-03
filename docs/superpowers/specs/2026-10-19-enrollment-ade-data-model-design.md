@@ -2,6 +2,27 @@
 
 Refs #6003.
 
+## Revision 2026-11-03: follow-up review on #6011
+
+Charlie's follow-up on #6011 (items 1, 2 and 11) changed the design again:
+
+- The FRESH reconciliation is out of this spec for now. The FRESH dashboard's QC
+  model already matches SIS and Finalsite ids, and the 10/19 data team thread
+  put the reconciliation there. The two dashboards serve different audiences, so
+  section 7 records what to revisit.
+- The ADE math moves out of the `rpt_` into a new mart,
+  `fct_enrollment_ade_daily` (sections 1 and 2). An `rpt_` is thin shaping for 1
+  tool, and the next BI tool needs the same rules. The daily fact gains no
+  column.
+- The rules sheet gets a domain `int_`, `int_finance__ade_rules` (section 3),
+  because neither a mart nor an `rpt_` may read a `stg_` model (A1).
+- Every `rpt_` model is a view. Tableau reads them through extracts (see
+  `src/dbt/kipptaf/CLAUDE.md`), and no threshold test remains that would need a
+  table.
+- Not adopted from the review: the all-year counts (section 2b) do not read the
+  new mart. A distinct count over a year cannot be rebuilt from date-level
+  totals, so they keep reading the student-grain marts.
+
 ## Revision 2026-10-22: review on #6011
 
 Charlie's review on #6011, and the reply to it, changed the design:
@@ -68,8 +89,6 @@ proposal line by line on Monday 2026-10-26.
   finance has confirmed it.
 - Targets compare correctly at grade, school, region and network level.
 - Staff with roster access can click a count and see the students in it.
-- The SIS can be reconciled against FRESH (Finalsite) as of today, with every
-  student in the gap given 1 reason.
 - From launch on, a monthly snapshot records the inputs behind each number, so a
   number that moves later can be explained.
 
@@ -77,8 +96,8 @@ proposal line by line on Monday 2026-10-26.
 
 - ADE for an individual student. ADE is only ever shown as a total for a group.
 - Any change to the FRESH models, and any snapshot of FRESH or Finalsite data.
-- Comparing the SIS with FRESH for a past date (see _Decisions to stamp with
-  stakeholders_).
+- The SIS-to-FRESH reconciliation. It stays in the FRESH dashboard for now;
+  section 7 records what to revisit.
 - Rebuilding the other Ops Dashboard views (Attrition x2, SPED, Student
   Demographics, Recent Enrollment Changes). They keep reading
   `rpt_tableau__ops_dashboard`.
@@ -108,7 +127,8 @@ The work fails, even if every model builds, if any of these happen:
 ## Constraints
 
 - Repo layering rules apply (`.claude/rules/dbt-architecture.md`): exposures
-  read `rpt_` or marts, `rpt_` reads marts, and 1 model owns each grain (A4).
+  read `rpt_` or marts, `rpt_` reads marts and is thin shaping for 1 tool, marts
+  and `rpt_` never read `stg_` (A1), and 1 model owns each grain (A4).
 - No dbt seeds. Every hand-kept lookup is a Google Sheet behind a
   `stg_google_sheets__*` model.
 - `fct_student_attendance_enrollment_daily` rebuilds on a cron at 06:00 and
@@ -129,11 +149,7 @@ These go back to finance and regional leaders in writing at the 10/26 review, so
 nobody later reads a limit as a defect.
 
 - The SIS is the source of truth for every enrollment and ADE number. Finalsite
-  and FRESH appear only in the reconciliation view.
-- The SIS-to-FRESH comparison is as of today only. Finalsite keeps only each
-  student's current status, and staff can edit status dates, so the comparison
-  cannot be rebuilt for a past date such as Oct 15. We will not attempt an
-  approximation.
+  and FRESH do not appear in this dashboard.
 - We will not change the FRESH models or add FRESH snapshots unless a
   stakeholder pushes back hard.
 - Snapshots of enrollment and ADE start on launch day. Past years remain
@@ -184,27 +200,26 @@ questions_, item 1).
 ## Design
 
 ```text
-fct_student_attendance_enrollment_daily (+ 1 column) ─┐
-dim_school_calendars ─────────────────────────────────┤
-dim_student_enrollments (+ 3 columns) ────────────────┤
-dim_student_enrollment_status ────────────────────────┼─▶ totals rpt
-stg_google_sheets__finance__ade_rules (new) ──────────┘
-stint-level inputs + rules sheet ─────────────────────────▶ monthly snapshot
-marts above ──────────────────────────────────────────────▶ all-year counts rpt
-finance targets sheet (restructured) ─────────────────────▶ targets rpt
-marts above + student identity ───────────────────────────▶ roster rpt (PII, row-level security)
-survey data (state files now, Focus export later) ────────▶ Miami surveys rpt
-Finalsite status (current SIS year) + SIS ────────────────▶ reconciliation rpt (today only)
+fct_student_attendance_enrollment_daily ──┐
+dim_school_calendars ─────────────────────┤
+dim_student_enrollments (+ 3 columns) ────┼─▶ fct_enrollment_ade_daily (new mart) ─▶ totals rpt
+dim_student_enrollment_status ────────────┤
+int_finance__ade_rules (new) ─────────────┘
+stint-level inputs + rules ──────────────────▶ monthly snapshot
+student-grain marts above ───────────────────▶ all-year counts rpt
+int_finance__enrollment_targets ─────────────▶ targets rpt
+student-grain marts + student identity ──────▶ roster rpt (PII, row-level security)
+survey data (state files now, Focus export later) ─▶ Miami surveys rpt
 ```
 
 Model names below are proposals. Rename to repo conventions as needed.
 
 ### 1. Mart additions
 
-- `fct_student_attendance_enrollment_daily` gains a running count of membership
-  days per stint (`membership_value = 1` on school days, attendance not
-  required). A4 rules out a second student-day model, so the column goes on the
-  existing fact.
+- A new fact, `fct_enrollment_ade_daily`, holds the enrollment and ADE math
+  (section 2). It reads `fct_student_attendance_enrollment_daily` and the dims
+  below. The daily fact gains no column. A domain `int_` cannot hold this math,
+  because A1 does not let a domain `int_` read a mart.
 - `dim_student_enrollments` (1 row per stint) gains `is_self_contained`,
   `is_out_of_district` and the district of residence code. Today these exist
   only on `int_extracts__student_enrollments`. They are not statuses, so they do
@@ -221,13 +236,17 @@ Model names below are proposals. Rename to repo conventions as needed.
     `int_students__student_enrollments` reads the student-level value for every
     stint today, so an earlier stint carries the student's current code.
 
-### 2. Totals table (`rpt_tableau__enrollment_ade_daily`)
+### 2. ADE mart and totals table (`fct_enrollment_ade_daily`, `rpt_tableau__enrollment_ade_daily`)
 
-The table Tableau reads for every number. No student rows.
+The mart does the math. The totals table is a thin view over it, the table
+Tableau reads for every number, and adds only the rule labels the pages display
+(`rounding_status`, `notes`). Neither has student rows.
 
 - Grain: academic year × as-of date × school × grade × self-contained × special
   education code × English learner × lunch status × out-of-district × district
-  of residence code. As-of dates are each school's school days.
+  of residence code. As-of dates are each school's school days. Every filter in
+  _Goals_ is a grain column, so the totals can be filtered without student rows.
+- Keys: foreign keys to `dim_locations` and `dim_dates`.
 - Status columns use each stint's status as `dim_student_enrollment_status`
   defines it (for example, New Jersey meal status is as of Oct 15 and Miami's is
   the latest). This is close to today's dashboard. The default is pending
@@ -251,10 +270,15 @@ The table Tableau reads for every number. No student rows.
   program id for New Jersey and a disability placement code for Miami.
 - Measures, all additive across rows:
   - students enrolled on the date
+  - daily membership: `sum(membership_value)` on school days, which does not
+    depend on recorded attendance
+  - membership days to date: the year-to-date sum of daily membership
   - ADE so far
   - projected ADE, unrounded and rounded per student to the nearest tenth
-  - official projected ADE: the variant the rules sheet names for the region
-  - membership days to date
+  - official projected ADE: the variant `int_finance__ade_rules` names for the
+    region
+- Rounding applies to each student's value, so the mart computes projected ADE
+  per student before it sums. It never rounds a group total.
 - Measured size: 2,090 combinations per date for AY2026 at full detail; about
   380,000 rows per year at about 180 school days. Keep the current year plus 4
   prior years (the trends page compares past years).
@@ -268,14 +292,17 @@ The table Tableau reads for every number. No student rows.
 My call, so finance can see the All year preset without roster access:
 distinct-student counts precomputed at 4 levels (school and grade, school,
 region, network) with the totals table's status and residence columns. No
-student rows. A level column tells Tableau which rows to show, since these
-counts cannot be summed across levels. A unit test checks that a student who
-changes schools counts once at region level and once at each school.
+student rows. It reads the student-grain marts (the daily fact and the dims),
+not `fct_enrollment_ade_daily`: a distinct count over a year cannot be rebuilt
+from date-level totals. A level column tells Tableau which rows to show, since
+these counts cannot be summed across levels. A unit test checks that a student
+who changes schools counts once at region level and once at each school.
 
-### 3. Rules sheet (`stg_google_sheets__finance__ade_rules`)
+### 3. Rules sheet (`stg_google_sheets__finance__ade_rules`, `int_finance__ade_rules`)
 
 A new Google Sheet tab, 1 row per region per academic year, edited by the data
-team after finance decides:
+team after finance decides. A domain `int_`, `int_finance__ade_rules`, sits over
+the staging model, because A1 lets neither the mart nor an `rpt_` read `stg_`.
 
 | Column                    | Values                                                                                                                                                                                                          |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -285,9 +312,11 @@ team after finance decides:
 | `self_contained_handling` | `broken_out` (own rows and own targets: Camden, Newark) or `rolled_in` (counted against the school's regular targets: Miami, and Paterson, which has no self-contained students). Neither value drops students. |
 | `notes`                   | free text shown in the dashboard's definitions                                                                                                                                                                  |
 
-The totals table joins the rules sheet, so a region with no rule row for its
+The mart joins `int_finance__ade_rules`, so a region with no rule row for its
 year shows up as a null rule column there. A `not_null` test on that column, on
-the totals table, fails the build.
+the mart, fails the build. The totals table reads the same `int_` for the
+display labels. No mart covers the rules, so the build PR links an issue for one
+(A2).
 
 ### 4. Targets (`rpt_tableau__enrollment_targets`)
 
@@ -299,6 +328,8 @@ the totals table, fails the build.
   Paterson, new schools and grades, and self-contained rows. Laz and Charlie
   decide the structure (school ids or a new column). The data team generates the
   scaffold rows and finance fills in the values.
+- The targets table reads `int_finance__enrollment_targets`. No targets mart
+  exists, so the build PR links an issue for one (A2).
 - Retire the synthetic target of 1 per self-contained or out-of-district student
   that `rpt_tableau__ops_dashboard` adds for Newark and Miami.
 - In Tableau, the targets table is related to the totals table, not joined, on
@@ -317,9 +348,9 @@ the totals table, fails the build.
 - Row-level security follows the existing pattern: a Tableau username column for
   the staff allowed to see each row, as in `rpt_tableau__student_course_grades`.
   Finance users get no rows.
-- Serves click-through. The roster and the totals table both read the daily
-  fact, so they cover the same students. Acceptance check 3 confirms it once; it
-  is not a standing test.
+- Serves click-through. The roster and the ADE mart both read the daily fact, so
+  they cover the same students. Acceptance check 3 confirms it once; it is not a
+  standing test.
 
 ### 6. Miami surveys (`rpt_tableau__miami_fte_surveys`)
 
@@ -354,55 +385,34 @@ the totals table, fails the build.
   already equals the funded average. Never average FTE values, or the number is
   halved twice.
 
-### 7. FRESH reconciliation (`rpt_tableau__enrollment_fresh_reconciliation`)
+### 7. Finalsite reconciliation: revisit
 
-As of today only. Counts by region, school and reason. No student rows leave the
-data team.
+Not built in this spec. The SIS-to-FRESH comparison stays in the FRESH
+dashboard, where `rpt_tableau__fresh_dashboard_qc` already matches SIS and
+Finalsite ids and lists each student's mismatch.
 
-- SIS side: students enrolled today, from the daily fact.
-- Finalsite side: the current SIS year's records in
-  `stg_finalsite__status_report` (partitioned by school year, overwritten by
-  each file), with each student's latest status picked the way FRESH picks it
-  (`int_finalsite__status_report_unpivot` plus the `status_order` tie-break) and
-  FRESH's enrolled rule (latest status `Enrolled` or `Enrollment In Progress`,
-  with a school assigned).
-- Layering rules keep an `rpt_` from reading staging or source intermediates, so
-  a new intermediate holds each student's current-year latest Finalsite status.
-  It is a new model; no FRESH model changes.
-- Do not read the FRESH `rpt_` models or
-  `int_tableau__finalsite_student_scaffold`: they follow
-  `finalsite_recruitment_year`, which moves to next year's recruiting before the
-  SIS year ends.
-- Matching: NJ through `infosnap_id` on `int_extracts__student_enrollments`;
-  Miami through `int_finalsite__contact_id_attributes`.
-- Each student found on only 1 side gets exactly 1 reason, in this priority
-  order:
-  1. No Finalsite record, or IDs not linked
-  2. Finalsite shows withdrawn or pending; SIS shows enrolled
-  3. Finalsite counts the student; no SIS record
-  4. No school assigned in Finalsite
-  5. Different school (moves between schools; nets to 0 at region)
-  6. Different grade (moves between grades; nets to 0 at school)
-  7. SIS changed after the latest Finalsite file
-  8. Unexplained
-- Show gross and net: students only in the SIS, only in Finalsite, and the
-  difference. A unit test checks that the signed reasons sum exactly to SIS
-  minus FRESH.
-- Gross unexplained students per region get 2 thresholds, values pending finance
-  (about 20 and about 100). The lower one is a warning on the Reconciliation
-  page, not a warn test. The higher one is an `error` test, so it surfaces as a
-  Dagster asset check. Build this model as a table so the test reruns when new
-  data lands; a test reruns only when a table rebuilds.
-- Drift guard, as a one-time check: while `current_academic_year` equals
-  `finalsite_recruitment_year`, this model's Finalsite-side count per region
-  matches FRESH's Progress to Goals count (acceptance check 7).
+Revisit this before launch, because the two dashboards serve different
+audiences. The FRESH QC view is a fix list for the enrollment team (SRE), one
+row per student per problem. Finance wants the gap itself: how far the SIS count
+is from FRESH, for the current school year, with each student in the gap given 1
+reason. The charter promises finance that comparison. The FRESH dashboard does
+not give it today, for 2 reasons:
+
+- FRESH follows `finalsite_recruitment_year`, which moves to next year's
+  recruiting before the SIS year ends.
+- The QC view lists students. It does not count them by reason in a way that
+  nets to SIS minus FRESH.
+
+The open question is where finance's view lives: a FRESH dashboard change, or a
+page here. Either way, the 2026-10-22 version of this section (in the git
+history) holds the matching rules, the reason list and the threshold design.
 
 ### 8. Monthly snapshot
 
-- Snapshot the inputs, not the totals: the stint-level rows the totals table
-  reads (stint dates, school, grade, the status and residence columns, and
-  membership days to date) and the rules sheet. Totals show that a number moved;
-  only the inputs show why.
+- Snapshot the inputs, not the totals: the stint-level rows the ADE mart reads
+  (stint dates, school, grade, the status and residence columns, and membership
+  days to date, summed from the daily fact on the snapshot date) and the rules
+  sheet. Totals show that a number moved; only the inputs show why.
 - Take it on the 1st of each month, on Oct 15, on Mar 15, and on each school's
   last school day. Start at launch.
 - Keyed by snapshot date. The Trends page rebuilds "then" from the snapshot's
@@ -414,18 +424,19 @@ data team.
 
 ### 9. Freshness and cadence
 
-- Every page shows when the data last updated, from the totals table's build
-  time.
-- `rpt_` models are views unless something shows that a table is needed. The
-  reconciliation model is the one table (section 7). It rebuilds on the daily
-  fact's cron tick (06:00 and 15:00 America/New_York), and the views can be no
-  fresher than that fact. The current Ops Dashboard refreshes hourly. Finance
-  confirms twice daily is enough (item 9).
+- Every page shows when the data last updated, from the ADE mart's build time.
+  The totals table is a view, so its own build time says nothing about the data.
+- Every `rpt_` model is a view. Tableau reads them through extracts, so the
+  extract refresh is the only query against them (`src/dbt/kipptaf/CLAUDE.md`).
+  `fct_enrollment_ade_daily` rebuilds on the daily fact's cron tick (06:00 and
+  15:00 America/New_York), and nothing here can be fresher than that fact. The
+  current Ops Dashboard refreshes hourly. Finance confirms twice daily is enough
+  (item 9).
 
 ### 10. Consumers
 
 - A new Tableau workbook, Enrollment & ADE, with pages Overview, Schools &
-  grades, Reconciliation, Trends and Definitions, each with an exposure in
+  grades, Trends and Definitions, each with an exposure in
   `models/exposures/tableau.yml`. A mockup exists on claude.ai (ask Anthony).
 - In the old Ops Dashboard workbook, the `Enrollment Dashboard` and
   `Enrollment (Sch/Gr)` views become a single page that links to the new
@@ -434,20 +445,22 @@ data team.
   the old ones: Paterson and Miami ADE now filled in, which rounding applies,
   and which definition of enrolled.
 - Cube is not a consumer. The 10/21 data team meeting ruled out building on Cube
-  for this work. The ADE inputs stay on the marts, so Cube can read them later
-  if that decision changes.
+  for this work. The ADE math lives in a mart, so Cube or the next BI tool can
+  read it later without rebuilding the rules.
 
 ### 11. Tests
 
-Every model here is a mart or an `rpt_` model, so _Tests on marts and `rpt_`
-models_ in `.claude/rules/dbt-yaml.md` applies:
+Every model here except `int_finance__ade_rules` is a mart or an `rpt_` model,
+so _Tests on marts and `rpt_` models_ in `.claude/rules/dbt-yaml.md` applies:
 
 - Only `error` tests and unit tests. No warn tests.
 - A grain test on every model: `unique` on its key, with `not_null` on any
   natural-key grain column that can be null.
-- The model's own logic gets a unit test: the reconciliation's signed reasons
-  (section 7), the all-year counts (section 2b), the as-of date resolving to a
-  school's latest school day, and rounding applied per student.
+- The model's own logic gets a unit test: the all-year counts (section 2b), the
+  as-of date resolving to a school's latest school day, and rounding applied per
+  student before the mart sums.
+- `int_finance__ade_rules` gets a `unique` test on region and academic year at
+  `error`, as its grain backstop.
 - No standing test compares 2 separately built models. Where 2 models must cover
   the same students, both read 1 shared upstream model, and the acceptance
   checks below confirm it once.
@@ -455,10 +468,9 @@ models_ in `.claude/rules/dbt-yaml.md` applies:
 ## Phase 0 (before 10/26)
 
 Read-only queries, not models, using the definitions above: enrolled today and
-projected ADE by region, a Newark SIS-to-FRESH gap broken into the reasons in
-section 7, Miami's enrolled headcount (plus Survey 2 if the state file has
-landed), and a past-year check of finance's 2 rules of thumb. Delivered as a
-dated one-page brief labeled approximate.
+projected ADE by region, Miami's enrolled headcount (plus Survey 2 if the state
+file has landed), and a past-year check of finance's 2 rules of thumb. Delivered
+as a dated one-page brief labeled approximate.
 
 Finance's rules of thumb, from the intake:
 
@@ -488,8 +500,8 @@ These are one-time checks during the build, not dbt tests (section 11).
    check runs for 2026-27.
 6. Miami state survey counts by school sum to the state file totals for every
    year on file.
-7. Reconciliation reasons sum exactly to SIS minus FRESH, and the Finalsite-side
-   count matches FRESH while the year settings match.
+7. `fct_enrollment_ade_daily`, summed to region, matches enrolled and ADE so far
+   computed straight from the daily fact for sample dates.
 8. Every school and grade in the totals table has a target row or an explicit
    "no target" state, and targets sum to the sheet's totals.
 9. Every region and year has a rules row.
@@ -506,13 +518,13 @@ Finance and stakeholders, for the 10/26 review:
    fixed date such as Oct 15?
 3. Residence moves: when a student moves districts mid-year, does each district
    pay for its own days, or the latest district for all of them?
-4. Variance thresholds for the FRESH gap, as a count, a percent, or both, and at
-   school or region level.
+4. Variance thresholds for the FRESH gap: moved to the Finalsite reconciliation
+   revisit (section 7).
 5. Miami funded average: is it counted in students or in state FTE units? A few
    students carry less than full FTE.
 6. Does any district bill for a period, such as a month or quarter, rather than
-   year to date? If so, period ADE comes from membership days, which the totals
-   table already stores.
+   year to date? If so, period ADE comes from daily membership, which the ADE
+   mart already stores.
 7. Is the Camden ADE+ weighted-funding calc in the old workbook still used? Its
    ratios live on the targets sheet.
 8. What does the NOL column mean?
@@ -530,6 +542,9 @@ Data team:
 1. Targets sheet structure for self-contained rows (Laz and Charlie).
 2. Tableau Server version: 2020.2 or later for relationships. If older, compute
    school and network target totals in dbt instead.
+3. Finalsite reconciliation: does finance's view of the SIS-to-FRESH gap live in
+   the FRESH dashboard or here? The audiences differ (section 7). Decide before
+   launch.
 
 ## Left to the builder
 
@@ -540,8 +555,8 @@ Data team:
 - The roster's entitlement source for row-level security.
 - Snapshot mechanism (an incremental append on a cron, or a dbt snapshot).
 - How the as-of date presets resolve to school days in Tableau.
-- The reconciliation table's automation condition, matching the daily fact's
-  cron.
+- `fct_enrollment_ade_daily`'s materialization and automation condition,
+  matching the daily fact's cron.
 - Whether to validate district of residence codes against the state's district
   code list, kept as a sheet. The current data has 89 New Jersey enrollment
   records with no code and 42 codes with only 1 or 2 students.
