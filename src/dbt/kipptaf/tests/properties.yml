@@ -1249,3 +1249,19 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__kippfwd__goals
+
+  - name: test_kfwd_early_apps_schools_have_seniors
+    description: >-
+      Every high school on the schools tab of the KIPP Forward Early Apps
+      Settings sheet has at least 1 current senior in Overgrad under that exact
+      name. A school with none usually means Overgrad spells the name
+      differently, and the early apps tracker silently leaves its seniors out.
+      Fix the overgrad_school_name on the schools tab to match Overgrad.
+    config:
+      tags:
+        - google_sheet
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kfwd__early_apps_schools
