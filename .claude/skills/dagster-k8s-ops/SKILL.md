@@ -98,12 +98,22 @@ description:
   `TaintManagerEviction`, any `DisruptionTarget`), the replacement hits
   Dagster's `verify_step()` duplicate-start guard, logs
   `Attempted to run <step_key> again even though it was already started. Exiting to prevent re-running the step.`,
-  and exits 0. Step state never advances; run hangs until
-  `run_monitoring.max_runtime_seconds`. Signature: duplicate
-  `StepWorkerStartedEvent` → "already started" `EngineEvent` → silence →
-  `RunCancelingEvent` at the max_runtime mark. Don't chase the asset's code or
-  query — check the auto-retry; if it succeeded, this was infra disruption, no
-  fix needed.
+  and exits 0, so the Job reads Complete. `zombie_aware_k8s_job_executor`
+  (`src/teamster/core/executors.py`) fails the step once the Job has been
+  Complete for `ZOMBIE_JOB_GRACE_SECONDS` without a step result. An op with a
+  `RetryPolicy` retries the step in the same run; any other op fails the run,
+  and the run's auto-retry takes over. Signature: duplicate
+  `StepWorkerStartedEvent` → "already started" `EngineEvent` → step failure
+  `failed health check: ... completed without a step result`. Don't chase the
+  asset's code or query — check the auto-retry; if it succeeded, this was infra
+  disruption, no fix needed. A run that instead fails with
+  `Attempted to mark step ... as complete that was not known to be in flight`
+  right after that health-check failure means the step had actually succeeded
+  and its success event arrived later than the grace period: raise
+  `ZOMBIE_JOB_GRACE_SECONDS`. An `Error while checking health for step` engine
+  event means the check itself raised (the executor logs it and moves on), so
+  zombie detection is off; suspect a `dagster-k8s` upgrade renamed a private
+  helper the handler calls.
 - **`required` antiAffinity authorizes scheduler preemption** of the target pods
   when no other node fits, but only of pods at LOWER priority. While run pods
   sat at 1000 and code servers at 0, `runK8sConfig.affinity.podAntiAffinity` let

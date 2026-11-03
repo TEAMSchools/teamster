@@ -1,3 +1,4 @@
+-- the column list resolves from the kippmiami relation at compile time
 with
     union_relations as (
         {{
@@ -9,6 +10,6 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
+-- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at compile time
 select *, {{ extract_source_project("union_relations") }} as _dbt_source_project,
 from union_relations

@@ -252,7 +252,8 @@ query the rebuilt `zz_<user>_*` table.
 
 Never judge CURRENT sheet content from the prod `stg_*` table — it is a table
 frozen at the last prod build, not a live read, so it reports pre-edit values
-indefinitely. Rebuild into dev (or query the external directly) first.
+indefinitely. Rebuild into dev, or read the sheet with the Google Sheets MCP,
+first.
 
 ### BigQuery type synonyms in contracts
 
@@ -292,7 +293,10 @@ legitimately-superseded inactive rows that repeat the key.
   an explicit severity silently degrade to warnings and won't fail CI. Set
   `error`, except on a ticketed test (#5558): it runs at `warn` on the earliest
   model that can route its ticket, which is often a staging model. Intermediate
-  tests may omit the override where a warning is acceptable.
+  tests may omit the override where a warning is acceptable. A warning is not
+  acceptable on the uniqueness test `.claude/rules/dbt-models.md` requires: it
+  is the model's grain backstop, so set `error`, with the source-defect
+  exception in the _Grain_ bullet under _Tests on marts and `rpt_` models_.
 - Tests on marts and `rpt_` models follow _Tests on marts and `rpt_` models_ at
   the end of this file.
 - Removing a `severity: warn` override reverts to the project default: `warn` in
@@ -356,6 +360,17 @@ state.
 A singular test that reads more than one model needs `meta.dagster.ref` in
 `tests/properties.yml`, or Dagster never sees its result: `build_dbt_assets`
 drops the observation dagster-dbt falls back to.
+
+The ref must name a model the test reads. dagster-dbt builds a check only from a
+test's dbt parents, so a ref to any other model (a downstream view, a sibling)
+silently never becomes a check. To attach a test that reads only a source, add
+`-- depends_on: {{ ref("<model>") }}` to its SQL.
+
+In kipptaf, a singular test whose ref is a `stg_google_sheets__*` model also
+needs `tags: [google_sheet]` in its `config:`. Without the tag it also runs in
+the core dbt run (`src/dbt/kipptaf/selectors.yml`), which has no check for it,
+so an `error` failure there fails the core run with no check to show why.
+Generic tests declared on a sheet model get the tag from `dbt_project.yml`.
 
 dagster-dbt resolves `meta.dagster.ref` via `(name, package, version)`. Omitting
 `package:` defaults to the running project — so a test under
@@ -457,7 +472,9 @@ Sort each test by what it guards:
   `severity: warn` on that one test with a `TODO(#N)` comment, and still flip
   the folder. A kipptaf `rpt_` model listed on
   [#5990](https://github.com/TEAMSchools/teamster/issues/5990) has no grain test
-  yet: add one in any PR that modifies it, and check it off there.
+  yet: add one in any PR that modifies it, and check it off there. The grain
+  test is also the guard against join fan-out. A unit test cannot anticipate a
+  join that does not exist yet, so do not add fan-out fixtures.
 - A `relationships` test from a mart or `rpt_` model to another model is not a
   regression test. Key drift is the key macros' job (A7). When two models must
   cover the same population, have both read one shared upstream model. A test

@@ -9,7 +9,7 @@ from teamster.libraries.overgrad.resources import OvergradResource
 
 
 class _FakeOvergrad(OvergradResource):
-    def list(self, path: str, *args: str, **kwargs) -> list[dict]:
+    def list_by_cursor(self, path: str) -> list[dict]:
         return [{"id": 1, "university": {"id": 99}}]
 
 

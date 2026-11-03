@@ -49,28 +49,6 @@ with
             and rn_student_program_year_desc = 1
     ),
 
-    prev_yr_state_test as (
-        select
-            _dbt_source_project,
-
-            state_student_id as statestudentidentifier,
-            aggregated_proficiency as state_test_aggregated_proficiency,
-            illuminate_subject_area as `subject`,
-
-            academic_year + 1 as academic_year_plus,
-        from {{ ref("int_assessments__state_scores") }}
-        where
-            /* NJSLA is the only Pearson assessment carrying a proficiency, and
-               it runs one window a year; NJGPA's Fall and Spring rows carry none. */
-            (score_source = 'state_nj' and assessment_name = 'NJSLA')
-            or (
-                score_source = 'state_fl'
-                and scale_score is not null
-                and assessment_name = 'FAST'
-                and administration_period = 'PM3'
-            )
-    ),
-
     prev_yr_iready as (
         select
             _dbt_source_project,
@@ -217,7 +195,7 @@ select
 
     coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
-    coalesce(py.state_test_aggregated_proficiency, 'No Test') as state_test_proficiency,
+    coalesce(py.aggregated_proficiency, 'No Test') as state_test_proficiency,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
@@ -240,7 +218,7 @@ select
     if(ie.student_number is not null or co.is_sipps, true, false) as is_exempt_iready,
 
     if(
-        co.grade_level <= 3, pr.iready_proficiency, py.state_test_aggregated_proficiency
+        co.grade_level <= 3, pr.iready_proficiency, py.aggregated_proficiency
     ) as bucket_one,
 
     if(
@@ -288,12 +266,13 @@ left join
     and co._dbt_source_project = fp._dbt_source_project
     and sj.discipline = fp.discipline
 left join
-    prev_yr_state_test as py
+    {{ ref("int_assessments__state_scores") }} as py
     /* TODO: find records that only match on SID */
-    on co.state_studentnumber = py.statestudentidentifier
-    and co.academic_year = py.academic_year_plus
+    on co.state_studentnumber = py.state_student_id
+    and co.academic_year = py.benchmark_academic_year
     and co._dbt_source_project = py._dbt_source_project
-    and sj.illuminate_subject_area = py.subject
+    and sj.illuminate_subject_area = py.illuminate_subject_area
+    and py.is_annual_state_test
 left join
     prev_yr_iready as pr
     on co.student_number = pr.student_id

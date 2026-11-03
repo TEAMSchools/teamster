@@ -1,0 +1,35 @@
+models:
+  - name: stg_google_sheets__kfwd__early_apps_schools
+    description: >-
+      High schools the KIPP Forward early apps tracker reports on, from the
+      schools tab of the KIPP Forward Early Apps Settings sheet. Maps each
+      Overgrad school name to the short key that names its Summary column.
+      Seniors at any other Overgrad school are left out of the tracker.
+    columns:
+      - name: overgrad_school_name
+        data_type: string
+        description: >-
+          High school name exactly as Overgrad spells it. If Overgrad renames
+          the school, update it here, or its seniors drop out of the tracker.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: school_key
+        data_type: string
+        description: >-
+          Short key for the school. The Summary tab has 1 fixed column per key,
+          so a new key also needs a new column in
+          rpt_gsheets__kfwd_early_apps_summary.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [cooper_norcross, newark_collegiate, newark_lab]
+              config:
+                severity: error

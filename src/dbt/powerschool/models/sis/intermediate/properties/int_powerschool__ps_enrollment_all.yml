@@ -2,6 +2,12 @@ models:
   - name: int_powerschool__ps_enrollment_all
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          name: int_powerschool__ps_enrollment_all__unique_student_entrydate
+          description: >-
+            A PowerSchool student has 2 enrollment stints that start on the same
+            day. Downstream models that key a stint on student and entry date
+            keep only 1 of them. Delete or correct the duplicate enrollment
+            record in PowerSchool.
           arguments:
             combination_of_columns:
               - studentid

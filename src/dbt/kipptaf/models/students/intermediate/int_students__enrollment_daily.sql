@@ -12,20 +12,20 @@ with
         group by schoolid, _dbt_source_project, academic_year
     ),
 
-    -- exitdate is exclusive: a stint's exitdate equals the next stint's
-    -- entrydate, so the last enrolled day is the day before it.
+    -- last_enrolled_date, not exitdate minus a day: PowerSchool's exitdate is
+    -- the day after the last enrolled day, but Focus's is the last enrolled day
+    -- itself, and Focus takes attendance on it.
     stint_bounds as (
         select
             student_number,
             _dbt_source_project,
             academic_year,
             entrydate,
-            exitdate,
             schoolid,
             grade_level,
             enroll_status,
 
-            date_sub(exitdate, interval 1 day) as stint_last_day,
+            last_enrolled_date as stint_last_day,
         from {{ ref("int_extracts__student_enrollments") }}
         where entrydate is not null
     ),

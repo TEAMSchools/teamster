@@ -14,6 +14,13 @@ models:
                 severity: error
       - name: id
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: owner_id
         data_type: string
       - name: record_type_id
@@ -51,6 +58,14 @@ models:
         data_type: numeric
       - name: current_college_cumulative_gpa
         data_type: numeric
+      - name: current_college_cumulative_gpa_rounded
+        data_type: numeric
+        description: >-
+          current_college_cumulative_gpa rounded to 2 decimals, to match against
+          gpa_rounded on stg_kippadb__gpa.
+        config:
+          meta:
+            contains_pii: true
       - name: current_college_semester_gpa
         data_type: numeric
       - name: current_kipp_student

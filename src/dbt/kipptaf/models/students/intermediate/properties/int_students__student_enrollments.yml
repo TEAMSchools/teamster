@@ -472,10 +472,42 @@ models:
         data_type: int64
       - name: is_enrolled_oct01
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on October 1
+          of the academic year. The same value sits on every stint the student
+          has that year, so use it for retention and per-student counts; for a
+          count by school or grade as of the date, use is_enrolled_oct01_stint.
       - name: is_enrolled_oct15
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on October 15
+          of the academic year. The same value sits on every stint the student
+          has that year; for a count by school or grade as of the date, use
+          is_enrolled_oct15_stint.
       - name: is_enrolled_mar15
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on March 15 of
+          the academic year (the following calendar year). The same value sits
+          on every stint the student has that year; for a count by school or
+          grade as of the date, use is_enrolled_mar15_stint.
+      - name: is_enrolled_oct01_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered October 1 of the academic year — entry date
+          on or before it, last_enrolled_date on or after it. Use for a count by
+          school or grade as of the date.
+      - name: is_enrolled_oct15_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered October 15 of the academic year — entry
+          date on or before it, last_enrolled_date on or after it.
+      - name: is_enrolled_mar15_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered March 15 of the academic year (the
+          following calendar year) — entry date on or before it,
+          last_enrolled_date on or after it.
       - name: is_retained_year
         data_type: boolean
         config:

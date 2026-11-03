@@ -625,8 +625,9 @@ In the family:
 
 Shared upstreams, maintained elsewhere:
 
-- `int_students__calendar_week`: school weeks per school, with quarter week
-  numbers and week dates.
+- `int_students__calendar_week`: school weeks per school, with the term each
+  week falls in (`term`), week numbers within the term, and week dates. The
+  gradebook models read `term` as `quarter`.
 - `int_students__terms`: PowerSchool quarter dates.
 - `int_students__course_sections`: sections with course, teacher and school
   level (including the Sumner override).

@@ -122,27 +122,41 @@ data_tests:
             name: base_powerschool__course_enrollments
             package: powerschool
 
-  - name: base_powerschool__student_enrollments__cohort_not_ahead_of_entry
+  - name: int_powerschool__ps_enrollment_all__no_skipped_grade
     description: >-
-      A current high school student should never be ahead of the cohort they
-      entered with. For grade 9 and up, cohort freezes at the student's first
-      year in the school, which is correct for New Jersey's 4-year adjusted
-      cohort graduation rate. Falling behind that cohort is ordinary retention
-      and is not a defect, so only the other direction is tested -- a student
-      whose grade level implies an earlier graduating class (`cohort_primary`)
-      than their recorded cohort. Three causes produce that shape. A skipped
-      grade and a missing enrollment year are records problems, corrected in
-      PowerSchool. Summer credit recovery is not -- a student can advance a
-      grade over the summer with no enrollment row to show for it, because
-      int_powerschool__student_enrollment_union filters out the summer school,
-      so the records are already right. Warn rather than error, because no
-      result here is fixed by a code change. Miami's version is
-      int_extracts__student_enrollments__miami_cohort_not_ahead_of_entry in
-      kipptaf.
+      A PowerSchool high school student (grade 9 to 12) whose grade rose by more
+      than 1 between consecutive school years. Each year is the student's
+      highest-grade stint, with no-shows excluded. A skipped grade puts the
+      student ahead of the cohort they entered with, which matters for New
+      Jersey's 4-year adjusted cohort graduation rate. Fix the grade level on
+      the stint, or move the stint to the right school year, in PowerSchool.
+      Summer school stints are left out, so a student promoted through summer
+      credit recovery can produce the same shape with correct records; leave
+      those as they are. Miami's version is
+      int_focus__student_enrollment_roster__no_skipped_grade in the focus
+      package.
     config:
       severity: warn
       meta:
         dagster:
           ref:
-            name: base_powerschool__student_enrollments
+            name: int_powerschool__ps_enrollment_all
+            package: powerschool
+
+  - name: int_powerschool__spenrollments__no_concurrent_bucket_per_subject
+    description: >-
+      A PowerSchool student holds 2 different Bucket special programs for the
+      same subject and school year at the same time (overlapping dates, or the
+      same enter date). Downstream, int_students__bucket_assignments keeps one
+      of them by enter date and other tiebreaks, not by which is correct. The
+      lower-numbered bucket is correct, because Bucket 1 means the student was
+      proficient the year before; delete the other special-program record in
+      PowerSchool. Back-to-back buckets, where one exits before the next enters,
+      are normal mid-year amendments and are not flagged.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_powerschool__spenrollments
             package: powerschool

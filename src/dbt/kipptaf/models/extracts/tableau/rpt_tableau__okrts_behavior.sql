@@ -65,7 +65,7 @@ with
             bt.category_type,
 
             w.academic_year,
-            w.quarter as term,
+            w.term,
             w.week_start_monday,
             w.week_end_sunday,
             w.date_count as days_in_session,
@@ -153,7 +153,7 @@ with
 
     quarterly_awards as (
         -- grain projection, not dup-masking
-        select distinct i.student_school_id, i.dl_school_id, i.academic_year, w.quarter,
+        select distinct i.student_school_id, i.dl_school_id, i.academic_year, w.term,
         from incentives as i
         inner join
             {{ ref("int_extracts__student_enrollments_weeks") }} as w
@@ -188,7 +188,7 @@ select
     co.self_contained_status,
     co.homeless_status,
     co.homeless_primary_nighttime_residence,
-    co.quarter as term,
+    co.term,
     co.week_start_monday,
     co.week_end_sunday,
     co.date_count as days_in_session,
@@ -231,5 +231,5 @@ left join
     on co.student_number = qa.student_school_id
     and co.deanslist_school_id = qa.dl_school_id
     and co.academic_year = qa.academic_year
-    and co.quarter = qa.quarter
+    and co.term = qa.term
 where co.is_enrolled_week and co.academic_year >= {{ var("current_academic_year") - 1 }}

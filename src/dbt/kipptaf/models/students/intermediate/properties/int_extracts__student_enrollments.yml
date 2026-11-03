@@ -342,10 +342,37 @@ models:
         data_type: boolean
       - name: is_enrolled_oct01
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on October 1
+          of the academic year, the same on every stint that year. For a count
+          by school or grade as of the date, use is_enrolled_oct01_stint.
       - name: is_enrolled_oct15
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on October 15
+          of the academic year, the same on every stint that year. For a count
+          by school or grade as of the date, use is_enrolled_oct15_stint.
       - name: is_enrolled_mar15
         data_type: boolean
+        description: >-
+          Whether the student was enrolled anywhere in the region on March 15 of
+          the academic year, the same on every stint that year. For a count by
+          school or grade as of the date, use is_enrolled_mar15_stint.
+      - name: is_enrolled_oct01_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered October 1 of the academic year — entry date
+          on or before it, last_enrolled_date on or after it.
+      - name: is_enrolled_oct15_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered October 15 of the academic year — entry
+          date on or before it, last_enrolled_date on or after it.
+      - name: is_enrolled_mar15_stint
+        data_type: boolean
+        description: >-
+          Whether this stint covered March 15 of the academic year — entry date
+          on or before it, last_enrolled_date on or after it.
       - name: is_enrolled_recent
         data_type: boolean
       - name: is_enrolled_fdos
@@ -1062,6 +1089,9 @@ models:
           school_level.
       - name: fafsa_status_mismatch_category
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         data_tests:
           - accepted_values:
               arguments:
@@ -1072,7 +1102,8 @@ models:
                   grade_level != 99 and academic_year = {{
                   var('current_academic_year')}}
         description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Categorical
-          mapping of academic_year, fafsa_opt_out, grade_level,
-          salesforce_contact_df_has_fafsa.
+          Flags a grade 12 student whose Salesforce contact says they have a
+          FAFSA while Overgrad records a FAFSA opt-out. Reads
+          "Salesforce/Overgrad has FAFSA opt-out mismatch" from academic year
+          2024 on, and "No issues" otherwise. KIPP Forward fixes a mismatch by
+          correcting the FAFSA status in Salesforce or the opt-out in Overgrad.

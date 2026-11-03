@@ -1,0 +1,243 @@
+models:
+  - name: int_surveys__kfwd_career_launch_assessments
+    description: >-
+      Career Launch readiness assessments with points, launch score, and stage,
+      one row per Career Conversation. Each indicator level takes its points
+      from the Rubric tab of the Career Launch Scoring Rubric sheet, GPA points
+      come from int_surveys__kfwd_career_launch_contacts, and the stage comes
+      from the Stages tab. The score uses the alumnus's GPA as of today, not as
+      of the conversation, matching the score the AppSheet app shows. A missing
+      level scores 0 points, so check has_all_levels before reading a low score
+      as a weak alumnus.
+    columns:
+      - name: assessment_id
+        data_type: string
+        description: AppSheet key for the assessment.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: contact_id
+        data_type: string
+        description: Salesforce contact id of the alumnus assessed.
+      - name: assessed_at
+        data_type: datetime
+        description: When the Career Conversation took place, in local time.
+        config:
+          meta:
+            contains_pii: true
+      - name: assessed_by
+        data_type: string
+        description: Staff member who recorded the assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: career_ready_level
+        data_type: int64
+        description: Career Ready level, 1 to 4.
+        config:
+          meta:
+            contains_pii: true
+      - name: active_search_level
+        data_type: int64
+        description: Active Search level, 1 to 4.
+        config:
+          meta:
+            contains_pii: true
+      - name: internship_experience_level
+        data_type: int64
+        description: Internship / Experience level, 1 to 4.
+        config:
+          meta:
+            contains_pii: true
+      - name: network_level
+        data_type: int64
+        description: Network level, 1 to 4.
+        config:
+          meta:
+            contains_pii: true
+      - name: coaching_focus
+        data_type: string
+        description: Coaching focus agreed in the conversation.
+        config:
+          meta:
+            contains_pii: true
+      - name: next_action
+        data_type: string
+        description: Next step agreed in the conversation.
+        config:
+          meta:
+            contains_pii: true
+      - name: notes
+        data_type: string
+        description: Free-text notes from the conversation.
+        config:
+          meta:
+            contains_pii: true
+      - name: career_ready_points
+        data_type: int64
+        description: >-
+          Rubric points for the Career Ready level. Null when the level is
+          missing or matches no rubric row.
+        config:
+          meta:
+            contains_pii: true
+      - name: active_search_points
+        data_type: int64
+        description: >-
+          Rubric points for the Active Search level. Null when the level is
+          missing or matches no rubric row.
+        config:
+          meta:
+            contains_pii: true
+      - name: internship_experience_points
+        data_type: int64
+        description: >-
+          Rubric points for the Internship / Experience level. Null when the
+          level is missing or matches no rubric row.
+        config:
+          meta:
+            contains_pii: true
+      - name: network_points
+        data_type: int64
+        description: >-
+          Rubric points for the Network level. Null when the level is missing or
+          matches no rubric row.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_points
+        data_type: int64
+        description: >-
+          GPA points from the alumnus's current college GPA; 0 when they have
+          none.
+        config:
+          meta:
+            contains_pii: true
+      - name: launch_score
+        data_type: int64
+        description: >-
+          Sum of the four indicator points and GPA points, out of 100. A missing
+          indicator counts as 0.
+        config:
+          meta:
+            contains_pii: true
+      - name: has_all_levels
+        data_type: boolean
+        description: True when all four indicator levels are entered.
+        config:
+          meta:
+            contains_pii: true
+      - name: launch_stage
+        data_type: string
+        description: >-
+          Stage whose score range holds the launch score, from the Stages tab.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_latest_assessment
+        data_type: boolean
+        description: >-
+          True on the alumnus's most recent assessment by assessed_at. Ties go
+          to the higher assessment_id.
+
+unit_tests:
+  - name: test_int_surveys__kfwd_career_launch_assessments_scoring
+    description: >-
+      A score on a stage's min_score lands in that stage. A missing level adds 0
+      points and clears has_all_levels. A level outside the rubric adds 0
+      points. An alumnus missing from the contacts model scores 0 GPA points.
+      Only the newest assessment per alumnus is latest.
+    model: int_surveys__kfwd_career_launch_assessments
+    given:
+      - input: ref('stg_google_appsheet__kfwd_career_conversations__assessments')
+        format: sql
+        rows: |
+          select
+              'a1' as assessment_id,
+              'c1' as contact_id,
+              datetime '2026-10-01 10:00:00' as assessed_at,
+              'staff' as assessed_by,
+              4 as career_ready_level,
+              4 as active_search_level,
+              4 as internship_experience_level,
+              3 as network_level,
+              cast(null as string) as coaching_focus,
+              cast(null as string) as next_action,
+              cast(null as string) as notes,
+              'career_ready_4' as career_ready_rubric_key,
+              'active_search_4' as active_search_rubric_key,
+              'internship_experience_4' as internship_experience_rubric_key,
+              'network_3' as network_rubric_key
+          union all
+          select
+              'a2', 'c1', datetime '2026-10-15 10:00:00', 'staff', 4, 4, 3, 3,
+              null, null, null, 'career_ready_4', 'active_search_4',
+              'internship_experience_3', 'network_3'
+          union all
+          select
+              'a3', 'c2', datetime '2026-10-15 10:00:00', 'staff', 4, 4, 4, null,
+              null, null, null, 'career_ready_4', 'active_search_4',
+              'internship_experience_4', null
+          union all
+          select
+              'a4', 'c3', datetime '2026-10-15 10:00:00', 'staff', 5, 1, 1, 1,
+              null, null, null, 'career_ready_5', 'active_search_1',
+              'internship_experience_1', 'network_1'
+      - input: ref('stg_google_sheets__kfwd__career_launch_rubric')
+        format: sql
+        rows: |
+          select
+              concat(indicator, '_', lvl) as rubric_key,
+              lvl * 5 as points
+          from
+              unnest(
+                  ['career_ready', 'active_search', 'internship_experience', 'network']
+              ) as indicator
+          cross join unnest([1, 2, 3, 4]) as lvl
+      - input: ref('int_surveys__kfwd_career_launch_contacts')
+        format: sql
+        rows: |
+          select 'c1' as contact_id, 15 as gpa_points
+          union all
+          select 'c2', 0
+      - input: ref('stg_google_sheets__kfwd__career_launch_stages')
+        format: sql
+        rows: |
+          select 'Strong Launch Likely' as stage, 90 as min_score
+          union all
+          select 'Strong Launch Possible', 75
+          union all
+          select 'Needs Targeted Support', 60
+          union all
+          select 'At Risk', 0
+    expect:
+      rows:
+        - assessment_id: a1
+          career_ready_points: 20
+          gpa_points: 15
+          launch_score: 90
+          has_all_levels: true
+          launch_stage: Strong Launch Likely
+          is_latest_assessment: false
+        - assessment_id: a2
+          career_ready_points: 20
+          gpa_points: 15
+          launch_score: 85
+          has_all_levels: true
+          launch_stage: Strong Launch Possible
+          is_latest_assessment: true
+        - assessment_id: a3
+          career_ready_points: 20
+          gpa_points: 0
+          launch_score: 60
+          has_all_levels: false
+          launch_stage: Needs Targeted Support
+          is_latest_assessment: true
+        - assessment_id: a4
+          career_ready_points: null
+          gpa_points: 0
+          launch_score: 15
+          has_all_levels: true
+          launch_stage: At Risk
+          is_latest_assessment: true

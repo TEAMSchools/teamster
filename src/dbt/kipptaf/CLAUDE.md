@@ -223,11 +223,13 @@ reviving the frozen archive branch; that was decided against.
 
 **Point-in-time enrollment headcount uses entry/exit dates, not
 `enroll_status`.** `count_students` on the `student_attendance_enrollment_daily`
-Cube counts distinct students over whatever slice is queried. There are no
-anchor measures and no anchor columns — pin `dates_date_day` to a date for a
-point-in-time figure, leave it open for ever-enrolled over a range.
-`fct_student_attendance_enrollment_daily` carries a row for every calendar day
-inside a stint, break days included, so any date resolves for every school.
+Cube counts distinct enrolled students over whatever slice is queried, whether
+or not their attendance has been recorded; rates divide by
+`count_students_measured` instead. There are no anchor measures and no anchor
+columns — pin `dates_date_day` to a date for a point-in-time figure, leave it
+open for ever-enrolled over a range. `fct_student_attendance_enrollment_daily`
+carries a row for every calendar day inside a stint, break days included, so any
+date resolves for every school.
 
 **Each stint's day window is clamped to its school's academic year, and that
 clamp is load-bearing.** PowerSchool rolls NJ stints over on 1 July while Focus
@@ -244,10 +246,10 @@ retain Miami — the calendar keeps the frozen PowerSchool archive for the years
 Focus does not cover. Miami _attendance_ for those years comes from that same
 archive, re-keyed onto Focus enrollment stints (#5114), so pre-AY2026 figures
 are four regions. Every rate excludes null attendance from both numerator and
-denominator (#4744), so a day nobody measured sits outside the population as
-well as the rate. Paterson `attendance_value` is unreliable (upstream PS
-conversion-items gap, #4193) but `membership_value` is clean, so enrollment
-counts include Paterson correctly.
+denominator (#4744), so a day nobody measured sits outside every rate; a student
+with no measured day still counts in `count_students`. Paterson
+`attendance_value` is unreliable (upstream PS conversion-items gap, #4193) but
+`membership_value` is clean, so enrollment counts include Paterson correctly.
 
 **School calendars diverge at year-end; never anchor a point-in-time count on a
 network-wide `max(date)`.** Mid-year months share a last in-session day across
@@ -339,6 +341,12 @@ These crons become real Dagster refresh schedules
 upstream cadence decisions — check them before moving an upstream model to a
 cron automation condition (see `.claude/rules/dbt-models.md` → View→table
 flips).
+
+A Tableau workbook reads its `rpt_tableau__*` model through an extract, never a
+live connection. The extract refresh is the only query that runs against the
+model, so an `rpt_tableau__*` model stays a view unless a refresh is measured
+too slow. Do not design a model, or its materialization, for live-connection
+queries.
 
 ## dbt Cloud CI
 

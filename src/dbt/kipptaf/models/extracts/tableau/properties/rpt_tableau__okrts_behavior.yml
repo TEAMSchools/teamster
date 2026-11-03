@@ -1,18 +1,49 @@
 models:
   - name: rpt_tableau__okrts_behavior
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - region
+              - academic_year
+              - week_start_monday
+              - behavior_category
+              - behavior
+              - entry_staff
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: region
+        data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: academic_year
+        data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: week_start_monday
+        data_type: date
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: student_name
         data_type: string
       - name: enroll_status
         data_type: int64
       - name: cohort
         data_type: int64
-      - name: academic_year
-        data_type: int64
-      - name: region
-        data_type: string
       - name: school_level
         data_type: string
       - name: school
@@ -31,8 +62,6 @@ models:
         data_type: int64
       - name: term
         data_type: string
-      - name: week_start_monday
-        data_type: date
       - name: week_end_sunday
         data_type: date
       - name: days_in_session

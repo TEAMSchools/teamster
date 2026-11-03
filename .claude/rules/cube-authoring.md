@@ -104,7 +104,7 @@ and diagnostics are in the `cube-ops` skill.
   does NOT block pruning. Keep the `dates_*` members for grouping and for
   academic-year / month / week-of questions, where they are the only path.
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
-  `_sum_attendance_value` building blocks).
+  `_count_tier_1_2` on `student_attendance_enrollment_periods`).
 - **`description:` says what a member is; `meta.ai_context:` says how to use
   it.** `meta.folders` is the only key Cube Cloud renders, but every `meta.*`
   key reaches the model, because our MCP server returns each cube's `/meta`

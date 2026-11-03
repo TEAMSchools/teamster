@@ -519,6 +519,7 @@ TWINS.update(
             ("student_assessments", c): ("dim_assessments", c)
             for c in [
                 "is_internal_assessment",
+                "assessment_family",
                 "module_type",
                 "module_code",
                 "academic_subject",
@@ -535,6 +536,10 @@ TWINS.update(
         ),
         ("locations", "grade_band"): ("dim_locations", "grade_band"),
         ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
+        ("student_attendance_enrollment_daily", "n_absent_days_rolling_90"): (
+            "fct_student_attendance_enrollment_daily",
+            "n_absent_days_rolling_90",
+        ),
     }
 )
 
@@ -654,7 +659,7 @@ PHRASES.update(
         ],
         # Assessments cube
         "student_assessments.assessment_type": [
-            "filter is_internal_assessment instead",
+            "filter assessment_family instead",
             "computer-adaptive",
             "select a source",
             "college (SAT, ACT and PSAT, Official and Practice)",
@@ -663,7 +668,12 @@ PHRASES.update(
         "student_assessments.is_internal_assessment": [
             "KIPP-authored interims, Illuminate and Focus Assessments",
             "internal source can change between years",
-            "filter assessment_type to select an external source",
+            "Filter assessment_family instead to select any kind of source",
+        ],
+        "student_assessments.assessment_family": [
+            "vendor_diagnostic (iready, dibels and star)",
+            "filter assessment_type to select 1 source",
+            "report them per source rather than pooled",
         ],
         "student_assessments.module_type": [
             "UA (Unit Assessment)",
