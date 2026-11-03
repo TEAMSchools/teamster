@@ -1424,15 +1424,17 @@
         ]
           .map((k) => `<span><i class="sw-${k}"></i>${STATUS[k]}</span>`)
           .join("");
-        // The step that completes "Fully available"; data from before the
-        // generator sent available_steps marks the last step instead.
+        // "Fully available" is a milestone, not a checklist step: it sits after
+        // the step that completes it. Data from before the generator sent
+        // available_steps puts it after the last step instead.
         const AVAILABLE_AT = (DATA.available_steps || STEPS.length) - 1;
+        const MILESTONE = `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>Fully available</b><span>Cube can answer everything this dashboard shows</span></li>`;
         $("#flow-steps").innerHTML =
           `<li><b><span class="n">1</span>${BUILDING}</b><span>1+ metric ready</span></li>` +
-          STEPS.map((s, i) =>
-            i === AVAILABLE_AT
-              ? `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>${esc(s)}</b><span>Fully available</span></li>`
-              : `<li><b><span class="n">${i + (i > AVAILABLE_AT ? 1 : 2)}</span>${esc(s)}</b>${i === STEPS.length - 1 ? "<span>Staff use it through Claude</span>" : ""}</li>`,
+          STEPS.map(
+            (s, i) =>
+              `<li><b><span class="n">${i + 2}</span>${esc(s)}</b>${i === STEPS.length - 1 ? "<span>Staff use it through Claude</span>" : ""}</li>` +
+              (i === AVAILABLE_AT ? MILESTONE : ""),
           ).join("");
         [...new Set(DATA.dashboards.map((d) => d.domain))].forEach((d) =>
           $("#f-domain").insertAdjacentHTML(
