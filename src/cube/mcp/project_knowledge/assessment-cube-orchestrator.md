@@ -221,17 +221,18 @@ becomes a file.
 
 ## Routing
 
-Given a question, first determine the assessment family, then read the relevant
-members' descriptions and `ai_context` in `meta`:
+Given a question, first determine the assessment family (the `assessment_family`
+member), then read the relevant members' descriptions and `ai_context` in
+`meta`:
 
 - **Region hint.** NJ regions are Newark, Camden, and Paterson; the FL region is
   Miami.
 - **Assessment hint.** `QA` / `MQQ` / `CRQ` implies the internal family, which
   has 2 sources: Illuminate and Focus Assessments (`apex`). A school's internal
-  source can change between years, so filter `is_internal_assessment` for
-  internal results and split a trend where the source changes; i-Ready, DIBELS,
-  or STAR each map to a vendor diagnostic; NJSLA / NJGPA implies NJ state; FAST
-  / EOC implies FL state.
+  source can change between years, so filter `assessment_family` to `internal`
+  for internal results and split a trend where the source changes; i-Ready,
+  DIBELS, or STAR each map to `vendor_diagnostic`; NJSLA / NJGPA implies NJ
+  state; FAST / EOC implies FL state.
 - **If the family is ambiguous, ask before querying** — do not guess and query
   anyway.
 

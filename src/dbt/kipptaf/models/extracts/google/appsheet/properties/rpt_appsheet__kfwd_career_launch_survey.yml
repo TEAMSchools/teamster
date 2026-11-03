@@ -1,10 +1,13 @@
 models:
   - name: rpt_appsheet__kfwd_career_launch_survey
     description:
-      One row per KIPP Forward alumnus (HSG or TAF status, cohort up to the
-      current year) for the career launch survey AppSheet app, with their
-      contact details, current enrollment, and how many survey responses they
-      have submitted. A response counts for an alumnus when its respondent email
+      One row per KIPP Forward alumnus (HSG or TAF status) on the Career Launch
+      app roster, with their contact details, current enrollment, Career Launch
+      inputs, and how many survey responses they have submitted. An alumnus is
+      on the roster when is_career_launch_active is true (the inclusion rules on
+      int_surveys__kfwd_career_launch_contacts), or when they already have a
+      saved Career Launch assessment, so their history keeps a name after they
+      age out. A response counts for an alumnus when its respondent email
       matches their primary or secondary Salesforce email, when its respondent
       Salesforce id is their contact id (Alchemer responses carrying an id, and
       every row on the career launch bulk-add sheet), or when the career launch
@@ -95,6 +98,17 @@ models:
           Adjusted six-year minority graduation rate of the college the alumnus
           graduated from. Null when they have not graduated. Context next to
           GPA; not scored.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_career_launch_active
+        data_type: boolean
+        description: >-
+          True when the alumnus meets a Career Launch roster rule: on a listed
+          caseload, 4 to 6 years past high school graduation, or in the newest
+          class outside the Collab, and not opted out of contact. False for an
+          alumnus kept only because they have a saved assessment; the app should
+          not offer them for new scores.
         config:
           meta:
             contains_pii: true
