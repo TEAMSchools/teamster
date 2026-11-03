@@ -39,7 +39,9 @@ Customizes asset key and automation condition generation:
   `union_relations` are auto-detected (via `raw_code` inspection) and assigned
   `dbt_union_relations_automation_condition()`; TABLE models opt into
   `dbt_cron_automation_condition()` via
-  `meta.dagster.automation_condition.cron_schedule`. Condition semantics:
+  `meta.dagster.automation_condition.cron_schedule`, and into
+  `with_failed_deps_guard()` (on top of either) via
+  `meta.dagster.automation_condition.block_on_failed_deps`. Condition semantics:
   `core/CLAUDE.md` → `automation_conditions.py`. The cron timezone defaults to
   the `local_timezone` the code location passes at translator construction (each
   `dbt/assets.py` passes `str(LOCAL_TIMEZONE)`). Meta is resolved by

@@ -19,6 +19,7 @@ from teamster.core.automation_conditions import (
     dbt_table_automation_condition,
     dbt_union_relations_automation_condition,
     dbt_view_automation_condition,
+    with_failed_deps_guard,
 )
 
 _VIEW_TAG = {"dagster/materialized": "view"}
@@ -1777,6 +1778,75 @@ def test_intacct_extract_partition_aware_on_payroll_update():
     assert result.get_num_requested(AssetKey("adp_payroll_date_group_code_csv")) == 1
 
 
+def test_table_held_while_dep_partition_failed():
+    """A guarded table is not requested while any parent partition's latest
+    attempt failed, stays held on later ticks, and is requested once that
+    partition succeeds. The unguarded table shows the scenario would
+    otherwise request.
+    """
+    _PARTITIONS = StaticPartitionsDefinition(["2024-01-01", "2024-01-02"])
+
+    @asset(key="workers", partitions_def=_PARTITIONS, tags=_TABLE_TAG)
+    def workers_ok():
+        return 1
+
+    @asset(key="workers", partitions_def=_PARTITIONS, tags=_TABLE_TAG)
+    def workers_fails():
+        raise Exception("intentional failure")
+
+    @asset(
+        deps=[workers_ok],
+        automation_condition=with_failed_deps_guard(dbt_table_automation_condition()),
+        tags=_TABLE_TAG,
+    )
+    def guarded():
+        return 2
+
+    @asset(
+        deps=[workers_ok],
+        automation_condition=dbt_table_automation_condition(),
+        tags=_TABLE_TAG,
+    )
+    def unguarded():
+        return 3
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[workers_ok, guarded, unguarded])
+
+    for pk in ["2024-01-01", "2024-01-02"]:
+        materialize(assets=[workers_ok], instance=instance, partition_key=pk)
+    materialize(assets=[guarded, unguarded], instance=instance)
+
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    materialize(assets=[workers_ok], instance=instance, partition_key="2024-01-01")
+    materialize(
+        assets=[workers_fails],
+        instance=instance,
+        partition_key="2024-01-02",
+        raise_on_error=False,
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("unguarded")) == 1
+    assert result.get_num_requested(AssetKey("guarded")) == 0
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("guarded")) == 0
+
+    materialize(assets=[workers_ok], instance=instance, partition_key="2024-01-02")
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("guarded")) == 1
+
+
 def test_intacct_extract_all_partitions_on_mapping_update():
     """Updating stg_google_sheets__finance__payroll_code_mapping (non-partitioned)
     fans out to ALL partitions of adp_payroll_date_group_code_csv.
@@ -2461,6 +2531,46 @@ def test_translator_meta_cron_schedule_override():
     }
     assert (
         translator.get_automation_condition(empty_cron_props)
+        == dbt_table_automation_condition()
+    )
+
+
+def test_translator_meta_block_on_failed_deps():
+    """meta.dagster.automation_condition.block_on_failed_deps wraps the table
+    or cron condition in the failed-deps guard; views ignore it."""
+    from teamster.libraries.dbt.dagster_dbt_translator import (
+        CustomDagsterDbtTranslator,
+    )
+
+    translator = CustomDagsterDbtTranslator(
+        code_location="kipptaf", local_timezone="America/New_York"
+    )
+
+    def props(materialized: str, **condition_meta) -> dict:
+        return {
+            "config": {
+                "materialized": materialized,
+                "meta": {"dagster": {"automation_condition": condition_meta}},
+            }
+        }
+
+    assert translator.get_automation_condition(
+        props("table", block_on_failed_deps=True)
+    ) == with_failed_deps_guard(dbt_table_automation_condition())
+
+    assert translator.get_automation_condition(
+        props("table", block_on_failed_deps=True, cron_schedule="0 0 * * *")
+    ) == with_failed_deps_guard(
+        dbt_cron_automation_condition("0 0 * * *", cron_timezone="America/New_York")
+    )
+
+    assert (
+        translator.get_automation_condition(props("view", block_on_failed_deps=True))
+        == dbt_view_automation_condition()
+    )
+
+    assert (
+        translator.get_automation_condition(props("table", block_on_failed_deps=False))
         == dbt_table_automation_condition()
     )
 
