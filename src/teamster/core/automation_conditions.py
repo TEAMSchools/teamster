@@ -279,3 +279,24 @@ def dbt_cron_automation_condition(
             cron_timezone=cron_timezone or "UTC",
         )
     )
+
+
+def with_failed_deps_guard(condition: AutomationCondition) -> AutomationCondition:
+    """Hold an asset back while any dep partition's latest attempt failed.
+
+    For a model that must not build over an incomplete upstream pull. An
+    unpartitioned asset over a partitioned dep checks every partition of the
+    dep, not a recent window, so one old failed partition holds it until that
+    partition is rerun. The wrapped condition's triggers stay armed while
+    held, so the asset is requested once the failed partition succeeds.
+
+    Args:
+        condition: The asset's automation condition, e.g. the dbt table or
+            cron condition.
+
+    Returns:
+        The condition, false while any dep partition is failed.
+    """
+    return condition & ~AutomationCondition.any_deps_match(
+        AutomationCondition.execution_failed()
+    ).with_label("any_deps_failed")
