@@ -24,15 +24,15 @@ with
             a.application_reason_for_rejection as reason_for_rejection,
             a.recruiters as recruiter_multiple,
             a.subject_preference as subject_preference_multiple,
-            a.demo_date as date_demo,
-            a.hired_date as date_hired,
-            a.last_update_date as date_last_update,
-            a.lead_date as date_lead,
-            a.new_date as date_new,
-            a.offer_date as date_offer,
-            a.phone_screen_complete_date as date_phone_screen_complete,
-            a.phone_screen_requested_date as date_phone_screen_requested,
-            a.rejected_date as date_rejected,
+            a.demo_date_local as date_demo,
+            a.hired_date_local as date_hired,
+            a.last_update_date_local as date_last_update,
+            a.lead_date_local as date_lead,
+            a.new_date_local as date_new,
+            a.offer_date_local as date_offer,
+            a.phone_screen_complete_date_local as date_phone_screen_complete,
+            a.phone_screen_requested_date_local as date_phone_screen_requested,
+            a.rejected_date_local as date_rejected,
 
             recruiter,
 
@@ -40,8 +40,27 @@ with
 
             coalesce(a.resume_score, a.average_rating) as resume_score,
 
-            -- trunk-ignore(sqlfluff/LT01)
-            date_trunc(a.new_date, week(monday)) as application_week_start,
+            (
+                select min(d),
+                from
+                    unnest(
+                        [
+                            a.phone_screen_requested_date_local,
+                            a.phone_screen_complete_date_local,
+                            a.demo_date_local,
+                            a.offer_date_local,
+                            a.hired_date_local,
+                            a.rejected_date_local
+                        ]
+                    ) as d
+            ) as date_reviewed,
+
+            /* App Review Week runs Thursday to Wednesday and is named for its
+               Monday: +4 days moves Thursday onto that Monday */
+            date_trunc(
+                -- trunk-ignore(sqlfluff/LT01)
+                date_add(a.new_date_local, interval 4 day), week(monday)
+            ) as application_week_start,
         from {{ ref("stg_smartrecruiters__applications") }} as a
         /* separating out multi-select fields for reporting */
         cross join unnest(split(a.subject_preference, ',')) as subject_preference_single
@@ -52,9 +71,21 @@ with
         select
             *,
 
+            date_add(application_week_start, interval 7 day) as review_due_date,
+
             if(resume_score >= 3, 1, 0) as high_quality_candidate,
 
+            date_add(application_week_start, interval 7 day)
+            <= current_date('{{ var("local_timezone") }}') as is_review_due,
+
             case
+                when
+                    department_org_field_value in ('Teacher', 'Teaching Fellow')
+                    and resume_score is not null
+                    and date_reviewed < date_add(application_week_start, interval 7 day)
+                then 1
+                when department_org_field_value in ('Teacher', 'Teaching Fellow')
+                then 0
                 when
                     department_org_field_value not in ('Teacher', 'Teaching Fellow')
                     and time_in_application_state_new <= 7
