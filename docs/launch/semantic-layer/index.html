@@ -1060,6 +1060,7 @@
           5: "Sustainment",
         };
         const STEPS = DATA.checklist_steps;
+        const BUILDING = "Building in Cube";
         // "Partly in Cube" is counted as "Needs Cube work".
         [...DATA.dashboards, ...DATA.parking_lot].forEach((d) =>
           [...d.measures, ...d.dimensions].forEach((x) => {
@@ -1114,10 +1115,16 @@
               label: "Launched · not fully available",
               cls: "warn",
             };
-          if (!d.has_checklist || d.stage === 0)
-            return { key: "not", label: "Not started", cls: "" };
           // stage = furthest checklist step ticked, so name it as done.
-          return { key: "prog", label: `${STEPS[d.stage - 1]} ✓`, cls: "" };
+          if (d.has_checklist && d.stage > 0)
+            return { key: "prog", label: `${STEPS[d.stage - 1]} ✓`, cls: "" };
+          if (isBuilding(d)) return { key: "prog", label: BUILDING, cls: "" };
+          return { key: "not", label: "Not started", cls: "" };
+        }
+        // "Building in Cube" is a page-only step before the Asana checklist:
+        // a dashboard is building once any of its metrics is ready.
+        function isBuilding(d) {
+          return d.measures.some((m) => m.status === "ready");
         }
 
         // ── Building blocks ──────────────────────────────────────────
@@ -1139,7 +1146,7 @@
           return `<span class="count"><b>${t.ready}</b> of ${t.total}</span>`;
         }
         function steps(d) {
-          return `<div class="steps" aria-hidden="true">${STEPS.map((_, i) => `<span class="${d.checklist[i] ? "on" : ""}"></span>`).join("")}</div>`;
+          return `<div class="steps" aria-hidden="true"><span class="${isBuilding(d) ? "on" : ""}"></span>${STEPS.map((_, i) => `<span class="${d.checklist[i] ? "on" : ""}"></span>`).join("")}</div>`;
         }
         function grouped(items, isDim) {
           return (
@@ -1420,11 +1427,13 @@
         // The step that completes "Fully available"; data from before the
         // generator sent available_steps marks the last step instead.
         const AVAILABLE_AT = (DATA.available_steps || STEPS.length) - 1;
-        $("#flow-steps").innerHTML = STEPS.map((s, i) =>
-          i === AVAILABLE_AT
-            ? `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>${esc(s)}</b><span>Fully available</span></li>`
-            : `<li><b><span class="n">${i + 1}</span>${esc(s)}</b>${i === STEPS.length - 1 ? "<span>Staff use it through Claude</span>" : ""}</li>`,
-        ).join("");
+        $("#flow-steps").innerHTML =
+          `<li><b><span class="n">1</span>${BUILDING}</b><span>1+ metric ready</span></li>` +
+          STEPS.map((s, i) =>
+            i === AVAILABLE_AT
+              ? `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>${esc(s)}</b><span>Fully available</span></li>`
+              : `<li><b><span class="n">${i + (i > AVAILABLE_AT ? 1 : 2)}</span>${esc(s)}</b>${i === STEPS.length - 1 ? "<span>Staff use it through Claude</span>" : ""}</li>`,
+          ).join("");
         [...new Set(DATA.dashboards.map((d) => d.domain))].forEach((d) =>
           $("#f-domain").insertAdjacentHTML(
             "beforeend",
