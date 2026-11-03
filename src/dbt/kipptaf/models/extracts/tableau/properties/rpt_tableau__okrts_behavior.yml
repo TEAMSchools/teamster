@@ -149,6 +149,9 @@ unit_tests:
       and 1002 earns one dated on a Monday quarter end that is not a school day.
       Both flag every Q1 week and no Q2 week.
     model: rpt_tableau__okrts_behavior
+    overrides:
+      vars:
+        current_academic_year: 2026
     given:
       - input: ref("int_extracts__student_enrollments_weeks")
         rows:

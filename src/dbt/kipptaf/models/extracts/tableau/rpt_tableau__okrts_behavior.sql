@@ -152,17 +152,26 @@ with
         where behavior = 'Progress to Quarterly Incentive'
     ),
 
+    school_crosswalk as (
+        -- grain projection, not dup-masking: 1 row per DeansList school
+        select distinct
+            location_deanslist_school_id as deanslist_school_id,
+            location_powerschool_school_id as powerschool_school_id,
+        from {{ ref("int_people__location_crosswalk") }}
+        where
+            location_deanslist_school_id is not null
+            and location_powerschool_school_id is not null
+    ),
+
     quarterly_awards as (
         -- grain projection, not dup-masking
         select distinct
             i.student_school_id, i.dl_school_id, i.academic_year, t.term_name as term,
         from incentives as i
-        inner join
-            {{ ref("int_people__location_crosswalk") }} as lc
-            on i.dl_school_id = lc.location_deanslist_school_id
+        inner join school_crosswalk as sc on i.dl_school_id = sc.deanslist_school_id
         inner join
             {{ ref("dim_terms") }} as t
-            on lc.location_powerschool_school_id = t.school_id
+            on sc.powerschool_school_id = t.school_id
             and i.academic_year = t.academic_year
             and i.behavior_date between t.start_date and t.end_date
             and t.type = 'RT'
