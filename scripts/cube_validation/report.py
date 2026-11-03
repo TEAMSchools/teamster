@@ -124,9 +124,11 @@ def mask(n: int) -> str:
         n: A count of rows or students.
 
     Returns:
-        `<10` when `n` is under 10, else the digits.
+        `<` and `MASK_BELOW` (`<10`) when `n` is under `MASK_BELOW`, else the
+        digits. The only place the label is built, so raising `MASK_BELOW`
+        moves every mask and its label together.
     """
-    return "<10" if n < MASK_BELOW else str(n)
+    return f"<{MASK_BELOW}" if n < MASK_BELOW else str(n)
 
 
 SUPPRESSED = "masked"
@@ -158,7 +160,7 @@ def suppress(total: int, parts: list[int]) -> tuple[str, list[str]]:
     ):
         extra.add(shown.pop(0))
     texts = [
-        "<10" if i in hidden else SUPPRESSED if i in extra else str(n)
+        mask(n) if i in hidden else SUPPRESSED if i in extra else str(n)
         for i, n in enumerate(parts)
     ]
     if hidden and not extra and total >= MASK_BELOW:
@@ -1150,7 +1152,7 @@ def _review_body(
         "",
         f"The {domain} team owns the rule behind {n} {plural} in the Cube validation.",
         "Cube and the dashboard disagree on them, or Cube disagrees with a source outside the dashboards.",
-        "Counts under 10 show as `<10`, and identifiers of students and staff are hidden.",
+        f"Counts under {MASK_BELOW} show as `{mask(0)}`, and identifiers of students and staff are hidden.",
         "",
     ]
     out += _bullets(question_lines + anchor_lines, "Nothing needs review.")
