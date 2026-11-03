@@ -1101,6 +1101,29 @@ class TestKipptafDbtAssets:
                 ["kipptaf", "powerschool", name]
             ), f"{name} lost its explicit asset_key"
 
+    def test_adp_workers_staging_blocks_on_failed_deps(self, nodes_by_name):
+        """ADP workers staging must not build over a failed ADP partition.
+
+        The flag sits in model config.meta, which dbt merges with the folder's
+        +meta (dagster.group); a replace would move the asset's group.
+        """
+        from teamster.libraries.dbt.dagster_dbt_translator import (
+            CustomDagsterDbtTranslator,
+        )
+
+        translator = CustomDagsterDbtTranslator(
+            code_location="kipptaf", local_timezone="America/New_York"
+        )
+        props = nodes_by_name["stg_adp_workforce_now__workers"]
+
+        assert props["config"]["meta"]["dagster"]["group"] == "adp_workforce_now"
+        assert translator.get_automation_condition(props) == with_failed_deps_guard(
+            dbt_table_automation_condition()
+        )
+        assert translator.get_asset_key(props) == AssetKey(
+            ["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__workers"]
+        )
+
     def test_table_view_table_chain_exists_in_kipptaf(self, all_specs, specs_by_key):
         """Find and validate a real table→view→table chain in kipptaf.
 
