@@ -2,12 +2,12 @@ models:
   - name: int_students__early_applications_rollup
     description:
       One row per current senior (Overgrad graduation year is the current
-      academic year plus 1) at KIPP Cooper Norcross High School, KIPP Newark
-      Collegiate Academy, or KIPP Newark Lab High School, whether or not they
-      are flagged for early applications or have any. Rolls their Overgrad early
-      applications up to counts and readable lists for the KIPP Forward early
-      apps tracker. Counts are distinct colleges, so a duplicate application row
-      never adds to a count.
+      academic year plus 1) at a high school on the schools tab of the KIPP
+      Forward Early Apps Settings sheet, whether or not they are flagged for
+      early applications or have any. Rolls their Overgrad early applications up
+      to counts and readable lists for the KIPP Forward early apps tracker, and
+      assigns a GPA band from the sheet's gpa_bands tab. Counts are distinct
+      colleges, so a duplicate application row never adds to a count.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -17,6 +17,20 @@ models:
           config:
             severity: error
     columns:
+      - name: gpa_band
+        data_type: string
+        description:
+          Early-application goal band from unweighted_gpa, matched to the ranges
+          in int_students__early_application_gpa_bands. A senior with no GPA
+          gets the band whose minimum is blank on the sheet. Null when the
+          sheet's bands leave the senior's GPA uncovered.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+        config:
+          meta:
+            contains_pii: true
       - name: _dbt_source_project
         data_type: string
         description: District code location the Overgrad record came from.
@@ -29,9 +43,9 @@ models:
       - name: school_key
         data_type: string
         description:
-          Short key for the high school — cooper_norcross, newark_collegiate, or
-          newark_lab. Seniors at any other Overgrad school are left out, so the
-          tracker's school list lives here only.
+          Short key for the high school, from
+          stg_google_sheets__kfwd__early_apps_schools. Seniors at a school not
+          on that tab are left out.
       - name: student_name
         data_type: string
         description: Student name as last name, first name.
@@ -48,14 +62,6 @@ models:
         data_type: numeric
         description:
           Overgrad unweighted GPA, cast to numeric and rounded to 2 decimals.
-        config:
-          meta:
-            contains_pii: true
-      - name: gpa_band
-        data_type: string
-        description:
-          Early-application goal band from unweighted_gpa — 3.75+, 3.50-3.74,
-          3.00-3.49, Below 3.00, or No GPA when Overgrad has no GPA.
         config:
           meta:
             contains_pii: true
@@ -117,13 +123,35 @@ unit_tests:
   - name: test_int_students__early_applications_rollup
     model: int_students__early_applications_rollup
     description:
-      Keeps current seniors at the 3 high schools only, bands GPA after rounding
-      to 2 decimals, counts submitted early applications, ignores Withdrew, and
-      lists Will Apply applications with the earliest deadline.
+      Keeps current seniors at the schools on the schools tab only, bands GPA
+      after rounding to 2 decimals, counts submitted early applications, ignores
+      Withdrew, and lists Will Apply applications with the earliest deadline.
     overrides:
       vars:
         current_academic_year: 2026
     given:
+      - &early_apps_schools
+        input: ref("stg_google_sheets__kfwd__early_apps_schools")
+        format: sql
+        rows: |
+          select 'KIPP Cooper Norcross High School' as overgrad_school_name, 'cooper_norcross' as school_key
+          union all
+          select 'KIPP Newark Collegiate Academy', 'newark_collegiate'
+          union all
+          select 'KIPP Newark Lab High School', 'newark_lab'
+      - &early_apps_gpa_bands
+        input: ref("int_students__early_application_gpa_bands")
+        format: sql
+        rows: |
+          select '3.75+' as gpa_band, cast(3.75 as numeric) as lower_gpa, cast(99 as numeric) as upper_gpa
+          union all
+          select '3.50-3.74', cast(3.50 as numeric), cast(3.75 as numeric)
+          union all
+          select '3.00-3.49', cast(3.00 as numeric), cast(3.50 as numeric)
+          union all
+          select 'Below 3.00', cast(0 as numeric), cast(3.00 as numeric)
+          union all
+          select 'No GPA', cast(-1 as numeric), cast(0 as numeric)
       - input: ref("int_overgrad__students")
         rows:
           - id: 1
@@ -276,6 +304,8 @@ unit_tests:
       vars:
         current_academic_year: 2026
     given:
+      - *early_apps_schools
+      - *early_apps_gpa_bands
       - input: ref("int_overgrad__students")
         rows:
           - id: 1

@@ -12,38 +12,33 @@ with
 
             cast(academics__unweighted_gpa as numeric) as unweighted_gpa_numeric,
             cast(updated_at as timestamp) as updated_at,
-
-            -- the 3 KIPP high schools the tracker reports on; every other
-            -- Overgrad school gets no key and drops out
-            case
-                school__name
-                when 'KIPP Cooper Norcross High School'
-                then 'cooper_norcross'
-                when 'KIPP Newark Collegiate Academy'
-                then 'newark_collegiate'
-                when 'KIPP Newark Lab High School'
-                then 'newark_lab'
-            end as school_key,
         from {{ ref("int_overgrad__students") }}
         where graduation_year = {{ var("current_academic_year") + 1 }}
     ),
 
     seniors_rounded as (
         select
-            _dbt_source_project,
-            overgrad_student_id,
-            high_school,
-            school_key,
-            is_ed_ea,
-            first_name,
-            last_name,
-            assigned_counselor__first_name,
-            assigned_counselor__last_name,
-            updated_at,
+            s._dbt_source_project,
+            s.overgrad_student_id,
+            s.high_school,
+            s.is_ed_ea,
+            s.first_name,
+            s.last_name,
+            s.assigned_counselor__first_name,
+            s.assigned_counselor__last_name,
+            s.updated_at,
 
-            round(unweighted_gpa_numeric, 2) as unweighted_gpa,
-        from seniors
-        where school_key is not null
+            sc.school_key,
+
+            round(s.unweighted_gpa_numeric, 2) as unweighted_gpa,
+
+            -- -1 stands for no GPA, matching the no-GPA band in
+            -- int_students__early_application_gpa_bands
+            coalesce(round(s.unweighted_gpa_numeric, 2), -1) as band_gpa,
+        from seniors as s
+        inner join
+            {{ ref("stg_google_sheets__kfwd__early_apps_schools") }} as sc
+            on s.high_school = sc.overgrad_school_name
     ),
 
     application_labels as (
@@ -147,6 +142,8 @@ select
 
     nd.submitted_no_deadline_type_applications,
 
+    b.gpa_band,
+
     s.last_name || ', ' || s.first_name as student_name,
     s.assigned_counselor__first_name
     || ' '
@@ -160,18 +157,6 @@ select
     ) as latest_overgrad_updated_at,
 
     if(s.is_ed_ea = 'Yes', true, false) as is_ed_ea_flagged,
-
-    case
-        when s.unweighted_gpa >= 3.75
-        then '3.75+'
-        when s.unweighted_gpa >= 3.50
-        then '3.50-3.74'
-        when s.unweighted_gpa >= 3.00
-        then '3.00-3.49'
-        when s.unweighted_gpa is not null
-        then 'Below 3.00'
-        else 'No GPA'
-    end as gpa_band,
 from seniors_rounded as s
 left join
     submitted as sub
@@ -189,3 +174,7 @@ left join
     latest_application as la
     on s.overgrad_student_id = la.overgrad_student_id
     and s._dbt_source_project = la._dbt_source_project
+left join
+    {{ ref("int_students__early_application_gpa_bands") }} as b
+    on s.band_gpa >= b.lower_gpa
+    and s.band_gpa < b.upper_gpa

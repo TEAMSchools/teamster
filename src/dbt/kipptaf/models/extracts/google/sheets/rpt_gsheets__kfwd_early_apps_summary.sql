@@ -55,31 +55,31 @@ with
     ),
 
     bands as (
-        select gpa_band, min(criterion_sort) as band_sort, count(*) as goal_count,
+        select gpa_band, band_sort, count(*) as goal_count,
         from {{ ref("int_students__early_application_criteria") }}
-        group by gpa_band
+        group by gpa_band, band_sort
     ),
 
     metrics as (
         select
-            c.criterion_code as metric_code,
-            c.gpa_band,
-            c.criterion_label as metric_label,
-            c.criterion_sort as within_band_sort,
+            gpa_band,
+            band_sort,
 
-            b.band_sort,
-        from {{ ref("int_students__early_application_criteria") }} as c
-        inner join bands as b on c.gpa_band = b.gpa_band
+            criterion_code as metric_code,
+            criterion_label as metric_label,
+            criterion_sort as within_band_sort,
+        from {{ ref("int_students__early_application_criteria") }}
 
         union all
 
         -- a band with more than 1 goal also gets a "met both" row, after its goals
         select
-            'met_both' as metric_code,
             gpa_band,
+            band_sort,
+
+            'met_both' as metric_code,
             'Met both' as metric_label,
             99 as within_band_sort,
-            band_sort,
         from bands
         where goal_count > 1
     ),
@@ -94,39 +94,42 @@ with
         from metrics
     ),
 
-    count_rows as (
-        select row_sort, gpa_band, row_label, metric_code, basis, band_filter,
-        from
-            unnest(
-                [
-                    struct(
-                        1 as row_sort,
-                        'All' as gpa_band,
-                        'N: flagged Is ED/EA = Yes' as row_label,
-                        cast(null as string) as metric_code,
-                        'count' as basis,
-                        [
-                            '3.75+', '3.50-3.74', '3.00-3.49', 'Below 3.00', 'No GPA'
-                        ] as band_filter
-                    ),
-                    struct(2, '3.75+', 'Seniors in band', null, 'count', ['3.75+']),
-                    struct(
-                        3, '3.50-3.74', 'Seniors in band', null, 'count', ['3.50-3.74']
-                    ),
-                    struct(
-                        4, '3.00-3.49', 'Seniors in band', null, 'count', ['3.00-3.49']
-                    ),
-                    struct(
-                        5,
-                        'Below 3.00 or no GPA',
-                        'Seniors in band',
-                        null,
-                        'count',
-                        ['Below 3.00', 'No GPA']
-                    )
-                ]
-            )
+    summary_groups as (
+        select
+            summary_group,
+
+            array_agg(gpa_band) as band_filter,
+
+            row_number() over (order by summary_sort) as group_sort,
+        from {{ ref("int_students__early_application_gpa_bands") }}
+        group by summary_group, summary_sort
     ),
+
+    count_rows as (
+        select
+            1 as row_sort,
+            'All' as gpa_band,
+            'N: flagged Is ED/EA = Yes' as row_label,
+            cast(null as string) as metric_code,
+            'count' as basis,
+
+            array_agg(gpa_band) as band_filter,
+        from {{ ref("int_students__early_application_gpa_bands") }}
+
+        union all
+
+        -- 1 "Seniors in band" row per summary group, after the N row
+        select
+            1 + group_sort as row_sort,
+            summary_group as gpa_band,
+            'Seniors in band' as row_label,
+            cast(null as string) as metric_code,
+            'count' as basis,
+            band_filter,
+        from summary_groups
+    ),
+
+    last_count_row as (select max(row_sort) as last_row_sort, from count_rows),
 
     summary_rows as (
         select row_sort, gpa_band, row_label, metric_code, basis, band_filter,
@@ -134,30 +137,32 @@ with
 
         union all
 
-        -- after the 5 count rows, each goal gets a "% of N" then a "% of band" row
+        -- after the count rows, each goal gets a "% of N" then a "% of band" row
         select
-            5 + 2 * metric_sort - 1 as row_sort,
-            gpa_band,
-            metric_label || ': % of N' as row_label,
-            metric_code,
+            l.last_row_sort + 2 * m.metric_sort - 1 as row_sort,
+            m.gpa_band,
+            m.metric_label || ': % of N' as row_label,
+            m.metric_code,
 
             'n' as basis,
 
-            [gpa_band] as band_filter,
-        from metrics_sorted
+            [m.gpa_band] as band_filter,
+        from metrics_sorted as m
+        cross join last_count_row as l
 
         union all
 
         select
-            5 + 2 * metric_sort as row_sort,
-            gpa_band,
-            metric_label || ': % of band' as row_label,
-            metric_code,
+            l.last_row_sort + 2 * m.metric_sort as row_sort,
+            m.gpa_band,
+            m.metric_label || ': % of band' as row_label,
+            m.metric_code,
 
             'band' as basis,
 
-            [gpa_band] as band_filter,
-        from metrics_sorted
+            [m.gpa_band] as band_filter,
+        from metrics_sorted as m
+        cross join last_count_row as l
     ),
 
     grid_seniors as (

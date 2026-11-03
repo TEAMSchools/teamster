@@ -2,23 +2,26 @@ models:
   - name: rpt_gsheets__kfwd_early_apps_summary
     description:
       Summary tab of the KIPP Forward early apps tracker. N (current seniors at
-      the tracker's high schools whose Overgrad Is ED/EA flag is Yes) and the
-      count in each GPA band come first, then 2 rows per goal, "% of N" and "%
-      of band". The goals come from int_students__early_application_criteria,
-      plus a "met both" row for each band with more than 1 goal. Display columns
-      read like 3% (1/40); a 0 denominator shows "-". Numeric met, denominator,
-      and percent columns sit beside them for charting.
+      the tracker's high schools whose Overgrad Is ED/EA flag is Yes) comes
+      first, then a count row per summary group of GPA bands from
+      int_students__early_application_gpa_bands, then 2 rows per goal, "% of N"
+      and "% of band". The goals come from
+      int_students__early_application_criteria, plus a "met both" row for each
+      band with more than 1 goal. Display columns read like 3% (1/40); a 0
+      denominator shows "-". Numeric met, denominator, and percent columns sit
+      beside them for charting. The 3 school columns are fixed here, so a new
+      school on the settings sheet also needs a new column.
     columns:
       - name: row_sort
         data_type: int64
         description: Display order of the row.
         data_tests:
-          - unique:
-              config:
-                severity: error
+          - unique
       - name: gpa_band
         data_type: string
-        description: GPA band the row belongs to, or All for the N row.
+        description:
+          GPA band the row belongs to, the summary group for a count row, or All
+          for the N row.
       - name: row_label
         data_type: string
         description:
@@ -102,15 +105,27 @@ unit_tests:
       - input: ref("int_students__early_application_criteria")
         format: sql
         rows: |
-          select 'ed_80_full_need' as criterion_code, 1 as criterion_sort, '3.75+' as gpa_band, '1 ED, full need, 80%+ URM' as criterion_label
+          select 'ed_80_full_need' as criterion_code, 1 as criterion_sort, '3.75+' as gpa_band, '1 ED, full need, 80%+ URM' as criterion_label, 1 as band_sort
           union all
-          select 'ea_78', 2, '3.75+', '2 EA, 78%+ URM'
+          select 'ea_78', 2, '3.75+', '2 EA, 78%+ URM', 1
           union all
-          select 'early_80_full_need', 3, '3.50-3.74', '1 ED/EA, full need, 80%+ URM'
+          select 'early_80_full_need', 3, '3.50-3.74', '1 ED/EA, full need, 80%+ URM', 2
           union all
-          select 'additional_68', 4, '3.50-3.74', '2 additional early, 68%+ URM'
+          select 'additional_68', 4, '3.50-3.74', '2 additional early, 68%+ URM', 2
           union all
-          select 'early_68', 5, '3.00-3.49', '3 early, 68%+ URM'
+          select 'early_68', 5, '3.00-3.49', '3 early, 68%+ URM', 3
+      - input: ref("int_students__early_application_gpa_bands")
+        format: sql
+        rows: |
+          select '3.75+' as gpa_band, '3.75+' as summary_group, 1 as summary_sort
+          union all
+          select '3.50-3.74', '3.50-3.74', 2
+          union all
+          select '3.00-3.49', '3.00-3.49', 3
+          union all
+          select 'Below 3.00', 'Below 3.00 or no GPA', 4
+          union all
+          select 'No GPA', 'Below 3.00 or no GPA', 4
       - input: ref("int_students__early_applications_rollup")
         format: sql
         rows: |
