@@ -8,9 +8,6 @@ models:
       latest enrollment stint in the year is read, so a student with several
       stints gets one row per measure, and a student whose latest stint is above
       grade 4 drops out even if they were benchmarked in a lower grade.
-    config:
-      meta:
-        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -26,6 +23,9 @@ models:
       - name: student_number
         data_type: int64
         description: Student number.
+        config:
+          meta:
+            contains_pii: true
       - name: period
         data_type: string
         description:
@@ -35,11 +35,17 @@ models:
         description:
           Amplify's composite benchmark level for the period -- Above, At, Below
           or Well Below Benchmark.
+        config:
+          meta:
+            contains_pii: true
       - name: composite_expectations
         data_type: string
         description:
           Composite level in report card terms -- Exceeded for Above Benchmark,
           Met for At Benchmark, Not Met for Below or Well Below Benchmark.
+        config:
+          meta:
+            contains_pii: true
       - name: literacy_key_concept
         data_type: string
         description:
@@ -52,6 +58,9 @@ models:
         description:
           Amplify's benchmark level on this measure for the period -- Above, At,
           Below or Well Below Benchmark.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_standard_value_translated
         data_type: string
         description: Spanish translation of the measure name.
@@ -63,6 +72,9 @@ models:
         description:
           Amplify's composite growth classification -- Not applicable in Q1,
           semester growth in Q2 and Q3, year growth in Q4.
+        config:
+          meta:
+            contains_pii: true
       - name: quarter
         data_type: string
         description: Report card quarter, Q1 to Q4.
