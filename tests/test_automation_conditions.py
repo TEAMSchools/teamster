@@ -1104,8 +1104,8 @@ class TestKipptafDbtAssets:
     def test_adp_workers_staging_blocks_on_failed_deps(self, nodes_by_name):
         """ADP workers staging must not build over a failed ADP partition.
 
-        The flag sits in model config.meta, which dbt merges with the folder's
-        +meta (dagster.group); a replace would move the asset's group.
+        dbt merges meta one level deep, so the model's dagster block replaces
+        the folder's; the model restates group to keep the asset's group.
         """
         from teamster.libraries.dbt.dagster_dbt_translator import (
             CustomDagsterDbtTranslator,
