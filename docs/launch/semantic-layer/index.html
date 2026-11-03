@@ -877,7 +877,9 @@
           <ol class="flow-steps" id="flow-steps"></ol>
         </div>
         <p class="flow-note">
-          <b>Fully transitioned</b> = launched and every metric ready.
+          <b>Fully available</b> = Cube can answer everything this dashboard
+          shows: every metric and dimension is ready, and the dashboard is
+          built, matched and access-checked.
         </p>
       </div>
       <div class="kpis" id="kpis"></div>
@@ -900,7 +902,7 @@
           <option value="">All stages</option>
           <option value="not">Not started</option>
           <option value="prog">In progress</option>
-          <option value="done">Fully transitioned</option>
+          <option value="done">Fully available</option>
         </select>
       </div>
     </div>
@@ -981,12 +983,12 @@
 
       <div id="pl-section">
         <div class="grouphead">
-          <h2>Outside the core set</h2>
+          <h2>Not in this year's plan</h2>
           <span class="fill"></span><span class="n" id="pl-n"></span>
         </div>
         <p class="section-note">
-          In the project's parking lot. Shown for reference, not counted in the
-          totals above.
+          Due in 2027-28, or stretch work for this year. Shown for reference,
+          not counted in the totals above.
         </p>
         <div class="table-wrap">
           <table>
@@ -1104,12 +1106,12 @@
           return { c, total, ready: c.ready };
         }
         function stageInfo(d) {
-          if (d.transitioned)
-            return { key: "done", label: "Fully transitioned", cls: "done" };
+          if (d.available ?? d.transitioned)
+            return { key: "done", label: "Fully available", cls: "done" };
           if (d.launched)
             return {
               key: "prog",
-              label: "Launched · metrics still open",
+              label: "Launched · not fully available",
               cls: "warn",
             };
           if (!d.has_checklist || d.stage === 0)
@@ -1192,7 +1194,7 @@
               ds.flatMap((d) => d.dimensions).map((x) => [x.name, x]),
             ).values(),
           ]);
-          const done = ds.filter((d) => d.transitioned).length;
+          const done = ds.filter((d) => d.available ?? d.transitioned).length;
           const started = ds.filter((d) => stageInfo(d).key === "prog").length;
           const today = new Date();
           today.setHours(0, 0, 0, 0);
@@ -1203,7 +1205,7 @@
             (x) => !x.done && !x.due,
           ).length;
           $("#kpis").innerHTML = `
-            <div class="kpi"><span class="eyebrow">Fully transitioned</span>
+            <div class="kpi"><span class="eyebrow">Fully available</span>
               <div class="kpi-value">${done} <small>of ${ds.length} dashboards</small></div>
               <div class="kpi-foot">${started} in progress · ${ds.length - done - started} not started</div></div>
             <div class="kpi"><span class="eyebrow">Metrics ready in Cube</span>
@@ -1415,10 +1417,13 @@
         ]
           .map((k) => `<span><i class="sw-${k}"></i>${STATUS[k]}</span>`)
           .join("");
+        // The step that completes "Fully available"; data from before the
+        // generator sent available_steps marks the last step instead.
+        const AVAILABLE_AT = (DATA.available_steps || STEPS.length) - 1;
         $("#flow-steps").innerHTML = STEPS.map((s, i) =>
-          i === STEPS.length - 1
-            ? `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>${esc(s)}</b><span>Staff use it through Claude</span></li>`
-            : `<li><b><span class="n">${i + 1}</span>${esc(s)}</b></li>`,
+          i === AVAILABLE_AT
+            ? `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>${esc(s)}</b><span>Fully available</span></li>`
+            : `<li><b><span class="n">${i + 1}</span>${esc(s)}</b>${i === STEPS.length - 1 ? "<span>Staff use it through Claude</span>" : ""}</li>`,
         ).join("");
         [...new Set(DATA.dashboards.map((d) => d.domain))].forEach((d) =>
           $("#f-domain").insertAdjacentHTML(
