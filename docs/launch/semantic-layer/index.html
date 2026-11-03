@@ -471,6 +471,12 @@
         color: var(--text-subtle);
         margin-left: 8px;
       }
+      tr.domain td {
+        padding-top: 20px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-subtle);
+        vertical-align: bottom;
+      }
       tr.dash td {
         border-bottom: 1px solid var(--border-subtle);
       }
@@ -609,21 +615,6 @@
         margin: 2px 0;
       }
       .grp li .use {
-        color: var(--text-subtle);
-      }
-      .checklist {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 8px;
-        font: 400 13.5px/1.6 var(--font-brand);
-      }
-      .checklist .tick {
-        display: inline-block;
-        width: 18px;
-        color: var(--good);
-        font-weight: 700;
-      }
-      .checklist .open {
         color: var(--text-subtle);
       }
       .asana-link {
@@ -873,13 +864,12 @@
           </ol>
         </div>
         <div class="flow">
-          <span class="flow-label">Each dashboard</span>
+          <span class="flow-label">Each domain</span>
           <ol class="flow-steps" id="flow-steps"></ol>
         </div>
         <p class="flow-note">
-          <b>Fully available</b> = Cube can answer everything this dashboard
-          shows: every metric and dimension is ready, and the dashboard is
-          built, matched and access-checked.
+          Progress is tracked per domain. <b>Verified</b> = Cube matches every
+          dashboard in the domain.
         </p>
       </div>
       <div class="kpis" id="kpis"></div>
@@ -898,11 +888,12 @@
         <select id="f-domain" class="field" aria-label="Domain">
           <option value="">All domains</option>
         </select>
-        <select id="f-stage" class="field" aria-label="Transition stage">
+        <select id="f-stage" class="field" aria-label="Domain stage">
           <option value="">All stages</option>
           <option value="not">Not started</option>
           <option value="prog">In progress</option>
-          <option value="done">Fully available</option>
+          <option value="verified">Verified</option>
+          <option value="launched">Launched</option>
         </select>
       </div>
     </div>
@@ -913,8 +904,8 @@
         <span class="fill"></span><span class="n" id="dash-n"></span>
       </div>
       <p class="section-note">
-        Select a dashboard to see its metrics, dimensions and transition
-        checklist.
+        Each domain row shows where the domain stands. Select a dashboard to see
+        its metrics and dimensions.
       </p>
       <div class="table-wrap">
         <table>
@@ -923,7 +914,7 @@
               <th class="col-name">Dashboard</th>
               <th class="col-bar">Metrics ready</th>
               <th class="col-bar">Dimensions ready</th>
-              <th class="col-stage">Transition stage</th>
+              <th class="col-stage">Domain stage</th>
               <th class="col-due">Target</th>
             </tr>
           </thead>
@@ -997,7 +988,6 @@
                 <th class="col-name">Dashboard</th>
                 <th class="col-bar">Metrics ready</th>
                 <th class="col-bar">Dimensions ready</th>
-                <th class="col-stage">Transition stage</th>
                 <th class="col-due">Target</th>
               </tr>
             </thead>
@@ -1059,7 +1049,9 @@
           4: "Team capacity",
           5: "Sustainment",
         };
-        const STEPS = DATA.checklist_steps;
+        // Data from before the generator sent domains shows no domain stage.
+        const STEPS = DATA.domain_steps || [];
+        const DOMAINS = DATA.domains || [];
         const BUILDING = "Building in Cube";
         // "Partly in Cube" is counted as "Needs Cube work".
         [...DATA.dashboards, ...DATA.parking_lot].forEach((d) =>
@@ -1106,25 +1098,30 @@
           });
           return { c, total, ready: c.ready };
         }
-        function stageInfo(d) {
-          if (d.available ?? d.transitioned)
-            return { key: "done", label: "Fully available", cls: "done" };
-          if (d.launched)
+        // steps follow DATA.domain_steps: Built in Cube, Verified, Security
+        // review, Pilot run, Launched.
+        function stageInfo(dom) {
+          if (dom.steps[4].done)
+            return { key: "launched", label: "Launched ✓", cls: "done" };
+          const verified = dom.steps[1].done;
+          // stage = furthest step ticked, so name it as done.
+          if (dom.stage > 0)
             return {
-              key: "prog",
-              label: "Launched · not fully available",
-              cls: "warn",
+              key: verified ? "verified" : "prog",
+              label: `${STEPS[dom.stage - 1]} ✓`,
+              cls: verified ? "done" : "",
             };
-          // stage = furthest checklist step ticked, so name it as done.
-          if (d.has_checklist && d.stage > 0)
-            return { key: "prog", label: `${STEPS[d.stage - 1]} ✓`, cls: "" };
-          if (isBuilding(d)) return { key: "prog", label: BUILDING, cls: "" };
+          if (isBuilding(dom)) return { key: "prog", label: BUILDING, cls: "" };
           return { key: "not", label: "Not started", cls: "" };
         }
-        // "Building in Cube" is a page-only step before the Asana checklist:
-        // a dashboard is building once any of its metrics is ready.
-        function isBuilding(d) {
-          return d.measures.some((m) => m.status === "ready");
+        // "Building in Cube" is a page-only step before the Asana steps: a
+        // domain is building once any metric on its dashboards is ready.
+        function isBuilding(dom) {
+          return DATA.dashboards.some(
+            (d) =>
+              d.domain === dom.name &&
+              d.measures.some((m) => m.status === "ready"),
+          );
         }
 
         // ── Building blocks ──────────────────────────────────────────
@@ -1145,9 +1142,13 @@
             return `<span class="count muted">No ${noun} listed</span>`;
           return `<span class="count"><b>${t.ready}</b> of ${t.total}</span>`;
         }
-        function steps(d) {
-          return `<div class="steps" aria-hidden="true"><span class="${isBuilding(d) ? "on" : ""}"></span>${STEPS.map((_, i) => `<span class="${d.checklist[i] ? "on" : ""}"></span>`).join("")}</div>`;
+        function steps(dom) {
+          return `<div class="steps" aria-hidden="true"><span class="${isBuilding(dom) ? "on" : ""}"></span>${dom.steps.map((s) => `<span class="${s.done ? "on" : ""}"></span>`).join("")}</div>`;
         }
+        const msName = (m) => (m.code ? `${m.code} ${m.name}` : m.name);
+        // Domain milestones carry a phase and no code; numbered ones from
+        // older data carry only a code.
+        const phaseOf = (m) => m.phase ?? Number(m.code.slice(1).split(".")[0]);
         function grouped(items, isDim) {
           return (
             [...ORDER, "tableau_only"]
@@ -1166,29 +1167,33 @@
           );
         }
         function detail(d) {
-          const ck = d.has_checklist
-            ? `<ul class="checklist">${STEPS.map((s, i) => `<li><span class="tick">${d.checklist[i] ? "✓" : ""}</span><span class="${d.checklist[i] ? "" : "open"}">${esc(s)}</span></li>`).join("")}</ul>`
-            : '<p class="muted" style="margin:0 0 8px">No transition checklist yet.</p>';
           return `<div class="detail-grid">
             <div class="detail"><h3>Metrics</h3>${grouped(d.measures, false)}</div>
-            <div class="detail"><h3>Dimensions</h3>${grouped(d.dimensions, true)}</div>
-            <div class="detail"><h3>Transition checklist</h3>${ck}
+            <div class="detail"><h3>Dimensions</h3>${grouped(d.dimensions, true)}
               <a class="asana-link" href="https://app.asana.com/0/0/${esc(d.gid)}" target="_blank" rel="noopener">Open in Asana ↗</a></div>
           </div>`;
         }
-        function row(d, hint) {
-          const st = stageInfo(d);
+        // Dashboards in this year's plan leave the stage cell to their domain
+        // row; the not-in-plan table has no stage column.
+        function row(d, hint, inPlan) {
           const m = tally(d.measures),
             dm = tally(d.dimensions);
-          const icon = st.cls === "done" ? "✓ " : st.cls === "warn" ? "⚠ " : "";
+          const cols = inPlan ? 5 : 4;
           return `<tr class="dash">
             <td><button class="name-btn" aria-expanded="false" aria-controls="det-${esc(d.gid)}"><span class="chev">▶</span><span>${esc(d.name)}</span></button>${hint ? `<span class="match-hint">${esc(hint)}</span>` : ""}</td>
             <td><div class="cell-bar">${bar(m, "metrics")}${countText(m, "metrics")}</div></td>
             <td><div class="cell-bar">${bar(dm, "dimensions")}${countText(dm, "dimensions")}</div></td>
-            <td>${steps(d)}<div class="stage-label ${st.cls}">${icon}${esc(st.label)}</div></td>
+            ${inPlan ? "<td></td>" : ""}
             <td class="due">${d.due ? fmtDate(d.due) : '<span class="muted">Not set</span>'}</td>
           </tr>
-          <tr class="detail" id="det-${esc(d.gid)}" hidden><td colspan="5">${detail(d)}</td></tr>`;
+          <tr class="detail" id="det-${esc(d.gid)}" hidden><td colspan="${cols}">${detail(d)}</td></tr>`;
+        }
+        function domainCells(dom) {
+          if (!dom) return "<td></td><td></td>";
+          const st = stageInfo(dom);
+          const launch = dom.steps[4].due;
+          return `<td>${steps(dom)}<div class="stage-label ${st.cls}">${esc(st.label)}</div></td>
+            <td class="due">${launch ? `Launch ${fmtDate(launch)}` : '<span class="muted">Not set</span>'}</td>`;
         }
 
         // ── KPIs ─────────────────────────────────────────────────────
@@ -1201,8 +1206,11 @@
               ds.flatMap((d) => d.dimensions).map((x) => [x.name, x]),
             ).values(),
           ]);
-          const done = ds.filter((d) => d.available ?? d.transitioned).length;
-          const started = ds.filter((d) => stageInfo(d).key === "prog").length;
+          const keys = DOMAINS.map((dom) => stageInfo(dom).key);
+          const launched = keys.filter((k) => k === "launched").length;
+          const verified =
+            launched + keys.filter((k) => k === "verified").length;
+          const started = keys.filter((k) => k === "prog").length;
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const next = DATA.milestones
@@ -1212,9 +1220,9 @@
             (x) => !x.done && !x.due,
           ).length;
           $("#kpis").innerHTML = `
-            <div class="kpi"><span class="eyebrow">Fully available</span>
-              <div class="kpi-value">${done} <small>of ${ds.length} dashboards</small></div>
-              <div class="kpi-foot">${started} in progress · ${ds.length - done - started} not started</div></div>
+            <div class="kpi"><span class="eyebrow">Domains verified</span>
+              <div class="kpi-value">${verified} <small>of ${DOMAINS.length} domains</small></div>
+              <div class="kpi-foot">${launched} launched · ${started} in progress · ${DOMAINS.length - verified - started} not started</div></div>
             <div class="kpi"><span class="eyebrow">Metrics ready in Cube</span>
               <div class="kpi-value">${m.ready} <small>of ${m.total}</small></div>
               ${bar(m, "metrics")}<div class="kpi-foot">A number a dashboard calculates, like attendance rate or % proficient. Counted once for each dashboard that uses it.</div></div>
@@ -1222,7 +1230,7 @@
               <div class="kpi-value">${dm.ready} <small>of ${dm.total}</small></div>
               ${bar(dm, "dimensions")}<div class="kpi-foot">What you filter or slice a metric by, like school or grade level. Counted once, however many dashboards use it.</div></div>
             <div class="kpi"><span class="eyebrow">Next milestone</span>
-              ${next ? `<div class="kpi-ms">${esc(next.code)} ${esc(next.name)}</div><div class="kpi-foot">Due ${fmtDate(next.due)}</div>` : `<div class="kpi-ms muted">None scheduled</div>`}
+              ${next ? `<div class="kpi-ms">${esc(msName(next))}</div><div class="kpi-foot">Due ${fmtDate(next.due)}</div>` : `<div class="kpi-ms muted">None scheduled</div>`}
               <div class="kpi-foot">${unsched} open milestones have no due date yet</div></div>`;
         }
 
@@ -1255,15 +1263,17 @@
             shown = 0;
           domains.forEach((dom) => {
             if (fd && fd !== dom) return;
+            const rec = DOMAINS.find((x) => x.name === dom);
+            if (fs && (!rec || stageInfo(rec).key !== fs)) return;
             const all = DATA.dashboards.filter((d) => d.domain === dom);
             const rows = all
               .map((d) => ({ d, mh: matchHint(d, q) }))
-              .filter(({ d, mh }) => mh.ok && (!fs || stageInfo(d).key === fs));
+              .filter(({ mh }) => mh.ok);
             if (!rows.length) return;
             shown += rows.length;
             const m = tally(all.flatMap((d) => d.measures));
-            html += `<tr class="domain"><th colspan="5">${esc(dom)}<span class="dom-sum">${all.length} dashboard${all.length > 1 ? "s" : ""} · ${m.ready} of ${m.total} metrics ready</span></th></tr>`;
-            html += rows.map(({ d, mh }) => row(d, mh.hint)).join("");
+            html += `<tr class="domain"><th colspan="3">${esc(dom)}<span class="dom-sum">${all.length} dashboard${all.length > 1 ? "s" : ""} · ${m.ready} of ${m.total} metrics ready</span></th>${domainCells(rec)}</tr>`;
+            html += rows.map(({ d, mh }) => row(d, mh.hint, true)).join("");
           });
           $("#dash-body").innerHTML = html;
           $("#empty-note").hidden = shown > 0;
@@ -1302,7 +1312,7 @@
 
           const groups = {};
           DATA.milestones.forEach((m) => {
-            const p = m.code.slice(1).split(".")[0];
+            const p = phaseOf(m);
             (groups[p] = groups[p] || []).push(m);
           });
           const rows = Object.keys(groups)
@@ -1315,14 +1325,14 @@
                   mark(
                     m.done ? "done" : "",
                     m.due,
-                    `${m.code} ${m.name}|Due ${fmtDate(m.due)}${m.done ? " · done" : ""}`,
-                    `${m.code} ${m.name}, due ${fmtDate(m.due)}`,
+                    `${msName(m)}|Due ${fmtDate(m.due)}${m.done ? " · done" : ""}`,
+                    `${msName(m)}, due ${fmtDate(m.due)}`,
                   ),
                 )
                 .join("");
               const und = ms.filter((m) => !m.due);
               const chips = und.length
-                ? `<div class="tl-unsched">No date yet: ${und.map((m) => `<span class="chip ${m.done ? "done" : ""}" title="${esc(m.name)}">${esc(m.code)}</span>`).join("")}</div>`
+                ? `<div class="tl-unsched">No date yet: ${und.map((m) => `<span class="chip ${m.done ? "done" : ""}" title="${esc(m.name)}">${esc(m.code || m.name)}</span>`).join("")}</div>`
                 : "";
               return `<div class="tl-row"><div class="tl-label">${esc(PHASES[p] || "Phase " + p)}<small>M${p} · ${ms.filter((m) => m.done).length} of ${ms.length} done</small></div>
                 <div><div class="tl-track">${todayLine}${marks}</div>${chips}</div></div>`;
@@ -1348,7 +1358,7 @@
             DATA.milestones
               .map(
                 (m) =>
-                  `<tr><td><b>${esc(m.code)}</b> ${esc(m.name)}</td><td>${esc(PHASES[m.code.slice(1).split(".")[0]] || "")}</td><td>${m.due ? fmtDate(m.due) : '<span class="muted">Not set</span>'}</td><td>${m.done ? "Done" : "Open"}</td></tr>`,
+                  `<tr><td>${m.code ? `<b>${esc(m.code)}</b> ` : ""}${esc(m.name)}</td><td>${esc(PHASES[phaseOf(m)] || "")}</td><td>${m.due ? fmtDate(m.due) : '<span class="muted">Not set</span>'}</td><td>${m.done ? "Done" : "Open"}</td></tr>`,
               )
               .join("") +
             "</tbody>";
@@ -1424,18 +1434,19 @@
         ]
           .map((k) => `<span><i class="sw-${k}"></i>${STATUS[k]}</span>`)
           .join("");
-        // "Fully available" is a milestone, not a checklist step: it sits after
-        // the step that completes it. Data from before the generator sent
-        // available_steps puts it after the last step instead.
-        const AVAILABLE_AT = (DATA.available_steps || STEPS.length) - 1;
-        const MILESTONE = `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>Fully available</b><span>Cube can answer everything this dashboard shows</span></li>`;
+        const STEP_NOTE = {
+          "Built in Cube": "Cubes facts task done",
+          Verified: "Cube matches its dashboards",
+          Launched: "Staff use it through Claude",
+        };
         $("#flow-steps").innerHTML =
           `<li><b><span class="n">1</span>${BUILDING}</b><span>1+ metric ready</span></li>` +
-          STEPS.map(
-            (s, i) =>
-              `<li><b><span class="n">${i + 2}</span>${esc(s)}</b>${i === STEPS.length - 1 ? "<span>Staff use it through Claude</span>" : ""}</li>` +
-              (i === AVAILABLE_AT ? MILESTONE : ""),
-          ).join("");
+          STEPS.map((s, i) => {
+            const note = STEP_NOTE[s] ? `<span>${STEP_NOTE[s]}</span>` : "";
+            return i === STEPS.length - 1
+              ? `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>${esc(s)}</b>${note}</li>`
+              : `<li><b><span class="n">${i + 2}</span>${esc(s)}</b>${note}</li>`;
+          }).join("");
         [...new Set(DATA.dashboards.map((d) => d.domain))].forEach((d) =>
           $("#f-domain").insertAdjacentHTML(
             "beforeend",
@@ -1451,7 +1462,7 @@
         renderTimeline();
         if (DATA.parking_lot.length) {
           $("#pl-body").innerHTML = DATA.parking_lot
-            .map((d) => row(d, ""))
+            .map((d) => row(d, "", false))
             .join("");
           $("#pl-n").textContent = DATA.parking_lot.length;
         } else {
