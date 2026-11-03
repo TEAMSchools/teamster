@@ -21,7 +21,7 @@ is.
 - Window: `academic_year >= current_academic_year - 1`. It moves forward at each
   July rollover with no code change.
 - Every field the "EA - Referral - Roster" worksheet shows, in its rows, its
-  tooltip, and its filters (list below).
+  tooltip, and its filters, except the 2 filters under Non-goals (list below).
 - The suspension letters on file in DeansList, with upload dates.
 - A `region` column for the per-region import.
 
@@ -31,6 +31,7 @@ is.
 - Miami 2025-26 in this change. The feed reads the student number the upstream
   models provide, so Miami fills in when #5790 lands, with no feed change.
 - The incident `context` field.
+- The dashboard's chronic absence and Tier 3/Tier 4 filters.
 - Non-suspension consequences.
 
 ## Anti-goals
@@ -42,10 +43,10 @@ is.
 
 ## Approaches
 
-1. **Read what the OKRTS Dashboard reads (picked).** DeansList penalties,
-   attachments, and roster assignments, plus the student enrollment extract. One
-   small PR. Costs 3 layer rule A1 rows in `standard-baseline.tsv` under #5811,
-   the same pattern `rpt_gsheets__historical_suspensions` and
+1. **Read what the OKRTS Dashboard reads (picked).** DeansList penalties and
+   attachments, plus the student enrollment extract. One small PR. Costs 2 layer
+   rule A1 rows in `standard-baseline.tsv` under #5811, the same pattern
+   `rpt_gsheets__historical_suspensions` and
    `rpt_gsheets__school_metrics_extract` follow.
 2. **Marts first.** Fix Miami in the behavior marts, add the free-text, SSDS,
    and letter fields to marts, then build a thin feed. Cleanest under rule A2
@@ -65,11 +66,11 @@ is.
   (`_dbt_source_project`).
 - `iep_status` comes from that enrollment, the same field the dashboard uses.
 - Columns:
-  - Where and when: `region`, `school`, `academic_year`,
-    `academic_year_display`.
+  - Where and when: `region`, `school`, `academic_year`. `academic_year` carries
+    the display form (`2025-26`), not the integer year; the window filter still
+    compares the integer year.
   - Student: `student_number`, `student_name`, `grade_level`, `gender`,
-    `homeroom_section`, `iep_status`, `ml_status`, `is_chronically_absent`,
-    `is_tier3_4`.
+    `homeroom_section`, `iep_status`, `ml_status`.
   - Incident: `incident_id`, `created_date`, `entry_staff`, `referral_tier`,
     `category`, `admin_summary`, `reported_details`, `nj_state_reporting`,
     `ssds_incident_id`.
@@ -87,9 +88,6 @@ is.
 
 - All suspensions, whatever the referral tier. The dashboard hides the
   Non-Behavioral, Social Work, and Home Instruction Request tiers by default.
-- `is_tier3_4` and `is_chronically_absent` follow
-  `rpt_tableau__okrts_referrals`: current Tier 3/Tier 4 roster membership, and
-  year-to-date ADA at or below 0.90.
 - Letter columns reuse the dashboard's attachment-name list, split into
   suspension letters and other uploads.
 
