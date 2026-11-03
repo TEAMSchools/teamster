@@ -1057,9 +1057,7 @@
           4: "Team capacity",
           5: "Sustainment",
         };
-        // Display labels for checklist steps whose Asana names are long.
-        const SHORT_STEP = { "Rebuilt in Tableau on Cube": "Tableau rebuilt" };
-        const STEPS = DATA.checklist_steps.map((s) => SHORT_STEP[s] || s);
+        const STEPS = DATA.checklist_steps;
         // "Partly in Cube" is counted as "Needs Cube work".
         [...DATA.dashboards, ...DATA.parking_lot].forEach((d) =>
           [...d.measures, ...d.dimensions].forEach((x) => {
@@ -1419,7 +1417,7 @@
           .join("");
         $("#flow-steps").innerHTML = STEPS.map((s, i) =>
           i === STEPS.length - 1
-            ? `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>${esc(s)}</b><span>Dashboard runs on Cube</span></li>`
+            ? `<li class="end"><b><span class="badge" aria-hidden="true">✓</span>${esc(s)}</b><span>Staff use it through Claude</span></li>`
             : `<li><b><span class="n">${i + 1}</span>${esc(s)}</b></li>`,
         ).join("");
         [...new Set(DATA.dashboards.map((d) => d.domain))].forEach((d) =>
