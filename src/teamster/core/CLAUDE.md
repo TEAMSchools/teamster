@@ -75,6 +75,15 @@ via `_build_dbt_condition()`:
   model via `meta.dagster.automation_condition.cron_schedule` (tables only; the
   translator ignores it on views). Timezone defaults to the code location's
   `LOCAL_TIMEZONE` via the translator.
+- `with_failed_deps_guard(condition)` — wraps a table or cron condition so the
+  model is held while any dep partition's latest attempt is failed. Opted into
+  per model via `meta.dagster.automation_condition.block_on_failed_deps: true`
+  (tables only). It checks every partition of a partitioned dep, not a recent
+  window, so one old failed partition holds the model until someone reruns it;
+  the held triggers stay armed, so the rerun rebuilds it. A partition that can
+  never succeed holds it for good: once the last good file for that date is
+  acceptable, report a materialization for that partition in the Dagster UI to
+  release it. A canceled run does not count as failed.
 - `dbt_table_automation_condition()` — for TABLE models: also triggers on
   upstream data changes, including through intermediate views via
   `_build_any_ancestor_updated()` (recursive `any_deps_match` up to

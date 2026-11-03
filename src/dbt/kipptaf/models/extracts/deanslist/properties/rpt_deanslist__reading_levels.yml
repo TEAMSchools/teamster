@@ -1,27 +1,80 @@
 models:
   - name: rpt_deanslist__reading_levels
+    description: >-
+      DeansList report card extract of DIBELS benchmark results for currently
+      enrolled K-4 students outside Miami in the current academic year, one row
+      per student, quarter, and DIBELS measure other than the composite. Q1
+      reports BOY, Q2 and Q3 report MOY, and Q4 reports EOY. Only the student's
+      latest enrollment stint in the year is read, so a student with several
+      stints gets one row per measure, and a student whose latest stint is above
+      grade 4 drops out even if they were benchmarked in a lower grade.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - quarter
+              - literacy_key_concept
     columns:
       - name: academic_year
         data_type: int64
+        description: Academic year, always the current one.
       - name: student_number
         data_type: int64
+        description: Student number.
+        config:
+          meta:
+            contains_pii: true
       - name: period
         data_type: string
+        description:
+          Benchmark administration the row reports -- BOY, MOY or EOY.
       - name: composite_level
         data_type: string
+        description:
+          Amplify's composite benchmark level for the period -- Above, At, Below
+          or Well Below Benchmark.
+        config:
+          meta:
+            contains_pii: true
       - name: composite_expectations
         data_type: string
+        description:
+          Composite level in report card terms -- Exceeded for Above Benchmark,
+          Met for At Benchmark, Not Met for Below or Well Below Benchmark.
+        config:
+          meta:
+            contains_pii: true
       - name: literacy_key_concept
         data_type: string
+        description:
+          The DIBELS measure the row reports, for example Reading Fluency (ORF).
       - name: description
         data_type: string
+        description: Plain-language description of what the measure assesses.
       - name: performance_level
         data_type: string
+        description:
+          Amplify's benchmark level on this measure for the period -- Above, At,
+          Below or Well Below Benchmark.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_standard_value_translated
         data_type: string
+        description: Spanish translation of the measure name.
       - name: description_value_translated
         data_type: string
+        description: Spanish translation of the measure description.
       - name: growth_level
         data_type: string
+        description:
+          Amplify's composite growth classification -- Not applicable in Q1,
+          semester growth in Q2 and Q3, year growth in Q4.
+        config:
+          meta:
+            contains_pii: true
       - name: quarter
         data_type: string
+        description: Report card quarter, Q1 to Q4.
