@@ -2,10 +2,9 @@
 
 Server is lenient: it published and rendered a workbook whose worksheets were
 missing `simple-id` and which used elements this Desktop build does not declare.
-Desktop refused to open the same file. check_seq.py and check_zone_order.py both
-passed it, because they only look at child ORDER inside pane / view / zone.
-
-Two checks here:
+Desktop refused to open the same file. One check here, the palette check, is a
+render failure instead: Server and Desktop both accept the file and draw the
+wrong colours.
 
 **Required children.** Desktop reports
 `missing elements in content model '(((layout-options?)|(repository-location?)),table,simple-id)'`
@@ -26,6 +25,12 @@ different legal element sets. Adding an element means adding its manifest entry.
 `missing elements in content model '(datasources?,...,slices?,aggregation)'`.
 Hand-built worksheets omit it easily.
 
+**Pane order.** Pane children must follow the content model Desktop printed.
+
+**Palette instances.** A palette in a data source's `<style>` takes effect only
+when its field also has a `<column-instance>` directly under that data source.
+Without one the marks fall back to Tableau's default colours, with no error.
+
 **Unknown elements (weak).** Comparative only: any tag absent from a reference
 workbook. Superseded by the manifest check above -- a --ref diff tells you what
 changed, not what is legal.
@@ -35,6 +40,9 @@ Usage: uv run python check_twb.py <twb> [--ref <known-good.twb>]
 
 import re
 import sys
+
+# trunk-ignore(bandit/B405): parses workbooks this tool downloaded itself, not untrusted input
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 TAG = re.compile(r"<([a-zA-Z][\w.-]*)[ >/]")
@@ -164,6 +172,32 @@ def check_pane_order(text: str, name: str) -> int:
     return problems
 
 
+def check_palette_instances(text: str, name: str) -> int:
+    """Every palette field in a data source needs a data-source-level instance.
+
+    A colour encoding can name several fields joined by a newline; each one is
+    checked. Measure Names never has an instance and needs none.
+    """
+    problems = 0
+    # trunk-ignore(bandit/B314): see the B405 note at the import
+    root = ET.fromstring(text)
+    for ds in root.findall("datasources/datasource"):
+        have = {ci.get("name") for ci in ds.findall("column-instance")}
+        label = ds.get("caption") or ds.get("name")
+        fields = {
+            f
+            for enc in ds.findall("style/style-rule/encoding[@type='palette']")
+            for f in enc.get("field", "").split("\n")
+        }
+        for field in sorted(fields - have - {"", "[:Measure Names]"}):
+            print(
+                f"  {name}: datasource {label!r} palette field {field} has no "
+                f"data-source-level <column-instance>; the palette will not apply"
+            )
+            problems += 1
+    return problems
+
+
 def check_manifest_drop(text: str, ref: str, name: str) -> int:
     """Never reconstruct the manifest -- only insert into it.
 
@@ -210,6 +244,7 @@ if __name__ == "__main__":
         n += check_features(text, p.name)
         n += check_views(text, p.name)
         n += check_pane_order(text, p.name)
+        n += check_palette_instances(text, p.name)
         if ref_path:
             ref_text = ref_path.read_text(encoding="utf-8", newline="")
             n += check_manifest_drop(text, ref_text, p.name)
