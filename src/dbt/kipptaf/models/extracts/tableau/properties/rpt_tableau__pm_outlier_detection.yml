@@ -6,7 +6,8 @@ models:
       from that observer's PM scoring forms (observation type PM before 2024,
       PMS from 2024). Observer attributes come from their primary roster row on
       the round's last end date across regions; teacher attributes come from
-      their primary roster row at their last scored form in the round.
+      their primary roster row at their last scored form in the round, and are
+      null when no primary row covers that time.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -205,8 +206,9 @@ models:
       - name: teacher_overall_score
         data_type: float64
         description:
-          Average overall score across every PM scoring form this observer gave
-          this teacher in the round.
+          Average of observation_score over the scored measurement rows of every
+          PM scoring form this observer gave this teacher in the round, so each
+          form is weighted by its number of measurement rows.
       - name: iqr_current
         data_type: string
         description:

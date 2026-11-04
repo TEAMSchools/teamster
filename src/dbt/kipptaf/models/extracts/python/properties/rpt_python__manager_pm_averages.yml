@@ -120,5 +120,6 @@ models:
       - name: overall_score
         data_type: float64
         description:
-          Average overall form score across the forms the observer scored this
-          round.
+          Average of observation_score over the measurement rows of every form
+          the observer scored this round, so each form is weighted by its number
+          of measurement rows.

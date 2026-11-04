@@ -8,7 +8,7 @@ with
     ),
 
     score_dates as (
-        select distinct
+        select
             od.observer_employee_number,
             od.academic_year,
             od.form_term as reporting_term,
@@ -151,7 +151,7 @@ inner join
     on sd.observer_employee_number = sa.observer_employee_number
     and sd.academic_year = sa.academic_year
     and sd.reporting_term = sa.term_code
-inner join
+left join
     {{ ref("int_people__staff_roster_history") }} as tsrh
     on sa.employee_number = tsrh.employee_number
     and sa.last_observed_at_timestamp
