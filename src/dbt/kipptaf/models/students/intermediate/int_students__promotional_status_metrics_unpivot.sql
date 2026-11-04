@@ -28,6 +28,7 @@ with
 select
     student_number, academic_year, term_name, region, grade_level, metric, metric_value,
 from
+    -- trunk-ignore(sqlfluff/LT01): sqlfmt writes nulls( and sqlfluff wants nulls (
     metrics unpivot include nulls(
         metric_value for metric in (
             ada_term_running,

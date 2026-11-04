@@ -9,6 +9,14 @@ models:
       value.
     config:
       materialized: table
+      meta:
+        standard_exempt:
+          A5: >-
+            Each pick is the business rule the promotion policy is written
+            against, not a dedup — the most recent DIBELS benchmark composite of
+            the year (rn_composite), the latest FAST window per subject
+            (rn_subject_year), and the latest PowerSchool log entry per student
+            and year for the exemption and forced-retention overrides (rn_log).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
