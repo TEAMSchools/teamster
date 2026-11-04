@@ -79,16 +79,25 @@ with
         from plan_years
     ),
 
+    plan_years_effective as (
+        select
+            *,
+
+            -- a plan that ends before it starts still reaches its start date
+            greatest(year_start, year_end_or_max) as year_end_effective,
+        from plan_years_sentinel
+    ),
+
     plans_ranked as (
         select
             *,
 
-            max(year_end_or_max) over (
+            max(year_end_effective) over (
                 partition by student_number, intervention_name, academic_year
-                order by year_start, year_end_or_max
+                order by year_start, year_end_or_max, intervention_plan_id
                 rows between unbounded preceding and 1 preceding
             ) as prior_max_end,
-        from plan_years_sentinel
+        from plan_years_effective
     ),
 
     plans_flagged as (
@@ -110,7 +119,7 @@ with
 
             sum(is_new_episode) over (
                 partition by student_number, intervention_name, academic_year
-                order by year_start, year_end_or_max
+                order by year_start, year_end_or_max, intervention_plan_id
                 rows between unbounded preceding and current row
             ) as episode_number,
         from plans_flagged
