@@ -3,10 +3,11 @@ models:
     description: >-
       Staff survey responses for the Survey Dashboard, one row per answer, with
       the respondent's staff roster attributes as of the submission date.
-      Responses keep flowing while a round is open, because the survey
-      completion, survey links and seat tracker extracts read this model live.
-      The Survey Dashboard hides open-round results with a data source filter on
-      is_round_open.
+      Limited to the surveys the dashboard reports on, and to rounds that have
+      closed: a round's answers appear the first time the view is read after its
+      end date in the reporting terms sheet. Surveys with no matching round are
+      kept. Completion tracking reads int_surveys__survey_submissions instead,
+      so it stays live during a round.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -89,14 +90,6 @@ models:
           Rank of the submission among one respondent's submissions for the same
           survey round and subject, latest first. 1 is the submission that
           counts.
-      - name: is_round_open
-        data_type: boolean
-        description: >-
-          True while the survey round's end date, from the reporting terms
-          sheet, is today or later in local time. False once the round has
-          closed, and for surveys with no matching round. Evaluated each time
-          the view is read, so a Tableau extract refresh the day after the end
-          date picks up the closed round.
       - name: employee_number
         data_type: int64
         description: Respondent's employee number.

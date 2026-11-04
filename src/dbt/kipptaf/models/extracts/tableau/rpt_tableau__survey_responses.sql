@@ -1,3 +1,13 @@
+with
+    open_rounds as (
+        select term_name, term_code, academic_year,
+        from {{ ref("dim_terms") }}
+        where
+            `type` = 'SURVEY'
+            and end_date >= current_date('{{ var("local_timezone") }}')
+    )
+
+-- trunk-ignore(sqlfluff/ST06): entity case fixed 3rd by Tableau RLS contract order
 select
     sr.survey_id,
     sr.survey_title,
@@ -59,10 +69,6 @@ select
 
     tgl.grade_level as primary_grade_level_taught,
 
-    coalesce(
-        dt.end_date >= current_date('{{ var("local_timezone") }}'), false
-    ) as is_round_open,
-
     lower(sr.question_shortname) as question_shortname,
 
     regexp_replace(sr.answer, r'<[^>]*>', '') as answer,
@@ -84,8 +90,18 @@ left join
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 left join
-    {{ ref("dim_terms") }} as dt
-    on sr.survey_title = dt.term_name
-    and sr.term_code = dt.term_code
-    and sr.academic_year = dt.academic_year
-    and dt.`type` = 'SURVEY'
+    open_rounds as orr
+    on sr.survey_title = orr.term_name
+    and sr.term_code = orr.term_code
+    and sr.academic_year = orr.academic_year
+where
+    orr.term_code is null
+    -- the surveys the Survey Dashboard reports on
+    and sr.survey_title in (
+        'CMO - Regional Leadership Survey',
+        'Engagement & Support Surveys',
+        'Intent to Return Survey',
+        'KTAF Support Survey',
+        'Room 9/10/11 & Staff Engagement Survey',
+        'Support Survey'
+    )
