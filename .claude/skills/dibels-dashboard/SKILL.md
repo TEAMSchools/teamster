@@ -134,5 +134,9 @@ and the NJDOE screener extract. As a new track lands, give it a route and a
 reference file here rather than starting a separate skill.
 
 On hold, not in prod: the Bright Spots tracker (design and open questions on
-issue #4952, code on PR #4964) and Camden benchmark completion tracking (issue
-#4896, PR #4902).
+issue #4952, requested by T&L) and Camden benchmark completion tracking (issue
+#4896, requested by KIPP Sumner Academy and Lanning Square Primary). Both tracks
+now live on one combined branch/PR to simplify handover (#5603) -- the code that
+was on PR #4964 and PR #4902 respectively. Both are still TBD and need to be
+finished with the stakeholder who asked for it before they ship: T&L for Bright
+Spots, the two Camden schools for benchmark completion.
