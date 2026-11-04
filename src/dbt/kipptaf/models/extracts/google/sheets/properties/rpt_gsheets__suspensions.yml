@@ -4,8 +4,8 @@ models:
       One row per DeansList suspension consequence for the current and prior
       academic year, for the Suspensions Google Sheet. School and student fields
       come from the enrollment stint covering the incident's created date, else
-      the student's rn_year = 1 stint for that year. Miami 2025-26 rows are
-      absent until Miami DeansList ids match Focus student numbers.
+      the student's rn_year = 1 stint for that year. A suspension whose student
+      has no enrollment in that region and academic year is left out.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -17,16 +17,9 @@ models:
     columns:
       - name: region
         data_type: string
-        description: Region of the student's enrollment (Newark, Camden, Miami).
-        data_tests:
-          - not_null:
-              config:
-                severity: error
-      - name: incident_penalty_id
-        data_type: int64
         description:
-          DeansList consequence id. Unique within a region; ids repeat across
-          regions.
+          Region of the student's enrollment (Newark, Camden, Paterson, or
+          Miami).
         data_tests:
           - not_null:
               config:
@@ -130,6 +123,11 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: incident_penalty_id
+        data_type: int64
+        description:
+          DeansList consequence id. Unique within a region; ids repeat across
+          regions.
       - name: penalty_name
         data_type: string
         description: Name of the consequence.
@@ -163,17 +161,20 @@ models:
       - name: suspension_letters
         data_type: string
         description:
-          Suspension letters on file for the incident, each as letter name
-          followed by its upload date in parentheses, joined with semicolons in
-          upload-date order. Null when none are on file.
+          Letters on file for the incident made from one of the DeansList
+          suspension letter templates the OKRTS dashboard counts, each as
+          template name followed by its upload date in parentheses, joined with
+          semicolons in upload-date order. Null when none are on file.
         config:
           meta:
             contains_pii: true
-      - name: other_uploads
+      - name: other_attachments
         data_type: string
         description:
-          Other files uploaded to the incident, each as file name followed by
-          its upload date in parentheses, joined with semicolons in upload-date
+          Every other attachment on the incident (uploaded files, and letters
+          made from any other template, such as the generic Incident Letter),
+          each as template name, or file name when it has none, followed by its
+          upload date in parentheses, joined with semicolons in upload-date
           order. Null when none are on file.
         config:
           meta:
@@ -184,10 +185,12 @@ unit_tests:
     model: rpt_gsheets__suspensions
     description:
       A mid-stint incident takes the covering stint over the rn_year = 1 stint,
-      a transfer-day incident takes the entering stint, an incident outside
-      every stint falls back to the rn_year = 1 stint, another region's letters
-      on the same incident id stay out, and non-suspensions, rows before the
-      window, and students with no enrollment drop out.
+      a transfer-day incident takes the entering stint, an incident on a Focus
+      stint's inclusive last day takes that stint, an incident outside every
+      stint falls back to the rn_year = 1 stint, another region's letters on the
+      same incident id stay out, generic and unnamed letters land in other
+      attachments, and non-suspensions, rows before the window, and students
+      with no enrollment drop out.
     overrides:
       vars:
         current_academic_year: 2026
@@ -243,6 +246,13 @@ unit_tests:
             create_ts_date: 2026-09-15T09:00:00
             is_suspension: true
             _dbt_source_project: kippnewark
+          - incident_penalty_id: 9008
+            incident_id: 508
+            student_school_id: 2001
+            create_ts_academic_year: 2025
+            create_ts_date: 2026-01-15T09:00:00
+            is_suspension: true
+            _dbt_source_project: kippmiami
       - input: ref("int_extracts__student_enrollments")
         rows:
           - student_number: 1001
@@ -252,6 +262,7 @@ unit_tests:
             school: SA
             entrydate: 2026-08-20
             exitdate: 2026-10-01
+            last_enrolled_date: 2026-09-30
             rn_year: 2
             _dbt_source_project: kippnewark
           - student_number: 1001
@@ -261,6 +272,7 @@ unit_tests:
             school: SB
             entrydate: 2026-10-01
             exitdate: 2027-06-20
+            last_enrolled_date: 2027-06-19
             rn_year: 1
             _dbt_source_project: kippnewark
           - student_number: 1002
@@ -270,6 +282,7 @@ unit_tests:
             school: SC
             entrydate: 2025-09-02
             exitdate: 2026-06-20
+            last_enrolled_date: 2026-06-19
             rn_year: 1
             _dbt_source_project: kippnewark
           - student_number: 1002
@@ -279,8 +292,29 @@ unit_tests:
             school: SC
             entrydate: 2024-09-03
             exitdate: 2025-06-20
+            last_enrolled_date: 2025-06-19
             rn_year: 1
             _dbt_source_project: kippnewark
+          - student_number: 2001
+            academic_year: 2025
+            academic_year_display: 2025-26
+            region: Miami
+            school: M1
+            entrydate: 2025-08-11
+            exitdate: 2026-01-15
+            last_enrolled_date: 2026-01-15
+            rn_year: 2
+            _dbt_source_project: kippmiami
+          - student_number: 2001
+            academic_year: 2025
+            academic_year_display: 2025-26
+            region: Miami
+            school: M2
+            entrydate: 2026-01-16
+            exitdate: 2026-05-29
+            last_enrolled_date: 2026-05-29
+            rn_year: 1
+            _dbt_source_project: kippmiami
       - input: ref("int_deanslist__incidents__attachments")
         rows:
           - _dbt_source_project: kippnewark
@@ -295,6 +329,18 @@ unit_tests:
             entity_name: null
             public_filename: letter.pdf
             file_posted_at__date: 2026-10-17T08:00:00
+          - _dbt_source_project: kippnewark
+            incident_id: 501
+            attachment_type: INC-LETTER
+            entity_name: Incident Letter
+            public_filename: incident.pdf
+            file_posted_at__date: 2026-10-18T08:00:00
+          - _dbt_source_project: kippnewark
+            incident_id: 501
+            attachment_type: INC-LETTER
+            entity_name: null
+            public_filename: unnamed.pdf
+            file_posted_at__date: 2026-10-19T08:00:00
           - _dbt_source_project: kippcamden
             incident_id: 501
             attachment_type: INC-LETTER
@@ -307,19 +353,26 @@ unit_tests:
           school: SB
           academic_year: 2026-27
           suspension_letters: OSS (2026-10-16)
-          other_uploads: letter.pdf (2026-10-17)
+          other_attachments:
+            letter.pdf (2026-10-17); Incident Letter (2026-10-18); unnamed.pdf
+            (2026-10-19)
         - incident_penalty_id: 9002
           school: SB
           academic_year: 2026-27
           suspension_letters: null
-          other_uploads: null
+          other_attachments: null
         - incident_penalty_id: 9003
           school: SC
           academic_year: 2025-26
           suspension_letters: null
-          other_uploads: null
+          other_attachments: null
         - incident_penalty_id: 9007
           school: SA
           academic_year: 2026-27
           suspension_letters: null
-          other_uploads: null
+          other_attachments: null
+        - incident_penalty_id: 9008
+          school: M1
+          academic_year: 2025-26
+          suspension_letters: null
+          other_attachments: null

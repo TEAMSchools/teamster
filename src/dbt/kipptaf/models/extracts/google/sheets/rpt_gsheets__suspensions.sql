@@ -41,7 +41,7 @@ with
             and s.create_ts_academic_year = ed.academic_year
             and s._dbt_source_project = ed._dbt_source_project
             and s.created_date >= ed.entrydate
-            and s.created_date < ed.exitdate
+            and s.created_date <= ed.last_enrolled_date
         left join
             {{ ref("int_extracts__student_enrollments") }} as ey
             on s.student_school_id = ey.student_number
@@ -55,23 +55,23 @@ with
             incident_id,
             _dbt_source_project,
             file_posted_at__date,
-            entity_name,
-            public_filename,
 
+            coalesce(entity_name, public_filename) as attachment_name,
             format_datetime('%F', file_posted_at__date) as posted_date,
-
-            attachment_type = 'UPLOAD' as is_upload,
 
             -- same suspension letter templates as rpt_tableau__okrts_referrals
             attachment_type = 'INC-LETTER'
-            and entity_name in (
-                'KIPP Miami Suspension Letter',
-                'Short-Term OSS (no further investigation)',
-                'OSS Long-Term Suspension',
-                'OSS Suspended Next Day',
-                'OSS',
-                'OSS Suspension Letter (pending further investigation)',
-                'ISS Suspension Letter'
+            and coalesce(
+                entity_name in (
+                    'KIPP Miami Suspension Letter',
+                    'Short-Term OSS (no further investigation)',
+                    'OSS Long-Term Suspension',
+                    'OSS Suspended Next Day',
+                    'OSS',
+                    'OSS Suspension Letter (pending further investigation)',
+                    'ISS Suspension Letter'
+                ),
+                false
             ) as is_suspension_letter,
         from {{ ref("int_deanslist__incidents__attachments") }}
     ),
@@ -81,14 +81,9 @@ with
             incident_id,
             _dbt_source_project,
             file_posted_at__date,
+            is_suspension_letter,
 
-            if(
-                is_suspension_letter, concat(entity_name, ' (', posted_date, ')'), null
-            ) as suspension_letter_label,
-
-            if(
-                is_upload, concat(public_filename, ' (', posted_date, ')'), null
-            ) as upload_label,
+            concat(attachment_name, ' (', posted_date, ')') as attachment_label,
         from attachments
     ),
 
@@ -98,12 +93,16 @@ with
             _dbt_source_project,
 
             string_agg(
-                suspension_letter_label, '; ' order by file_posted_at__date
+                if(is_suspension_letter, attachment_label, null),
+                '; '
+                order by file_posted_at__date
             ) as suspension_letters,
 
             string_agg(
-                upload_label, '; ' order by file_posted_at__date
-            ) as other_uploads,
+                if(is_suspension_letter, null, attachment_label),
+                '; '
+                order by file_posted_at__date
+            ) as other_attachments,
         from attachment_labels
         group by incident_id, _dbt_source_project
     )
@@ -137,8 +136,9 @@ select
     s.num_days,
 
     ar.suspension_letters,
-    ar.other_uploads,
+    ar.other_attachments,
 from {{ ref("int_extracts__student_enrollments") }} as e
+-- Miami DeansList ids match no Focus student number until #5790, so those drop here
 inner join
     enrollment_picks as ep
     on e.student_number = ep.student_school_id

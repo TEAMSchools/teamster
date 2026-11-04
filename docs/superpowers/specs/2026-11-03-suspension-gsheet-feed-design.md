@@ -101,3 +101,14 @@ is.
 ## Left to the user
 
 - The Sheet URL for the exposure, and the Sheet's connection to BigQuery.
+
+## Revision 2026-11-04 (final review)
+
+- `other_uploads` is now `other_attachments`: every attachment not made from one
+  of the 7 suspension letter templates, uploaded files and letters from other
+  templates alike. Paterson's suspension incidents carry only the generic
+  Incident Letter template, so under the old split they showed in neither
+  column. The user chose this.
+- The stint match uses `last_enrolled_date`, the upstream model's inclusive last
+  day, instead of `exitdate`. NJ rows do not change; Focus stints keep their
+  last day once Miami rows arrive with #5790.
