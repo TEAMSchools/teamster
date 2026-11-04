@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import kubernetes.config
 import pytest
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.storage.tags import AUTOMATION_CONDITION_TAG
 from dagster_k8s import k8s_job_executor
 from dagster_k8s.executor import K8sStepHandler
@@ -129,10 +130,11 @@ def test_wrapper_installs_subclass_handler(monkeypatch):
 
 
 AUTO = {AUTOMATION_CONDITION_TAG: "true"}
+DEFAULT_DEPS = StepDependencyConfig.default()
 
 
 def _dispatch(tags: dict[str, str], step_keys: list[str]) -> list:
-    step = Mock(retries=RetryMode.ENABLED)
+    step = Mock(retries=RetryMode.ENABLED, step_dependency_config=DEFAULT_DEPS)
     step.execute = Mock(return_value=iter(["step"]))
     executor = AutomationInProcessExecutor(step)
     executor._in_process = Mock(execute=Mock(return_value=iter(["in"])))
@@ -158,14 +160,18 @@ def test_tag_not_true_uses_step_pods():
 
 
 def test_in_process_shares_retry_mode():
-    executor = AutomationInProcessExecutor(Mock(retries=RetryMode.DISABLED))
+    executor = AutomationInProcessExecutor(
+        Mock(retries=RetryMode.DISABLED, step_dependency_config=DEFAULT_DEPS)
+    )
     assert executor.retries == RetryMode.DISABLED
     assert executor._in_process.retries == RetryMode.DISABLED
 
 
 def test_forwards_step_dependency_config():
-    config = Mock()
+    config = StepDependencyConfig(require_upstream_step_success=False)
     executor = AutomationInProcessExecutor(
         Mock(retries=RetryMode.ENABLED, step_dependency_config=config)
     )
     assert executor.step_dependency_config is config
+    # InProcessExecutor hands its own copy to the step context, not the wrapper's
+    assert executor._in_process.step_dependency_config is config

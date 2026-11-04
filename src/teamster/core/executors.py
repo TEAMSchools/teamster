@@ -85,8 +85,9 @@ class AutomationInProcessExecutor(Executor):
 
     Almost every automation run materializes a single op, so a step pod adds a pod
     without adding parallelism. Each extra pod feeds the node scale-ups where GKE
-    preempts our pods (Refs #6225). Runs launched any other way keep step pods, so
-    manual launches and backfills of assets that size their own pod are unchanged.
+    preempts our pods. Manual launches and user-launched backfills keep step pods.
+    Backfills the automation daemon creates carry its tag, so their one-step runs
+    also run in process.
 
     In process, op-level `dagster-k8s/config` tags do not apply; the step runs with
     the run pod's resources.
@@ -94,7 +95,10 @@ class AutomationInProcessExecutor(Executor):
 
     def __init__(self, step_executor: Executor):
         self._step_executor = step_executor
-        self._in_process = InProcessExecutor(retries=step_executor.retries)
+        self._in_process = InProcessExecutor(
+            retries=step_executor.retries,
+            step_dependency_config=step_executor.step_dependency_config,
+        )
 
     @property
     def retries(self) -> RetryMode:
