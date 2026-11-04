@@ -51,7 +51,7 @@ with
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on fg.studentid = gc.studentid
             and fg.schoolid = gc.schoolid
-            and {{ union_dataset_join_clause(left_alias="fg", right_alias="gc") }}
+            and fg._dbt_source_project = gc._dbt_source_project
     ),
 
     iready_dr as (
@@ -281,13 +281,13 @@ left join
     on co.studentid = att.studentid
     and co.yearid = att.yearid
     and rt.name = att.term_name
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
+    and co._dbt_source_project = att._dbt_source_project
 left join
     credits as c
     on co.studentid = c.studentid
     and co.academic_year = c.academic_year
     and rt.name = c.storecode
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="c") }}
+    and co._dbt_source_project = c._dbt_source_project
 left join
     iready as ir
     on co.student_number = ir.student_id
@@ -305,17 +305,17 @@ left join fast as f on co.fleid = f.student_id and co.academic_year = f.academic
 left join
     {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
     on co.students_dcid = nj.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
+    and co._dbt_source_project = nj._dbt_source_project
 left join
     exempt_override as lg
     on co.studentid = lg.studentid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="lg") }}
+    and co._dbt_source_project = lg._dbt_source_project
     and co.academic_year = lg.academic_year
     and lg.rn_log = 1
 left join
     force_retention as fr
     on co.studentid = fr.studentid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="fr") }}
+    and co._dbt_source_project = fr._dbt_source_project
     and co.academic_year = fr.academic_year
     and fr.rn_log = 1
 where co.rn_year = 1
