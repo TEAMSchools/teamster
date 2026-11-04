@@ -1,0 +1,39 @@
+<!-- @dsCard group="Type" viewport="700x330" name="Cross-platform stack" subtitle="No webfont required — what each platform actually renders" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;padding:18px 22px;background:var(--surface-card)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-family:var(--font-brand);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);padding:0 0 7px;border-bottom:1px solid var(--divider)}
+td{padding:8px 0;border-bottom:1px solid var(--divider);vertical-align:middle}
+.plat{font-family:var(--font-brand);font-size:12px;font-weight:600;color:var(--kipp-indigo);width:96px}
+.face{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);width:132px}
+.samp{font-size:19px;font-weight:600;color:var(--text-strong);letter-spacing:-.005em}
+.win{font-family:'Segoe UI',sans-serif}
+.mac{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
+.and{font-family:Roboto,sans-serif}
+.arl{font-family:Arial,sans-serif}
+.stack{margin-top:12px;font-family:var(--font-mono);font-size:10.5px;line-height:1.7;color:var(--text-muted);background:var(--surface-page);border:1px solid var(--border-subtle);padding:8px 10px;border-radius:3px;white-space:pre-wrap;word-break:break-word}
+.w{margin-top:10px;display:flex;gap:7px}
+.w span{font-family:var(--font-brand);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:2px}
+.ok{background:var(--green-50);color:var(--green-700)}
+.no{background:var(--red-50);color:var(--red-700);text-decoration:line-through}
+</style>
+</head>
+<body>
+<table>
+<thead><tr><th>Platform</th><th>Renders</th><th>Specimen</th></tr></thead>
+<tbody>
+<tr><td class="plat">Windows</td><td class="face">Segoe UI</td><td class="samp win">Radical love</td></tr>
+<tr><td class="plat">macOS / iOS</td><td class="face">SF Pro</td><td class="samp mac">Radical love</td></tr>
+<tr><td class="plat">Chromebook</td><td class="face">Roboto</td><td class="samp and">Radical love</td></tr>
+<tr><td class="plat">Fallback</td><td class="face">Arial</td><td class="samp arl">Radical love</td></tr>
+</tbody>
+</table>
+<div class="stack">-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif</div>
+<div class="w"><span class="ok">400</span><span class="ok">600</span><span class="ok">700</span><span class="no">300</span><span class="no">500</span><span class="no">800</span></div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Data-viz sequence" subtitle="Categorical order for the Data team's charts and dashboards" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface-card); display:flex; align-items:center; gap:28px; }
+  .bars { display:flex; align-items:flex-end; gap:10px; height:96px; }
+  .bars span { width: 34px; border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+  .key { display:flex; flex-direction:column; gap:6px; }
+  .key div { display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:11px; color:var(--text-muted); }
+  .key i { width:12px; height:12px; border-radius:3px; }
+</style>
+</head>
+<body>
+  <div class="bars">
+    <span style="height:90%; background:var(--viz-1)"></span>
+    <span style="height:64%; background:var(--viz-2)"></span>
+    <span style="height:78%; background:var(--viz-3)"></span>
+    <span style="height:48%; background:var(--viz-4)"></span>
+    <span style="height:70%; background:var(--viz-5)"></span>
+    <span style="height:38%; background:var(--viz-6)"></span>
+  </div>
+  <div class="key">
+    <div><i style="background:var(--viz-1)"></i>viz-1 indigo</div>
+    <div><i style="background:var(--viz-2)"></i>viz-2 orange</div>
+    <div><i style="background:var(--viz-3)"></i>viz-3 blue</div>
+    <div><i style="background:var(--viz-4)"></i>viz-4 green</div>
+    <div><i style="background:var(--viz-5)"></i>viz-5 red</div>
+    <div><i style="background:var(--viz-6)"></i>viz-6 indigo-500</div>
+  </div>
+</body>
+</html>

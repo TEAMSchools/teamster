@@ -1,0 +1,24 @@
+<!-- @dsCard group="Spacing" viewport="700x180" name="Radius & photo rule" subtitle="Tight, confident radii — and photos always stay square" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; padding: 22px 28px; background: var(--surface-card); display:flex; align-items:center; gap: 20px; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .box { width: 70px; height: 70px; background: var(--indigo-100); border: 2px solid var(--kipp-indigo); }
+  .col span { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  .photo { width: 70px; height: 70px; background: repeating-linear-gradient(45deg,var(--blue-200),var(--blue-200) 8px,var(--blue-100) 8px,var(--blue-100) 16px); }
+</style>
+</head>
+<body>
+  <div class="col"><div class="box" style="border-radius:0"></div><span>none 0</span></div>
+  <div class="col"><div class="box" style="border-radius:var(--radius-sm)"></div><span>sm 3</span></div>
+  <div class="col"><div class="box" style="border-radius:var(--radius-md)"></div><span>md 5</span></div>
+  <div class="col"><div class="box" style="border-radius:var(--radius-lg)"></div><span>lg 8</span></div>
+  <div class="col"><div class="box" style="border-radius:var(--radius-xl)"></div><span>xl 14</span></div>
+  <div class="col"><div class="box" style="border-radius:var(--radius-pill)"></div><span>pill</span></div>
+  <div class="col"><div class="photo"></div><span style="color:var(--brand-accent);font-weight:700">photo · 0</span></div>
+</body>
+</html>
