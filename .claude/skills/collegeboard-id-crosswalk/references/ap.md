@@ -117,9 +117,9 @@ confirmation.**
 
 Write every `resolved` row to one tab-separated file in the session scratchpad,
 `College_Board_ID<tab>PowerSchool_Student_Number`, no header, and hand it over
-per _Handing rows to the user_ in [SKILL.md](../SKILL.md): destination
-`src_collegeboard__ap_id_crosswalk`, appended below the last filled row. If any
-row is Tier C/D, show a small markdown review table in chat first (tier tag,
+per _Handing rows to the user_ in [SKILL.md](../SKILL.md): destination tab
+`CB AP ID Crosswalk`, appended below the last filled row. If any row is Tier
+C/D, show a small markdown review table in chat first (tier tag,
 course-enrollment note) — for eyeballing, not for pasting.
 
 Present `flagged_for_review` rows (if any) separately as a markdown table (CB
