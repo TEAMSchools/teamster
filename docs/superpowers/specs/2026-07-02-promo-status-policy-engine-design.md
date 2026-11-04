@@ -253,3 +253,25 @@ both map to the same label). Resolve every diff deliberately before the swap.
 - **Shared-spreadsheet trigger**: all tabs on the spreadsheet URI trigger
   together on any tab change (repo-known Sheets behavior). The promo sheet
   already behaves this way; no new exposure.
+
+## Revision 2026-11-04
+
+Decisions taken when the branch was revived after four months idle:
+
+- The dashboard starts clean at SY26-27 (`academic_year` 2026). No prior-year
+  policy rows are seeded, so the backfill follow-up is dropped. Historical
+  coverage accrues from this year forward.
+- Miami is out of scope until its source integrations are complete (#6265). The
+  sheet carries no Miami rows, `rpt_tableau__promo_status` filters Miami out,
+  and the coverage test is scoped to the NJ regions.
+- The unpivot is its own reshape model,
+  `int_students__promotional_status_metrics_unpivot`, and its column list is the
+  metric vocabulary. The two list-returning macros are gone; the
+  `metric_in_catalog` test checks sheet rows against that model's distinct
+  metrics plus the two pseudo-metrics.
+- `int_reporting__promotional_status` stays enabled in this PR so the swap can
+  be checked against it in prod. Disabling it is a follow-on (#6266).
+- The metric layer tracks `main`: attendance reads
+  `int_students__attendance_daily` keyed on `student_number`, i-Ready reads
+  `int_assessments__iready_diagnostic_results`, and joins use
+  `_dbt_source_project`.

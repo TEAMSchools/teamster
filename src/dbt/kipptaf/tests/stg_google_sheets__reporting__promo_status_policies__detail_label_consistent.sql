@@ -1,5 +1,3 @@
-{{ config(severity="error") }}
-
 select
     academic_year,
     region,

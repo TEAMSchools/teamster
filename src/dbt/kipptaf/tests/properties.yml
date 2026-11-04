@@ -1280,3 +1280,47 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__kfwd__early_apps_schools
+
+  - name: stg_google_sheets__reporting__promo_status_policies__current_year_coverage
+    description: >-
+      Lists every current-year region and grade with enrolled students that has
+      no policy row for one of the three domains (attendance, academic,
+      overall). A scope with no rule reads NULL statuses on the promotional
+      status dashboard, so a missing row is a silent gap, not an error. Fix by
+      adding the rows to the Promo Status Policies sheet. Miami is left out
+      while its integrations are incomplete.
+    config:
+      tags:
+        - google_sheet
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__reporting__promo_status_policies
+
+  - name: stg_google_sheets__reporting__promo_status_policies__detail_label_consistent
+    description: >-
+      A rule group's detail_label is emitted when the group fires, so every
+      condition row in the group must carry the same label. Lists groups whose
+      rows disagree. Fix the label on the Promo Status Policies sheet.
+    config:
+      tags:
+        - google_sheet
+      severity: error
+
+  - name: stg_google_sheets__reporting__promo_status_policies__metric_in_catalog
+    description: >-
+      A policy row naming a metric the engine cannot evaluate silently never
+      fires, because the join to
+      int_students__promotional_status_metrics_unpivot finds no row. Lists sheet
+      rows whose metric is neither an unpivoted metric column nor one of the two
+      overall-domain pseudo-metrics. Fix the metric name on the Promo Status
+      Policies sheet.
+    config:
+      tags:
+        - google_sheet
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__reporting__promo_status_policies

@@ -113,9 +113,10 @@ models:
       - name: metric
         data_type: string
         description: >-
-          Metric the condition tests, from the fixed catalog defined by the
-          promo_status_metric_columns macro (plus pseudo-metrics for the overall
-          domain).
+          Metric the condition tests — a metric column of
+          int_students__promotional_status_metrics_unpivot, or for the overall
+          domain the pseudo-metrics is_off_track_attendance and
+          is_off_track_academic.
         data_tests:
           - not_null:
               config:

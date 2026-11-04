@@ -1,42 +1,4 @@
 with
-    metrics as (select *, from {{ ref("int_students__promotional_status_metrics") }}),
-
-    policies as (
-        select *, from {{ ref("stg_google_sheets__reporting__promo_status_policies") }}
-    ),
-
-    metrics_long as (
-        select
-            student_number,
-            academic_year,
-            term_name,
-            region,
-            grade_level,
-            metric,
-            metric_value,
-        from
-            (
-                select
-                    student_number,
-                    academic_year,
-                    term_name,
-                    region,
-                    grade_level,
-
-                    {% for m in promo_status_metric_columns() %}
-                        cast({{ m }} as float64) as {{ m }},
-                    {% endfor %}
-                from metrics
-            -- trunk-ignore(sqlfluff/LT01)
-            ) unpivot include nulls(
-                metric_value for metric in (
-                    {% for m in promo_status_metric_columns() %}
-                        {{ m }}{% if not loop.last %},{% endif %}
-                    {% endfor %}
-                )
-            )
-    ),
-
     conditions as (
         select
             mtr.student_number,
@@ -67,9 +29,9 @@ with
                 when p.comparator = 'not_equals'
                 then mtr.metric_value != p.`value`
             end as is_met,
-        from metrics_long as mtr
+        from {{ ref("int_students__promotional_status_metrics_unpivot") }} as mtr
         inner join
-            policies as p
+            {{ ref("stg_google_sheets__reporting__promo_status_policies") }} as p
             on mtr.academic_year = p.academic_year
             and mtr.region = p.region
             and mtr.metric = p.metric
@@ -151,7 +113,7 @@ with
             grade_level,
             metric,
             metric_value,
-        from metrics_long
+        from {{ ref("int_students__promotional_status_metrics_unpivot") }}
 
         union all
 
@@ -169,14 +131,10 @@ with
                 cast(cast(dw.is_off_track_attendance as int) as float64),
                 cast(cast(dw.is_off_track_academic as int) as float64)
             ) as metric_value,
-        from metrics as m
+        from {{ ref("int_students__promotional_status_metrics") }} as m
         cross join
             unnest(
-                [
-                    {% for pm in promo_status_pseudo_metric_columns() -%}
-                        '{{ pm }}'{% if not loop.last %}, {% endif %}
-                    {%- endfor %}
-                ]
+                ['is_off_track_attendance', 'is_off_track_academic']
             ) as pseudo_metric
         left join
             domain_wide as dw
@@ -215,7 +173,7 @@ with
             end as is_met,
         from overall_metrics_long as mtr
         inner join
-            policies as p
+            {{ ref("stg_google_sheets__reporting__promo_status_policies") }} as p
             on mtr.academic_year = p.academic_year
             and mtr.region = p.region
             and mtr.metric = p.metric
@@ -304,7 +262,7 @@ select
     case
         os.is_off_track when true then 'Off-Track' when false then 'On-Track'
     end as overall_status,
-from metrics as m
+from {{ ref("int_students__promotional_status_metrics") }} as m
 left join
     domain_wide as dw
     on m.student_number = dw.student_number

@@ -203,6 +203,42 @@ unit_tests:
           select 5, 2025, 'Q1', true, 'Miami', 5, 0.50, 0.0, 0.0, 0.0,
             3, 3, null, null, null, null, null, 5, 5, null, null,
             null, null, null, null, null
+      - input: ref('int_students__promotional_status_metrics_unpivot')
+        format: sql
+        rows: |
+          select 1 as student_number, 2025 as academic_year,
+            'Q1' as term_name, 'Newark' as region, 5 as grade_level,
+            'n_failing_core' as metric, 2.0 as metric_value
+          union all
+          select 1, 2025, 'Q1', 'Newark', 5, 'ada_term_running', 0.95
+          union all
+          select 1, 2025, 'Q1', 'Newark', 5, 'iready_reading_levels_below', 0.0
+          union all
+          select 2, 2025, 'Q1', 'Newark', 5, 'n_failing_core', 0.0
+          union all
+          select 2, 2025, 'Q1', 'Newark', 5, 'ada_term_running', 0.80
+          union all
+          select 2, 2025, 'Q1', 'Newark', 5, 'iready_reading_levels_below', 3.0
+          union all
+          select 3, 2025, 'Q1', 'Newark', 5, 'n_failing_core', 0.0
+          union all
+          select 3, 2025, 'Q1', 'Newark', 5, 'ada_term_running', 0.80
+          union all
+          select 3, 2025, 'Q1', 'Newark', 5, 'iready_reading_levels_below', 1.0
+          union all
+          select 4, 2025, 'Q1', 'Newark', 5, 'n_failing_core', 0.0
+          union all
+          select 4, 2025, 'Q1', 'Newark', 5, 'ada_term_running',
+            cast(null as float64)
+          union all
+          select 4, 2025, 'Q1', 'Newark', 5, 'iready_reading_levels_below',
+            cast(null as float64)
+          union all
+          select 5, 2025, 'Q1', 'Miami', 5, 'n_failing_core', 5.0
+          union all
+          select 5, 2025, 'Q1', 'Miami', 5, 'ada_term_running', 0.50
+          union all
+          select 5, 2025, 'Q1', 'Miami', 5, 'iready_reading_levels_below', 3.0
       - input: ref('stg_google_sheets__reporting__promo_status_policies')
         format: sql
         rows: |
@@ -267,6 +303,25 @@ unit_tests:
           select 3, 2025, 'Q2', true, 'Newark', 9, 0.90, 10.0, 10.0, 10.0,
             null, null, null, null, null, null, null, 0, 0, 25.0, 50.0,
             null, null, null, null, null
+      - input: ref('int_students__promotional_status_metrics_unpivot')
+        format: sql
+        rows: |
+          select 1 as student_number, 2025 as academic_year,
+            'Q1' as term_name, 'Newark' as region, 9 as grade_level,
+            'n_absences_y1_running_non_susp_no_tardy' as metric,
+            30.0 as metric_value
+          union all
+          select 1, 2025, 'Q1', 'Newark', 9, 'projected_credits_cum', 50.0
+          union all
+          select 2, 2025, 'Q1', 'Newark', 9,
+            'n_absences_y1_running_non_susp_no_tardy', 10.0
+          union all
+          select 2, 2025, 'Q1', 'Newark', 9, 'projected_credits_cum', 50.0
+          union all
+          select 3, 2025, 'Q2', 'Newark', 9,
+            'n_absences_y1_running_non_susp_no_tardy', 10.0
+          union all
+          select 3, 2025, 'Q2', 'Newark', 9, 'projected_credits_cum', 50.0
       - input: ref('stg_google_sheets__reporting__promo_status_policies')
         format: sql
         rows: |
@@ -349,6 +404,14 @@ unit_tests:
             cast(null as string) as dibels_composite_level_recent_str,
             cast(null as string) as exemption,
             cast(null as string) as manual_retention
+      - input: ref('int_students__promotional_status_metrics_unpivot')
+        format: sql
+        rows: |
+          select 1 as student_number, 2025 as academic_year,
+            'Q1' as term_name, 'Newark' as region, 5 as grade_level,
+            'n_failing_core' as metric, 2.0 as metric_value
+          union all
+          select 1, 2025, 'Q1', 'Newark', 5, 'ada_term_running', 0.50
       - input: ref('stg_google_sheets__reporting__promo_status_policies')
         format: sql
         rows: |

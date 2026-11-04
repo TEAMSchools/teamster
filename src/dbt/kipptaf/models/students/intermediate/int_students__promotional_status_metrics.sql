@@ -129,18 +129,16 @@ with
         from {{ ref("stg_fldoe__fast") }}
     ),
 
+    fast_filtered as (
+        select student_id, academic_year, assessment_subject, achievement_level_int,
+        from fast_results
+        where rn_subject_year = 1
+    ),
+
     fast as (
         select student_id, academic_year, fast_ela, fast_math,
         from
-            (
-                select
-                    f.student_id,
-                    f.academic_year,
-                    f.assessment_subject,
-                    f.achievement_level_int,
-                from fast_results as f
-                where f.rn_subject_year = 1
-            ) as fast_filtered pivot (
+            fast_filtered pivot (
                 max(achievement_level_int) for assessment_subject
                 in ('English Language Arts' as fast_ela, 'Mathematics' as fast_math)
             )

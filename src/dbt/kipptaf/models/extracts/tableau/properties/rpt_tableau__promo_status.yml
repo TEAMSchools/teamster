@@ -1,5 +1,13 @@
 models:
   - name: rpt_tableau__promo_status
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - term
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: int64

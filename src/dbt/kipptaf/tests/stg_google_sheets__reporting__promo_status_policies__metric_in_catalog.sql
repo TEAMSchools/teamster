@@ -1,14 +1,20 @@
-{{ config(severity="error") }}
+with
+    catalog as (
+        /* grain projection: metric is the partition key; not a mask for upstream
+        duplicates */
+        select distinct metric,
+        from {{ ref("int_students__promotional_status_metrics_unpivot") }}
 
-{% set all_metrics = (
-    promo_status_metric_columns() + promo_status_pseudo_metric_columns()
-) %}
+        union all
 
-select academic_year, region, domain, metric,
-from {{ ref("stg_google_sheets__reporting__promo_status_policies") }}
-where
-    metric not in (
-        {% for m in all_metrics %}
-            '{{ m }}'{% if not loop.last %},{% endif %}
-        {% endfor %}
+        select pseudo_metric as metric,
+        from
+            unnest(
+                ['is_off_track_attendance', 'is_off_track_academic']
+            ) as pseudo_metric
     )
+
+select p.academic_year, p.region, p.domain, p.metric,
+from {{ ref("stg_google_sheets__reporting__promo_status_policies") }} as p
+left join catalog as c on p.metric = c.metric
+where c.metric is null
