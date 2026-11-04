@@ -183,7 +183,8 @@ unit_tests:
   - name: unit_rpt_gsheets_suspensions_stint_window_letters
     model: rpt_gsheets__suspensions
     description:
-      A transfer-day incident takes the entering stint, an incident outside
+      A mid-stint incident takes the covering stint over the rn_year = 1 stint,
+      a transfer-day incident takes the entering stint, an incident outside
       every stint falls back to the rn_year = 1 stint, another region's letters
       on the same incident id stay out, and non-suspensions, rows before the
       window, and students with no enrollment drop out.
@@ -235,6 +236,13 @@ unit_tests:
             create_ts_date: 2025-11-01T09:00:00
             is_suspension: true
             _dbt_source_project: kippmiami
+          - incident_penalty_id: 9007
+            incident_id: 507
+            student_school_id: 1001
+            create_ts_academic_year: 2026
+            create_ts_date: 2026-09-15T09:00:00
+            is_suspension: true
+            _dbt_source_project: kippnewark
       - input: ref("int_extracts__student_enrollments")
         rows:
           - student_number: 1001
@@ -262,6 +270,15 @@ unit_tests:
             school: SC
             entrydate: 2025-09-02
             exitdate: 2026-06-20
+            rn_year: 1
+            _dbt_source_project: kippnewark
+          - student_number: 1002
+            academic_year: 2024
+            academic_year_display: 2024-25
+            region: Newark
+            school: SC
+            entrydate: 2024-09-03
+            exitdate: 2025-06-20
             rn_year: 1
             _dbt_source_project: kippnewark
       - input: ref("int_deanslist__incidents__attachments")
@@ -299,5 +316,10 @@ unit_tests:
         - incident_penalty_id: 9003
           school: SC
           academic_year: 2025-26
+          suspension_letters: null
+          other_uploads: null
+        - incident_penalty_id: 9007
+          school: SA
+          academic_year: 2026-27
           suspension_letters: null
           other_uploads: null
