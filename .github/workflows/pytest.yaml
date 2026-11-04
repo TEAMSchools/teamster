@@ -13,6 +13,8 @@ on:
       - tests/launch/**
       - scripts/cube_validation/**
       - tests/scripts/cube_validation/**
+      - src/dbt/dbt_overrides/**
+      - tests/test_dbt_overrides.py
       - mkdocs.yml
       - pyproject.toml
       - uv.lock
@@ -78,3 +80,23 @@ jobs:
       # Offline: fake tables and DuckDB, no warehouse or credentials.
       - name: Run the Cube validator tests
         run: uv run --with duckdb pytest tests/scripts/cube_validation -q
+
+  dbt-overrides:
+    name: dbt-overrides
+    # Fails when a uv.lock dbt bump (usually dependabot) changes the built-in
+    # test materialization that src/dbt/dbt_overrides forks. Re-sync per
+    # src/dbt/dbt_overrides/CLAUDE.md.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # For repo checkout. Nothing here writes.
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+
+      - name: Compare the fork against the installed built-in
+        run: uv run pytest tests/test_dbt_overrides.py -q

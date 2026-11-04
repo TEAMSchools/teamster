@@ -1,5 +1,6 @@
 # trunk-ignore-all(yamllint/quoted-strings)
 packages:
+  - local: ../dbt_overrides
   - local: ../finalsite
   - local: ../iready
   - local: ../focus
