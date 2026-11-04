@@ -4,12 +4,15 @@ from unittest.mock import Mock
 
 import kubernetes.config
 import pytest
+from dagster._core.execution.retries import RetryMode
+from dagster._core.storage.tags import AUTOMATION_CONDITION_TAG
 from dagster_k8s import k8s_job_executor
 from dagster_k8s.executor import K8sStepHandler
 from kubernetes.client import V1JobStatus
 from kubernetes.client.exceptions import ApiException
 
 from teamster.core.executors import (
+    AutomationInProcessExecutor,
     ZombieAwareK8sStepHandler,
     zombie_aware_k8s_job_executor,
 )
@@ -112,7 +115,8 @@ def test_wrapper_installs_subclass_handler(monkeypatch):
 
     executor = zombie_aware_k8s_job_executor.executor_creation_fn(init_context)  # type: ignore[arg-type]
 
-    handler = executor._step_handler  # type: ignore[attr-defined]
+    assert isinstance(executor, AutomationInProcessExecutor)
+    handler = executor._step_executor._step_handler  # type: ignore[attr-defined]
     assert isinstance(handler, ZombieAwareK8sStepHandler)
     # _handler() stubs these, so only the real instance catches an upstream rename
     for name in (
@@ -122,3 +126,46 @@ def test_wrapper_installs_subclass_handler(monkeypatch):
         "_api_client",
     ):
         assert hasattr(handler, name), name
+
+
+AUTO = {AUTOMATION_CONDITION_TAG: "true"}
+
+
+def _dispatch(tags: dict[str, str], step_keys: list[str]) -> list:
+    step = Mock(retries=RetryMode.ENABLED)
+    step.execute = Mock(return_value=iter(["step"]))
+    executor = AutomationInProcessExecutor(step)
+    executor._in_process = Mock(execute=Mock(return_value=iter(["in"])))
+    plan_context = SimpleNamespace(dagster_run=SimpleNamespace(tags=tags))
+    plan = SimpleNamespace(step_keys_to_execute=step_keys)
+    return list(executor.execute(plan_context, plan))  # type: ignore[arg-type]
+
+
+def test_automation_one_step_runs_in_process():
+    assert _dispatch(AUTO, ["a"]) == ["in"]
+
+
+def test_automation_two_steps_use_step_pods():
+    assert _dispatch(AUTO, ["a", "b"]) == ["step"]
+
+
+def test_untagged_one_step_uses_step_pods():
+    assert _dispatch({}, ["a"]) == ["step"]
+
+
+def test_tag_not_true_uses_step_pods():
+    assert _dispatch({AUTOMATION_CONDITION_TAG: "false"}, ["a"]) == ["step"]
+
+
+def test_in_process_shares_retry_mode():
+    executor = AutomationInProcessExecutor(Mock(retries=RetryMode.DISABLED))
+    assert executor.retries == RetryMode.DISABLED
+    assert executor._in_process.retries == RetryMode.DISABLED
+
+
+def test_forwards_step_dependency_config():
+    config = Mock()
+    executor = AutomationInProcessExecutor(
+        Mock(retries=RetryMode.ENABLED, step_dependency_config=config)
+    )
+    assert executor.step_dependency_config is config
