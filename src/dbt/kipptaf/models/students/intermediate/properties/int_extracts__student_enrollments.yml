@@ -990,10 +990,7 @@ models:
           exit_date.
       - name: is_sipps
         data_type: boolean
-        description:
-          True when the student held a SIPPS or SIPPS Challenge plan in
-          Branching Minds at any point in the academic year, per
-          int_branchingminds__intervention_plans_rollup.
+        description: Conditional on students_student_number.
       - name: is_hs_honors_program
         data_type: boolean
         description: >-
