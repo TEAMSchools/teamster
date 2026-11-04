@@ -17,3 +17,9 @@ too.
 materialization. To re-sync, copy the new upstream file the test names, apply
 its `PATCHES`, keep this file's header lines, and re-run the test. If a patch
 site moved, update `PATCHES` to match the new upstream text.
+
+Retire the fork once dbt-labs/dbt#16343 ships. Delete
+`src/dbt/kipp*/macros/materialization_test.sql`, the `local: ../dbt_overrides`
+line in each `kipp*` `packages.yml`, this package, the test, the `dbt-overrides`
+job in `.github/workflows/pytest.yaml`, and the `src/dbt/dbt_overrides/**` path
+in each `deploy-prod-*.yaml`.
