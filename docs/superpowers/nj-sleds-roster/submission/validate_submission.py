@@ -9,6 +9,7 @@ import sys
 from google.cloud import bigquery
 from submission_query import (
     ALPHA_GRADE_DOMAIN,
+    REGIONS_IN_SCOPE,
     SUBMISSION_COLUMNS,
     SUBMISSION_SQL,
     UNGRADED_WORKLIST_SQL,
@@ -16,9 +17,22 @@ from submission_query import (
 
 PROJECT = "teamster-332318"
 
-BASE_TABLES = {
+# Every region's extract table. BASE_TABLES below narrows this to the ones
+# still being submitted for; the full map stays here so a certified region's
+# table is still named in one obvious place.
+ALL_BASE_TABLES = {
     "newark": "teamster-332318.cokafor.stg_student_extract_newark",
     "camden": "teamster-332318.cokafor.stg_student_extract_camden",
+}
+
+# Scoped to REGIONS_IN_SCOPE, which also filters SUBMISSION_SQL. Both sides of
+# every parity and pass-through check must cover the same regions - comparing
+# a Newark-only view against both base tables would report the whole of Camden
+# as missing rows.
+BASE_TABLES = {
+    region: table
+    for region, table in ALL_BASE_TABLES.items()
+    if region in REGIONS_IN_SCOPE
 }
 
 PASS_THROUGH_COLUMNS = [
@@ -29,12 +43,22 @@ PASS_THROUGH_COLUMNS = [
 # shifts between extract pulls (enrollment, course, and span changes), and
 # the band logic is exactly what this baseline cross-checks, so deriving it
 # would be circular. Re-measure by hand whenever a new extract is loaded (see
-# the README's re-baseline step). Measured from the 2026-07-29 extract.
+# the README's re-baseline step).
+#
+# Newark measured from the 2026-08-02 extract. It is lower than the 2026-07-29
+# figures (HS 10695, MS 10746, OUT 11709) because 54 sections were removed from
+# the pull on purpose - see the section-exclusion work. Re-pinning here is
+# recording a deliberate scope change, not relaxing a check that was failing:
+# the check still demands exact equality against a number measured once by
+# hand, and any drift from this extract fails it.
+#
+# Camden entries are its certified 2026-07-31 values, retained for the record
+# and skipped at evaluation while it sits outside REGIONS_IN_SCOPE.
 BASELINE_BAND_ROWS = {
-    ("newark", "HS"): 10695,
-    ("newark", "MS"): 10746,
-    ("newark", "OUT"): 11709,
-    ("camden", "HS"): 3648,
+    ("newark", "HS"): 9838,
+    ("newark", "MS"): 10528,
+    ("newark", "OUT"): 11446,
+    ("camden", "HS"): 3628,
     ("camden", "MS"): 3638,
     ("camden", "OUT"): 3057,
 }
@@ -95,6 +119,8 @@ def check_band_counts(client, sql=SUBMISSION_SQL):
     """
     actual = {(r.region, r.grade_band): r.n for r in _rows(client, sql_text)}
     for key, expected in BASELINE_BAND_ROWS.items():
+        if key[0] not in REGIONS_IN_SCOPE:
+            continue
         got = actual.get(key, 0)
         if got != expected:
             failures.append(
@@ -104,10 +130,13 @@ def check_band_counts(client, sql=SUBMISSION_SQL):
 
 
 # Per-cycle baseline, same caveat as BASELINE_BAND_ROWS above - re-measure by
-# hand whenever a new extract is loaded. Measured from the 2026-07-29 extract.
+# hand whenever a new extract is loaded. Newark measured from the 2026-08-02
+# extract (was HS 10675, MS 10682 on 2026-07-29, before the 54 excluded
+# sections left the pull). Camden holds its certified 2026-07-31 values and is
+# skipped while outside REGIONS_IN_SCOPE.
 BASELINE_STORED_COVERAGE = {
-    ("newark", "HS"): 10675,
-    ("newark", "MS"): 10682,
+    ("newark", "HS"): 9826,
+    ("newark", "MS"): 10484,
     ("camden", "HS"): 3616,
     ("camden", "MS"): 3633,
 }
@@ -128,6 +157,8 @@ def check_stored_coverage(client, sql=SUBMISSION_SQL):
     """
     actual = {(r.region, r.grade_band): r.matched for r in _rows(client, sql_text)}
     for key, floor in BASELINE_STORED_COVERAGE.items():
+        if key[0] not in REGIONS_IN_SCOPE:
+            continue
         got = actual.get(key, 0)
         if got < floor:
             failures.append(

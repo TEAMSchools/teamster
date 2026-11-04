@@ -84,6 +84,24 @@ PASSING_ALPHA_GRADES = frozenset(
 _ALPHA_GRADE_DOMAIN_SQL = ", ".join(f"'{g}'" for g in sorted(ALPHA_GRADE_DOMAIN))
 _PASSING_ALPHA_GRADES_SQL = ", ".join(f"'{g}'" for g in sorted(PASSING_ALPHA_GRADES))
 
+# Regions this tool still submits for. Camden's 2026-07-31 submission was
+# accepted, error-free, and certified, so its extract is final - reprocessing
+# it can only introduce a difference from what the state already holds. Newark
+# remains open, and from the 2026-08-02 extract onward its files arrive alone.
+#
+# This is the single source of truth: the gate's base-table iteration, the
+# submission export, and the ungraded worklist all derive their region set
+# from here. Restoring a region means adding it back to this tuple and
+# re-measuring the baselines in validate_submission.py - nothing else.
+#
+# SUBMISSION_SQL still builds both regions' branches below, each pinned to its
+# own source project, and filters at the end. Keeping the branch and filtering
+# it out means a certified region can be brought back by editing one tuple
+# rather than reconstructing SQL that has been deleted.
+REGIONS_IN_SCOPE = ("newark",)
+
+_REGIONS_IN_SCOPE_SQL = ", ".join(f"'{r}'" for r in sorted(REGIONS_IN_SCOPE))
+
 # trunk-ignore(bandit/B608): grade domain values are module constants, not user input
 SUBMISSION_SQL = f"""
 with
@@ -368,6 +386,7 @@ select
     candidate_letter,
     grade_source,
 from emitted_credit
+where region in ({_REGIONS_IN_SCOPE_SQL})
 """
 
 # The worklist identifies rows by local IDs only (LocalIdentificationNumber,
