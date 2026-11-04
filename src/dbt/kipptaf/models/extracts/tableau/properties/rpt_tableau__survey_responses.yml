@@ -132,17 +132,29 @@ models:
       - name: alumni_status
         data_type: string
         description: Respondent's KIPP alumni status from the staff roster.
+        config:
+          meta:
+            contains_pii: true
       - name: community_grew_up
         data_type: string
         description: Community the respondent grew up in, from the staff roster.
+        config:
+          meta:
+            contains_pii: true
       - name: community_professional_exp
         data_type: string
         description: >-
           Community where the respondent has professional experience, from the
           staff roster.
+        config:
+          meta:
+            contains_pii: true
       - name: level_of_education
         data_type: string
         description: Respondent's highest level of education.
+        config:
+          meta:
+            contains_pii: true
       - name: assignment_status
         data_type: string
         description: Respondent's assignment status as of the submission date.
