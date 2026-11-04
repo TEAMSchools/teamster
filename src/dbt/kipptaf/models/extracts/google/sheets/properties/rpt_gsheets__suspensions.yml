@@ -136,7 +136,10 @@ models:
             contains_pii: true
       - name: suspension_type
         data_type: string
-        description: Suspension type of the consequence (ISS or OSS).
+        description:
+          ISS or OSS for the standard in-school and out-of-school suspension
+          consequence names; null for any other consequence DeansList flags as a
+          suspension.
         config:
           meta:
             contains_pii: true

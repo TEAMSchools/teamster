@@ -56,8 +56,12 @@ with
             _dbt_source_project,
             file_posted_at__date,
 
-            coalesce(entity_name, public_filename) as attachment_name,
-            format_datetime('%F', file_posted_at__date) as posted_date,
+            concat(
+                coalesce(entity_name, public_filename),
+                ' (',
+                format_datetime('%F', file_posted_at__date),
+                ')'
+            ) as attachment_label,
 
             -- same suspension letter templates as rpt_tableau__okrts_referrals
             attachment_type = 'INC-LETTER'
@@ -76,17 +80,6 @@ with
         from {{ ref("int_deanslist__incidents__attachments") }}
     ),
 
-    attachment_labels as (
-        select
-            incident_id,
-            _dbt_source_project,
-            file_posted_at__date,
-            is_suspension_letter,
-
-            concat(attachment_name, ' (', posted_date, ')') as attachment_label,
-        from attachments
-    ),
-
     attachment_rollup as (
         select
             incident_id,
@@ -103,7 +96,7 @@ with
                 '; '
                 order by file_posted_at__date
             ) as other_attachments,
-        from attachment_labels
+        from attachments
         group by incident_id, _dbt_source_project
     )
 
