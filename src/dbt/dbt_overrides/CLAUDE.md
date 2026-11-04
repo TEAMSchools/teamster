@@ -16,7 +16,9 @@ too.
 `tests/test_dbt_overrides.py` fails when a dbt upgrade changes the built-in
 materialization. To re-sync, copy the new upstream file the test names, apply
 its `PATCHES`, keep this file's header lines, and re-run the test. If a patch
-site moved, update `PATCHES` to match the new upstream text.
+site moved, update `PATCHES` to match the new upstream text. The test checks
+only the dbt pinned in `uv.lock`; dbt Cloud CI runs its own version, so the copy
+can lag there without a failure.
 
 Retire the fork once dbt-labs/dbt#16343 ships. Delete
 `src/dbt/kipp*/macros/materialization_test.sql`, the `local: ../dbt_overrides`
