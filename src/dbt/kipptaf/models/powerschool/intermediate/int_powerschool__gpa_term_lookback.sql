@@ -22,7 +22,6 @@ with
         select
             gpa._dbt_source_relation,
             gpa.studentid,
-            gpa.schoolid,
             gpa.yearid,
             gpa.gpa_y1,
             gpa.gpa_y1_unweighted,
@@ -32,6 +31,14 @@ with
             /* the snapshot carries n_failing_y1 = 0 on versions with no gpa_y1,
                which reads as "failing nothing" rather than "not yet graded" */
             if(gpa.gpa_y1 is not null, gpa.n_failing_y1, null) as n_failing_y1,
+
+            /* rows from before the snapshot closed stale labels can overlap a
+               boundary; the newest version is the one in effect */
+            row_number() over (
+                partition by
+                    gpa._dbt_source_relation, gpa.studentid, gpa.yearid, lb.days_prior
+                order by gpa.dbt_valid_from desc
+            ) as rn_version,
         from {{ ref("snapshot_powerschool__gpa_term") }} as gpa
         inner join
             lookbacks as lb
@@ -43,7 +50,6 @@ with
 select
     _dbt_source_relation,
     studentid,
-    schoolid,
     yearid,
 
     {{ extract_source_project() }} as _dbt_source_project,
@@ -60,4 +66,5 @@ select
     max(if(days_prior = 14, n_failing_y1, null)) as n_failing_y1_2_week_prior,
     max(if(days_prior = 28, n_failing_y1, null)) as n_failing_y1_4_week_prior,
 from matched
-group by _dbt_source_relation, studentid, schoolid, yearid
+where rn_version = 1
+group by _dbt_source_relation, studentid, yearid
