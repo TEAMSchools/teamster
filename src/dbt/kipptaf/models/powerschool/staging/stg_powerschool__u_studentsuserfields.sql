@@ -12,10 +12,6 @@ with
                         "stg_powerschool__u_studentsuserfields",
                     ),
                     source(
-                        "kippmiami_powerschool",
-                        "stg_powerschool__u_studentsuserfields",
-                    ),
-                    source(
                         "kipppaterson_powerschool",
                         "stg_powerschool__u_studentsuserfields",
                     ),
@@ -24,5 +20,5 @@ with
         }}
     )
 
-select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
+select ur.*, {{ extract_source_project("ur") }} as _dbt_source_project,
 from union_relations as ur

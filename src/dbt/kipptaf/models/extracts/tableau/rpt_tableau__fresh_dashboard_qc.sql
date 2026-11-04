@@ -1,52 +1,179 @@
 with
-    fs_vs_ps_record_match as (
+    -- grain projection: every column here is functionally determined by
+    -- (enrollment_academic_year, finalsite_id); the source carries one row per
+    -- (goal_type, goal_name) grouping, neither of which is projected, so those
+    -- collapse to one byte-identical tuple. Not a mask for upstream duplicates.
+    roster as (
+        select distinct
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            org,
+            region,
+            schoolid,
+            school,
+            finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            self_contained,
+            enrollment_type,
+            latest_status,
+            enroll_status as sis_enroll_status,
+            sis_grade_level,
+            sis_schoolid,
+            sis_school,
+            finalsite_expected_enroll_status,
+            is_enroll_status_mismatch,
+            is_grade_level_mismatch,
+            is_school_mismatch,
+
+            if(
+                finalsite_expected_enroll_status = 0 and enroll_status is null,
+                true,
+                false
+            ) as is_missing_sis_record,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }}
+        where grouped_status_timeframe = 'Current'
+    ),
+
+    -- grain projection onto finalsite_enrollment_id, which the source repeats
+    -- across Dagster partitions. Deliberately unscoped by year: a record filed
+    -- under any cycle still means Finalsite knows the student.
+    finalsite_records as (
+        select distinct finalsite_enrollment_id,
+        from {{ ref("stg_finalsite__status_report") }}
+    ),
+
+    finalsite_contact_ids as (
         select
-            f.enrollment_academic_year,
-            f.finalsite_enrollment_id,
+            _dbt_source_project,
+            finalsite_enrollment_id,
 
-            f.enrollment_type,
+            cast(focus_student_id_prefixed as int) as focus_student_id,
+        from {{ ref("int_finalsite__contact_id_attributes") }}
+    ),
 
-            'FS vs PS' as flag_type,
-            'Enrollment Mismatch' as flag_name,
-            'Enrollment record exists on FS but not PS' as flag_description,
-
-            if(e.infosnap_id is null, true, false) as flag_value,
-
-        from {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-        left join
-            {{ ref("int_extracts__student_enrollments") }} as e
-            on f.enrollment_academic_year - 1 = e.academic_year
-            and f.finalsite_enrollment_id = e.infosnap_id
-            and e.rn_year = 1
-        /* hardcoded year because finalsite academic years do not sync with ps
-           academic years during review time */
-        where f.enrollment_academic_year = 2026
-
-        union all
-
+    sis_enrollments as (
         select
             e.academic_year,
-            e.infosnap_id,
+            e.academic_year_display,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.student_first_name,
+            e.student_last_name,
+            e.grade_level,
+            e.enroll_status,
 
-            f.enrollment_type,
-
-            'PS vs FS' as flag_type,
-            'Enrollment Mismatch' as flag_name,
-            'Enrollment record exists on PS but not FS' as flag_description,
-
-            if(f.finalsite_enrollment_id is null, true, false) as flag_value,
+            -- Miami rows carry no infosnap_id, so their Finalsite identity
+            -- comes from the contact-id crosswalk instead.
+            coalesce(e.infosnap_id, c.finalsite_enrollment_id) as sis_finalsite_id,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
-            {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-            on e.academic_year + 1 = f.enrollment_academic_year
-            and e.infosnap_id = f.finalsite_enrollment_id
-        /* hardcoded year because finalsite academic years do not sync with ps
-           academic years during review time */
-        where f.enrollment_academic_year = 2026
+            finalsite_contact_ids as c
+            on e.student_number = c.focus_student_id
+            and e._dbt_source_project = c._dbt_source_project
+        where
+            e.rn_year = 1
+            and e.enroll_status = 0
+            and e.academic_year = {{ var("finalsite_recruitment_year") }}
+    ),
+
+    sis_only as (
+        select
+            e.academic_year as enrollment_academic_year,
+            e.academic_year_display as enrollment_academic_year_display,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number as powerschool_student_number,
+            e.student_first_name as first_name,
+            e.student_last_name as last_name,
+            e.grade_level,
+            e.enroll_status as sis_enroll_status,
+            e.grade_level as sis_grade_level,
+            e.schoolid as sis_schoolid,
+            e.school as sis_school,
+
+            'KTAF' as org,
+            'is_missing_finalsite_record' as flag_name,
+            true as flag_value,
+
+            cast(null as string) as finalsite_id,
+            cast(null as string) as self_contained,
+            cast(null as string) as enrollment_type,
+            cast(null as string) as latest_status,
+            cast(null as int64) as finalsite_expected_enroll_status,
+
+        from sis_enrollments as e
+        left join
+            finalsite_records as f on e.sis_finalsite_id = f.finalsite_enrollment_id
+        where f.finalsite_enrollment_id is null
     )
 
-select *,
+select
+    enrollment_academic_year,
+    enrollment_academic_year_display,
+    org,
+    region,
+    schoolid,
+    school,
+    finalsite_id,
+    powerschool_student_number,
+    first_name,
+    last_name,
+    grade_level,
+    self_contained,
+    enrollment_type,
+    latest_status,
+    sis_enroll_status,
+    sis_grade_level,
+    sis_schoolid,
+    sis_school,
+    finalsite_expected_enroll_status,
 
-from fs_vs_ps_record_match
+    flag_name,
+    flag_value,
+
+from
+    roster unpivot (
+        flag_value for flag_name in (
+            is_enroll_status_mismatch,
+            is_grade_level_mismatch,
+            is_school_mismatch,
+            is_missing_sis_record
+        )
+    )
 where flag_value
+
+union all
+
+select
+    enrollment_academic_year,
+    enrollment_academic_year_display,
+    org,
+    region,
+    schoolid,
+    school,
+    finalsite_id,
+    powerschool_student_number,
+    first_name,
+    last_name,
+    grade_level,
+    self_contained,
+    enrollment_type,
+    latest_status,
+    sis_enroll_status,
+    sis_grade_level,
+    sis_schoolid,
+    sis_school,
+    finalsite_expected_enroll_status,
+
+    flag_name,
+    flag_value,
+
+from sis_only

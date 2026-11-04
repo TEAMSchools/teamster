@@ -2,9 +2,13 @@ models:
   - name: int_tableau__gradebook_audit_teacher_scaffold
     config:
       materialized: table
+      enabled: false
     columns:
       - name: _dbt_source_relation
         data_type: string
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.
       - name: schoolid
         data_type: int64
       - name: yearid

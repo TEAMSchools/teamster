@@ -60,5 +60,5 @@ left join
     on sr.studentid = gt.studentid
     and sr.yearid = gt.yearid
     and sr.schoolid = gt.schoolid
-    and {{ union_dataset_join_clause(left_alias="sr", right_alias="gt") }}
+    and sr._dbt_source_project = gt._dbt_source_project
 where sr.school_level in ('MS', 'HS') and sr.rn_year = 1

@@ -1,23 +1,41 @@
 exposures:
-  - name: crdc_dashboard
-    label: CRDC Dashboard
+  - name: academic_goal_rollup_dashboard
+    label: Academic Goal Roll-Up
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
-      - ref("rpt_tableau__crdc_roster")
-    url: https://drive.google.com/file/d/1aChpbS6v37hwIi1QrT1EmpzOHpXkXKaz
+      - ref("rpt_tableau__academic_goals_dashboard")
     config:
       meta:
         dagster:
           kinds:
             - tableau
+          asset:
+            metadata:
+              id: 15cb4859-ab6d-46a7-8e4f-1aa786785aa3
+  - name: crdc_dashboard
+    label: CRDC Dashboard
+    type: dashboard
+    owner:
+      name: Data Team - awalters
+    depends_on:
+      - ref("rpt_tableau__crdc_roster")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 9cc6fe34-8ae9-4c56-aa5f-6e6c229f6f5d
   - name: attrition_dashboard
     label: Attrition Dashboard
     type: dashboard
     owner:
       name: Data Team
     depends_on:
+      - ref("int_people__staff_roster")
       - ref("rpt_tableau__staff_attrition_details")
     config:
       meta:
@@ -32,7 +50,7 @@ exposures:
     label: College Admission Readiness Assessments Tracker (CARAT)
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__ap_assessment_dashboard")
       - ref("rpt_tableau__college_assessment_dashboard_benchmark_calcs")
@@ -75,6 +93,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__grants_timesheets")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -91,7 +110,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__adp_pension_and_benefits_enrollments")
       - ref("rpt_tableau__finance_accounting_people_model")
-      # - ref("rpt_tableau__staff_attrition")
+      - ref("rpt_tableau__staff_attrition_details")
     config:
       meta:
         dagster:
@@ -101,11 +120,23 @@ exposures:
             metadata:
               id: c29963fb-8516-4148-b43f-cddc0f2b4093
               cron_schedule: 0 13 * * *
+  - name: gpa_goals_dashboard
+    label: GPA Goals Dashboard
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__gpa_goals")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
   - name: high_school_early_warning_dashboard
     label: High School Early Warning Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__community_service")
       - ref("rpt_tableau__graduation_requirements")
@@ -126,6 +157,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_gsheets__kfwd_rem_roster")
+      - ref("rpt_tableau__kfwd_aid_report")
       - ref("rpt_tableau__kfwd_career_launch_survey")
       - ref("rpt_tableau__kfwd_contact_notes")
       - ref("rpt_tableau__kfwd_dashboard")
@@ -248,6 +280,7 @@ exposures:
       - ref("rpt_tableau__okrts_behavior")
       - ref("rpt_tableau__okrts_referrals")
       - ref("rpt_tableau__suspension_over_time")
+      - ref("rpt_tableau__home_instruction")
     config:
       meta:
         dagster:
@@ -266,7 +299,6 @@ exposures:
       - ref("rpt_tableau__schoolmint_grow_observation_details")
       - ref("rpt_tableau__schoolmint_grow_goals")
       - ref("rpt_tableau__teacher_observations")
-      - ref("rpt_tableau__pm_outlier_detection")
     config:
       meta:
         dagster:
@@ -296,12 +328,14 @@ exposures:
           asset:
             metadata:
               id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-              cron_schedule: 0 15 * * *
+              cron_schedule:
+                - 0 6 * * *
+                - 0 15 * * *
   - name: literacy_dashboard
     label: Literacy Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__dibels_dashboard")
       - ref("rpt_tableau__sight_words_dashboard")
@@ -334,18 +368,39 @@ exposures:
                 - 0 12 * * *
                 - 30 14 * * *
                 - 15 16 * * *
+  - name: academic_gradebook_health_suite
+    label: Academic & Gradebook Health Suite
+    type: dashboard
+    owner:
+      name: Data Team - awalters
+    depends_on:
+      - ref("rpt_tableau__gpa_goals")
+      - ref("rpt_tableau__gpa_goal_progress")
+      - ref("rpt_tableau__gpa_cumulative_year")
+      - ref("rpt_tableau__gpa_course_pace")
+      - ref("rpt_tableau__student_course_grades")
+      - ref("rpt_tableau__gradebook_audit")
+      - ref("rpt_tableau__gradebook_es_comments")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: b3c14d67-3130-46ac-82a0-0637a5cc2da5
+              cron_schedule: 0 4 * * *
   - name: gradebook_and_gpa_dashboard
     label: Gradebook and GPA Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
-      - ref("rpt_tableau__assignment_checks")
+      - ref("rpt_tableau__gpa_cumulative_year")
+      - ref("rpt_tableau__gpa_goal_progress")
+      - ref("rpt_tableau__gpa_goals")
       - ref("rpt_tableau__gradebook_audit")
-      - ref("rpt_tableau__gradebook_gpa")
-      - ref("rpt_tableau__gradebook_gpa_cumulative")
-      - ref("rpt_tableau__gradebook_es_comments")
-      - ref("rpt_tableau__gradebook_ms_hs_comments")
+      - ref("rpt_tableau__student_course_grades")
     config:
       meta:
         dagster:
@@ -354,12 +409,27 @@ exposures:
           asset:
             metadata:
               id: 5046a976-ed0e-4c77-93fe-78b732cb5548
-              cron_schedule: 0 4 * * *
+  - name: gradebook_audit
+    label: Gradebook Audit Dashboard
+    type: dashboard
+    owner:
+      name: Data Team - awalters
+    depends_on:
+      - ref("rpt_tableau__gradebook_audit")
+    config:
+      enabled: false
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: f06a1938-9082-4c02-a0e4-f450b687dc43
   - name: gradebook_audit_teacher_report
     label: Gradebook Audit - Teacher Report
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__gradebook_audit")
       - ref("rpt_tableau__gradebook_es_comments")
@@ -392,15 +462,13 @@ exposures:
               id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
               cron_schedule:
                 - 0 1 * * *
-                - 40 14 * * 3
-                - 00 11 * * 3
                 - 0 16 * * 5
                 - 0 18 * * *
   - name: apm_dashboard
     label: APM Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__iready_apm")
     config:
@@ -469,6 +537,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__stipend_and_bonus_app")
+      - source("google_appsheet_frozen", "snapshot__stipend_and_bonus__output")
     config:
       meta:
         dagster:
@@ -509,6 +578,11 @@ exposures:
             metadata:
               id: 01861d02-0674-4ddb-979e-f1e6bcbcf5c0
               cron_schedule: 0 6 * * *
+  # Archive only. Leadership Development moved to Lattice on 2026-07-30 and the
+  # upstream dbt models are disabled. This workbook never had a Dagster
+  # cron_schedule, so Dagster never refreshed it -- any remaining extract
+  # refresh is a Tableau-side schedule and has to be removed in Tableau.
+  # Refs #4627
   - name: leadership_development
     label: Leadership Development
     type: dashboard
@@ -517,6 +591,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__leadership_development")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -534,6 +609,7 @@ exposures:
       - ref("rpt_tableau__miami_k2_iready")
       - ref("rpt_tableau__miami_k2_star")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -568,7 +644,6 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__smartrecruiters")
-      - ref("rpt_tableau__seat_tracker")
       - ref("rpt_tableau__seat_tracker_snapshot")
     config:
       meta:
@@ -604,8 +679,7 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("rpt_tableau__survey_completion")
-      - ref("rpt_tableau__survey_responses")
+      - ref("rpt_tableau__survey_links")
     config:
       meta:
         dagster:
@@ -650,7 +724,7 @@ exposures:
     label: State Testing Analysis Tool
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__state_assessments_dashboard")
       - ref("rpt_tableau__state_assessments_dashboard_comps")
@@ -692,6 +766,9 @@ exposures:
         dagster:
           kinds:
             - tableau
+          asset:
+            metadata:
+              id: 0c1f3b3f-f49a-45cb-8424-05bbbab619e9
   - name: topline_cascade_dashboard
     label: Topline Cascade Dashboard
     type: dashboard
@@ -700,6 +777,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__topline_cascade_dashboard")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -729,7 +807,7 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("int_surveys__manager_survey_details")
+      - ref("rpt_tableau__manager_survey_details")
     config:
       meta:
         dagster:
@@ -738,14 +816,16 @@ exposures:
           asset:
             metadata:
               id: 61c1e07d-778e-40a8-81ad-327f3951c8e2
+              cron_schedule: 0 7 * * *
   - name: fresh_dashboard
     label: FRESH Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__fresh_dashboard_aggregated")
       - ref("rpt_tableau__fresh_dashboard_progress_to_goals")
+      - ref("rpt_tableau__fresh_dashboard_qc")
       - ref("int_tableau__finalsite_student_scaffold")
     config:
       meta:
@@ -756,3 +836,46 @@ exposures:
             metadata:
               id: 0decd81d-f1c0-464a-bf2f-3546af11d47c
               cron_schedule: 0 5 * * *
+  - name: cumulative_gpa_monitor
+    label: Cumulative GPA Monitor
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__gpa_goal_progress")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+  - name: manager_survey_rollup
+    label: Manager Survey Rollup
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__manager_survey_details")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 400e54b2-4b34-4185-b7e6-72765e6f1c86
+              cron_schedule: 0 7 * * *
+  - name: content_team_dashboard
+    label: Content Team Dashboard
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__content_team")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1

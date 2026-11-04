@@ -1,18 +1,41 @@
 models:
   - name: stg_pearson__student_list_report
+    description: >-
+      Pearson student list report rows, the preliminary per-student scores
+      Pearson released before final score files. test_type, administration and
+      fiscal_year come from the Dagster partition keys. Frozen history; no new
+      rows are expected.
     columns:
       - name: state_student_identifier
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: last_or_surname
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: date_of_birth
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: scale_score
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: performance_level
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: test_name
         data_type: string
       - name: testing_school
@@ -21,11 +44,20 @@ models:
         data_type: string
       - name: local_student_identifier
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: test_type
         data_type: string
+        description: Test type partition key, uppercased.
       - name: administration
         data_type: string
+        description: >-
+          Letter prefix of the administration/fiscal-year partition key.
       - name: fiscal_year
         data_type: int64
+        description: >-
+          Numeric suffix of the administration/fiscal-year partition key.
       - name: academic_year
         data_type: int64
+        description: fiscal_year minus 1.

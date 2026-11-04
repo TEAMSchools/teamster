@@ -7,13 +7,6 @@ from teamster.libraries.extracts.assets import build_bigquery_query_sftp_asset
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
-powerschool_extract_assets = [
-    build_bigquery_query_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
-    )
-    for a in config_from_files([f"{config_dir}/powerschool.yaml"])["assets"]
-]
-
 focus_extract_assets = [
     build_bigquery_query_sftp_asset(
         code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
@@ -22,6 +15,5 @@ focus_extract_assets = [
 ]
 
 assets = [
-    *powerschool_extract_assets,
     *focus_extract_assets,
 ]

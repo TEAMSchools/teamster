@@ -1,4 +1,42 @@
 with
+    foundation_goals_by_season as (
+        select
+            academic_year,
+            region,
+            grade_level,
+            `period`,
+            population,
+            grade_goal_type,
+            grade_goal,
+            grade_range_goal,
+        from {{ ref("stg_google_sheets__dibels_foundation_goals") }}
+
+        union all
+
+        select
+            e.academic_year,
+            e.region,
+            e.grade_level,
+
+            'MOY' as `period`,
+
+            e.population,
+            e.grade_goal_type,
+            e.grade_goal,
+            e.grade_range_goal,
+
+        from {{ ref("stg_google_sheets__dibels_foundation_goals") }} as e
+        left join
+            {{ ref("stg_google_sheets__dibels_foundation_goals") }} as m
+            on e.academic_year = m.academic_year
+            and e.region = m.region
+            and e.grade_level = m.grade_level
+            and e.population = m.population
+            and e.grade_goal_type = m.grade_goal_type
+            and m.period = 'MOY'
+        where e.period = 'EOY' and m.academic_year is null
+    ),
+
     roster as (
         select
             a.academic_year,
@@ -13,8 +51,11 @@ with
             f.grade_goal_type,
             f.grade_goal,
             f.grade_range_goal,
+            f_iep.grade_goal as grade_goal_iep,
+            f_iep.grade_range_goal as grade_range_goal_iep,
+            f_mll.grade_goal as grade_goal_mll,
+            f_mll.grade_range_goal as grade_range_goal_mll,
 
-            -- school/gl calcs
             count(a.student_number) over (
                 partition by a.academic_year, e.school, a.period, a.assessment_grade
             ) as n_admin_season_school_gl_all,
@@ -41,15 +82,9 @@ with
                     null
                 )
             ) over (
-                partition by
-                    a.academic_year,
-                    e.school,
-                    a.period,
-                    a.assessment_grade,
-                    a.aggregated_measure_standard_level
+                partition by a.academic_year, e.school, a.period, a.assessment_grade
             ) as n_admin_season_school_gl_bl_wb,
 
-            -- region/gl calcs
             count(a.student_number) over (
                 partition by a.academic_year, e.region, a.period, a.assessment_grade
             ) as n_admin_season_region_gl_all,
@@ -76,15 +111,136 @@ with
                     null
                 )
             ) over (
+                partition by a.academic_year, e.region, a.period, a.assessment_grade
+            ) as n_admin_season_region_gl_bl_wb,
+
+            count(if(e.iep_status = 'Has IEP', a.student_number, null)) over (
+                partition by a.academic_year, e.school, a.period, a.assessment_grade
+            ) as n_admin_season_school_gl_all_iep,
+
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'At/Above'
+                    and e.iep_status = 'Has IEP',
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by
+                    a.academic_year,
+                    e.school,
+                    a.period,
+                    a.assessment_grade,
+                    a.aggregated_measure_standard_level
+            ) as n_admin_season_school_gl_at_above_iep,
+
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'Below/Well Below'
+                    and e.iep_status = 'Has IEP',
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by a.academic_year, e.school, a.period, a.assessment_grade
+            ) as n_admin_season_school_gl_bl_wb_iep,
+
+            count(if(e.iep_status = 'Has IEP', a.student_number, null)) over (
+                partition by a.academic_year, e.region, a.period, a.assessment_grade
+            ) as n_admin_season_region_gl_all_iep,
+
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'At/Above'
+                    and e.iep_status = 'Has IEP',
+                    a.student_number,
+                    null
+                )
+            ) over (
                 partition by
                     a.academic_year,
                     e.region,
                     a.period,
                     a.assessment_grade,
                     a.aggregated_measure_standard_level
-            ) as n_admin_season_region_gl_bl_wb,
+            ) as n_admin_season_region_gl_at_above_iep,
 
-            -- distinct
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'Below/Well Below'
+                    and e.iep_status = 'Has IEP',
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by a.academic_year, e.region, a.period, a.assessment_grade
+            ) as n_admin_season_region_gl_bl_wb_iep,
+
+            count(if(e.lep_status, a.student_number, null)) over (
+                partition by a.academic_year, e.school, a.period, a.assessment_grade
+            ) as n_admin_season_school_gl_all_mll,
+
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'At/Above' and e.lep_status,
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by
+                    a.academic_year,
+                    e.school,
+                    a.period,
+                    a.assessment_grade,
+                    a.aggregated_measure_standard_level
+            ) as n_admin_season_school_gl_at_above_mll,
+
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'Below/Well Below'
+                    and e.lep_status,
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by a.academic_year, e.school, a.period, a.assessment_grade
+            ) as n_admin_season_school_gl_bl_wb_mll,
+
+            count(if(e.lep_status, a.student_number, null)) over (
+                partition by a.academic_year, e.region, a.period, a.assessment_grade
+            ) as n_admin_season_region_gl_all_mll,
+
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'At/Above' and e.lep_status,
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by
+                    a.academic_year,
+                    e.region,
+                    a.period,
+                    a.assessment_grade,
+                    a.aggregated_measure_standard_level
+            ) as n_admin_season_region_gl_at_above_mll,
+
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'Below/Well Below'
+                    and e.lep_status,
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by a.academic_year, e.region, a.period, a.assessment_grade
+            ) as n_admin_season_region_gl_bl_wb_mll,
+
+            -- the level stays in the partition: the final SELECT anchors on the
+            -- At/Above row, so one must survive per school. order by is what
+            -- makes the pick deterministic -- without it row_number() picked
+            -- arbitrarily, which is how the bl_wb columns used to come back
+            -- null at random.
             row_number() over (
                 partition by
                     a.academic_year,
@@ -94,6 +250,7 @@ with
                     a.benchmark_goal_season,
                     a.aggregated_measure_standard_level,
                     e.school
+                order by a.student_number
             ) as rn,
 
         from {{ ref("int_amplify__all_assessments") }} as a
@@ -105,12 +262,29 @@ with
             and a.assessment_grade_int = e.grade_level
             and a.client_date between e.entrydate and e.exitdate
         left join
-            {{ ref("stg_google_sheets__dibels_foundation_goals") }} as f
+            foundation_goals_by_season as f
             on a.academic_year = f.academic_year
             and a.region = f.region
             and a.assessment_grade_int = f.grade_level
             and a.benchmark_goal_season = f.period
             and a.foundation_measure_standard_level = f.grade_goal_type
+            and f.population = 'All'
+        left join
+            foundation_goals_by_season as f_iep
+            on a.academic_year = f_iep.academic_year
+            and a.region = f_iep.region
+            and a.assessment_grade_int = f_iep.grade_level
+            and a.benchmark_goal_season = f_iep.period
+            and a.foundation_measure_standard_level = f_iep.grade_goal_type
+            and f_iep.population = 'IEP'
+        left join
+            foundation_goals_by_season as f_mll
+            on a.academic_year = f_mll.academic_year
+            and a.region = f_mll.region
+            and a.assessment_grade_int = f_mll.grade_level
+            and a.benchmark_goal_season = f_mll.period
+            and a.foundation_measure_standard_level = f_mll.grade_goal_type
+            and f_mll.population = 'MLL'
         where
             a.academic_year = {{ var("current_academic_year") }}
             and a.assessment_type = 'Benchmark'
@@ -137,6 +311,22 @@ with
             n_admin_season_region_gl_all,
             n_admin_season_region_gl_at_above,
             n_admin_season_region_gl_bl_wb,
+            grade_goal_iep,
+            grade_range_goal_iep,
+            n_admin_season_school_gl_all_iep,
+            n_admin_season_school_gl_at_above_iep,
+            n_admin_season_school_gl_bl_wb_iep,
+            n_admin_season_region_gl_all_iep,
+            n_admin_season_region_gl_at_above_iep,
+            n_admin_season_region_gl_bl_wb_iep,
+            grade_goal_mll,
+            grade_range_goal_mll,
+            n_admin_season_school_gl_all_mll,
+            n_admin_season_school_gl_at_above_mll,
+            n_admin_season_school_gl_bl_wb_mll,
+            n_admin_season_region_gl_all_mll,
+            n_admin_season_region_gl_at_above_mll,
+            n_admin_season_region_gl_bl_wb_mll,
 
         from roster
         where rn = 1
@@ -146,11 +336,30 @@ with
         select
             *,
 
+            -- T&L planning pads, K-8. BOY is double padded: this +5 and the
+            -- 1.5x gap multiplier below. From SY26-27 MOY is single padded --
+            -- it keeps the multiplier and drops this one.
             ceiling(n_admin_season_school_gl_all * grade_goal)
-            + 5 as n_admin_season_school_gl_at_above_expected,
+            + if(period = 'BOY', 5, 0) as n_admin_season_school_gl_at_above_expected,
 
             ceiling(n_admin_season_region_gl_all * grade_goal)
-            + 5 as n_admin_season_region_gl_at_above_expected,
+            + if(period = 'BOY', 5, 0) as n_admin_season_region_gl_at_above_expected,
+
+            ceiling(n_admin_season_school_gl_all_iep * grade_goal_iep) + if(
+                period = 'BOY', 5, 0
+            ) as n_admin_season_school_gl_at_above_expected_iep,
+
+            ceiling(n_admin_season_region_gl_all_iep * grade_goal_iep) + if(
+                period = 'BOY', 5, 0
+            ) as n_admin_season_region_gl_at_above_expected_iep,
+
+            ceiling(n_admin_season_school_gl_all_mll * grade_goal_mll) + if(
+                period = 'BOY', 5, 0
+            ) as n_admin_season_school_gl_at_above_expected_mll,
+
+            ceiling(n_admin_season_region_gl_all_mll * grade_goal_mll) + if(
+                period = 'BOY', 5, 0
+            ) as n_admin_season_region_gl_at_above_expected_mll,
 
         from group_rows
     )
@@ -163,7 +372,6 @@ select
     c.period,
     c.benchmark_goal_season,
     c.school,
-
     c.grade_goal,
     c.grade_range_goal,
     c.n_admin_season_school_gl_all,
@@ -172,9 +380,29 @@ select
     c.n_admin_season_region_gl_at_above,
     c.n_admin_season_school_gl_at_above_expected,
     c.n_admin_season_region_gl_at_above_expected,
+    c.grade_goal_iep,
+    c.grade_range_goal_iep,
+    c.n_admin_season_school_gl_all_iep,
+    c.n_admin_season_school_gl_at_above_iep,
+    c.n_admin_season_region_gl_all_iep,
+    c.n_admin_season_region_gl_at_above_iep,
+    c.n_admin_season_school_gl_at_above_expected_iep,
+    c.n_admin_season_region_gl_at_above_expected_iep,
+    c.grade_goal_mll,
+    c.grade_range_goal_mll,
+    c.n_admin_season_school_gl_all_mll,
+    c.n_admin_season_school_gl_at_above_mll,
+    c.n_admin_season_region_gl_all_mll,
+    c.n_admin_season_region_gl_at_above_mll,
+    c.n_admin_season_school_gl_at_above_expected_mll,
+    c.n_admin_season_region_gl_at_above_expected_mll,
 
-    b.n_admin_season_school_gl_bl_wb,
-    b.n_admin_season_region_gl_bl_wb,
+    c.n_admin_season_school_gl_bl_wb,
+    c.n_admin_season_school_gl_bl_wb_iep,
+    c.n_admin_season_school_gl_bl_wb_mll,
+    c.n_admin_season_region_gl_bl_wb,
+    c.n_admin_season_region_gl_bl_wb_iep,
+    c.n_admin_season_region_gl_bl_wb_mll,
 
     (c.n_admin_season_school_gl_at_above_expected - c.n_admin_season_school_gl_at_above)
     * 1.5 as n_admin_season_school_gl_at_above_gap,
@@ -182,14 +410,29 @@ select
     (c.n_admin_season_region_gl_at_above_expected - c.n_admin_season_region_gl_at_above)
     * 1.5 as n_admin_season_region_gl_at_above_gap,
 
+    (
+        c.n_admin_season_school_gl_at_above_expected_iep
+        - c.n_admin_season_school_gl_at_above_iep
+    )
+    * 1.5 as n_admin_season_school_gl_at_above_gap_iep,
+
+    (
+        c.n_admin_season_region_gl_at_above_expected_iep
+        - c.n_admin_season_region_gl_at_above_iep
+    )
+    * 1.5 as n_admin_season_region_gl_at_above_gap_iep,
+
+    (
+        c.n_admin_season_school_gl_at_above_expected_mll
+        - c.n_admin_season_school_gl_at_above_mll
+    )
+    * 1.5 as n_admin_season_school_gl_at_above_gap_mll,
+
+    (
+        c.n_admin_season_region_gl_at_above_expected_mll
+        - c.n_admin_season_region_gl_at_above_mll
+    )
+    * 1.5 as n_admin_season_region_gl_at_above_gap_mll,
+
 from needed_count_calcs as c
-left join
-    needed_count_calcs as b
-    on c.academic_year = b.academic_year
-    and c.region = b.region
-    and c.assessment_grade = b.assessment_grade
-    and c.period = b.period
-    and c.benchmark_goal_season = b.benchmark_goal_season
-    and c.school = b.school
-    and b.grade_goal_type = 'Well Below'
 where c.grade_goal_type = 'At/Above'

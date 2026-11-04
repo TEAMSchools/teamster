@@ -3,6 +3,7 @@ name: kippcamden
 permissions:
   contents: read
   pull-requests: write
+  packages: write
   id-token: write
 
 on:
@@ -15,6 +16,8 @@ on:
       - .github/workflows/deploy-prod-kippcamden.yaml
       - Dockerfile
       - uv.lock
+      - src/dbt/cambium/**
+      - src/dbt/dbt_overrides/**
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/finalsite/**
@@ -25,16 +28,17 @@ on:
       - src/dbt/titan/**
       - src/teamster/code_locations/kippcamden/**
       - src/teamster/core/**
+      - src/teamster/libraries/cambium/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/edplan/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
@@ -47,16 +51,17 @@ on:
       - uv.lock
       - src/teamster/code_locations/kippcamden/**
       - src/teamster/core/**
+      - src/teamster/libraries/cambium/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/edplan/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**

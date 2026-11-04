@@ -1,9 +1,21 @@
 models:
   - name: rpt_gsheets__kfwd_rem_roster
+    description:
+      KIPP Forward REM roster for the Google Sheet — one row per KIPP high
+      school graduate's Salesforce contact, with current enrollment status, the
+      latest REM contact note, credit progress, and advisor fields.
     columns:
-      - name: student_name
-        data_type: string
       - name: contact_id
+        data_type: string
+        description: Salesforce contact ID for the alum. One row per contact.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_name
         data_type: string
       - name: ktc_cohort
         data_type: int64
@@ -95,9 +107,66 @@ models:
         data_type: string
       - name: postsec_advisor_name
         data_type: string
+      - name: postsecondary_advisor
+        data_type: string
+        description:
+          Advisor shown on the REM roster — 'Collab' when the advising provider
+          is KIPP NYC, otherwise the postsecondary advisor's name from the
+          Salesforce contact record.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name_id_hash
         data_type: string
       - name: es_graduated
         data_type: string
       - name: contact_kipp_region_name
         data_type: string
+      - name: advising_provider
+        data_type: string
+        description:
+          Organization providing postsecondary advising to the alum, from the
+          Salesforce contact record.
+      - name: high_school_graduated_from
+        data_type: string
+        description:
+          High school the alum graduated from, from the Salesforce contact
+          record.
+
+unit_tests:
+  - name: test_rpt_gsheets__kfwd_rem_roster_postsecondary_advisor
+    model: rpt_gsheets__kfwd_rem_roster
+    description:
+      KIPP NYC-advised alumni show Collab. Every other alum, including one with
+      no advising provider, shows the postsecondary advisor's name.
+    given:
+      - input: ref("int_kippadb__roster")
+        rows:
+          - contact_id: a
+            contact_has_hs_graduated_enrollment: HS Graduate
+            contact_advising_provider: KIPP NYC
+            contact_postsec_advisor_name: Advisor A
+          - contact_id: b
+            contact_has_hs_graduated_enrollment: HS Graduate
+            contact_advising_provider: KIPP Forward
+            contact_postsec_advisor_name: Advisor B
+          - contact_id: c
+            contact_has_hs_graduated_enrollment: HS Graduate
+            contact_advising_provider: null
+            contact_postsec_advisor_name: Advisor C
+      - input: ref("int_kippadb__enrollment_pivot")
+        rows: []
+      - input: ref("stg_kippadb__enrollment")
+        rows: []
+      - input: ref("stg_kippadb__contact_note")
+        rows: []
+      - input: ref("stg_kippadb__gpa")
+        rows: []
+    expect:
+      rows:
+        - contact_id: a
+          postsecondary_advisor: Collab
+        - contact_id: b
+          postsecondary_advisor: Advisor B
+        - contact_id: c
+          postsecondary_advisor: Advisor C

@@ -116,14 +116,34 @@ select
     m.fiscal_year,
 
     r.formatted_name as preferred_name_lastfirst,
-    r.sam_account_name,
-    r.job_title,
-    r.home_business_unit_name as entity,
-    r.home_work_location_name as `location`,
-    r.home_department_name as department,
     r.reports_to_formatted_name as manager,
-    r.reports_to_sam_account_name as report_to_sam_account_name,
     r.assignment_status,
+
+    lc.location_clean_name,
+    lc.campus_name,
+
+    case
+        r.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else r.home_business_unit_name
+    end as home_business_unit_name,
+    r.home_department_name,
+    r.job_function,
+    r.job_title,
+
+    r.mail,
+    r.user_principal_name,
+    r.sam_account_name,
+
+    r.reports_to_mail,
+    r.reports_to_sam_account_name,
 
     case when m.bucket = 'Goals' then p.notes_boy else m.description end as description,
 
@@ -158,5 +178,10 @@ left join
     and p.academic_year = mc.academic_year
     and p.term = mc.term
 left join metrics_lookup as m on p.metric_id = m.metric_id
-left join
+/* INNER, not LEFT: rows whose employee_number resolves to no roster record are
+   test data, and a row with no roster record cannot be gated to anyone. */
+inner join
     {{ ref("int_people__staff_roster") }} as r on p.employee_number = r.employee_number
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on r.home_work_location_name = lc.location_name

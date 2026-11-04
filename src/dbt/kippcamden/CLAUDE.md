@@ -15,10 +15,9 @@ models/
     powerschool/ # PowerSchool autocomm extracts (teachers, students IEP)
 ```
 
-PowerSchool data source: **ODBC** (`odbc.+enabled: true`,
-`sftp.+enabled: false`)
+PowerSchool data source: **dlt** (`dlt.+enabled: true`; `odbc` and `sftp`
+disabled)
 
 ## Source Packages
 
-Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`). Camden
-does not use `iready` or `renlearn`.
+Camden does not use `iready` or `renlearn`.

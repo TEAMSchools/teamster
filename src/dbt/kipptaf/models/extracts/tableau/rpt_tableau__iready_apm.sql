@@ -105,7 +105,7 @@ left join
     and il.completion_date between co.week_start_monday and co.week_end_sunday
     and il.academic_year_int = {{ var("current_academic_year") }}
 left join
-    {{ ref("int_iready__diagnostic_results") }} as dr
+    {{ ref("int_assessments__iready_diagnostic_results") }} as dr
     on co.student_number = dr.student_id
     and co.academic_year = dr.academic_year_int
     and co.iready_subject = dr.subject
@@ -117,7 +117,7 @@ left join
     and co.yearid = cr.cc_yearid
     and co.schoolid = cr.cc_schoolid
     and co.powerschool_credittype = cr.courses_credittype
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="cr") }}
+    and co._dbt_source_project = cr._dbt_source_project
     and not cr.is_dropped_section
     and cr.rn_credittype_year = 1
 left join

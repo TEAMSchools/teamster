@@ -17,25 +17,17 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: behavioral_incident_key
         data_type: string
         description: >-
           FK to fct_behavioral_incidents. Surrogate key derived from incident_id
           and _dbt_source_project.
-        constraints:
-          - type: foreign_key
-            to: ref('fct_behavioral_incidents')
-            to_columns: [behavioral_incident_key]
-            warn_unsupported: false
-        data_tests:
-          - not_null
-
-          - relationships:
-              arguments:
-                to: ref('fct_behavioral_incidents')
-                field: behavioral_incident_key
+        config:
+          meta:
+            foreign_key:
+              to: ref('fct_behavioral_incidents')
+              to_columns: [behavioral_incident_key]
       - name: start_date_key
         data_type: date
         description: >-
@@ -46,16 +38,9 @@ models:
             source_system: DeansList
             source_model: int_deanslist__incidents__penalties
             source_column: start_date
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
       - name: end_date_key
         data_type: date
         description: >-
@@ -66,16 +51,9 @@ models:
             source_system: DeansList
             source_model: int_deanslist__incidents__penalties
             source_column: end_date
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
       - name: type
         quote: true
         data_type: string

@@ -65,6 +65,10 @@ def build_couchdrop_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
+        # drop keys for assets no longer selected, so a stale 0 can't pin min_cursor
+        selected = {a.key.to_python_identifier() for a in asset_selection}
+        cursor = {k: v for k, v in cursor.items() if k in selected}
+
         # 0 when any asset is unprocessed — lists all files on first run
         min_cursor = min(cursor.values(), default=0)
 

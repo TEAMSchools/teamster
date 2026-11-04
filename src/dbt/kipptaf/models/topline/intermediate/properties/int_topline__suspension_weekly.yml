@@ -1,4 +1,12 @@
 models:
   - name: int_topline__suspension_weekly
     config:
+      enabled: false
       materialized: table
+      meta:
+        dagster:
+          # cron instead of eager: sole consumer is
+          # int_topline__student_metrics, which shares this tick.
+          # Refs #4153
+          automation_condition:
+            cron_schedule: 30 0 * * *

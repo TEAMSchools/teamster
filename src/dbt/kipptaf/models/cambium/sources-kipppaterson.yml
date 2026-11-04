@@ -1,0 +1,24 @@
+sources:
+  - name: kipppaterson_cambium
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kipppaterson_cambium"
+    tables:
+      - name: stg_cambium__njsla
+        config:
+          meta:
+            dagster:
+              group: cambium
+              asset_key:
+                - kipppaterson
+                - cambium
+                - stg_cambium__njsla
+      - name: int_cambium__all_assessments
+        config:
+          meta:
+            dagster:
+              group: cambium
+              asset_key:
+                - kipppaterson
+                - cambium
+                - int_cambium__all_assessments

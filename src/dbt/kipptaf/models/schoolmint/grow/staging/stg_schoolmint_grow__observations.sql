@@ -1,4 +1,6 @@
 with
+    -- Measured at 125,167 input rows for #5252 -- below the ~1M threshold for
+    -- the ranked-column rewrite, so this stays on the macro. Don't re-measure.
     deduplicate as (
         {{
             dbt_utils.deduplicate(

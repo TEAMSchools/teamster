@@ -30,5 +30,8 @@ select
     null as `15 Teacher Competency Level`,
     null as `16 Is Attendance Enabled`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("base_powerschool__sections") }}
-where terms_academic_year = {{ current_school_year(var("local_timezone")) }}
+from {{ ref("int_students__course_sections") }}
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+where
+    _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
+    and terms_academic_year = {{ current_school_year(var("local_timezone")) }}

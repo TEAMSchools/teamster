@@ -1,39 +1,76 @@
 models:
   - name: int_illuminate__agg_student_responses_group
+    description: >-
+      Student scores per assessment reporting group, with the group's label and
+      the band set and sort order the assessment assigns to it. One row per
+      student assessment sitting per reporting group. Inner joins drop scores
+      for groups not linked to the assessment or missing from reporting_groups.
+      Staging keeps only rows with points_possible above zero.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_assessment_id
+              - reporting_group_id
     columns:
       - name: student_assessment_id
         data_type: int64
+        description: The student's assessment sitting.
       - name: assessment_id
         data_type: int64
+        description: Illuminate assessment id.
       - name: reporting_group_id
         data_type: int64
+        description: Illuminate reporting group id.
       - name: student_id
         data_type: int64
+        description: Illuminate student id.
       - name: performance_band_id
         data_type: int64
+        description: Performance band the group score falls in.
       - name: performance_band_level
         data_type: int64
+        description: Level number of that performance band.
       - name: mastered
         data_type: boolean
+        description: Whether the student mastered the reporting group.
       - name: points
         data_type: numeric
+        description: Points earned in the reporting group.
       - name: points_possible
         data_type: numeric
+        description: Points possible in the reporting group. Always above zero.
       - name: answered
         data_type: int64
+        description: Number of questions in the group the student answered.
       - name: percent_correct
         data_type: numeric
+        description: Percent correct as Illuminate reports it.
       - name: number_of_questions
         data_type: int64
+        description: Number of questions in the reporting group.
       - name: raw_score
         data_type: numeric
+        description: Raw score in the reporting group.
       - name: raw_score_mastered
         data_type: boolean
+        description: Whether the raw score meets mastery.
       - name: raw_score_possible
         data_type: numeric
+        description: Raw score possible in the reporting group.
       - name: performance_band_set_id
         data_type: int64
+        description: >-
+          Performance band set the assessment assigns to this reporting group,
+          from assessments_reporting_groups.
       - name: sort_order
         data_type: int64
+        description: >-
+          Display order of the reporting group within the assessment, from
+          assessments_reporting_groups.
       - name: label
         data_type: string
+        description: Reporting group label, from reporting_groups.

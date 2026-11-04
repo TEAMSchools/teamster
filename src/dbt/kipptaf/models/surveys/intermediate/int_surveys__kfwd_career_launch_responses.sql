@@ -1,4 +1,3 @@
-/* KIPP Forward Career Launch Survey */
 select
     ri.response_date_submitted,
     ri.respondent_salesforce_id,
@@ -16,11 +15,13 @@ inner join
     {{ source("alchemer", "base_alchemer__survey_results") }} as sr
     on ri.survey_id = sr.survey_id
     and ri.response_id = sr.response_id
-where ri.survey_id = 6734664
+where
+    ri.survey_id = 6734664
+    and sr.question_short_name is not null
+    and sr.response_string_value is not null
 
 union all
 
-/* KIPP Forward Career Launch Survey - OLD */
 select
     safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
 
@@ -36,11 +37,13 @@ select
     cast(fr.response_id as string) as response_id,
     lower(fr.respondent_email) as respondent_user_principal_name,
 from {{ ref("int_google_forms__form_responses") }} as fr
-where fr.form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
+where
+    fr.form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
+    and fr.item_abbreviation is not null
+    and fr.text_value is not null
 
 union all
 
-/* KIPP Forward Career Launch Survey */
 select
     safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
 
@@ -60,7 +63,6 @@ where fr.form_id = '1c4SLP61YIVnUUvRl_IUdFuLXdtI1Vsq9OE3Jrz3HR0U'
 
 union all
 
-/* KIPP Forward Career Launch Survey - Bulk Add */
 select
     null as response_date_submitted,
     contact_id as respondent_salesforce_id,

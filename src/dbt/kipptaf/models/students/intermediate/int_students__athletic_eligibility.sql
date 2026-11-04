@@ -4,6 +4,7 @@ with
             _dbt_source_relation,
             yearid,
             studentid,
+            _dbt_source_project,
 
             sum(earnedcrhrs) as py_credits,
 
@@ -12,7 +13,24 @@ with
         from {{ ref("stg_powerschool__storedgrades") }}
         where
             storecode = 'Y1' and academic_year = {{ var("current_academic_year") - 1 }}
-        group by _dbt_source_relation, yearid, studentid
+        group by _dbt_source_relation, yearid, studentid, _dbt_source_project
+    ),
+
+    py_gpa as (
+        select
+            studentid,
+            _dbt_source_project,
+
+            round(
+                safe_divide(sum(potentialcrhrs * gpa_points), sum(potentialcrhrs)), 2
+            ) as py_y1_gpa,
+
+        from {{ ref("stg_powerschool__storedgrades") }}
+        where
+            storecode = 'Y1'
+            and excludefromgpa = 0
+            and academic_year = {{ var("current_academic_year") - 1 }}
+        group by studentid, _dbt_source_project
     ),
 
     cy_credits as (
@@ -20,6 +38,7 @@ with
             _dbt_source_relation,
             yearid,
             studentid,
+            _dbt_source_project,
 
             if(
                 sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) = 0, true, false
@@ -27,7 +46,7 @@ with
 
         from {{ ref("base_powerschool__final_grades") }}
         where storecode = 'Q2'
-        group by _dbt_source_relation, yearid, studentid
+        group by _dbt_source_relation, yearid, studentid, _dbt_source_project
     ),
 
     base as (
@@ -49,15 +68,16 @@ with
             e.ada_weighted_semester_s1 as cy_weighted_s1_ada,
             e.ada_unweighted_year_prev as py_y1_unweighted_ada,
             e.ada_weighted_year_prev as py_y1_weighted_ada,
+            e._dbt_source_project,
 
             gpa.gpa_term_q1 as cy_q1_gpa,
             gpa.gpa_y1_q2 as cy_s1_gpa,
             gpa.gpa_y1_cur as cy_y1_gpa,
 
-            gpapy.gpa_y1_cur as py_y1_gpa,
-
             pyc.py_credits,
             pyc.met_py_credits,
+
+            pyg.py_y1_gpa,
 
             cyc.met_cy_credits,
 
@@ -69,8 +89,7 @@ with
             ) as is_first_time_ninth,
 
             if(
-                date_diff(date({{ var("current_academic_year") }}, 09, 01), e.dob, year)
-                > 19,
+                e.dob < date({{ var("current_academic_year") - 19 }}, 09, 01),
                 false,
                 true
             ) as is_age_eligible,
@@ -80,26 +99,25 @@ with
             {{ ref("int_powerschool__gpa_term_pivot") }} as gpa
             on e.studentid = gpa.studentid
             and e.yearid = gpa.yearid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="gpa") }}
-        left join
-            {{ ref("int_powerschool__gpa_term_pivot") }} as gpapy
-            on e.studentid = gpapy.studentid
-            and e.yearid = (gpapy.yearid + 1)
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="gpapy") }}
+            and e._dbt_source_project = gpa._dbt_source_project
         left join
             py_credits as pyc
             on e.studentid = pyc.studentid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="pyc") }}
+            and e._dbt_source_project = pyc._dbt_source_project
+        left join
+            py_gpa as pyg
+            on e.studentid = pyg.studentid
+            and e._dbt_source_project = pyg._dbt_source_project
         left join
             cy_credits as cyc
             on e.studentid = cyc.studentid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="cyc") }}
+            and e._dbt_source_project = cyc._dbt_source_project
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.rn_year = 1
             and e.enroll_status = 0
             and e.grade_level >= 5
-            and e.region not in ('Paterson', 'Miami')
+            and e.region != 'Miami'
     )
 
 select
@@ -129,6 +147,7 @@ select
     met_cy_credits,
     is_first_time_ninth,
     is_age_eligible,
+    _dbt_source_project,
 
     case
         when not is_age_eligible
@@ -144,38 +163,44 @@ select
         when
             grade_level >= 9
             and met_py_credits
-            and py_y1_unweighted_ada >= 0.9
+            and py_y1_weighted_ada >= 0.9
             and py_y1_gpa >= 2.5
         then 'Eligible'
-        when grade_level >= 6 and py_y1_unweighted_ada >= 0.9 and py_y1_gpa >= 2.5
+        when
+            grade_level between 6 and 8
+            and py_y1_unweighted_ada >= 0.9
+            and py_y1_gpa >= 2.5
         then 'Eligible'
         when
             grade_level >= 9
             and met_py_credits
+            and py_y1_weighted_ada >= 0.9
+            and py_y1_gpa between 2.2 and 2.49
+        then 'Probation - GPA'
+        when
+            grade_level between 6 and 8
             and py_y1_unweighted_ada >= 0.9
             and py_y1_gpa between 2.2 and 2.49
         then 'Probation - GPA'
         when
-            grade_level >= 6
-            and py_y1_unweighted_ada >= 0.9
-            and py_y1_gpa between 2.2 and 2.49
-        then 'Probation - GPA'
-        when
             grade_level >= 9
             and met_py_credits
+            and py_y1_weighted_ada < 0.9
+            and py_y1_gpa >= 2.5
+        then 'Probation - ADA'
+        when
+            grade_level between 6 and 8
             and py_y1_unweighted_ada < 0.9
             and py_y1_gpa >= 2.5
         then 'Probation - ADA'
-        when grade_level >= 6 and py_y1_unweighted_ada < 0.9 and py_y1_gpa >= 2.5
-        then 'Probation - ADA'
         when
             grade_level >= 9
             and met_py_credits
-            and py_y1_unweighted_ada < 0.9
+            and py_y1_weighted_ada < 0.9
             and py_y1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
         when
-            grade_level >= 6
+            grade_level between 6 and 8
             and py_y1_unweighted_ada < 0.9
             and py_y1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
@@ -220,6 +245,8 @@ select
             and cy_q1_gpa between 2.2 and 2.49
             and (met_py_credits or is_first_time_ninth)
         then 'Probation - ADA and GPA'
+        when grade_level >= 5 and `ada` < 0.9 and cy_y1_gpa between 2.2 and 2.49
+        then 'Probation - ADA and GPA'
     end as q2_ae_status,
 
     case
@@ -261,6 +288,8 @@ select
             and cy_weighted_s1_ada < 0.9
             and cy_s1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
+        when grade_level >= 5 and `ada` < 0.9 and cy_y1_gpa between 2.2 and 2.49
+        then 'Probation - ADA and GPA'
     end as q3_ae_status,
 
     case
@@ -301,6 +330,8 @@ select
             and met_cy_credits
             and cy_weighted_s1_ada < 0.9
             and cy_s1_gpa between 2.2 and 2.49
+        then 'Probation - ADA and GPA'
+        when grade_level >= 5 and `ada` < 0.9 and cy_y1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
     end as q4_ae_status,
 

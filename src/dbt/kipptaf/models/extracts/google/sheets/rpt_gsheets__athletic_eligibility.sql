@@ -42,11 +42,11 @@ left join
     {{ ref("int_students__athletic_eligibility") }} as a
     on e.academic_year = a.academic_year
     and e.student_number = a.student_number
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
+    and e._dbt_source_project = a._dbt_source_project
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.grade_level >= 5
     and e.rn_year = 1
     and e.enroll_status = 0
     and not e.is_out_of_district
-    and e.region not in ('Miami', 'Paterson')
+    and e.region != 'Miami'

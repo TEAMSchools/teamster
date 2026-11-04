@@ -1,0 +1,49 @@
+models:
+  - name: fct_meta_sample
+    description: >-
+      Table-materialized fact that records its FK edges as
+      config.meta.foreign_key, since a table mart cannot carry foreign_key
+      constraints (they render into the CTAS DDL).
+    config:
+      materialized: table
+    columns:
+      # primary_key stays a real constraint on a table mart — ignored here.
+      - name: sample_key
+        data_type: string
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+            warn_unenforced: false
+
+      # the meta form yields an edge, and its relationships test is not
+      # double-counted alongside it.
+      - name: assessment_administration_key
+        data_type: string
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessment_administrations')
+                field: assessment_administration_key
+
+      # a literal constraint still yields an edge — both forms coexist.
+      - name: still_constrained_key
+        data_type: string
+        constraints:
+          - type: foreign_key
+            to: ref('dim_other')
+            to_columns: [other_key]
+            warn_unsupported: false
+
+      # relationships test with neither form yields nothing.
+      - name: relationships_only_key
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_ignored')
+                field: ignored_key

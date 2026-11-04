@@ -67,11 +67,11 @@ with
             {{ ref("stg_powerschool__users") }} as u
             on sr.powerschool_teacher_number = u.teachernumber
             and sr.home_work_location_powerschool_school_id = u.homeschoolid
-            and sr.home_work_location_dagster_code_location = u.dagster_code_location
+            and sr.home_work_location_dagster_code_location = u._dbt_source_project
         left join
             {{ ref("stg_powerschool__userscorefields") }} as ucf
             on u.dcid = ucf.usersdcid
-            and {{ union_dataset_join_clause(left_alias="u", right_alias="ucf") }}
+            and u._dbt_source_project = ucf._dbt_source_project
         /* import terminated staff up to 2 weeks after termination date */
         where sr.days_after_termination <= 14
 
@@ -95,7 +95,7 @@ with
         left join
             {{ ref("stg_powerschool__users") }} as u
             on sr.powerschool_teacher_number = u.teachernumber
-            and sr.home_work_location_dagster_code_location = u.dagster_code_location
+            and sr.home_work_location_dagster_code_location = u._dbt_source_project
         where sr.days_after_termination <= 14 and u.dcid is null
     ),
 

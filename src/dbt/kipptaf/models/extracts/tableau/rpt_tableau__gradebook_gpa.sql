@@ -2,8 +2,9 @@ with
     term as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             schoolid,
-            yearid,
+            academic_year,
 
             term as `quarter`,
 
@@ -14,14 +15,16 @@ with
             is_current_term as is_current_quarter,
             semester,
 
-        from {{ ref("int_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
+        where term is not null
 
         union all
 
         select
             _dbt_source_relation,
+            _dbt_source_project,
             schoolid,
-            yearid,
+            academic_year,
 
             'Y1' as `quarter`,
 
@@ -32,13 +35,14 @@ with
             false as is_current_quarter,
             'S#' as semester,
 
-        from {{ ref("stg_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
         where isyearrec = 1
     ),
 
     student_roster as (
         select
             enr._dbt_source_relation,
+            enr._dbt_source_project,
             enr.studentid,
             enr.student_number,
             enr.student_name,
@@ -109,33 +113,32 @@ with
         inner join
             term
             on enr.schoolid = term.schoolid
-            and enr.yearid = term.yearid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="term") }}
+            -- academic_year, not yearid: yearid is null on every Miami row of
+            -- int_extracts__student_enrollments, so this join dropped them all
+            and enr.academic_year = term.academic_year
+            and enr._dbt_source_project = term._dbt_source_project
         left join
             {{ ref("int_powerschool__gpa_term") }} as gtq
             on enr.studentid = gtq.studentid
             and enr.yearid = gtq.yearid
             and enr.schoolid = gtq.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gtq") }}
+            and enr._dbt_source_project = gtq._dbt_source_project
             and term.quarter = gtq.term_name
-            and {{ union_dataset_join_clause(left_alias="term", right_alias="gtq") }}
+            and term._dbt_source_project = gtq._dbt_source_project
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty
             on enr.studentid = gty.studentid
             and enr.yearid = gty.yearid
             and enr.schoolid = gty.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
+            and enr._dbt_source_project = gty._dbt_source_project
             and gty.is_current
-        where
-            enr.rn_year = 1
-            and not enr.is_out_of_district
-            and enr.enroll_status != -1
-            and enr.region != 'Paterson'
+        where enr.rn_year = 1 and not enr.is_out_of_district and enr.enroll_status != -1
     ),
 
     course_enrollments as (
         select
             m._dbt_source_relation,
+            m._dbt_source_project,
             m.cc_studentid as studentid,
             m.cc_yearid as yearid,
             m.cc_course_number as course_number,
@@ -161,7 +164,7 @@ with
             on m.cc_studentid = f.studentid
             and m.cc_academic_year = f.academic_year
             and m.courses_credittype = f.powerschool_credittype
-            and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
+            and m._dbt_source_project = f._dbt_source_project
             and f.rn_year = 1
         left join
             {{ ref("int_people__staff_roster") }} as r
@@ -185,44 +188,24 @@ with
 
     y1_historical as (
         select
-            tr._dbt_source_relation,
-            tr.studentid,
-            tr.academic_year,
-            tr.yearid,
-            tr.schoolid,
-            tr.schoolname,
-            tr.grade_level,
-            tr.course_number,
-            tr.course_name,
-            tr.sectionid,
-            tr.teacher_name,
-            tr.storecode,
-            tr.termid,
-            tr.`percent` as y1_course_final_percent_grade_adjusted,
-            tr.grade as y1_course_final_letter_grade_adjusted,
-            tr.earnedcrhrs as y1_course_final_earned_credits,
-            tr.potentialcrhrs as y1_course_final_potential_credit_hours,
-            tr.gpa_points as y1_course_final_grade_points,
-            tr.excludefromgpa,
-
-            cast(tr.academic_year as string)
-            || '-'
-            || right(cast(tr.academic_year + 1 as string), 2) as academic_year_display,
-
-        from {{ ref("stg_powerschool__storedgrades") }} as tr
-        left join
-            student_roster as co
-            on tr.studentid = co.studentid
-            and tr.academic_year = co.academic_year
-            and tr.schoolid = co.schoolid
-            and tr.storecode = co.`quarter`
-            and {{ union_dataset_join_clause(left_alias="tr", right_alias="co") }}
-        where tr.storecode = 'Y1'
+            _dbt_source_project,
+            studentid,
+            yearid,
+            course_number,
+            `quarter`,
+            y1_course_final_percent_grade_adjusted,
+            y1_course_final_letter_grade_adjusted,
+            y1_course_final_earned_credits,
+            y1_course_final_potential_credit_hours,
+            y1_course_final_grade_points,
+        from {{ ref("int_powerschool__student_course_grades_spine") }}
+        where `quarter` = 'Y1'
     ),
 
     quarter_and_ip_y1_grades as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             yearid,
             schoolid,
@@ -258,6 +241,7 @@ with
 
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             yearid,
             schoolid,
@@ -293,6 +277,7 @@ with
     category_grades as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             yearid,
             schoolid,
             studentid,
@@ -442,34 +427,38 @@ select
         s.grade_level < 9, ce.section_number, ce.external_expression
     ) as section_or_period,
 
+    if(
+        s.ada_above_or_at_80 and s.gpa_y1 < 2.0, true, false
+    ) as is_ada_above_or_at_80_gpa_y1_less_2,
+
 from student_roster as s
 left join
     course_enrollments as ce
     on s.studentid = ce.studentid
     and s.yearid = ce.yearid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
+    and s._dbt_source_project = ce._dbt_source_project
 left join
     y1_historical as y1h
     on s.studentid = y1h.studentid
     and s.yearid = y1h.yearid
-    and s.`quarter` = y1h.storecode
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="y1h") }}
+    and s.`quarter` = y1h.`quarter`
+    and s._dbt_source_project = y1h._dbt_source_project
     and ce.course_number = y1h.course_number
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="y1h") }}
+    and ce._dbt_source_project = y1h._dbt_source_project
 left join
     quarter_and_ip_y1_grades as qy1
     on s.studentid = qy1.studentid
     and s.yearid = qy1.yearid
     and s.`quarter` = qy1.`quarter`
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="qy1") }}
+    and s._dbt_source_project = qy1._dbt_source_project
     and ce.sectionid = qy1.sectionid
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="qy1") }}
+    and ce._dbt_source_project = qy1._dbt_source_project
 left join
     category_grades as c
     on s.studentid = c.studentid
     and s.yearid = c.yearid
     and s.`quarter` = c.term
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+    and s._dbt_source_project = c._dbt_source_project
     and ce.sectionid = c.sectionid
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
+    and ce._dbt_source_project = c._dbt_source_project
 where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')

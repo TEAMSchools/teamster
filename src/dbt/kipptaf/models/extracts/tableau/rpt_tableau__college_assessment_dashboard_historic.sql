@@ -77,7 +77,7 @@ with
             on e.studentid = s.cc_studentid
             and e.academic_year = s.cc_academic_year
             and e.powerschool_credittype = s.courses_credittype
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+            and e._dbt_source_project = s._dbt_source_project
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
             and s.courses_course_name in (
@@ -92,7 +92,7 @@ with
             on s.cc_academic_year = ec.cc_academic_year
             and s.students_student_number = ec.student_number
             and s.courses_course_name = ec.courses_course_name_expected
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="ec") }}
+            and s._dbt_source_project = ec._dbt_source_project
         where e.rn_year = 1 and e.school_level = 'HS'
     ),
 

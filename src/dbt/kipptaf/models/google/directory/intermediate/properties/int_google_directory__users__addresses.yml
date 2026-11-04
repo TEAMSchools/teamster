@@ -1,0 +1,26 @@
+models:
+  - name: int_google_directory__users__addresses
+    description: >-
+      Every email address known for a Google Directory user, one row per
+      (primary_email, address). Unnests the emails record and the aliases list
+      and adds the primary email itself, so a consumer can resolve any address a
+      person has ever submitted under back to their primary account.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - primary_email
+              - address
+    columns:
+      - name: primary_email
+        description: Primary email of the Google Directory user.
+        config:
+          meta:
+            contains_pii: true
+      - name: address
+        description: >-
+          An email address that resolves to primary_email, including the primary
+          email itself.
+        config:
+          meta:
+            contains_pii: true

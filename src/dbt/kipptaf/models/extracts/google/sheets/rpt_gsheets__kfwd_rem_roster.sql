@@ -90,6 +90,12 @@ select
     r.contact_kipp_hs_graduate as is_kipp_hs_grad,
     r.contact_expected_college_graduation as expected_college_graduation,
 
+    if(
+        r.contact_advising_provider = 'KIPP NYC',
+        'Collab',
+        r.contact_postsec_advisor_name
+    ) as postsecondary_advisor,
+
     if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
 
     rs.date as most_recent_rem_status,
@@ -169,6 +175,8 @@ select
     r.contact_postsec_advisor_name as postsec_advisor_name,
     r.es_graduated,
     r.contact_kipp_region_name,
+    r.contact_advising_provider as advising_provider,
+    r.contact_high_school_graduated_from as high_school_graduated_from,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
 left join {{ ref("stg_kippadb__enrollment") }} as e on ei.cur_enrollment_id = e.id

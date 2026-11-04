@@ -1,3 +1,6 @@
+-- `dbt_utils.union_relations` resolves the column list at compile time, so a
+-- column a district adds reads null here until this file itself changes and the
+-- view is redeployed. Edit this comment whenever a district adds a column.
 with
     union_relations as (
         {{
@@ -21,5 +24,5 @@ with
         }}
     )
 
-select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
+select ur.*, {{ extract_source_project("ur") }} as _dbt_source_project,
 from union_relations as ur

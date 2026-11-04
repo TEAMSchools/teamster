@@ -14,6 +14,19 @@ with
         from {{ ref("int_amplify__all_assessments") }}
         where
             academic_year = {{ var("current_academic_year") }}
+            -- the cohort's starting point is a BENCHMARK score, never a PM
+            -- probe, and all_assessments now emits a row per data method. Each
+            -- filter below does a different job -- none is redundant:
+            -- assessment_type/model_type -- Benchmark rows only. Without
+            -- them, only the period values kept PM out, and every Internal
+            -- PM row carries overall_probe_eligible = 'Yes', so Internal
+            -- and Aimline probes would average into the STARTING score.
+            -- period -- excludes EOY, which opens no PM season and therefore
+            -- sets no goals. Do not drop this on the grounds that
+            -- overall_probe_eligible is null on every EOY row; that is
+            -- true, but it is an eligibility column, not a season one.
+            and assessment_type = 'Benchmark'
+            and model_type = 'BM'
             and measure_standard != 'Composite'
             and overall_probe_eligible = 'Yes'
             and period in ('BOY', 'MOY')
@@ -46,11 +59,11 @@ with
             e.pm_goal_include,
             e.pm_goal_criteria,
 
-            e.benchmark_goal + 3 as benchmark_goal,
+            e.benchmark_goal,
 
-            round(
-                (e.benchmark_goal + 3) - a.starting_words, 0
-            ) as required_growth_words,
+            -- the pad is applied here, once, and every calculation below reads
+            -- the padded column rather than repeating the arithmetic
+            e.benchmark_goal + 3 as benchmark_goal_padded,
 
             if(e.round_number = e.min_pm_round, true, false) as is_min_round,
 
@@ -64,6 +77,15 @@ with
             and a.assessment_grade_int = e.grade
             and a.matching_season = e.admin_season
             and a.measure_standard = e.expected_measure_standard
+    ),
+
+    required_growth as (
+        select
+            *,
+
+            round(benchmark_goal_padded - starting_words, 0) as required_growth_words,
+
+        from scores_and_days
     ),
 
     calcs as (
@@ -83,6 +105,7 @@ with
             pm_goal_include,
             pm_goal_criteria,
             benchmark_goal,
+            benchmark_goal_padded,
             required_growth_words,
             is_max_round,
 
@@ -99,7 +122,7 @@ with
                 0
             ) as round_growth_words_goal,
 
-        from scores_and_days
+        from required_growth
     )
 
 select
@@ -115,6 +138,7 @@ select
     pm_goal_criteria,
     pm_round_days,
     benchmark_goal,
+    benchmark_goal_padded,
     required_growth_words,
     pm_days,
     daily_growth_rate,
@@ -122,7 +146,7 @@ select
 
     case
         when is_max_round
-        then benchmark_goal
+        then benchmark_goal_padded
         else
             sum(round_growth_words_goal) over (
                 partition by

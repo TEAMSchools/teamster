@@ -5,9 +5,9 @@ with
     -- (+1 offset) while dim_assessment_administrations hashes the raw value.
     internal_assessments as (
         select
-            rr.powerschool_student_number as student_number,
+            rr.student_number,
+            rr.source,
             rr.assessment_id,
-            rr.response_type,
             rr.response_type_id,
             rr.response_type_code,
             rr.response_type_description,
@@ -22,6 +22,11 @@ with
 
             rr.date_taken as test_date,
 
+            -- Null here is a real assigned-but-not-taken record, not a join
+            -- defect: response_rollup LEFT JOINs responses onto the scaffold's
+            -- "expected to take" grain.
+            coalesce(rr.response_type, 'not_taken') as response_type,
+
             to_json_string(rr.assessment_ids) as assessment_ids_json,
 
             rr.assessment_id as source_assessment_id,
@@ -31,6 +36,8 @@ with
 
             c.administered_date,
 
+            coalesce(c.administered_date, rr.date_taken) as assessment_date_key,
+
             cast(null as numeric) as scale_score,
 
             rr.performance_band_label as proficiency_level,
@@ -39,209 +46,190 @@ with
         from {{ ref("int_assessments__response_rollup") }} as rr
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
-            on rr.assessment_id = a.assessment_id
+            on rr.source = a.source
+            and rr.assessment_id = a.assessment_id
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on a.canonical_assessment_id = c.canonical_assessment_id
+            on a.source = c.source
+            and a.canonical_assessment_id = c.canonical_assessment_id
         where rr.is_internal_assessment
-    ),
-
-    state_nj as (
-        select
-            localstudentidentifier as student_number,
-            academic_year,
-            subject_area,
-            illuminate_subject,
-            discipline,
-            module_code,
-            administration_period,
-            assessment_type,
-            _dbt_source_project,
-
-            cast(null as string) as state_student_id,
-
-            test_grade as grade_level,
-            testscalescore as scale_score,
-            is_proficient,
-            testperformancelevel_text as performance_band,
-            testperformancelevel as performance_band_level,
-
-            assessment_name as title,
-
-            test_date,
-            cast(null as numeric) as percent_correct,
-
-            'state_nj' as score_source,
-        from {{ ref("int_pearson__all_assessments") }}
-        where
-            academic_year >= {{ var("current_academic_year") - 7 }}
-            and testscalescore is not null
-    ),
-
-    state_fl as (
-        select
-            student_number,
-            academic_year,
-            assessment_subject as subject_area,
-            illuminate_subject,
-            discipline,
-            test_code as module_code,
-            scale_score,
-            is_proficient,
-            administration_window as administration_period,
-            assessment_type,
-            _dbt_source_project,
-
-            student_id as state_student_id,
-
-            achievement_level as performance_band,
-            performance_level as performance_band_level,
-
-            assessment_name as title,
-
-            cast(assessment_grade as int) as grade_level,
-
-            test_date,
-            cast(null as numeric) as percent_correct,
-
-            'state_fl' as score_source,
-        from {{ ref("int_fldoe__all_assessments") }}
-        where scale_score is not null
-    ),
-
-    state_all as (
-        select
-            student_number,
-            state_student_id,
-            academic_year,
-            subject_area,
-            illuminate_subject,
-            discipline,
-            module_code,
-            grade_level,
-            scale_score,
-            is_proficient,
-            performance_band,
-            performance_band_level,
-            administration_period,
-            title,
-            _dbt_source_project,
-            test_date,
-            percent_correct,
-            score_source,
-            assessment_type,
-        from state_nj
-
-        union all
-
-        select
-            student_number,
-            state_student_id,
-            academic_year,
-            subject_area,
-            illuminate_subject,
-            discipline,
-            module_code,
-            grade_level,
-            scale_score,
-            is_proficient,
-            performance_band,
-            performance_band_level,
-            administration_period,
-            title,
-            _dbt_source_project,
-            test_date,
-            percent_correct,
-            score_source,
-            assessment_type,
-        from state_fl
     ),
 
     state_union as (
         select
-            sa.*,
+            student_number,
+            academic_year,
+            subject_area,
+            module_code,
+            administration_period,
+            assessment_type,
+            scale_score,
+            is_proficient,
+            test_date,
+            score_source,
+            _dbt_source_project,
 
-            coalesce(
-                cast(sa.student_number as string), sa.state_student_id
-            ) as student_identifier,
-        from state_all as sa
+            performance_level_label as performance_band,
+            illuminate_subject_area as illuminate_subject,
+
+            cast(null as numeric) as percent_correct,
+        from {{ ref("int_assessments__state_scores") }}
+        where
+            scale_score is not null
+            and (
+                score_source = 'state_fl'
+                or academic_year >= {{ var("current_academic_year") - 7 }}
+            )
     ),
 
-    iready_scores_raw as (
+    -- iReady overall and DIBELS benchmark rows (Composite as overall, each
+    -- sub-measure as group). DIBELS is already unique at the (student, year,
+    -- period, date, measure_standard) grain, so no dedupe here. The unique test
+    -- on assessment_score_key is what holds that.
+    benchmark_scores as (
+        select
+            student_number,
+            academic_year,
+            module_code,
+            raw_subject,
+            source_system,
+            administration_period,
+            test_date,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            national_percentile,
+            is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+
+            illuminate_subject_area as illuminate_subject,
+        from {{ ref("int_assessments__benchmark_scores") }}
+        where
+            (
+                score_source = 'iready'
+                and rn_subj_day = 1
+                and _dbt_source_project is not null
+                and test_date is not null
+                and scale_score is not null
+            )
+            or (score_source = 'dibels' and test_date is not null)
+    ),
+
+    -- Domain-level rows. module_code stays the subject so these rows hash to
+    -- the same assessment_administration_key as the subject's overall row.
+    -- No 'relative_placement is not null' predicate
+    -- because int_assessments__iready_domain_unpivot already enforces it (#4709).
+    iready_domain_scores_raw as (
         select
             student_id as student_number,
             academic_year_int as academic_year,
-            subject as module_code,
-            illuminate_subject,
+            `subject` as module_code,
+            `subject` as raw_subject,
             test_round as administration_period,
             completion_date as test_date,
-            `start_date`,
             _dbt_source_project,
 
-            overall_relative_placement as proficiency_level,
+            relative_placement as proficiency_level,
 
+            'iready' as source_system,
             'iready' as score_source,
+            'group' as response_type,
 
-            cast(overall_scale_score as numeric) as scale_score,
-            cast(percentile as numeric) as national_percentile,
+            domain_name as response_type_code,
 
-            overall_relative_placement_int >= 4 as is_mastery,
-        from {{ ref("int_iready__diagnostic_results") }}
+            initcap(replace(domain_name, '_', ' ')) as response_type_description,
+
+            cast(scale_score as numeric) as scale_score,
+            cast(null as numeric) as national_percentile,
+
+            -- Matched on labels, not an ordinal, because no per-domain
+            -- equivalent of overall_relative_placement_int exists upstream. The
+            -- accepted_values test on relative_placement guards the strings.
+            relative_placement
+            in ('Early On Grade Level', 'Mid or Above Grade Level') as is_mastery,
+        from {{ ref("int_assessments__iready_domain_unpivot") }}
         where
-            overall_scale_score is not null
+            completion_date is not null
             and _dbt_source_project is not null
-            and completion_date is not null
+            and relative_placement != 'Not Assessed'
+            and domain_name != 'comprehension_overall'
+            and rn_subj_day = 1
     ),
 
-    -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
-    -- same-day retests and duplicate rows exist upstream. Remove this dedupe
-    -- when staging is fixed.
-    iready_scores as (
-        {{
-            dbt_utils.deduplicate(
-                relation="iready_scores_raw",
-                partition_by="""
-                    _dbt_source_project,
-                    student_number,
-                    academic_year,
-                    administration_period,
-                    module_code,
-                    test_date
-                """,
-                order_by="start_date desc, scale_score desc",
-            )
-        }}
+    iready_domain_scores as (
+        select
+            d.student_number,
+            d.academic_year,
+            d.module_code,
+            d.raw_subject,
+            d.source_system,
+            d.administration_period,
+            d.test_date,
+            d._dbt_source_project,
+            d.proficiency_level,
+            d.score_source,
+            d.scale_score,
+            d.national_percentile,
+            d.is_mastery,
+            d.response_type,
+            d.response_type_code,
+            d.response_type_description,
+
+            coalesce(x.illuminate_subject_area, d.raw_subject) as illuminate_subject,
+        from iready_domain_scores_raw as d
+        left join
+            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
+            on d.source_system = x.source_system
+            and d.raw_subject = x.raw_subject
     ),
 
     star_scores_raw as (
         select
-            student_display_id as student_number,
+            student_number,
             academic_year,
-            star_subject as module_code,
-            illuminate_subject,
-            screening_period_window_name as administration_period,
-            completed_date_value as test_date,
-            assessment_id,
+            module_code,
+            raw_subject,
+            source_system,
+            administration_period,
+            test_date,
             _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            national_percentile,
+            is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+            assessment_id,
 
-            state_benchmark_category_name as proficiency_level,
-
-            'star' as score_source,
-
-            cast(unified_score as numeric) as scale_score,
-            cast(percentile_rank as numeric) as national_percentile,
-
-            state_benchmark_proficient = 'Yes' as is_mastery,
-        from {{ ref("stg_renlearn__star") }}
+            illuminate_subject_area as illuminate_subject,
+        from {{ ref("int_assessments__benchmark_scores") }}
         where
-            completed_date_value is not null
-            and unified_score is not null
+            score_source = 'star'
+            and test_date is not null
+            and scale_score is not null
             and _dbt_source_project is not null
     ),
 
-    -- TODO(#4388): stg_renlearn__star holds fiscal-year re-pull duplicates
-    -- (same assessment_id in two partitions) and same-day retests. Remove
-    -- this dedupe when staging is fixed.
+    -- This dedupe is permanent, not a workaround for #4388. STAR records each
+    -- sitting under its own assessment_id, and students genuinely retest the
+    -- same subject on the same day -- 144 rows as of 2026-09-01 -- so the fact
+    -- grain (which carries no attempt dimension) is coarser than staging on
+    -- purpose. scale_score desc keeps the best sitting.
+    -- partition_by deliberately omits academic_year: a physical test pulled
+    -- under two fiscal-year partitions has the same test_date but a differing
+    -- pull-derived academic_year, so keying on academic_year would keep both
+    -- rows -- they then double-count once academic_year is resolved from the
+    -- test date (#4546). A date belongs to exactly one academic year, so
+    -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
+    -- never distinct sittings. academic_year desc makes the survivor
+    -- deterministic.
+    -- Measured at 8,128 input rows for #5252 -- below the ~1M threshold for the
+    -- ranked-column rewrite, so this stays on the macro. Don't re-measure.
     star_scores as (
         {{
             dbt_utils.deduplicate(
@@ -249,41 +237,13 @@ with
                 partition_by="""
                     _dbt_source_project,
                     student_number,
-                    academic_year,
                     administration_period,
                     module_code,
                     test_date
                 """,
-                order_by="scale_score desc, assessment_id desc",
+                order_by="scale_score desc, assessment_id desc, academic_year desc",
             )
         }}
-    ),
-
-    -- DIBELS benchmark composites are unique at this grain upstream
-    -- (verified); no dedupe needed.
-    dibels_scores as (
-        select
-            student_number,
-            academic_year,
-            measure_standard as module_code,
-            illuminate_subject,
-            `period` as administration_period,
-            client_date as test_date,
-            _dbt_source_project,
-
-            measure_standard_level as proficiency_level,
-
-            'dibels' as score_source,
-
-            cast(measure_standard_score as numeric) as scale_score,
-            cast(measure_percentile as numeric) as national_percentile,
-
-            measure_standard_level_int >= 3 as is_mastery,
-        from {{ ref("int_amplify__all_assessments") }}
-        where
-            assessment_type = 'Benchmark'
-            and measure_standard = 'Composite'
-            and client_date is not null
     ),
 
     vendor_all as (
@@ -291,7 +251,8 @@ with
             student_number,
             academic_year,
             module_code,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             administration_period,
             test_date,
             _dbt_source_project,
@@ -300,7 +261,11 @@ with
             scale_score,
             national_percentile,
             is_mastery,
-        from iready_scores
+            response_type,
+            response_type_code,
+            response_type_description,
+            illuminate_subject,
+        from benchmark_scores
 
         union all
 
@@ -308,7 +273,8 @@ with
             student_number,
             academic_year,
             module_code,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             administration_period,
             test_date,
             _dbt_source_project,
@@ -317,6 +283,10 @@ with
             scale_score,
             national_percentile,
             is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+            illuminate_subject,
         from star_scores
 
         union all
@@ -325,7 +295,8 @@ with
             student_number,
             academic_year,
             module_code,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             administration_period,
             test_date,
             _dbt_source_project,
@@ -334,7 +305,25 @@ with
             scale_score,
             national_percentile,
             is_mastery,
-        from dibels_scores
+            response_type,
+            response_type_code,
+            response_type_description,
+            illuminate_subject,
+        from iready_domain_scores
+    ),
+
+    -- Reporting quarters. A score's quarter comes from the date it was
+    -- administered or taken, NOT from its section enrollment: a section spans
+    -- several quarters, so "the quarter for a section enrollment" is not well
+    -- defined (#4484). Resolved per score row rather than in
+    -- int_assessments__resolved_section_enrollments, which is one row per score
+    -- GRAIN — scores sharing a grain can carry different dates. RT rows abut but
+    -- never overlap within a (school_id, region), so BETWEEN matches one row.
+    reporting_terms as (
+        select
+            `type`, code, `name`, `start_date`, end_date, region, school_id, grade_band,
+        from {{ ref("stg_google_sheets__reporting__terms") }}
+        where `type` = 'RT'
     )
 
 /* internal assessments */
@@ -343,6 +332,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "ia.student_number",
+                "ia.source",
                 "ia.assessment_id",
                 "ia.assessment_ids_json",
                 "ia.response_type",
@@ -353,23 +343,40 @@ select
     }} as assessment_score_key,
 
     {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "'illuminate'",
-                "ia.module_code",
-                "ia.administered_date",
-                "ia.academic_year",
-                "ia._dbt_source_project",
-                "null",
-                "ia.source_assessment_id",
-                "null",
-            ]
+        assessment_administration_key(
+            "ia.source",
+            "ia.module_code",
+            "ia.administered_date",
+            "ia.academic_year",
+            "ia._dbt_source_project",
+            "null",
+            "ia.source_assessment_id",
+            "null",
         )
     }} as assessment_administration_key,
+
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                    "rt.grade_band",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     sr.student_section_enrollment_key,
 
     ia.test_date as test_date_key,
+    ia.assessment_date_key,
 
     ia.scale_score,
     ia.percent_correct,
@@ -393,10 +400,16 @@ from internal_assessments as ia
 -- resolved section (out of scope) -- the resolver is the scope of record.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
-    on ia.student_number = sr.powerschool_student_number
+    on ia.student_number = sr.student_number
+    and ia.source = sr.source
     and ia.assessment_id = sr.canonical_assessment_id
     and ia._dbt_source_project = sr._dbt_source_project
     and sr.source_type = 'internal'
+left join
+    reporting_terms as rt
+    on sr.powerschool_school_id = rt.school_id
+    and sr.region = rt.region
+    and ia.assessment_date_key between rt.`start_date` and rt.end_date
 
 union all
 
@@ -406,7 +419,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "su._dbt_source_project",
-                "su.student_identifier",
+                "su.student_number",
                 "su.academic_year",
                 "su.administration_period",
                 "su.subject_area",
@@ -429,9 +442,28 @@ select
         )
     }} as assessment_administration_key,
 
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                    "rt.grade_band",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
+
     sr.student_section_enrollment_key,
 
     su.test_date as test_date_key,
+    su.test_date as assessment_date_key,
 
     su.scale_score,
     su.percent_correct,
@@ -441,7 +473,7 @@ select
     su.performance_band as proficiency_level,
     su.is_proficient as is_mastery,
 
-    cast(null as string) as response_type,
+    'overall' as response_type,
     cast(null as string) as response_type_code,
     cast(null as string) as response_type_description,
     cast(null as string) as response_type_root_description,
@@ -450,18 +482,24 @@ select
 
     sr.resolution_type as enrollment_resolution,
 from state_union as su
--- the resolver keys state scores on illuminate_subject (the state->course
--- subject mapping), not the raw subject_area the assessment_score_key hashes.
--- join on su.illuminate_subject = sr.subject_area or every row drops.
--- INNER scopes the fact to state scores with a resolved section.
+-- the resolver keys state scores on illuminate_subject (the crosswalk's
+-- state->Illuminate subject mapping), not the raw subject_area the
+-- assessment_score_key hashes. join on su.illuminate_subject = sr.subject_area
+-- or every row drops. INNER scopes the fact to state scores with a resolved
+-- section.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
-    on su.student_number = sr.powerschool_student_number
+    on su.student_number = sr.student_number
     and su.academic_year = sr.academic_year
     and su.administration_period = sr.administration_period
     and su.illuminate_subject = sr.subject_area
     and su._dbt_source_project = sr._dbt_source_project
     and sr.source_type in ('state_nj', 'state_fl')
+left join
+    reporting_terms as rt
+    on sr.powerschool_school_id = rt.school_id
+    and sr.region = rt.region
+    and su.test_date between rt.`start_date` and rt.end_date
 
 union all
 
@@ -477,6 +515,7 @@ select
                 "va.administration_period",
                 "va.module_code",
                 "va.test_date",
+                "va.response_type_code",
             ]
         )
     }} as assessment_score_key,
@@ -496,9 +535,28 @@ select
         )
     }} as assessment_administration_key,
 
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                    "rt.grade_band",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
+
     sr.student_section_enrollment_key,
 
     va.test_date as test_date_key,
+    va.test_date as assessment_date_key,
 
     va.scale_score,
 
@@ -507,24 +565,30 @@ select
     va.national_percentile,
     va.proficiency_level,
     va.is_mastery,
+    va.response_type,
+    va.response_type_code,
+    va.response_type_description,
 
-    cast(null as string) as response_type,
-    cast(null as string) as response_type_code,
-    cast(null as string) as response_type_description,
     cast(null as string) as response_type_root_description,
     cast(null as bool) as is_replacement,
     cast(null as numeric) as performance_band_label_number,
 
     sr.resolution_type as enrollment_resolution,
 from vendor_all as va
--- the resolver keys vendor scores on illuminate_subject (the vendor->course
--- subject mapping), not the raw vendor subject the assessment_score_key
--- hashes. INNER scopes the fact to vendor scores with a resolved section.
+-- the resolver keys vendor scores on illuminate_subject (the crosswalk's
+-- vendor->Illuminate subject mapping), not the raw vendor subject the
+-- assessment_score_key hashes. INNER scopes the fact to vendor scores with a
+-- resolved section.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
-    on va.student_number = sr.powerschool_student_number
+    on va.student_number = sr.student_number
     and va.academic_year = sr.academic_year
     and va.administration_period = sr.administration_period
     and va.illuminate_subject = sr.subject_area
     and va._dbt_source_project = sr._dbt_source_project
     and va.score_source = sr.source_type
+left join
+    reporting_terms as rt
+    on sr.powerschool_school_id = rt.school_id
+    and sr.region = rt.region
+    and va.test_date between rt.`start_date` and rt.end_date

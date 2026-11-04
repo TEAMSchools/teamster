@@ -13,7 +13,6 @@ with
 select
     d.* except (custom_field_values, student, university, due_date, award_letter),
 
-    /* records */
     d.student.id as student__id,
     s.external_student_id as student__external_student_id,
 

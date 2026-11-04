@@ -9,6 +9,9 @@ models:
             combination_of_columns:
               - contact_id
               - response_id
+              - enrollment_id
+          config:
+            severity: error
     columns:
       - name: contact_id
         data_type: string
@@ -58,8 +61,17 @@ models:
         data_type: numeric
       - name: institution
         data_type: string
+      - name: enrollment_id
+        data_type: string
+        description:
+          Salesforce id of the graduated postsecondary enrollment on this row.
+          Null when the alum has no graduated enrollment.
       - name: reconciliation_response_id
         data_type: string
+        description:
+          The survey response id when the career launch reconciliation sheet
+          matched this response to this alum. Null when the match came from
+          email or Salesforce id, and on rows with no response.
       - name: college_programs
         data_type: string
       - name: is_basta
@@ -163,13 +175,19 @@ models:
       - name: postsec_advisor
         data_type: string
         description:
-          Postsecondary advisor assigned to the alumnus on their Salesforce
-          contact record.
+          Salesforce Contact ID of the postsecondary advisor assigned to the
+          alumnus on their Salesforce contact record.
+      - name: college_counselor
+        data_type: string
+        description:
+          College counselor assigned to the alumnus, resolved from the
+          counselor's own Salesforce contact record.
       - name: advisor
         data_type: string
         description:
           Effective advisor for the alumnus — 'Collab' when the advising
-          provider is KIPP NYC, otherwise the Salesforce contact owner.
+          provider is KIPP NYC, otherwise the name of the alumnus's
+          postsecondary advisor.
       - name: high_school_graduated_from
         data_type: string
         description:
@@ -251,3 +269,161 @@ models:
         description:
           Whether work samples were discussed during the KFWD career
           conversation. False when no conversation is recorded.
+      - name: cc1_count
+        data_type: int64
+        description:
+          Count of the alumnus's first Career Conversation (CC1) Salesforce
+          contact notes, summed across all academic years. Zero when none are
+          recorded.
+      - name: cc2_count
+        data_type: int64
+        description:
+          Count of the alumnus's second Career Conversation (CC2) Salesforce
+          contact notes, summed across all academic years. Zero when none are
+          recorded.
+      - name: cc3_count
+        data_type: int64
+        description:
+          Count of the alumnus's third Career Conversation (CC3) Salesforce
+          contact notes, summed across all academic years. Zero when none are
+          recorded.
+      - name: cc4_count
+        data_type: int64
+        description:
+          Count of the alumnus's fourth Career Conversation (CC4) Salesforce
+          contact notes, summed across all academic years. Zero when none are
+          recorded.
+      - name: cc5_count
+        data_type: int64
+        description:
+          Count of the alumnus's fifth Career Conversation (CC5) Salesforce
+          contact notes, summed across all academic years. Zero when none are
+          recorded.
+      - name: cc_total_count
+        data_type: int64
+        description:
+          Total count of the alumnus's Career Conversation (CC1 through CC5)
+          Salesforce contact notes, summed across all academic years. Zero when
+          none are recorded.
+      - name: career_conversation_items_complete_count
+        data_type: int64
+        description:
+          Number of the seven KFWD career conversation checklist items (resume
+          score, LinkedIn, mock interview or prep, professional references list,
+          job search template, cover letter template, work samples) marked
+          complete for the alumnus in the Career Conversation Tracker AppSheet
+          app. Zero when no conversation is recorded.
+      - name: is_career_conversation_complete
+        data_type: boolean
+        description:
+          Whether all seven KFWD career conversation checklist items are marked
+          complete for the alumnus in the Career Conversation Tracker AppSheet
+          app. False when any item is incomplete or no conversation is recorded.
+      - name: last_ccr_date
+        data_type: date
+        description:
+          Contact note date of the alumnus's most recent Career Conversation
+          (CC1 through CC5) record in Salesforce, across all academic years.
+          NULL when no Career Conversation note is logged.
+      - name: launch_assessed_at
+        data_type: datetime
+        description: >-
+          When the alumnus's latest Career Launch assessment took place, from
+          the KIPP Forward Career Launch AppSheet app. The assessment columns
+          that follow come from that same assessment, and all are NULL when the
+          alumnus has never been assessed.
+        config:
+          meta:
+            contains_pii: true
+      - name: career_ready_level
+        data_type: int64
+        description: Career Ready level, 1 to 4, on the latest assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: active_search_level
+        data_type: int64
+        description: Active Search level, 1 to 4, on the latest assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: internship_experience_level
+        data_type: int64
+        description:
+          Internship / Experience level, 1 to 4, on the latest assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: network_level
+        data_type: int64
+        description: Network level, 1 to 4, on the latest assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: career_ready_points
+        data_type: int64
+        description: Rubric points for the Career Ready level.
+        config:
+          meta:
+            contains_pii: true
+      - name: active_search_points
+        data_type: int64
+        description: Rubric points for the Active Search level.
+        config:
+          meta:
+            contains_pii: true
+      - name: internship_experience_points
+        data_type: int64
+        description: Rubric points for the Internship / Experience level.
+        config:
+          meta:
+            contains_pii: true
+      - name: network_points
+        data_type: int64
+        description: Rubric points for the Network level.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_points
+        data_type: int64
+        description: >-
+          GPA points from the alumnus's current college GPA; 0 when they have
+          none. NULL when the alumnus has never been assessed.
+        config:
+          meta:
+            contains_pii: true
+      - name: launch_score
+        data_type: int64
+        description: >-
+          Career Launch score out of 100 on the latest assessment: the four
+          indicator points plus GPA points, scored with today's rubric and GPA.
+        config:
+          meta:
+            contains_pii: true
+      - name: launch_stage
+        data_type: string
+        description: Career Launch stage for the launch score.
+        config:
+          meta:
+            contains_pii: true
+      - name: has_all_levels
+        data_type: boolean
+        description: >-
+          True when the latest assessment has all four indicator levels. A
+          missing level counts as 0 points, so filter on this before comparing
+          scores.
+        config:
+          meta:
+            contains_pii: true
+      - name: coaching_focus
+        data_type: string
+        description: Coaching focus agreed on the latest assessment.
+        config:
+          meta:
+            contains_pii: true
+      - name: next_action
+        data_type: string
+        description: Next step agreed on the latest assessment.
+        config:
+          meta:
+            contains_pii: true

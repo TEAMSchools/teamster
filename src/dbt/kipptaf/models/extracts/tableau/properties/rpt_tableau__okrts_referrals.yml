@@ -1,8 +1,35 @@
 models:
   - name: rpt_tableau__okrts_referrals
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - region
+              - week_start_monday
+              - incident_id
+              - incident_penalty_id
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: region
+        data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: week_start_monday
+        data_type: date
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: student_name
         data_type: string
       - name: academic_year
@@ -12,8 +39,6 @@ models:
       - name: school
         data_type: string
       - name: school_name
-        data_type: string
-      - name: region
         data_type: string
       - name: grade_level
         data_type: int64
@@ -37,8 +62,6 @@ models:
         data_type: string
       - name: homeroom_teacher_name
         data_type: string
-      - name: week_start_monday
-        data_type: date
       - name: week_end_sunday
         data_type: date
       - name: week_number_academic_year
@@ -113,6 +136,16 @@ models:
         data_type: string
       - name: self_contained_status
         data_type: string
+      - name: homeless_status
+        data_type: string
+        description:
+          Decoded homelessness status for the enrollment year. Null for Miami,
+          which does not populate the underlying PowerSchool field.
+      - name: homeless_primary_nighttime_residence
+        data_type: string
+        description:
+          Decoded primary nighttime residence for the enrollment year. Collected
+          in New Jersey only, so null elsewhere.
       - name: entry_staff
         data_type: string
       - name: last_update_staff
@@ -123,6 +156,13 @@ models:
         data_type: float64
       - name: is_chronically_absent
         data_type: boolean
+      - name: chronic_absence_status
+        data_type: string
+        description:
+          Chronic absence label for Tableau. Chronic Absence when the student's
+          unweighted year-to-date ADA is 0.90 or below, otherwise Not Chronic
+          Absence. Mirrors is_chronically_absent, including rows with no ADA
+          value, which land in Not Chronic Absence.
       - name: school_enrollment_by_week
         data_type: int64
       - name: is_week_ytd
@@ -145,6 +185,19 @@ models:
         data_type: int64
       - name: is_suspended_y1_iss_2plus_int
         data_type: int64
+      - name: is_suspended_y1_oss_2plus_days
+        data_type: boolean
+        description:
+          True when the student's out-of-school suspension (OSS) days for the
+          academic year total two or more, summed across OSS penalties entered
+          during the student's enrolled weeks at any school. In-school
+          suspension days do not count, and a penalty with no day count adds
+          zero. Counts days, not incidents, unlike
+          is_suspended_y1_oss_2plus_int. Repeats on every row for the student
+          and year, so it works as a roster filter.
+        config:
+          meta:
+            contains_pii: true
       - name: is_tier3_4
         data_type: boolean
       - name: ssds_period

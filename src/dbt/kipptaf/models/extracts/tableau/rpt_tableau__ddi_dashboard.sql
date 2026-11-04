@@ -24,7 +24,7 @@ with
             {{ ref("int_people__location_crosswalk") }} as cw
             on il.school = cw.location_name
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as pw
+            {{ ref("int_students__calendar_week") }} as pw
             on il.academic_year_int = pw.academic_year
             and cw.location_powerschool_school_id = pw.schoolid
             and il.completion_date between pw.week_start_monday and pw.week_end_sunday
@@ -57,7 +57,7 @@ with
             )
     ),
 
-    identifiers as (
+    responses as (
         select
             co.student_number,
             co.student_name,
@@ -86,7 +86,7 @@ with
             co.week_start_monday,
             co.week_end_sunday,
             co.date_count as days_in_session,
-            co.quarter as term,
+            co.term,
             co.is_current_week_mon_sun as is_current_week,
 
             r.title,
@@ -107,21 +107,33 @@ with
 
             sd.standard_domain,
 
-            cc.sections_section_number as course_section,
-            cc.courses_course_name as course_name,
-            cc.courses_course_number as course_number,
-            cc.courses_credittype as course_credittype,
-            cc.teachernumber as course_teachernumber,
-            cc.teacher_lastfirst as course_teacher_name,
-            cc.is_foundations,
-
-            sf.dibels_most_recent_composite,
-            sf.state_test_proficiency,
-            sf.is_exempt_iready,
-            sf.nj_student_tier,
-            sf.is_low_25_fl,
-
             cast(r.assessment_id as string) as assessment_id,
+
+            -- Apex rows take the section the scaffold matched, Illuminate rows
+            -- the student's latest section in the subject
+            -- Focus rows null sections_section_number; cc_section_number is
+            -- the Focus section number
+            if(
+                r.source = 'apex', ca.cc_section_number, cc.sections_section_number
+            ) as course_section,
+            if(
+                r.source = 'apex', ca.courses_course_name, cc.courses_course_name
+            ) as course_name,
+            if(
+                r.source = 'apex', ca.courses_course_number, cc.courses_course_number
+            ) as course_number,
+            if(
+                r.source = 'apex', ca.courses_credittype, cc.courses_credittype
+            ) as course_credittype,
+            if(
+                r.source = 'apex', ca.teachernumber, cc.teachernumber
+            ) as course_teachernumber,
+            if(
+                r.source = 'apex', ca.teacher_lastfirst, cc.teacher_lastfirst
+            ) as course_teacher_name,
+            if(
+                r.source = 'apex', ca.is_foundations, cc.is_foundations
+            ) as is_foundations,
 
             if(r.date_taken is not null, 1, 0) as is_complete,
 
@@ -131,7 +143,7 @@ with
         from {{ ref("int_extracts__student_enrollments_weeks") }} as co
         left join
             {{ ref("int_assessments__response_rollup") }} as r
-            on co.student_number = r.powerschool_student_number
+            on co.student_number = r.student_number
             and co.academic_year = r.academic_year
             and co.region = r.region
             and r.administered_at between co.week_start_monday and co.week_end_sunday
@@ -143,23 +155,45 @@ with
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
             and r.subject_area = cc.illuminate_subject_area
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
+            and co._dbt_source_project = cc._dbt_source_project
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
         left join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-            on co.student_number = sf.student_number
-            and co.academic_year = sf.academic_year
-            and cc.courses_credittype = sf.powerschool_credittype
-            and sf.rn_year = 1
+            {{ ref("base_powerschool__course_enrollments") }} as ca
+            on r.cc_dcid = ca.cc_dcid
+            and r._dbt_source_project = ca._dbt_source_project
         where
-            co.enroll_status = 0
-            and co.is_enrolled_week_end
+            /* Eligibility is enrollment as of the week end, not current
+               enroll_status: that column is student-level and current-only, so
+               pinning it to 0 retroactively erased the assessment history of every
+               student who had since withdrawn, transferred, or graduated (#4807).
+               Withdrawn (2) and graduated (3) are in scope; inactive (1) and
+               pre-registered (-1) stay out -- never report against either. */
+            co.is_enrolled_week_end
+            and co.enroll_status in (0, 2, 3)
             and not co.is_out_of_district
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
             and r.module_type != 'WPP'
+    ),
+
+    identifiers as (
+        select
+            r.*,
+
+            sf.dibels_most_recent_composite,
+            sf.state_test_proficiency,
+            sf.is_exempt_iready,
+            sf.nj_student_tier,
+            sf.is_low_25_fl,
+        from responses as r
+        left join
+            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
+            on r.student_number = sf.student_number
+            and r.academic_year = sf.academic_year
+            and r.course_credittype = sf.powerschool_credittype
+            and sf.rn_year = 1
     ),
 
     microgoals_long as (
@@ -254,7 +288,7 @@ select
     co.is_sipps,
     co.is_low_25_fl,
 
-    qbls.qbl,
+    cast(null as string) as qbl,
 
     g.grade_goal,
     g.school_goal,
@@ -268,22 +302,13 @@ select
         ip.total_iready_lessons_passed_math, 0
     ) as total_iready_lessons_passed_math,
 
-    if(qbls.qbl is not null, true, false) as is_qbl,
+    false as is_qbl,
 
     coalesce(ip.is_pass_2_lessons_int_reading, 0) as is_passed_iready_2plus_reading_int,
     coalesce(ip.is_pass_4_lessons_int_reading, 0) as is_passed_iready_4plus_reading_int,
     coalesce(ip.is_pass_2_lessons_int_math, 0) as is_passed_iready_2plus_math_int,
     coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
 from identifiers as co
-left join
-    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
-    on co.academic_year = qbls.academic_year
-    and co.term = qbls.term_name
-    and co.region = qbls.region
-    and co.grade_level = qbls.grade_level
-    and co.response_type_code = qbls.standard_code
-    and co.subject_area = qbls.illuminate_subject_area
-    and qbls.qbl is not null
 left join
     {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id
@@ -362,7 +387,7 @@ select
     co.is_sipps,
     co.is_low_25_fl,
 
-    qbls.qbl,
+    cast(null as string) as qbl,
 
     g.grade_goal,
     g.school_goal,
@@ -372,20 +397,13 @@ select
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
 
-    if(qbls.qbl is not null, true, false) as is_qbl,
+    false as is_qbl,
 
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
     null as is_passed_iready_2plus_math_int,
     null as is_passed_iready_4plus_math_int,
 from identifiers as co
-left join
-    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
-    on co.academic_year = qbls.academic_year
-    and co.term = qbls.term_name
-    and co.region = qbls.region
-    and co.response_type_code = qbls.standard_code
-    and co.subject_area = qbls.illuminate_subject_area
 left join
     {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id
@@ -419,7 +437,7 @@ select
     null as enroll_status,
     null as cohort,
 
-    cw.location_grade_band as school_level,
+    pl.grade_band as school_level,
 
     null as gender,
     null as ethnicity,
@@ -429,7 +447,7 @@ select
     w.week_start_monday,
     w.week_end_sunday,
     w.date_count as days_in_session,
-    w.quarter as term,
+    w.term,
 
     o.rubric_name as title,
     m.microgoals as subject_area,
@@ -515,12 +533,11 @@ left join
     and r.home_work_location_dagster_code_location
     = regexp_extract(t._dbt_source_relation, r'(kipp\w+)_')
 inner join
-    {{ ref("int_powerschool__calendar_week") }} as w
+    {{ ref("int_students__calendar_week") }} as w
     on r.home_work_location_powerschool_school_id = w.schoolid
     and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join
-    {{ ref("int_people__location_crosswalk") }} as cw
-    on r.home_work_location_reporting_name = cw.location_clean_name
+    {{ ref("dim_locations") }} as pl on r.home_work_location_reporting_name = pl.name
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
     on r.home_work_location_powerschool_school_id

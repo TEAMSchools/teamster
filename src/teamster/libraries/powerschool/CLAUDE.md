@@ -1,10 +1,15 @@
 # CLAUDE.md — `teamster/libraries/powerschool/`
 
-Two separate PowerSchool integrations with different protocols:
+> **`sis/odbc/` is ARCHIVED (retired 2026-07; no importers).** All districts
+> migrated PowerSchool SIS ingestion to dlt (`libraries/dlt/powerschool/`) or,
+> for Miami, to Focus. The odbc code and this section are kept for reference
+> only. `sis/sftp/` is unaffected.
 
-- `sis/odbc/` — Live Oracle ODBC queries via SSH tunnel (primary SIS data)
+- `sis/odbc/` — Oracle ODBC queries via SSH tunnel (ARCHIVED; was primary SIS
+  data)
 - `sis/sftp/` — SFTP file ingestion (schema only; used by Paterson)
-- `enrollment/` — PowerSchool Enrollment REST API
+- `enrollment/` — PowerSchool Enrollment REST API (preserved, not wired into any
+  code location)
 
 ## `sis/odbc/` — PowerSchool SIS via Oracle ODBC
 
@@ -81,6 +86,10 @@ no signal and were a recurring `DPY-4024` source on `assignmentscore` /
   for code that accesses `.lower()` or `.name` on description elements.
 
 ## `enrollment/`
+
+Preserved for reuse; no code location imports it. The kipptaf wiring, its
+`PS_ENROLLMENT_API_KEY` secret mounts, and tests were removed, so re-wiring
+means restoring all three.
 
 **`resources.py`** (`PowerSchoolEnrollmentResource`): REST client for the
 PowerSchool Enrollment/Registration API (separate from SIS; handles enrollment

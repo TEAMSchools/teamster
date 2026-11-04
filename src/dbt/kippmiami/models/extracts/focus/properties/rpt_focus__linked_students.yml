@@ -1,5 +1,7 @@
 models:
   - name: rpt_focus__linked_students
+    config:
+      enabled: false
     columns:
       - name: primary_student_id
         data_type: string

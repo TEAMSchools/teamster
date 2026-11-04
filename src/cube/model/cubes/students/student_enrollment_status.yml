@@ -39,24 +39,23 @@ cubes:
 
       - name: special_education_code
         description: >-
-          NJ state special education code (Newark and Camden only; NULL for
-          Miami and Paterson).
+          NJ state special education code (NJ regions only; NULL for Miami).
         sql: special_education_code
         type: string
         public: true
 
       - name: special_education_name
         description: >-
-          Human-readable label for the NJ special education code (Newark and
-          Camden only; NULL for Miami and Paterson).
+          Human-readable label for the NJ special education code (NJ regions
+          only; NULL for Miami).
         sql: special_education_name
         type: string
         public: true
 
       - name: special_education_placement
         description: >-
-          NJ special education placement category (Newark and Camden only; NULL
-          for Miami and Paterson).
+          NJ special education placement category (NJ regions only; NULL for
+          Miami).
         sql: special_education_placement
         type: string
         public: true

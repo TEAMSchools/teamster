@@ -3,6 +3,7 @@ name: kippnewark
 permissions:
   contents: read
   pull-requests: write
+  packages: write
   id-token: write
 
 on:
@@ -16,6 +17,8 @@ on:
       - Dockerfile
       - uv.lock
       - src/dbt/amplify/**
+      - src/dbt/cambium/**
+      - src/dbt/dbt_overrides/**
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/finalsite/**
@@ -29,17 +32,18 @@ on:
       - src/teamster/code_locations/kippnewark/**
       - src/teamster/core/**
       - src/teamster/libraries/amplify/**
+      - src/teamster/libraries/cambium/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/edplan/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/iready/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
@@ -54,17 +58,18 @@ on:
       - src/teamster/code_locations/kippnewark/**
       - src/teamster/core/**
       - src/teamster/libraries/amplify/**
+      - src/teamster/libraries/cambium/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/edplan/**
       - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/iready/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**

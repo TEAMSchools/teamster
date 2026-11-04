@@ -1,0 +1,356 @@
+models:
+  - name: int_gpa__goal_aggregations
+    description:
+      Rolls the per-student GPA measures spine up to the school, region, and org
+      (network-wide) grain and inner-joins each grain's matching goal from the
+      GPA goals sheet on academic year and grade band, then evaluates whether
+      the resulting rate meets the goal. Goal-driven — a grain surfaces here
+      only when it has a matching goal row; students in a grain with no goal
+      simply don't aggregate into a row. One row per academic year, metric, and
+      goal aggregation key. A consequence worth stating plainly — a grade
+      missing from the goals sheet is indistinguishable in this model's output
+      from a grade that has no students, since both yield no row rather than a
+      null. Two singular tests on stg_google_sheets__gpa_goals assert coverage
+      from each direction so an accidental omission is not silent.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - metric
+              - aggregation_hash
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: The academic year of the underlying student measures.
+      - name: metric
+        data_type: string
+        description:
+          GPA metric the goal targets — `y1_gpa_weighted`, `y1_gpa_unweighted`,
+          `cumulative_gpa_unweighted`, or `on_pace`.
+      - name: aggregation_hash
+        data_type: string
+        description:
+          Join key matching this aggregate to its goal — see
+          `int_google_sheets__gpa_goals`.
+      - name: org_level
+        data_type: string
+        description:
+          Scope of the aggregate — `org` (network-wide), `region`, or `school`.
+      - name: region
+        data_type: string
+        description:
+          Region label when `org_level` is `region` or `school`. Null for
+          `org`-level rows.
+      - name: schoolid
+        data_type: int64
+        description:
+          PowerSchool school ID when `org_level` is `school`. Null for `org`- or
+          `region`-level rows.
+      - name: grade_band
+        data_type: string
+        description: Human-readable grade band from the matched goal.
+      - name: goal_proportion
+        data_type: numeric
+        description: Target rate from the matched goal, as a proportion.
+      - name: n_students_in_grain
+        data_type: int64
+        description:
+          Count of students covered by the matched goal's grain and grade band,
+          whether or not their measure is populated.
+      - name: n_students_measured
+        data_type: int64
+        description:
+          Count of students carrying a measurable value for `metric` — a
+          non-null measure for threshold metrics, or membership of the on-pace
+          denominator for `on_pace`. This is the denominator of `metric_rate`.
+      - name: n_students_met
+        data_type: int64
+        description:
+          Count of measured students satisfying `metric`'s threshold per
+          `direction`, or on pace for `on_pace`. This is the numerator of
+          `metric_rate`.
+      - name: metric_rate
+        data_type: float64
+        description:
+          Share of measured students meeting `metric`'s threshold per
+          `direction`, or for `on_pace` the share of the on-pace denominator
+          that is on pace, rounded to 3 decimal places. Students whose measure
+          is null are excluded from the denominator rather than counted as
+          non-achievers, so an entirely unmeasured grain yields null rather than
+          0 — the state before a year's grades post.
+      - name: is_goal_met
+        data_type: boolean
+        description:
+          Whether `metric_rate` meets the goal — `metric_rate >=
+          goal_proportion` when the goal's direction favors higher values, else
+          `metric_rate <= goal_proportion`. Null when `metric_rate` is null.
+      - name: progress_to_goal
+        data_type: float64
+        description:
+          Share that `metric_rate` represents of `goal_proportion` (or its
+          inverse when lower is better), capped at 1.0 and rounded to 3 decimal
+          places. Null when `metric_rate` is null.
+
+unit_tests:
+  - name: unit_gpa_goal_aggregations
+    description:
+      Verifies the three aggregation grains against one set of four students
+      (grades 9-12, all in Newark school 101) matched against three goals
+      sharing the same 9-12 grade band. A school-level `y1_gpa_weighted >= 3.0`
+      goal (2 of 4 students meet it) proves the threshold/direction rate
+      calculation and a below-goal result. An org-level `y1_gpa_unweighted >=
+      2.8` goal proves cross-grade aggregation into a single row. A region-level
+      `cumulative_gpa_unweighted <= 2.5` goal (higher_is_better false) proves
+      the derived direction flips `is_goal_met` relative to a naive `>=`
+      comparison. Two Camden students carrying no measures at all, plus matching
+      Camden school-level and region-level goals, prove that an entirely
+      unmeasured grain yields a null rate rather than 0 at both of those grains,
+      and that unmeasured students raise `n_students_in_grain` on the org row
+      without dragging its rate down.
+    model: int_gpa__goal_aggregations
+    given:
+      - input: ref('int_gpa__goal_student_metrics')
+        format: sql
+        rows: |
+          select
+              2026 as academic_year,
+              'Newark' as region,
+              101 as schoolid,
+              9 as grade_level,
+              90001 as student_number,
+              cast(3.5 as float64) as y1_gpa_weighted,
+              cast(3.0 as float64) as y1_gpa_unweighted,
+              cast(2.0 as float64) as cumulative_gpa_unweighted,
+              cast(null as boolean) as is_on_pace,
+              cast(null as boolean) as is_on_pace_denominator
+          union all
+          select
+              2026,
+              'Newark',
+              101,
+              10,
+              90002,
+              cast(3.1 as float64),
+              cast(2.9 as float64),
+              cast(2.6 as float64),
+              cast(null as boolean),
+              cast(null as boolean)
+          union all
+          select
+              2026,
+              'Newark',
+              101,
+              11,
+              90003,
+              cast(2.9 as float64),
+              cast(2.5 as float64),
+              cast(2.4 as float64),
+              cast(null as boolean),
+              cast(null as boolean)
+          union all
+          select
+              2026,
+              'Newark',
+              101,
+              12,
+              90004,
+              cast(2.0 as float64),
+              cast(2.0 as float64),
+              cast(3.0 as float64),
+              cast(null as boolean),
+              cast(null as boolean)
+          union all
+          /* Camden, no measures at all — the pre-grades-posted state */
+          select
+              2026,
+              'Camden',
+              201,
+              9,
+              90005,
+              cast(null as float64),
+              cast(null as float64),
+              cast(null as float64),
+              cast(null as boolean),
+              cast(null as boolean)
+          union all
+          select
+              2026,
+              'Camden',
+              201,
+              10,
+              90006,
+              cast(null as float64),
+              cast(null as float64),
+              cast(null as float64),
+              cast(null as boolean),
+              cast(null as boolean)
+      - input: ref('int_google_sheets__gpa_goals')
+        format: sql
+        rows: |
+          /* school-level: y1_gpa_weighted >= 3.0, goal 58% */
+          select
+              2026 as academic_year,
+              'school' as org_level,
+              'Newark' as region,
+              101 as schoolid,
+              9 as grade_low,
+              12 as grade_high,
+              'y1_gpa_weighted' as metric,
+              cast(3.0 as numeric) as threshold,
+              '>=' as direction,
+              cast(58 as numeric) as goal,
+              '9-12' as grade_band,
+              '101_9-12' as aggregation_hash,
+              cast(0.58 as float64) as goal_proportion,
+              true as higher_is_better
+          union all
+          /* region-level: cumulative_gpa_unweighted <= 2.5, goal 60% */
+          select
+              2026,
+              'region',
+              'Newark',
+              cast(null as int64),
+              9,
+              12,
+              'cumulative_gpa_unweighted',
+              cast(2.5 as numeric),
+              '<=',
+              cast(60 as numeric),
+              '9-12',
+              'Newark_9-12',
+              cast(0.6 as float64),
+              false
+          union all
+          /* org-level: y1_gpa_unweighted >= 2.8, goal 50% */
+          select
+              2026,
+              'org',
+              cast(null as string),
+              cast(null as int64),
+              9,
+              12,
+              'y1_gpa_unweighted',
+              cast(2.8 as numeric),
+              '>=',
+              cast(50 as numeric),
+              '9-12',
+              'org_9-12',
+              cast(0.5 as float64),
+              true
+          union all
+          /* school-level, Camden: no student carries a measure */
+          select
+              2026,
+              'school',
+              'Camden',
+              201,
+              9,
+              12,
+              'y1_gpa_weighted',
+              cast(3.0 as numeric),
+              '>=',
+              cast(58 as numeric),
+              '9-12',
+              '201_9-12',
+              cast(0.58 as float64),
+              true
+          union all
+          /* region-level, Camden: same unmeasured cohort at the region grain */
+          select
+              2026,
+              'region',
+              'Camden',
+              cast(null as int64),
+              9,
+              12,
+              'y1_gpa_weighted',
+              cast(3.0 as numeric),
+              '>=',
+              cast(58 as numeric),
+              '9-12',
+              'Camden_9-12',
+              cast(0.58 as float64),
+              true
+    expect:
+      rows:
+        - {
+            academic_year: 2026,
+            metric: y1_gpa_weighted,
+            aggregation_hash: 101_9-12,
+            org_level: school,
+            region: Newark,
+            schoolid: 101,
+            grade_band: 9-12,
+            goal_proportion: 0.58,
+            n_students_in_grain: 4,
+            n_students_measured: 4,
+            n_students_met: 2,
+            metric_rate: 0.5,
+            is_goal_met: false,
+            progress_to_goal: 0.862,
+          }
+        - {
+            academic_year: 2026,
+            metric: y1_gpa_weighted,
+            aggregation_hash: 201_9-12,
+            org_level: school,
+            region: Camden,
+            schoolid: 201,
+            grade_band: 9-12,
+            goal_proportion: 0.58,
+            n_students_in_grain: 2,
+            n_students_measured: 0,
+            n_students_met: 0,
+            metric_rate: null,
+            is_goal_met: null,
+            progress_to_goal: null,
+          }
+        - {
+            academic_year: 2026,
+            metric: y1_gpa_weighted,
+            aggregation_hash: Camden_9-12,
+            org_level: region,
+            region: Camden,
+            schoolid: null,
+            grade_band: 9-12,
+            goal_proportion: 0.58,
+            n_students_in_grain: 2,
+            n_students_measured: 0,
+            n_students_met: 0,
+            metric_rate: null,
+            is_goal_met: null,
+            progress_to_goal: null,
+          }
+        - {
+            academic_year: 2026,
+            metric: cumulative_gpa_unweighted,
+            aggregation_hash: Newark_9-12,
+            org_level: region,
+            region: Newark,
+            schoolid: null,
+            grade_band: 9-12,
+            goal_proportion: 0.6,
+            n_students_in_grain: 4,
+            n_students_measured: 4,
+            n_students_met: 2,
+            metric_rate: 0.5,
+            is_goal_met: true,
+            progress_to_goal: 1.0,
+          }
+        - {
+            academic_year: 2026,
+            metric: y1_gpa_unweighted,
+            aggregation_hash: org_9-12,
+            org_level: org,
+            region: null,
+            schoolid: null,
+            grade_band: 9-12,
+            goal_proportion: 0.5,
+            n_students_in_grain: 6,
+            n_students_measured: 4,
+            n_students_met: 2,
+            metric_rate: 0.5,
+            is_goal_met: true,
+            progress_to_goal: 1.0,
+          }

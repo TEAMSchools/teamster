@@ -105,10 +105,10 @@ echo -e "${YELLOW}Symlink resolution${NC}"
 # Create a temp symlink for testing (clean up after)
 TMPLINK="/tmp/test_hook_symlink_$$"
 if ln -s /etc/secret-volume "${TMPLINK}" 2>/dev/null; then
-  expect_deny "symlink to secret-volume" Read file_path "${TMPLINK}"
-  rm -f "${TMPLINK}"
+	expect_deny "symlink to secret-volume" Read file_path "${TMPLINK}"
+	rm -f "${TMPLINK}"
 else
-  echo -e "  ${YELLOW}SKIP${NC}: could not create test symlink"
+	echo -e "  ${YELLOW}SKIP${NC}: could not create test symlink"
 fi
 
 # ─── #1: cert/key files under non-path / MCP keys (Rule 1b scans all leaves) ──
@@ -117,22 +117,22 @@ echo -e "${YELLOW}#1: cert/key under non-path keys${NC}"
 
 # trunk-ignore-begin(shellcheck/SC2312)
 expect_deny_json "MCP uri = .key file" \
-  "$(jq -n '{tool_name:"mcp__example__tool", tool_input:{uri:"/tmp/server.key"}}')"
+	"$(jq -n '{tool_name:"mcp__example__tool", tool_input:{uri:"/tmp/server.key"}}')"
 expect_deny_json "MCP nested localPath = .pem file" \
-  "$(jq -n '{tool_name:"mcp__example__tool", tool_input:{obj:{localPath:"/home/u/id_rsa.pem"}}}')"
+	"$(jq -n '{tool_name:"mcp__example__tool", tool_input:{obj:{localPath:"/home/u/id_rsa.pem"}}}')"
 expect_deny_json "MCP source = .cer file" \
-  "$(jq -n '{tool_name:"mcp__example__tool", tool_input:{source:"/tmp/chain.cer"}}')"
+	"$(jq -n '{tool_name:"mcp__example__tool", tool_input:{source:"/tmp/chain.cer"}}')"
 # content exemption preserved: .key as a code attribute in a Write body allows
 expect_allow_json "Write content asset.key (attr, not a file)" \
-  "$(jq -n '{tool_name:"Write", tool_input:{file_path:"/tmp/x.py", content:"v = asset.key"}}')"
+	"$(jq -n '{tool_name:"Write", tool_input:{file_path:"/tmp/x.py", content:"v = asset.key"}}')"
 expect_allow_json "Edit new_string mentioning cert.pem" \
-  "$(jq -n '{tool_name:"Edit", tool_input:{file_path:"/tmp/x.py", new_string:"# see cert.pem docs"}}')"
+	"$(jq -n '{tool_name:"Edit", tool_input:{file_path:"/tmp/x.py", new_string:"# see cert.pem docs"}}')"
 # free-text SQL fields are NOT path-scanned: a dotted column ref must not be
 # mistaken for a cert/key file (Rule 1b scans named path keys, not `sql`)
 expect_allow_json "BQ sql dot-attr record.key (not a cert file)" \
-  "$(jq -n '{tool_name:"mcp__bigquery__execute_sql", tool_input:{sql:"SELECT record.key FROM t"}}')"
+	"$(jq -n '{tool_name:"mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly", tool_input:{sql:"SELECT record.key FROM t"}}')"
 expect_allow_json "BQ sql dot-attr a.pem (not a cert file)" \
-  "$(jq -n '{tool_name:"mcp__bigquery__execute_sql", tool_input:{sql:"SELECT a.pem FROM t"}}')"
+	"$(jq -n '{tool_name:"mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly", tool_input:{sql:"SELECT a.pem FROM t"}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
 # ─── #2: symlink resolution for every path field (not just file_path) ─────────
@@ -143,17 +143,17 @@ TMPLINK2="/tmp/test_hook_slink_grep_$$"
 TMPLINK3="/tmp/test_hook_slink_mcp_$$"
 TMPLINK4="/tmp/test_hook_slink_ok_$$"
 if ln -s /etc/secret-volume "${TMPLINK2}" 2>/dev/null &&
-  ln -s /etc/secret-volume "${TMPLINK3}" 2>/dev/null &&
-  ln -s /tmp "${TMPLINK4}" 2>/dev/null; then
-  expect_deny2 "Grep path symlink to secret-volume" Grep pattern "x" path "${TMPLINK2}"
-  # trunk-ignore-begin(shellcheck/SC2312)
-  expect_deny_json "MCP uri symlink to secret-volume" \
-    "$(jq -n --arg p "${TMPLINK3}" '{tool_name:"mcp__example__tool", tool_input:{uri:$p}}')"
-  # trunk-ignore-end(shellcheck/SC2312)
-  expect_allow2 "Grep path symlink to benign /tmp" Grep pattern "x" path "${TMPLINK4}"
-  rm -f "${TMPLINK2}" "${TMPLINK3}" "${TMPLINK4}"
+	ln -s /etc/secret-volume "${TMPLINK3}" 2>/dev/null &&
+	ln -s /tmp "${TMPLINK4}" 2>/dev/null; then
+	expect_deny2 "Grep path symlink to secret-volume" Grep pattern "x" path "${TMPLINK2}"
+	# trunk-ignore-begin(shellcheck/SC2312)
+	expect_deny_json "MCP uri symlink to secret-volume" \
+		"$(jq -n --arg p "${TMPLINK3}" '{tool_name:"mcp__example__tool", tool_input:{uri:$p}}')"
+	# trunk-ignore-end(shellcheck/SC2312)
+	expect_allow2 "Grep path symlink to benign /tmp" Grep pattern "x" path "${TMPLINK4}"
+	rm -f "${TMPLINK2}" "${TMPLINK3}" "${TMPLINK4}"
 else
-  echo -e "  ${YELLOW}SKIP${NC}: could not create test symlinks"
+	echo -e "  ${YELLOW}SKIP${NC}: could not create test symlinks"
 fi
 
 # ─── Description field scoping (Agent-only exclusion) ─────────────────────────
@@ -162,10 +162,10 @@ echo -e "${YELLOW}Description field scoping${NC}"
 
 # trunk-ignore-begin(shellcheck/SC2312)
 expect_deny_json "MCP description field with .env" \
-  "$(jq -n '{tool_name: "mcp__bigquery__execute_sql", tool_input: {description: "cat .env", sql: "SELECT 1"}}')"
+	"$(jq -n '{tool_name: "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly", tool_input: {description: "cat .env", sql: "SELECT 1"}}')"
 
 expect_allow_json "Agent description with env word" \
-  "$(jq -n '{tool_name: "Agent", tool_input: {description: "check the environment setup", prompt: "list files"}}')"
+	"$(jq -n '{tool_name: "Agent", tool_input: {description: "check the environment setup", prompt: "list files"}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
 # ─── Bash path protection (retained pending verification gate) ──────
@@ -184,11 +184,11 @@ echo -e "${YELLOW}Exit code regression (PreToolUse must exit 0 on deny)${NC}"
 
 # trunk-ignore-begin(shellcheck/SC2312): command substitution in function args is intentional
 expect_deny_exit0 "PreToolUse .env deny exits 0" "${HOOK}" \
-  "$(make_input Read file_path /workspaces/teamster/env/.env)"
+	"$(make_input Read file_path /workspaces/teamster/env/.env)"
 expect_deny_exit0 "PreToolUse secret-volume deny exits 0" "${HOOK}" \
-  "$(make_input Read file_path /etc/secret-volume/token)"
+	"$(make_input Read file_path /etc/secret-volume/token)"
 expect_deny_exit0 "PreToolUse bash printenv deny exits 0" "${HOOK}" \
-  "$(make_input Bash command printenv)"
+	"$(make_input Bash command printenv)"
 # trunk-ignore-end(shellcheck/SC2312)
 
 # ─── #23: additional credential files ───────────────────────────────────────

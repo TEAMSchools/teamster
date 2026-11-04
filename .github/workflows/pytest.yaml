@@ -1,0 +1,102 @@
+name: pytest
+
+on:
+  pull_request:
+    paths:
+      - docs/launch/**
+      - docs/hooks.py
+      - docs/reference/dbt-conventions.md
+      - .claude/rules/dbt-architecture.md
+      - .claude/rules/dbt-marts.md
+      - .claude/rules/dbt-yaml.md
+      - .claude/rules/dbt-sql.md
+      - tests/launch/**
+      - scripts/cube_validation/**
+      - tests/scripts/cube_validation/**
+      - src/dbt/dbt_overrides/**
+      - tests/test_dbt_overrides.py
+      - mkdocs.yml
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/pytest.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  launch:
+    name: launch
+    # No `github.actor != 'dependabot[bot]'` gate here, unlike the other
+    # workflows: dependabot's daily `uv` bump is the actor for nearly every
+    # PR that touches pyproject.toml/uv.lock, which is exactly why those
+    # files are in `paths` above. Gating this job on actor would skip the
+    # only check that runs on a dependency bump. Do not "restore
+    # consistency" with the other workflows.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # For repo checkout. Nothing here writes.
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+
+      - name: Run the launch page tests
+        run: uv run --group docs pytest tests/launch -v
+
+      - name: Build the docs site
+        run: uv run --group docs mkdocs build --site-dir site
+
+      # https://github.com/actions/upload-artifact
+      - name: Upload the rendered page for review
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: launch-page-preview
+          path: site/launch/index.html
+          # Below the publication threshold no page is generated. The
+          # default (warn) would print a confusing warning on every PR.
+          if-no-files-found: ignore
+
+  cube-validation:
+    name: cube-validation
+    # Same dependabot reasoning as `launch` above: a uv.lock bump (sqlglot,
+    # the BigQuery client) is what most often breaks the validator.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # For repo checkout. Nothing here writes.
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+
+      # Offline: fake tables and DuckDB, no warehouse or credentials.
+      - name: Run the Cube validator tests
+        run: uv run --with duckdb pytest tests/scripts/cube_validation -q
+
+  dbt-overrides:
+    name: dbt-overrides
+    # Fails when a uv.lock dbt bump (usually dependabot) changes the built-in
+    # test materialization that src/dbt/dbt_overrides forks. Re-sync per
+    # src/dbt/dbt_overrides/CLAUDE.md.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # For repo checkout. Nothing here writes.
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+
+      - name: Compare the fork against the installed built-in
+        run: uv run pytest tests/test_dbt_overrides.py -q

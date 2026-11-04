@@ -6,6 +6,10 @@ models:
       alternate school-name spellings (e.g., ADP home_work_location_name,
       SchoolMint Grow observation school_name). For one-row-per-logical-school,
       use stg_google_sheets__people__locations.
+
+      Despite the name, this is not a union model and carries no
+      _dbt_source_relation column. To join it across regions, match the other
+      side's _dbt_source_project against location_dagster_code_location.
     columns:
       - name: location_name
         data_type: string
@@ -42,6 +46,15 @@ models:
           Focus SIS school-number code (alphanumeric SCH_ID) passed through from
           stg_google_sheets__people__locations; NULL for locations not yet
           mapped to Focus.
+      - name: location_google_student_org_unit_path
+        data_type: string
+        description: |
+          Full Google Workspace org unit path for this school's student
+          accounts, passed through from stg_google_sheets__people__locations.
+          Resolving it through this model means every consumer reaches the same
+          path from whichever school-name spelling its source uses, since each
+          row here is one alias. NULL for campuses and any school with no
+          student org unit yet.
       - name: location_is_campus
         data_type: boolean
       - name: location_is_pathways

@@ -6,8 +6,12 @@ data-team Codespaces via `npx mcp-remote`.
 
 ## Files
 
-- `server.py` — FastMCP server (PEP 723 inline deps). Tools: `meta`, `load`,
-  `sql`.
+- `server.py` — `MCPServer` (mcp SDK's `mcp.server.mcpserver`, PEP 723 inline
+  deps; the class was `FastMCP` under `mcp.server.fastmcp` before SDK 2.0).
+  Tools: `meta`, `load`, `sql`, `dry_run`, `cubesql`, `convert_query`,
+  `graphql_to_json`. Every read-only Cube REST endpoint has one; the excluded
+  ones and why are in
+  `docs/superpowers/specs/2026-10-15-cube-mcp-rest-coverage-design.md`.
 - `Dockerfile` — Python 3.13-slim; bare `python` entrypoint (uv installs PEP 723
   deps at build time).
 
@@ -23,8 +27,12 @@ data-team Codespaces via `npx mcp-remote`.
 
 ## When to edit
 
-- Tool descriptions or the FastMCP `instructions=` string: edit `server.py`.
-  Redeploy is required for changes to reach `claude.ai` users.
+- Tool descriptions or the `MCPServer` `instructions=` string: edit `server.py`.
+  Redeploy is required for changes to reach `claude.ai` users. **Put
+  load-bearing model guidance in the per-tool docstrings, not `instructions=`**
+  — the `instructions=` block is dropped by the claude.ai connector and
+  truncated in Claude Code, whereas tool descriptions reach the model on every
+  surface (#4473). `instructions=` is now a slim orientation only.
 - Tool surface changes (add/remove tools): edit `server.py` and add tests in
   `tests/cube/test_mcp_server.py`.
 - Validate that an `instructions=`/tool change actually helps the model with the
@@ -75,45 +83,93 @@ Cloud Run service via `--set-secrets`).
 - **Cloud Run request timeout defaults to 300s** (no `--timeout` set). Claude
   Code's 60s per-tool ceiling is tighter for tool wall-clock; Cloud Run's
   governs the underlying connection.
+- **After a deploy that changes tool signatures or descriptions, refresh the
+  connector's tool list on the client.** claude.ai Custom Connector sessions
+  cache the tool list and keep serving the old schema indefinitely — a new
+  parameter or an edited description is invisible to the model until the user
+  reconnects / refreshes the connector (settings → the cube connector). The
+  server has the change immediately; the client does not (#4473).
 
 ## MCP SDK gotchas
 
+- **Raise `ToolError` for any failure the caller should read.** The SDK replaces
+  every other exception's text with "Error executing tool <name>", so a
+  `RuntimeError` from Cube hides the reason from the model. Keep `RuntimeError`
+  for real crashes, such as a startup misconfiguration.
 - **Verified bearer-token claims** live behind `get_access_token()` from
   `mcp.server.auth.middleware.auth_context`. `ctx.request_context.user` does not
   exist on `Context`.
-- **`host` / `port` are FastMCP constructor kwargs**, not `run()` kwargs; stored
-  at `mcp.settings.host` / `mcp.settings.port`. `run()` accepts only `transport`
-  and `mount_path`.
+- **SDK 2.0 (`mcp>=2.0`) renamed `FastMCP` → `MCPServer` and moved it from
+  `mcp.server.fastmcp` to `mcp.server.mcpserver`.** `Context` moved with it.
+  `mcp.server.auth.*` and `mcp.types` imports are unaffected by the rename.
+- **`host` / `port` / `stateless_http` moved from constructor kwargs to `run()`
+  kwargs** in SDK 2.0 (the reverse of SDK 1.x, where they were constructor-only
+  and read back via `mcp.settings.host`/`.port`). `mcp.settings` no longer
+  carries them at all — pass them to
+  `mcp.run(transport="streamable-http", host=..., port=..., stateless_http=...)`
+  and don't try to introspect them off the server object afterward.
 - **Elicit capability check**:
   `ctx.session.check_client_capability(ClientCapabilities(elicitation=ElicitationCapability()))`.
   Don't use the `CapabilityNotSupported` try/except from build-mcp-server's
   `references/elicitation.md` — that's jlowin's `fastmcp`, not the official
-  SDK's bundled FastMCP.
-- **Do NOT use `lifespan=` with `stateless_http=True`.** In stateless mode the
-  SDK invokes `app.run(...)` per HTTP request, which runs the user lifespan per
-  request — a `client.aclose()` teardown closes the shared httpx client after
-  the first request and breaks every subsequent one
-  (`Cannot send a request, as the client has been closed`). Let the module-level
-  client live until process exit; SIGTERM cleans up.
+  SDK's bundled `MCPServer`.
+- **`lifespan=` + `stateless_http=True` is safe again as of SDK 2.0** — verified
+  against `mcp/server/streamable_http_manager.py`: lifespan is now entered once
+  for the manager's lifetime and that state is reused across every stateless
+  request, not re-entered per request. (SDK 1.x re-entered it per request, which
+  is why `server.py` used to keep the httpx client as a bare module-level global
+  with no `aclose()` — `client.aclose()` in a `lifespan=` teardown would close
+  the shared client after the first request and break every subsequent one.)
+  `server.py` now creates/tears down the client in `_lifespan()`, passed via the
+  `lifespan=` kwarg — still a constructor kwarg (unlike
+  host/port/stateless_http, it did not move to `run()`).
 - **`PyJWKClient` defaults are uncached** (`cache_keys=False`, `lifespan=300`).
   For hot-path verifiers pass `cache_keys=True, lifespan=3600`.
 - **Total tool wall-clock must stay under 60s** (Claude Code default per-tool
   timeout). httpx timeout + polling-loop deadline both fit inside that budget.
-- **`stateless_http=True`** on `FastMCP(...)` for any multi-instance Cloud Run
-  deploy. `StreamableHTTPSessionManager` holds session state per-instance, so
-  rollovers return 404 "Session not found". Stateless mode disables
-  subscriptions, progress, sampling, and elicit-over-HTTP — this server uses
-  none.
+- **`stateless_http=True`** on `mcp.run(transport="streamable-http", ...)` for
+  any multi-instance Cloud Run deploy. `StreamableHTTPSessionManager` holds
+  session state per-instance, so rollovers return 404 "Session not found".
+  Stateless mode disables subscriptions, progress, sampling, and
+  elicit-over-HTTP — this server uses none.
 
 ## Cube REST quirks
 
-- **`/sql` is GET-only**; query goes in URL via
-  `params={"query": json.dumps(query)}`. `/load` accepts POST with JSON body.
+- `/load` and `/dry-run` take POST with a JSON body. `sql` uses GET (the method
+  proven against Cube Cloud) with `query` as a JSON-string param; adding
+  `format=sql` makes `query` a SQL API string instead of a query object.
+- `/cubesql` returns newline-delimited JSON (schema line, then `data` chunks),
+  not one object; `_request(raw=True)` returns the text for
+  `_parse_cubesql_stream`.
+- `/graphql-to-json` answers a parse error with HTTP 200 and
+  `{"jsonQuery": null}`.
+- `/sql`'s `canUseTransformedQuery` is dev/Playground-only in the gateway
+  (`getSqlQueriesInternal`); do not build on it. `/dry-run` always returns that
+  data as `transformedQueries`.
 
 ## WorkOS quirks
 
+- Staging (`environment_01KRKXNKQ43HDNS42FZQB91AQ3`, a sandbox environment) is
+  the live AuthKit environment for this server and for staff apps. Production
+  was never activated: it has no billing, no Google provider, and no JWT
+  template, so an app created there cannot sign anyone in. Read and change
+  Staging unless the user says production has been turned on.
+- Two token kinds, two issuers. The OAuth tokens this server verifies come from
+  the AuthKit domain (`AUTHKIT_DOMAIN`). An app's sign-in session tokens carry
+  `iss` = `https://api.workos.com/user_management/<default app client id>` and
+  verify against `https://api.workos.com/sso/jwks/<default app client id>`. Both
+  are shared by every app in the environment, so never build the issuer from an
+  app's own client id; the `client_id` claim names the app.
+- Staging allows Google sign-in only. Its Google OAuth client lives in
+  `teamster-mcp` with audience Internal, which limits sign-in to KTAF Workspace
+  accounts (every domain in the Workspace, `kippmiami.org` included).
+  Re-enabling password or another provider lets non-staff accounts get tokens.
+  The audience is readable only in the GCP console (Google Auth Platform →
+  Audience); the `gcloud iap oauth-brands` API is shut down.
 - Access tokens omit `email` by default. Add a JWT template at Authentication →
-  Sessions → JWT template: `{"email": "{{ user.email }}"}`.
+  Features → JWT Template: `{"email": "{{ user.email }}"}`. The environment has
+  one template shared by every application, so another app's claims get merged
+  in beside `email`, never replace it.
 - DCR/CIMD lives at Connect → Configuration → MCP Auth (tenant-wide toggle), not
   per-application. The advertised `registration_endpoint` returns
   `dynamic_client_registration_disabled` until the toggle is on.
@@ -125,7 +181,8 @@ Cloud Run service via `--set-secrets`).
 
 ## PII reminder
 
-Tools return Cube query results. `*_detail` views carry row-level student
-identifiers (see the FastMCP `instructions=` block in `server.py`). Never emit
-detail-view values to PR comments, issues, or scheduled-agent outputs — only to
-the local conversation. See project CLAUDE.md PII reference.
+Tools return Cube query results. Student views carry row-level student
+identifiers alongside aggregate-safe dimensions (see the PII note in the `load`
+tool docstring in `server.py`). Never emit identifying values to PR comments,
+issues, or scheduled-agent outputs — only to the local conversation. See project
+CLAUDE.md PII reference.

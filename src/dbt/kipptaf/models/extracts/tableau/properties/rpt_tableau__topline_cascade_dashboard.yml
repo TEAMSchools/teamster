@@ -1,5 +1,7 @@
 models:
   - name: rpt_tableau__topline_cascade_dashboard
+    config:
+      enabled: false
     columns:
       - name: metric_type
         data_type: string

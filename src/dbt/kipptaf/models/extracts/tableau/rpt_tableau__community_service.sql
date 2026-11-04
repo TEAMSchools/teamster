@@ -14,12 +14,13 @@ select
     co.student_email,
     co.school as school_name,
 
+    b.dl_said,
     b.behavior_date,
     b.behavior,
     b.notes,
     b.staff_full_name as staff_name,
 
-    coalesce(safe_cast(left(b.behavior, length(b.behavior) - 5) as int), 0) as cs_hours,
+    coalesce(b.cs_hours, 0) as cs_hours,
 
     coalesce(safe_cast(c.`9th_hours` as numeric), 0) as grade_9_hours,
     coalesce(safe_cast(c.`10th_hours` as numeric), 0) as grade_10_hours,
@@ -29,7 +30,7 @@ from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     {{ ref("stg_deanslist__behavior") }} as b
     on co.student_number = b.student_school_id
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+    and co._dbt_source_project = b._dbt_source_project
     and b.behavior_category in ('Community Service', 'Community Service Hours')
     and b.behavior_date between co.entrydate and co.exitdate
 left join

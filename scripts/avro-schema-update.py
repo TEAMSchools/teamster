@@ -83,15 +83,6 @@ def kippcamden_deanslist_incidents():
     )
 
 
-def kippmiami_deanslist_incidents():
-    from teamster.code_locations.kippmiami.deanslist.schema import INCIDENTS_SCHEMA
-
-    rewrite_blobs(
-        asset_key=["kippmiami", "deanslist", "incidents"],
-        schema=parse_schema(INCIDENTS_SCHEMA),
-    )
-
-
 def kippnewark_deanslist_incidents():
     from teamster.code_locations.kippnewark.deanslist.schema import INCIDENTS_SCHEMA
 

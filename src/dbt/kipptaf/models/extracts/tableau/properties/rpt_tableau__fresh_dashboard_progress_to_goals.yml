@@ -1,5 +1,19 @@
 models:
   - name: rpt_tableau__fresh_dashboard_progress_to_goals
+    description: >
+      Progress-to-Goals tab of the FRESH dashboard. Starts from the school x
+      grade spine (int_tableau__fresh_enrollment_scaffold) at two levels --
+      whole-school rows (grade_level = -9) and per-grade rows -- each repeated
+      for enrollment_type "All", "New" and "Returning". Region rollup rows are
+      not included. Onto each spine row it left-joins two kinds of rows. Student
+      rows (row_type "Student") are students whose latest Finalsite status is
+      Enrolled or Enrollment In Progress; each such student appears under their
+      own enrollment_type and again under "All". Goal rows (row_type "Goal")
+      carry the Enrollment targets from
+      int_google_sheets__finalsite__goals_pivot for the current recruitment
+      cycle. A spine row with no match keeps null row_type and null student and
+      goal columns, so every school and grade still shows. Students with no
+      assigned school (schoolid = 0) do not match the spine and drop out.
     config:
       enabled: true
       contract:
@@ -21,53 +35,164 @@ models:
     columns:
       - name: academic_year
         data_type: int64
+        description: >
+          The Finalsite recruitment cycle in start-year form (AY2026-2027 =
+          2026). Renamed from the scaffold's enrollment_academic_year for
+          Tableau.
       - name: org
         data_type: string
+        description: >
+          Always "KTAF".
       - name: region
         data_type: string
+        description: >
+          One of "Newark", "Camden", "Miami", "Paterson".
       - name: school_level
         data_type: string
+        description: >
+          ES / MS / HS. On whole-school rows, the school's grade band from
+          int_people__location_crosswalk; on per-grade rows, the scaffold's band
+          for that grade (>= 9 HS, >= 5 MS, else ES).
       - name: schoolid
         data_type: int64
+        description: >
+          PowerSchool-space school id from the scaffold (Miami's is mapped from
+          Focus).
       - name: school
         data_type: string
+        description: >
+          Short school abbreviation from the scaffold.
       - name: grade_level
         data_type: int64
+        description: >
+          -9 on whole-school rows, otherwise the grade (K = 0). Student rows on
+          whole-school rows are placed at -9 regardless of their grade.
       - name: enrollment_type
         data_type: string
+        description: >
+          The spine's enrollment slice -- "All", "New" or "Returning". Every
+          spine row appears once per value.
       - name: finalsite_id
         data_type: string
+        description: >
+          Finalsite enrollment id on Student rows; null on Goal rows and
+          unmatched spine rows.
+        config:
+          meta:
+            contains_pii: true
       - name: powerschool_student_number
         data_type: int64
+        description: >
+          Student number as reported by Finalsite, on Student rows. Null on Goal
+          rows, unmatched spine rows, and applicants with no SIS identity yet.
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
+        description: >
+          Student first name, on Student rows.
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
+        description: >
+          Student last name, on Student rows.
+        config:
+          meta:
+            contains_pii: true
       - name: latest_status
         data_type: string
+        description: >
+          The student's most recent Finalsite status -- always "Enrolled" or
+          "Enrollment In Progress" on Student rows. The literal "Goal Record" on
+          Goal rows; null on unmatched spine rows.
+        config:
+          meta:
+            contains_pii: true
       - name: student_enrollment_type
         data_type: string
+        description: >
+          The matched row's enrollment_type. Because the join is on
+          enrollment_type, this always equals enrollment_type when a row matched
+          (so it reads "All" on a student's "All" copy, not their New/Returning
+          type), and is null otherwise.
+        config:
+          meta:
+            contains_pii: true
       - name: self_contained
         data_type: string
+        description: >
+          Finalsite self-contained special-education indicator on Student rows
+          (mixed "Yes" / "No" / "false" labels). "NA" on Goal rows; null on
+          unmatched spine rows.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_fdos
         data_type: boolean
+        description: >
+          True when the matched SIS enrollment started on or before the region's
+          first day of school. Null on Goal rows and when no SIS record matched.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_oct01
         data_type: boolean
+        description: >
+          True when the matched SIS enrollment covers October 1. Null on Goal
+          rows and when no SIS record matched.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_oct15
         data_type: boolean
+        description: >
+          True when the matched SIS enrollment covers October 15. Null on Goal
+          rows and when no SIS record matched.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_mar15
         data_type: boolean
+        description: >
+          True when the matched SIS enrollment covers March 15. Null on Goal
+          rows and when no SIS record matched.
+        config:
+          meta:
+            contains_pii: true
       - name: row_type
         data_type: string
+        description: >
+          "Student" or "Goal"; null on a spine row with nothing matched.
       - name: student_count
         data_type: int64
+        description: >
+          1 on Student rows, 0 on Goal rows, null on unmatched spine rows. Sum
+          it for a headcount.
       - name: seat_target
         data_type: numeric
+        description: >
+          Seat target from the goals sheet, on the "All" Goal row. Null
+          elsewhere.
       - name: fdos_target
         data_type: numeric
+        description: >
+          First-day-of-school enrollment target from the goals sheet, on the
+          "All" Goal row. Null elsewhere.
       - name: budget_target
         data_type: numeric
+        description: >
+          Budget enrollment target from the goals sheet, on the "All" Goal row.
+          Null elsewhere.
       - name: new_student_target
         data_type: numeric
+        description: >
+          New-student target from the goals sheet, on the "New" Goal row. Null
+          elsewhere.
       - name: re_enroll_projection
         data_type: numeric
+        description: >
+          Re-enrollment projection from the goals sheet, on the "Returning" Goal
+          row. Null elsewhere.

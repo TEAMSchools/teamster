@@ -6,7 +6,6 @@ select
     safe_cast(ph.updated_time as date) as updated_date,
     safe_cast(ph.created_time as date) as created_date,
 
-    -- post lifetime metrics
     max(pm.post_impressions) as post_impressions,
     max(pm.post_impressions_paid) as post_impressions_paid,
     max(pm.post_impressions_organic) as post_impressions_organic,

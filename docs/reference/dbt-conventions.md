@@ -1,95 +1,67 @@
 # dbt Conventions
 
-## Model conventions
+This page is built from the rule files Claude reads
+(`.claude/rules/dbt-architecture.md`, `.claude/rules/dbt-marts.md`,
+`.claude/rules/dbt-yaml.md`, and `.claude/rules/dbt-sql.md`), so people and
+Claude review against the same text. Cite rules by ID (`A2`, `S10`) in review.
 
-Models follow standard prefixes reflecting their layer in the data flow.
+A rule changes through a PR to its rule file. If you disagree with a rule in
+review, open an issue; the feature PR follows the current rule.
 
-### Staging (`stg_`)
+The standard applies to the lines a PR adds or changes. Old violations elsewhere
+in a model are left alone, and existing models are not swept.
 
-Modular building blocks from source data.
+--8<-- ".claude/rules/dbt-architecture.md:architecture"
 
-- File naming: `stg_{source}__{entity}.sql`
-- **`contract: enforced: true`** — required on all staging models
-- **Uniqueness test** — required: either a single-column `unique:` test or
-  `dbt_utils.unique_combination_of_columns` for composite keys
+--8<-- ".claude/rules/dbt-marts.md:marts"
 
-### Intermediate (`int_`)
+--8<-- ".claude/rules/dbt-yaml.md:tests"
 
-Layers of logic with clear and specific purposes, preparing staging models to
-join into the entities we want.
+--8<-- ".claude/rules/dbt-sql.md:sql-style"
 
-- Folder structure: subdirectories by area of business concern
-- File naming: `int_{business_concern}__{entity}_{verb}.sql`
-  - Business concerns: `assessments`, `surveys`, `people`
-  - Verbs: `pivot`, `unpivot`, `rollup`
-- **Uniqueness test** — required: either a single-column `unique:` test or
-  `dbt_utils.unique_combination_of_columns` for composite keys
+## Reference
 
-### Marts / Extracts (`rpt_`)
+### Required config per layer
 
-Wide, rich views of the entities our organization cares about, or extracts
-consumed by reporting tools and applications.
-
-- **`contract: enforced: true`** — required on all marts and extract models.
-  These are the last stop before data reaches an external reporting tool
-  (Tableau, PowerSchool, Google Sheets, etc.). Schema changes break downstream
+- `stg_`, marts, and `rpt_` models set `contract: enforced: true`. Marts and
+  `rpt_` models are the last stop before data reaches an external tool (Tableau,
+  PowerSchool, Google Sheets), so a schema change breaks downstream
   [exposures](https://docs.getdbt.com/reference/exposure-properties) and must be
-  made deliberately.
-- **Uniqueness test** — required: either a single-column `unique:` test or
-  `dbt_utils.unique_combination_of_columns` for composite keys
+  deliberate.
+- Every model has a uniqueness test: a single-column `unique:` test or
+  `dbt_utils.unique_combination_of_columns` for a composite key.
+- Exceptions: a kipptaf `stg_` union view over district staging, and a thin
+  district `rpt_` wrapper over a kipptaf extract, carry no uniqueness test; it
+  lives on the model they wrap. The district wrapper still enforces its
+  contract, and a kipptaf union view enforces one only where its own properties
+  file sets it.
 
-## SQL conventions
+### Region labels
 
-- **Use `union_dataset_join_clause()`** for any query that joins two CTEs built
-  from unioned regional datasets. Pass the CTE aliases to prevent cross-region
-  row matching:
+A10 covers joining unioned regional models on `_dbt_source_project`. Each union
+view materializes that column once; see `src/dbt/kipptaf/CLAUDE.md` for which
+form applies. For a human-readable region label, use the `extract_region()`
+macro:
 
-  ```sql
-  {{ union_dataset_join_clause(left_alias="left_cte", right_alias="right_cte") }}
+```sql
+{{ extract_region("s") }} as region
+```
 
-  -- expands to:
-  regexp_extract(left_cte._dbt_source_relation, r'(kipp\w+)_')
-      = regexp_extract(right_cte._dbt_source_relation, r'(kipp\w+)_')
-  ```
+### Handy SQL
 
-  To extract a human-readable region label from `_dbt_source_relation`:
-
-  ```sql
-  initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region
-  ```
-
-- **No `GROUP BY` without aggregation** — use `DISTINCT` instead.
-- **`DISTINCT` requires a comment** explaining why it is necessary.
-- **No `ORDER BY` in `SELECT` statements** — ordering belongs in the reporting
-  layer, not in dbt models.
-- **No `GROUP BY ALL`** — never use in production models. Always list grouping
-  columns explicitly; `GROUP BY ALL` obscures intent and breaks silently when
-  upstream columns are added or removed.
-- **No `SELECT *` in the final `SELECT` of `rpt_` or mart models** — list
-  columns explicitly. Wildcards obscure column sourcing, create ambiguity when
-  both sides of a join share a column name, and leave the contract declaration
-  as the only readable spec. Pass-through CTEs (`select * from ref(...)`) are
-  fine.
-- **Filter conditions: `ON` vs `WHERE`** — row-filter conditions on the
-  preserved table belong in `WHERE`, not `ON`. For `INNER JOIN` the result is
-  identical but intent is hidden; for `LEFT JOIN`, a filter in `ON` keeps
-  non-matching left rows whereas `WHERE` eliminates them — a silent semantic
-  change. Exception: for `FULL JOIN`, conditions in `ON` that reference only one
-  side are intentional and cannot be moved to `WHERE`.
-- **Timezone-aware today** — use `{{ var("local_timezone") }}` so `current_date`
-  reflects Eastern time rather than UTC:
+- Timezone-aware today, so `current_date` reflects local time rather than UTC:
 
   ```sql
   current_date('{{ var("local_timezone") }}')
   ```
 
-- **Removing diacritical marks** — to normalize names with accented characters:
+- Removing diacritical marks, to normalize names with accented characters:
 
   ```sql
   regexp_replace(normalize(name_col, NFD), r'\pM', '')
   ```
 
-- **Time travel** — query a table as it existed at a point in time:
+- Time travel, to query a table as it existed at a point in time:
 
   ```sql
   select *
@@ -97,7 +69,7 @@ consumed by reporting tools and applications.
   for system_time as of timestamp('2025-08-22 23:59:59')
   ```
 
-- **New or modified external sources** — stage before building. See
+- New or modified external sources must be staged before building. See
   [Staging external sources](../guides/dbt-development.md#staging-external-sources)
   for the full command and CI requirements.
 
@@ -115,41 +87,35 @@ declared in a `sources:` YAML file:
 
 Shared UDFs in the `functions` dataset:
 
-| Function                                     | Returns                                             |
-| -------------------------------------------- | --------------------------------------------------- |
-| `functions.current_academic_year()`          | Current academic year integer                       |
-| `functions.date_to_sy(date_col)`             | Academic year of a given date                       |
-| `functions.region_join(left_col, right_col)` | Boolean equivalent of `union_dataset_join_clause()` |
+| Function                            | Returns                       |
+| ----------------------------------- | ----------------------------- |
+| `functions.current_academic_year()` | Current academic year integer |
+| `functions.date_to_sy(date_col)`    | Academic year of a given date |
 
 ```sql
 select
     functions.current_academic_year() as academic_year,
     functions.date_to_sy(att_date) as att_academic_year,
 from my_table
-where
-    functions.region_join(co._dbt_source_relation, gpa._dbt_source_relation)
 ```
 
-## Model properties file
+`functions.region_join` also exists in the dataset. Don't use it; join on
+`_dbt_source_project` (A10).
 
-Every model must have a corresponding `[model_name].yml` properties file. Use
-the `scripts/dbt-yaml.py` wrapper to generate and update model YAML — it handles
-column ordering and data type inference automatically:
+### Model properties file
 
-```bash
-uv run scripts/dbt-yaml.py --select stg_my_model kipptaf
-# add --dev to target your personal dev dataset instead of prod
+Every model must have a corresponding `[model_name].yml` properties file. Write
+it by hand — there is no scaffold generator in this repo. Column names and types
+come from `INFORMATION_SCHEMA.COLUMNS` on the built relation:
+
+```sql
+select column_name, data_type
+from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
+where table_name = '<model_name>'
+order by ordinal_position
 ```
 
-Or generate the raw scaffold manually and save the console output as the `.yml`
-file:
-
-```bash
-uv run dbt run-operation generate_model_yaml \
-  --args '{"model_names": ["model_name"]}'
-```
-
-Fill in the scaffold:
+The shape:
 
 ```yaml
 models:
@@ -172,15 +138,15 @@ models:
               - column_b
 ```
 
-## Exposures
+### Exposures
 
 Every external tool that consumes our data must have a
 [dbt exposure](https://docs.getdbt.com/reference/exposure-properties) defined in
 the consuming project (typically `src/dbt/kipptaf/models/exposures/`). Exposures
 make the dependency graph explicit and power Dagster asset lineage.
 
-**All exposures** require a `name`, `label`, `type`, `owner`, `depends_on`
-(listing every model the tool uses), and a `url` linking to the external
+All exposures require a `name`, `label`, `type`, `owner`, `depends_on` (listing
+every model the tool uses), and a `url` linking to the external
 tool/workbook/sheet:
 
 ```yaml
@@ -202,9 +168,9 @@ exposures:
             - ... # additional kinds
 ```
 
-**Tableau dashboards** that refresh on a schedule must additionally include the
-Tableau workbook LSID and a `cron_schedule` under `asset.metadata`. Workbooks
-without a scheduled refresh can omit the `asset` block:
+Tableau dashboards that refresh on a schedule must also include the Tableau
+workbook LSID and a `cron_schedule` under `asset.metadata`. Workbooks without a
+scheduled refresh can omit the `asset` block:
 
 ```yaml
 config:

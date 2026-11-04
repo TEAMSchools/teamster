@@ -30,7 +30,6 @@ with
         left join active_users on roster.employee_number = active_users.employee_number
     ),
 
-    -- logic to create list of assignments
     assignments as (
         select
             roster.employee_number,

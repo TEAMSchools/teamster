@@ -1,0 +1,182 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook original-version='18.1' source-build='2025.1.0' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource hasconnection='false' inline='true' name='Parameters' version='18.1'>
+      <column caption='Metric' datatype='string' name='[Parameter 1]' param-domain-type='list' role='measure' type='nominal' value='&quot;Mastery&quot;'>
+        <calculation class='tableau' formula='&quot;Mastery&quot;' />
+        <members>
+          <member value='&quot;Mastery&quot;' />
+          <member value='&quot;Correct&quot;' />
+        </members>
+      </column>
+    </datasource>
+    <datasource caption='Mastery Rows' inline='true' name='federated.0pf' version='18.1'>
+      <column caption='Grade Level' datatype='integer' name='[grade_level]' role='dimension' type='ordinal' />
+      <column caption='Subject Area' datatype='string' name='[subject_area]' role='dimension' type='nominal' />
+      <column caption='School' datatype='string' name='[school]' role='dimension' type='nominal' />
+      <column caption='Academic Year' datatype='integer' name='[academic_year]' role='dimension' type='ordinal' />
+      <column caption='Week Start Monday' datatype='date' name='[week_start_monday]' role='dimension' type='ordinal' />
+      <column caption='Administered At' datatype='date' name='[administered_at]' role='dimension' type='ordinal' />
+      <column caption='Is Mastery Int' datatype='real' name='[is_mastery_int]' role='measure' type='quantitative' />
+      <column caption='Grade/Subject' datatype='string' name='[Calculation_1]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='STR([grade_level]) + &apos; &apos; + [subject_area]' />
+      </column>
+      <column caption='Current Week (Sunday)' datatype='date' name='[Calculation_2]' role='dimension' type='ordinal'>
+        <calculation class='tableau' formula='DATE(DATEADD(&apos;day&apos;, 8 - DATEPART(&apos;weekday&apos;, TODAY()), TODAY()))' />
+      </column>
+      <column caption='Exclude Future Assessments' datatype='boolean' name='[Calculation_3]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='[administered_at] &lt;= [Calculation_2]' />
+      </column>
+      <column caption='Metric Switch' datatype='boolean' name='[Calculation_4]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='[Parameters].[Parameter 1] = &quot;Mastery&quot;' />
+      </column>
+      <column datatype='string' name='[Discipline]' role='dimension' type='nominal'>
+        <calculation class='categorical-bin' column='[subject_area]' default='&quot;Other&quot;' new-bin='true'>
+          <bin default-name='false' value='&quot;ELA&quot;'>
+            <value>&quot;Text Study&quot;</value>
+          </bin>
+        </calculation>
+      </column>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Grid'>
+      <table>
+        <view>
+          <datasources>
+            <datasource name='Parameters' />
+            <datasource caption='Mastery Rows' name='federated.0pf' />
+          </datasources>
+          <datasource-dependencies datasource='Parameters'>
+            <column caption='Metric' datatype='string' name='[Parameter 1]' param-domain-type='list' role='measure' type='nominal' value='&quot;Mastery&quot;'>
+              <calculation class='tableau' formula='&quot;Mastery&quot;' />
+            </column>
+          </datasource-dependencies>
+          <datasource-dependencies datasource='federated.0pf'>
+            <column caption='Academic Year' datatype='integer' name='[academic_year]' role='dimension' type='ordinal' />
+            <column caption='Grade Level' datatype='integer' name='[grade_level]' role='dimension' type='ordinal' />
+            <column caption='Grade/Subject' datatype='string' name='[Calculation_1]' role='dimension' type='nominal'>
+              <calculation class='tableau' formula='STR([grade_level]) + &apos; &apos; + [subject_area]' />
+            </column>
+            <column caption='Exclude Future Assessments' datatype='boolean' name='[Calculation_3]' role='dimension' type='nominal'>
+              <calculation class='tableau' formula='[administered_at] &lt;= [Calculation_2]' />
+            </column>
+            <column caption='Metric Switch' datatype='boolean' name='[Calculation_4]' role='dimension' type='nominal'>
+              <calculation class='tableau' formula='[Parameters].[Parameter 1] = &quot;Mastery&quot;' />
+            </column>
+            <column datatype='string' name='[Discipline]' role='dimension' type='nominal'>
+              <calculation class='categorical-bin' column='[subject_area]' default='&quot;Other&quot;' new-bin='true'>
+                <bin default-name='false' value='&quot;ELA&quot;'>
+                  <value>&quot;Text Study&quot;</value>
+                </bin>
+              </calculation>
+            </column>
+            <column caption='Is Mastery Int' datatype='real' name='[is_mastery_int]' role='measure' type='quantitative' />
+            <column caption='School' datatype='string' name='[school]' role='dimension' type='nominal' />
+            <column caption='Week Start Monday' datatype='date' name='[week_start_monday]' role='dimension' type='ordinal' />
+            <column-instance column='[is_mastery_int]' derivation='Avg' name='[avg:is_mastery_int:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[is_mastery_int]' derivation='Avg' name='[diff:avg:is_mastery_int:qk:2]' pivot='key' type='quantitative'>
+              <table-calc diff-options='Relative' ordering-type='Field' type='Difference'>
+                <order field='[federated.0pf].[week_start_monday]' />
+                <address>
+                  <value>1</value>
+                </address>
+              </table-calc>
+            </column-instance>
+            <column-instance column='[is_mastery_int]' derivation='Avg' name='[diff:avg:is_mastery_int:qk]' pivot='key' type='quantitative'>
+              <table-calc diff-options='Relative' ordering-type='Rows' type='Difference'>
+                <address>
+                  <value>-1</value>
+                </address>
+              </table-calc>
+            </column-instance>
+            <column-instance column='[Calculation_1]' derivation='None' name='[none:Calculation_1:nk]' pivot='key' type='nominal' />
+            <column-instance column='[Calculation_3]' derivation='None' name='[none:Calculation_3:nk]' pivot='key' type='nominal' />
+            <column-instance column='[Calculation_4]' derivation='None' name='[none:Calculation_4:nk]' pivot='key' type='nominal' />
+            <column-instance column='[academic_year]' derivation='None' name='[none:academic_year:ok]' pivot='key' type='ordinal' />
+            <column-instance column='[grade_level]' derivation='None' name='[none:grade_level:ok]' pivot='key' type='ordinal' />
+            <column-instance column='[school]' derivation='None' name='[none:school:nk]' pivot='key' type='nominal' />
+            <column-instance column='[week_start_monday]' derivation='None' name='[none:week_start_monday:ok]' pivot='key' type='ordinal' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.0pf].[Discipline]' filter-group='94'>
+            <groupfilter function='member' level='[Discipline]' member='&quot;ELA&quot;' user:ui-domain='database' user:ui-enumeration='inclusive' user:ui-marker='enumerate' />
+          </filter>
+          <filter class='categorical' column='[federated.0pf].[none:Calculation_3:nk]' context='true' filter-group='103'>
+            <groupfilter function='member' level='[none:Calculation_3:nk]' member='true' user:ui-domain='database' user:ui-enumeration='inclusive' user:ui-marker='enumerate' />
+          </filter>
+          <filter class='categorical' column='[federated.0pf].[none:Calculation_4:nk]'>
+            <groupfilter function='member' level='[none:Calculation_4:nk]' member='true' />
+          </filter>
+          <filter class='categorical' column='[federated.0pf].[none:academic_year:ok]'>
+            <groupfilter function='member' level='[none:academic_year:ok]' member='2026' />
+          </filter>
+          <filter class='categorical' column='[federated.0pf].[none:school:nk]' filter-group='101'>
+            <groupfilter function='level-members' level='[none:school:nk]' user:ui-enumeration='all' user:ui-marker='enumerate' />
+          </filter>
+          <slices>
+            <column>[federated.0pf].[Discipline]</column>
+            <column>[federated.0pf].[none:Calculation_3:nk]</column>
+            <column>[federated.0pf].[none:Calculation_4:nk]</column>
+            <column>[federated.0pf].[none:academic_year:ok]</column>
+            <column>[federated.0pf].[none:school:nk]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style />
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Square' />
+            <encodings>
+              <tooltip column='[federated.0pf].[diff:avg:is_mastery_int:qk]' />
+              <text column='[federated.0pf].[avg:is_mastery_int:qk]' />
+              <text column='[federated.0pf].[diff:avg:is_mastery_int:qk:2]' />
+            </encodings>
+          </pane>
+        </panes>
+        <rows>[federated.0pf].[none:Calculation_1:nk]</rows>
+        <cols>([federated.0pf].[none:week_start_monday:ok] / [federated.0pf].[none:school:nk])</cols>
+      </table>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000c1}' />
+    </worksheet>
+    <worksheet name='Other'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Mastery Rows' name='federated.0pf' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0pf'>
+            <column caption='School' datatype='string' name='[school]' role='dimension' type='nominal' />
+            <column-instance column='[school]' derivation='None' name='[none:school:nk]' pivot='key' type='nominal' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.0pf].[Discipline]' filter-group='94'>
+            <groupfilter function='member' level='[Discipline]' member='&quot;ELA&quot;' />
+          </filter>
+          <aggregation value='true' />
+        </view>
+        <style />
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+          </pane>
+        </panes>
+        <rows>[federated.0pf].[none:school:nk]</rows>
+        <cols />
+      </table>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000c2}' />
+    </worksheet>
+  </worksheets>
+  <windows>
+    <window class='worksheet' name='Grid'>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000c3}' />
+    </window>
+    <window class='worksheet' name='Other'>
+      <simple-id uuid='{00000000-0000-0000-0000-0000000000c4}' />
+    </window>
+  </windows>
+</workbook>

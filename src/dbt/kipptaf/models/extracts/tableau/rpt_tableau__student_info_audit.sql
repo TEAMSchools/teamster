@@ -1,25 +1,35 @@
 with
     studentrace_agg as (
-        select _dbt_source_relation, studentid, string_agg(racecd) as racecd,
+        select
+            _dbt_source_relation,
+            _dbt_source_project,
+            studentid,
+            string_agg(racecd) as racecd,
         from {{ ref("stg_powerschool__studentrace") }}
-        group by studentid, _dbt_source_relation
+        group by studentid, _dbt_source_relation, _dbt_source_project
     ),
 
     course_enrollment_count as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             students_student_number,
             cc_academic_year,
 
             count(cc_sectionid) as sectionid_count,
         from {{ ref("base_powerschool__course_enrollments") }}
         where not is_dropped_section
-        group by _dbt_source_relation, students_student_number, cc_academic_year
+        group by
+            _dbt_source_relation,
+            _dbt_source_project,
+            students_student_number,
+            cc_academic_year
     ),
 
     student_enrollments as (
         select
             se._dbt_source_relation,
+            se._dbt_source_project,
             se.student_number,
             se.state_studentnumber,
             se.student_name as lastfirst,
@@ -38,22 +48,19 @@ with
 
             r.racecd,
 
-            cast(se.dob as string) as dob,
-
             cast(cec.sectionid_count as string) as sectionid_count,
 
             if(se.ethnicity is null, 1, 0) as missing_ethnicity_flag,
             if(se.gender is null, 1, 0) as missing_gender_flag,
             if(se.state_studentnumber is null, 1, 0) as missing_sid_flag,
-            if(se.dob is null, 1, 0) as missing_dob_flag,
 
             if(
-                regexp_contains(se.student_name, r"\s{2,}|[^\w\s',-]"), 1, 0
+                regexp_contains(se.student_name, r"\s{2,}|[^\w\p{L}\p{M}\s',-]"), 1, 0
             ) as name_spelling_flag,
 
             if(cec.sectionid_count < 3, true, false) as underenrollment_flag,
 
-            if(se.region = 'KMS', se.ethnicity, r.racecd) as race_eth_detail,
+            if(se.region = 'Miami', se.ethnicity, r.racecd) as race_eth_detail,
 
             case
                 when se.fteid != fte.id
@@ -92,17 +99,17 @@ with
             {{ ref("stg_powerschool__fte") }} as fte
             on se.schoolid = fte.schoolid
             and se.yearid = fte.yearid
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="fte") }}
+            and se._dbt_source_project = fte._dbt_source_project
             and fte.name like 'Full Time Student%'
         left join
             studentrace_agg as r
             on se.studentid = r.studentid
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="r") }}
+            and se._dbt_source_project = r._dbt_source_project
         left join
             course_enrollment_count as cec
             on se.student_number = cec.students_student_number
             and se.academic_year = cec.cc_academic_year
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="cec") }}
+            and se._dbt_source_project = cec._dbt_source_project
         where
             se.academic_year = {{ var("current_academic_year") }}
             and se.schoolid != 999999
@@ -112,6 +119,7 @@ with
     cc_lag as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studyear,
             course_number,
             dateleft,
@@ -127,6 +135,7 @@ with
     enr_dupes as (
         select
             cc._dbt_source_relation,
+            cc._dbt_source_project,
             cc.cc_academic_year,
             cc.cc_course_number,
             cc.cc_dateenrolled,
@@ -138,7 +147,7 @@ with
             cc_lag as cco
             on cc.cc_studyear = cco.studyear
             and cc.cc_course_number = cco.course_number
-            and {{ union_dataset_join_clause(left_alias="cc", right_alias="cco") }}
+            and cc._dbt_source_project = cco._dbt_source_project
             and cco.dateleft <= cco.dateleft_prev
     )
 
@@ -229,30 +238,13 @@ select
     grade_level,
     advisory_name as team,
 
-    'Missing DOB' as element,
-
-    dob as detail,
-    missing_dob_flag as flag,
-from student_enrollments
-
-union all
-
-select
-    _dbt_source_relation as `db_name`,
-    schoolid,
-    school_name,
-    school_abbreviation,
-    student_number,
-    region,
-    lastfirst,
-    grade_level,
-    advisory_name as team,
-
     'Missing or Incorrect FTEID' as element,
 
     fteid_detail as detail,
     missing_fte_flag as flag,
 from student_enrollments
+-- Focus has no FTE
+where region != 'Miami'
 
 union all
 
@@ -326,5 +318,5 @@ inner join
     enr_dupes as ceo
     on se.student_number = ceo.students_student_number
     and se.academic_year = ceo.cc_academic_year
-    and {{ union_dataset_join_clause(left_alias="se", right_alias="ceo") }}
+    and se._dbt_source_project = ceo._dbt_source_project
 where se.enroll_status = 0

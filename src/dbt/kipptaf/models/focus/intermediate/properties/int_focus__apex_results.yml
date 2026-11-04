@@ -1,0 +1,13 @@
+models:
+  - name: int_focus__apex_results
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__apex_results — Apex overall and per-standard results per
+      student and assessment, with bands and mastery. Column docs and tests live
+      on the kippmiami source model.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

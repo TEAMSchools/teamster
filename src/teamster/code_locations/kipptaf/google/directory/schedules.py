@@ -5,6 +5,7 @@ from teamster.code_locations.kipptaf.google.directory.assets import (
     google_directory_role_assignments_create,
     google_directory_user_create,
     google_directory_user_update,
+    groups,
     orgunits,
     role_assignments,
     roles,
@@ -20,7 +21,7 @@ google_directory_users_schedule = ScheduleDefinition(
 
 google_directory_nonpartitioned_asset_schedule = ScheduleDefinition(
     name=f"{CODE_LOCATION}__google__directory__nonpartitioned_asset_job_schedule",
-    target=[orgunits, role_assignments, roles, users],
+    target=[groups, orgunits, role_assignments, roles, users],
     cron_schedule="30 1 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )

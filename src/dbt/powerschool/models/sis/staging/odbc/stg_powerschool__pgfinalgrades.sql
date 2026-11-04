@@ -13,6 +13,10 @@ with
         -- trunk-ignore(sqlfluff/AM04)
         select
             * except (
+                _dagster_partition_date,
+                _dagster_partition_fiscal_year,
+                _dagster_partition_hour,
+                _dagster_partition_minute,
                 calculatedpercent,
                 citizenship,
                 comment_value,
@@ -31,7 +35,6 @@ with
                 whomodifiedid
             ),
 
-            /* records */
             dcid.int_value as dcid,
             id.int_value as id,
             sectionid.int_value as sectionid,
@@ -45,7 +48,6 @@ with
             isexempt.int_value as isexempt,
             whomodifiedid.int_value as whomodifiedid,
 
-            /* column transformations */
             nullif(grade, '--') as grade,
             nullif(citizenship, '') as citizenship,
             nullif(comment_value, '') as comment_value,

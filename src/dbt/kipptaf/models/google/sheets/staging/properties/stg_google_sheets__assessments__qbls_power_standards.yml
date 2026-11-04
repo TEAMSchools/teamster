@@ -1,21 +1,37 @@
 models:
   - name: stg_google_sheets__assessments__qbls_power_standards
+    description: >-
+      QBL and power-standard designations by region, academic year, term, grade,
+      and subject, keyed to Illuminate standards. Consumers match on
+      Parent_Standard (an Illuminate standard_id) when it is set, otherwise on
+      Standard_Code (the standard custom code).
     columns:
       - name: Region
         data_type: string
+        description: Region the designation applies to.
       - name: Academic_Year
         data_type: int64
+        description: Academic year the designation applies to.
       - name: Term_Name
         data_type: string
+        description: Term the designation applies to.
       - name: Grade_Level
         data_type: int64
+        description: Grade level the designation applies to.
       - name: Illuminate_Subject_Area
         data_type: string
+        description: Illuminate subject area.
       - name: Parent_Standard
         data_type: int64
+        description: >-
+          Illuminate standard_id of a parent standard. Blank when the row is
+          keyed by Standard_Code.
       - name: Standard_Code
         data_type: string
+        description: Illuminate standard custom code.
       - name: Is_Power_Standard
         data_type: boolean
+        description: Whether the standard is a power standard.
       - name: QBL
         data_type: string
+        description: QBL the standard belongs to.

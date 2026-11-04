@@ -17,10 +17,19 @@ models:
         data_type: int64
       - name: first_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: middle_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: resides_with_stud
         data_type: string
       - name: custody
@@ -31,83 +40,138 @@ models:
         data_type: string
       - name: address
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: address2
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: city
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: state
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: zipcode
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: email
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact1_type
         data_type: string
       - name: contact1_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact1_blocked
         data_type: string
       - name: contact1_unlisted
         data_type: string
       - name: contact1_callout
         data_type: string
+      - name: contact1_sms
+        data_type: string
       - name: contact2_type
         data_type: string
       - name: contact2_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact2_blocked
         data_type: string
       - name: contact2_unlisted
         data_type: string
       - name: contact2_callout
         data_type: string
+      - name: contact2_sms
+        data_type: string
       - name: contact3_type
         data_type: string
       - name: contact3_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact3_blocked
         data_type: string
       - name: contact3_unlisted
         data_type: string
       - name: contact3_callout
         data_type: string
+      - name: contact3_sms
+        data_type: string
       - name: contact4_type
         data_type: string
       - name: contact4_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact4_blocked
         data_type: string
       - name: contact4_unlisted
         data_type: string
       - name: contact4_callout
         data_type: string
+      - name: contact4_sms
+        data_type: string
       - name: contact5_type
         data_type: string
       - name: contact5_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact5_blocked
         data_type: string
       - name: contact5_unlisted
         data_type: string
       - name: contact5_callout
         data_type: string
+      - name: contact5_sms
+        data_type: string
       - name: contact6_type
         data_type: string
       - name: contact6_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact6_blocked
         data_type: string
       - name: contact6_unlisted
         data_type: string
       - name: contact6_callout
         data_type: string
+      - name: contact6_sms
+        data_type: string
       - name: contact7_type
         data_type: string
       - name: contact7_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact7_blocked
         data_type: string
       - name: contact7_unlisted
+        data_type: string
+      - name: contact7_callout
+        data_type: string
+      - name: contact7_sms
         data_type: string
 
 unit_tests:
@@ -137,35 +201,43 @@ unit_tests:
               cast(null as string) as contact1_blocked,
               cast(null as string) as contact1_unlisted,
               cast(null as string) as contact1_callout,
+              cast(null as string) as contact1_sms,
               cast(null as string) as contact2_type,
               cast(null as string) as contact2_value,
               cast(null as string) as contact2_blocked,
               cast(null as string) as contact2_unlisted,
               cast(null as string) as contact2_callout,
+              cast(null as string) as contact2_sms,
               cast(null as string) as contact3_type,
               cast(null as string) as contact3_value,
               cast(null as string) as contact3_blocked,
               cast(null as string) as contact3_unlisted,
               cast(null as string) as contact3_callout,
+              cast(null as string) as contact3_sms,
               cast(null as string) as contact4_type,
               cast(null as string) as contact4_value,
               cast(null as string) as contact4_blocked,
               cast(null as string) as contact4_unlisted,
               cast(null as string) as contact4_callout,
+              cast(null as string) as contact4_sms,
               cast(null as string) as contact5_type,
               cast(null as string) as contact5_value,
               cast(null as string) as contact5_blocked,
               cast(null as string) as contact5_unlisted,
               cast(null as string) as contact5_callout,
+              cast(null as string) as contact5_sms,
               cast(null as string) as contact6_type,
               cast(null as string) as contact6_value,
               cast(null as string) as contact6_blocked,
               cast(null as string) as contact6_unlisted,
               cast(null as string) as contact6_callout,
+              cast(null as string) as contact6_sms,
               cast(null as string) as contact7_type,
               cast(null as string) as contact7_value,
               cast(null as string) as contact7_blocked,
-              cast(null as string) as contact7_unlisted
+              cast(null as string) as contact7_unlisted,
+              cast(null as string) as contact7_callout,
+              cast(null as string) as contact7_sms
           union all
           select
               '8400000002' as student_id, 'parent' as student_relation,
@@ -181,35 +253,43 @@ unit_tests:
               cast(null as string) as contact1_blocked,
               cast(null as string) as contact1_unlisted,
               cast(null as string) as contact1_callout,
+              cast(null as string) as contact1_sms,
               cast(null as string) as contact2_type,
               cast(null as string) as contact2_value,
               cast(null as string) as contact2_blocked,
               cast(null as string) as contact2_unlisted,
               cast(null as string) as contact2_callout,
+              cast(null as string) as contact2_sms,
               cast(null as string) as contact3_type,
               cast(null as string) as contact3_value,
               cast(null as string) as contact3_blocked,
               cast(null as string) as contact3_unlisted,
               cast(null as string) as contact3_callout,
+              cast(null as string) as contact3_sms,
               cast(null as string) as contact4_type,
               cast(null as string) as contact4_value,
               cast(null as string) as contact4_blocked,
               cast(null as string) as contact4_unlisted,
               cast(null as string) as contact4_callout,
+              cast(null as string) as contact4_sms,
               cast(null as string) as contact5_type,
               cast(null as string) as contact5_value,
               cast(null as string) as contact5_blocked,
               cast(null as string) as contact5_unlisted,
               cast(null as string) as contact5_callout,
+              cast(null as string) as contact5_sms,
               cast(null as string) as contact6_type,
               cast(null as string) as contact6_value,
               cast(null as string) as contact6_blocked,
               cast(null as string) as contact6_unlisted,
               cast(null as string) as contact6_callout,
+              cast(null as string) as contact6_sms,
               cast(null as string) as contact7_type,
               cast(null as string) as contact7_value,
               cast(null as string) as contact7_blocked,
-              cast(null as string) as contact7_unlisted
+              cast(null as string) as contact7_unlisted,
+              cast(null as string) as contact7_callout,
+              cast(null as string) as contact7_sms
           union all
           select
               '8400000003' as student_id, 'parent' as student_relation,
@@ -226,35 +306,43 @@ unit_tests:
               cast(null as string) as contact1_blocked,
               cast(null as string) as contact1_unlisted,
               cast(null as string) as contact1_callout,
+              cast(null as string) as contact1_sms,
               cast(null as string) as contact2_type,
               cast(null as string) as contact2_value,
               cast(null as string) as contact2_blocked,
               cast(null as string) as contact2_unlisted,
               cast(null as string) as contact2_callout,
+              cast(null as string) as contact2_sms,
               cast(null as string) as contact3_type,
               cast(null as string) as contact3_value,
               cast(null as string) as contact3_blocked,
               cast(null as string) as contact3_unlisted,
               cast(null as string) as contact3_callout,
+              cast(null as string) as contact3_sms,
               cast(null as string) as contact4_type,
               cast(null as string) as contact4_value,
               cast(null as string) as contact4_blocked,
               cast(null as string) as contact4_unlisted,
               cast(null as string) as contact4_callout,
+              cast(null as string) as contact4_sms,
               cast(null as string) as contact5_type,
               cast(null as string) as contact5_value,
               cast(null as string) as contact5_blocked,
               cast(null as string) as contact5_unlisted,
               cast(null as string) as contact5_callout,
+              cast(null as string) as contact5_sms,
               cast(null as string) as contact6_type,
               cast(null as string) as contact6_value,
               cast(null as string) as contact6_blocked,
               cast(null as string) as contact6_unlisted,
               cast(null as string) as contact6_callout,
+              cast(null as string) as contact6_sms,
               cast(null as string) as contact7_type,
               cast(null as string) as contact7_value,
               cast(null as string) as contact7_blocked,
-              cast(null as string) as contact7_unlisted
+              cast(null as string) as contact7_unlisted,
+              cast(null as string) as contact7_callout,
+              cast(null as string) as contact7_sms
           union all
           select
               '8400000004' as student_id, 'parent' as student_relation,
@@ -270,35 +358,43 @@ unit_tests:
               cast(null as string) as contact1_blocked,
               cast(null as string) as contact1_unlisted,
               cast(null as string) as contact1_callout,
+              cast(null as string) as contact1_sms,
               cast(null as string) as contact2_type,
               cast(null as string) as contact2_value,
               cast(null as string) as contact2_blocked,
               cast(null as string) as contact2_unlisted,
               cast(null as string) as contact2_callout,
+              cast(null as string) as contact2_sms,
               cast(null as string) as contact3_type,
               cast(null as string) as contact3_value,
               cast(null as string) as contact3_blocked,
               cast(null as string) as contact3_unlisted,
               cast(null as string) as contact3_callout,
+              cast(null as string) as contact3_sms,
               cast(null as string) as contact4_type,
               cast(null as string) as contact4_value,
               cast(null as string) as contact4_blocked,
               cast(null as string) as contact4_unlisted,
               cast(null as string) as contact4_callout,
+              cast(null as string) as contact4_sms,
               cast(null as string) as contact5_type,
               cast(null as string) as contact5_value,
               cast(null as string) as contact5_blocked,
               cast(null as string) as contact5_unlisted,
               cast(null as string) as contact5_callout,
+              cast(null as string) as contact5_sms,
               cast(null as string) as contact6_type,
               cast(null as string) as contact6_value,
               cast(null as string) as contact6_blocked,
               cast(null as string) as contact6_unlisted,
               cast(null as string) as contact6_callout,
+              cast(null as string) as contact6_sms,
               cast(null as string) as contact7_type,
               cast(null as string) as contact7_value,
               cast(null as string) as contact7_blocked,
-              cast(null as string) as contact7_unlisted
+              cast(null as string) as contact7_unlisted,
+              cast(null as string) as contact7_callout,
+              cast(null as string) as contact7_sms
       - input: ref("stg_focus__students_join_people")
         format: sql
         rows: |
@@ -320,32 +416,40 @@ unit_tests:
             cast(null as string) as contact1_blocked,
             cast(null as string) as contact1_unlisted,
             cast(null as string) as contact1_callout,
+            cast(null as string) as contact1_sms,
             cast(null as string) as contact2_type,
             cast(null as string) as contact2_value,
             cast(null as string) as contact2_blocked,
             cast(null as string) as contact2_unlisted,
             cast(null as string) as contact2_callout,
+            cast(null as string) as contact2_sms,
             cast(null as string) as contact3_type,
             cast(null as string) as contact3_value,
             cast(null as string) as contact3_blocked,
             cast(null as string) as contact3_unlisted,
             cast(null as string) as contact3_callout,
+            cast(null as string) as contact3_sms,
             cast(null as string) as contact4_type,
             cast(null as string) as contact4_value,
             cast(null as string) as contact4_blocked,
             cast(null as string) as contact4_unlisted,
             cast(null as string) as contact4_callout,
+            cast(null as string) as contact4_sms,
             cast(null as string) as contact5_type,
             cast(null as string) as contact5_value,
             cast(null as string) as contact5_blocked,
             cast(null as string) as contact5_unlisted,
             cast(null as string) as contact5_callout,
+            cast(null as string) as contact5_sms,
             cast(null as string) as contact6_type,
             cast(null as string) as contact6_value,
             cast(null as string) as contact6_blocked,
             cast(null as string) as contact6_unlisted,
             cast(null as string) as contact6_callout,
+            cast(null as string) as contact6_sms,
             cast(null as string) as contact7_type,
             cast(null as string) as contact7_value,
             cast(null as string) as contact7_blocked,
-            cast(null as string) as contact7_unlisted
+            cast(null as string) as contact7_unlisted,
+            cast(null as string) as contact7_callout,
+            cast(null as string) as contact7_sms

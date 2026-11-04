@@ -1,8 +1,13 @@
 # CLAUDE.md — `dbt/powerschool/`
 
 Source-system staging project for **PowerSchool SIS** data. Produces clean,
-contract-enforced staging models consumed by all district-specific dbt projects
-(`kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`) and `kipptaf`.
+contract-enforced staging models consumed by the NJ district dbt projects
+(`kippnewark`, `kippcamden`, `kipppaterson`) and `kipptaf`. `kippmiami` no
+longer consumes it — its SIS moved to Focus (#4441). The exception is an archive
+rebuild, which re-includes the package (dlt variant, reading the frozen
+`dagster_kippmiami_dlt_powerschool` pull) in `kippmiami` and removes it again
+afterward; `src/dbt/kippmiami/CLAUDE.md` carries that recipe. If you find the
+package listed in that project's `packages.yml`, a rebuild is mid-flight.
 
 ## Model Structure
 
@@ -11,38 +16,66 @@ models/
   sis/
     base/        # base models (light renaming, no logic)
     staging/
-      odbc/      # models sourced from live Oracle ODBC connection (enabled by default)
-      sftp/      # models sourced from SFTP file extracts (disabled by default)
+      dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); ENABLED by default — the live SIS path
+      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default)
+      sftp/      # models sourced from SFTP file extracts (disabled by default; unused)
     intermediate/
 ```
 
-All staging models have `contract: enforced: true`. Each district project
-overrides `odbc.+enabled` and `sftp.+enabled` in its own `dbt_project.yml` to
-select the ingestion method.
+All staging models have `contract: enforced: true`. The `dlt` variant is enabled
+by default (every consuming district ingests PowerSchool via dlt); `odbc` and
+`sftp` default off. A district only overrides these flags to disable specific
+`dlt` tables it does not populate (e.g. `kipppaterson`).
 
-## Key Variables
+## dlt staging variant (#3807)
 
-| Variable                            | Default | Notes                                          |
-| ----------------------------------- | ------- | ---------------------------------------------- |
-| `current_academic_year`             | `0`     | Overridden per district project                |
-| `local_timezone`                    | `UTC`   | Overridden per district project                |
-| `bigquery_external_connection_name` | `null`  | Set to BigLake connection in district projects |
+A dlt model = its archived **odbc** sibling minus the struct-unwrap: dlt lands
+raw Oracle scalars, so drop the
+`.int_value`/`.double_value`/`coalesce(... .bytes_decimal_value ...)` accessors,
+the `_file_name`-snapshot `dbt_utils.deduplicate` (native table, no file dupes)
+— but KEEP a business-grain dedup the odbc model already had (e.g.
+`u_clg_et_stu`/`u_clg_et_stu_alt` on `(studentsdcid, exit_date)`, which guards a
+downstream LEFT JOIN from fan-out), and any `_dagster_partition_*`; explicitly
+project the shared contract columns and cast to the contract type
+(`NUMERIC(10)`→int, `NUMERIC(38,9)`→float64, `TIMESTAMP`→date, `STRING`→bare).
+Watch native-type divergence per column: a date Oracle stores as DATE lands
+`TIMESTAMP` (use `cast(x as date)`), one stored as text lands `STRING` (keep the
+odbc `parse_date`) — check the landed type, don't assume. Source is
+`sources-bigquery.yml` schema `dagster_<district>_dlt_powerschool`, read in
+every target (dlt writes the prod dataset even on branch deploys).
 
-## Cross-Project Usage
+## Validating an ODBC→dlt cutover
 
-This project is never run standalone in production. District-specific projects
-reference it as a dbt package and override variables and enabled flags. When a
-district project runs, it resolves `ref('stg_powerschool__*')` models from this
-project.
+Compare the dlt landing table to prod `stg_powerschool__<t>` (native, deduped) —
+NOT `src_powerschool__<t>` (snapshot-accumulating external, dup-laden). Cast dlt
+raw scalars to the staging contract types first. Expect sub-1e-10 float epsilon
+on `.double_value`-derived numeric columns (`points`, `percent`, `gpa_points`):
+dlt reads the raw Oracle `NUMBER`, ODBC stored a lossy double — benign, not a
+defect. Key-set differences are extract-time drift (dlt lands a clean subset of
+prod). The migration PR's dbt Cloud CI stays **red until the dlt landing tables
+exist** — trigger a branch-deployment load of the `@dlt_assets` first (they
+write the non-branch-isolated prod dataset), then CI can build the staging
+models.
 
-The `odbc/` vs `sftp/` split exists because some schools pull data via live
-Oracle ODBC tunnel and others via SFTP file drops. Only one should be enabled
-per deployment.
+## ODBC source schema drift (recurring on `s_nj_stu_x`)
+
+The odbc Avro schema is inferred from the Oracle cursor type
+(`libraries/powerschool/sis/odbc/schema.py` `ORACLE_AVRO_SCHEMA_TYPES`): NUMBER
+→ `STRUCT<int_value, double_value, bytes_decimal_value>`, VARCHAR/CHAR → STRING.
+Two drift modes both surface as failed `stg_powerschool__*` builds: (1)
+PowerSchool retypes a column NUMBER→VARCHAR → the `.int_value` unwrap fails
+"Cannot access field int_value on a value with type STRING" — fix by casting
+(`cast(col as int)`, matching the sftp/dlt variants); (2) PowerSchool adds a new
+column → `select *` passes it through and the enforced contract fails "missing
+in contract" — fix by declaring it in `properties.yml`. Diff the full source
+column set (`INFORMATION_SCHEMA.COLUMNS`) against the contract to catch ALL new
+columns at once — dbt reports only the first.
 
 ## GPA Gotchas
 
-- **`storecode = 'Y1'` only**: Q1–Q4 records have `gpa_points = 0` by design —
-  only `storecode = 'Y1'` rows are used in GPA calculations.
+- **`storecode = 'Y1'` only**: Q1–Q4 records carry scale `gpa_points` too, but
+  only `storecode = 'Y1'` rows are used in GPA calculations. Filter on
+  `storecode`, never on `gpa_points != 0`.
 - **`districtentrydate` null placeholder**: PowerSchool stores null/missing
   dates as `1899-xx-xx`. Derive network tenure from `MIN(academic_year)` in
   storedgrades instead.
@@ -58,5 +91,5 @@ per deployment.
   `test_int_powerschool__ps_enrollment_all__fteid_belongs_to_school_year`.
 - **`schoolid = 999999`**: graduated-students sentinel, not a "no school"
   marker. Already excluded in `int_powerschool__district_entry_date`. Students
-  at 999999 commonly retain a real-school FTE from prior placement — the
-  fteid-belongs-to-school-year test treats this as a cleanup target.
+  at 999999 commonly retain a real-school FTE from prior placement. They get no
+  membership days, so the fteid-belongs-to-school-year test excludes them.

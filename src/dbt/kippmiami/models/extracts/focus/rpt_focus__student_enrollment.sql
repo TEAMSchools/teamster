@@ -1,42 +1,33 @@
 with
-    decoded as (
-        select d.*, dc.short_name as drop_code_decoded,
-        from {{ source("kipptaf_extracts", "rpt_focus__student_enrollment") }} as d
-        left join
-            {{ ref("stg_focus__student_enrollment_codes") }} as dc
-            on d.drop_code = dc.title
-            and dc.type = 'Drop'
-    ),
-
-    -- pre-format the Focus join keys to the export string shapes so the join
-    -- below compares plain columns (no one-sided casts in the ON clause).
+    -- live Focus enrollments, keys pre-formatted to the export string shapes so
+    -- the joins below compare plain columns (no one-sided casts in ON)
     focus_enrollment as (
-        select
-            enrollment_code,
-            drop_code,
-            cast(student_id as string) as student_id,
-            format_date('%Y%m%d', start_date) as start_date,
-            format_date('%Y%m%d', end_date) as end_date,
+        select syear, cast(student_id as string) as student_id,
         from {{ ref("stg_focus__student_enrollment") }}
     ),
 
-    matched as (
-        select
-            e.*,
-            fe.enrollment_code as focus_enrollment_code,
-            fe.drop_code as focus_drop_code,
-            fe.end_date as focus_end_date,
-        from decoded as e
+    -- entry-existence key. Match on (student_id, syear) only: ops manually edit
+    -- the floored start_date in Focus after import, so a start_date match would
+    -- re-open an already-loaded student-year as "new".
+    focus_year as (select distinct student_id, syear, from focus_enrollment),
+
+    -- desired state from kipptaf, scoped to the current academic year.
+    -- Withdrawals are excluded outright (#4769 decision I): the feed creates
+    -- enrollments only, so a row carrying an end_date has nothing to add and
+    -- would otherwise import as an ACTIVE enrollment with no end date once the
+    -- end_date column itself is dropped from the output.
+    desired as (
+        select d.*,
+        from {{ source("kipptaf_extracts", "rpt_focus__student_enrollment") }} as d
+        where d.syear = {{ var("current_academic_year") }} and d.end_date is null
+    ),
+
+    entries as (
+        select d.*,
+        from desired as d
         left join
-            focus_enrollment as fe
-            on e.student_id = fe.student_id
-            and e.start_date = fe.start_date
-        where
-            -- import once: keep a row only when the enrollment is new to Focus,
-            -- or when Focus has no withdrawal yet and this export carries one (a
-            -- one-time withdrawal fill). Existing Focus values are never
-            -- overwritten — enrollment ops harmonize later changes manually.
-            fe.student_id is null or (fe.end_date is null and e.end_date is not null)
+            focus_year as fy on d.student_id = fy.student_id and d.syear = fy.syear
+        where fy.student_id is null
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus STUDENT_ENROLLMENT contract
@@ -46,11 +37,7 @@ select
     student_id,
     grade_id,
     start_date,
-    if(
-        focus_enrollment_code is null, enrollment_code, cast(null as string)
-    ) as enrollment_code,
-    if(focus_end_date is null, end_date, cast(null as string)) as end_date,
-    if(focus_drop_code is null, drop_code_decoded, cast(null as string)) as drop_code,
+    enrollment_code,
     calendar_id,
     prior_dist,
     prior_state,
@@ -71,4 +58,4 @@ select
     include_in_class_rank,
     fl_days_present,
     fl_days_absent,
-from matched
+from entries

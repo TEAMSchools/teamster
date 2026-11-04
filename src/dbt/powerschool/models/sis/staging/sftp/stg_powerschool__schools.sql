@@ -49,7 +49,7 @@ select
         then 'HS'
         when high_grade = '8'
         then 'MS'
-        when high_grade in ('4', '5')
+        when high_grade in ('4', '5') or abbreviation = 'Sumner'
         then 'ES'
     end as school_level,
 from {{ source("powerschool_sftp", "src_powerschool__schools") }}

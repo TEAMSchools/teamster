@@ -3,6 +3,7 @@ models:
     config:
       cluster_by: cte_grouping
       # materialized: table
+      enabled: false
     columns:
       - name: _dbt_source_relation
         data_type: string

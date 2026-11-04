@@ -1,14 +1,40 @@
 with
     roster as (
+        -- trunk-ignore(sqlfluff/ST06): contract column order is mandated
         select
-            formatted_name as respondent,
-            google_email,
-            job_title as respondent_job_title,
-            home_work_location_name as respondent_location,
-        from {{ ref("int_people__staff_roster") }}
-    ),
+            sr.formatted_name as respondent,
+            sr.google_email,
 
-    schools as (select *, from {{ ref("int_people__location_crosswalk") }}),
+            lc.location_clean_name,
+            lc.campus_name,
+
+            case
+                sr.home_business_unit_name
+                when 'TEAM'
+                then 'TEAM Academy Charter School'
+                when 'KCNA'
+                then 'KIPP Cooper Norcross Academy'
+                when 'MIA'
+                then 'KIPP Miami'
+                when 'KNJ'
+                then 'KIPP TEAM and Family Schools Inc.'
+                else sr.home_business_unit_name
+            end as home_business_unit_name,
+            sr.home_department_name,
+            sr.job_function,
+            sr.job_title,
+
+            sr.mail,
+            sr.user_principal_name,
+            sr.sam_account_name,
+
+            sr.reports_to_mail,
+            sr.reports_to_sam_account_name,
+        from {{ ref("int_people__staff_roster") }} as sr
+        left join
+            {{ ref("int_people__location_crosswalk") }} as lc
+            on sr.home_work_location_name = lc.location_name
+    ),
 
     form_responses as (
         select
@@ -60,12 +86,24 @@ with
     final as (
         select
             roster.*,
-            responses_pivoted.*,
-            schools.location_region as region,
-            schools.location_grade_band as grade_band,
+            -- raw form-dropdown text is join-key-only. it carries retired and
+            -- abbreviated aliases, so consumers get school_clean_name instead
+            responses_pivoted.* except (school),
+
+            sc.location_grade_band as grade_band,
+            sc.location_clean_name as school_clean_name,
+            sc.location_region as school_business_unit_name,
         from responses_pivoted
-        left join roster on responses_pivoted.respondent_email = roster.google_email
-        left join schools on responses_pivoted.school = schools.location_name
+        left join
+            roster
+            on (
+                lower(regexp_extract(responses_pivoted.respondent_email, r'^([^@]+)'))
+                = roster.sam_account_name
+                or responses_pivoted.respondent_email = roster.google_email
+            )
+        left join
+            {{ ref("int_people__location_crosswalk") }} as sc
+            on responses_pivoted.school = sc.location_name
         where responses_pivoted.item_id not in ('27596233', '669334db')
     )
 

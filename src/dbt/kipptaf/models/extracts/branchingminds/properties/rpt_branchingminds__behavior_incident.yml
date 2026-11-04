@@ -1,0 +1,44 @@
+models:
+  - name: rpt_branchingminds__behavior_incident
+    description: >
+      One row per active disciplinary DeansList incident for Newark, Camden, and
+      Paterson, built for the Branching Minds daily SFTP feed. Excludes deleted
+      incidents and non-disciplinary referral categories (Social Work,
+      Non-Behavioral, and Documentation-only entries) so only genuine behavioral
+      incidents are sent. Scoped to the current academic year by the incident's
+      issue date.
+    columns:
+      - name: incident_id
+        data_type: string
+        description: >-
+          DeansList's own incident identifier, confirmed unique across the
+          network.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        data_type: string
+        description: >-
+          PowerSchool school number of the school where the incident occurred,
+          mapped from the DeansList school through the locations sheet so it
+          matches the ids Branching Minds receives from rostering.
+      - name: type
+        quote: true
+        data_type: string
+        description: >-
+          Incident category as logged in DeansList, e.g. Tier 2 - Cutting Class.
+      - name: location
+        data_type: string
+        description: >-
+          Free-text location where the incident occurred, as logged by staff.
+        config:
+          meta:
+            contains_pii: true
+      - name: date
+        quote: true
+        data_type: date
+        description: Date the incident occurred.

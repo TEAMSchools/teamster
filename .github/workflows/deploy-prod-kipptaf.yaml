@@ -3,6 +3,7 @@ name: kipptaf
 permissions:
   contents: read
   pull-requests: write
+  packages: write
   id-token: write
 
 on:
@@ -15,6 +16,7 @@ on:
       - .github/workflows/deploy-prod-kipptaf.yaml
       - Dockerfile
       - uv.lock
+      - src/dbt/dbt_overrides/**
       - src/dbt/kipptaf/**
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
@@ -32,7 +34,6 @@ on:
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/performance_management/**
-      - src/teamster/libraries/powerschool/enrollment/**
       - src/teamster/libraries/level_data/**
       - src/teamster/libraries/nsc/**
       - src/teamster/libraries/sftp/**
@@ -65,7 +66,6 @@ on:
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/performance_management/**
-      - src/teamster/libraries/powerschool/enrollment/**
       - src/teamster/libraries/level_data/**
       - src/teamster/libraries/nsc/**
       - src/teamster/libraries/sftp/**

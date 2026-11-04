@@ -1,0 +1,30 @@
+models:
+  - name: stg_focus__apex_band_sets
+    description: >-
+      Focus Apex mastery band sets — one row per named set of score bands (for
+      example a FAST quick-assessment set). Soft-deleted sets are filtered out.
+      Bands live in stg_focus__apex_band_levels; assessments link to a set
+      through stg_focus__apex_band_set_assessments.
+    columns:
+      - name: id
+        description: Primary key — Focus apex_band_sets id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: name
+        description: Band set name.
+        data_type: string
+      - name: is_default
+        description: Whether Focus marks this set as the default.
+        data_type: boolean
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

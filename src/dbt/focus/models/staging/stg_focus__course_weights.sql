@@ -4,10 +4,7 @@ select
     school_id,
     course_id,
     course_weight,
-    gpa_multiplier,
     rollover_id,
-    year_fraction,
-    credits,
     student_requestable,
     student_scheduleable,
     cw_checkbox_setting_1,
@@ -24,4 +21,8 @@ select
     imported,
     created_at,
     updated_at,
+
+    cast(credits as numeric) as credits,
+    cast(gpa_multiplier as numeric) as gpa_multiplier,
+    cast(year_fraction as numeric) as year_fraction,
 from {{ source("focus", "course_weights") }}

@@ -18,7 +18,7 @@ with
             {{ ref("base_powerschool__student_enrollments") }} as e
             on g.studentid = e.studentid
             and g.schoolid = e.schoolid
-            and {{ union_dataset_join_clause(left_alias="g", right_alias="e") }}
+            and g._dbt_source_project = e._dbt_source_project
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.enroll_status = 0

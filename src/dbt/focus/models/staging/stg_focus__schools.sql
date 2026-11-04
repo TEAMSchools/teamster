@@ -6,10 +6,6 @@ select
     min_syear,
     max_syear,
     title,
-    latitude,
-    longitude,
-    sort_order,
-    act_organization_code,
     college_board_attending_institution_code,
     virtual,
     custom_327 as school_number,
@@ -20,8 +16,15 @@ select
     custom_50000002 as technical_center,
     custom_319000052,
     custom_200000200 as exclude_from_state_reporting,
+    paec_gpa_for_transcript,
+    paec_rank_for_transcript,
     uuid,
     created_at,
     updated_at,
+
+    cast(act_organization_code as numeric) as act_organization_code,
+    cast(latitude as numeric) as latitude,
+    cast(longitude as numeric) as longitude,
+    cast(sort_order as numeric) as sort_order,
 from {{ source("focus", "schools") }}
 where deleted is null

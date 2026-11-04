@@ -1,0 +1,45 @@
+models:
+  - name: stg_google_sheets__kfwd__career_launch_rubric
+    description: >-
+      Points for each level of each Career Launch indicator, from the Rubric tab
+      of the Career Launch Scoring Rubric sheet. The KIPP Forward Career Launch
+      AppSheet app reads the same tab, so the app and the dashboard score
+      assessments the same way.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - indicator
+              - level
+          config:
+            severity: error
+    columns:
+      - name: rubric_key
+        data_type: string
+        description: >-
+          Indicator and level, such as career_ready_3. The prefix matches the
+          level column name on the assessments table, and scoring joins on this
+          key, so a renamed or mistyped key scores that level 0 points. Fix the
+          key on the Rubric tab.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: points
+        data_type: int64
+        description: >-
+          Points the level adds to the launch score. Scoring treats a blank as 0
+          points, so fill it on the Rubric tab.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: indicator
+        data_type: string
+        description: Indicator display name.
+      - name: level
+        data_type: int64
+        description: Level from 1 to 4.
+      - name: label
+        data_type: string
+        description: What the level means.

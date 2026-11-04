@@ -7,6 +7,8 @@ models:
         data_type: boolean
       - name: is_referral
         data_type: boolean
+      - name: non_disciplinary
+        data_type: boolean
       - name: send_alert
         data_type: boolean
       - name: close_ts_timezone_type
@@ -243,3 +245,84 @@ models:
         data_type: string
       - name: referral_tier
         data_type: string
+        description: >-
+          Referral level derived from the leading characters of category. Social
+          Work for SW and SS categories; Non-Behavioral for TX, Documentation,
+          School Clinic, and Incident Report/Accident Report; Low, Middle, and
+          High for T1/Tier 1, T2/Tier 2, and T3/Tier 3; Other for any other
+          category; null when category is null.
+      - name: is_behavioral_referral
+        data_type: boolean
+        description: >-
+          True when the incident counts as a behavioral referral, meaning
+          referral_tier is anything other than Social Work or Non-Behavioral.
+          False when category is null.
+
+unit_tests:
+  - name: test_int_deanslist__incidents__referral_tier
+    model: int_deanslist__incidents
+    given:
+      - input: ref('stg_deanslist__incidents')
+        rows:
+          - { incident_id: 1, category: SW - Counseling }
+          - { incident_id: 2, category: SSC - Check In }
+          - { incident_id: 3, category: Documentation of Call }
+          - { incident_id: 4, category: TX - Medical }
+          - { incident_id: 5, category: School Clinic }
+          - { incident_id: 6, category: T1 - Disruption }
+          - { incident_id: 7, category: Tier 1 Disruption }
+          - { incident_id: 8, category: T2 - Defiance }
+          - { incident_id: 9, category: Tier 3 Fighting }
+          - { incident_id: 10, category: Skipped Detention }
+          - { incident_id: 11, category: null }
+      - input: ref('int_deanslist__incidents__custom_fields__pivot')
+        rows:
+          - { incident_id: -1 }
+      - input: ref('stg_deanslist__users')
+        rows:
+          - { dl_user_id: "-1" }
+    expect:
+      rows:
+        - {
+            incident_id: 1,
+            referral_tier: Social Work,
+            is_behavioral_referral: false,
+          }
+        - {
+            incident_id: 2,
+            referral_tier: Social Work,
+            is_behavioral_referral: false,
+          }
+        - {
+            incident_id: 3,
+            referral_tier: Non-Behavioral,
+            is_behavioral_referral: false,
+          }
+        - {
+            incident_id: 4,
+            referral_tier: Non-Behavioral,
+            is_behavioral_referral: false,
+          }
+        - {
+            incident_id: 5,
+            referral_tier: Non-Behavioral,
+            is_behavioral_referral: false,
+          }
+        - { incident_id: 6, referral_tier: Low, is_behavioral_referral: true }
+        - { incident_id: 7, referral_tier: Low, is_behavioral_referral: true }
+        - {
+            incident_id: 8,
+            referral_tier: Middle,
+            is_behavioral_referral: true,
+          }
+        - { incident_id: 9, referral_tier: High, is_behavioral_referral: true }
+        - {
+            incident_id: 10,
+            referral_tier: Other,
+            is_behavioral_referral: true,
+          }
+        - {
+            incident_id: 11,
+            referral_tier: null,
+            is_behavioral_referral: false,
+          }

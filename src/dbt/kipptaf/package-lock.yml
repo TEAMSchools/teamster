@@ -1,8 +1,10 @@
 packages:
+  - local: ../dbt_overrides
+    name: dbt_overrides
   - name: dbt_external_tables
     package: dbt-labs/dbt_external_tables
-    version: 0.12.2
+    version: 0.12.4
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.4.1
-sha1_hash: 7bd42ade1aac7baaf975ecf69ca317572e685b2e
+sha1_hash: 8f94de1f518371e88fdf96cb7e22c5ae0ec2acd0

@@ -1,0 +1,173 @@
+models:
+  - name: rpt_parentsquare__parents
+    description:
+      ParentSquare `parents.csv` for the KIPP NJ regions — one row per household
+      parent of a currently-enrolled student, drawn from the Finalsite Household
+      1 Parent 1 and Parent 2 slots. Each district's thin
+      `extracts/parentsquare` wrapper slices this to its own `code_location`,
+      and that wrapper is what ParentSquare receives. Delivered as a full
+      snapshot each run. Rows carrying neither an email nor a mobile number are
+      dropped, since ParentSquare cannot create a contactable account without
+      one. `parent_id` is deliberately not emitted — ParentSquare then matches a
+      parent across their children by email and phone, which keeps one account
+      per person instead of one per child.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - first_name
+              - last_name
+          config:
+            severity: error
+    columns:
+      - name: student_id
+        data_type: string
+        description:
+          PowerSchool `student_number` of the child, as a string. Matches a
+          `rpt_parentsquare__students` row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        data_type: string
+        description:
+          PowerSchool `school_number` of the child's school, as a string.
+          Matches a `rpt_parentsquare__schools` row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: code_location
+        data_type: string
+        description:
+          Dagster code location of the region this row belongs to. Present so
+          each district's thin `extracts/parentsquare` wrapper can slice the
+          feed to its own region; it is not part of the ParentSquare file and no
+          wrapper projects it.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: first_name
+        data_type: string
+        description:
+          The parent's given name, taken from their Finalsite contact record
+          rather than split out of a full-name string.
+        config:
+          meta:
+            contains_pii: true
+      - name: last_name
+        data_type: string
+        description:
+          The parent's family name, taken from their Finalsite contact record
+          rather than split out of a full-name string.
+        config:
+          meta:
+            contains_pii: true
+      - name: relationship
+        data_type: string
+        description: The parent's relationship to the student.
+      - name: mobile
+        data_type: string
+        description:
+          The parent's mobile number as 10 digits, with the US country code and
+          any extension digits removed. Falls back to the parent's untyped
+          Finalsite number when no number is labelled Cell — such a number
+          reaches none of the typed columns, and a parent carrying neither a
+          mobile nor an email is dropped as undeliverable, so without the
+          fallback these families get no ParentSquare account at all. Null when
+          they have no number on file at all, in which case `email` is present.
+          A number that does not reduce to exactly 10 digits is an upstream
+          data-entry typo and is dropped rather than sent in a form ParentSquare
+          would reject.
+        config:
+          meta:
+            contains_pii: true
+      - name: secondary_phone
+        data_type: string
+        description:
+          The parent's voice fallback number as 10 digits — the typed home phone
+          where present, otherwise the work phone. Null when they have neither,
+          and subject to the same 10-digit validity rule as `mobile`.
+        config:
+          meta:
+            contains_pii: true
+      - name: email
+        data_type: string
+        description:
+          The parent's email address. Null when they have none on file, in which
+          case `mobile` is present.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_parents_untyped_phone_fills_mobile
+    description:
+      Locks the untyped-phone fallback and its precedence. Finalsite lets a
+      number be saved with no Cell/Home/Work label, and such a number reaches
+      none of the typed columns — a parent carrying only one had no mobile and
+      no email, so the deliverability filter dropped them and they never got a
+      ParentSquare account. contact_1 carries only an untyped number and must
+      surface it as mobile; contact_2 carries both a typed Cell and an untyped
+      number, and the typed Cell must win. A flipped coalesce argument order
+      would silently resume dropping the first parent.
+    model: rpt_parentsquare__parents
+    given:
+      - input: ref('int_students__contacts')
+        format: sql
+        rows: |
+          select
+            400001 as student_number,
+            'kippnewark' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'parent' as relationship,
+            'Nan' as contact_first_name,
+            'Untyped' as contact_last_name,
+            cast(null as string) as email_current,
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_work,
+            '+18564730100' as phone_untyped
+          union all
+          select
+            400001, 'kippnewark', 'contact_2', 'parent',
+            'Ted', 'Typed', cast(null as string), '+18564730200',
+            cast(null as string), cast(null as string), '+18564730300'
+      - input: ref('int_extracts__student_enrollments')
+        format: sql
+        rows: |
+          select
+            400001 as student_number,
+            'kippnewark' as _dbt_source_project,
+            2026 as academic_year,
+            1 as rn_year,
+            false as is_out_of_district,
+            0 as enroll_status,
+            73253 as schoolid
+    expect:
+      rows:
+        - {
+            first_name: Nan,
+            last_name: Untyped,
+            relationship: parent,
+            mobile: "8564730100",
+            secondary_phone: null,
+            email: null,
+            school_id: "73253",
+            code_location: kippnewark,
+            student_id: "400001",
+          }
+        - {
+            first_name: Ted,
+            last_name: Typed,
+            relationship: parent,
+            mobile: "8564730200",
+            secondary_phone: null,
+            email: null,
+            school_id: "73253",
+            code_location: kippnewark,
+            student_id: "400001",
+          }

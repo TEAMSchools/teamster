@@ -1,14 +1,11 @@
 with
-    student_enrollments as (
+    final_grades as (
         select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            yearid,
-            student_number,
-            entrydate,
-            exitdate,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+            *,
+
+            {{ student_section_enrollment_key("cc_dcid", "_dbt_source_project") }}
+            as student_section_enrollment_key,
+        from {{ ref("int_students__final_grades") }}
     ),
 
     reporting_terms as (
@@ -20,6 +17,7 @@ with
             end_date,
             region,
             school_id,
+            grade_band,
             powerschool_year_id,
         from {{ ref("stg_google_sheets__reporting__terms") }}
         where `type` = 'RT'
@@ -32,8 +30,7 @@ select
         )
     }} as grades_term_key,
 
-    {{ dbt_utils.generate_surrogate_key(["fg.cc_dcid", "fg._dbt_source_project"]) }}
-    as student_section_enrollment_key,
+    fg.student_section_enrollment_key,
 
     if(
         rt.code is not null,
@@ -46,6 +43,7 @@ select
                     "rt.start_date",
                     "rt.region",
                     "rt.school_id",
+                    "rt.grade_band",
                 ]
             )
         }},
@@ -76,17 +74,10 @@ select
     fg.lastgradeupdate as last_grade_update_date,
 
     cast(fg.exclude_from_gpa as bool) as is_excluded_from_gpa,
-from {{ ref("base_powerschool__final_grades") }} as fg
--- retained as a row-population filter (term grade must fall within a covering
--- school enrollment); enrollment linkage now flows via
--- student_section_enrollment_key -> dim_student_section_enrollments
+from final_grades as fg
 inner join
-    student_enrollments as enr
-    on fg.studentid = enr.studentid
-    and fg.yearid = enr.yearid
-    and fg.termbin_start_date >= enr.entrydate
-    and fg.termbin_start_date < enr.exitdate
-    and fg._dbt_source_project = enr._dbt_source_project
+    {{ ref("dim_student_section_enrollments") }} as sse
+    on fg.student_section_enrollment_key = sse.student_section_enrollment_key
 inner join
     {{ ref("dim_regions") }} as dr on fg._dbt_source_project = dr.dagster_code_location
 left join
@@ -95,3 +86,4 @@ left join
     and fg.schoolid = rt.school_id
     and dr.`name` = rt.region
     and fg.yearid = rt.powerschool_year_id
+where sse.student_enrollment_key is not null

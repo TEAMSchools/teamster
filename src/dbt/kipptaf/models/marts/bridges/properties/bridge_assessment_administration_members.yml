@@ -20,12 +20,30 @@ models:
 
       Single-member canonical groups produce one bridge row per
       `(canonical_assessment_id, region)`.
+    config:
+      # Disabled: nothing consumes this model. No `ref()` to it anywhere under
+      # `src/`, no entry in any exposure, and no reference under
+      # `src/cube/model/`. 180 days of BigQuery history shows only its own build
+      # and its own three tests — 171 GiB (~1.04 USD) per 11 days for a relation
+      # no one reads. `dim_assessments` names it in a comment describing the
+      # canonical-to-member mapping, but does not select from it.
+      #
+      # Kept rather than deleted so the definition survives if the
+      # member-grain bridge is ever needed. Refs #4821
+      enabled: false
+    # Each test carries its own `enabled: false`. dbt does NOT disable a
+    # model's tests when the model itself is disabled in properties yml
+    # (verified with `dbt parse --no-partial-parse`) — left implicit they would
+    # keep running against the stale prod relation, which is the cost this
+    # disable exists to remove.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - assessment_administration_key
               - assessment_key
+          config:
+            enabled: false
     columns:
       - name: assessment_administration_key
         data_type: string
@@ -33,16 +51,18 @@ models:
           FK to `dim_assessment_administrations`. Hashed from canonical inputs
           to match the canonical-grain dim row at the same `(canonical, region,
           canonical_administered_date)` coordinate.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessment_administrations')
-            to_columns: [assessment_administration_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
         data_tests:
           - relationships:
               arguments:
                 to: ref('dim_assessment_administrations')
                 field: assessment_administration_key
+              config:
+                enabled: false
       - name: assessment_key
         data_type: string
         description: >-
@@ -50,13 +70,15 @@ models:
           `assessment_id`, not canonical). Each bridge row resolves to the
           member's row in the member-grain `dim_assessments` for full
           definitional detail (member title, module_type, etc.).
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessments')
-            to_columns: [assessment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessments')
+              to_columns: [assessment_key]
         data_tests:
           - relationships:
               arguments:
                 to: ref('dim_assessments')
                 field: assessment_key
+              config:
+                enabled: false

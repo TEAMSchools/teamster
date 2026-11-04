@@ -1,6 +1,7 @@
 with
     members_unnested as (
         select
+            a.source,
             a.assessment_id as member_assessment_id,
             a.canonical_assessment_id,
             a.module_code,
@@ -14,7 +15,8 @@ with
         from {{ ref("int_assessments__assessments_members") }} as a
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on a.canonical_assessment_id = c.canonical_assessment_id
+            on a.source = c.source
+            and a.canonical_assessment_id = c.canonical_assessment_id
         cross join unnest(a.regions_assessed_array) as region
         where a.is_internal_assessment
     )
@@ -23,7 +25,7 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "'illuminate'",
+                "source",
                 "module_code",
                 "canonical_administered_date",
                 "academic_year",
@@ -38,7 +40,7 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "'illuminate'",
+                "source",
                 "module_code",
                 "member_assessment_id",
                 "null",

@@ -1,6 +1,3 @@
--- Finalsite contacts API layer is enabled only in regions with Finalsite
--- ingestion wired (today: KIPP Miami). Add each region's relation here when its
--- api layer is enabled.
 with
     union_relations as (
         {{
@@ -14,5 +11,5 @@ with
         }}
     )
 
-select *, {{ extract_code_location("union_relations") }} as _dbt_source_project,
+select *, {{ extract_source_project("union_relations") }} as _dbt_source_project,
 from union_relations

@@ -11,4 +11,6 @@ from {{ ref("int_powerschool__ps_enrollment_all") }} as e
 left join {{ ref("stg_powerschool__fte") }} as f on e.fteid = f.id
 where
     e.fteid is not null
+    and e.schoolid != 999999
+    and e.entrydate < e.exitdate_clipped
     and (f.id is null or f.schoolid != e.schoolid or f.yearid != e.yearid)

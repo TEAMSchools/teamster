@@ -7,8 +7,6 @@ CODE_LOCATION = "kipptaf"
 LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 ```
 
-GCS bucket: `teamster-kipptaf`
-
 ## Active Integrations
 
 | Module                   | Assets                                                    | Schedules        | Sensors                 |
@@ -18,6 +16,7 @@ GCS bucket: `teamster-kipptaf`
 | `google`                 | Directory, Forms, AppSheet specs, Sheets specs            | directory, forms | bigquery, forms, sheets |
 | `adp`                    | payroll SFTP + WFN API (WFM disabled)                     | WFN schedule     | WFN + payroll sensors   |
 | `airbyte`                | asset specs                                               | schedule         | disabled                |
+| `branchingminds`         | SFTP export assets (fiscal-year partitions)               | —                | sensor                  |
 | `collegeboard`           | SFTP assets                                               | —                | —                       |
 | `coupa`                  | API assets                                                | schedule         | —                       |
 | `deanslist`              | API assets                                                | —                | sensor                  |
@@ -28,22 +27,33 @@ GCS bucket: `teamster-kipptaf`
 | `nsc`                    | SFTP assets                                               | —                | —                       |
 | `overgrad`               | API assets                                                | —                | —                       |
 | `performance_management` | SFTP assets                                               | —                | —                       |
-| `powerschool`            | enrollment API                                            | schedule         | —                       |
 | `smartrecruiters`        | report assets                                             | schedule         | —                       |
 | `tableau`                | workbook refresh assets                                   | schedule         | —                       |
 | `zendesk`                | assets                                                    | schedule         | —                       |
 | `couchdrop`              | sensor only                                               | —                | sensor                  |
+
+**Coupa Dagster code is aliased `l`** — resource `lResource`, env vars `l_*`
+(`l_SFTP_*`, `l_API_*`), asset group `l`, and `libraries/l/` + `kipptaf/l/`
+modules that the `coupa` submodule wires from. Grep `l` as well as `coupa`. The
+dbt side is cleanly named `coupa`.
 
 ## dbt Asset Groups (`dbt/assets.py`)
 
 Kipptaf splits dbt into **three separate asset groups** with different resource
 requirements and selection criteria:
 
-| Asset variable            | `select`              | `exclude`                              | Notes                                         |
-| ------------------------- | --------------------- | -------------------------------------- | --------------------------------------------- |
-| `core_dbt_assets`         | — (all)               | `source:adp_payroll+ tag:google_sheet` | Main run                                      |
-| `google_sheet_dbt_assets` | `tag:google_sheet`    | —                                      | Separate to isolate brittle gsheet deps       |
-| `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                      | Partitioned by payroll file; cannot be merged |
+| Asset variable            | `select`                   | `exclude`                            | Notes                                         |
+| ------------------------- | -------------------------- | ------------------------------------ | --------------------------------------------- |
+| `core_dbt_assets`         | selector `core_dbt_assets` | (in `src/dbt/kipptaf/selectors.yml`) | Main run                                      |
+| `google_sheet_dbt_assets` | `tag:google_sheet`         | —                                    | Separate to isolate brittle gsheet deps       |
+| `adp_payroll_dbt_assets`  | `source:adp_payroll+`      | —                                    | Partitioned by payroll file; cannot be merged |
+
+The core selector excludes `tag:google_sheet` with
+`indirect_selection: cautious`. A plain `exclude=` uses eager selection, which
+drops every test that reads any sheet model, including tests whose check belongs
+to a core model. Do not move the exclude back into `exclude=`. A test whose
+check belongs to a sheet model carries `tag:google_sheet` so it leaves core
+(`.claude/rules/dbt-yaml.md`).
 
 `core_dbt_assets` is the one used by `TableauServerResource` dependencies
 (imported as `core_dbt_assets` from `kipptaf.dbt.assets`).
@@ -82,6 +92,20 @@ ADP hard-delete / merge / backdated edit to a record older than the window
 doesn't propagate until you manually rematerialize the affected partition span.
 Absence from a re-pulled partition therefore means the record is gone from ADP.
 
+The asset pulls the **list** endpoint (`GET hr/v2/workers?asOfDate=`), which
+OMITS a worker not yet effective as of that date (hire date after the partition
+date). The `_test_get_worker` harness in
+`tests/resources/test_resource_adp_workforce_now.py` uses the **single-worker**
+GET (`/workers/{aoid}`), which returns the worker regardless — so a
+single-worker probe does NOT predict which partitions a bulk re-pull will place
+them in.
+
+A `workers_sync` `zero_api_errors` failure with `EMPLOYEE_NOT_FOUND` is usually
+one of these ghosts: the record was deleted in ADP after its partition left the
+window, staging keeps it open, and the roster sends the sync to the deleted OID.
+Check the `stg_adp_workforce_now__workers__ghost_open_records` asset check
+before you debug the sync itself. The fix is the re-pull above.
+
 ## Illuminate DLT Schedule Split
 
 Illuminate DLT assets are split across two schedules in
@@ -98,13 +122,13 @@ New DLT assets must be assigned to the appropriate schedule.
 
 ## Adding a secret env var to `dagster-cloud.yaml`
 
-Env mappings duplicate across `server_k8s_config` and `run_k8s_config`, and each
-splits into a credentials block (password/username) and a host/port block — 4
-insertion points per secret. Missing `run_k8s_config` leaves run pods broken
-while the code server boots clean.
+4 insertion points per secret: `server_k8s_config` and `run_k8s_config` each
+split into a credentials block (password/username) and a host/port block. Why
+both configs: `src/teamster/CLAUDE.md` → _Resource Model_.
 
 ## Disabled Integrations
 
 `adp` WFM is not integrated (no schedules or assets). Reusable library code for
-`alchemer`, `dayforce`, `fivetran`, and `adp/workforce_manager` is preserved
-under `src/teamster/libraries/` for future use.
+`alchemer`, `dayforce`, `fivetran`, `adp/workforce_manager`, and
+`powerschool/enrollment` is preserved under `src/teamster/libraries/` for future
+use.

@@ -1,9 +1,9 @@
 models:
   - name: int_powerschool__teachers
-    config:
-      materialized: table
     columns:
       - name: _dbt_source_relation
+        data_type: string
+      - name: _dbt_source_project
         data_type: string
       - name: lastfirst
         data_type: string

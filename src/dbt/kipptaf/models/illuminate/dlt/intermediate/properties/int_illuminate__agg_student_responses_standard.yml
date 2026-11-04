@@ -1,35 +1,71 @@
 models:
   - name: int_illuminate__agg_student_responses_standard
+    description: >-
+      Student scores per assessed standard, with the standard's code and
+      description and its root standard's description. One row per student
+      assessment sitting per standard. Inner joins drop scores for standards not
+      linked to the assessment or missing from standards. Staging keeps only
+      rows with points_possible above zero.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_assessment_id
+              - standard_id
     columns:
       - name: student_assessment_id
         data_type: int64
+        description: The student's assessment sitting.
       - name: assessment_id
         data_type: int64
+        description: Illuminate assessment id.
       - name: standard_id
         data_type: int64
+        description: Illuminate standard id.
       - name: student_id
         data_type: int64
+        description: Illuminate student id.
       - name: performance_band_id
         data_type: int64
+        description: Performance band the standard score falls in.
       - name: performance_band_level
         data_type: int64
+        description: Level number of that performance band.
       - name: mastered
         data_type: boolean
+        description: Whether the student mastered the standard.
       - name: points
         data_type: numeric
+        description: Points earned on the standard.
       - name: points_possible
         data_type: numeric
+        description: Points possible on the standard. Always above zero.
       - name: answered
         data_type: int64
+        description: Number of questions on the standard the student answered.
       - name: percent_correct
         data_type: numeric
+        description: Percent correct as Illuminate reports it.
       - name: number_of_questions
         data_type: int64
+        description: Number of questions on the standard.
       - name: performance_band_set_id
         data_type: int64
+        description: >-
+          Performance band set the assessment assigns to this standard, from
+          assessment_standards.
       - name: custom_code
         data_type: string
+        description: The standard's custom code, from standards.
       - name: standard_description
         data_type: string
+        description: The standard's description, from standards.
       - name: root_standard_description
         data_type: string
+        description: >-
+          Description of the standard's root (top-level) standard, via
+          int_illuminate__root_standards. Null when the standard does not trace
+          to a root.

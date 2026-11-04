@@ -1,7 +1,7 @@
 select
     *,
 
-    safe_cast(right(test_code, 1) as int) as round_number,
+    safe_cast(regexp_extract(test_code, r'LIT(\d+)') as int) as round_number,
 
     regexp_extract(measure_standard, r'^[^_]*') as expected_measure_name_code,
     regexp_substr(measure_standard, r'_(.*?)_') as expected_measure_name,

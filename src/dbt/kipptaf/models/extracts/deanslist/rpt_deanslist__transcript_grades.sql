@@ -22,20 +22,18 @@ with
         inner join
             {{ ref("stg_powerschool__students") }} as s
             on sg.studentid = s.id
-            and {{ union_dataset_join_clause(left_alias="sg", right_alias="s") }}
+            and sg._dbt_source_project = s._dbt_source_project
         where ifnull(sg.excludefromtranscripts, 0) = 0 and sg.storecode = 'Y1'
 
         union all
 
         select
             s.student_number,
-            s.schoolid,
 
+            fg.schoolid,
             fg.yearid + 1990 as academic_year,
             fg.course_number,
-
-            c.course_name,
-
+            fg.course_name,
             fg.potential_credit_hours as credit_hours,
             fg.y1_percent_grade_adjusted as y1_grade_percent,
             fg.y1_letter_grade as y1_grade_letter,
@@ -43,9 +41,9 @@ with
             'Y1' as term,
 
             if(
-                sch.name = 'KIPP Newark Collegiate Academy',
+                fg.school_name = 'KIPP Newark Collegiate Academy',
                 'Newark Collegiate Academy',
-                sch.name
+                fg.school_name
             ) as schoolname,
 
             0 as is_stored,
@@ -53,18 +51,10 @@ with
         inner join
             {{ ref("base_powerschool__final_grades") }} as fg
             on s.id = fg.studentid
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="fg") }}
+            and s._dbt_source_project = fg._dbt_source_project
             and fg.exclude_from_gpa = 0
             and current_date('{{ var("local_timezone") }}')
             between fg.termbin_start_date and fg.termbin_end_date
-        inner join
-            {{ ref("stg_powerschool__courses") }} as c
-            on c.course_number = fg.course_number
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="fg") }}
-        inner join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on s.schoolid = sch.school_number
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="sch") }}
         where s.grade_level >= 5
     )
 

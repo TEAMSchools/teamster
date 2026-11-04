@@ -15,6 +15,8 @@ models:
         data_type: boolean
       - name: is_referral
         data_type: boolean
+      - name: non_disciplinary
+        data_type: boolean
       - name: send_alert
         data_type: boolean
       - name: close_ts_timezone_type

@@ -4,10 +4,7 @@ with
             dbt_utils.union_relations(
                 relations=[
                     ref("stg_amplify__mclass__sftp__benchmark_student_summary"),
-                    source(
-                        "amplify",
-                        "stg_amplify__mclass__api__benchmark_student_summary",
-                    ),
+                    ref("stg_amplify__mclass__api__benchmark_student_summary"),
                 ],
                 source_column_name="_dbt_source_relation_2",
             )
@@ -32,65 +29,12 @@ with
     )
 
 select
-    * except (
-        basic_comprehension_maze_local_percentile,
-        enrollment_teacher_staff_id,
-        official_teacher_staff_id,
-        enrollment_teacher_name,
-        official_teacher_name,
-        device_date,
-        client_date,
-        composite_score_lexile,
-        dibels_composite_score_lexile,
-        basic_comprehension_maze_score,
-        reading_comprehension_maze_score,
-        basic_comprehension_maze_semester_growth,
-        reading_comprehension_maze_semester_growth,
-        basic_comprehension_maze_year_growth,
-        reading_comprehension_maze_year_growth,
-        basic_comprehension_maze_national_norm_percentile,
-        reading_comprehension_maze_national_norm_percentile,
-        basic_comprehension_maze_level,
-        reading_comprehension_maze_level,
-        basic_comprehension_maze_tested_out,
-        reading_comprehension_maze_tested_out,
-        basic_comprehension_maze_discontinued,
-        reading_comprehension_maze_discontinued
-    ),
+    * except (student_primary_id),
 
-    basic_comprehension_maze_local_percentile
-    as reading_comprehension_maze_local_percentile,
-
-    coalesce(
-        enrollment_teacher_staff_id, official_teacher_staff_id
-    ) as official_teacher_staff_id,
-    coalesce(enrollment_teacher_name, official_teacher_name) as official_teacher_name,
-    coalesce(device_date, client_date) as client_date,
-    coalesce(
-        composite_score_lexile, dibels_composite_score_lexile
-    ) as dibels_composite_score_lexile,
-    coalesce(
-        basic_comprehension_maze_score, reading_comprehension_maze_score
-    ) as reading_comprehension_maze_score,
-    coalesce(
-        basic_comprehension_maze_semester_growth,
-        reading_comprehension_maze_semester_growth
-    ) as reading_comprehension_maze_semester_growth,
-    coalesce(
-        basic_comprehension_maze_year_growth, reading_comprehension_maze_year_growth
-    ) as reading_comprehension_maze_year_growth,
-    coalesce(
-        basic_comprehension_maze_national_norm_percentile,
-        reading_comprehension_maze_national_norm_percentile
-    ) as reading_comprehension_maze_national_norm_percentile,
-    coalesce(
-        basic_comprehension_maze_level, reading_comprehension_maze_level
-    ) as reading_comprehension_maze_level,
-    coalesce(
-        basic_comprehension_maze_tested_out, reading_comprehension_maze_tested_out
-    ) as reading_comprehension_maze_tested_out,
-    coalesce(
-        basic_comprehension_maze_discontinued, reading_comprehension_maze_discontinued
-    ) as reading_comprehension_maze_discontinued,
+    {{
+        focus_student_number(
+            "student_primary_id", "academic_year", "_dbt_source_project"
+        )
+    }} as student_primary_id,
 
 from location_xref

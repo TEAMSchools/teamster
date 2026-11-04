@@ -1,13 +1,13 @@
 with
     report_card_region as (
-        select iae.assessment_id, report_card_region,
+        select iae.source, iae.assessment_id, report_card_region,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     ),
 
     assessment_response_avg as (
         select
-            ar.powerschool_student_number,
+            ar.student_number,
             ar.academic_year,
             ar.subject_area,
             ar.term_administered,
@@ -21,28 +21,28 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
             on ar.academic_year = co.academic_year
-            and ar.powerschool_student_number = co.student_number
+            and ar.student_number = co.student_number
             and co.rn_year = 1
             and co.grade_level < 5
         left join
             report_card_region as rcr
-            on ar.assessment_id = rcr.assessment_id
+            on ar.source = rcr.source
+            and ar.assessment_id = rcr.assessment_id
             and co.region = rcr.report_card_region
         where
-            ar.response_type = 'overall'
+            -- performance_band_set_id is looked up in Illuminate's band sets
+            ar.source = 'illuminate'
+            and ar.response_type = 'overall'
             and ar.subject_area not in ('Text Study', 'Mathematics')
             and ar.academic_year = {{ var("current_academic_year") }}
             and ar.term_administered is not null
             and (ar.scope = 'Unit Assessment' or rcr.report_card_region is not null)
         group by
-            ar.powerschool_student_number,
-            ar.academic_year,
-            ar.subject_area,
-            ar.term_administered
+            ar.student_number, ar.academic_year, ar.subject_area, ar.term_administered
     )
 
 select
-    ara.powerschool_student_number as student_number,
+    ara.student_number,
     ara.academic_year,
     ara.term_administered,
     ara.subject_area as subject_area_label,

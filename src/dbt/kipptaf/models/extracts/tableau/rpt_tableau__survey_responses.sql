@@ -1,8 +1,19 @@
+with
+    open_rounds as (
+        select term_name, term_code, academic_year,
+        from {{ ref("dim_terms") }}
+        where
+            `type` = 'SURVEY'
+            and end_date >= current_date('{{ var("local_timezone") }}')
+    )
+
+-- trunk-ignore(sqlfluff/ST06): entity case fixed 3rd by Tableau RLS contract order
 select
     sr.survey_id,
     sr.survey_title,
     sr.survey_response_id,
     sr.survey_response_link,
+    sr.survey_question_id,
     sr.term_code as survey_code,
 
     'SURVEY' as survey_type,
@@ -13,26 +24,48 @@ select
     sr.answer_value,
     sr.is_open_ended,
     sr.round_rn,
+    sr.rated_department_code,
+    sr.rated_department_name,
 
     eh.employee_number,
     eh.formatted_name as respondent_name,
     eh.management_position_indicator as is_manager,
-    eh.home_department_name as department,
-    eh.home_business_unit_name as legal_entity,
-    eh.reports_to_formatted_name as manager,
-    eh.job_title,
-    eh.home_work_location_name as `location`,
     eh.race_ethnicity_reporting as race_ethnicity,
     eh.gender_identity as gender,
-    eh.mail,
     eh.reports_to_formatted_name as manager_name,
-    eh.reports_to_mail as manager_email,
     eh.reports_to_user_principal_name as manager_user_principal_name,
     eh.alumni_status,
     eh.community_grew_up,
     eh.community_professional_exp,
     eh.level_of_education,
     eh.assignment_status,
+
+    lc.location_clean_name,
+    lc.campus_name,
+
+    case
+        eh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else eh.home_business_unit_name
+    end as home_business_unit_name,
+
+    eh.home_department_name,
+    eh.job_function,
+    eh.job_title,
+
+    eh.mail,
+    eh.user_principal_name,
+    eh.sam_account_name,
+
+    eh.reports_to_mail,
+    eh.reports_to_sam_account_name,
 
     tgl.grade_level as primary_grade_level_taught,
 
@@ -48,8 +81,21 @@ inner join
     between eh.effective_date_start_timestamp and eh.effective_date_end_timestamp
     and eh.primary_indicator
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on eh.home_work_location_name = lc.location_name
+left join
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
     on eh.powerschool_teacher_number = tgl.teachernumber
     and eh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
+left join
+    open_rounds as orr
+    on sr.survey_title = orr.term_name
+    and sr.term_code = orr.term_code
+    and sr.academic_year = orr.academic_year
+where
+    orr.term_code is null
+    -- the surveys the Survey Dashboard reports on
+    and sr.survey_title
+    in ('Intent to Return Survey', 'KTAF Support Survey', 'Support Survey')

@@ -8,10 +8,10 @@ from dagster_gcp import BigQueryResource, GCSResource
 from teamster import GCS_PROJECT_NAME
 from teamster.core.io_managers.gcs import GCSIOManager
 from teamster.libraries.deanslist.resources import DeansListResource
+from teamster.libraries.dlt.powerschool.resources import OracleResource
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
 from teamster.libraries.overgrad.resources import OvergradResource
-from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.zendesk.resources import ZendeskResource
 
@@ -68,19 +68,25 @@ def get_powerschool_ssh_resource() -> SSHResource:
         remote_host=EnvVar("PS_SSH_HOST"),
         remote_port=EnvVar.int("PS_SSH_PORT"),
         username=EnvVar("PS_SSH_USERNAME"),
+        password=EnvVar("PS_SSH_PASSWORD"),
         tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
+        # paramiko 5.0 dropped ssh-rsa; PowerSchool-hosted servers still
+        # require it
+        enable_legacy_rsa=True,
+    )
+
+
+def get_powerschool_oracle_resource() -> OracleResource:
+    return OracleResource(
+        user=EnvVar("PS_DB_USERNAME"),
+        password=EnvVar("PS_DB_PASSWORD"),
+        host=EnvVar("PS_DB_HOST"),
+        port=EnvVar("PS_DB_PORT"),
+        service_name=EnvVar("PS_DB_DATABASE"),
     )
 
 
 BIGQUERY_RESOURCE = BigQueryResource(project=GCS_PROJECT_NAME)
-
-DB_POWERSCHOOL = PowerSchoolODBCResource(
-    user=EnvVar("PS_DB_USERNAME"),
-    password=EnvVar("PS_DB_PASSWORD"),
-    host=EnvVar("PS_DB_HOST"),
-    port=EnvVar("PS_DB_PORT"),
-    service_name=EnvVar("PS_DB_DATABASE"),
-)
 
 DEANSLIST_RESOURCE = DeansListResource(
     api_key_dir="/etc/deanslist",
@@ -97,8 +103,8 @@ OVERGRAD_RESOURCE = OvergradResource(api_key=EnvVar("OVERGRAD_API_KEY"), page_li
 
 ZENDESK_RESOURCE = ZendeskResource(
     subdomain=EnvVar("ZENDESK_SUBDOMAIN"),
-    email=EnvVar("ZENDESK_EMAIL"),
-    token=EnvVar("ZENDESK_TOKEN"),
+    client_id=EnvVar("ZENDESK_CLIENT_ID"),
+    client_secret=EnvVar("ZENDESK_CLIENT_SECRET"),
 )
 
 SSH_COUCHDROP = SSHResource(
@@ -113,10 +119,11 @@ SSH_EDPLAN = SSHResource(
     remote_port=22,
     username=EnvVar("EDPLAN_SFTP_USERNAME"),
     password=EnvVar("EDPLAN_SFTP_PASSWORD"),
-    # Upstream default is 10s. secureftp.easyiep.com TCP handshakes from GKE
-    # occasionally exceed that during peak periods, causing transient TimeoutError
-    # on connect. 30s tolerates those without masking a truly unreachable host.
-    timeout=30,
+    # No `timeout` override: secureftp.easyiep.com TCP handshakes from GKE
+    # occasionally exceed the old 10s upstream default during peak periods, which
+    # is why this used to set 30s. `SSHResource` now defaults to 45s, which
+    # covers those AND clears paramiko's 30s negotiation ceiling — 30s would sit
+    # exactly ON that ceiling and reintroduce the inversion in #4636.
     # secureftp.easyiep.com (GlobalSCAPE EFT 8.1) advertises only `ssh-rsa`
     # (SHA-1 RSA) host keys. paramiko 5.0 dropped ssh-rsa from defaults; opt
     # back in for this host only.

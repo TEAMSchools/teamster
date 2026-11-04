@@ -1,31 +1,90 @@
 models:
   - name: int_iready__instruction_by_lesson_union
+    description: >-
+      One row per student per completed i-Ready lesson across both products,
+      stacking the classic (Traditional) and i-Ready Pro lesson models on a
+      shared set of columns. Pro rows use the lesson title as the lesson ID and
+      name, and leave the objective, level, and grade null. lesson_source tells
+      the two apart.
     columns:
       - name: academic_year_int
         data_type: int64
+        description: >-
+          The academic year the export was pulled for, as the integer start year
+          of the school year.
       - name: student_id
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Network student number, as normalized in the two upstream lesson
+          models.
       - name: school
         data_type: string
+        description: >-
+          The name of the school i-Ready has the student enrolled at.
       - name: subject
         data_type: string
+        description: >-
+          The subject of the completed lesson, Math or Reading.
       - name: lesson_id
         data_type: string
+        description: >-
+          The lesson identifier. The vendor's lesson ID for Traditional rows;
+          the lesson title for Pro rows, which have no ID.
       - name: lesson_name
         data_type: string
+        description: >-
+          The name of the completed lesson. The lesson title for Pro rows.
       - name: lesson_objective
         data_type: string
+        description: >-
+          The objective or objectives of the completed lesson. Null for Pro
+          rows, which do not report one.
       - name: lesson_level
         data_type: string
+        description: >-
+          The level of the completed lesson. Null for Pro rows, whose level is
+          not carried into this model.
       - name: lesson_grade
         data_type: string
+        description: >-
+          The grade level of the completed lesson. Null for Pro rows, which do
+          not report one.
       - name: passed_or_not_passed
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Whether the student passed or did not pass the completed lesson. Taken
+          from the vendor's pass result for Traditional rows and from the lesson
+          result for Pro rows.
       - name: total_time_on_lesson_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on the completed lesson. For Pro rows this
+          is the lesson time on task, which includes completed retries.
       - name: completion_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The date the student completed the lesson.
       - name: passed_or_not_passed_numeric
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Numeric pass flag, 1.0 when the lesson was passed and 0.0 otherwise.
       - name: lesson_source
         data_type: string
+        description: >-
+          Which i-Ready product the row came from, Traditional for classic
+          i-Ready lessons or Pro for i-Ready Pro lessons.

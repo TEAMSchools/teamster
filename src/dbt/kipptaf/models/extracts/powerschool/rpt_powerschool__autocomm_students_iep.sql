@@ -6,6 +6,7 @@ select
     nj_se_placement as s_nj_stu_x__special_education_placement,
     nj_timeinregularprogram as s_nj_stu_x__time_in_regular_program,
     spedlep as studentcorefields__spedlep,
+    _dbt_source_project as code_location,
 
     null as s_nj_stu_x__early_intervention_yn,
 
@@ -26,8 +27,6 @@ select
         '%m/%d/%Y', nj_se_lastiepmeetingdate
     ) as s_nj_stu_x__annual_iep_review_meeting_date,
     format_date('%m/%d/%Y', nj_se_reevaluationdate) as s_nj_stu_x__reevaluation_date,
-
-    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
     if(ti_serv_counseling = 'Y', 1, 0) as s_nj_stu_x__counseling_services_yn,
     if(ti_serv_occup = 'Y', 1, 0) as s_nj_stu_x__occupational_therapy_serv_yn,

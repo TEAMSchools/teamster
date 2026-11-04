@@ -3,9 +3,9 @@ models:
     description:
       For reporting purposes, this table contains a summary per subject group of
       a student's credits for their graduation plan. Data is accessed by
-      selecting a group ofstudents and then navigating to [Select Function]
-      arrow > Graduation Progress Report Data Capture (or Special Functions >
-      Group Functions > GraduationProgress Report Data Capture).
+      selecting a group of students and then navigating to [Select Function]
+      arrow > Graduation Plan Progress Report Data Capture (or Special Functions
+      > Group Functions > Graduation Plan Progress Report Data Capture).
     columns:
       - name: id
         data_type: int64
@@ -67,21 +67,33 @@ models:
         description:
           Number of waived credits that have been applied to this subject group.
           Defaults to 0.
+        config:
+          meta:
+            contains_pii: true
       - name: earnedcredits
         data_type: float64
         description:
           Number of earned credits. Values obtained from the Stored Grades
           table. Defaults to 0.
+        config:
+          meta:
+            contains_pii: true
       - name: enrolledcredits
         data_type: float64
         description:
           Number of enrolled credits. Values obtained from the CC table.
           Defaults to 0.
+        config:
+          meta:
+            contains_pii: true
       - name: requestedcredits
         data_type: float64
         description:
           Number of requested credits. Values obtained from the Schedule
           Requests table. Defaults to 0.
+        config:
+          meta:
+            contains_pii: true
       - name: requiredcredits
         data_type: float64
         description:
@@ -91,7 +103,13 @@ models:
         data_type: float64
         description:
           Number of credits waived from this subject group. Defaults to 0.
+        config:
+          meta:
+            contains_pii: true
       - name: nodegpa
         data_type: float64
         description:
           GPA that has been calculated for this node. Reserved for future use.
+        config:
+          meta:
+            contains_pii: true

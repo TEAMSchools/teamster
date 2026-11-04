@@ -1,0 +1,21 @@
+sources:
+  - name: ignite
+    schema: kipptaf_restricted
+    tables:
+      - name: ignite_id_salt
+        description:
+          One-row table holding the salt for the IGNITE masked student id. Lives
+          in a restricted dataset only the pipeline service accounts can read,
+          because 34 CFR 99.31(b)(2) forbids disclosing how a de-identified
+          record code is generated. Never print, log or commit the value. See
+          the IGNITE extract page in the docs.
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - ignite
+                - id_salt
+        columns:
+          - name: salt
+            description: The salt string. Must never change during the study.

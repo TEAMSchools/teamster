@@ -348,6 +348,7 @@ class User(UserBase):
     category_planner_user: bool | None = None
     intake_user: bool | None = None
     coupa_navi_ai_agent_user: bool | None = None
+    invoicing_user: bool | None = None
 
     custom_fields: UserCustomFields | None = None
     default_account: Account | None = None

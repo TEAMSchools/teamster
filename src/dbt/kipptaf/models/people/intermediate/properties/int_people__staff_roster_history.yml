@@ -22,6 +22,31 @@ models:
               - effective_date_start
               - position_id
     columns:
+      - name: home_business_unit_name
+        data_type: string
+        description: >-
+          Legal entity of the worker's home assignment, from ADP Workforce Now.
+          Older records carry the short codes TEAM, KCNA, MIA, and KNJ, which
+          the Tableau extracts decode to full names.
+        data_tests:
+          # Covers int_people__staff_roster too, which reads the current rows of
+          # this model. A new business unit passes the Tableau extract decodes
+          # unchanged and reads as Region there: add it to those decodes and to
+          # this list.
+          - accepted_values:
+              arguments:
+                values:
+                  - TEAM Academy Charter School
+                  - KIPP Cooper Norcross Academy
+                  - KIPP Miami
+                  - KIPP Paterson
+                  - KIPP TEAM and Family Schools Inc.
+                  - TEAM
+                  - KCNA
+                  - MIA
+                  - KNJ
+              config:
+                severity: warn
       - name: _dbt_source_relation
         data_type: string
       - name: associate_oid
@@ -133,8 +158,6 @@ models:
       - name: assigned_department_name
         data_type: string
       - name: home_business_unit_code
-        data_type: string
-      - name: home_business_unit_name
         data_type: string
       - name: home_department_name
         data_type: string

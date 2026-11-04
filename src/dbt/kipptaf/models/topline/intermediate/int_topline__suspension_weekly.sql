@@ -17,7 +17,7 @@ with
             and co.academic_year = ip.create_ts_academic_year
             and co.deanslist_school_id = ip.school_id
             and ip.start_date between co.week_start_monday and co.week_end_sunday
-            and ip.referral_tier not in ('Non-Behavioral', 'Social Work')
+            and ip.is_behavioral_referral
         where co.academic_year >= {{ var("current_academic_year") - 1 }}
         group by
             co.student_number,

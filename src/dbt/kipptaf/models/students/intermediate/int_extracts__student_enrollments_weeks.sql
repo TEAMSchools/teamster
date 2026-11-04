@@ -5,25 +5,29 @@ with
 
             cw.week_start_monday,
             cw.week_end_sunday,
-            cw.quarter,
+            cw.term,
             cw.semester,
             cw.school_week_start_date,
             cw.school_week_end_date,
             cw.week_number_academic_year,
-            cw.week_number_quarter,
+            cw.week_number_term,
             cw.is_current_week_mon_sun,
             cw.date_count,
 
             if(
-                cw.week_start_monday between co.entrydate and co.exitdate, true, false
+                cw.week_start_monday between co.entrydate and co.last_enrolled_date,
+                true,
+                false
             ) as is_enrolled_week,
 
             if(
-                cw.week_end_sunday between co.entrydate and co.exitdate, true, false
+                cw.week_end_sunday between co.entrydate and co.last_enrolled_date,
+                true,
+                false
             ) as is_enrolled_week_end,
         from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as cw
+            {{ ref("int_students__calendar_week") }} as cw
             on co.academic_year = cw.academic_year
             and co.schoolid = cw.schoolid
     )
@@ -32,6 +36,6 @@ with
         dbt_utils.deduplicate(
             relation="student_week",
             partition_by="_dbt_source_project, student_number, week_start_monday",
-            order_by="is_enrolled_week desc",
+            order_by="is_enrolled_week desc, entrydate desc",
         )
     }}

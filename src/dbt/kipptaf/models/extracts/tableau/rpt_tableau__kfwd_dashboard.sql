@@ -252,7 +252,7 @@ select
     c.lastfirst as student_name,
     c.ktc_cohort,
     c.record_type_name as record_type_name,
-    c.contact_owner_name as counselor_name,
+    c.contact_college_counselor_name as counselor_name,
     c.contact_kipp_ms_graduate as is_kipp_ms_graduate,
     c.contact_kipp_hs_graduate as is_kipp_hs_graduate,
     c.contact_current_kipp_student as current_kipp_student,
@@ -290,8 +290,10 @@ select
     c.is_dlm,
     c.contact_graduation_year as graduation_year,
     c.exit_school_name,
+    c.exit_grade_level,
     c.powerschool_enroll_status,
     c.contact_postsec_advisor_name as postsec_advisor,
+    c.contact_college_counselor_name as college_counselor,
     c.best_guess_pathway as bgp,
     c.desired_pathway,
     c.is_ed_ea,
@@ -307,7 +309,6 @@ select
     c.ktc_status,
     c.es_graduated,
     c.contact_highest_sat_score as highest_sat_score,
-    /* Military columns */
     c.contact_intent_to_enlist as intent_to_enlist,
     c.contact_cte_military_interest as cte_military_interest,
     c.contact_opt_out_national_contact,
@@ -372,6 +373,9 @@ select
     ei.ugrad_competitiveness_ranking,
     ei.ugrad_status,
 
+    gc.is_ba_grad_ever_int,
+    gc.is_aa_grad_ever_int,
+    gc.is_cte_grad_ever_int,
     gc.is_4yr_ba_grad_int,
     gc.is_5yr_ba_grad_int,
     gc.is_6yr_ba_grad_int,
@@ -388,7 +392,10 @@ select
     gc.is_5yr_cte_grad_int,
     gc.is_6yr_cte_grad_int,
     gc.is_grad_ever,
-    gc.is_6yr_ugrad_cte_grad_int,
+    -- is_6yr_ugrad_cte_grad_int is identical to is_6yr_grad_any_int once each
+    -- degree is gated on its own end date; kept as an alias for the Tableau
+    -- workbook until it is repointed (#4874).
+    gc.is_6yr_grad_any_int as is_6yr_ugrad_cte_grad_int,
     gc.is_24yo_ugrad_cte_grad_int,
     gc.is_4yr_ugrad_grad_int,
     gc.is_5yr_ugrad_grad_int,
@@ -586,11 +593,9 @@ select
 
     coalesce(
         gpa_fall.cumulative_credits_earned,
-        /* prev spring */
         lag(gpa_spr.cumulative_credits_earned, 1) over (
             partition by c.contact_id order by ay.academic_year asc
         ),
-        /* prev fall */
         lag(gpa_fall.cumulative_credits_earned, 1) over (
             partition by c.contact_id order by ay.academic_year asc
         )
@@ -599,11 +604,9 @@ select
     coalesce(
         gpa_spr.cumulative_credits_earned,
         gpa_fall.cumulative_credits_earned,
-        /* prev spring */
         lag(gpa_spr.cumulative_credits_earned, 1) over (
             partition by c.contact_id order by ay.academic_year asc
         ),
-        /* prev fall */
         lag(gpa_fall.cumulative_credits_earned, 1) over (
             partition by c.contact_id order by ay.academic_year asc
         )
@@ -698,7 +701,6 @@ select
             and ar.n_68_plus_ecc_submitted >= 2
             and ar.n_meets_full_need_68plus_ecc_ea_ed_submitted >= 1
         then 1
-        -- when cf.best_guess_pathway = '4-year' and
         else 0
     end as is_submitted_quality_bar_int,
 
@@ -719,6 +721,9 @@ select
     coalesce(
         ogc.has_duplicate_overgrad_1st_choice, false
     ) as has_duplicate_overgrad_1st_choice,
+
+    (13 - c.exit_grade_level) + c.exit_academic_year
+    = c.contact_graduation_year as is_grade_grad_year,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student

@@ -1,10 +1,7 @@
--- Union of the per-region Finalsite int_finalsite__student_contacts models
--- (grain: finalsite_enrollment_id x contact_slot) — the source for the network
--- contact surface. Union a region here only when it cuts over to Finalsite
--- contacts reporting (today the NJ regions: Newark, Camden, Paterson); its rows
--- flow straight into int_students__contacts' Finalsite branch, so a
--- not-yet-cutover region (e.g. Miami, still PowerSchool-sourced for contacts)
--- must NOT be added here even though its api layer is enabled.
+-- Add a region below only when it cuts over to Finalsite contacts reporting.
+-- These rows flow straight into int_students__contacts' Finalsite branch, so a
+-- region that is still PowerSchool-sourced for contacts double-counts there.
+-- CI reads the district zz_stg_* copies only when this model is rebuilt.
 with
     union_relations as (
         {{
@@ -20,5 +17,5 @@ with
         }}
     )
 
-select *, {{ extract_code_location("union_relations") }} as _dbt_source_project,
+select *, {{ extract_source_project("union_relations") }} as _dbt_source_project,
 from union_relations

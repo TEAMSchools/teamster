@@ -1,7 +1,8 @@
-from dagster import define_asset_job
+from dagster import define_asset_job, in_process_executor
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.extracts.assets import (
+    branchingminds_extract_assets,
     clever_extract_assets,
     coupa_extract,
     deanslist_annual_extract_assets,
@@ -43,9 +44,19 @@ littlesis_extract_asset_job = define_asset_job(
     selection=[littlesis_extract],
 )
 
+branchingminds_extract_asset_job = define_asset_job(
+    name=f"{CODE_LOCATION}__extracts__branchingminds__asset_job",
+    selection=branchingminds_extract_assets,
+)
+
+# In process: a step pod per asset adds to the top-of-hour bursts that GKE
+# preempts on new nodes (#6225). The steps are short, so loading the code location
+# once and running them in turn takes about as long as parallel step pods, and the
+# default run pod fits on an existing node.
 clever_extract_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}__extracts__clever__asset_job",
     selection=clever_extract_assets,
+    executor_def=in_process_executor,
 )
 
 deanslist_annual_extract_asset_job = define_asset_job(

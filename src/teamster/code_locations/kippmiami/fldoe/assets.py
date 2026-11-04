@@ -12,13 +12,36 @@ from teamster.libraries.sftp.assets import (
     build_sftp_folder_asset,
 )
 
+# FLDOE moved the ordinal to the front of the standards columns in 2026-27:
+# `Category` became `1. Category`. `FLDOECategories` already declares ordinals 1
+# through 44. See #5283. `dict_reader_to_records` sorts replacements longest key
+# first, so these beat the bare-ordinal strip below. Order here is irrelevant.
+FAST_STANDARDS_REPLACEMENTS = [
+    [f"{ordinal}. {label}", f"{slug}_{ordinal}"]
+    for ordinal in range(1, 45)
+    for label, slug in (
+        ("Category", "category"),
+        ("Benchmark", "benchmark"),
+        ("Points Earned", "points_earned"),
+        ("Points Possible", "points_possible"),
+    )
+]
+
+# Every `N. <Prose> Performance` header slugifies to its target once the leading
+# ordinal is gone, so one strip replaces the 21 pairs that used to be spelled out.
+# The ordinal is not load-bearing: grades 7 and 8 already mapped `3. Geometric
+# Reasoning Performance` and `4. Geometric Reasoning Performance` to one field.
+# ponytail: strips `N. ` anywhere in a header, not just leading. No FLDOE header
+# has one mid-string; anchor this if one ever ships.
+FAST_ORDINAL_STRIP = [[f"{ordinal}. ", ""] for ordinal in range(1, 5)]
+
 fast = build_sftp_folder_asset(
     asset_key=[CODE_LOCATION, "fldoe", "fast"],
     remote_dir_regex=(
         r"/data-team/kippmiami/fldoe/fast/(?P<school_year_term>SY\d+/PM\d)"
     ),
     remote_file_regex=(
-        r"\w+-\w+_(?P<grade_level_subject>Grade\dFAST\w+)_StudentData_.+\.csv"
+        r"[^/]+?_(?P<grade_level_subject>Grade\dFAST\w+)_StudentData_.+\.csv"
     ),
     ssh_resource_key="ssh_couchdrop",
     avro_schema=FAST_SCHEMA,
@@ -33,6 +56,9 @@ fast = build_sftp_folder_asset(
                     ]
                 )
             ),
+            # FLDOE added Grade 9 FAST ELA Reading in 2026-27 and sends no
+            # Grade 9 mathematics file, so Grade 9 is listed on its own instead of
+            # widening the grade/subject cross product. See #5283.
             "grade_level_subject": StaticPartitionsDefinition(
                 sorted(
                     [
@@ -40,95 +66,14 @@ fast = build_sftp_folder_asset(
                         for subject in ["ELAReading", "Mathematics"]
                         for grade in [3, 4, 5, 6, 7, 8]
                     ]
+                    + ["Grade9FASTELAReading"]
                 )
             ),
         }
     ),
     slugify_replacements=[
-        [
-            "1. Number Sense and Additive Reasoning Performance",
-            "number_sense_and_additive_reasoning_performance",
-        ],
-        [
-            "2. Number Sense and Multiplicative Reasoning Performance",
-            "number_sense_and_multiplicative_reasoning_performance",
-        ],
-        [
-            "3. Fractional Reasoning Performance",
-            "fractional_reasoning_performance",
-        ],
-        [
-            "4. Geometric Reasoning, Measurement, and Data Analysis and Probability Performance",
-            "geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
-        ],
-        [
-            "1. Reading Prose and Poetry Performance",
-            "reading_prose_and_poetry_performance",
-        ],
-        [
-            "2. Reading Informational Text Performance",
-            "reading_informational_text_performance",
-        ],
-        [
-            "3. Reading Across Genres & Vocabulary Performance",
-            "reading_across_genres_vocabulary_performance",
-        ],
-        [
-            "1. Number Sense and Operations with Whole Numbers Performance",
-            "number_sense_and_operations_with_whole_numbers_performance",
-        ],
-        [
-            "2. Number Sense and Operations with Fractions and Decimals Performance",
-            "number_sense_and_operations_with_fractions_and_decimals_performance",
-        ],
-        [
-            "3. Geometric Reasoning, Measurement, and Data Analysis and Probability Performance",
-            "geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
-        ],
-        [
-            "3. Algebraic Reasoning Performance",
-            "algebraic_reasoning_performance",
-        ],
-        [
-            "1. Number Sense and Operations Performance",
-            "number_sense_and_operations_performance",
-        ],
-        [
-            "2. Algebraic Reasoning Performance",
-            "algebraic_reasoning_performance",
-        ],
-        [
-            "3. Geometric Reasoning, Data Analysis, and Probability Performance",
-            "geometric_reasoning_data_analysis_and_probability_performance",
-        ],
-        [
-            "1. Number Sense and Operations and Algebraic Reasoning Performance",
-            "number_sense_and_operations_and_algebraic_reasoning_performance",
-        ],
-        [
-            "2. Proportional Reasoning and Relationships Performance",
-            "proportional_reasoning_and_relationships_performance",
-        ],
-        [
-            "3. Geometric Reasoning Performance",
-            "geometric_reasoning_performance",
-        ],
-        [
-            "4. Data Analysis and Probability Performance",
-            "data_analysis_and_probability_performance",
-        ],
-        [
-            "1. Number Sense and Operations and Probability Performance",
-            "number_sense_and_operations_and_probability_performance",
-        ],
-        [
-            "3. Linear Relationships, Data Analysis and Functions Performance",
-            "linear_relationships_data_analysis_and_functions_performance",
-        ],
-        [
-            "4. Geometric Reasoning Performance",
-            "geometric_reasoning_performance",
-        ],
+        *FAST_STANDARDS_REPLACEMENTS,
+        *FAST_ORDINAL_STRIP,
     ],
 )
 
@@ -187,7 +132,7 @@ science = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "fldoe", "science"],
     remote_dir_regex=r"/data-team/kippmiami/fldoe/science/(?P<school_year_term>\d+)",
     remote_file_regex=(
-        r"\w+-\w+_Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv"
+        r"[^/]+?_Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv"
     ),
     ssh_resource_key="ssh_couchdrop",
     avro_schema=SCIENCE_SCHEMA,

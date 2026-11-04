@@ -2,7 +2,13 @@ from dagster import define_asset_job
 
 from teamster.code_locations.kippnewark import CODE_LOCATION
 from teamster.code_locations.kippnewark.extracts.assets import (
+    parentsquare_extract_assets,
     powerschool_extract_assets,
+)
+
+parentsquare_extract_asset_job = define_asset_job(
+    name=f"{CODE_LOCATION}__extracts__parentsquare__asset_job",
+    selection=parentsquare_extract_assets,
 )
 
 powerschool_extract_asset_job = define_asset_job(

@@ -84,7 +84,7 @@ left join
     {{ ref("int_deanslist__incidents__penalties") }} as dlp
     on co.student_number = dlp.student_school_id
     and co.academic_year = dlp.create_ts_academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="dlp") }}
+    and co._dbt_source_project = dlp._dbt_source_project
     and dlp.is_active
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as d
@@ -95,7 +95,7 @@ left join
     suspension_att as att
     on co.studentid = att.studentid
     and co.academic_year = att.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
+    and co._dbt_source_project = att._dbt_source_project
 where
     co.rn_year = 1
     and co.region in ('Newark', 'Camden')

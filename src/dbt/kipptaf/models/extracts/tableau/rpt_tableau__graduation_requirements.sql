@@ -51,7 +51,9 @@ select
     c.met_ela,
     c.met_math,
     c.final_grad_path_code,
-    c.grad_eligibility,
+    c.final_grad_path_name,
+
+    g.grad_eligibility,
 
     if(e.met_fafsa_requirement, 'Yes', 'No') as has_fafsa,
 
@@ -60,7 +62,7 @@ left join
     {{ ref("base_powerschool__course_enrollments") }} as s
     on e.studentid = s.cc_studentid
     and e.academic_year = s.cc_academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+    and e._dbt_source_project = s._dbt_source_project
     and s.courses_course_name like 'College and Career%'
     and s.rn_course_number_year = 1
     and not s.is_dropped_section
@@ -70,6 +72,14 @@ left join
     and e.discipline = c.discipline
     and c.scale_score is not null
     and c.rn_highest = 1
+/* grad_eligibility is one value per student, so read it from a row every
+   student has, not only from scored rows */
+left join
+    {{ ref("int_students__graduation_path_codes") }} as g
+    on e.student_number = g.student_number
+    and e.discipline = g.discipline
+    and e._dbt_source_project = g._dbt_source_project
+    and g.rn_discipline_distinct = 1
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.rn_year = 1

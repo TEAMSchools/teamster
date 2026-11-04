@@ -1,4 +1,3 @@
-/* Gifted & Talented */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Import Student ID`,
@@ -26,14 +25,15 @@ select
     null as `15 Site ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments") }}
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
 where
-    academic_year = {{ current_school_year(var("local_timezone")) }}
+    region in ('Newark', 'Camden', 'Paterson')
+    and academic_year = {{ current_school_year(var("local_timezone")) }}
     and rn_year = 1
     and gifted_and_talented = 'Y'
 
 union all
 
-/* ELL */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Import Student ID`,
@@ -61,14 +61,15 @@ select
     null as `15 Site ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments") }}
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
 where
-    academic_year = {{ current_school_year(var("local_timezone")) }}
+    region in ('Newark', 'Camden', 'Paterson')
+    and academic_year = {{ current_school_year(var("local_timezone")) }}
     and rn_year = 1
     and lep_status
 
 union all
 
-/* Buckets */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Import Student ID`,
@@ -114,11 +115,14 @@ select
     null as `15 Site ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments_subjects") }}
-where academic_year = {{ current_school_year(var("local_timezone")) }} and rn_year = 1
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+where
+    region in ('Newark', 'Camden', 'Paterson')
+    and academic_year = {{ current_school_year(var("local_timezone")) }}
+    and rn_year = 1
 
 union all
 
-/* L25 */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Import Student ID`,
@@ -146,7 +150,9 @@ select
     null as `15 Site ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments_subjects") }}
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
 where
-    academic_year = {{ current_school_year(var("local_timezone")) }}
+    region in ('Newark', 'Camden', 'Paterson')
+    and academic_year = {{ current_school_year(var("local_timezone")) }}
     and rn_year = 1
     and is_low_25_fl

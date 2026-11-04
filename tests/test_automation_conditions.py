@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 import pytest
 from dagster import (
     AssetKey,
@@ -13,9 +15,11 @@ from dagster import (
 )
 
 from teamster.core.automation_conditions import (
+    dbt_cron_automation_condition,
     dbt_table_automation_condition,
     dbt_union_relations_automation_condition,
     dbt_view_automation_condition,
+    with_failed_deps_guard,
 )
 
 _VIEW_TAG = {"dagster/materialized": "view"}
@@ -1051,6 +1055,75 @@ class TestKipptafDbtAssets:
                     f"{name} is a regular view but got non-view condition"
                 )
 
+    def test_gpa_snapshots_get_cron_condition(self, nodes_by_name):
+        """The two PowerSchool GPA snapshots must be on the 23:00 cron condition.
+
+        A dbt snapshot's config.materialized is 'snapshot', not view or
+        ephemeral, so both inherit dbt_table_automation_condition() by default.
+        The two churn by different routes. gpa_cumulative depends on
+        int_powerschool__gpa_cumulative, a table, so a plain
+        any_deps_updated() fires on that table's own eager rebuilds.
+        gpa_term is declared on the ephemeral
+        int_powerschool__gpa_term_current, for which dagster-dbt makes no
+        asset, so its Dagster dep is int_powerschool__gpa_term, a view, and
+        _build_any_ancestor_updated follows views down to the district source
+        tables. Both routes fired each snapshot about 143 times a day.
+        Refs #5218.
+        """
+        from teamster.libraries.dbt.dagster_dbt_translator import (
+            CustomDagsterDbtTranslator,
+        )
+
+        translator = CustomDagsterDbtTranslator(
+            code_location="kipptaf", local_timezone="America/New_York"
+        )
+        expected = dbt_cron_automation_condition(
+            "0 23 * * *", cron_timezone="America/New_York"
+        )
+
+        for name in (
+            "snapshot_powerschool__gpa_term",
+            "snapshot_powerschool__gpa_cumulative",
+        ):
+            props = nodes_by_name[name]
+
+            assert props["config"]["materialized"] == "snapshot", (
+                f"{name} is no longer a snapshot; this test's premise is stale"
+            )
+            assert translator.get_automation_condition(props) == expected, (
+                f"{name} did not get the 0 23 * * * cron condition"
+            )
+            # _get_dbt_meta or-shorts the whole top-level meta dict, so
+            # automation_condition and asset_key must sit on the same side.
+            # A misplaced key drops the explicit asset_key and the resolved
+            # key loses its 'powerschool' segment.
+            assert translator.get_asset_key(props) == AssetKey(
+                ["kipptaf", "powerschool", name]
+            ), f"{name} lost its explicit asset_key"
+
+    def test_adp_workers_staging_blocks_on_failed_deps(self, nodes_by_name):
+        """ADP workers staging must not build over a failed ADP partition.
+
+        dbt merges meta one level deep, so the model's dagster block replaces
+        the folder's; the model restates group to keep the asset's group.
+        """
+        from teamster.libraries.dbt.dagster_dbt_translator import (
+            CustomDagsterDbtTranslator,
+        )
+
+        translator = CustomDagsterDbtTranslator(
+            code_location="kipptaf", local_timezone="America/New_York"
+        )
+        props = nodes_by_name["stg_adp_workforce_now__workers"]
+
+        assert props["config"]["meta"]["dagster"]["group"] == "adp_workforce_now"
+        assert translator.get_automation_condition(props) == with_failed_deps_guard(
+            dbt_table_automation_condition()
+        )
+        assert translator.get_asset_key(props) == AssetKey(
+            ["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__workers"]
+        )
+
     def test_table_view_table_chain_exists_in_kipptaf(self, all_specs, specs_by_key):
         """Find and validate a real table→view→table chain in kipptaf.
 
@@ -1187,13 +1260,13 @@ class TestKipptafChainTopologies:
         self, translator, nodes_by_name
     ):
         """Real topology: stg_renlearn__star (table) →
-        int_topline__star_assessment_weekly (table).
+        int_assessments__benchmark_scores (table).
 
         Downstream table should be requested when upstream table is updated.
         """
         upstream_props = self._get_node(nodes_by_name, "stg_renlearn__star")
         downstream_props = self._get_node(
-            nodes_by_name, "int_topline__star_assessment_weekly"
+            nodes_by_name, "int_assessments__benchmark_scores"
         )
 
         @asset(
@@ -1204,16 +1277,16 @@ class TestKipptafChainTopologies:
             return 1
 
         @asset(
-            key=["kipptaf", "int_topline__star_assessment_weekly"],
+            key=["kipptaf", "int_assessments__benchmark_scores"],
             deps=[stg_renlearn__star],
             automation_condition=translator.get_automation_condition(downstream_props),
             tags=translator.get_tags(downstream_props),
         )
-        def int_topline__star_assessment_weekly():
+        def int_assessments__benchmark_scores():
             return 2
 
         instance = DagsterInstance.ephemeral()
-        all_assets = [stg_renlearn__star, int_topline__star_assessment_weekly]
+        all_assets = [stg_renlearn__star, int_assessments__benchmark_scores]
         defs = Definitions(assets=all_assets)
 
         materialize(assets=all_assets, instance=instance)
@@ -1229,58 +1302,54 @@ class TestKipptafChainTopologies:
         )
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_topline__star_assessment_weekly"])
+                AssetKey(["kipptaf", "int_assessments__benchmark_scores"])
             )
             == 1
         )
 
     def test_kipptaf_table_view_table_chain(self, translator, nodes_by_name):
-        """Real topology: int_extracts__student_enrollments_subjects (table) →
-        int_extracts__student_enrollments_subjects_weeks (view) →
-        int_topline__star_assessment_weekly (table).
+        """Real topology: stg_kippadb__standardized_test (table) →
+        int_kippadb__standardized_test (view) →
+        int_kippadb__standardized_test_unpivot (table).
 
         View should NOT be requested; downstream table SHOULD be requested.
         """
-        source_props = self._get_node(
-            nodes_by_name, "int_extracts__student_enrollments_subjects"
-        )
-        view_props = self._get_node(
-            nodes_by_name, "int_extracts__student_enrollments_subjects_weeks"
-        )
+        source_props = self._get_node(nodes_by_name, "stg_kippadb__standardized_test")
+        view_props = self._get_node(nodes_by_name, "int_kippadb__standardized_test")
         target_props = self._get_node(
-            nodes_by_name, "int_topline__star_assessment_weekly"
+            nodes_by_name, "int_kippadb__standardized_test_unpivot"
         )
 
         @asset(
-            key=["kipptaf", "int_extracts__student_enrollments_subjects"],
+            key=["kipptaf", "stg_kippadb__standardized_test"],
             tags=translator.get_tags(source_props),
         )
-        def int_extracts__student_enrollments_subjects():
+        def stg_kippadb__standardized_test():
             return 1
 
         @asset(
-            key=["kipptaf", "int_extracts__student_enrollments_subjects_weeks"],
-            deps=[int_extracts__student_enrollments_subjects],
+            key=["kipptaf", "int_kippadb__standardized_test"],
+            deps=[stg_kippadb__standardized_test],
             automation_condition=translator.get_automation_condition(view_props),
             tags=translator.get_tags(view_props),
         )
-        def int_extracts__student_enrollments_subjects_weeks():
+        def int_kippadb__standardized_test():
             return 2
 
         @asset(
-            key=["kipptaf", "int_topline__star_assessment_weekly"],
-            deps=[int_extracts__student_enrollments_subjects_weeks],
+            key=["kipptaf", "int_kippadb__standardized_test_unpivot"],
+            deps=[int_kippadb__standardized_test],
             automation_condition=translator.get_automation_condition(target_props),
             tags=translator.get_tags(target_props),
         )
-        def int_topline__star_assessment_weekly():
+        def int_kippadb__standardized_test_unpivot():
             return 3
 
         instance = DagsterInstance.ephemeral()
         all_assets = [
-            int_extracts__student_enrollments_subjects,
-            int_extracts__student_enrollments_subjects_weeks,
-            int_topline__star_assessment_weekly,
+            stg_kippadb__standardized_test,
+            int_kippadb__standardized_test,
+            int_kippadb__standardized_test_unpivot,
         ]
         defs = Definitions(assets=all_assets)
 
@@ -1289,85 +1358,85 @@ class TestKipptafChainTopologies:
         assert result.total_requested == 0
 
         materialize(
-            assets=[int_extracts__student_enrollments_subjects],
+            assets=[stg_kippadb__standardized_test],
             instance=instance,
-            selection=[int_extracts__student_enrollments_subjects],
+            selection=[stg_kippadb__standardized_test],
         )
         result = evaluate_automation_conditions(
             defs=defs, instance=instance, cursor=result.cursor
         )
         assert (
             result.get_num_requested(
-                AssetKey(
-                    ["kipptaf", "int_extracts__student_enrollments_subjects_weeks"]
-                )
+                AssetKey(["kipptaf", "int_kippadb__standardized_test"])
             )
             == 0
         )
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_topline__star_assessment_weekly"])
+                AssetKey(["kipptaf", "int_kippadb__standardized_test_unpivot"])
             )
             == 1
         )
 
     def test_kipptaf_double_view_chain(self, translator, nodes_by_name):
-        """Real topology: int_extracts__student_enrollments_subjects (table) →
-        int_students__dibels_participation_roster (view) →
-        int_amplify__pm_met_criteria (view) →
-        int_topline__dibels_pm_weekly (table).
+        """Real topology: stg_google_sheets__reporting__terms (table) →
+        int_google_sheets__dibels_expected_assessments (view) →
+        int_amplify__all_assessments (view) →
+        int_assessments__benchmark_scores (table).
 
         Both views should NOT be requested; target table SHOULD be requested.
         """
         source_props = self._get_node(
-            nodes_by_name, "int_extracts__student_enrollments_subjects"
+            nodes_by_name, "stg_google_sheets__reporting__terms"
         )
         view_a_props = self._get_node(
-            nodes_by_name, "int_students__dibels_participation_roster"
+            nodes_by_name, "int_google_sheets__dibels_expected_assessments"
         )
-        view_b_props = self._get_node(nodes_by_name, "int_amplify__pm_met_criteria")
-        target_props = self._get_node(nodes_by_name, "int_topline__dibels_pm_weekly")
+        view_b_props = self._get_node(nodes_by_name, "int_amplify__all_assessments")
+        target_props = self._get_node(
+            nodes_by_name, "int_assessments__benchmark_scores"
+        )
 
         @asset(
-            key=["kipptaf", "int_extracts__student_enrollments_subjects"],
+            key=["kipptaf", "stg_google_sheets__reporting__terms"],
             tags=translator.get_tags(source_props),
         )
-        def int_extracts__student_enrollments_subjects():
+        def stg_google_sheets__reporting__terms():
             return 1
 
         @asset(
-            key=["kipptaf", "int_students__dibels_participation_roster"],
-            deps=[int_extracts__student_enrollments_subjects],
+            key=["kipptaf", "int_google_sheets__dibels_expected_assessments"],
+            deps=[stg_google_sheets__reporting__terms],
             automation_condition=translator.get_automation_condition(view_a_props),
             tags=translator.get_tags(view_a_props),
         )
-        def int_students__dibels_participation_roster():
+        def int_google_sheets__dibels_expected_assessments():
             return 2
 
         @asset(
-            key=["kipptaf", "int_amplify__pm_met_criteria"],
-            deps=[int_students__dibels_participation_roster],
+            key=["kipptaf", "int_amplify__all_assessments"],
+            deps=[int_google_sheets__dibels_expected_assessments],
             automation_condition=translator.get_automation_condition(view_b_props),
             tags=translator.get_tags(view_b_props),
         )
-        def int_amplify__pm_met_criteria():
+        def int_amplify__all_assessments():
             return 3
 
         @asset(
-            key=["kipptaf", "int_topline__dibels_pm_weekly"],
-            deps=[int_amplify__pm_met_criteria],
+            key=["kipptaf", "int_assessments__benchmark_scores"],
+            deps=[int_amplify__all_assessments],
             automation_condition=translator.get_automation_condition(target_props),
             tags=translator.get_tags(target_props),
         )
-        def int_topline__dibels_pm_weekly():
+        def int_assessments__benchmark_scores():
             return 4
 
         instance = DagsterInstance.ephemeral()
         all_assets = [
-            int_extracts__student_enrollments_subjects,
-            int_students__dibels_participation_roster,
-            int_amplify__pm_met_criteria,
-            int_topline__dibels_pm_weekly,
+            stg_google_sheets__reporting__terms,
+            int_google_sheets__dibels_expected_assessments,
+            int_amplify__all_assessments,
+            int_assessments__benchmark_scores,
         ]
         defs = Definitions(assets=all_assets)
 
@@ -1375,9 +1444,9 @@ class TestKipptafChainTopologies:
         result = evaluate_automation_conditions(defs=defs, instance=instance)
 
         materialize(
-            assets=[int_extracts__student_enrollments_subjects],
+            assets=[stg_google_sheets__reporting__terms],
             instance=instance,
-            selection=[int_extracts__student_enrollments_subjects],
+            selection=[stg_google_sheets__reporting__terms],
         )
         result = evaluate_automation_conditions(
             defs=defs, instance=instance, cursor=result.cursor
@@ -1385,19 +1454,19 @@ class TestKipptafChainTopologies:
 
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_students__dibels_participation_roster"])
+                AssetKey(["kipptaf", "int_google_sheets__dibels_expected_assessments"])
             )
             == 0
         )
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_amplify__pm_met_criteria"])
+                AssetKey(["kipptaf", "int_amplify__all_assessments"])
             )
             == 0
         )
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_topline__dibels_pm_weekly"])
+                AssetKey(["kipptaf", "int_assessments__benchmark_scores"])
             )
             == 1
         )
@@ -1405,65 +1474,61 @@ class TestKipptafChainTopologies:
     def test_kipptaf_update_propagates_through_view_between_tables(
         self, translator, nodes_by_name
     ):
-        """Real topology: stg_powerschool__terms (table) →
-        int_extracts__student_enrollments_subjects (table) →
-        int_extracts__student_enrollments_subjects_weeks (view) →
-        int_topline__star_assessment_weekly (table).
+        """Real topology: stg_google_forms__responses (table) →
+        int_google_forms__form_responses (table) →
+        int_surveys__staff_information_survey_pivot (view) →
+        int_people__staff_roster_history (table).
 
         When source table is updated, middle table and downstream table should
         be requested; view should NOT be requested.
         """
-        source_props = self._get_node(nodes_by_name, "stg_powerschool__terms")
-        middle_props = self._get_node(
-            nodes_by_name, "int_extracts__student_enrollments_subjects"
-        )
+        source_props = self._get_node(nodes_by_name, "stg_google_forms__responses")
+        middle_props = self._get_node(nodes_by_name, "int_google_forms__form_responses")
         view_props = self._get_node(
-            nodes_by_name, "int_extracts__student_enrollments_subjects_weeks"
+            nodes_by_name, "int_surveys__staff_information_survey_pivot"
         )
-        target_props = self._get_node(
-            nodes_by_name, "int_topline__star_assessment_weekly"
-        )
+        target_props = self._get_node(nodes_by_name, "int_people__staff_roster_history")
 
         @asset(
-            key=["kipptaf", "stg_powerschool__terms"],
+            key=["kipptaf", "stg_google_forms__responses"],
             tags=translator.get_tags(source_props),
         )
-        def stg_powerschool__terms():
+        def stg_google_forms__responses():
             return 1
 
         @asset(
-            key=["kipptaf", "int_extracts__student_enrollments_subjects"],
-            deps=[stg_powerschool__terms],
+            key=["kipptaf", "int_google_forms__form_responses"],
+            deps=[stg_google_forms__responses],
             automation_condition=translator.get_automation_condition(middle_props),
             tags=translator.get_tags(middle_props),
         )
-        def int_extracts__student_enrollments_subjects():
+        def int_google_forms__form_responses():
             return 2
 
         @asset(
-            key=["kipptaf", "int_extracts__student_enrollments_subjects_weeks"],
-            deps=[int_extracts__student_enrollments_subjects],
+            key=["kipptaf", "int_surveys__staff_information_survey_pivot"],
+            deps=[int_google_forms__form_responses],
             automation_condition=translator.get_automation_condition(view_props),
             tags=translator.get_tags(view_props),
         )
-        def int_extracts__student_enrollments_subjects_weeks():
+        def int_surveys__staff_information_survey_pivot():
             return 3
 
         @asset(
-            key=["kipptaf", "int_topline__star_assessment_weekly"],
-            deps=[int_extracts__student_enrollments_subjects_weeks],
+            key=["kipptaf", "int_people__staff_roster_history"],
+            deps=[int_surveys__staff_information_survey_pivot],
             automation_condition=translator.get_automation_condition(target_props),
             tags=translator.get_tags(target_props),
         )
-        def int_topline__star_assessment_weekly():
+        def int_people__staff_roster_history():
             return 4
 
         instance = DagsterInstance.ephemeral()
         all_assets = [
-            stg_powerschool__terms,
-            int_extracts__student_enrollments_subjects,
-            int_extracts__student_enrollments_subjects_weeks,
-            int_topline__star_assessment_weekly,
+            stg_google_forms__responses,
+            int_google_forms__form_responses,
+            int_surveys__staff_information_survey_pivot,
+            int_people__staff_roster_history,
         ]
         defs = Definitions(assets=all_assets)
 
@@ -1472,9 +1537,9 @@ class TestKipptafChainTopologies:
         assert result.total_requested == 0
 
         materialize(
-            assets=[stg_powerschool__terms],
+            assets=[stg_google_forms__responses],
             instance=instance,
-            selection=[stg_powerschool__terms],
+            selection=[stg_google_forms__responses],
         )
         result = evaluate_automation_conditions(
             defs=defs, instance=instance, cursor=result.cursor
@@ -1482,21 +1547,19 @@ class TestKipptafChainTopologies:
 
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_extracts__student_enrollments_subjects"])
+                AssetKey(["kipptaf", "int_google_forms__form_responses"])
             )
             == 1
         )
         assert (
             result.get_num_requested(
-                AssetKey(
-                    ["kipptaf", "int_extracts__student_enrollments_subjects_weeks"]
-                )
+                AssetKey(["kipptaf", "int_surveys__staff_information_survey_pivot"])
             )
             == 0
         )
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_topline__star_assessment_weekly"])
+                AssetKey(["kipptaf", "int_people__staff_roster_history"])
             )
             == 1
         )
@@ -1738,6 +1801,75 @@ def test_intacct_extract_partition_aware_on_payroll_update():
     assert result.get_num_requested(AssetKey("adp_payroll_date_group_code_csv")) == 1
 
 
+def test_table_held_while_dep_partition_failed():
+    """A guarded table is not requested while any parent partition's latest
+    attempt failed, stays held on later ticks, and is requested once that
+    partition succeeds. The unguarded table shows the scenario would
+    otherwise request.
+    """
+    _PARTITIONS = StaticPartitionsDefinition(["2024-01-01", "2024-01-02"])
+
+    @asset(key="workers", partitions_def=_PARTITIONS, tags=_TABLE_TAG)
+    def workers_ok():
+        return 1
+
+    @asset(key="workers", partitions_def=_PARTITIONS, tags=_TABLE_TAG)
+    def workers_fails():
+        raise Exception("intentional failure")
+
+    @asset(
+        deps=[workers_ok],
+        automation_condition=with_failed_deps_guard(dbt_table_automation_condition()),
+        tags=_TABLE_TAG,
+    )
+    def guarded():
+        return 2
+
+    @asset(
+        deps=[workers_ok],
+        automation_condition=dbt_table_automation_condition(),
+        tags=_TABLE_TAG,
+    )
+    def unguarded():
+        return 3
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[workers_ok, guarded, unguarded])
+
+    for pk in ["2024-01-01", "2024-01-02"]:
+        materialize(assets=[workers_ok], instance=instance, partition_key=pk)
+    materialize(assets=[guarded, unguarded], instance=instance)
+
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    materialize(assets=[workers_ok], instance=instance, partition_key="2024-01-01")
+    materialize(
+        assets=[workers_fails],
+        instance=instance,
+        partition_key="2024-01-02",
+        raise_on_error=False,
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("unguarded")) == 1
+    assert result.get_num_requested(AssetKey("guarded")) == 0
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("guarded")) == 0
+
+    materialize(assets=[workers_ok], instance=instance, partition_key="2024-01-02")
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("guarded")) == 1
+
+
 def test_intacct_extract_all_partitions_on_mapping_update():
     """Updating stg_google_sheets__finance__payroll_code_mapping (non-partitioned)
     fans out to ALL partitions of adp_payroll_date_group_code_csv.
@@ -1860,13 +1992,22 @@ def test_union_relations_view_not_triggered_by_upstream_data_update():
     assert result.get_num_requested(AssetKey("union_relations_view")) == 0
 
 
-def test_union_relations_view_triggered_by_upstream_code_version_change():
-    """union_relations views SHOULD refresh when an upstream dep's code version
-    changes (e.g., a staging model adds a new column after a deploy).
+def _deploy(asset_name: str, code_version: str, tags: dict, deps=None):
+    """Return a replacement asset simulating a deploy that bumps code_version."""
 
-    Simulates: regional_table (table, code_version="1") → union_relations_view.
-    When regional_table's code version changes to "2", the union_relations view
-    should be requested so the macro recompiles with the updated column set.
+    @asset(key=asset_name, tags=tags, code_version=code_version, deps=deps)
+    def _redeployed():
+        return 1
+
+    return _redeployed
+
+
+def test_union_relations_view_waits_for_parent_code_change_to_land():
+    """The wrapper must NOT rebuild on the deploy tick, when the parent table
+    still has its old schema. It rebuilds on the tick the parent's
+    post-deploy materialization lands, exactly once, and a later data-only
+    refresh of the parent does not re-fire it (issue #4290: finalsite and
+    amplify PM incidents).
     """
 
     @asset(tags=_TABLE_TAG, code_version="1")
@@ -1882,33 +2023,56 @@ def test_union_relations_view_triggered_by_upstream_code_version_change():
         return 2
 
     instance = DagsterInstance.ephemeral()
-    all_assets = [regional_table, union_relations_view]
-    defs = Definitions(assets=all_assets)
-
-    materialize(assets=all_assets, instance=instance)
+    defs = Definitions(assets=[regional_table, union_relations_view])
+    materialize(assets=[regional_table, union_relations_view], instance=instance)
     result = evaluate_automation_conditions(defs=defs, instance=instance)
     assert result.total_requested == 0
 
-    # Simulate deploy: upstream code version changes
-    @asset(key="regional_table", tags=_TABLE_TAG, code_version="2")
-    def regional_table_v2():
-        return 1
-
+    regional_table_v2 = _deploy("regional_table", "2", _TABLE_TAG)
     defs_v2 = Definitions(assets=[regional_table_v2, union_relations_view])
+    wrapper = AssetKey("union_relations_view")
+
+    # Deploy tick: parent has the new code version but has not rebuilt
     result = evaluate_automation_conditions(
         defs=defs_v2, instance=instance, cursor=result.cursor
     )
-    assert result.get_num_requested(AssetKey("union_relations_view")) == 1
+    assert result.get_num_requested(wrapper) == 0
+
+    # Parent's post-deploy rebuild lands
+    materialize(
+        assets=[regional_table_v2, union_relations_view],
+        instance=instance,
+        selection=[regional_table_v2],
+    )
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 1
+
+    # Trigger resets on the request
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 0
+
+    # Data-only refresh of the parent afterwards: no re-fire
+    materialize(
+        assets=[regional_table_v2, union_relations_view],
+        instance=instance,
+        selection=[regional_table_v2],
+    )
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 0
 
 
-def test_union_relations_view_triggered_by_ancestor_code_version_change():
-    """union_relations views should detect code version changes through
-    intermediate views (recursive lookthrough).
+def test_union_relations_view_fires_when_table_behind_view_lands():
+    """A table behind an intermediate view counts as a parent: the wrapper
+    rebuilds when that table's post-deploy materialization lands, even though
+    the intermediate view never rematerializes.
 
-    Simulates: staging_table (table, code_version="1") → intermediate_view
-    (view) → union_relations_view. When staging_table's code version changes,
-    the union_relations view should be requested even though the intermediate
-    view sits between them.
+    Chain: staging_table (table) -> intermediate_view (view) -> wrapper.
     """
 
     @asset(tags=_TABLE_TAG, code_version="1")
@@ -1933,21 +2097,771 @@ def test_union_relations_view_triggered_by_ancestor_code_version_change():
 
     instance = DagsterInstance.ephemeral()
     all_assets = [staging_table, intermediate_view, union_relations_view]
-    defs = Definitions(assets=all_assets)
-
     materialize(assets=all_assets, instance=instance)
-    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    result = evaluate_automation_conditions(
+        defs=Definitions(assets=all_assets), instance=instance
+    )
     assert result.total_requested == 0
 
-    # Simulate deploy: ancestor code version changes
-    @asset(key="staging_table", tags=_TABLE_TAG, code_version="2")
-    def staging_table_v2():
-        return 1
+    staging_table_v2 = _deploy("staging_table", "2", _TABLE_TAG)
+    assets_v2 = [staging_table_v2, intermediate_view, union_relations_view]
+    defs_v2 = Definitions(assets=assets_v2)
+    wrapper = AssetKey("union_relations_view")
 
-    defs_v2 = Definitions(
-        assets=[staging_table_v2, intermediate_view, union_relations_view]
-    )
     result = evaluate_automation_conditions(
         defs=defs_v2, instance=instance, cursor=result.cursor
     )
-    assert result.get_num_requested(AssetKey("union_relations_view")) == 1
+    assert result.get_num_requested(wrapper) == 0
+
+    materialize(assets=assets_v2, instance=instance, selection=[staging_table_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 1
+
+
+def test_union_relations_view_fires_when_grandparent_change_reaches_parent():
+    """Overgrad shape (issue #4290, second comment): the code change is two
+    hops up, behind a parent table whose own code never changes. The wrapper
+    must wait for the PARENT to rebuild, not just the changed grandparent.
+
+    Chain: pivot (table, code change) -> admissions (table) -> wrapper.
+    """
+
+    @asset(tags=_TABLE_TAG, code_version="1")
+    def pivot():
+        return 1
+
+    @asset(deps=[pivot], tags=_TABLE_TAG, code_version="1")
+    def admissions():
+        return 2
+
+    @asset(
+        deps=[admissions],
+        automation_condition=_get_union_relations_condition(),
+        tags=_VIEW_TAG,
+    )
+    def union_relations_view():
+        return 3
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [pivot, admissions, union_relations_view]
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(
+        defs=Definitions(assets=all_assets), instance=instance
+    )
+    assert result.total_requested == 0
+
+    pivot_v2 = _deploy("pivot", "2", _TABLE_TAG)
+    assets_v2 = [pivot_v2, admissions, union_relations_view]
+    defs_v2 = Definitions(assets=assets_v2)
+    wrapper = AssetKey("union_relations_view")
+
+    # Deploy tick
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 0
+
+    # Grandparent rebuilds; parent still carries the old schema
+    materialize(assets=assets_v2, instance=instance, selection=[pivot_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 0
+
+    # Parent's data rebuild picks up the grandparent change
+    materialize(assets=assets_v2, instance=instance, selection=[admissions])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 1
+
+
+def test_union_relations_trigger_survives_stale_wrapper_run():
+    """A wrapper materialization from a run that started before the parent
+    landed (stale in-flight run, or a manual UI run) must not consume the
+    trigger (issue #4290, overgrad mechanism).
+
+    The ~any_deps_missing gate holds the wrapper back while
+    other_regional_table is missing, which stands in for the
+    ~any_deps_in_progress gate in prod.
+    """
+
+    @asset(tags=_TABLE_TAG, code_version="1")
+    def regional_table():
+        return 1
+
+    @asset(tags=_TABLE_TAG)
+    def other_regional_table():
+        return 1
+
+    @asset(
+        deps=[regional_table, other_regional_table],
+        automation_condition=_get_union_relations_condition(),
+        tags=_VIEW_TAG,
+    )
+    def union_relations_view():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [regional_table, other_regional_table, union_relations_view]
+    materialize(
+        assets=all_assets,
+        instance=instance,
+        selection=[regional_table, union_relations_view],
+    )
+    result = evaluate_automation_conditions(
+        defs=Definitions(assets=all_assets), instance=instance
+    )
+    assert result.total_requested == 0
+
+    regional_table_v2 = _deploy("regional_table", "2", _TABLE_TAG)
+    assets_v2 = [regional_table_v2, other_regional_table, union_relations_view]
+    defs_v2 = Definitions(assets=assets_v2)
+    wrapper = AssetKey("union_relations_view")
+
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 0
+
+    # Parent lands while the gate holds the wrapper
+    materialize(assets=assets_v2, instance=instance, selection=[regional_table_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 0
+
+    # Stale wrapper run finishes
+    materialize(assets=assets_v2, instance=instance, selection=[union_relations_view])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 0
+
+    # Gate opens: the trigger is still armed
+    materialize(assets=assets_v2, instance=instance, selection=[other_regional_table])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 1
+
+
+def test_union_relations_view_fires_per_parent_landing():
+    """Two parents change code in one deploy (e.g. Newark and Camden). Each
+    landing can change the column set, so the wrapper fires once per landing.
+    """
+
+    @asset(tags=_TABLE_TAG, code_version="1")
+    def newark_table():
+        return 1
+
+    @asset(tags=_TABLE_TAG, code_version="1")
+    def camden_table():
+        return 1
+
+    @asset(
+        deps=[newark_table, camden_table],
+        automation_condition=_get_union_relations_condition(),
+        tags=_VIEW_TAG,
+    )
+    def union_relations_view():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [newark_table, camden_table, union_relations_view]
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(
+        defs=Definitions(assets=all_assets), instance=instance
+    )
+    assert result.total_requested == 0
+
+    newark_v2 = _deploy("newark_table", "2", _TABLE_TAG)
+    camden_v2 = _deploy("camden_table", "2", _TABLE_TAG)
+    assets_v2 = [newark_v2, camden_v2, union_relations_view]
+    defs_v2 = Definitions(assets=assets_v2)
+    wrapper = AssetKey("union_relations_view")
+
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 0
+
+    materialize(assets=assets_v2, instance=instance, selection=[newark_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 1
+
+    # Pretend the requested run completed
+    materialize(assets=assets_v2, instance=instance, selection=[union_relations_view])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 0
+
+    materialize(assets=assets_v2, instance=instance, selection=[camden_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(wrapper) == 1
+
+
+def test_union_relations_condition_change_does_not_fire_all():
+    """Shipping the new condition changes the condition tree, so its new nodes
+    have no cursor. newly_true() treats a missing cursor as "everything newly
+    true"; the first evaluation must still request nothing when no parent
+    updated.
+    """
+
+    @asset(tags=_TABLE_TAG, code_version="1")
+    def regional_table():
+        return 1
+
+    @asset(
+        key="union_relations_view",
+        deps=[regional_table],
+        automation_condition=_get_view_condition(),
+        tags=_VIEW_TAG,
+    )
+    def wrapper_old_condition():
+        return 2
+
+    @asset(
+        key="union_relations_view",
+        deps=[regional_table],
+        automation_condition=_get_union_relations_condition(),
+        tags=_VIEW_TAG,
+    )
+    def wrapper_new_condition():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    materialize(assets=[regional_table, wrapper_old_condition], instance=instance)
+    result = evaluate_automation_conditions(
+        defs=Definitions(assets=[regional_table, wrapper_old_condition]),
+        instance=instance,
+    )
+    assert result.total_requested == 0
+
+    result = evaluate_automation_conditions(
+        defs=Definitions(assets=[regional_table, wrapper_new_condition]),
+        instance=instance,
+        cursor=result.cursor,
+    )
+    assert result.get_num_requested(AssetKey("union_relations_view")) == 0
+
+
+def test_cron_table_not_requested_on_upstream_update():
+    """Cron tables ignore upstream data updates; only the tick triggers.
+
+    This is the whole point of the condition: an expensive table whose
+    consumers refresh nightly should not rebuild on every upstream refresh.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def upstream_table():
+        return 1
+
+    @asset(
+        deps=[upstream_table],
+        automation_condition=dbt_cron_automation_condition(
+            "0 0 * * *", cron_timezone="UTC"
+        ),
+        tags=_TABLE_TAG,
+    )
+    def cron_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [upstream_table, cron_table]
+    defs = Definitions(assets=all_assets)
+
+    materialize(assets=all_assets, instance=instance)
+
+    t0 = datetime(2026, 1, 1, 6, 0, tzinfo=UTC)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=t0
+    )
+    assert result.total_requested == 0
+
+    # upstream data refresh mid-day: eager tables would rebuild; cron must not
+    materialize(assets=[upstream_table], instance=instance, selection=[upstream_table])
+
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("cron_table")) == 0
+
+    # midnight tick crossed: requested exactly once
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 1, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("cron_table")) == 1
+
+    # trigger consumed by the request: not re-requested before the next tick
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 2, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("cron_table")) == 0
+
+
+def test_cron_table_requested_on_code_version_change():
+    """Deploys still rebuild cron tables immediately, without waiting for
+    the next tick — code_version_changed is retained from the shared
+    condition skeleton."""
+
+    @asset(tags=_TABLE_TAG, code_version="1")
+    def versioned_cron_table():
+        return 1
+
+    versioned_cron_table = versioned_cron_table.map_asset_specs(
+        lambda spec: spec.replace_attributes(
+            automation_condition=dbt_cron_automation_condition(
+                "0 0 * * *", cron_timezone="UTC"
+            )
+        )
+    )
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[versioned_cron_table])
+
+    materialize(assets=[versioned_cron_table], instance=instance)
+
+    t0 = datetime(2026, 1, 1, 6, 0, tzinfo=UTC)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=t0
+    )
+    assert result.total_requested == 0
+
+    # simulate deploy: code version changes, no cron tick crossed
+    @asset(key="versioned_cron_table", tags=_TABLE_TAG, code_version="2")
+    def versioned_cron_table_v2():
+        return 1
+
+    versioned_cron_table_v2 = versioned_cron_table_v2.map_asset_specs(
+        lambda spec: spec.replace_attributes(
+            automation_condition=dbt_cron_automation_condition(
+                "0 0 * * *", cron_timezone="UTC"
+            )
+        )
+    )
+
+    defs_v2 = Definitions(assets=[versioned_cron_table_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 1, 6, 5, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("versioned_cron_table")) == 1
+
+
+def test_translator_meta_cron_schedule_override():
+    """meta.dagster.automation_condition.cron_schedule overrides the
+    materialized-type condition; absent meta falls through unchanged."""
+    from teamster.libraries.dbt.dagster_dbt_translator import (
+        CustomDagsterDbtTranslator,
+    )
+
+    translator = CustomDagsterDbtTranslator(
+        code_location="kipptaf", local_timezone="America/New_York"
+    )
+
+    # no cron_timezone in meta: the translator's local_timezone applies
+    cron_props = {
+        "config": {
+            "materialized": "table",
+            "meta": {
+                "dagster": {"automation_condition": {"cron_schedule": "0 0 * * *"}}
+            },
+        }
+    }
+    assert translator.get_automation_condition(
+        cron_props
+    ) == dbt_cron_automation_condition("0 0 * * *", cron_timezone="America/New_York")
+
+    # explicit meta cron_timezone wins over the translator's local_timezone
+    tz_props = {
+        "config": {
+            "materialized": "table",
+            "meta": {
+                "dagster": {
+                    "automation_condition": {
+                        "cron_schedule": "0 0 * * *",
+                        "cron_timezone": "UTC",
+                    }
+                }
+            },
+        }
+    }
+    assert translator.get_automation_condition(
+        tz_props
+    ) == dbt_cron_automation_condition("0 0 * * *", cron_timezone="UTC")
+
+    plain_table_props = {"config": {"materialized": "table", "meta": {}}}
+    assert (
+        translator.get_automation_condition(plain_table_props)
+        == dbt_table_automation_condition()
+    )
+
+    plain_view_props = {"config": {"materialized": "view", "meta": {}}}
+    assert (
+        translator.get_automation_condition(plain_view_props)
+        == dbt_view_automation_condition()
+    )
+
+    # top-level meta (no config.meta) is the fallback arm of _get_dbt_meta
+    top_level_meta_props = {
+        "config": {"materialized": "table"},
+        "meta": {"dagster": {"automation_condition": {"cron_schedule": "0 0 * * *"}}},
+    }
+    assert translator.get_automation_condition(
+        top_level_meta_props
+    ) == dbt_cron_automation_condition("0 0 * * *", cron_timezone="America/New_York")
+
+    # the override is table-only: a view carrying the meta key keeps its
+    # view condition (union_relations detection must not be lost)
+    view_with_cron_props = {
+        "config": {
+            "materialized": "view",
+            "meta": {
+                "dagster": {"automation_condition": {"cron_schedule": "0 0 * * *"}}
+            },
+        }
+    }
+    assert (
+        translator.get_automation_condition(view_with_cron_props)
+        == dbt_view_automation_condition()
+    )
+
+    # an empty cron_schedule fails the truthiness guard and falls through
+    empty_cron_props = {
+        "config": {
+            "materialized": "table",
+            "meta": {"dagster": {"automation_condition": {"cron_schedule": ""}}},
+        }
+    }
+    assert (
+        translator.get_automation_condition(empty_cron_props)
+        == dbt_table_automation_condition()
+    )
+
+
+def test_translator_meta_block_on_failed_deps():
+    """meta.dagster.automation_condition.block_on_failed_deps wraps the table
+    or cron condition in the failed-deps guard; views ignore it."""
+    from teamster.libraries.dbt.dagster_dbt_translator import (
+        CustomDagsterDbtTranslator,
+    )
+
+    translator = CustomDagsterDbtTranslator(
+        code_location="kipptaf", local_timezone="America/New_York"
+    )
+
+    def props(materialized: str, **condition_meta) -> dict:
+        return {
+            "config": {
+                "materialized": materialized,
+                "meta": {"dagster": {"automation_condition": condition_meta}},
+            }
+        }
+
+    assert translator.get_automation_condition(
+        props("table", block_on_failed_deps=True)
+    ) == with_failed_deps_guard(dbt_table_automation_condition())
+
+    assert translator.get_automation_condition(
+        props("table", block_on_failed_deps=True, cron_schedule="0 0 * * *")
+    ) == with_failed_deps_guard(
+        dbt_cron_automation_condition("0 0 * * *", cron_timezone="America/New_York")
+    )
+
+    assert (
+        translator.get_automation_condition(props("view", block_on_failed_deps=True))
+        == dbt_view_automation_condition()
+    )
+
+    assert (
+        translator.get_automation_condition(props("table", block_on_failed_deps=False))
+        == dbt_table_automation_condition()
+    )
+
+
+def test_cron_table_tick_latched_while_dep_missing():
+    """A tick that fires while a dep is missing is not lost: the
+    .since(newly_requested | newly_updated) wrapper latches the trigger and
+    the request goes out once the dep guard clears — no new tick needed.
+
+    This is the deps-guard behavior the docstring advertises, and what the
+    same-tick run batching of response_rollup -> assessment star relies on.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def latch_upstream():
+        return 1
+
+    @asset(
+        deps=[latch_upstream],
+        automation_condition=dbt_cron_automation_condition(
+            "0 0 * * *", cron_timezone="UTC"
+        ),
+        tags=_TABLE_TAG,
+    )
+    def latch_cron_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[latch_upstream, latch_cron_table])
+
+    # only the cron table exists; its dep is missing
+    materialize(
+        assets=[latch_upstream, latch_cron_table],
+        instance=instance,
+        selection=[latch_cron_table],
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        evaluation_time=datetime(2026, 1, 1, 6, 0, tzinfo=UTC),
+    )
+    assert result.total_requested == 0
+
+    # tick crosses midnight while the dep is still missing: blocked
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 1, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("latch_cron_table")) == 0
+
+    # dep materializes — no new tick — and the latched trigger fires
+    materialize(assets=[latch_upstream], instance=instance, selection=[latch_upstream])
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 10, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("latch_cron_table")) == 1
+
+
+def test_table_dep_update_during_own_run_triggers_follow_up():
+    """A dep update that lands while the table's own run is in flight must
+    trigger one more run, not be cleared by that run's completion (#5822).
+
+    The stale run read the old dep. Its materialization and the dep update
+    land in the same tick window, so a newly_updated reset would win.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def midrun_dep():
+        return 1
+
+    @asset(
+        deps=[midrun_dep],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
+    def midrun_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [midrun_dep, midrun_table]
+    defs = Definitions(assets=all_assets)
+    table = AssetKey("midrun_table")
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+
+    materialize(assets=all_assets, instance=instance, selection=[midrun_dep])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 1
+
+    # run is in flight; nothing new lands this tick
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 0
+
+    # dep lands mid-run, then the stale run finishes, in one tick window
+    materialize(assets=all_assets, instance=instance, selection=[midrun_dep])
+    materialize(assets=all_assets, instance=instance, selection=[midrun_table])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 1
+
+    # exactly one follow-up
+    materialize(assets=all_assets, instance=instance, selection=[midrun_table])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 0
+
+
+def test_table_two_feed_race_triggers_follow_up():
+    """kippmiami int_finalsite__enrollment_lifecycle joins two feeds that
+    rebuild in separate concurrent runs (#4834). A run triggered by one feed
+    must not swallow the other feed's update when it lands in the same tick
+    the run finishes, even after the run's materialization.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def contacts_feed():
+        return 1
+
+    @asset(tags=_TABLE_TAG)
+    def status_report_feed():
+        return 1
+
+    @asset(
+        deps=[contacts_feed, status_report_feed],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
+    def two_feed_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [contacts_feed, status_report_feed, two_feed_table]
+    defs = Definitions(assets=all_assets)
+    table = AssetKey("two_feed_table")
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+
+    materialize(assets=all_assets, instance=instance, selection=[contacts_feed])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 1
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 0
+
+    # run finishes on the old status report, then the new one lands, one tick
+    materialize(assets=all_assets, instance=instance, selection=[two_feed_table])
+    materialize(assets=all_assets, instance=instance, selection=[status_report_feed])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 1
+
+    # exactly one follow-up
+    materialize(assets=all_assets, instance=instance, selection=[two_feed_table])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 0
+
+
+def test_table_not_rerun_after_dep_updated_in_same_run():
+    """A dep updated by the same run as the table must not re-trigger it:
+    any_deps_updated drops updates from runs that targeted this asset.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def same_run_dep():
+        return 1
+
+    @asset(
+        deps=[same_run_dep],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
+    def same_run_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [same_run_dep, same_run_table]
+    defs = Definitions(assets=all_assets)
+    table = AssetKey("same_run_table")
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+
+    # materialize() records an empty run asset_selection, which
+    # executed_with_root_target reads; a job run records it, as sensor runs do
+    defs.resolve_implicit_global_asset_job_def().execute_in_process(
+        instance=instance, asset_selection=[AssetKey("same_run_dep"), table]
+    )
+    for _ in range(2):
+        result = evaluate_automation_conditions(
+            defs=defs, instance=instance, cursor=result.cursor
+        )
+        assert result.get_num_requested(table) == 0
+
+
+def test_cron_table_tick_during_own_run_triggers_follow_up():
+    """A cron tick that passes while the table's own run is in flight must
+    not be cleared by that run's completion (#5822).
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def midrun_cron_dep():
+        return 1
+
+    @asset(
+        deps=[midrun_cron_dep],
+        automation_condition=dbt_cron_automation_condition(
+            "0 0 * * *", cron_timezone="UTC"
+        ),
+        tags=_TABLE_TAG,
+    )
+    def midrun_cron_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [midrun_cron_dep, midrun_cron_table]
+    defs = Definitions(assets=all_assets)
+    table = AssetKey("midrun_cron_table")
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        evaluation_time=datetime(2026, 1, 1, 23, 0, tzinfo=UTC),
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 1, tzinfo=UTC),
+    )
+    assert result.get_num_requested(table) == 1
+
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 2, tzinfo=UTC),
+    )
+    assert result.get_num_requested(table) == 0
+
+    # the run spans the next tick and finishes in the same tick window
+    materialize(assets=all_assets, instance=instance, selection=[midrun_cron_table])
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 3, 0, 1, tzinfo=UTC),
+    )
+    assert result.get_num_requested(table) == 1

@@ -2,6 +2,7 @@ with
     abs_count as (
         select
             co._dbt_source_relation,
+            co._dbt_source_project,
             co.student_number,
             co.student_name,
             co.academic_year,
@@ -11,25 +12,23 @@ with
             co.grade_level,
             co.advisor_lastfirst,
 
-            count(att.att_date) as n_absences,
+            count(att.calendardate) as n_absences,
         from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
-            {{ ref("stg_powerschool__attendance") }} as att
-            on co.studentid = att.studentid
-            and att.att_date between co.entrydate and co.exitdate
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
-            and att.att_mode_code = 'ATT_ModeDaily'
-        inner join
-            {{ ref("stg_powerschool__attendance_code") }} as ac
-            on att.attendance_codeid = ac.id
-            and {{ union_dataset_join_clause(left_alias="att", right_alias="ac") }}
-            and ac.att_code like 'A%'  -- change to exclude AE
+            {{ ref("int_students__attendance_daily") }} as att
+            on co.student_number = att.student_number
+            and att.calendardate between co.entrydate and co.exitdate
+            and co._dbt_source_project = att._dbt_source_project
+            -- 'A%' covers A, AD, and AE. Focus's U is conformed to A upstream,
+            -- so Miami is counted by the same predicate rather than a branch.
+            and att.att_code like 'A%'  -- change to exclude AE
         where
             co.academic_year = {{ var("current_academic_year") }}
             and co.rn_year = 1
             and co.enroll_status = 0
         group by
             co._dbt_source_relation,
+            co._dbt_source_project,
             co.student_number,
             co.student_name,
             co.academic_year,
@@ -65,5 +64,5 @@ left join
     {{ ref("int_deanslist__comm_log") }} as cl
     on ac.student_number = cl.student_school_id
     and ac.academic_year = cl.academic_year
-    and {{ union_dataset_join_clause(left_alias="ac", right_alias="cl") }}
+    and ac._dbt_source_project = cl._dbt_source_project
     and cl.reason like 'Chronic%'

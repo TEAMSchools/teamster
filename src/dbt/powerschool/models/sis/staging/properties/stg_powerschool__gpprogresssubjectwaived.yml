@@ -3,9 +3,10 @@ models:
     description:
       For reporting purposes, this table contains, per waiver, the credits
       required by their graduation plan but waived for the student. Data
-      assessed by selecting a group ofstudents and then navigating to [Select
-      Function] arrow > Graduation Progress Report Data Capture (or Special
-      Functions > Group Functions > GraduationProgress Report Data Capture).
+      assessed by selecting a group of students and then navigating to [Select
+      Function] arrow > Graduation Plan Progress Report Data Capture (or Special
+      Functions > Group Functions > Graduation Plan Progress Report Data
+      Capture).
     config:
       enabled: false
     columns:

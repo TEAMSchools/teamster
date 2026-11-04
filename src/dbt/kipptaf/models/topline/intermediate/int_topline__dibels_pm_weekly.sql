@@ -1,3 +1,18 @@
+with
+    pm_rounds as (
+        select
+            student_number,
+            academic_year,
+            start_date,
+            end_date,
+
+            min(met_pm_round_overall_criteria) as met_pm_round_overall_criteria,
+            min(completed_test_round_int) as completed_test_round_int,
+        from {{ ref("int_amplify__pm_met_criteria") }}
+        where academic_year >= {{ var("current_academic_year") - 1 }}
+        group by student_number, academic_year, start_date, end_date
+    )
+
 select
     cw.student_number,
     cw.academic_year,
@@ -8,7 +23,7 @@ select
     dp.completed_test_round_int,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as cw
 inner join
-    {{ ref("int_amplify__pm_met_criteria") }} as dp
+    pm_rounds as dp
     on cw.student_number = dp.student_number
     and cw.academic_year = dp.academic_year
     and cw.week_start_monday between dp.start_date and dp.end_date

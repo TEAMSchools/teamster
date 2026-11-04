@@ -6,7 +6,20 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_powerschool__autocomm_students")
+      - ref("rpt_powerschool__autocomm_students_iep")
       - ref("rpt_powerschool__autocomm_teachers")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - powerschool
+  - name: powerschool_stored_grades
+    label: PowerSchool Stored Grades Import
+    type: application
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_powerschool__stored_grades")
     config:
       meta:
         dagster:

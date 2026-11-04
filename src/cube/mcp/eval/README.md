@@ -1,7 +1,7 @@
 # Academic-year eval
 
-Measures whether the academic-year crosswalk in the FastMCP `instructions`
-string keeps the **wrong-year rate** near zero on Sonnet/Haiku, on top of the
+Measures whether the academic-year crosswalk in the `load` tool description
+keeps the **wrong-year rate** near zero on Sonnet/Haiku, on top of the
 `academic_year_label` dimension.
 
 The unit tests in `tests/cube/test_mcp_server.py` cover the dimensions and view
@@ -17,20 +17,23 @@ reps × 3 arms) the tool **never beat arm B**, and on the Family-2 trap it
 produced the off-by-one it existed to prevent — fed the bare end-year integer
 `2026`, it returned `SY27 (2026-2027)`, and only the model overriding the tool
 avoided a wrong answer. The tool was dropped (issue #4084 proposal #4, PR
-#4125); the crosswalk now lives inline in `instructions=`. This harness is
-retained as the A-vs-B regression guard for that crosswalk.
+#4125). The crosswalk lived inline in `instructions=` until #4473 moved it into
+the `load` tool description — a channel that reaches the model on every surface,
+where `instructions=` is dropped by the claude.ai connector and truncated in
+Claude Code. This harness is retained as the A-vs-B regression guard for that
+crosswalk.
 
 ## What it compares
 
-Two arms, holding the `meta` catalog (and its dimension descriptions) constant;
-only the academic-year crosswalk paragraph in the FastMCP `instructions` string
-changes. The instructions string is read from the real
-[`server.py`](../server.py), so the eval measures the shipped surface.
+Two arms, holding the `meta` catalog (and its dimension descriptions) and the
+slim `instructions` string constant; only the academic-year crosswalk paragraph
+in the `load` tool description changes. The tool descriptions are read from the
+real [`server.py`](../server.py), so the eval measures the shipped surface.
 
-| Arm              | instructions                                | isolates                   |
+| Arm              | `load` description                          | isolates                   |
 | ---------------- | ------------------------------------------- | -------------------------- |
 | `A_baseline`     | shipped, minus the crosswalk paragraph      | floor — descriptions alone |
-| `B_instructions` | the shipped branch as-is (inline crosswalk) | does the crosswalk help?   |
+| `B_descriptions` | the shipped branch as-is (inline crosswalk) | does the crosswalk help?   |
 
 `A` vs `B` shows whether the crosswalk paragraph buys correctness over the
 dimension descriptions alone.
@@ -38,6 +41,29 @@ dimension descriptions alone.
 Every Cube tool is stubbed (`harness.py`): `meta` returns a fixed catalog,
 `load`/`sql` record the query the model built and return a dummy result. No
 warehouse, no auth, no PII.
+
+### Family 4 — assessment traps (#5236)
+
+Does the drained Cube text change how the model queries the assessment view? Run
+with `--prompts prompts_assessment.yaml`. Each prompt names one trap from
+`traps.py`; a trap fires when the captured `load` query on
+`student_assessment_scores_view` shows the mistake. The one exception,
+`paterson_zero_as_failure`, checks the answer text for a coverage statement.
+
+| Arm        | Catalog and docstrings                                                   | Isolates                          |
+| ---------- | ------------------------------------------------------------------------ | --------------------------------- |
+| `A4_pre`   | `fixtures/meta_pre_drain.json` (origin/main), docstrings minus the drain | the floor                         |
+| `B4_post`  | the working tree, compiled by `src/cube/compile-meta.js`                 | the drain                         |
+| `C4_skill` | `B4_post` plus the orchestrator's policy and recipe sections             | what an org-level skill would add |
+
+The `load` stub returns 0 rows for a Paterson query, with the server's
+empty-result note on `B4_post` and `C4_skill` only. Every record also carries
+tokens (input, cache read, cache write, output), `cost_usd`, `num_turns` and
+`duration_ms`, and the run prints a median cost table per arm.
+
+Pass rule, from the knowledge-drain spec: `B4_post`'s pooled trap rate is below
+`A4_pre`'s, with at most 2 revision rounds. `C4_skill` and a Sonnet run report
+but do not gate.
 
 ## Prompts (`prompts.yaml`)
 
@@ -53,7 +79,21 @@ warehouse, no auth, no PII.
 
 Determinate prompts: `wrong_rate`, `silent_wrong_rate` (wrong **and** no
 interpretation echoed), `correct_rate`, `no_query_rate`. Ambiguous prompts:
-`disambig_rate`. Rates are reported with Wilson 95% intervals.
+`disambig_rate`. Family 4: `trap_rate`.
+
+Every rate is reported with a 95% Wilson interval clustered on prompt id. Reps
+of one prompt are correlated, so the independent unit is the prompt, not the
+rep, and adding reps does not narrow the interval the way adding prompts does.
+The interval uses the Korn-Graubard effective sample size and a Student-t
+critical value with `prompts - 1` degrees of freedom, ported from Inspect AI's
+`ci_wilson(cluster=...)`. The summary table prints `n/k` (records / prompts)
+beside each family.
+
+With 7 trap prompts the intervals are rough, and they are wide: expect 40 to 70
+points across at mid-range rates. At a rate of exactly 0% or 100% the method
+cannot estimate the correlation between reps, so the interval reflects only the
+small prompt count and is likely too narrow. The pass rule compares point rates,
+so the intervals inform the reading of a result but do not gate it.
 
 ## Two runners
 
@@ -66,7 +106,10 @@ they drive the model.
 | `run_eval_cc.py` | Claude Code subscription (logged-in `claude` binary) | Claude Agent SDK, run **hermetic** — cube instructions as the full system prompt, `tools=[]`, `strict_mcp_config=True`, `setting_sources=[]` |
 
 The two runners are methodologically equivalent (same clean "model + cube
-instructions + only cube tools" surface); they differ only in auth. The CC
+instructions + only cube tools" surface); they differ only in auth. The
+academic-year crosswalk under test rides in the `load` tool description (not the
+slim `instructions` system prompt), so both runners vary it per arm via the tool
+schema — the CC runner builds one in-process SDK server per arm for this. The CC
 runner **must** be hermetic: an earlier append-to-`claude_code`-preset version
 leaked into Bash, `ToolSearch`, sub-agents, and the **live claude.ai Cube
 connector** (it queried production Cube and returned pre-rename member names),
@@ -113,8 +156,8 @@ usage draws from a separate monthly Agent-SDK credit pool.
 
 ## Fidelity caveats
 
-- Drives the in-process tool schemas + instructions from `server.py`, not the
-  live Cloud Run connector. They share `server.py`, so behavior should match,
-  but the MCP transport itself is not exercised.
+- Drives the in-process tool descriptions + instructions from `server.py`, not
+  the live Cloud Run connector. They share `server.py`, so behavior should
+  match, but the MCP transport itself is not exercised.
 - The human Superset path (no model in the loop) is out of scope by construction
   — that is a data-model question, not an MCP one.

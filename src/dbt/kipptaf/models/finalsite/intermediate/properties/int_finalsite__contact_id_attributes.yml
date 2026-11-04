@@ -4,8 +4,8 @@ models:
       Network-wide union of the per-region Finalsite
       `int_finalsite__contact_id_attributes` models (one row per contact, the
       `id_attributes` identifiers pivoted to columns). Enabled only where the
-      Finalsite API layer is wired (today KIPP Miami); carries
-      `_dbt_source_relation`.
+      Finalsite API layer is wired — today KIPP Miami, Newark, Camden and
+      Paterson; carries `_dbt_source_relation`.
     columns:
       - name: finalsite_enrollment_id
         data_type: string
@@ -13,3 +13,21 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: focus_student_id_prefixed
+        data_type: string
+        description:
+          The 8400-prefixed Focus student id the `rpt_focus__*` extracts
+          consume, produced by the per-region package model. Null outside Miami,
+          which is what limits those extracts to Miami rows when they filter on
+          it being non-null. Where it is non-null it is one row per student per
+          district, which lets consumers such as
+          `rpt_tableau__fresh_dashboard_qc` join it to a student roster without
+          deduplicating first. The finalsite package model tests that
+          uniqueness, where a duplicate first appears.
+      - name: is_latest_powerschool_student_number
+        data_type: boolean
+        description:
+          True on the one record per PowerSchool student number per district
+          that consumers should use, picked in the finalsite package model.
+          Filter on it before joining to a PowerSchool roster, or a student with
+          duplicate Finalsite records fans out.

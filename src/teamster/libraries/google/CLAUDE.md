@@ -19,16 +19,43 @@ account with domain-wide delegation. Provides batch methods:
 
 **Retry pattern**: All `.execute()` calls (both `_list` and batch methods) are
 wrapped via the module-level `_retryable_execute(request)` factory +
-`backoff(fn=..., retry_on=(_TransientHttpError,))`. Never use bare
+`_backoff(fn)`, which retries `_TransientHttpError` 6 times with delays of 1, 2,
+4, 8, 16, 32s (63s total, enough to outlast a per-minute 429). Do not call
+`dagster.backoff` directly: its defaults give up after 1.5s. Never use bare
 `errors.HttpError` — 4xx client errors must not be retried. Transient codes:
 `{429, 500, 502, 503, 504}`.
 
+**Batch sub-request retry**: `BatchHttpRequest.execute()` never raises for an
+individual sub-request failure — it delivers the error to the `callback`, so the
+`backoff` wrapper alone only retries a failure of the whole batch envelope, not
+a per-sub-request 5xx. All four batch methods route through
+`_execute_batch_with_retry`, which re-submits only the transiently-failed
+(429/5xx) sub-requests in follow-up batches (bounded by `_MAX_BATCH_ATTEMPTS`);
+already-succeeded sub-requests are not re-sent (re-sending would 409).
+
+**`batch_insert_users` and `batch_update_users` return `list[dict]`**
+(`{"primaryEmail", "error"}`), NOT `list[str]` like the other two batch methods
+— the dict form keeps the user payload (which includes the password hash on
+create and update rows alike) out of logs and asset-check metadata. The create
+asset additionally needs the failed emails to skip group membership for
+uncreated users (via `members_for_created_users`).
+
 **409 conflict handling**: 409 is deliberately excluded from
-`_TRANSIENT_HTTP_CODES` because its meaning is method-specific: for
-`batch_insert_role_assignments` it means "entity already exists" (not
-retryable), but for `batch_update_users` it means "conflicting request, please
-try again" (retryable). User update 409s are retried individually via
-`_retry_update_user()` after a 1-second cooldown.
+`_TRANSIENT_HTTP_CODES`, so no batch method retries one. Read the `reason` code
+before assuming what a 409 means — `duplicate` ("entity already exists") is
+permanent, `conflict` ("conflicting requests, please try again") is Google
+serializing two writes against one resource and is transient. User update 409s
+are retried individually via `_retry_update_user()` after a 1-second cooldown.
+
+**Role assignment batches are serialized per org unit**: the Directory API
+serializes writes against a single org unit, so two `roleAssignments.insert`
+sub-requests scoped to the same org unit inside one batch race and one returns
+409 `conflict` — which nothing retries, so it fails the `zero_api_errors` check.
+`_batch_by_distinct_org_unit` deals at most one item per org unit into each
+batch, and batches run sequentially, so two writes to one org unit are never in
+flight together. The batch count therefore equals the largest single org unit's
+row count, NOT `len(rows) / size` — a payload of 135 rows across 6 org units
+(largest 56) yields 56 batches, not 14.
 
 **Batch callback signature**: Google's batch executor calls
 `callback(id, response, exception)` with exactly one of `response`/`exception`
@@ -48,6 +75,19 @@ path) to suppress inter-batch delays.
 **Empty-page responses**: Some API endpoints return `{}` instead of
 `{"users": []}` for pages with no items. Use `response.get(key, [])`, not
 `response[key]`.
+
+**`groups.list` and `members.list` cap `maxResults` at 200, but their discovery
+entries carry no `maximum` key** — `googleapiclient` does not validate, so the
+resource-wide default of 500 reaches the server. Both need an explicit
+`max_results` pop (`roles`=100 and `roleAssignments`=200 already have one).
+`list_groups` is now capped; `list_members` is NOT — cap it when the `members`
+asset is revived.
+
+**Directory resolves a `groupKey` by alias and case-insensitively.** Validating
+a constructed address against a staged mirror instead (the `groupKey` guard in
+`rpt_google_directory__users_import`) narrows that, so the staging model
+lowercases `email`; an alias-only address still resolves to null. Verified once:
+camden/miami/newark are primary addresses with no aliases.
 
 **`schema.py`**: Pydantic models (`User`, `OrgUnits`, `Role`, `RoleAssignment`,
 `Group`, `Member`) mirroring the Google Directory API response shapes. Code
@@ -73,6 +113,11 @@ Drive API methods targeting a specific file (`files.get`, `files.list`,
 `files.create`, `files.update`, `files.copy`, `files.delete`) must pass
 `supportsAllDrives=True` — without it, files in shared drives 404 even when ACL
 grants access.
+
+`files_list` retries through `request.execute(num_retries=N)`, not `tenacity`:
+googleapiclient's built-in retry already limits itself to 5xx, 429, rate-limit
+403s, and connection errors. `BatchHttpRequest.execute()` takes no
+`num_retries`, so `get_modified_times` still does not retry.
 
 ## `forms/`
 

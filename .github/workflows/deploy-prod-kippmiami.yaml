@@ -3,6 +3,7 @@ name: kippmiami
 permissions:
   contents: read
   pull-requests: write
+  packages: write
   id-token: write
 
 on:
@@ -15,12 +16,12 @@ on:
       - .github/workflows/deploy-prod-kippmiami.yaml
       - Dockerfile
       - uv.lock
+      - src/dbt/dbt_overrides/**
       - src/dbt/deanslist/**
       - src/dbt/finalsite/**
       - src/dbt/focus/**
       - src/dbt/iready/**
       - src/dbt/kippmiami/**
-      - src/dbt/powerschool/**
       - src/dbt/renlearn/**
       - src/teamster/code_locations/kippmiami/**
       - src/teamster/core/**
@@ -33,7 +34,6 @@ on:
       - src/teamster/libraries/fldoe/**
       - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/iready/**
-      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
@@ -54,7 +54,6 @@ on:
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/fldoe/**
       - src/teamster/libraries/iready/**
-      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**

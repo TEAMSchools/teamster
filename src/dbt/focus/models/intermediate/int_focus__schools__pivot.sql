@@ -5,6 +5,8 @@ with
             cast(school_level as string) as custom_100000004,
             cast(school_type as string) as custom_200000326,
             cast(technical_center as string) as custom_50000002,
+            cast(paec_gpa_for_transcript as string) as paec_gpa_for_transcript,
+            cast(paec_rank_for_transcript as string) as paec_rank_for_transcript,
         from {{ ref("stg_focus__schools") }}
     ),
 
@@ -12,8 +14,13 @@ with
         select id, column_name, stored_value,
         from
             encoded unpivot (
-                stored_value for column_name
-                in (custom_100000004, custom_200000326, custom_50000002)
+                stored_value for column_name in (
+                    custom_100000004,
+                    custom_200000326,
+                    custom_50000002,
+                    paec_gpa_for_transcript,
+                    paec_rank_for_transcript
+                )
             )
     ),
 
@@ -33,6 +40,8 @@ from
         any_value(label) for column_name in (
             'custom_100000004' as school_level_label,
             'custom_200000326' as school_type_label,
-            'custom_50000002' as technical_center_label
+            'custom_50000002' as technical_center_label,
+            'paec_gpa_for_transcript' as paec_gpa_for_transcript_label,
+            'paec_rank_for_transcript' as paec_rank_for_transcript_label
         )
     )

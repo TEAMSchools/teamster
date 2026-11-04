@@ -1,9 +1,45 @@
 models:
   - name: rpt_gsheets__csgf_hs_sat
+    description:
+      Scoped to students who completed the prior school year at a high school
+      (is_enrolled_recent on that year's row, true when a stint that year ran to
+      the school's last in-session day) to match
+      rpt_gsheets__csgf_hs_enrollment's population, per that task's own
+      instruction "ONLY INCLUDE STUDENTS WHO COMPLETED THE 25-26 SCHOOL YEAR."
+      CSGF cross-validates every HSDC tab's studentid against the HS Enrollment
+      tab and flags "ID not on Enrollment Tab" otherwise. Do not filter on
+      enroll_status here -- it is the student's current PowerSchool status,
+      copied onto every past-year row, so it drops students who finished the
+      year and left over the summer. Same filter applies to csgf_hs_act,
+      csgf_hs_ap_scores, and the school-level csgf_hs_ap_offerings. Full
+      provenance lives in docs/models/csgf-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - section
     columns:
       - name: studentid
         data_type: int64
+        description: >-
+          The student's PowerSchool student_number (the school-facing student
+          number), not the internal studentid key. CSGF's template names the
+          column studentid.
+        config:
+          meta:
+            contains_pii: true
       - name: section
         data_type: string
+        description: SAT section, Evidence-Based Reading and Writing or Math.
+        config:
+          meta:
+            contains_pii: true
       - name: score
         data_type: numeric
+        description: >-
+          The student's highest scale score for the section, rounded to a whole
+          number.
+        config:
+          meta:
+            contains_pii: true

@@ -120,6 +120,16 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: exitdate
+      - name: last_enrolled_date
+        data_type: date
+        description:
+          Inclusive last day the student was enrolled in this stint. PowerSchool
+          records exitdate as the first day the student is no longer enrolled,
+          so PowerSchool stints use the day before exitdate; Focus trims each
+          stint to the day before the next one starts, so Focus stints use
+          exitdate unchanged. Null for graduate placeholder rows, which carry no
+          exit date. Use this column, not exitdate, for any "enrolled on date X"
+          test.
       - name: exitcode
         data_type: string
         description:
@@ -272,6 +282,21 @@ models:
         data_type: boolean
       - name: is_homeless
         data_type: boolean
+      - name: homeless_status
+        data_type: string
+        description:
+          Decoded homelessness status for the enrollment year — Not Homeless,
+          Homeless - With Guardian, or Homeless - Unaccompanied. Null where the
+          code is unset or unrecognized, and for Miami, which does not populate
+          the field. May disagree with is_homeless on closed years, which reads
+          current status for every year.
+      - name: homeless_primary_nighttime_residence
+        data_type: string
+        description:
+          Decoded primary nighttime residence for the enrollment year —
+          Shelters, transitional housing / Doubled-up / Unsheltered / Hotels or
+          Motels. Null where no selection was made and outside New Jersey, which
+          is the only state that collects it.
       - name: is_out_of_district
         data_type: boolean
       - name: is_self_contained

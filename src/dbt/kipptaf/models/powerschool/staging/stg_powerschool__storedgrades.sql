@@ -17,21 +17,9 @@ with
 select
     u.*,
 
-    case
-        when u.credit_type like 'ENG%'
-        then 'ENG'
-        when u.credit_type like 'MATH%'
-        then 'MATH'
-        when u.credit_type like 'SCI%'
-        then 'SCI'
-        when u.credit_type like 'SOC%'
-        then 'SOC'
-        else u.credit_type
-    end as agg_credittype,
-
     if(l.location_name is null, true, false) as is_transfer_grade,
 
-    {{ extract_code_location("u") }} as _dbt_source_project,
+    {{ extract_source_project("u") }} as _dbt_source_project,
 
 from union_relations as u
 left join

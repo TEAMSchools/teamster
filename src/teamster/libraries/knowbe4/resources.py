@@ -2,7 +2,7 @@ import time
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Response, Session
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import HTTPError, JSONDecodeError, Timeout
@@ -19,7 +19,7 @@ class KnowBe4Error(Exception):
 
 
 class KnowBe4Resource(ConfigurableResource):
-    api_key: str
+    api_key: str = Field(repr=False)
     server: str
     page_size: int = 100
 

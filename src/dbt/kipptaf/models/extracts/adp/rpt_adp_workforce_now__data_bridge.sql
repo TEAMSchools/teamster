@@ -46,16 +46,13 @@ select
     /* required to be after ID */
     format_date('%m/%d/%Y', wk.worker_original_hire_date) as `Change Effective On`,
 
-    /* personal information */
     wk.work_email as `Work E-Mail`,
     'W' as `E-Mail to Use For Notification`,
 
-    /* custom fields */
     'Employment Custom Fields' as `CDF Category`,
     'Employee Number' as `CDF Label`,
     wk.employee_number as `CDF Value`,
 
-    /* time & attendance */
     if(wk.adp__time_and_attendance_indicator, 'Y', 'N') as `Position Uses Time`,
     if(wk.adp__time_and_attendance_indicator, wk.badge, null) as `Badge`,
     if(
@@ -76,7 +73,6 @@ select
         wk.adp__time_and_attendance_indicator, tna.supervisor_flag, null
     ) as `Supervisorflag`,
 
-    /* audit */
     wk.adp__badge,
     wk.adp__work_email,
     wk.adp__employee_number,

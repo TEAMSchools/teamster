@@ -49,6 +49,11 @@ with
                     ref("stg_illuminate__dna_repositories__repository_470"),
                     ref("stg_illuminate__dna_repositories__repository_471"),
                     ref("stg_illuminate__dna_repositories__repository_472"),
+                    ref("stg_illuminate__dna_repositories__repository_473"),
+                    ref("stg_illuminate__dna_repositories__repository_474"),
+                    ref("stg_illuminate__dna_repositories__repository_475"),
+                    ref("stg_illuminate__dna_repositories__repository_476"),
+                    ref("stg_illuminate__dna_repositories__repository_477"),
                 ]
             )
         }}

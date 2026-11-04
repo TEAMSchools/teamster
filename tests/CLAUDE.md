@@ -1,24 +1,5 @@
 # CLAUDE.md — `tests/`
 
-## Test Categories
-
-- **Root-level `test_*.py`** — unit tests for Dagster definitions, IO managers,
-  automation conditions, utils. No external connections required.
-- **`tests/assets/`** — integration tests per source system. Require env vars
-  and external connections; not run in CI by default.
-- **`tests/sensors/`, `tests/schedules/`, `tests/ops/`, `tests/resources/`** —
-  component-level tests. Many have `archive/` subdirectories (deprecated tests
-  prefixed with `_test_`).
-
-## Running Tests
-
-```bash
-uv run pytest                                                          # all tests
-uv run pytest tests/test_dagster_definitions.py                        # single file
-uv run pytest tests/test_dagster_definitions.py::test_definitions_kipptaf  # single test
-uv run pytest tests/assets/test_assets_dbt.py                         # requires env vars
-```
-
 ## Patterns
 
 - **Definitions validation**: calls `dagster definitions validate` via
@@ -33,17 +14,21 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   check the token file first — don't investigate individual env vars.
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
   pytest by convention, not markers.
-- **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields and
-  `EnvVar.int("X")` for `int` fields (e.g. ports) inside `build_resources()` —
-  both resolve lazily at resource init and never read the environment at
-  construction. Prefer these over `int(EnvVar("X").get_value())`: `.get_value()`
-  reads eagerly, which is harmless when a test always sets the var but crashes
-  module-load construction in production `resources.py` when it is unset (e.g. a
-  codespace) — so never copy that idiom there. Plain `int(EnvVar("X"))` casts
-  the marker object, not the value.
-- **Worktree tests**: VS Code doesn't discover tests in worktrees. Run manually
-  ensuring `OP_SERVICE_ACCOUNT_TOKEN` is set, then
-  `cd .worktrees/<branch> && uv run pytest ...`.
+- **Deleting or disabling a dbt model silently breaks
+  `tests/assets/test_assets_dbt.py`** — it selects hardcoded asset keys
+  (`kipptaf/<folder>/<model>`) and `materialize()` raises on a missing one. Not
+  run in CI, so it rots unnoticed. Grep it before removing a model, and check
+  the neighbouring keys are still enabled while you're there.
+- **`EnvVar` in integration tests**: `EnvVar("X")` / `EnvVar.int("X")` inside
+  `build_resources()`, per `src/teamster/CLAUDE.md` _Int env-var config_. Plain
+  `int(EnvVar("X"))` casts the marker object, not the value.
+- **Credentialed one-offs print secrets in third-party frames**: resources hide
+  credential fields from `repr`, but a failure inside a token fetch still prints
+  the frame's arguments (e.g. `fetch_token(client_secret=...)`). Run
+  live-credential tests with `--tb=short` before pasting a traceback anywhere.
+- **Worktree tests**: VS Code doesn't discover tests in worktrees. Run from the
+  CLI: `cd <abs-worktree> && uv run pytest ...` (conftest reads the token file
+  itself). Invocation details: `.claude/rules/worktrees.md`.
 - **Unit testing Dagster resources**: `SSHResource` and other
   `ConfigurableResource` subclasses are frozen Pydantic models — use
   `build_resources()` context manager to instantiate, then call methods on
@@ -58,21 +43,35 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `<Resource>._request.retry.wait = wait_none()` (tenacity) to kill backoff,
   inject `object.__setattr__(r, "_session", SimpleNamespace(request=fake_fn))`
   with a `_FakeResponse` stub, and assert call counts for retry/no-retry paths.
-  Reference harness: `tests/resources/test_resource_adp_workforce_now.py`.
-- **SSH `test=True`**: `SSHResource` reads the SSH password from a secret file
-  by default (`test=False`). Integration tests must set `test=True` and pass
-  `password` directly so each district uses its own credentials.
+  Reference harness: `tests/resources/test_resource_adp_workforce_now.py`. For a
+  retry-decorated METHOD (e.g. `SSHResource.get_connection`), use
+  `Cls.method.retry_with(wait=wait_none())(instance)` — it returns a copy, so no
+  class mutation to undo, and `stop=stop_after_attempt(1)` collapses it per
+  test.
+- **SSH-tunnel / powerschool-odbc suites take ~2-3 min** (loopback ssh-rsa
+  servers in `test_ssh_paramiko_tunnel.py` / `test_resource_ssh_rekey.py`) —
+  they exceed the 120s Bash timeout; run them with `run_in_background`. Do NOT
+  chain `git stash` with a long-running verify in one command: a timeout can
+  leave the changes stashed and the `stash pop` unrun. To confirm a failure is
+  pre-existing, check the test is in an untouched dir and doesn't reference your
+  changed symbols, rather than stash-comparing.
+- **`test_resource_ssh_dir_mtime_propagation.py` fails ~10 of 15 on `main`** —
+  it asserts LIVE SFTP servers propagate directory mtime, so failures track
+  vendor behavior, not your change, and `littlesis` flaps between runs. Baseline
+  against `main` before attributing a failure here to an SSH edit.
 - **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
   fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
   a string forward-ref.
-- **Secrets ARE available to Claude inside pytest**: the autouse `conftest.py`
-  fixture bootstraps 1Password per run, so credentialed work (live API pulls,
-  asset `materialize()`, BigQuery) is runnable via `uv run pytest`. Wrap a
-  credentialed one-off as a throwaway `tests/**/test_zz_*.py` and delete it
-  after — a plain `uv run python script.py` is NOT bootstrapped. ADC
-  (BigQuery/GCS) auth is independent of 1Password and always works (dbt CLI, BQ
-  client). `dagster definitions validate` likewise relies on the conftest
-  bootstrap.
+- **ADC (BigQuery/GCS) auth is independent of 1Password** and always works (dbt
+  CLI, BQ client), inside or outside pytest.
+- **Mixed live + mocked test files**:
+  `tests/resources/test_resource_google_directory.py` interleaves mocked unit
+  tests with **live-API** integration tests (bare names —
+  `test_batch_insert_users`, `test_list_users`, etc.) that mutate the REAL
+  Google directory (conftest bootstraps creds). Select mocked tests with
+  positive `-k` on suffix fragments; `pytest --deselect <file>::<bare>`
+  PREFIX-matches (silently drops same-prefix unit tests too), and
+  `-k "not <bare>"` substring-matches them.
 
 ## Hook security tests (`tests/hooks/`)
 
@@ -86,11 +85,14 @@ runs all of them; each `test_*.sh` covers one rule area; `helpers.sh` provides
   / `OUTPUT_HOOK` env overrides:
   `HOOK=/abs/scratch/check-sensitive-x.sh OUTPUT_HOOK=/abs/scratch/check-output-x.sh bash tests/hooks/run_all.sh`.
 - Reading a `test_*.sh` range that contains secret-shaped fixtures (`op://`, key
-  headers, cloud tokens) trips `check-output.sh` on the Read result. Read clean
-  ranges only, or anchor Edits on a non-fixture line (e.g. `print_summary`).
+  headers, cloud tokens) gets the whole Read result redacted by
+  `check-output.sh`. Read clean ranges only, or anchor Edits on a non-fixture
+  line (e.g. `print_summary`).
 - Synthetic secret fixtures: split the literal (`"sk_live""_..."`,
-  `'-----BEGIN ''PRIVATE KEY-----'`) so gitleaks' source scan misses it but bash
+  `'-----BEGIN PRIVATE'' KEY-----'`) so gitleaks' source scan misses it but bash
   rebuilds the value at run time — cleaner than a `trunk-ignore`, which trips
   `trunk/ignore-does-nothing` when gitleaks wouldn't have flagged it anyway.
+  Split inside the text `check-output.sh` matches, not beside it, or reading the
+  source file gets redacted too.
 - New detection rules: add benign outputs to `test_fp_corpus.sh` and measure
   against it — it is the false-positive back-out gauge.

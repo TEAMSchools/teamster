@@ -1,0 +1,64 @@
+models:
+  - name: int_powerschool__u_expectations_qtd_unpivot
+    description:
+      Quarter-to-date expectations counts per region and school level. Returns
+      counts from the most recently completed school week (weeks starting on or
+      after the current Monday are excluded). This aligns with the Monday audit
+      cadence, which always checks the previous school week. Past quarters
+      reflect their final week.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - region
+              - school_level
+              - quarter
+              - assignment_category_code
+    columns:
+      - name: region
+        data_type: string
+        description: District region (e.g. Newark, Camden, Paterson).
+      - name: school_level
+        data_type: string
+        description: School level grouping (ES / MS / HS).
+      - name: quarter
+        data_type: string
+        quote: true
+        description: Academic quarter (Q1–Q4).
+      - name: week_number_qtd
+        data_type: int64
+        description:
+          Week number within the quarter as of which the counts are reported.
+      - name: week_start_monday
+        data_type: date
+        description: Monday of the school week represented by week_number_qtd.
+      - name: week_end_sunday
+        data_type: date
+        description:
+          Sunday ending the most recently completed school week. Serves as the
+          assignment count cutoff date for quarter-to-date audits — only
+          assignments with duedate on or before this date count toward
+          teacher_running_total_assign_by_cat.
+      - name: notes
+        data_type: string
+      - name: assignment_category_code
+        data_type: string
+        description: Single-letter category code (W, H, F, or S).
+      - name: expectation
+        data_type: int64
+        description:
+          Count of expected assignments for this category as of week_number_qtd.
+      - name: academic_year
+        data_type: int64
+        description: >
+          Academic year (starting year). Always current_academic_year — the
+          model filters to one year only.
+      - name: assignment_category_term
+        data_type: string
+        description:
+          Category code concatenated with quarter number (e.g. W1, H2, F3, S4).
+      - name: assignment_category_name
+        data_type: string
+        description:
+          Human-readable category name (Work Habits, Homework, Formative
+          Mastery, Summative Mastery).

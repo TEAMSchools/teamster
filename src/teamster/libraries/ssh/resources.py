@@ -1,19 +1,32 @@
+import logging
+import select
 import socket
-import subprocess
+import socketserver
 import threading
-import time
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from stat import S_ISDIR, S_ISREG
 
 from cryptography.hazmat.primitives import hashes
+from dagster import SkipReason
 from dagster_shared import check
 from dagster_ssh import SSHResource as DagsterSSHResource
 from paramiko import RSAKey, SFTPAttributes, SFTPClient, SSHClient, Transport
-from paramiko.ssh_exception import NoValidConnectionsError
+from paramiko.ssh_exception import (
+    AuthenticationException,
+    BadHostKeyException,
+    IncompatiblePeer,
+    NoValidConnectionsError,
+    ProxyCommandFailure,
+    SSHException,
+)
+from pydantic import Field
 from tenacity import (
     retry,
-    retry_if_exception_type,
+    retry_if_exception,
     stop_after_attempt,
+    stop_after_delay,
     wait_exponential_jitter,
 )
 
@@ -24,37 +37,211 @@ from tenacity import (
 # value as "original" and restores to it).
 _PREFERRED_KEYS_LOCK = threading.Lock()
 
+# Effectively "no rekey": larger than any single PowerSchool extract's byte
+# volume, so paramiko's `need_rekey()` never trips on the tunnel (OpenSSH
+# `RekeyLimit none`). Explicit `Transport.renegotiate_keys()` still works.
+_REKEY_DISABLED_BYTES = 1 << 48
 
-class SSHTunnelError(Exception):
-    """Raised when the sshpass tunnel subprocess emits unexpected stdout."""
+# `SSHClient.connect` hands `timeout` to `Transport.start_client()`, whose wait
+# spans the banner read (`banner_timeout`, 15s) AND the key exchange that
+# follows (`handshake_timeout`, 15s). dagster-ssh defaults `timeout` to 10s, so
+# it expired first — and `start_client()` breaks out of its wait loop WITHOUT
+# raising when its own deadline passes. `connect()` then fell through to
+# `get_remote_server_key()`, which raises the misleading
+# `SSHException("No existing session")` while the real negotiation kept running
+# on an abandoned transport thread that logged an ERROR traceback seconds after
+# the caller had given up (#4636).
+#
+# 45s clears paramiko's 30s negotiation ceiling with headroom. It does NOT need
+# to cover `auth_timeout` (30s) — authentication runs after `start_client()`
+# returns and enforces its own deadline.
+# `tests/resources/test_resource_ssh_banner_timeout.py` reads the paramiko
+# defaults live and fails if an upgrade ever pushes them past this.
+_NEGOTIATION_TIMEOUT_SECONDS = 45
+
+# Soft ceiling on the retry sequence: `stop_after_delay` is evaluated BETWEEN
+# attempts, so an attempt starting just under the threshold still runs its full
+# `_NEGOTIATION_TIMEOUT_SECONDS`, putting the true worst case nearer 165s. That
+# is still well inside the 600s shortest SFTP sensor interval, whereas the
+# unbounded five attempts plus backoff it replaces could reach ~4 minutes
+# against a black-holed host.
+_RETRY_DEADLINE_SECONDS = 120
+
+# Deterministic `SSHException` subclasses: a config/compatibility mismatch that
+# fails identically on every attempt, so retrying only burns backoff.
+# `AuthenticationException` covers `BadAuthenticationType` and
+# `PartialAuthentication`.
+_NON_RETRYABLE_SSH_EXCEPTIONS = (
+    AuthenticationException,
+    BadHostKeyException,
+    IncompatiblePeer,
+    ProxyCommandFailure,
+)
+
+# paramiko reports its transient negotiation failures as a BARE `SSHException`
+# ("Error reading SSH protocol banner", "No existing session", "Negotiation
+# failed.") — there is no dedicated subclass to match on. The rest are NOT
+# `SSHException` subclasses (`NoValidConnectionsError` is an `OSError`), so they
+# have to be named separately.
+#
+# This is the OUTER net — everything a connect can plausibly fail with that is
+# not a programming error. `_is_transient_connect_failure` then subtracts the
+# deterministic subclasses from it. `listdir_attr_r_or_skip` uses both: catch
+# widely, then re-raise the deterministic ones. Catching only `SSHException`
+# here would miss a downed host (`NoValidConnectionsError`) or a reset peer
+# (`ConnectionResetError`), since `reraise=True` on `get_connection` re-raises
+# the ORIGINAL exception once the retry budget is spent.
+TRANSIENT_CONNECT_EXCEPTIONS = (
+    SSHException,
+    NoValidConnectionsError,
+    TimeoutError,
+    socket.gaierror,
+    ConnectionResetError,
+)
+
+
+def _is_transient_connect_failure(exception: BaseException) -> bool:
+    """Retry predicate for `get_connection`.
+
+    Subtracting the deterministic subclasses from `SSHException` rather than
+    dropping the base class outright: `c4541aa1b` did the latter, which
+    correctly stopped retrying `IncompatiblePeer` / `BadHostKeyException` /
+    `BadAuthenticationType` but also silently disabled the retry for every
+    transient bare `SSHException` — including the banner read failure this retry
+    exists for (#4636).
+    """
+    if isinstance(exception, _NON_RETRYABLE_SSH_EXCEPTIONS):
+        return False
+
+    return isinstance(exception, TRANSIENT_CONNECT_EXCEPTIONS)
+
+
+class _DemoteTransportThreadErrors(logging.Filter):
+    """Lower `paramiko.transport`'s ERROR records to WARNING.
+
+    `Transport.run()` logs its exception message and full traceback at ERROR
+    from a BACKGROUND thread, so GCP Error Reporting files a group even when the
+    retry above recovers the connection on the next attempt. Two such groups
+    (`CPuG15Xz8J-doAE`, `CO7X67XY7MG3YA`) were the two halves of one chained
+    traceback, refiled every time an SFTP host was slow (#4636).
+
+    No signal is lost: `run()` also stores the exception in `saved_exception`,
+    which `start_client()` re-raises on the calling thread, so a failure the
+    retry does NOT recover still propagates and gets logged at the run/tick
+    level by Dagster. This is the vendored-library form of the rule in
+    `core/CLAUDE.md` about not logging tracebacks inside retry-wrapped helpers.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.levelno >= logging.ERROR:
+            record.levelno = logging.WARNING
+            record.levelname = logging.getLevelName(logging.WARNING)
+
+        return True
+
+
+def _demote_paramiko_transport_errors() -> None:
+    """Install the demoting filter once per process.
+
+    A logger-level filter only runs for records logged directly to that logger,
+    which is exactly the target: `Transport._log` writes to `paramiko.transport`
+    itself. Child loggers (`paramiko.transport.sftp`) are untouched.
+
+    Called from `get_connection` rather than at import so that importing this
+    module does not mutate global logging state in processes that never open an
+    SSH connection. Installing here is still early enough: the transport thread
+    that logs the traceback is not started until `connect()` runs below.
+    """
+    logger = logging.getLogger("paramiko.transport")
+
+    if not any(isinstance(f, _DemoteTransportThreadErrors) for f in logger.filters):
+        logger.addFilter(_DemoteTransportThreadErrors())
+
+
+# `RSAKey` subclass that accepts `ssh-rsa` (SHA-1) signatures. paramiko 5.0
+# keeps `ssh-rsa` out of `RSAKey.HASHES` (declared `Final`) to refuse SHA-1;
+# placing this subclass in a transport instance's `_key_info["ssh-rsa"]`
+# re-enables SHA-1 host-key verification at rekey WITHOUT mutating the
+# process-global `RSAKey.HASHES` (which would weaken every RSA verification in
+# the process). Built via `type()` because a static subclass cannot override
+# the `Final` `HASHES` attribute.
+_LegacyRSAKey = type(
+    "_LegacyRSAKey",
+    (RSAKey,),
+    {"HASHES": {**RSAKey.HASHES, "ssh-rsa": hashes.SHA1}},
+)
+
+
+def _is_safe_listing_filename(filename: str) -> bool:
+    """Whether a directory entry is a single, non-traversing name.
+
+    Entry names come from the remote server and are joined onto ``remote_dir``
+    to build the paths callers list, match, and download. A real SFTP entry is
+    always one path component (paramiko already drops the exact ``.`` and
+    ``..`` entries, nothing else), so a name carrying a separator or a ``..``
+    could steer that join — and the local download path derived from it —
+    outside the directory being walked.
+    """
+    return filename not in ("", ".", "..") and "/" not in filename
+
+
+def _persist_legacy_rsa(transport: Transport) -> None:
+    """Keep `ssh-rsa` usable for the LIFETIME of one transport, and disable
+    paramiko's periodic rekey on it.
+
+    `get_connection` re-enables ssh-rsa only for the initial handshake and
+    reverts the class-level patch immediately. But paramiko renegotiates keys
+    mid-stream every `Packetizer.REKEY_BYTES` (512 MiB); against an ssh-rsa-only
+    server (GlobalSCAPE EFT, the PowerSchool host) that rekey's KEXINIT would no
+    longer offer ssh-rsa, negotiation would fail, and the dropped transport
+    surfaced as `oracledb DPY-4011` on the forwarded Oracle connection.
+
+    All three assignments are scoped to the transport instance / a subclass, so
+    (unlike the class-level patch in `get_connection`) they never leak ssh-rsa
+    to other connections in the process. `getattr` reads the instance attribute
+    before the class attribute, so a mid-stream rekey sees ssh-rsa again.
+    """
+    transport._preferred_keys = tuple(transport._preferred_keys) + ("ssh-rsa",)
+    transport._key_info = {**transport._key_info, "ssh-rsa": _LegacyRSAKey}
+    transport.packetizer.REKEY_BYTES = _REKEY_DISABLED_BYTES
+    transport.packetizer.REKEY_PACKETS = _REKEY_DISABLED_BYTES
 
 
 class SSHResource(DagsterSSHResource):
+    # redeclared only to hide the inherited credentials from repr
+    password: str | None = Field(default=None, repr=False)
+    key_string: str | None = Field(default=None, repr=False)
     tunnel_remote_host: str | None = None
     test: bool = False
     # paramiko 5.0 dropped `ssh-rsa` (SHA-1 RSA host keys) from its default
     # _preferred_keys. Set True to re-enable ssh-rsa for servers that only
     # advertise it (otherwise KEX negotiation fails with IncompatiblePeer).
     enable_legacy_rsa: bool = False
+    # Overrides dagster-ssh's 10s default, which expired before paramiko
+    # finished negotiating. See `_NEGOTIATION_TIMEOUT_SECONDS`.
+    timeout: int = Field(
+        default=_NEGOTIATION_TIMEOUT_SECONDS,
+        description=(
+            "Timeout for the attempt to connect to remote host. Must exceed"
+            " paramiko's banner_timeout + handshake_timeout or connect() reports"
+            " a misleading 'No existing session' and abandons the transport"
+            " thread. Also bounds each SFTP channel read made through"
+            " listdir_attr_r."
+        ),
+    )
 
     @retry(
-        stop=stop_after_attempt(5),
+        stop=stop_after_attempt(5) | stop_after_delay(_RETRY_DEADLINE_SECONDS),
         wait=wait_exponential_jitter(initial=2, max=30),
-        # Only retry true transients. SSHException is too broad — it covers
-        # IncompatiblePeer / BadHostKeyException / BadAuthenticationType, which
-        # are deterministic config failures that will fail identically on every
-        # attempt and burn ~30s per call.
-        retry=retry_if_exception_type(
-            (
-                NoValidConnectionsError,
-                TimeoutError,
-                socket.gaierror,
-                ConnectionResetError,
-            )
-        ),
+        # Retry true transients only — but by SUBTRACTING the deterministic
+        # subclasses from SSHException rather than dropping the base class,
+        # which would take the transient bare SSHExceptions with it.
+        retry=retry_if_exception(_is_transient_connect_failure),
         reraise=True,
     )
     def get_connection(self) -> SSHClient:
+        _demote_paramiko_transport_errors()
+
         if not self.enable_legacy_rsa:
             return super().get_connection()
 
@@ -80,11 +267,18 @@ class SSHResource(DagsterSSHResource):
             Transport._key_info = {**original_key_info, "ssh-rsa": RSAKey}
             RSAKey.HASHES = {**original_rsa_hashes, "ssh-rsa": hashes.SHA1}
             try:
-                return super().get_connection()
+                client = super().get_connection()
             finally:
                 Transport._preferred_keys = original_preferred_keys
                 Transport._key_info = original_key_info
                 RSAKey.HASHES = original_rsa_hashes
+
+        # The class-level patch above is reverted the instant the handshake
+        # returns; persist ssh-rsa on THIS transport (and disable auto-rekey) so
+        # a mid-stream 512 MiB rekey can't drop the connection. See
+        # `_persist_legacy_rsa`.
+        _persist_legacy_rsa(check.not_none(value=client.get_transport()))
+        return client
 
     def listdir_attr_r(
         self,
@@ -106,6 +300,11 @@ class SSHResource(DagsterSSHResource):
         directory's ``st_mtime`` is older than the max ``st_mtime`` of its
         descendants; if so, do not pass ``dir_mtimes``.
         """
+        # paramiko channels default to no timeout: a server that stops answering
+        # mid-listing would block recv() until the sensor tick or run is killed.
+        # A stalled read now raises TimeoutError instead.
+        check.not_none(value=sftp_client.get_channel()).settimeout(self.timeout)
+
         if exclude_dirs is None:
             exclude_dirs = []
 
@@ -114,6 +313,13 @@ class SSHResource(DagsterSSHResource):
 
         files: list[tuple[SFTPAttributes, str]] = []
         for file in sftp_client.listdir_attr(remote_dir):
+            if not _is_safe_listing_filename(file.filename):
+                self.log.warning(
+                    "Skipping illegal filename in SFTP listing of "
+                    f"'{remote_dir}': {file.filename!r}"
+                )
+                continue
+
             path = str(Path(remote_dir) / file.filename)
             mtime = check.not_none(value=file.st_mtime)
 
@@ -141,54 +347,159 @@ class SSHResource(DagsterSSHResource):
 
         return files
 
-    def open_ssh_tunnel(self) -> subprocess.Popen[bytes]:
-        # trunk-ignore(bandit/B603): static argv, no shell; inputs are EnvVar resource config
-        ssh_tunnel = subprocess.Popen(
-            args=[
-                "sshpass",
-                (
-                    f"-p{self.password}"
-                    if self.test
-                    else "-f/etc/secret-volume/powerschool_ssh_password.txt"
+    def listdir_attr_r_or_skip(
+        self, **kwargs
+    ) -> list[tuple[SFTPAttributes, str]] | SkipReason:
+        """Connect, list recursively, and turn a TRANSIENT failure into a skip.
+
+        The SFTP sensors all share the same shape — open a connection, open an
+        SFTP channel, recurse — and the same need to tell two kinds of failure
+        apart:
+
+        - **Transient** (host slow, down, DNS blip, reset peer): already retried
+          by `get_connection`. Nothing is wrong with the code, so skip the tick
+          and let the next one pick the files up.
+        - **Deterministic** (`AuthenticationException`, `BadHostKeyException`,
+          `IncompatiblePeer`, `ProxyCommandFailure`): a rotated credential or a
+          server that changed its host key. These are re-raised so the tick
+          FAILS and alerts. Skipping them looks identical to "no new files" in
+          the UI, which would let ingestion stop silently and indefinitely.
+
+        Centralized rather than repeated per sensor because that distinction is
+        subtle, and 4 of 5 sensors previously got the simpler version of this
+        wrong (#4636). `**kwargs` are forwarded to `listdir_attr_r`.
+        """
+        try:
+            with (
+                self.get_connection() as connection,
+                connection.open_sftp() as sftp_client,
+            ):
+                return self.listdir_attr_r(sftp_client=sftp_client, **kwargs)
+        except TRANSIENT_CONNECT_EXCEPTIONS as e:
+            if not _is_transient_connect_failure(e):
+                raise
+
+            return SkipReason(str(e))
+
+    @contextmanager
+    def open_ssh_tunnel(
+        self, local_port: int = 1521, remote_port: int = 1521
+    ) -> Iterator[int]:
+        """In-process SSH local port forward.
+
+        Replaced the retired sshpass-subprocess tunnel (#4442): no password
+        file mount, no readiness race, host-key verification kept
+        (get_connection handles legacy ssh-rsa and transient-failure retry).
+        Yields the bound local port; pass local_port=0 for an ephemeral port.
+        """
+        client = self.get_connection()
+        server: _ForwardServer | None = None
+
+        try:
+            transport = check.not_none(value=client.get_transport())
+
+            server = _ForwardServer(
+                server_address=("127.0.0.1", local_port),
+                RequestHandlerClass=_make_forward_handler(
+                    transport=transport,
+                    remote_host=check.not_none(value=self.tunnel_remote_host),
+                    remote_port=remote_port,
+                    log=self.log,
                 ),
-                "ssh",
-                self.remote_host,
-                f"-p{self.remote_port}",
-                f"-l{self.username}",
-                f"-L1521:{self.tunnel_remote_host}:1521",
-                "-oHostKeyAlgorithms=+ssh-rsa",
-                "-oStrictHostKeyChecking=accept-new",
-                "-oConnectTimeout=10",
-                "-oServerAliveInterval=30",
-                "-oServerAliveCountMax=3",
-                "-N",
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
+            )
 
-        stdout_stream = check.not_none(value=ssh_tunnel.stdout)
+            server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+            server_thread.start()
 
-        while True:
-            stdout = stdout_stream.readline()
-            self.log.debug(msg=stdout)
+            yield server.server_address[1]
+        finally:
+            # Stop accepting new connections, then close the SSH
+            # client/transport BEFORE closing the listener. Closing the
+            # transport EOFs every open `direct-tcpip` channel, which makes a
+            # handler thread blocked in
+            # `select.select([self.request, channel], [], [])` on a
+            # still-open forwarded connection return and unwind on its own.
+            # Only then is it safe to call `server_close()`. `server` stays
+            # `None` if construction raised before assignment (e.g.
+            # `tunnel_remote_host` unset) — guard both server calls so
+            # `client.close()` (paramiko no-ops on a second call, so this is
+            # the single close site regardless of path) still runs.
+            if server is not None:
+                server.shutdown()
 
-            if stdout in [
-                (
-                    f"Warning: Permanently added '[{self.remote_host}]:"
-                    f"{self.remote_port}' (RSA) to the list of known hosts.\r\n"
-                ).encode(),
-                b"A secure connection to your server has been established.\n",
-            ]:
-                continue
-            elif stdout == b"To disconnect, simply close this window.\n":
-                break
-            else:
-                ssh_tunnel.kill()
-                raise SSHTunnelError(stdout)
+            client.close()
 
-        # Prevent a race condition with the ssh tunnel becoming fully established
-        # before downstream code (e.g. PowerSchool ODBC) opens a forwarded port.
-        time.sleep(1.0)
+            if server is not None:
+                # `_ForwardServer.block_on_close = False` is a bounded
+                # backstop on top of the ordering above: `server_close()`
+                # never joins per-connection handler threads (the
+                # `ThreadingMixIn.block_on_close=True` default would join
+                # with no timeout), so a thread that is somehow still stuck
+                # can't hang cleanup — it's already `daemon_threads = True`,
+                # so it won't block interpreter exit either.
+                server.server_close()
 
-        return ssh_tunnel
+
+class _ForwardServer(socketserver.ThreadingTCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+    # See the cleanup-ordering comment in `open_ssh_tunnel`: without
+    # this, `server_close()` joins every per-connection handler thread with
+    # no timeout, which can hang forever on a handler parked in `select()`.
+    block_on_close = False
+
+
+def _make_forward_handler(
+    transport: Transport,
+    remote_host: str,
+    remote_port: int,
+    log: logging.Logger,
+) -> type[socketserver.BaseRequestHandler]:
+    class Handler(socketserver.BaseRequestHandler):
+        def handle(self) -> None:
+            try:
+                channel = transport.open_channel(
+                    kind="direct-tcpip",
+                    dest_addr=(remote_host, remote_port),
+                    src_addr=self.request.getpeername(),
+                )
+            except Exception as e:
+                log.warning(
+                    f"direct-tcpip channel to {remote_host}:{remote_port} failed: {e}"
+                )
+                return
+
+            if channel is None:
+                log.warning("direct-tcpip channel rejected by server")
+                return
+
+            try:
+                while True:
+                    r, _, _ = select.select([self.request, channel], [], [])
+                    if self.request in r:
+                        data = self.request.recv(16384)
+                        if len(data) == 0:
+                            break
+                        # `Channel.send()` may write fewer bytes than given
+                        # (returns the count) — `sendall()` loops until the
+                        # full buffer is written, preventing a short write
+                        # from silently truncating the forwarded stream.
+                        channel.sendall(data)
+                    if channel in r:
+                        data = channel.recv(16384)
+                        if len(data) == 0:
+                            break
+                        # `socket.send()` has the same short-write behavior as
+                        # `Channel.send()` above — use `sendall()` here too.
+                        self.request.sendall(data)
+            finally:
+                # `open_ssh_tunnel`'s `client.close()` can close the SSH
+                # socket while this handler is mid-close (the forwarded client
+                # hung up just before the tunnel exited), so paramiko raises
+                # writing CHANNEL_CLOSE. The channel is gone either way; still
+                # close the local socket.
+                with suppress(EOFError, OSError, SSHException):
+                    channel.close()
+                self.request.close()
+
+    return Handler

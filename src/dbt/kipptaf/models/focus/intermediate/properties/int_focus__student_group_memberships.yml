@@ -1,0 +1,13 @@
+models:
+  - name: int_focus__student_group_memberships
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__student_group_memberships — student-to-group memberships with
+      the group's title and active dates. Column docs/tests live on the
+      kippmiami source model.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

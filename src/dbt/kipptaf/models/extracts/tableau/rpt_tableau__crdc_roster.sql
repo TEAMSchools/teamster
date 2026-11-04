@@ -1,9 +1,15 @@
+{#- CRDC fall snapshot: 1 October of the submission year, or the next weekday
+    when it falls on a weekend. Confirm against OCR's definition each cycle. -#}
+{%- set oct_01 = modules.datetime.date(var("current_academic_year") - 1, 10, 1) -%}
+{%- set weekend_shift = {5: 2, 6: 1}.get(oct_01.weekday(), 0) -%}
+{%- set fall_snapshot = oct_01 + modules.datetime.timedelta(days=weekend_shift) -%}
+
 with
     retained as (
         select student_number, is_retained_year,
         from {{ ref("int_extracts__student_enrollments") }}
         where
-            /* submission is always for the previous school year, but retention is 
+            /* submission is always for the previous school year, but retention is
             tracked only on the submission year + 1 (current academic year) */
             academic_year = {{ var("current_academic_year") }}
             and rn_year = 1
@@ -15,6 +21,7 @@ with
     enrollment as (
         select
             e._dbt_source_relation,
+            e._dbt_source_project,
             e.academic_year,
             e.region,
             e.schoolid,
@@ -37,10 +44,6 @@ with
 
             -- need this to join to act/sat scores
             e.salesforce_id,
-
-            -- tag the manual entry for student numbers on the crdc student crosswalk
-            -- g-sheet feed
-            me.crdc_question_section,
 
             coalesce(r.is_retained_year, false) as is_retained_year,
 
@@ -72,10 +75,6 @@ with
                 then 'Two or more races'
             end as crdc_demographic,
 
-            -- bring over the manual entry student numbers that match the crdc
-            -- question tag
-            if(me.student_number is null, false, true) as crdc_question_section_status,
-
             if(e.iep_status = 'Has IEP' and not is_504, true, false) as iep_only,
 
             if(e.iep_status = 'Has IEP' and is_504, true, false) as iep_and_c504,
@@ -88,9 +87,6 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join retained as r on e.student_number = r.student_number
-        left join
-            {{ ref("stg_google_sheets__crdc__student_numbers") }} as me
-            on e.student_number = me.student_number
         where
             /* submission is always for the previous school year */
             e.academic_year = {{ var("current_academic_year") - 1 }}
@@ -99,9 +95,19 @@ with
             and e.region != 'Miami'
     ),
 
+    manual_tags as (
+        /* one row per student per section tagged on the manual-entry sheet */
+        select e.*, me.crdc_question_section,
+        from enrollment as e
+        inner join
+            {{ ref("stg_google_sheets__crdc__student_numbers") }} as me
+            on e.student_number = me.student_number
+    ),
+
     custom_schedule as (
         select
             c._dbt_source_relation,
+            c._dbt_source_project,
             c.cc_academic_year,
             c.cc_schoolid,
 
@@ -151,19 +157,18 @@ with
 
             false as is_credit_recovery,
 
-            -- some data is needed as of fall snapshot
             if(
-                c.cc_dateenrolled <= '2023-10-02' and c.cc_dateleft >= '2023-10-02',
+                c.cc_dateenrolled <= '{{ fall_snapshot }}'
+                and c.cc_dateleft >= '{{ fall_snapshot }}',
                 true,
                 false
             ) as is_oct_01_course,
 
-            -- some data is needed as of the last day of school
             if(c.cc_dateleft >= c.terms_lastday, true, false) as is_last_day_course,
 
             if(g.grade like 'F%', false, true) as passed_course,
 
-        from {{ ref("base_powerschool__course_enrollments") }} as c
+        from {{ ref("int_students__course_enrollments") }} as c
         -- left rather than inner to be able to see students who attempted but didnt
         -- earn a y1 grade
         left join
@@ -171,7 +176,7 @@ with
             on c.cc_academic_year = g.academic_year
             and c.sections_id = g.sectionid
             and c.cc_studentid = g.studentid
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="g") }}
+            and c._dbt_source_project = g._dbt_source_project
             and g.storecode = 'Y1'
         left join
             {{ ref("stg_google_sheets__crdc__sced_code_crosswalk") }} as x
@@ -180,12 +185,13 @@ with
             -- submission is always for the previous school year
             c.cc_academic_year = {{ var("current_academic_year") - 1 }}
             -- miami does their own submission
-            and regexp_extract(c._dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
+            and c._dbt_source_project != 'kippmiami'
 
         union all
         -- credit recovery courses, which only exist in storedgrades
         select
             _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
             schoolid,
 
@@ -198,10 +204,10 @@ with
             course_name,
             null as sections_dcid,
             sectionid,
-            null as ections_external_expression,
+            null as sections_external_expression,
 
             null as is_dropped_course,
-            null as s_dropped_section,
+            null as is_dropped_section,
 
             null as ap_course_subject,
             null as is_ap_course,
@@ -212,7 +218,7 @@ with
 
             null as terms_lastday,
 
-            null as ced_course_name,
+            null as sced_course_name,
             null as crdc_course_group,
             null as crdc_subject_group,
             null as crdc_ap_group,
@@ -245,19 +251,16 @@ with
             and schoolname = 'KIPP Summer School'
             and storecode = 'Y1'
             -- miami does their own submission
-            and regexp_extract(_dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
+            and _dbt_source_project != 'kippmiami'
     ),
 
-    -- this CTE is appending the different course versions/groupings needed
     final_schedule as (
-        -- data dual enrolled students
         select *, 'PENR-4' as crdc_question_section,
         from custom_schedule
         where is_dual_enrollment and is_oct_01_course and not ap_tag
 
         union all
 
-        -- credit recovery students
         select *, 'PENR-6' as crdc_question_section,
         from custom_schedule
         where is_credit_recovery
@@ -272,7 +275,6 @@ with
 
         union all
 
-        -- hs math courses
         select *, 'COUR-7' as crdc_question_section,
         from custom_schedule
         where
@@ -289,7 +291,6 @@ with
 
         union all
 
-        -- hs science courses
         select
             *,
             case
@@ -309,7 +310,6 @@ with
 
         union all
 
-        -- ap courses that have correct tags on PS
         select *, 'APIB-4' as crdc_question_section,
         from custom_schedule
         -- crdc ap group is needed to not count the AP courses crdc doesnt like
@@ -317,7 +317,6 @@ with
 
         union all
 
-        -- ap courses that have incorrect tags on PS
         select *, 'APIB-4' as crdc_question_section,
         from custom_schedule
         -- crdc ap group is needed to not count the AP courses crdc doesnt like
@@ -335,10 +334,9 @@ with
         where
             score_type in ('act_composite', 'sat_total_score')
             and academic_year = {{ var("current_academic_year") - 1 }}
-        group by all
+        group by contact
     )
 
--- DSED-2 and ATHL
 select
     _dbt_source_relation,
     academic_year,
@@ -393,14 +391,13 @@ select
         else 'Arrests'
     end as crdc_question_description,
 
-from enrollment
+from manual_tags
 where
     crdc_question_section
     in ('DSED-2', 'ATHL-3', 'ARRS-1', 'ARRS-2', 'ARRS-3', 'ARRS-4', 'ARRS-5', 'ARRS-6')
 
 union all
 
--- ENRL-1, 2a,2b, 3, and 4;and RETN
 select
     _dbt_source_relation,
     academic_year,
@@ -561,7 +558,7 @@ from enrollment as e
 inner join
     final_schedule as f
     on e.studentid = f.cc_studentid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="f") }}
+    and e._dbt_source_project = f._dbt_source_project
     and f.crdc_question_section = 'PENR-6'
 where
     -- timeframe is any part of the year + summer
@@ -801,7 +798,6 @@ where
     is_enrolled_oct01 and e.grade_level >= 9 and f.courses_course_name is not null
 
 union all
--- act/sat attempts
 select
     e._dbt_source_relation,
     e.academic_year,

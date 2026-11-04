@@ -18,10 +18,6 @@ with
     ),
 
     contacts as (
-        -- One row per (student, contact slot, phone type) for the Clever feed.
-        -- UNPIVOT drops null inputs, so a contact with no phone of a given type
-        -- emits no row for it. contact_1 is the single reportable parent
-        -- (contact_type 'primary'); emergency_1..4 are emergency contacts.
         select
             student_number,
             _dbt_source_project,
@@ -29,7 +25,8 @@ with
             relationship,
             contact_type,
             contact_phone_type,
-            contact_phone,
+
+            regexp_replace(contact_phone, r'[^0-9]', '') as phone_digits,
         from
             contacts_base unpivot (
                 contact_phone for contact_phone_type
@@ -49,11 +46,17 @@ select
     sr.gifted_and_talented as ext__gifted,
     sr.cumulative_y1_gpa as weighted_gpa,
     sr.cumulative_y1_gpa_unweighted as unweighted_gpa,
+    -- every region left in this feed is NJ, so the FL education id (fleid) that
+    -- Miami reported here is no longer reachable
+    sr.state_studentnumber as state_id,
 
     c.contact_name,
     c.relationship as contact_relationship,
     c.contact_type,
     c.contact_phone_type,
+
+    dr.state_district_id as ext__district_sisid,
+    dr.state_school_id as ext__school_sisid,
 
     null as hispanic_latino,
     null as home_language,
@@ -72,20 +75,24 @@ select
 
     format_date('%m/%d/%Y', sr.dob) as dob,
 
-    left(regexp_replace(c.contact_phone, r'\W', ''), 10) as contact_phone,
+    -- int_students__contacts carries E.164 (+1..., optional xNNN) for
+    -- Finalsite-sourced contacts; drop a leading US `1` and take 10 digits.
+    left(regexp_replace(c.phone_digits, r'^1', ''), 10) as contact_phone,
 
     if(sr.lep_status, 'Y', 'N') as ell_status,
     if(sr.spedlep in ('SPED', 'SPED SPEECH'), 'Y', 'N') as iep_status,
-    if(sr.region = 'Miami', sr.fleid, sr.state_studentnumber) as state_id,
     if(sr.grade_level = 0, 'Kindergarten', cast(sr.grade_level as string)) as grade,
 from {{ ref("int_extracts__student_enrollments") }} as sr
 left join
     contacts as c
     on sr.student_number = c.student_number
     and sr._dbt_source_project = c._dbt_source_project
+left join
+    {{ ref("dim_regions") }} as dr on sr._dbt_source_project = dr.dagster_code_location
 where
     sr.academic_year = {{ var("current_academic_year") }}
     and sr.rn_year = 1
     and not sr.is_out_of_district
     and sr.enroll_status in (0, -1)
-    and sr._dbt_source_relation not like '%kipppaterson%'
+    -- Miami rosters into Clever from Focus, not from this feed
+    and sr._dbt_source_project != 'kippmiami'

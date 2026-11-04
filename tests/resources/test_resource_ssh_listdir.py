@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from dagster import build_resources
+from dagster import SkipReason, build_resources
 from paramiko import SFTPAttributes
 
 from teamster.libraries.ssh.resources import SSHResource
@@ -174,6 +174,67 @@ def test_dir_mtimes_traverses_unseen_directory():
     assert dir_mtimes["newdir"] == 300
 
 
+def test_traversing_filename_is_skipped():
+    """A server-supplied name with a separator must not reach the join, and
+    must not abort the rest of the listing."""
+    sftp = _build_mock_sftp(
+        {
+            ".": [
+                _make_sftp_attr("good.csv", FILE_MODE, st_mtime=100, st_size=50),
+                _make_sftp_attr(
+                    "report.txt/../../../../app/evil.pth",
+                    FILE_MODE,
+                    st_mtime=300,
+                    st_size=50,
+                ),
+            ],
+        }
+    )
+
+    with build_resources(
+        {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
+    ) as resources:
+        # DagsterLogManager doesn't propagate to caplog; assert on the call
+        # directly instead.
+        resources.ssh.log.warning = MagicMock()
+
+        files = resources.ssh.listdir_attr_r(
+            sftp_client=sftp,
+            remote_dir=".",
+            exclude_dirs=[],
+        )
+
+    filenames = [attr.filename for attr, _ in files]
+    assert filenames == ["good.csv"]
+    resources.ssh.log.warning.assert_called_once()
+    assert "Skipping illegal filename" in resources.ssh.log.warning.call_args[0][0]
+
+
+def test_parent_directory_entry_is_skipped():
+    """A `..` directory entry must not be walked upward, and must not abort
+    the rest of the listing."""
+    sftp = _build_mock_sftp(
+        {
+            ".": [
+                _make_sftp_attr("..", DIR_MODE, st_mtime=100, st_size=0),
+                _make_sftp_attr("good.csv", FILE_MODE, st_mtime=100, st_size=50),
+            ],
+        }
+    )
+
+    with build_resources(
+        {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
+    ) as resources:
+        files = resources.ssh.listdir_attr_r(
+            sftp_client=sftp,
+            remote_dir=".",
+            exclude_dirs=[],
+        )
+
+    filenames = [attr.filename for attr, _ in files]
+    assert filenames == ["good.csv"]
+
+
 def test_dir_mtimes_none_returns_list_only():
     """When dir_mtimes is None, return type is list (backward compat)."""
     sftp = _build_mock_sftp(
@@ -195,3 +256,39 @@ def test_dir_mtimes_none_returns_list_only():
 
     assert isinstance(result, list)
     assert len(result) == 1
+
+
+def _patch_connection(ssh: SSHResource, sftp: MagicMock) -> None:
+    connection = MagicMock()
+    connection.__enter__.return_value = connection
+    connection.open_sftp.return_value.__enter__.return_value = sftp
+    object.__setattr__(ssh, "get_connection", lambda: connection)
+
+
+def test_listdir_bounds_sftp_channel_reads():
+    """paramiko channels default to no timeout, so a server that stops
+    answering mid-listing would block the sensor tick until Dagster kills it.
+    Covers direct callers too, not just listdir_attr_r_or_skip."""
+    sftp = _build_mock_sftp({".": []})
+
+    with build_resources(
+        {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
+    ) as resources:
+        resources.ssh.listdir_attr_r(sftp_client=sftp, remote_dir=".")
+
+    sftp.get_channel.return_value.settimeout.assert_called_once_with(
+        resources.ssh.timeout
+    )
+
+
+def test_or_skip_turns_listing_timeout_into_skip():
+    sftp = MagicMock()
+    sftp.listdir_attr.side_effect = TimeoutError("timed out")
+
+    with build_resources(
+        {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
+    ) as resources:
+        _patch_connection(resources.ssh, sftp)
+        result = resources.ssh.listdir_attr_r_or_skip(remote_dir=".")
+
+    assert isinstance(result, SkipReason)

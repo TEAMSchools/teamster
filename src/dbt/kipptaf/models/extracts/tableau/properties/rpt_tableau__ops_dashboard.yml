@@ -23,6 +23,11 @@ models:
         data_type: int64
       - name: enroll_status
         data_type: int64
+        description: >-
+          Current PowerSchool enroll_status (0 active, 2 transferred out, 3
+          graduated); inactive (1) and pre-registered (-1) students are
+          excluded. Student-level and current-only, so a student's prior-year
+          rows carry their status today, not as of that year.
       - name: entrydate
         data_type: date
       - name: exitdate
@@ -143,8 +148,18 @@ models:
         data_type: string
       - name: is_enrolled_oct01_next
         data_type: boolean
+        description: >-
+          Whether the student was enrolled on 1 October of the NEXT academic
+          year, meaning this row's academic_year plus one. A student with no
+          enrollment record for that year is false, never the value from a later
+          year the student returned in.
       - name: is_enrolled_oct15_next
         data_type: boolean
+        description: >-
+          Whether the student was enrolled on 15 October of the NEXT academic
+          year, meaning this row's academic_year plus one. A student with no
+          enrollment record for that year is false, never the value from a later
+          year the student returned in.
       - name: is_retained_ever
         data_type: boolean
       - name: is_retained_year

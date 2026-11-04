@@ -1,10 +1,14 @@
 models:
   - name: rpt_gsheets__grad_plan_tracking
+    config:
+      meta:
+        contains_pii: true
     description: >
-      Grad plan tracking extract for Tableau. One row per student per
-      discipline-subject slot in their active grad plan (NJ State Diploma or HS
-      Distinction Diploma). Includes plan-, discipline-, and subject-level
-      credit totals alongside current grade and enrollment data.
+      Grad plan tracking extract read by the Grad Plan Tracking Google Sheet.
+      One row per student per discipline-subject slot in their active grad plan
+      (NJ State Diploma or HS Distinction Diploma). Includes plan-, discipline-,
+      and subject-level credit totals alongside current grade and enrollment
+      data. Newark and Camden high schools only.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -22,24 +26,41 @@ models:
       - name: academic_year
         data_type: int64
       - name: plan_id
+        description: gpnode.id for the grad plan root node.
         data_type: int64
       - name: plan_name
+        description: Name of the grad plan.
         data_type: string
       - name: discipline_id
+        description: gpnode.id for the discipline node.
         data_type: int64
       - name: discipline_name
+        description: Name of the discipline.
         data_type: string
       - name: subject_id
+        description:
+          gpnode.id for the subject node; equals discipline_id for disciplines
+          with no subject children.
         data_type: int64
       - name: subject_name
+        description:
+          Name of the subject node; equals discipline_name for disciplines with
+          no subject children.
         data_type: string
       - name: teacher_name
+        description: Teacher name for the course.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: course_number
+        description: Course number.
         data_type: string
       - name: course_name
+        description: Course name.
         data_type: string
       - name: sectionid
+        description: Section ID.
         data_type: int64
       - name: grade_dcid
         description: >
@@ -49,17 +70,42 @@ models:
           values.
         data_type: int64
       - name: credit_type
+        description: Credit type classification.
         data_type: string
       - name: letter_grade
+        description: Letter grade earned or projected for the course.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: is_transfer_grade
+        description: >-
+          True when the stored grade's school has no match among the district's
+          own schools, i.e. the grade was earned outside the district. Always
+          false for in-progress grades.
         data_type: boolean
       - name: credit_status
+        description:
+          Whether this row represents an Earned or Enrolled grade record.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: earned_credits
+        description: >-
+          Credits earned; for enrolled rows, zero when the letter grade starts
+          with F.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: potential_credits
+        description:
+          Credits available for this course toward the grad plan slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: region
         data_type: string
       - name: schoolid
@@ -70,38 +116,77 @@ models:
         data_type: int64
       - name: state_studentnumber
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: salesforce_id
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: student_number
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
       - name: student_email
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: enroll_status
         data_type: int64
       - name: cohort
         data_type: int64
       - name: gender
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ethnicity
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: dob
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: lunch_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: gifted_and_talented
         data_type: string
       - name: iep_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: is_504
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_homeless
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_out_of_district
         data_type: boolean
       - name: is_self_contained
@@ -118,10 +203,16 @@ models:
         data_type: string
       - name: college_match_gpa
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: college_match_gpa_bands
         data_type: string
       - name: contact_owner_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ktc_cohort
         data_type: int64
       - name: ms_attended
@@ -130,37 +221,94 @@ models:
         data_type: string
       - name: ada
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: ada_above_or_at_80
         data_type: boolean
       - name: advisory
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: plan_required_credits
+        description: Credits required to satisfy the grad plan.
         data_type: float64
       - name: plan_enrolled_credits
+        description: Credits currently enrolled toward the plan.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: plan_requested_credits
+        description: Credits requested toward the plan.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: plan_earned_credits
+        description: Credits earned toward the plan.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: plan_waived_credits
+        description: Credits waived toward the plan.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: discipline_required_credits
+        description: Credits required to satisfy this discipline.
         data_type: float64
       - name: discipline_enrolled_credits
+        description: Credits currently enrolled toward this discipline.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: discipline_requested_credits
+        description: Credits requested toward this discipline.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: discipline_earned_credits
+        description: Credits earned toward this discipline.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: discipline_waived_credits
+        description: Credits waived toward this discipline.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: subject_required_credits
+        description: Credits required to satisfy this subject slot.
         data_type: float64
       - name: subject_enrolled_credits
+        description: Credits currently enrolled toward this subject slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: subject_requested_credits
+        description: Credits requested toward this subject slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: subject_earned_credits
+        description: Credits earned toward this subject slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: subject_waived_credits
+        description: Credits waived toward this subject slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true

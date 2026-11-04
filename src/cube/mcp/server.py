@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#   "mcp>=1.2",
+#   "mcp>=2.0",
 #   "httpx>=0.27",
 #   "pyjwt>=2.8",
 # ]
@@ -10,8 +10,8 @@
 """MCP server wrapping Cube Cloud's REST data API.
 
 Mints HS256 JWTs per request using CUBE_API_SECRET. The user's Google
-Workspace email is the JWT security context — it determines which `cube-*`
-groups apply per [src/cube/cube.js].
+Workspace email is the JWT security context; `checkAuth` in [src/cube/cube.js]
+resolves it to the caller's access from `dim_staff_cube_access`.
 
 Email resolution (in order):
   1. CUBE_USER_EMAIL env var (override, bypasses cache).
@@ -21,9 +21,13 @@ Email resolution (in order):
      engineer to set CUBE_USER_EMAIL or write the cache file directly.
 
 Tools:
-  meta  - return the Cube data model catalog (cached 1 hour per email)
-  load  - run a Cube query (JSON body per the REST API spec)
-  sql   - return the SQL Cube would generate for a query, without executing
+  meta            - return the Cube data model catalog (cached 1 hour per email)
+  load            - run a Cube query (JSON body per the REST API spec)
+  sql             - return the SQL Cube would generate, without executing
+  dry_run         - validate and normalize a query; pre-aggregation matching
+  cubesql         - run a SQL API dialect query over REST
+  convert_query   - SQL API query -> REST query object
+  graphql_to_json - Cube GraphQL query -> REST query object
 """
 
 import asyncio
@@ -31,6 +35,8 @@ import hashlib
 import json
 import os
 import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -39,7 +45,8 @@ import jwt
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken
 from mcp.server.auth.settings import AuthSettings
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.mcpserver import Context, MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ClientCapabilities, ElicitationCapability
 from pydantic import BaseModel, Field
 
@@ -68,12 +75,12 @@ class UserEmailPrompt(BaseModel):
         description=(
             "Your Google Workspace email "
             "(e.g. firstlast@apps.teamschools.org). Used as the JWT security "
-            "context to resolve your cube-* group memberships."
+            "context; Cube resolves your access from it."
         )
     )
 
 
-class MissingUserEmailError(RuntimeError):
+class MissingUserEmailError(ToolError):
     """Raised when no email is available and the client can't be prompted."""
 
 
@@ -144,7 +151,13 @@ def _mint_token(email: str) -> str:
     if cached and cached[1] - now > _TOKEN_REFRESH_BUFFER_SECONDS:
         return cached[0]
     exp = now + TOKEN_TTL_SECONDS
-    token = jwt.encode({"email": email, "exp": exp}, CUBE_API_SECRET, algorithm="HS256")
+    # `iat` is required by cube.js's `jwt.verify(..., { maxAge: "12h" })` —
+    # PyJWT does not add it automatically. `exp` alone is not enough: maxAge
+    # derives its cutoff from `iat`, not `exp`, so a token minted without it
+    # would fail `checkAuth` with "iat required when maxAge is specified".
+    token = jwt.encode(
+        {"email": email, "iat": now, "exp": exp}, CUBE_API_SECRET, algorithm="HS256"
+    )
     _token_cache[email] = (token, exp)
     return token
 
@@ -194,94 +207,55 @@ class JWKSTokenVerifier:
         )
 
 
-_fastmcp_kwargs: dict[str, Any] = {
-    "host": "0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
-    "port": 8080,
-    # stateless_http lets Cloud Run scale horizontally — no per-instance session
-    # state, every request stands alone. We don't use MCP features that require
-    # persistent sessions (subscriptions, server-initiated messages); elicit is
-    # only invoked in stdio dev mode.
-    #
-    # Do NOT pass a `lifespan=` kwarg: with stateless_http=True the SDK's
-    # _handle_stateless_request invokes `app.run(...)` per HTTP request, which
-    # in turn runs the user lifespan per request. A teardown like
-    # `await client.aclose()` would close the shared httpx client after the
-    # first request and break every subsequent one.
-    "stateless_http": True,
-}
+# mcp SDK 2.0 fixed the bug where stateless_http=True re-entered a `lifespan=`
+# context manager on every HTTP request (streamable_http_manager now enters it
+# once for the manager's lifetime and reuses that state across requests), so
+# it's now safe to manage the httpx client's shutdown here instead of leaving
+# it as a bare module-level global with no `aclose()`.
+client: httpx.AsyncClient | None = None
+
+
+@asynccontextmanager
+async def _lifespan(_server: "MCPServer[None]") -> AsyncIterator[None]:
+    global client
+    client = httpx.AsyncClient(
+        base_url=CUBE_REST_URL,
+        headers={"Content-Type": "application/json"},
+        timeout=TIMEOUT_SECONDS,
+    )
+    try:
+        yield
+    finally:
+        await client.aclose()
+        client = None
+
+
+_mcpserver_kwargs: dict[str, Any] = {}
 if AUTHKIT_DOMAIN and PUBLIC_URL:
-    _fastmcp_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
-    _fastmcp_kwargs["auth"] = AuthSettings(
+    _mcpserver_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
+    _mcpserver_kwargs["auth"] = AuthSettings(
         issuer_url=f"https://{AUTHKIT_DOMAIN}",  # type: ignore[arg-type]
         resource_server_url=PUBLIC_URL,  # type: ignore[arg-type]
     )
 
-mcp = FastMCP(
+mcp = MCPServer(
     "cube",
     instructions=(
         "Query the Cube semantic layer (KIPP TEAM & Family metrics, dimensions, "
-        "and views) via Cube Cloud's REST API.\n\n"
-        "Workflow: (1) call `meta` to discover available views, measures, and "
-        "dimensions — analyst-facing surfaces are views named `<domain>_<grain>` "
-        "(e.g. `student_attendance_detail`, `student_attendance_summary`); (2) "
-        "build a Cube "
-        "query object (measures, dimensions, filters, timeDimensions, order, "
-        "limit) and call `load` to execute, or `sql` to inspect the compiled "
-        "SQL without running it. The query spec follows the Cube REST API.\n\n"
-        "Member naming: every measure/dimension is dotted `<view>.<member>` "
-        "(e.g. `student_attendance_summary.count_students`). Bare names won't "
-        "resolve.\n\n"
-        "Filter operators are named, not SQL: `equals`, `notEquals`, `contains`, "
-        "`gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`, "
-        "`afterDate`. SQL-style `=`/`IN`/`LIKE` won't parse. See "
-        "https://cube.dev/docs/product/apis-integrations/rest-api/query-format#filters-operators "
-        "for the full list.\n\n"
-        "Date dimensions: for a single date use `filters` with `equals`; for a "
-        "range or when you need `granularity` (day/week/month/etc.), use "
-        "`timeDimensions` with `dateRange`. Putting a date in the wrong place "
-        "either fails or silently drops the granularity.\n\n"
-        "Academic year convention: an academic_year value of 2025 means the "
-        "2025–26 school year (July 2025 – June 2026), not the year ending in "
-        "2025. This is the opposite of typical fiscal-year conventions where "
-        "FY2025 ends in 2025. When a user says 'this year' or 'current year', "
-        "use the academic_year value whose start year matches the current "
-        "calendar year (e.g. if today is May 2026, current academic_year = "
-        "2025). In attendance views, the academic year is exposed as "
-        "dates_academic_year (integer) and dates_academic_year_label "
-        "(string, e.g. '2025-2026'), both sourced from the date dimension.\n\n"
-        "ACADEMIC YEAR — resolve it yourself before building any query that "
-        "names a year:\n"
-        "- academic_year is the START year; 'SY' notation uses the END year.\n"
-        "- 'SY26' -> academic_year 2025, label '2025-2026' (SY end year minus "
-        "1).\n"
-        "- '2025-26', '2025-2026', 'AY2025' -> academic_year 2025, label "
-        "'2025-2026'.\n"
-        "- bare '2026' -> treat as the START year (academic_year 2026, label "
-        "'2026-2027'); if the user's wording implies SY / end-year, note the "
-        "other reading.\n"
-        "State your interpretation inline (e.g. 'Interpreting as the 2025-2026 "
-        "school year') before showing results, then proceed.\n\n"
-        "Numeric values come back as strings — cast to numeric before "
-        "comparing or arithmetic. Raw `==` / `<` compare lexicographically "
-        "(`'10' < '9'`).\n\n"
-        "PII defaults: prefer summary views (`*_summary`) for aggregate "
-        "questions. Detail views (`*_detail`) carry row-level student "
-        "identifiers and should be used only when drill-down is explicitly "
-        "requested. Never emit detail-view values to PR comments, issues, "
-        "Slack, scheduled-agent outputs, or any external surface — only to "
-        "the local conversation.\n\n"
-        "Access is group-driven and default-deny: empty `meta` results or "
-        "`WHERE (1=0)` in `sql` output usually means the requester lacks the "
-        "required `cube-*` Workspace group, not a missing model."
+        "and views) via Cube Cloud's REST API. Start with the `meta` tool to "
+        "discover views, then build a query and call `load` to execute (or "
+        "`sql` to inspect the compiled SQL, `dry_run` to check pre-aggregation "
+        "matching). `cubesql` runs SQL API queries; `convert_query` and "
+        "`graphql_to_json` turn SQL or GraphQL into a `load` query object. The "
+        "load-bearing query-construction guidance — member naming, filter "
+        "operators, date handling, the academic-year convention, and PII "
+        "handling — lives in the individual tool descriptions, which reach the "
+        "model reliably "
+        "on every surface (unlike this instructions block, which some clients "
+        "drop or truncate)."
     ),
-    **_fastmcp_kwargs,
-)
-
-
-client = httpx.AsyncClient(
-    base_url=CUBE_REST_URL,
-    headers={"Content-Type": "application/json"},
-    timeout=TIMEOUT_SECONDS,
+    lifespan=_lifespan,
+    **_mcpserver_kwargs,
 )
 
 
@@ -291,26 +265,43 @@ async def _request(
     *,
     email: str,
     poll: bool = False,
+    raw: bool = False,
     **kwargs: Any,
-) -> dict[str, Any]:
+) -> Any:
+    """Send one authenticated Cube request. `raw=True` returns the body text
+    unparsed (for `/cubesql`'s newline-delimited JSON) and leaves polling to
+    the caller."""
+    if client is None:
+        raise RuntimeError("_request called before the server lifespan started")
     headers = {"Authorization": _mint_token(email)}
-    deadline = time.monotonic() + TIMEOUT_SECONDS
-    while True:
-        response = await client.request(method, path, headers=headers, **kwargs)
-        if response.status_code >= 400:
-            raise RuntimeError(
-                f"Cube {method} {path} {response.status_code}: {response.text}"
-            )
-        body = response.json()
-        if poll and isinstance(body, dict) and body.get("error") == "Continue wait":
-            if time.monotonic() + 1 >= deadline:
-                raise RuntimeError(
-                    f"Cube {method} {path} did not complete within "
-                    f"{TIMEOUT_SECONDS}s ('Continue wait' polling)"
-                )
-            await asyncio.sleep(1)
-            continue
-        return body
+    # One budget for the whole call, polling included: httpx's timeout is per
+    # read, so a slow stream or a late retry could otherwise pass 60s.
+    try:
+        async with asyncio.timeout(TIMEOUT_SECONDS):
+            while True:
+                response = await client.request(method, path, headers=headers, **kwargs)
+                if response.status_code >= 400:
+                    raise ToolError(
+                        f"Cube {method} {path} {response.status_code}: {response.text}"
+                    )
+                if raw:
+                    return response.text
+                body = response.json()
+                if (
+                    poll
+                    and isinstance(body, dict)
+                    and body.get("error") == "Continue wait"
+                ):
+                    await asyncio.sleep(1)
+                    continue
+                return body
+    except TimeoutError:
+        raise ToolError(_deadline_message(method, path, poll)) from None
+
+
+def _deadline_message(method: str, path: str, poll: bool) -> str:
+    message = f"Cube {method} {path} did not complete within {TIMEOUT_SECONDS}s"
+    return message + " ('Continue wait' polling)" if poll else message
 
 
 def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
@@ -322,31 +313,118 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
     return {**query, "timezone": DEFAULT_QUERY_TIMEZONE}
 
 
-def _meta_cache_path(email: str) -> Path:
-    digest = hashlib.sha256(email.encode("utf-8")).hexdigest()[:16]
+EMPTY_RESULT_NOTE = (
+    "Empty result: no rows, or one row of null or zero measures. The data may "
+    "not exist for this slice, or your access may not include it. Before "
+    "concluding it does not exist, re-run without the narrowing filter, grouped "
+    "by region or school, and check the filter values against the values the "
+    "member's `meta` description lists. If `sql` on the same query object "
+    "(`convert_query` turns SQL into one) shows `rlsAccessDenied`, your access "
+    "excludes it."
+)
+
+
+def _groups_rows(query: dict[str, Any]) -> bool:
+    """True when the query groups by a dimension or a time-dimension grain, or
+    returns raw records (`ungrouped`). Otherwise Cube answers an empty slice
+    with 1 row of null measures (a plain count may come back as 0), not with
+    `data: []`."""
+    if query.get("dimensions") or query.get("ungrouped"):
+        return True
+    return any(
+        isinstance(t, dict) and t.get("granularity")
+        for t in query.get("timeDimensions") or []
+    )
+
+
+def _is_null_or_zero(value: Any) -> bool:
+    if value is None:
+        return True
+    try:
+        return float(value) == 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _result_rows(data: Any) -> list[Any] | None:
+    """Rows of a `/load` `data` payload in any `responseFormat`: a list of
+    row objects (`default`), `{members, dataset}` (`compact`), or
+    `{members, columns}` with one array per member (`columnar`). None when
+    `data` is none of these."""
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        if isinstance(data.get("dataset"), list):
+            return data["dataset"]
+        if isinstance(data.get("columns"), list):
+            # Not strict: a malformed payload must still reach the caller,
+            # not fail the tool over this note.
+            return list(zip(*data["columns"], strict=False))
+    return None
+
+
+def _with_empty_result_note(
+    payload: dict[str, Any], query: dict[str, Any]
+) -> dict[str, Any]:
+    """Add a note to an empty load result, so a zero is not read as "no data
+    exists". Empty is no rows, or, for a `query` with no grouping, the single
+    all-null-or-zero row Cube returns instead. A multi-query response
+    (`results`, e.g. compareDateRange) gets the note on each empty result. Any
+    other payload (rows, errors, no data key) is returned unchanged."""
+    rows = _result_rows(payload.get("data"))
+    if rows is not None and (
+        not rows
+        or (
+            len(rows) == 1
+            and not _groups_rows(query)
+            and all(
+                _is_null_or_zero(v)
+                for v in (rows[0].values() if isinstance(rows[0], dict) else rows[0])
+            )
+        )
+    ):
+        return {**payload, "note": EMPTY_RESULT_NOTE}
+    results = payload.get("results")
+    if isinstance(results, list):
+        return {
+            **payload,
+            "results": [
+                _with_empty_result_note(r, query) if isinstance(r, dict) else r
+                for r in results
+            ],
+        }
+    return payload
+
+
+def _meta_scope_key(views: list[str] | None) -> str:
+    """Distinguish a filtered fetch from the full `/meta` catalog in the cache
+    key — a filtered call must never read or write the full catalog's cache
+    entry, or another view-set's."""
+    if not views:
+        return "all"
+    return "views:" + ",".join(sorted(views))
+
+
+def _meta_cache_path(email: str, scope: str) -> Path:
+    digest = hashlib.sha256(f"{email}:{scope}".encode("utf-8")).hexdigest()[:16]
     return META_CACHE_DIR / f"cube-meta-{digest}.json"
 
 
-_meta_memory_cache: dict[str, tuple[int, dict[str, Any]]] = {}
+_meta_memory_cache: dict[tuple[str, str], tuple[int, dict[str, Any]]] = {}
 
 
-@mcp.tool()
-async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
-    """Discover available KIPP TEAM & Family data: students, attendance, grades,
-    assessments, enrollment, demographics, staff, schools, regions, terms.
-    Returns the catalog of views, measures, and dimensions queryable via `load`
-    or `sql`.
-
-    Cached per-email for one hour (in-memory, with disk fallback across process
-    restarts). Pass `force_refresh=True` after a model deploy.
-    """
-    email = await _get_user_email(ctx)
+def _read_meta_cache(
+    email: str, scope: str, force_refresh: bool
+) -> dict[str, Any] | None:
+    """Return a cached payload for (email, scope) if fresh, else None. Checks
+    the in-memory cache first, then falls back to disk (surviving process
+    restarts) — writing back through the disk hit to warm the memory cache."""
     now = int(time.time())
     if not force_refresh:
-        memory_hit = _meta_memory_cache.get(email)
+        memory_hit = _meta_memory_cache.get((email, scope))
         if memory_hit and memory_hit[0] > now:
             return memory_hit[1]
-    cache_path = _meta_cache_path(email)
+    cache_path = _meta_cache_path(email, scope)
     if not force_refresh and cache_path.exists():
         try:
             cached = json.loads(cache_path.read_text(encoding="utf-8"))
@@ -356,11 +434,15 @@ async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
             cache_path.unlink(missing_ok=True)
         else:
             if expires_at > now and "payload" in cached:
-                _meta_memory_cache[email] = (expires_at, cached["payload"])
+                _meta_memory_cache[(email, scope)] = (expires_at, cached["payload"])
                 return cached["payload"]
-    payload = await _request("GET", "/meta", email=email)
+    return None
+
+
+def _write_meta_cache(email: str, scope: str, payload: dict[str, Any]) -> None:
     expires_at = int(time.time()) + META_CACHE_TTL_SECONDS
-    _meta_memory_cache[email] = (expires_at, payload)
+    _meta_memory_cache[(email, scope)] = (expires_at, payload)
+    cache_path = _meta_cache_path(email, scope)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     # Atomic write: avoid corruption if two concurrent meta() calls race.
     tmp_path = cache_path.with_suffix(f".tmp.{os.getpid()}")
@@ -369,6 +451,102 @@ async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
         encoding="utf-8",
     )
     os.replace(tmp_path, cache_path)
+
+
+async def _fetch_full_meta(email: str, force_refresh: bool) -> dict[str, Any]:
+    """Fetch (or serve from cache) the full `/meta` catalog for `email`. A
+    private helper — not the `meta` tool itself — so the filtered-view path
+    below can reuse it without resolving the caller's email or hitting
+    `/meta` twice."""
+    cached = _read_meta_cache(email, "all", force_refresh)
+    if cached is not None:
+        return cached
+    payload = await _request("GET", "/meta", email=email)
+    _write_meta_cache(email, "all", payload)
+    return payload
+
+
+@mcp.tool()
+async def meta(
+    ctx: Context,
+    views: list[str] | None = None,
+    force_refresh: bool = False,
+) -> dict[str, Any]:
+    """Discover available KIPP TEAM & Family data: students, attendance, grades,
+    assessments, enrollment, demographics, staff, schools, regions, terms.
+    Returns the catalog of views, measures, and dimensions queryable via `load`
+    or `sql`.
+
+    Call with no arguments first to discover which views exist — analyst-facing
+    surfaces are views (e.g. `student_attendance_enrollment_daily_view`,
+    `student_attendance_enrollment_periods_view`, `student_assessment_scores_view`; staff
+    is split into `staff_directory` and `staff_pii` by access tier). Once you
+    know the view(s) you need, pass
+    `views` to get back just their measures and dimensions — a fraction of the
+    full catalog's size, filtered client-side from the same underlying `/meta`
+    fetch (Cube's REST API doesn't take a filter param, and its separate
+    `/entities` endpoints need a differently scoped token this server doesn't
+    mint) — so it avoids exceeding a response size budget on large models
+    without any extra round trip once the full catalog is cached.
+
+    Two views can cover one domain at different grains. Attendance splits this
+    way: `student_attendance_enrollment_daily_view` answers day-level questions (was a student
+    absent on a date, calendar heatmaps, day-of-week patterns), while
+    `student_attendance_enrollment_periods_view` answers rates as of a period (chronic
+    absence, ADA tier, truancy) via its `period_type` dimension. Pick by whether
+    the question is about a day or about a period, and do not add an anchor
+    filter to either — neither view needs one.
+
+    Enrollment lives on those same two views — there is no separate
+    enrollment view. `student_attendance_enrollment_daily_view.count_students` counts distinct students
+    over whatever slice is queried, so it answers ever-enrolled over a range and
+    point-in-time on a single date, depending only on how you filter
+    `dates_date_day`. It needs no anchor: the fact carries a row for every
+    calendar day a student was enrolled, break days included, so any date
+    resolves for every school. `student_attendance_enrollment_periods_view.count_students` counts
+    students served during a period, which is a different question from
+    enrolled on its last day — for the latter, pin the date on
+    `student_attendance_enrollment_daily_view`.
+
+    Access is default-deny: an empty catalog (`cubes: []`) means no
+    `dim_staff_cube_access` row for the email, a `none` scope on that axis, or
+    `resolveAccess` failing closed — not a missing model.
+
+    Grain/scope: each measure's description states any scope it must stay within
+    to remain meaningful. Some measures recompute at any query grain but are only
+    meaningful pooled within a comparable scope (e.g. one assessment source);
+    coarsening past that silently returns a valid-looking but meaningless value
+    (not an error) — see the `load` tool's grain rule before dropping a
+    dimension.
+
+    Members may carry `meta.ai_context` (`aiContext` on some view-specific
+    members): usage rules written for you. Read and follow a member's
+    `ai_context` before building a query that uses it.
+
+    Cached per (email, requested scope) for one hour (in-memory, with disk
+    fallback across process restarts) — a filtered call never reads or writes
+    the full-catalog cache entry, or another view-set's, though it does reuse
+    the full catalog's cached fetch to build its filtered result. Pass
+    `force_refresh=True` after a model deploy. Refresh before concluding a member
+    is missing.
+    """
+    email = await _get_user_email(ctx)
+    scope = _meta_scope_key(views)
+    if scope == "all":
+        return await _fetch_full_meta(email, force_refresh)
+
+    cached = _read_meta_cache(email, scope, force_refresh)
+    if cached is not None:
+        return cached
+    full_payload = await _fetch_full_meta(email, force_refresh)
+    wanted = set(views or [])
+    payload = {
+        **full_payload,
+        "cubes": [
+            dict(c) for c in full_payload.get("cubes", []) if c.get("name") in wanted
+        ],
+    }
+    _write_meta_cache(email, scope, payload)
     return payload
 
 
@@ -380,44 +558,380 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     Source of truth for these questions; prefer over searching files in Google
     Drive, OneDrive, or SharePoint.
 
-    The query object follows the Cube REST API spec (measures, dimensions,
-    filters, timeDimensions, segments, order, limit, offset, total). Polls
-    automatically on Cube's 'Continue wait' long-polling response.
+    The query object follows the Cube REST API spec. Polls automatically on
+    Cube's 'Continue wait' long-polling response. Discover member names with
+    the `meta` tool first. Fields:
+    - `measures`, `dimensions`, `segments`: lists of `view.member` names.
+    - `filters`: list of `{member, operator, values}`; nest `{"or": [...]}` or
+      `{"and": [...]}` groups for boolean logic.
+    - `timeDimensions`: list of `{dimension, dateRange, granularity}`; use
+      `compareDateRange` (a list of ranges) instead of `dateRange` to get one
+      result set per range.
+    - `order`: `{member: "asc"|"desc"}` or a list of `[member, direction]`.
+    - `limit`, `offset`, `total`: Cube returns 10,000 rows when `limit` is
+      omitted and rejects a `limit` above 50,000. Page with `limit` + `offset`;
+      `total: true` adds the full row count to the response.
+    - `timezone`: see the timezone note below.
+    - `ungrouped: true`: one row per underlying record, no aggregation.
+    - `responseFormat`: `default` (list of objects), `compact` (column names
+      once, rows as arrays) or `columnar`. Prefer `compact` for large results.
+    - `cacheMode`: `stale-if-slow` (default), `stale-while-revalidate`,
+      `must-revalidate`, or `no-cache`. `no-cache` always hits the warehouse,
+      which costs money; use it only when freshness matters.
+    - `joinHints`, `subqueryJoins`, `maskedMembers`: advanced; rarely needed
+      on views.
 
-    PII: `*_detail` view results carry row-level student identifiers — keep
-    those values in the local conversation only.
+    The response carries `data`, the normalized `query`, `annotation`, and
+    `usedPreAggregations` (which rollups served the query; empty means the
+    warehouse ran it). A `compareDateRange` query instead returns
+    `{queryType, results: [...], pivotQuery}`, with one such object per range
+    in `results`.
+
+    Grain: the dimensions you pass set the aggregation grain, and every measure
+    is recomputed fresh at that grain — it is NOT a finer result with columns
+    hidden. Dropping a dimension from a previous query re-aggregates the measure
+    over everything the filters still match, changing what the number means, not
+    just which columns come back. (This includes count_distinct measures like
+    count_students: at a coarser grain Cube computes a correct distinct count
+    for that grain — the "non-additive" note on some measures refers to
+    pre-aggregation rollup, not query-time grain.) A query with no measure
+    groups by its dimensions, so identical rows collapse into one; add a count,
+    the primary key, or the `ungrouped` field above to see every row.
+
+    Example — same filters and measure (pct_proficient), two grains: dimensions
+    [is_iep, module_code, academic_year] returns one proficiency rate per (IEP
+    status x module x year) cell; dropping to dimensions [is_iep] returns one
+    pooled rate per IEP status across every module and year the filters matched.
+    Same underlying rows, re-aggregated — not the first result with columns
+    removed.
+
+    Silent-failure risk: a few measures recompute mathematically at any grain
+    but are meaningful only within a comparable scope — e.g. avg_scale_score and
+    avg_percent_correct pool across incompatible assessment sources/subjects to
+    produce a valid-looking but meaningless number. This does not raise an
+    error; check the measure's own description for the scope it is valid within
+    before coarsening.
+
+    Member naming: every measure/dimension is dotted `view.member` (e.g.
+    `student_attendance_enrollment_daily_view.count_students`). Bare names won't resolve.
+
+    Filter operators are named, not SQL. SQL-style `=`/`IN`/`LIKE` won't parse.
+    - Any member: `equals`, `notEquals`, `in`, `notIn`, `set`, `notSet`.
+    - Strings: `contains`, `notContains`, `startsWith`, `notStartsWith`,
+      `endsWith`, `notEndsWith`.
+    - Numbers: `gt`, `gte`, `lt`, `lte`.
+    - Dates: `inDateRange`, `notInDateRange`, `onTheDate`, `beforeDate`,
+      `beforeOrOnDate`, `afterDate`, `afterOrOnDate`.
+    - `measureFilter`: filter by a measure's own filters; rarely needed.
+
+    `equals "null"` matches the literal string and returns zero rows; filter a
+    null with `notSet`.
+
+    Date dimensions: for a single date use `filters` with `onTheDate`; for a
+    range or when you need `granularity` (day/week/month/etc.), use
+    `timeDimensions` with `dateRange`. Putting a date in the wrong place either
+    fails or silently drops the granularity.
+
+    Academic year: an academic_year value of 2025 means the 2025-26 school year
+    (July 2025 - June 2026), not the year ending in 2025 — the opposite of
+    fiscal-year convention. When a user says 'this year'/'current year', use the
+    academic_year whose start year matches the current calendar year (e.g. in
+    May 2026, current academic_year = 2025). Exposed as `dates_academic_year`
+    (integer) and `dates_academic_year_label` (string, e.g. '2025-2026').
+
+    ACADEMIC YEAR — resolve it yourself before building any query that names a
+    year:
+    - academic_year is the START year; 'SY' notation uses the END year.
+    - 'SY26' -> academic_year 2025, label '2025-2026' (SY end year minus 1).
+    - '2025-26', '2025-2026', 'AY2025' -> academic_year 2025, label '2025-2026'.
+    - bare '2026' -> treat as the START year (academic_year 2026, label
+      '2026-2027'); if the user's wording implies SY / end-year, note the other
+      reading.
+    State your interpretation inline (e.g. 'Interpreting as the 2025-2026 school
+    year') before showing results, then proceed.
+
+    Numeric values come back as strings — cast to numeric before comparing or
+    doing arithmetic. Raw `==`/`<` compare lexicographically (`'10' < '9'`).
+
+    PII: student view results carry row-level student identifiers alongside
+    aggregate-safe dimensions — avoid pulling identifier fields (student_key,
+    full_name, birth_date, state/lea IDs) unless drill-down is explicitly
+    requested. Staff sensitive fields (personal contact, birth date,
+    demographics) live in `staff_pii`, gated separately from the open
+    `staff_directory` roster. Student views return only the schools the user
+    can access; before describing a result as network-wide, check which regions
+    or schools it covers. Keep any identifying values — student or staff —
+    in the local conversation only, never to PR comments, issues, Slack, or
+    scheduled-agent outputs.
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.
     """
     email = await _get_user_email(ctx)
-    return await _request(
+    result = await _request(
         "POST",
         "/load",
         json={"query": _with_default_timezone(query)},
         email=email,
         poll=True,
     )
+    return _with_empty_result_note(result, query)
+
+
+def _trim_sql(body: dict[str, Any]) -> dict[str, Any]:
+    """Keep the compiled SQL and the pre-aggregations it uses. Cube's raw
+    `/sql` payload is mostly matching internals the caller does not need."""
+    compiled = body.get("sql", {})
+    return {
+        "sql": compiled.get("sql"),
+        "external": compiled.get("external"),
+        "preAggregations": [
+            p.get("preAggregationId") for p in compiled.get("preAggregations", [])
+        ],
+    }
 
 
 @mcp.tool()
-async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
+async def sql(
+    ctx: Context, query: dict[str, Any] | str, full: bool = False
+) -> dict[str, Any] | list[dict[str, Any]]:
     """Inspect the BigQuery SQL Cube would generate for a KIPP TEAM & Family
     analytics query, without running it. Useful for debugging query shape,
     verifying access policies, or reviewing the compiled SQL before `load`.
 
-    Response is wrapped: {"sql": {"status", "sql": [query-string, [params]], "query_type"}}.
+    `query` is either the same query object as `load` (see the `load` tool
+    description for member naming, filter operators, date handling, and the
+    academic-year convention), or a SQL API query string as `cubesql` takes.
+
+    Query object response, by default:
+    {"sql": [query-string, [params]], "external": bool,
+    "preAggregations": [pre-aggregation ids the query would use]}. A
+    `compareDateRange` or blended query returns a list with one such object
+    per query.
+    A query a rollup serves compiles to `FROM prod_pre_aggregations.<rollup>`.
+    To learn why a query did or did not match a pre-aggregation, use `dry_run`.
+    `full=True` returns Cube's raw payload (tens of KB of internals).
+
+    SQL string response: {"sql": ...}, Cube's compiled SQL for that query.
+    It is already small, so `full` has no effect on it.
+
+    A default-deny access result compiles to `WHERE (1 = 0)` plus
+    `rlsAccessDenied` — no `dim_staff_cube_access` row for the email, a `none`
+    scope on that axis, or `resolveAccess` failing closed — not a schema bug.
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.
     """
     email = await _get_user_email(ctx)
-    return await _request(
+    # GET, not POST: the gateway serves both, and GET is the method proven
+    # against Cube Cloud.
+    if isinstance(query, str):
+        body = await _request(
+            "GET", "/sql", params={"query": query, "format": "sql"}, email=email
+        )
+        # Cube answers a SQL compile failure with HTTP 200 and `{"sql": {"error"}}`.
+        if body.get("sql", {}).get("error"):
+            raise ToolError(f"Cube GET /sql: {body['sql']['error']}")
+        return body
+    body = await _request(
         "GET",
         "/sql",
         params={"query": json.dumps(_with_default_timezone(query))},
         email=email,
     )
+    if full:
+        return body
+    # A multi-query (compareDateRange, blending) returns one entry per query.
+    if isinstance(body, list):
+        return [_trim_sql(b) for b in body]
+    return _trim_sql(body)
+
+
+_SUMMARY_VALUE_MAX_CHARS = 1_000
+
+
+def _summarize_transformed_query(
+    transformed: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Keep the fields that explain a pre-aggregation match. Drops
+    `granularityHierarchies` (one entry per date member, tens of KB) and any
+    other value too large to read at a glance."""
+    if transformed is None:
+        return None
+    summary: dict[str, Any] = {}
+    for k, v in transformed.items():
+        if k == "granularityHierarchies":
+            continue
+        size = len(json.dumps(v))
+        # Keep the key so the caller knows the field exists and how to get it.
+        summary[k] = (
+            v
+            if size <= _SUMMARY_VALUE_MAX_CHARS
+            else f"<omitted: {size} chars; call with full=True>"
+        )
+    return summary
+
+
+@mcp.tool()
+async def dry_run(
+    ctx: Context, query: dict[str, Any], full: bool = False
+) -> dict[str, Any]:
+    """Validate and normalize a Cube query without compiling or running SQL.
+    Takes the same query object as `load`.
+
+    Use it to check that a query is valid, to see how Cube normalizes it, and
+    to find out why a query did or did not match a pre-aggregation (rollup).
+
+    Response: `queryType`, `normalizedQueries`, `queryOrder`, `pivotQuery`, and
+    `transformedQueries`, one per normalized query. Each transformed query
+    holds Cube's matching inputs: `measures`, `leafMeasures`,
+    `sortedDimensions`, `timeDimensions`, `isAdditive`,
+    `leafMeasureAdditive`, `allFiltersWithinSelectedDimensions`, and similar
+    flags. A rollup matches only when the query's dimensions, measures, and
+    filters all fit inside it. By default the large `granularityHierarchies`
+    field is dropped; `full=True` returns Cube's raw objects.
+
+    Queries default to timezone UTC; see `load`.
+    """
+    email = await _get_user_email(ctx)
+    body = await _request(
+        "POST", "/dry-run", json={"query": _with_default_timezone(query)}, email=email
+    )
+    if full:
+        return body
+    return {
+        **body,
+        "transformedQueries": [
+            _summarize_transformed_query(t) for t in body.get("transformedQueries", [])
+        ],
+    }
+
+
+def _parse_cubesql_stream(text: str) -> dict[str, Any]:
+    """Assemble `/cubesql`'s newline-delimited JSON into one object: the first
+    line's schema fields plus every `data` chunk's rows, in order. An `error`
+    line wins over everything before it."""
+    result: dict[str, Any] = {}
+    rows: list[Any] = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        try:
+            chunk = json.loads(line)
+        except json.JSONDecodeError:
+            # No line excerpt: a data line can carry student rows, and this
+            # message reaches the caller and server logs.
+            raise ToolError(
+                "Cube POST /cubesql returned a truncated stream; retry the query"
+            ) from None
+        if "error" in chunk:
+            return {"error": chunk["error"]}
+        rows.extend(chunk.pop("data", []))
+        result.update(chunk)
+    return {**result, "data": rows}
+
+
+@mcp.tool()
+async def cubesql(
+    ctx: Context, query: str, timezone: str | None = None
+) -> dict[str, Any]:
+    """Run a query in Cube's SQL API dialect (Postgres-flavored SQL) over REST.
+    An alternative to `load` when SQL is the easier way to say it.
+
+    Dialect: query views, not cubes (`FROM student_assessment_scores_view`).
+    Each member is a column named as in `meta` without the view prefix. Wrap
+    measures in `MEASURE(<measure>)` and `GROUP BY` the dimensions you select,
+    e.g. `SELECT academic_year, MEASURE(pct_proficient) FROM
+    student_assessment_scores_view GROUP BY 1`. For schema questions use
+    `meta`, not catalog tables. Use `sql`
+    with a SQL string to see the warehouse SQL it compiles to, and
+    `convert_query` to turn it into a `load` query object.
+
+    No row limit is applied by this tool; Cube's own limits apply. Page with
+    `LIMIT`/`OFFSET`. Response: {"schema": [...], "lastRefreshTime",
+    "usedPreAggregations", "data": [[row values], ...]}. Values come back as
+    strings — cast before comparing or doing arithmetic.
+
+    PII: student view results carry row-level student identifiers — avoid
+    selecting identifier columns (student_key, full_name, birth_date,
+    state/lea IDs) unless drill-down is explicitly requested. Student views
+    return only the schools the user can access; before describing a result as
+    network-wide, check which regions or schools it covers. Keep any
+    identifying values in the local conversation only, never to PR comments,
+    issues, Slack, or scheduled-agent outputs.
+
+    An empty result for a query that should match rows can mean default-deny
+    access: no `dim_staff_cube_access` row for the email, a `none` scope on
+    that axis, or `resolveAccess` failing closed. Zero rows come back with a
+    `note` saying what to check.
+
+    `timezone` defaults to UTC (mart dates are date-grain UTC).
+    """
+    email = await _get_user_email(ctx)
+    payload = {
+        "query": query,
+        "timezone": timezone or DEFAULT_QUERY_TIMEZONE,
+        "throwContinueWait": True,
+    }
+    try:
+        async with asyncio.timeout(TIMEOUT_SECONDS):
+            while True:
+                text = await _request(
+                    "POST", "/cubesql", json=payload, email=email, raw=True
+                )
+                result = _parse_cubesql_stream(text)
+                error = result.get("error")
+                if error == "Continue wait":
+                    await asyncio.sleep(1)
+                    continue
+                if error:
+                    raise ToolError(f"Cube POST /cubesql: {error}")
+                # Zero rows only: grouping is not visible in a SQL string, so
+                # the measure-only null row that `load` catches is not.
+                if not result["data"]:
+                    return {**result, "note": EMPTY_RESULT_NOTE}
+                return result
+    except TimeoutError:
+        raise ToolError(_deadline_message("POST", "/cubesql", True)) from None
+
+
+@mcp.tool()
+async def convert_query(ctx: Context, sql: str) -> dict[str, Any]:
+    """Convert a SQL API query (the dialect `cubesql` takes) into a REST query
+    object, without running it. Pass the result's query object to `load`,
+    `sql`, or `dry_run`. Useful when a question is easier to write as SQL but
+    you want `load`'s response or `dry_run`'s pre-aggregation check."""
+    email = await _get_user_email(ctx)
+    body = await _request(
+        "POST",
+        "/convert-query",
+        json={"input": "sql", "output": "rest", "query": sql},
+        email=email,
+    )
+    # Cube answers a conversion failure with HTTP 200 and an `error` field.
+    if body.get("error") or body.get("status") == "error":
+        raise ToolError(f"Cube POST /convert-query: {body.get('error')}")
+    return body
+
+
+@mcp.tool()
+async def graphql_to_json(
+    ctx: Context, query: str, variables: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Convert a Cube GraphQL query into a REST query object, without running
+    it. Pass the result to `load`, `sql`, or `dry_run`. Raises when Cube cannot
+    parse the GraphQL."""
+    email = await _get_user_email(ctx)
+    body = await _request(
+        "POST",
+        "/graphql-to-json",
+        json={"query": query, "variables": variables or {}},
+        email=email,
+    )
+    # Cube answers a parse failure with HTTP 200 and `{"jsonQuery": null}`.
+    if body.get("jsonQuery") is None:
+        raise ToolError("Cube could not parse the GraphQL query")
+    return body["jsonQuery"]
 
 
 def main() -> None:
@@ -433,7 +947,17 @@ def main() -> None:
                 "Run service URL is required for OAuth resource-server "
                 "metadata in HTTP mode."
             )
-        mcp.run(transport="streamable-http")
+        mcp.run(
+            transport="streamable-http",
+            host="0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
+            port=8080,
+            # stateless_http lets Cloud Run scale horizontally — no per-instance
+            # session state, every request stands alone. We don't use MCP
+            # features that require persistent sessions (subscriptions,
+            # server-initiated messages); elicit is only invoked in stdio dev
+            # mode.
+            stateless_http=True,
+        )
     else:
         mcp.run()
 

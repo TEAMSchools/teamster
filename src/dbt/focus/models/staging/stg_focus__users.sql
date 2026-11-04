@@ -24,10 +24,7 @@ select
     custom_100000001 as e_mail_address,
     custom_200000001 as staff_number_identifier_local,
     custom_100000002 as phone_number,
-    custom_200000002 as experience_length_years,
     custom_319000004 as active,
-    custom_l801 as w4_allowances_under_17,
-    custom_l802 as f_3_claim_dependent_and_other,
     custom_l790 as profile_on_non_production_sites,
     custom_2 as education,
     uuid,
@@ -36,5 +33,9 @@ select
     last_updated_date,
     created_at,
     updated_at,
+
+    cast(custom_200000002 as numeric) as experience_length_years,
+    cast(custom_l801 as numeric) as w4_allowances_under_17,
+    cast(custom_l802 as numeric) as f_3_claim_dependent_and_other,
 from {{ source("focus", "users") }}
 where deleted is null

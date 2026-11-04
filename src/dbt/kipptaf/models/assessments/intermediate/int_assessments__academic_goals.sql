@@ -10,9 +10,10 @@ select
     g.organization_goal,
     g.grade_band_goal,
     g.assessment_band_goal,
+    g.region_grade_goal,
 
     s.school_level,
 
     initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
 from {{ ref("stg_google_sheets__assessments__academic_goals") }} as g
-inner join {{ ref("stg_powerschool__schools") }} as s on g.school_id = s.school_number
+inner join {{ ref("int_students__schools") }} as s on g.school_id = s.school_number

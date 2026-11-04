@@ -116,133 +116,181 @@ select
         year_to_date_vocabulary_percent_lessons_passed as numeric
     ) as year_to_date_vocabulary_percent_lessons_passed,
     cast(_dagster_partition_academic_year as int) as _dagster_partition_academic_year,
-    cast(april_lessons_completed as int) as april_lessons_completed,
-    cast(april_total_time_on_task_min as int) as april_total_time_on_task_min,
+    cast(cast(april_lessons_completed as numeric) as int) as april_lessons_completed,
     cast(
-        april_weekly_average_time_on_task_min as int
+        cast(april_total_time_on_task_min as numeric) as int
+    ) as april_total_time_on_task_min,
+    cast(
+        cast(april_weekly_average_time_on_task_min as numeric) as int
     ) as april_weekly_average_time_on_task_min,
-    cast(august_lessons_completed as int) as august_lessons_completed,
-    cast(august_total_time_on_task_min as int) as august_total_time_on_task_min,
+    cast(cast(august_lessons_completed as numeric) as int) as august_lessons_completed,
     cast(
-        august_weekly_average_time_on_task_min as int
+        cast(august_total_time_on_task_min as numeric) as int
+    ) as august_total_time_on_task_min,
+    cast(
+        cast(august_weekly_average_time_on_task_min as numeric) as int
     ) as august_weekly_average_time_on_task_min,
-    cast(december_lessons_completed as int) as december_lessons_completed,
-    cast(december_total_time_on_task_min as int) as december_total_time_on_task_min,
     cast(
-        december_weekly_average_time_on_task_min as int
+        cast(december_lessons_completed as numeric) as int
+    ) as december_lessons_completed,
+    cast(
+        cast(december_total_time_on_task_min as numeric) as int
+    ) as december_total_time_on_task_min,
+    cast(
+        cast(december_weekly_average_time_on_task_min as numeric) as int
     ) as december_weekly_average_time_on_task_min,
-    cast(february_lessons_completed as int) as february_lessons_completed,
-    cast(february_total_time_on_task_min as int) as february_total_time_on_task_min,
     cast(
-        february_weekly_average_time_on_task_min as int
+        cast(february_lessons_completed as numeric) as int
+    ) as february_lessons_completed,
+    cast(
+        cast(february_total_time_on_task_min as numeric) as int
+    ) as february_total_time_on_task_min,
+    cast(
+        cast(february_weekly_average_time_on_task_min as numeric) as int
     ) as february_weekly_average_time_on_task_min,
-    cast(january_lessons_completed as int) as january_lessons_completed,
-    cast(january_total_time_on_task_min as int) as january_total_time_on_task_min,
     cast(
-        january_weekly_average_time_on_task_min as int
+        cast(january_lessons_completed as numeric) as int
+    ) as january_lessons_completed,
+    cast(
+        cast(january_total_time_on_task_min as numeric) as int
+    ) as january_total_time_on_task_min,
+    cast(
+        cast(january_weekly_average_time_on_task_min as numeric) as int
     ) as january_weekly_average_time_on_task_min,
-    cast(july_lessons_completed as int) as july_lessons_completed,
-    cast(july_total_time_on_task_min as int) as july_total_time_on_task_min,
+    cast(cast(july_lessons_completed as numeric) as int) as july_lessons_completed,
     cast(
-        july_weekly_average_time_on_task_min as int
+        cast(july_total_time_on_task_min as numeric) as int
+    ) as july_total_time_on_task_min,
+    cast(
+        cast(july_weekly_average_time_on_task_min as numeric) as int
     ) as july_weekly_average_time_on_task_min,
-    cast(june_lessons_completed as int) as june_lessons_completed,
-    cast(june_total_time_on_task_min as int) as june_total_time_on_task_min,
+    cast(cast(june_lessons_completed as numeric) as int) as june_lessons_completed,
     cast(
-        june_weekly_average_time_on_task_min as int
+        cast(june_total_time_on_task_min as numeric) as int
+    ) as june_total_time_on_task_min,
+    cast(
+        cast(june_weekly_average_time_on_task_min as numeric) as int
     ) as june_weekly_average_time_on_task_min,
-    cast(last_week_lessons_completed as int) as last_week_lessons_completed,
-    cast(last_week_time_on_task_min as int) as last_week_time_on_task_min,
-    cast(march_lessons_completed as int) as march_lessons_completed,
-    cast(march_total_time_on_task_min as int) as march_total_time_on_task_min,
     cast(
-        march_weekly_average_time_on_task_min as int
+        cast(last_week_lessons_completed as numeric) as int
+    ) as last_week_lessons_completed,
+    cast(
+        cast(last_week_time_on_task_min as numeric) as int
+    ) as last_week_time_on_task_min,
+    cast(cast(march_lessons_completed as numeric) as int) as march_lessons_completed,
+    cast(
+        cast(march_total_time_on_task_min as numeric) as int
+    ) as march_total_time_on_task_min,
+    cast(
+        cast(march_weekly_average_time_on_task_min as numeric) as int
     ) as march_weekly_average_time_on_task_min,
-    cast(may_lessons_completed as int) as may_lessons_completed,
-    cast(may_total_time_on_task_min as int) as may_total_time_on_task_min,
+    cast(cast(may_lessons_completed as numeric) as int) as may_lessons_completed,
     cast(
-        may_weekly_average_time_on_task_min as int
+        cast(may_total_time_on_task_min as numeric) as int
+    ) as may_total_time_on_task_min,
+    cast(
+        cast(may_weekly_average_time_on_task_min as numeric) as int
     ) as may_weekly_average_time_on_task_min,
-    cast(november_lessons_completed as int) as november_lessons_completed,
-    cast(november_total_time_on_task_min as int) as november_total_time_on_task_min,
     cast(
-        november_weekly_average_time_on_task_min as int
+        cast(november_lessons_completed as numeric) as int
+    ) as november_lessons_completed,
+    cast(
+        cast(november_total_time_on_task_min as numeric) as int
+    ) as november_total_time_on_task_min,
+    cast(
+        cast(november_weekly_average_time_on_task_min as numeric) as int
     ) as november_weekly_average_time_on_task_min,
-    cast(october_lessons_completed as int) as october_lessons_completed,
-    cast(october_total_time_on_task_min as int) as october_total_time_on_task_min,
     cast(
-        october_weekly_average_time_on_task_min as int
+        cast(october_lessons_completed as numeric) as int
+    ) as october_lessons_completed,
+    cast(
+        cast(october_total_time_on_task_min as numeric) as int
+    ) as october_total_time_on_task_min,
+    cast(
+        cast(october_weekly_average_time_on_task_min as numeric) as int
     ) as october_weekly_average_time_on_task_min,
-    cast(september_lessons_completed as int) as september_lessons_completed,
-    cast(september_total_time_on_task_min as int) as september_total_time_on_task_min,
     cast(
-        september_weekly_average_time_on_task_min as int
+        cast(september_lessons_completed as numeric) as int
+    ) as september_lessons_completed,
+    cast(
+        cast(september_total_time_on_task_min as numeric) as int
+    ) as september_total_time_on_task_min,
+    cast(
+        cast(september_weekly_average_time_on_task_min as numeric) as int
     ) as september_weekly_average_time_on_task_min,
     cast(
-        year_to_date_algebra_and_algebraic_thinking_lessons_completed as int
+        cast(
+            year_to_date_algebra_and_algebraic_thinking_lessons_completed as numeric
+        ) as int
     ) as year_to_date_algebra_and_algebraic_thinking_lessons_completed,
     cast(
-        year_to_date_algebra_and_algebraic_thinking_time_on_task_min as int
+        cast(
+            year_to_date_algebra_and_algebraic_thinking_time_on_task_min as numeric
+        ) as int
     ) as year_to_date_algebra_and_algebraic_thinking_time_on_task_min,
     cast(
-        year_to_date_comprehension_close_reading_lessons_completed as int
+        cast(
+            year_to_date_comprehension_close_reading_lessons_completed as numeric
+        ) as int
     ) as year_to_date_comprehension_close_reading_lessons_completed,
     cast(
-        year_to_date_comprehension_close_reading_time_on_task_min as int
+        cast(
+            year_to_date_comprehension_close_reading_time_on_task_min as numeric
+        ) as int
     ) as year_to_date_comprehension_close_reading_time_on_task_min,
     cast(
-        year_to_date_comprehension_lessons_completed as int
+        cast(year_to_date_comprehension_lessons_completed as numeric) as int
     ) as year_to_date_comprehension_lessons_completed,
     cast(
-        year_to_date_comprehension_time_on_task_min as int
+        cast(year_to_date_comprehension_time_on_task_min as numeric) as int
     ) as year_to_date_comprehension_time_on_task_min,
     cast(
-        year_to_date_geometry_lessons_completed as int
+        cast(year_to_date_geometry_lessons_completed as numeric) as int
     ) as year_to_date_geometry_lessons_completed,
     cast(
-        year_to_date_geometry_time_on_task_min as int
+        cast(year_to_date_geometry_time_on_task_min as numeric) as int
     ) as year_to_date_geometry_time_on_task_min,
     cast(
-        year_to_date_high_frequency_words_lessons_completed as int
+        cast(year_to_date_high_frequency_words_lessons_completed as numeric) as int
     ) as year_to_date_high_frequency_words_lessons_completed,
     cast(
-        year_to_date_high_frequency_words_time_on_task_min as int
+        cast(year_to_date_high_frequency_words_time_on_task_min as numeric) as int
     ) as year_to_date_high_frequency_words_time_on_task_min,
     cast(
-        year_to_date_measurement_and_data_lessons_completed as int
+        cast(year_to_date_measurement_and_data_lessons_completed as numeric) as int
     ) as year_to_date_measurement_and_data_lessons_completed,
     cast(
-        year_to_date_measurement_and_data_time_on_task_min as int
+        cast(year_to_date_measurement_and_data_time_on_task_min as numeric) as int
     ) as year_to_date_measurement_and_data_time_on_task_min,
     cast(
-        year_to_date_number_and_operations_lessons_completed as int
+        cast(year_to_date_number_and_operations_lessons_completed as numeric) as int
     ) as year_to_date_number_and_operations_lessons_completed,
     cast(
-        year_to_date_number_and_operations_time_on_task_min as int
+        cast(year_to_date_number_and_operations_time_on_task_min as numeric) as int
     ) as year_to_date_number_and_operations_time_on_task_min,
     cast(
-        year_to_date_overall_lessons_completed as int
+        cast(year_to_date_overall_lessons_completed as numeric) as int
     ) as year_to_date_overall_lessons_completed,
     cast(
-        year_to_date_overall_time_on_task_min as int
+        cast(year_to_date_overall_time_on_task_min as numeric) as int
     ) as year_to_date_overall_time_on_task_min,
     cast(
-        year_to_date_phonics_lessons_completed as int
+        cast(year_to_date_phonics_lessons_completed as numeric) as int
     ) as year_to_date_phonics_lessons_completed,
     cast(
-        year_to_date_phonics_time_on_task_min as int
+        cast(year_to_date_phonics_time_on_task_min as numeric) as int
     ) as year_to_date_phonics_time_on_task_min,
     cast(
-        year_to_date_phonological_awareness_lessons_completed as int
+        cast(year_to_date_phonological_awareness_lessons_completed as numeric) as int
     ) as year_to_date_phonological_awareness_lessons_completed,
     cast(
-        year_to_date_phonological_awareness_time_on_task_min as int
+        cast(year_to_date_phonological_awareness_time_on_task_min as numeric) as int
     ) as year_to_date_phonological_awareness_time_on_task_min,
     cast(
-        year_to_date_vocabulary_lessons_completed as int
+        cast(year_to_date_vocabulary_lessons_completed as numeric) as int
     ) as year_to_date_vocabulary_lessons_completed,
     cast(
-        year_to_date_vocabulary_time_on_task_min as int
+        cast(year_to_date_vocabulary_time_on_task_min as numeric) as int
     ) as year_to_date_vocabulary_time_on_task_min,
 
     safe_cast(student_id as int) as student_id,

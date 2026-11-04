@@ -1,12 +1,18 @@
 import json
 
-from teamster.code_locations.kipppaterson import CODE_LOCATION, DBT_PROJECT
+from teamster.code_locations.kipppaterson import (
+    CODE_LOCATION,
+    DBT_PROJECT,
+    LOCAL_TIMEZONE,
+)
 from teamster.libraries.dbt.assets import build_dbt_assets
 from teamster.libraries.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
 manifest = json.loads(s=DBT_PROJECT.manifest_path.read_text())
 
-dagster_dbt_translator = CustomDagsterDbtTranslator(code_location=CODE_LOCATION)
+dagster_dbt_translator = CustomDagsterDbtTranslator(
+    code_location=CODE_LOCATION, local_timezone=str(LOCAL_TIMEZONE)
+)
 
 dbt_assets = build_dbt_assets(
     manifest=manifest,

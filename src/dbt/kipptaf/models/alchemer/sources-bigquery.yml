@@ -11,4 +11,6 @@ sources:
                 - alchemer
                 - base_alchemer__survey_results
       - name: stg_alchemer__survey
+      - name: stg_alchemer__survey_campaign
       - name: stg_alchemer__survey_question
+      - name: stg_alchemer__survey_response

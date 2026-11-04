@@ -7,9 +7,6 @@ from teamster.libraries.google.directory.resources import GoogleDirectoryResourc
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
 from teamster.libraries.level_data.grow.resources import GrowResource
-from teamster.libraries.powerschool.enrollment.resources import (
-    PowerSchoolEnrollmentResource,
-)
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
@@ -51,10 +48,6 @@ LDAP_RESOURCE = LdapResource(
     password=EnvVar("LDAP_PASSWORD"),
 )
 
-POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(
-    api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000
-)
-
 GROW_RESOURCE = GrowResource(
     client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
     client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
@@ -84,12 +77,21 @@ SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
     password=EnvVar("ADP_SFTP_PASSWORD"),
 )
 
+SSH_RESOURCE_BRANCHINGMINDS = SSHResource(
+    remote_host=EnvVar("BRANCHINGMINDS_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("BRANCHINGMINDS_SFTP_USERNAME"),
+    password=EnvVar("BRANCHINGMINDS_SFTP_PASSWORD"),
+)
+
 SSH_RESOURCE_CLEVER = SSHResource(
     remote_host=EnvVar("CLEVER_SFTP_HOST"),
     remote_port=22,
     username=EnvVar("CLEVER_SFTP_USERNAME"),
     password=EnvVar("CLEVER_SFTP_PASSWORD"),
-    timeout=30,
+    # No `timeout` override: 30s sits exactly ON paramiko's banner + handshake
+    # ceiling, which reintroduces the inversion in #4636. The `SSHResource`
+    # default (45s) already exceeds the 30s this was raised to.
 )
 
 SSH_RESOURCE_COUPA = SSHResource(
@@ -118,7 +120,9 @@ SSH_RESOURCE_ILLUMINATE = SSHResource(
     remote_port=22,
     username=EnvVar("ILLUMINATE_SFTP_USERNAME"),
     password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
-    timeout=30,
+    # No `timeout` override: 30s sits exactly ON paramiko's banner + handshake
+    # ceiling, which reintroduces the inversion in #4636. The `SSHResource`
+    # default (45s) already exceeds the 30s this was raised to.
 )
 
 SSH_RESOURCE_IDAUTO = SSHResource(

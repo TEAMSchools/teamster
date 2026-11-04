@@ -9,7 +9,7 @@ with
                 distinct if(is_suspension, incident_penalty_id, null)
             ) as suspension_count_all,
         from {{ ref("int_deanslist__incidents__penalties") }}
-        where referral_tier not in ('Non-Behavioral', 'Social Work')
+        where is_behavioral_referral
         group by student_school_id, create_ts_academic_year, school_id
     ),
 

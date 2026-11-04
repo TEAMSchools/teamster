@@ -8,8 +8,10 @@ from googleapiclient.errors import HttpError
 
 from teamster.libraries.google.directory.resources import (
     GoogleDirectoryResource,
+    _batch_by_distinct_org_unit,
     _retryable_execute,
     _TransientHttpError,
+    members_for_created_users,
 )
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -98,6 +100,38 @@ def test_list_retries_on_503_mid_pagination():
     assert mock_execute.call_count == 3
 
 
+def test_list_outlasts_a_sustained_429():
+    """A per-minute rateLimitExceeded needs a retry budget measured in tens of
+    seconds, not the dagster.backoff default of 1.5s across 5 attempts."""
+    resource, mock_api = _make_resource()
+    mock_execute = mock_api.users.return_value.list.return_value.execute
+    mock_execute.side_effect = [_http_error(429)] * 6 + [{"users": [{"id": "u1"}]}]
+
+    with patch("dagster._utils.backoff.time.sleep") as mock_sleep:
+        data = resource._list("users", customer="C123")
+
+    assert data == [{"id": "u1"}]
+    assert mock_execute.call_count == 7
+    assert sum(c.args[0] for c in mock_sleep.call_args_list) >= 60
+
+
+def test_batch_envelope_outlasts_a_sustained_429():
+    """The whole-batch ``execute()`` shares the 63s budget with ``_list``."""
+    resource, mock_api = _make_resource()
+    mock_batch = MagicMock()
+    mock_batch.execute.side_effect = [_http_error(429)] * 6 + [None]
+    mock_api.new_batch_http_request.return_value = mock_batch
+
+    with patch("dagster._utils.backoff.time.sleep") as mock_sleep:
+        failures = resource._execute_batch_with_retry(
+            [{"primaryEmail": "a@x.org"}], request_factory=MagicMock()
+        )
+
+    assert failures == []
+    assert mock_batch.execute.call_count == 7
+    assert sum(c.args[0] for c in mock_sleep.call_args_list) >= 60
+
+
 def test_list_returns_single_page():
     resource, mock_api = _make_resource()
     mock_api.users.return_value.list.return_value.execute.return_value = {
@@ -183,7 +217,27 @@ def test_batch_insert_users_collects_exception_from_failed_request():
     )
     exceptions = resource.batch_insert_users([{"primaryEmail": "a@b.com"}])
     assert len(exceptions) == 1
-    assert "a@b.com" in exceptions[0]
+    assert exceptions[0]["primaryEmail"] == "a@b.com"
+    assert "error" in exceptions[0]
+    # 409 is non-transient: collected without a wasted follow-up batch.
+    assert mock_api.new_batch_http_request.call_count == 1
+
+
+def test_batch_insert_users_error_dict_omits_user_payload():
+    # The returned error must not carry the user payload (e.g. the password
+    # hash) into logs / asset-check metadata — only the email and the message.
+    resource, mock_api = _make_resource()
+    err = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[(None, err)] for _ in range(10)]
+    )
+    user = {"primaryEmail": "a@b.com", "password": "deadbeefsecrethash"}
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_users([user])
+    assert len(exceptions) == 1
+    assert set(exceptions[0].keys()) == {"primaryEmail", "error"}
+    assert exceptions[0]["primaryEmail"] == "a@b.com"
+    assert "deadbeefsecrethash" not in str(exceptions[0])
 
 
 def test_batch_insert_users_collects_all_exceptions_from_multi_failure_batch():
@@ -214,6 +268,79 @@ def test_batch_insert_users_sleeps_between_batches_not_after_last():
     ) as mock_sleep:
         resource.batch_insert_users(users)
     mock_sleep.assert_called_once_with(1)
+
+
+def test_batch_insert_users_retries_transient_subrequest_and_succeeds():
+    # A transient 503 on an individual sub-request must be retried, not recorded
+    # as a permanent error. Regression: only the outer batch envelope was wrapped
+    # in backoff, but a sub-request failure is delivered to the callback and never
+    # raised out of execute(), so it was never retried.
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [
+            [(None, transient)],  # attempt 1: sub-request 503
+            [({"primaryEmail": "a@b.com"}, None)],  # retry: success
+        ]
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_users([{"primaryEmail": "a@b.com"}])
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 2
+
+
+def test_batch_insert_users_records_transient_subrequest_after_exhausting_retries():
+    # More failing attempts available than the retry budget; the helper must stop
+    # retrying and record the failure rather than loop forever.
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[(None, transient)] for _ in range(10)]
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_users([{"primaryEmail": "a@b.com"}])
+    assert len(exceptions) == 1
+    assert exceptions[0]["primaryEmail"] == "a@b.com"
+    assert 1 < mock_api.new_batch_http_request.call_count < 10
+
+
+def test_batch_insert_users_retries_only_the_failed_subrequest_in_a_mixed_batch():
+    # Item 0 succeeds and item 1 gets a transient 503: the retry batch must be
+    # built with only the failed item, never re-sending the succeeded one (which
+    # would 409 on recreate).
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    batches_built = []
+
+    responses_per_batch = [
+        [({"primaryEmail": "a@b.com"}, None), (None, transient)],  # attempt 1
+        [({"primaryEmail": "b@b.com"}, None)],  # retry: only the failed item
+    ]
+    batch_idx = [-1]
+
+    def new_batch(callback):
+        batch_idx[0] += 1
+        batch_responses = responses_per_batch[batch_idx[0]]
+        mock_batch = MagicMock()
+
+        def execute():
+            for i, (response, exception) in enumerate(batch_responses):
+                callback(str(i + 1), response, exception)
+
+        mock_batch.execute.side_effect = execute
+        batches_built.append(mock_batch)
+        return mock_batch
+
+    mock_api.new_batch_http_request.side_effect = new_batch
+
+    users = [{"primaryEmail": "a@b.com"}, {"primaryEmail": "b@b.com"}]
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_users(users)
+
+    assert exceptions == []
+    assert len(batches_built) == 2
+    assert batches_built[0].add.call_count == 2  # both items on the first attempt
+    assert batches_built[1].add.call_count == 1  # only the failed item retried
 
 
 # ── batch_update_users ────────────────────────────────────────────────────────
@@ -263,7 +390,63 @@ def test_batch_update_users_collects_exception_when_409_retry_also_fails():
     with patch("teamster.libraries.google.directory.resources.time.sleep"):
         exceptions = resource.batch_update_users([{"primaryEmail": "a@b.com"}])
     assert len(exceptions) == 1
-    assert "a@b.com" in exceptions[0]
+    assert exceptions[0]["primaryEmail"] == "a@b.com"
+
+
+@pytest.mark.parametrize(
+    "status, content, stub_retry",
+    [
+        (400, b"Bad Request", False),
+        (409, b"Conflicting requests. Please try again", True),
+    ],
+)
+def test_batch_update_users_error_dict_omits_user_payload(
+    status: int, content: bytes, stub_retry: bool
+):
+    # The returned error must not carry the update payload (e.g. the password
+    # hash) into logs / asset-check metadata — only the email and the message —
+    # on both the batch path and the single-user 409 retry path, which formats
+    # its own error entry.
+    resource, mock_api = _make_resource()
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[(None, _http_error(status, content))]]
+    )
+    if stub_retry:
+        mock_api.users.return_value.update.return_value.execute.side_effect = (
+            _http_error(status, content)
+        )
+    user = {
+        "primaryEmail": "a@b.com",
+        "password": "deadbeefsecrethash",
+        "hashFunction": "SHA-1",
+    }
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_update_users([user])
+    assert len(exceptions) == 1
+    assert set(exceptions[0].keys()) == {"primaryEmail", "error"}
+    assert exceptions[0]["primaryEmail"] == "a@b.com"
+    assert "deadbeefsecrethash" not in str(exceptions[0])
+    # the diagnostic the redaction is meant to preserve must actually survive:
+    # an empty "error" would satisfy every assertion above
+    assert str(status) in exceptions[0]["error"]
+    assert content.decode() in exceptions[0]["error"]
+
+
+def test_batch_update_users_retries_transient_subrequest_and_succeeds():
+    # Distinct from the 409 path: a transient 5xx on a sub-request is retried in
+    # a follow-up batch, not routed through the single-user 409 retry.
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [
+            [(None, transient)],
+            [({"primaryEmail": "a@b.com"}, None)],
+        ]
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_update_users([{"primaryEmail": "a@b.com"}])
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 2
 
 
 # ── batch_insert_members ──────────────────────────────────────────────────────
@@ -280,6 +463,23 @@ def test_batch_insert_members_returns_empty_on_all_success():
     )
 
 
+def test_batch_insert_members_retries_transient_subrequest_and_succeeds():
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [
+            [(None, transient)],
+            [({"email": "a@b.com"}, None)],
+        ]
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_members(
+            [{"groupKey": "g@b.com", "email": "a@b.com"}]
+        )
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 2
+
+
 # ── batch_insert_role_assignments ─────────────────────────────────────────────
 
 
@@ -294,6 +494,93 @@ def test_batch_insert_role_assignments_returns_empty_on_all_success():
         )
         == []
     )
+
+
+def test_batch_insert_role_assignments_retries_transient_subrequest_and_succeeds():
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [
+            [(None, transient)],
+            [({"roleAssignmentId": "ra1"}, None)],
+        ]
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_role_assignments(
+            [{"assignedTo": "uid", "roleId": "rid", "scopeType": "CUSTOMER"}]
+        )
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 2
+
+
+# ── _batch_by_distinct_org_unit ───────────────────────────────────────────────
+
+
+def test_batch_by_distinct_org_unit_never_repeats_an_org_unit_in_a_batch():
+    role_assignments = [
+        {"assignedTo": f"uid{i}", "orgUnitId": org_unit_id}
+        for org_unit_id, count in [("ou_a", 56), ("ou_b", 33), ("ou_c", 3)]
+        for i in range(count)
+    ]
+
+    batches = list(
+        _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+    )
+
+    for batch in batches:
+        org_unit_ids = [ra["orgUnitId"] for ra in batch]
+        assert len(org_unit_ids) == len(set(org_unit_ids))
+        assert len(batch) <= 10
+
+    flat = [ra for batch in batches for ra in batch]
+    assert len(flat) == len(role_assignments)
+
+    for org_unit_id in ("ou_a", "ou_b", "ou_c"):
+        assert [ra for ra in flat if ra["orgUnitId"] == org_unit_id] == [
+            ra for ra in role_assignments if ra["orgUnitId"] == org_unit_id
+        ]
+
+
+def test_batch_by_distinct_org_unit_yields_every_item_exactly_once():
+    role_assignments = [
+        {"assignedTo": f"uid{i}", "orgUnitId": "ou_a"} for i in range(5)
+    ]
+
+    batches = list(
+        _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+    )
+
+    assert batches == [[ra] for ra in role_assignments]
+
+
+def test_batch_by_distinct_org_unit_packs_customer_scoped_items_to_size():
+    role_assignments = [
+        {"assignedTo": f"uid{i}", "scopeType": "CUSTOMER"} for i in range(25)
+    ]
+
+    batches = list(
+        _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+    )
+
+    assert [len(batch) for batch in batches] == [10, 10, 5]
+
+
+def test_batch_insert_role_assignments_splits_same_org_unit_across_batches():
+    resource, mock_api = _make_resource()
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[({"roleAssignmentId": f"ra{i}"}, None)] for i in range(3)]
+    )
+
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_role_assignments(
+            [
+                {"assignedTo": f"uid{i}", "roleId": "rid", "orgUnitId": "ou_a"}
+                for i in range(3)
+            ]
+        )
+
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 3
 
 
 # ── list_roles / list_role_assignments default params ─────────────────────────
@@ -319,6 +606,111 @@ def test_list_role_assignments_uses_max_results_200_and_items_key():
     assert data == [{"roleAssignmentId": "ra1"}]
     _, call_kwargs = mock_api.roleAssignments.return_value.list.call_args
     assert call_kwargs["maxResults"] == 200
+
+
+def test_list_groups_uses_max_results_200():
+    resource, mock_api = _make_resource()
+    mock_api.groups.return_value.list.return_value.execute.return_value = {
+        "groups": [{"email": "g@x.org"}]
+    }
+    data = resource.list_groups()
+    assert data == [{"email": "g@x.org"}]
+    _, call_kwargs = mock_api.groups.return_value.list.call_args
+    assert call_kwargs["maxResults"] == 200
+
+
+# ── members_for_created_users ─────────────────────────────────────────────────
+
+
+def _created_user(
+    email: str,
+    group_key: str | None = "g@x.org",
+    org_unit_path: str = "/Students/School A",
+) -> dict:
+    return {
+        "primaryEmail": email,
+        "groupKey": group_key,
+        "orgUnitPath": org_unit_path,
+    }
+
+
+def _member(email: str) -> dict:
+    return {"groupKey": "g@x.org", "email": email, "delivery_settings": "DISABLED"}
+
+
+def test_members_for_created_users_all_succeeded():
+    users = [_created_user("a@x.org"), _created_user("b@x.org")]
+    assert members_for_created_users(users, []) == (
+        [_member("a@x.org"), _member("b@x.org")],
+        [],
+    )
+
+
+def test_members_for_created_users_skips_failed_create():
+    users = [_created_user("a@x.org"), _created_user("b@x.org")]
+    create_errors = [{"primaryEmail": "b@x.org", "error": "boom"}]
+    assert members_for_created_users(users, create_errors) == (
+        [_member("a@x.org")],
+        [],
+    )
+
+
+def test_members_for_created_users_all_failed_returns_empty():
+    users = [_created_user("a@x.org")]
+    create_errors = [{"primaryEmail": "a@x.org", "error": "boom"}]
+    assert members_for_created_users(users, create_errors) == ([], [])
+
+
+def test_members_for_created_users_skips_null_group_key():
+    users = [_created_user("a@x.org"), _created_user("b@x.org", group_key=None)]
+
+    members, _ = members_for_created_users(users, [])
+
+    assert members == [_member("a@x.org")]
+
+
+def test_members_for_created_users_reports_null_group_key_once():
+    users = [
+        _created_user("a@x.org", group_key=None, org_unit_path="/Students/School B"),
+        _created_user("b@x.org", group_key=None, org_unit_path="/Students/School A"),
+    ]
+
+    _, unresolved = members_for_created_users(users, [])
+
+    assert unresolved == [
+        {
+            "error": (
+                "2 created users have no resolvable students group; membership skipped"
+            ),
+            "count": 2,
+            "orgUnitPaths": ["/Students/School A", "/Students/School B"],
+        }
+    ]
+
+
+def test_members_for_created_users_reports_null_group_key_singular():
+    users = [
+        _created_user("a@x.org", group_key=None, org_unit_path="/Students/School A")
+    ]
+
+    _, unresolved = members_for_created_users(users, [])
+
+    assert unresolved == [
+        {
+            "error": (
+                "1 created user has no resolvable students group; membership skipped"
+            ),
+            "count": 1,
+            "orgUnitPaths": ["/Students/School A"],
+        }
+    ]
+
+
+def test_members_for_created_users_does_not_report_null_group_key_for_failed_create():
+    users = [_created_user("a@x.org", group_key=None)]
+    create_errors = [{"primaryEmail": "a@x.org", "error": "boom"}]
+
+    assert members_for_created_users(users, create_errors) == ([], [])
 
 
 def get_google_directory_resource() -> GoogleDirectoryResource:

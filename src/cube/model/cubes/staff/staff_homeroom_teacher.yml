@@ -1,0 +1,9 @@
+cubes:
+  # Role alias for staff, the homeroom-teacher join target on
+  # student_homeroom_section (the current-homeroom section reached from
+  # student_school_enrollments). Distinct role-play cube (like staff_manager) so
+  # the homeroom-teacher members can't collide with the lead-teacher role
+  # (staff_lead_teacher). Inherits all of staff's dimensions.
+  - name: staff_homeroom_teacher
+    extends: staff
+    public: false

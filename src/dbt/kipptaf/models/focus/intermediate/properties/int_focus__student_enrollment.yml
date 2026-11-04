@@ -1,0 +1,19 @@
+models:
+  - name: int_focus__student_enrollment
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__student_enrollment — every stg_focus__student_enrollment column
+      plus the int_focus__student_enrollment__pivot custom-field labels. The
+      denormalized enrollment spine lives in
+      int_focus__student_enrollment_roster, which is what
+      int_students__student_enrollment_union reads; this wrapper exposes the raw
+      stint row for consumers that want the source columns without the roster's
+      derivation. Focus is Miami-only today; this shape lets a future region's
+      Focus ingestion union in without a rewrite. Column docs/tests live on the
+      kippmiami source model.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

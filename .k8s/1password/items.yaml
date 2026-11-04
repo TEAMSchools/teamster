@@ -50,6 +50,14 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-branchingminds-sftp
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Branching Minds SFTP
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-clever-sftp
   namespace: dagster-cloud
 spec:
@@ -138,18 +146,10 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-titan-sftp-kippcamden
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Titan SFTP - Camden
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
   name: op-ps-db-kippmiami
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/items/PowerSchool DB - Miami
+  itemPath: vaults/Data Team/items/f6aiyw3rwvgnccheebsvvorvue
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
@@ -157,7 +157,15 @@ metadata:
   name: op-ps-ssh-kippmiami
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/items/PowerSchool SSH - Miami
+  itemPath: vaults/Data Team/items/fo36s5a5ovc654jjfsubwkc4ny
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-titan-sftp-kippcamden
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Titan SFTP - Camden
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
@@ -242,6 +250,14 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-parentsquare-sftp
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/ParentSquare SFTP
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-schoolmint-grow-api
   namespace: dagster-cloud
 spec:
@@ -282,6 +298,14 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-zendesk-oauth-dagster
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Zendesk OAuth - Dagster
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-deanslist-api-kippnewark
   namespace: dagster-cloud
 spec:
@@ -294,14 +318,6 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/DeansList API - Camden
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
-  name: op-deanslist-api-kippmiami
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/DeansList API - Miami
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
@@ -334,14 +350,6 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Google Admin Service Account
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
-  name: op-powerschool-enrollment-api
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/PowerSchool Enrollment
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
@@ -390,6 +398,14 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Amplify SFTP - Paterson
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-edplan-sftp-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/edplan SFTP - Paterson
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
@@ -454,3 +470,11 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/PowerSchool SSH - Paterson
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-titan-sftp-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Titan SFTP - Paterson

@@ -32,6 +32,9 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: grade_level
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from _dbt_source_relation.
       - name: student_id
         data_type: string
       - name: assessment_subject

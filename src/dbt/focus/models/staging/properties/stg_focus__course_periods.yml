@@ -20,6 +20,18 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: teacher_id
+        description: Focus staff id of the lead teacher (FLDOE TEACHER_ID).
+        data_type: int
+        data_tests:
+          - not_null:
+              name: stg_focus__course_periods__teacher_id_not_null
+              description: >-
+                A Focus course period has no lead teacher. Downstream, the
+                section has no teacher of record on rosters and gradebook
+                reports. Assign a lead teacher to the course period in Focus.
+              config:
+                severity: warn
       - name: syear
         description: Focus school year (start year, FLDOE SYEAR).
         data_type: int
@@ -43,9 +55,6 @@ models:
         data_type: int
       - name: marking_period_id
         description: Focus marking period id (FLDOE MARKING_PERIOD_ID).
-        data_type: int
-      - name: teacher_id
-        description: Focus staff id of the lead teacher (FLDOE TEACHER_ID).
         data_type: int
       - name: co_teacher_id1
         description: Co-teacher 1 staff id (FLDOE CO_TEACHER_ID1).
@@ -173,6 +182,51 @@ models:
       - name: imported
         description: Y/N — whether the row originated from an import.
         data_type: string
+      - name: age_inst_setting
+        description: >-
+          AGE Institutional Setting — Focus custom field. Stored as an encoded
+          select option code (decode deferred).
+        data_type: string
+      - name: age_online_course
+        description: >-
+          AGE Online Course Delivery Indicator — Focus custom field. Stored as
+          an encoded select option code (decode deferred).
+        data_type: string
+      - name: cte_de_location
+        description: >-
+          CTE Dual Enrollment Course Location — Focus custom field. Stored as an
+          encoded select option code (decode deferred).
+        data_type: string
+      - name: de_inst_type
+        description: >-
+          Dual Enrollment Institution Type — Focus custom field. Stored as an
+          encoded select option code (decode deferred).
+        data_type: string
+      - name: de_student_type
+        description: >-
+          Dual Enrollment Student Type — Focus custom field. Stored as an
+          encoded select option code (decode deferred).
+        data_type: string
+      - name: function_level
+        description: >-
+          Functioning Level — Focus custom field. Stored as an encoded select
+          option code (decode deferred).
+        data_type: string
+      - name: online_course
+        description: >-
+          Online Course — Focus custom field. Stored as an encoded select option
+          code (decode deferred).
+        data_type: string
+      - name: math_intervention
+        description: >-
+          Math Intervention Component — Focus custom field. Stored as an encoded
+          select option code (decode deferred).
+        data_type: string
+      - name: alt_date_certain
+        description: >-
+          Day of Week Scheduled, Alternate Date Certain — Focus custom field.
+          Stored as an encoded select option code (decode deferred).
+        data_type: string
       - name: uuid
         description: Focus global unique identifier for the row.
         data_type: string
@@ -230,4 +284,14 @@ models:
       - name: class_minutes_weekly
         description: >-
           Class minutes weekly — Focus custom field.
+        data_type: string
+      - name: dual_enrollment_indicator
+        description: >-
+          Dual Enrollment Indicator — Focus custom field. Stored as an encoded
+          select option code (decode deferred).
+        data_type: string
+      - name: team_teacher_training
+        description: >-
+          Team Teacher Training — Focus custom field. Stored as an encoded
+          select option code (decode deferred).
         data_type: string

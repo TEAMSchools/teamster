@@ -5,18 +5,32 @@ on:
     types: [opened, ready_for_review]
     branches:
       - main
+    # Skip only PRs whose every file is excluded below: docs, generated
+    # lockfiles, data, and editor or docs-site config where a mistake is
+    # cosmetic. Config that can break builds or weaken guardrails stays in.
     paths:
-      - src/**
-      - tests/**
-      - scripts/**
-      - mcp/**
+      - "**"
       - "!**/*.md"
+      - "!**/*.csv"
+      - "!**/package.json"
+      - "!**/package-lock.json"
+      - "!**/package-lock.yml"
+      - "!**/uv.lock"
+      - "!**/.gitignore"
+      - "!.github/ISSUE_TEMPLATE/**"
+      - "!.vscode/extensions.json"
+      - "!.vscode/launch.json"
+      - "!.vscode/settings.json"
+      - "!docs/images/**"
+      - "!LICENSE"
+      - "!mkdocs.yml"
 
 jobs:
   claude-review:
     if: github.actor != 'dependabot[bot]' && !github.event.pull_request.draft
 
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       pull-requests: write
@@ -25,13 +39,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@f87768c6d25f92ae6efa7175e223ef77d4cbf97f # v1.0.166
+        uses: anthropics/claude-code-action@16f9f71ab9c490faf367f94dd294897edc25be33 # v1.0.261
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -41,43 +55,140 @@ jobs:
             https://github.com/anthropics/claude-plugins-official.git
             https://github.com/dbt-labs/dbt-agent-skills.git
             https://github.com/dagster-io/skills.git
+            https://github.com/obra/superpowers.git
+            https://github.com/DietrichGebert/ponytail.git
           plugins: |
-            superpowers@claude-plugins-official
+            superpowers@superpowers-dev
             context7@claude-plugins-official
-            dagster-expert@dagster
-            dignified-python@dagster
+            dagster@dagster
             dbt@dbt-agent-marketplace
+            ponytail@ponytail
           track_progress: true
           prompt: >-
-            /requesting-code-review ${{ github.repository }}/pull/${{
-            github.event.pull_request.number }}.
+            Review ${{ github.repository }}/pull/${{
+            github.event.pull_request.number }}. Load
+            superpowers:requesting-code-review and use its code-reviewer.md
+            checklist and severity scale, but do the review yourself: this job
+            cannot dispatch subagents, and the PR author, not you, acts on the
+            findings.
 
-
-            Apply dignified-python for Python standards, dagster-expert for
-            Dagster assets and pipelines, and
+            Apply dagster:dagster-expert for Dagster assets and pipelines, and
             dbt:using-dbt-for-analytics-engineering for dbt models and
             transformations.
 
+            Also run /ponytail:ponytail-review over the changed code, preferring
+            existing macros, models, and helpers over reinventing them. This job
+            has read-only repo access, so report these as review findings only;
+            do not apply or commit fixes.
 
-            Environment: you run in GitHub Actions with NO warehouse or data
-            access. No BigQuery connection, and none of the cube, dbt, dagster,
-            or bigquery MCP servers are available. You cannot run queries, `dbt
-            show`, `dbt compile`, or materialize any model. Do not state
-            data-dependent claims (row counts, null rates, join fan-out, grain
-            or duplicate violations, value distributions) as fact. When a
+            For SQL and dbt changes, read .claude/rules/dbt-architecture.md and
+            .claude/rules/dbt-sql.md with the Read tool, plus src/dbt/CLAUDE.md
+            and the nearest per-project CLAUDE.md; for a mart change, also read
+            .claude/rules/dbt-marts.md. Check the changed models against every
+            rule (A1-A11, S1-S18, and R1-R4, R6-R10 for marts) and the review
+            rubric in dbt-sql.md. Cite the rule ID (for example "S10") in every
+            SQL or dbt finding. Do not report a violation of a rule enforced
+            only by sqlfluff, sql-banned-syntax, or dbt-layer-check; the Trunk
+            check and the dbt standard workflow report those. Apply the rules to
+            lines the PR adds or changes only; an old violation on an untouched
+            line is not a finding, and never ask for a sweep of untouched
+            models. For the edge rules (A1, A2, A8), flag only an edge the PR
+            adds; an edge the model already had is known backlog. Apply A11 only
+            to a folder the PR adds, and A7 only to an entity that already has a
+            key macro under src/dbt/kipptaf/macros/.
+
+            For a model the PR adds, an rpt_ model it modifies, or a properties
+            file whose tests it changes, also read .claude/rules/dbt-models.md
+            and .claude/rules/dbt-yaml.md with the Read tool. Check the tests
+            against the per-layer requirements in dbt-models.md and against
+            "Test config defaults" and "Tests on marts and rpt_ models" in
+            dbt-yaml.md: uniqueness test, its severity, explicit severity on
+            every staging test, not_null on natural-key grain columns that are
+            not non-null by construction, and only error tests on marts and rpt_
+            models. Severity resolves from the folder defaults in
+            dbt_project.yml as well as the test's own config. These rules have
+            no IDs, so cite the file and section name.
+
+            For each int_ or rpt_ model the PR adds, write a ledger in the
+            fold-out: one line per rule below, even when the answer is "none". A
+            model with no ledger means you skipped it, so never leave one out.
+            This ledger replaces a free-form "checked and fine" note for added
+            models.
+
+            A4 line: the model's grain, and every model in the same folder at
+            that grain, including one whose grain columns carry different names
+            (assessment_subject vs subject).
+
+            A5 line: every row-pick (dbt_utils.deduplicate, or row_number()
+            filtered to 1), and the standard_exempt reason if there is one.
+
+            A10 line: every join between 2 regional models (unions of district
+            models), with its join keys and whether _dbt_source_project is one
+            of them.
+
+            Tests line: the uniqueness test and its resolved severity, or the
+            exemption that applies, and for an rpt_ model, any test that
+            resolves to warn.
+
+            Also check model altitude: derive a model in the source-system
+            package at the same layer the source system derives it, not at
+            kipptaf, so surrogate-key hashes are not recomputed at network
+            altitude. Flag a model built at kipptaf that recomputes a hash its
+            source package already derives.
+
+            Environment: you run in GitHub Actions with no warehouse or data
+            access. There is no BigQuery connection, and none of the cube, dbt,
+            dagster, or bigquery MCP servers are available. You cannot run
+            queries, `dbt show`, `dbt compile`, or materialize any model. Do not
+            state data-dependent claims (row counts, null rates, join fan-out,
+            grain or duplicate violations, value distributions) as fact. When a
             finding depends on the data, label it "needs local verification" and
             give the exact query or dbt command the author should run.
 
-
             Review what is checkable statically: SQL and Jinja logic,
             ref()/source() wiring, incremental and materialization config, join
-            grain inferred from schema, test coverage, and PII exposure. Before
-            reporting a repo-convention violation, confirm the convention
-            against existing models with git grep; do not invent naming or style
-            rules the codebase does not already follow. Report every issue with
-            a severity label; do not withhold lower-severity findings.
+            grain inferred from schema, test coverage, and PII exposure. A rule
+            with an ID in the rule files is the authority even where existing
+            models break it. For any other convention, confirm it against
+            existing models with the Grep tool before reporting it; do not
+            invent naming or style rules the codebase does not already follow.
+            Report every issue you find, including ones you are uncertain about;
+            do not withhold lower-severity findings. Include a confidence level
+            and a severity label for each finding so a human can rank them.
+
+            Response format: lead the comment with a short, plain-language
+            summary for human skimming — the overall verdict and only the
+            highest-severity findings, no jargon. Then add a collapsed
+            <details><summary>Full findings</summary> fold-out listing every
+            finding, including lower-severity and uncertain ones, each with
+            file:line, confidence, severity, and the specific convention or
+            citation. Leave a blank line after <summary>Full findings</summary>
+            before the findings list, or GitHub renders the list as inert HTML
+            instead of markdown. This mirrors this repo's PR/issue template
+            pattern: human-readable content first, denser context folded below.
+
+            Execution model: this job is a single non-interactive turn sequence.
+            There is no wake-up and no second invocation — when you stop
+            producing output the process exits and any unfinished work is lost.
+            Never end a turn waiting on background work. Posting the review with
+            update_claude_comment must be your final action, and must happen
+            even if some checks are still incomplete.
           allowed_bots: dbt-cloud
           include_fix_links: false
           use_sticky_comment: true
           display_report: true
-          claude_args: --model opus
+          # A second --allowedTools accumulates with the action's own list
+          # (parse-sdk-options.ts ACCUMULATING_FLAGS) rather than replacing it,
+          # so the comment-update and git-push tools stay allowed. The
+          # --disallowedTools set is upstream's tested workaround for
+          # anthropics/claude-code-action#1462 and #1499: these tools assume a
+          # turn can be resumed later, which a headless run cannot do. Agent is
+          # the worst case: run-claude-sdk.ts breaks on the first result, so a
+          # background subagent is orphaned and the run reports success having
+          # posted nothing. Not gated by --allowedTools, so denying them
+          # explicitly is the only guard.
+          claude_args: >-
+            --model claude-opus-5-5 --effort medium --allowedTools
+            "Skill,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git
+            rev-parse:*),Bash(git merge-base:*)" --disallowedTools
+            "Agent,ScheduleWakeup,SendMessage,Monitor,Workflow"

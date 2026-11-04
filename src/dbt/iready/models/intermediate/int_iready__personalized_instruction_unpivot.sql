@@ -183,7 +183,7 @@ select
                 'multi_syllable',
                 'rational_numbers_and_operations',
                 'ratios_and_proportions',
-                'single_syllable'
+                'single_syllable',
                 'whole_numbers_and_operations'
             )
         then 'Pro'

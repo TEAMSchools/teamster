@@ -1,5 +1,11 @@
 models:
   - name: int_powerschool__category_grades_pivot
+    description: |
+      Category grades pivoted to one row per student, year, school, reporting
+      term, and course, with running year-to-date columns.
+    # No cron, so the table condition rebuilds this model each time its only
+    # parent, int_powerschool__category_grades, lands. A shared cron tick let
+    # it build on the parent's previous copy. Refs #6044
     config:
       materialized: table
     data_tests:
@@ -30,61 +36,148 @@ models:
         data_type: boolean
       - name: f_rt1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: f_rt2
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: f_rt3
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: f_rt4
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: f_cur
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: f_y1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: s_rt1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: s_rt2
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: s_rt3
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: s_rt4
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: s_cur
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: s_y1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: w_rt1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: w_rt2
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: w_rt3
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: w_rt4
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: w_cur
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: w_y1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: e_rt1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: e_rt2
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: e_rt3
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: e_rt4
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: e_cur
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: e_y1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: rn_credittype
         data_type: int64
       - name: ctz_rt1
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ctz_rt2
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ctz_rt3
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ctz_rt4
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ctz_cur
         data_type: string
+        config:
+          meta:
+            contains_pii: true

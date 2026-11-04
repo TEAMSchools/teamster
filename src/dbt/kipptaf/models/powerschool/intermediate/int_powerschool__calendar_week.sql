@@ -9,17 +9,19 @@ with
                     source(
                         "kippcamden_powerschool", "int_powerschool__calendar_week"
                     ),
-                    source("kippmiami_powerschool", "int_powerschool__calendar_week"),
                     source(
                         "kipppaterson_powerschool", "int_powerschool__calendar_week"
                     ),
+                    source("kippmiami_powerschool", "int_powerschool__calendar_week"),
                 ]
             )
         }}
     )
 
+-- Miami's source is its frozen PowerSchool archive. A package column change
+-- needs that table rebuilt too (src/dbt/kippmiami/CLAUDE.md).
 select
     *,
     initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-    {{ extract_code_location("union_relations") }} as _dbt_source_project,
+    {{ extract_source_project("union_relations") }} as _dbt_source_project,
 from union_relations

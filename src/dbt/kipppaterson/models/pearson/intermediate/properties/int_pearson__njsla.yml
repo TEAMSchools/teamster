@@ -1,5 +1,7 @@
 models:
   - name: int_pearson__njsla
+    config:
+      enabled: false
     description: |
       Paterson NJSLA assessment rows with `localstudentidentifier` translated
       from the Paterson district SIS ID to the canonical KIPP
@@ -10,8 +12,12 @@ models:
       - name: studenttestuuid
         description: Pearson per-test-attempt UUID. Unique grain.
         data_tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                enabled: false
+          - not_null:
+              config:
+                enabled: false
       - name: localstudentidentifier
         description: |
           KIPP `student_number` for students matched via Paterson PowerSchool

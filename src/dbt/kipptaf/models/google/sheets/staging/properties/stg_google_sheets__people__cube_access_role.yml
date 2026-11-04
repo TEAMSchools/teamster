@@ -1,0 +1,120 @@
+models:
+  - name: stg_google_sheets__people__cube_access_role
+    description: >-
+      Cube access role crosswalk, maintained by the data team in Google Sheets.
+      One row per (job_function_code, entity) tuple, mapping each role to its
+      student location scope, the staff sensitive-field remit (location +
+      department), and the per-field sensitive scopes. The sentinel `any` in
+      entity matches any value for codes whose access does not vary by entity.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - job_function_code
+              - entity
+          config:
+            severity: error
+    columns:
+      - name: job_function_code
+        data_type: string
+        description: ADP job function code (CHIEF, EDHOS, SL, TEACH, ...).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: entity
+        data_type: string
+        description: KTAF, Region, or the sentinel `any`.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: job_function_level
+        data_type: int64
+        description: Org rank for the role (1 = Chief, 6 = Teacher, 7 = Intern).
+      - name: student_location_scope
+        data_type: string
+        description: >-
+          Student data location breadth. A non-none scope grants every student
+          view and all fields, including PII.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: staff_location_scope
+        data_type: string
+        description: Location remit bounding the staff sensitive fields.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: staff_department_scope
+        data_type: string
+        description: Department remit bounding the staff sensitive fields.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [all, own_group, none]
+              config:
+                severity: error
+      - name: staff_pii_scope
+        data_type: string
+        description:
+          Staff PII field visibility (per-field sensitive scope enum).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
+      - name: staff_compensation_scope
+        data_type: string
+        description: Staff compensation field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
+      - name: staff_observations_scope
+        data_type: string
+        description: Staff observation field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
+      - name: staff_benefits_scope
+        data_type: string
+        description: Staff benefits field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error

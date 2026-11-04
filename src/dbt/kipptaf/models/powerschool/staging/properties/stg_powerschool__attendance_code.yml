@@ -1,4 +1,2 @@
 models:
   - name: stg_powerschool__attendance_code
-    config:
-      materialized: table

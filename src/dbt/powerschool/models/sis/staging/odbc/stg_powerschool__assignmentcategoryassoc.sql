@@ -14,6 +14,10 @@ with
 -- trunk-ignore(sqlfluff/AM04)
 select
     * except (
+        _dagster_partition_date,
+        _dagster_partition_fiscal_year,
+        _dagster_partition_hour,
+        _dagster_partition_minute,
         assignmentcategoryassocid,
         assignmentsectionid,
         teachercategoryid,
@@ -22,7 +26,6 @@ select
         whomodifiedid
     ),
 
-    /* column transformations */
     assignmentcategoryassocid.int_value as assignmentcategoryassocid,
     assignmentsectionid.int_value as assignmentsectionid,
     teachercategoryid.int_value as teachercategoryid,

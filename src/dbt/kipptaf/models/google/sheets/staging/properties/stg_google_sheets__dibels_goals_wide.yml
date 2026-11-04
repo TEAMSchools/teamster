@@ -5,25 +5,41 @@ models:
     columns:
       - name: Lookup
         data_type: string
+        description: Sheet-authored lookup key for the row.
       - name: Year
         data_type: int64
+        description: Academic year the standards apply to.
       - name: Measure_Standard
         data_type: string
+        description:
+          The measure the standard applies to, e.g. Reading Fluency (ORF).
       - name: Grade
         data_type: string
+        description:
+          Grade level the standard applies to, as written on the sheet.
       - name: Admin_Season
         data_type: string
+        description: The administration -- BOY, MOY or EOY.
       - name: Grade_Level_Standard
         data_type: int64
+        description:
+          Amplify's published score for grade level at this measure, grade and
+          administration. Unpadded.
       - name: Above_Benchmark_Lower_Threshold
         data_type: int64
+        description: Lowest score still counted as Above Benchmark.
       - name: Below_Benchmark_Lower_Threshold
         data_type: int64
+        description: Lowest score still counted as Below Benchmark.
       - name: Well_Below_Benchmark_Lower_Threshold
         data_type: int64
+        description: Lowest score still counted as Well Below Benchmark.
       - name: Next_Grade_Level_Standard
         data_type: int64
+        description: The grade-level standard for the following administration.
       - name: BM_Period_Sort_Order
         data_type: int64
+        description: Sort order for the administration, for reporting.
       - name: Grade_Level_Sort_Order
         data_type: int64
+        description: Sort order for the grade level, for reporting.

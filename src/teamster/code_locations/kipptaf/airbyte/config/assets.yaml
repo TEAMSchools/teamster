@@ -20,6 +20,7 @@ assets:
       - Account
       - Application__c
       - College_Persistence__c
+      - Consent_Form__c
       - Contact
       - Contact_Note__c
       - Employment__c

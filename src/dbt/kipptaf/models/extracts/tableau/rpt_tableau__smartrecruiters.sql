@@ -52,7 +52,6 @@ with
         select
             *,
 
-            /* custom dimensions */
             if(resume_score >= 3, 1, 0) as high_quality_candidate,
 
             case
@@ -104,7 +103,6 @@ with
                 else 0
             end as within_week_initial_review,
 
-            /* calculated metrics */
             date_diff(date_hired, date_new, day) as days_to_hire,
             date_diff(current_date(), date_last_update, day) as days_since_update,
         from applications_unnested
@@ -113,7 +111,6 @@ with
 select
     *,
 
-    /* derived metrics */
     case
         when
             days_since_update >= 7

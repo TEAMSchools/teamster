@@ -28,6 +28,19 @@ models:
         description: >-
           School_Number of the school where the grades were stored (completed
           years) or where the student is currently enrolled (projected row).
+      - name: students_dcid
+        data_type: int64
+      - name: students_student_number
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+      - name: school_name
+        data_type: string
+      - name: school_abbreviation
+        data_type: string
+      - name: school_level
+        data_type: string
       - name: academic_year
         data_type: int64
         description: >-
@@ -173,6 +186,10 @@ unit_tests:
               cast(2.5 as float64) as cumulative_y1_gpa_projected_unweighted,
               cast(105.0 as float64) as earned_credits_cum_projected,
               cast(105.0 as float64) as potential_gpa_credits_cum_projected
+      - input: ref('stg_powerschool__students')
+        rows: []
+      - input: ref('stg_powerschool__schools')
+        rows: []
     expect:
       rows:
         - {

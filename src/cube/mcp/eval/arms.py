@@ -1,30 +1,38 @@
 """Arm definitions for the academic-year eval.
 
 Two designs are compared, holding everything constant except the one variable
-under test: the academic-year crosswalk paragraph in the FastMCP
-``instructions`` string.
+under test: the academic-year crosswalk paragraph in the ``load`` tool
+description.
 
-    A_baseline      shipped instructions minus the "resolve it yourself"
-                    crosswalk paragraph — the floor: dimension descriptions
-                    alone.
-    B_instructions  the shipped branch as-is: instructions including the inline
-                    crosswalk with worked examples.
+    A_baseline      shipped tools minus the "resolve it yourself" crosswalk
+                    paragraph in load's description — the floor: the rest of
+                    the tool descriptions (and the academic-year dimension
+                    descriptions) alone.
+    B_descriptions  the shipped branch as-is: load's description including the
+                    inline crosswalk with worked examples.
 
-A model-in-the-loop eval (#4084, PR #4125) compared these against a third arm
-that added a deterministic ``resolve_academic_year`` tool. The tool never beat
-arm B and on the trap case produced the off-by-one it existed to prevent, so it
-was dropped; this harness is retained as the A-vs-B regression guard for the
-shipped crosswalk.
+The crosswalk moved from the FastMCP ``instructions`` string into the ``load``
+tool description (#4473) because ``instructions`` is an unreliable channel —
+absent on the claude.ai connector, truncated in Claude Code — while tool
+descriptions reach the model on every surface. This eval now measures that
+channel: it reads the tool descriptions from the real ``src/cube/mcp/server.py``
+and varies only the crosswalk paragraph; ``instructions`` is held constant
+(slim) across both arms.
 
-The instructions string is read from the real ``src/cube/mcp/server.py`` so the
-eval measures the shipped surface, not a hand-written approximation. Only the
-``load``/``meta``/``sql`` execution is stubbed (see harness.py) so no warehouse,
-auth, or PII is involved.
+A model-in-the-loop eval (#4084, PR #4125) also compared these against a third
+arm that added a deterministic ``resolve_academic_year`` tool. The tool never
+beat arm B and on the trap case produced the off-by-one it existed to prevent,
+so it was dropped; this harness is retained as the A-vs-B regression guard.
+
+Only the ``load``/``meta``/``sql`` execution is stubbed (see harness.py) so no
+warehouse, auth, or PII is involved.
 """
 
 import asyncio
 import importlib.util
+import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -33,14 +41,14 @@ from typing import Any
 _SERVER_PATH = Path(__file__).resolve().parents[1] / "server.py"
 
 # Anchors that bracket the shipped "ACADEMIC YEAR — resolve it yourself ..."
-# crosswalk paragraph in the real instructions string. Removing the text between
-# them yields the crosswalk-free baseline instructions used by arm A.
+# crosswalk paragraph in the real load tool description. Removing the text
+# between them yields the crosswalk-free baseline description used by arm A.
 _CROSSWALK_ANCHOR = "ACADEMIC YEAR — resolve it yourself"
 _AFTER_ANCHOR = "Numeric values come back"
 
 # Fixed /meta payload. Carries the real academic-year dimension descriptions
 # (the crosswalk surface) so it is present in every arm; only the crosswalk
-# paragraph in the instructions string varies across arms.
+# paragraph in the load tool description varies across arms.
 _ACADEMIC_YEAR_DESC = (
     "KIPP academic year (July start). The calendar year in which the academic "
     "year begins (e.g., 2025 for the 2025-26 school year). For filtering by "
@@ -58,55 +66,244 @@ _ACADEMIC_YEAR_LABEL_DESC = (
 META_STUB: dict[str, Any] = {
     "cubes": [
         {
-            "name": "student_attendance_summary",
-            "title": "Student Attendance Summary",
+            "name": "student_attendance_enrollment_daily_view",
+            "title": "Student Attendance",
             "type": "view",
             "measures": [
                 {
-                    "name": "student_attendance_summary.count_students",
+                    "name": "student_attendance_enrollment_daily_view.count_students",
                     "title": "Count Students",
                     "type": "number",
-                    "description": "Distinct students served.",
-                },
-                {
-                    "name": "student_attendance_summary.count_chronically_absent",
-                    "title": "Count Chronically Absent",
-                    "type": "number",
                     "description": (
-                        "Students flagged chronically absent (under 90% attendance)."
+                        "Distinct students in the queried slice. Pin a date for a "
+                        "point-in-time headcount; leave it open for ever-enrolled."
                     ),
-                },
-                {
-                    "name": "student_attendance_summary.percent_chronically_absent",
-                    "title": "Percent Chronically Absent",
-                    "type": "number",
-                    "description": "Share of students chronically absent.",
                 },
             ],
             "dimensions": [
                 {
-                    "name": "student_attendance_summary.dates_academic_year",
+                    "name": "student_attendance_enrollment_daily_view.dates_academic_year",
                     "title": "Dates Academic Year",
                     "type": "number",
                     "description": _ACADEMIC_YEAR_DESC,
                 },
                 {
-                    "name": "student_attendance_summary.dates_academic_year_label",
+                    "name": "student_attendance_enrollment_daily_view.dates_academic_year_label",
                     "title": "Dates Academic Year Label",
                     "type": "string",
                     "description": _ACADEMIC_YEAR_LABEL_DESC,
                 },
                 {
-                    "name": "student_attendance_summary.school_abbreviation",
+                    "name": "student_attendance_enrollment_daily_view.school_abbreviation",
                     "title": "School",
                     "type": "string",
                     "description": "School abbreviation.",
                 },
             ],
             "segments": [],
-        }
+        },
+        {
+            "name": "student_attendance_enrollment_periods_view",
+            "title": "Student Attendance Periods",
+            "type": "view",
+            "measures": [
+                {
+                    "name": "student_attendance_enrollment_periods_view.count_students",
+                    "title": "Count Students",
+                    "type": "number",
+                    "description": (
+                        "Student-school records served at any point in the period. "
+                        "Show it beside every rate on this view."
+                    ),
+                },
+                {
+                    "name": "student_attendance_enrollment_periods_view.count_chronically_absent",
+                    "title": "Count Chronically Absent",
+                    "type": "number",
+                    "description": (
+                        "Students at or below 90.0% cumulative attendance as of "
+                        "period end."
+                    ),
+                },
+                {
+                    "name": "student_attendance_enrollment_periods_view.pct_chronically_absent",
+                    "title": "Percent Chronically Absent",
+                    "type": "number",
+                    "description": (
+                        "Chronic absence rate. Excludes anyone with fewer than 10 "
+                        "membership days year-to-date."
+                    ),
+                },
+            ],
+            "dimensions": [
+                {
+                    "name": "student_attendance_enrollment_periods_view.period_type",
+                    "title": "Period Type",
+                    "type": "string",
+                    "description": "year, month, or week.",
+                },
+                {
+                    "name": "student_attendance_enrollment_periods_view.academic_year_label",
+                    "title": "Academic Year Label",
+                    "type": "string",
+                    "description": _ACADEMIC_YEAR_LABEL_DESC,
+                },
+            ],
+            "segments": [],
+        },
     ]
 }
+
+
+# --- Family 4 catalogs: the assessment view before and after the drain -------
+
+_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_ASSESSMENT_VIEW = "student_assessment_scores_view"
+
+
+def load_assessment_meta(which: str) -> dict[str, Any]:
+    """The assessment view's /meta entry. "pre" is the committed pre-drain
+    fixture (origin/main before #5495's text); "post" compiles the working
+    tree's model with Cube's schema compiler (src/cube/compile-meta.js)."""
+    if which == "pre":
+        return json.loads((_FIXTURES / "meta_pre_drain.json").read_text())
+    if which != "post":
+        raise ValueError(f"which must be 'pre' or 'post', got {which!r}")
+    try:
+        # trunk-ignore(bandit/B603,bandit/B607): fixed arguments; node on PATH is the dev toolchain
+        out = subprocess.run(
+            [
+                "node",
+                str(_REPO_ROOT / "src" / "cube" / "compile-meta.js"),
+                str(_REPO_ROOT / "src" / "cube" / "model"),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        # CalledProcessError's message omits stderr, where the compile error is.
+        raise RuntimeError(
+            f"compile-meta.js exited {exc.returncode}:\n{exc.stderr}"
+        ) from exc
+    full = json.loads(out.stdout)
+    return {"cubes": [c for c in full["cubes"] if c["name"] == _ASSESSMENT_VIEW]}
+
+
+# --- Family 4 arms ------------------------------------------------------------
+#
+#     A4_pre    pre-drain catalog and docstrings (the 5 new sentences removed)
+#     B4_post   this branch: post-drain catalog, docstrings, empty-result note
+#     C4_skill  B4_post plus the orchestrator's policy and recipe sections as
+#               the system prompt, to size the planned org-level skill
+
+# The sentences #5495 added to the load and meta docstrings; arm A removes them
+# to reproduce the pre-drain docstrings. A missing sentence raises, like the
+# crosswalk anchors.
+NEW_LOAD_SENTENCES = [
+    '`equals "null"` matches the literal string and returns zero rows; filter a'
+    " null with `notSet`.",
+    "A query with no measure groups by its dimensions, so identical rows collapse"
+    " into one; add a count, the primary key, or the `ungrouped` field above to"
+    " see every row.",
+    "Student views return only the schools the user can access; before describing"
+    " a result as network-wide, check which regions or schools it covers.",
+]
+NEW_META_SENTENCES = [
+    "Refresh before concluding a member is missing.",
+    "Members may carry `meta.ai_context` (`aiContext` on some view-specific"
+    " members): usage rules written for you. Read and follow a member's"
+    " `ai_context` before building a query that uses it.",
+]
+_ORCHESTRATOR = (
+    Path(__file__).resolve().parents[1]
+    / "project_knowledge"
+    / "assessment-cube-orchestrator.md"
+)
+# Arm C carries the orchestrator's policy and recipe sections, not its
+# session-start ritual (ask a name, calibrate, keep a log), which would stop a
+# one-turn eval conversation before it queries.
+_SKILL_SECTIONS = [
+    "## Flag, don't invent",
+    "## Modeling, projections, and deliverables",
+    "## Routing",
+]
+
+
+def _flat(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _strip_sentences(text: str, sentences: list[str]) -> str:
+    flat = _flat(text)
+    for sentence in sentences:
+        if sentence not in flat:
+            raise RuntimeError(
+                f"docstring sentence not found; update arms.py: {sentence[:60]}"
+            )
+        flat = _flat(flat.replace(sentence, ""))
+    return flat
+
+
+def _skill_text() -> str:
+    doc = _ORCHESTRATOR.read_text(encoding="utf-8")
+    parts = []
+    for heading in _SKILL_SECTIONS:
+        start = doc.index(heading)
+        nxt = doc.find("\n## ", start + len(heading))
+        parts.append(doc[start : nxt if nxt != -1 else len(doc)].strip())
+    return "\n\n".join(parts)
+
+
+def build_assessment_arms(server: ModuleType) -> dict[str, dict[str, Any]]:
+    """Return {arm: {"instructions", "tools", "meta", "empty_note"}}."""
+    tools = _anthropic_tools(server)
+    instructions = server.mcp.instructions or ""
+    # Flatten whitespace on every arm so the only docstring difference is the
+    # sentences themselves.
+    pre_tools = [
+        {
+            **tools["meta"],
+            "description": _strip_sentences(
+                tools["meta"]["description"], NEW_META_SENTENCES
+            ),
+        },
+        {
+            **tools["load"],
+            "description": _strip_sentences(
+                tools["load"]["description"], NEW_LOAD_SENTENCES
+            ),
+        },
+        tools["sql"],
+    ]
+    post_tools = [
+        {**tools["meta"], "description": _flat(tools["meta"]["description"])},
+        {**tools["load"], "description": _flat(tools["load"]["description"])},
+        tools["sql"],
+    ]
+    post_meta = load_assessment_meta("post")
+    return {
+        "A4_pre": {
+            "instructions": instructions,
+            "tools": pre_tools,
+            "meta": load_assessment_meta("pre"),
+            "empty_note": False,
+        },
+        "B4_post": {
+            "instructions": instructions,
+            "tools": post_tools,
+            "meta": post_meta,
+            "empty_note": True,
+        },
+        "C4_skill": {
+            "instructions": instructions + "\n\n" + _skill_text(),
+            "tools": post_tools,
+            "meta": post_meta,
+            "empty_note": True,
+        },
+    }
 
 
 def load_server() -> ModuleType:
@@ -135,38 +332,51 @@ def _anthropic_tools(server: ModuleType) -> dict[str, dict[str, Any]]:
         t.name: {
             "name": t.name,
             "description": t.description or "",
-            "input_schema": t.inputSchema,
+            # mcp SDK 2.0 renamed Tool.inputSchema to input_schema.
+            "input_schema": t.input_schema,
         }
         for t in raw
     }
 
 
 def build_arms(server: ModuleType) -> dict[str, dict[str, Any]]:
-    """Return {arm_name: {"instructions": str, "tools": list[tool-dict]}}."""
+    """Return {arm_name: {"instructions": str, "tools": list[tool-dict]}}.
+
+    ``instructions`` is held constant (the shipped slim string) across arms; the
+    A-vs-B variable is the academic-year crosswalk paragraph in the ``load``
+    tool description, which arm A has removed.
+    """
     tools = _anthropic_tools(server)
     missing = {"meta", "load", "sql"} - set(tools)
     if missing:
         raise RuntimeError(f"server.py is missing expected tools: {sorted(missing)}")
 
-    base = server.mcp.instructions
-    start = base.find(_CROSSWALK_ANCHOR)
-    end = base.find(_AFTER_ANCHOR)
+    instructions = server.mcp.instructions or ""
+    load_desc = tools["load"]["description"]
+    start = load_desc.find(_CROSSWALK_ANCHOR)
+    end = load_desc.find(_AFTER_ANCHOR)
     if start == -1 or end == -1 or end < start:
         raise RuntimeError(
-            "Could not locate the academic-year crosswalk paragraph in "
-            "instructions; anchors may have changed — update "
+            "Could not locate the academic-year crosswalk paragraph in the "
+            "load tool description; anchors may have changed — update "
             "_CROSSWALK_ANCHOR/_AFTER_ANCHOR."
         )
-    no_crosswalk = base[:start] + base[end:]
+    load_no_crosswalk = load_desc[:start] + load_desc[end:]
 
-    query_tools = [tools["meta"], tools["load"], tools["sql"]]
+    def _tools_with_load(desc: str) -> list[dict[str, Any]]:
+        return [
+            tools["meta"],
+            {**tools["load"], "description": desc},
+            tools["sql"],
+        ]
+
     return {
         "A_baseline": {
-            "instructions": no_crosswalk,
-            "tools": query_tools,
+            "instructions": instructions,
+            "tools": _tools_with_load(load_no_crosswalk),
         },
-        "B_instructions": {
-            "instructions": base,
-            "tools": query_tools,
+        "B_descriptions": {
+            "instructions": instructions,
+            "tools": _tools_with_load(load_desc),
         },
     }

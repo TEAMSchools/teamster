@@ -1,0 +1,65 @@
+models:
+  - name: rpt_gsheets__gradebook_audit_current_expectations
+    description: >
+      Passthrough of stg_powerschool__u_expectations, one row per current
+      U_EXPECTATIONS record across all regions with the plugin installed.
+      Buffers the Gradebook Audit Expectations Upload Template sheet's live
+      "current expectations" tab from the raw staging table so the connected
+      sheet reads a reporting view rather than an internal model directly.
+    columns:
+      - name: id
+        data_type: int64
+        data_tests:
+          - unique
+          - not_null
+        description: U_EXPECTATIONS row ID from PowerSchool.
+      - name: school_level
+        data_type: string
+        description: School level the expectation row applies to (MS / HS).
+      - name: quarter
+        data_type: string
+        quote: true
+        description: Academic quarter (Q1-Q4).
+      - name: week_number
+        data_type: int64
+        description: Week number within the quarter.
+      - name: cnt_w
+        data_type: int64
+        description:
+          Count of expected Work Habits assignments for the week. Null when the
+          U_EXPECTATIONS row leaves the category unset.
+      - name: cnt_h
+        data_type: int64
+        description:
+          Count of expected Homework assignments for the week. Null when the
+          U_EXPECTATIONS row leaves the category unset.
+      - name: cnt_f
+        data_type: int64
+        description:
+          Count of expected Formative Mastery assignments for the week. Null
+          when the U_EXPECTATIONS row leaves the category unset.
+      - name: cnt_s
+        data_type: int64
+        description:
+          Count of expected Summative Mastery assignments for the week. Null
+          when the U_EXPECTATIONS row leaves the category unset.
+      - name: notes
+        data_type: string
+        description: Free-text note entered on the U_EXPECTATIONS row.
+      - name: whocreated
+        data_type: string
+        description: PowerSchool user who created the U_EXPECTATIONS row.
+      - name: whencreated
+        data_type: timestamp
+        description: Timestamp the U_EXPECTATIONS row was created.
+      - name: whomodified
+        data_type: string
+        description: PowerSchool user who last modified the U_EXPECTATIONS row.
+      - name: whenmodified
+        data_type: timestamp
+        description: Timestamp the U_EXPECTATIONS row was last modified.
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          Source project extracted from _dbt_source_relation at
+          stg_powerschool__u_expectations (e.g. 'kippnewark', 'kippcamden').

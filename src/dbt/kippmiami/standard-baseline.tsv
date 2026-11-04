@@ -1,0 +1,4 @@
+model	rule	detail	issue
+finalsite.stg_finalsite__contact_relationships	A1	finalsite.stg_finalsite__contacts	#5807
+kippmiami.int_fldoe__all_assessments	A1	focus.int_focus__student_enrollment	#5807
+kippmiami.int_fldoe__all_assessments	A1	focus.int_focus__students	#5807

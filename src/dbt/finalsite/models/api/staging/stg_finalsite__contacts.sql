@@ -1,3 +1,19 @@
+with
+    -- Pulls accumulate one Hive partition per pull date, and a `since` window
+    -- re-delivers a contact on every pull that covers it, so the same `id`
+    -- appears in many partitions. Keep the newest. `desc` alone is deliberate:
+    -- the macro compiles to array_agg(... limit 1) and BigQuery rejects
+    -- explicit null-ordering inside an aggregate. See #4715.
+    deduplicated as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("finalsite", "contacts"),
+                partition_by="id",
+                order_by="_dagster_partition_date desc",
+            )
+        }}
+    )
+
 select
     id as finalsite_enrollment_id,
     first_name,
@@ -24,26 +40,42 @@ select
     school_year.start_year as school_year_start,
     prospect_entry_year.start_year as prospect_entry_year_start,
 
-    phone_1.phone_type as phone_1_type,
-    phone_1.number as phone_1_number,
-    phone_2.phone_type as phone_2_type,
-    phone_2.number as phone_2_number,
-    phone_3.phone_type as phone_3_type,
-    phone_3.number as phone_3_number,
-
     custom_attributes,
     id_attributes,
     track_attributes,
+    households,
+
+    -- passed through whole so stg_finalsite__contact_relationships can unnest
+    -- one deduped copy rather than re-reading the accumulated source. Same
+    -- contract-widening move `households` already carries for
+    -- int_finalsite__contacts__households.
+    relationships,
 
     safe_cast(birth_date as date) as birth_date,
 
-    -- normalize the household address: Finalsite emits empty strings (not null)
-    -- and mixed-case states, which flow unchanged into the Focus ADDRESS and
-    -- CONTACTS feeds. Blank -> null; uppercase the state code.
+    -- Finalsite emits an unset phone type as an empty string on a contact
+    -- record, but as NULL in the emrg_N custom-field sets that feed the
+    -- emergency contact slots. Normalize to NULL so every consumer tests for an
+    -- untyped phone the same way -- the same blank-to-null treatment the
+    -- household address fields get below.
+    nullif(phone_1.phone_type, '') as phone_1_type,
+    nullif(phone_2.phone_type, '') as phone_2_type,
+    nullif(phone_3.phone_type, '') as phone_3_type,
+
+    households[safe_offset(0)].id as household_1_id,
+
     nullif(trim(households[safe_offset(0)].address_1), '') as address_1,
     nullif(trim(households[safe_offset(0)].address_2), '') as address_2,
     nullif(trim(households[safe_offset(0)].city), '') as city,
     nullif(upper(trim(households[safe_offset(0)].state)), '') as state,
     nullif(trim(households[safe_offset(0)].zip), '') as zip,
     households[safe_offset(0)].country as country,
-from {{ source("finalsite", "contacts") }}
+
+    array(
+        select h.id, from unnest(households) as h where h.id is not null
+    ) as household_ids,
+
+    {{ clean_phone("phone_1.number") }} as phone_1_number,
+    {{ clean_phone("phone_2.number") }} as phone_2_number,
+    {{ clean_phone("phone_3.number") }} as phone_3_number,
+from deduplicated

@@ -1,5 +1,24 @@
 models:
   - name: stg_kippadb__standardized_test
+    description: >-
+      One row per Standardized Test record in Salesforce (KIPP Forward), with
+      ACT, SAT, PSAT and AP scores held as wide columns.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          name: standardized_test_one_record_per_contact_test_date_subject
+          description: >-
+            Duplicate Salesforce Standardized Test records for the same contact,
+            test, date and subject. Each copy becomes its own score row in
+            int_kippadb__standardized_test_unpivot. KIPP Forward deletes the
+            duplicate record in Salesforce.
+          arguments:
+            combination_of_columns:
+              - contact
+              - test_type
+              - date
+              - subject
+          config:
+            severity: warn
     columns:
       - name: id
         data_type: string

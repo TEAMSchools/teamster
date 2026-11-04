@@ -22,14 +22,30 @@ locations:
           pod_spec_config:
             affinity:
               podAntiAffinity:
-                requiredDuringSchedulingIgnoredDuringExecution:
-                  - labelSelector:
-                      matchExpressions:
-                        - key: location_name
-                          operator: In
-                          values:
-                            - kipppaterson
-                    topologyKey: kubernetes.io/hostname
+                # Preferred, not required. With one replica per location this
+                # spreads nothing; as `required` its only live effect was
+                # forbidding the replacement pod from the outgoing pod's node
+                # during a rollover -- the one node guaranteed to have
+                # `dagster-arm-first` capacity sized for a code server and, by
+                # the run-pod anti-affinity, no run pods on it. Under
+                # `preferred` that node becomes FEASIBLE again, which is what
+                # removes the NAP wait -- the scheduler still penalizes it,
+                # twice counting the hostname topologySpreadConstraint, and will
+                # usually pick elsewhere when anything else fits. Cross-location
+                # spreading is unchanged; it comes from
+                # topologySpreadConstraints in the Helm values.
+                # Rollover co-location risks are modelled in the spec:
+                # docs/superpowers/specs/2026-08-18-code-server-scheduling-resilience-design.md
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                          - key: location_name
+                            operator: In
+                            values:
+                              - kipppaterson
+                      topologyKey: kubernetes.io/hostname
           container_config:
             env:
               - name: COUCHDROP_SFTP_PASSWORD
@@ -62,6 +78,36 @@ locations:
                   secretKeyRef:
                     name: op-amplify-sftp-kipppaterson
                     key: username
+              - name: EDPLAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: host
+              - name: EDPLAN_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: password
+              - name: EDPLAN_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: username
+              - name: TITAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-titan-sftp-kipppaterson
+                    key: host
+              - name: TITAN_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-titan-sftp-kipppaterson
+                    key: password
+              - name: TITAN_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-titan-sftp-kipppaterson
+                    key: username
               - name: FINALSITE_CREDENTIAL_ID
                 valueFrom:
                   secretKeyRef:
@@ -72,6 +118,56 @@ locations:
                   secretKeyRef:
                     name: op-finalsite-api-kipppaterson
                     key: password
+              - name: PS_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: username
+              - name: PS_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: password
+              - name: PS_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: server
+              - name: PS_DB_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: port
+              - name: PS_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: database
+              - name: PS_SSH_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: host
+              - name: PS_SSH_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: port
+              - name: PS_SSH_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: username
+              - name: PS_SSH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: password
+              - name: PS_SSH_REMOTE_BIND_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: remote-bind-host
         run_k8s_config:
           container_config:
             env:
@@ -105,6 +201,36 @@ locations:
                   secretKeyRef:
                     name: op-amplify-sftp-kipppaterson
                     key: username
+              - name: EDPLAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: host
+              - name: EDPLAN_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: password
+              - name: EDPLAN_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: username
+              - name: TITAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-titan-sftp-kipppaterson
+                    key: host
+              - name: TITAN_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-titan-sftp-kipppaterson
+                    key: password
+              - name: TITAN_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-titan-sftp-kipppaterson
+                    key: username
               - name: FINALSITE_CREDENTIAL_ID
                 valueFrom:
                   secretKeyRef:
@@ -115,3 +241,53 @@ locations:
                   secretKeyRef:
                     name: op-finalsite-api-kipppaterson
                     key: password
+              - name: PS_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: username
+              - name: PS_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: password
+              - name: PS_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: server
+              - name: PS_DB_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: port
+              - name: PS_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: database
+              - name: PS_SSH_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: host
+              - name: PS_SSH_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: port
+              - name: PS_SSH_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: username
+              - name: PS_SSH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: password
+              - name: PS_SSH_REMOTE_BIND_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: remote-bind-host

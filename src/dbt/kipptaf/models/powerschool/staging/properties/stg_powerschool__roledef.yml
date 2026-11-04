@@ -1,4 +1,0 @@
-models:
-  - name: stg_powerschool__roledef
-    config:
-      materialized: table

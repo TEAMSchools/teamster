@@ -25,4 +25,10 @@ select
     date(
         last_submitted_timestamp, '{{ var("local_timezone") }}'
     ) as last_submitted_date_local,
+    date(last_submitted_timestamp) as last_submitted_date,
+    concat(
+        'https://docs.google.com/forms/d/', form_id, '/edit#response=', response_id
+    ) as response_link,
+
+    lower(regexp_extract(respondent_email, r'^([^@]+)')) as respondent_local_part,
 from responses

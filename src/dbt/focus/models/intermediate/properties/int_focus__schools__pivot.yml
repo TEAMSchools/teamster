@@ -19,3 +19,11 @@ models:
         description: Decoded label for the school_type select field.
       - name: technical_center_label
         description: Decoded label for the technical_center select field.
+      - name: paec_gpa_for_transcript_label
+        description: >-
+          Decoded label for the paec_gpa_for_transcript select field — which GPA
+          to display on the secondary transcript.
+      - name: paec_rank_for_transcript_label
+        description: >-
+          Decoded label for the paec_rank_for_transcript select field — which
+          class rank to display on the secondary transcript.

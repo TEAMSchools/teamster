@@ -1,0 +1,98 @@
+data_tests:
+  - name: stg_finalsite__contacts__no_stale_enrolled
+    description: >-
+      A Finalsite student still marked `enrolled` under a past school year, in a
+      grade below 12th. The student was not rolled into the current year, so
+      Finalsite has no current-year record for them. Enrollment Ops fixes each
+      row in Finalsite. If the student is returning, create the current-year
+      record. If the student left, set a withdrawal status. Seniors are skipped,
+      because Finalsite has no graduated status and leaves graduates at
+      `enrolled` under their final year.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_finalsite__contacts
+            package: finalsite
+
+  - name: stg_finalsite__contact_relationships__single_primary
+    description: >-
+      `primary` is a per-student singleton in Finalsite. The old model surfaced
+      a violation as a duplicate contact_1 failing the uniqueness test; dense
+      ranking absorbs a second primary into contact_2 instead, so the condition
+      is tested at the source where it can be acted on. No student trips this
+      today -- it guards against regression rather than reporting a backlog.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_finalsite__contact_relationships
+            package: finalsite
+
+  - name: stg_finalsite__contact_relationships__caregiver_is_adult
+    description: >-
+      A currently enrolled Finalsite student has a relationship flagged
+      `primary` or `financial` whose related contact is not at
+      `not_in_workflow`, the status Finalsite gives adults. Students who are not
+      enrolled this school year are skipped. The usual cause is a parent whose
+      own contact record sits in a student workflow status such as `inquiry`.
+      The parent-contact models drop that relationship and fill the slot from
+      the next candidate, so the parent silently disappears from SIS contact
+      feeds. Enrollment Ops fixes each row in Finalsite. If the related contact
+      is the parent, set their status to `not_in_workflow`. If it is really a
+      student, remove the `primary` and `financial` flags from the relationship.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_finalsite__contact_relationships
+            package: finalsite
+
+  - name: int_finalsite__student_contacts__enrolled_has_contact_1
+    description: >-
+      A currently enrolled student with no parent slot at all. The model itself
+      stays SIS-agnostic and emits rows for every student record including
+      prospects and applicants, who legitimately have no parent on file yet --
+      so the enrolled scope lives here, in the test, rather than in the model.
+      Every row is a Finalsite data-entry gap: no relationship on the record
+      carries a `primary` or `financial` flag. A parent miskeyed with a student
+      status does not surface here when another eligible candidate exists --
+      dense ranking backfills the slot from the next candidate -- so that case
+      is reported by stg_finalsite__contact_relationships__caregiver_is_adult
+      instead.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__student_contacts
+            package: finalsite
+
+  - name: int_finalsite__enrollment_lifecycle__status_report_not_stale
+    description: >-
+      The model joins two independently-ingested feeds -- contacts from the
+      Finalsite API and the status report from the SFTP drop -- that rebuild in
+      separate concurrent Dagster runs. When they interleave, this table is
+      built from a status report older than the one on disk, so
+      enrollment_start_date or assigned_school comes back null while the live
+      status report already holds a value. The Focus enrollment extract gates on
+      both columns, so each such row is silently dropped from the 13:15 ET
+      delivery, which is a plain cron and reports nothing. That delivery backs a
+      commitment that a student entered in Finalsite by noon is usable in Focus
+      by 2pm, and the failure is invisible to enrollment ops until an import
+      comes up short. A student with no enrolled_date in the feed at all is a
+      legitimate deferral and is not flagged. Warn rather than error: an errored
+      test fails the dbt build and blocks the delivery outright, and a delivery
+      built from a stale read still beats no delivery at all. The failed check
+      sets the asset's health to WARNING, so this test is only as loud as the
+      Dagster+ asset-health alert policy for the consuming district's dbt
+      assets.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__enrollment_lifecycle
+            package: finalsite

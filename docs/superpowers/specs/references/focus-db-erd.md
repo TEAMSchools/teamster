@@ -10,6 +10,13 @@
 > REST API surface, see `focus-api-spec.md`. For warehouse-query gotchas
 > (soft-delete sentinel, `custom_NNN` decode, join pitfalls), see
 > `src/dbt/focus/CLAUDE.md`.
+>
+> The Apex assessment tables (`apex_*`) are not in this ERD. Focus publishes
+> them separately in the
+> [Apex schema reference](https://fe.focusschoolsoftware.com/josh2/docs/apex_schema_reference.html):
+> columns, unique keys, and join targets graded confirmed, likely, or
+> unresolved. It predates the live database, so a few staged columns are missing
+> from it.
 
 ## Conventions
 

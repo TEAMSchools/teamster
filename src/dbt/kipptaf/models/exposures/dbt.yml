@@ -5,7 +5,6 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("snapshot_leadership_development__output")
       - ref("snapshot_people__employee_numbers")
       - ref("snapshot_people__student_logins")
     config:

@@ -62,10 +62,6 @@ Or rebuild the container from scratch: open the command palette and run **Dev
 Containers: Rebuild Container**. Note that a full rebuild re-runs `dbt deps` and
 `dbt parse` for all 15 projects, which takes several minutes.
 
-## dbt Power User
-
-See [Troubleshooting dbt → dbt Power User](dbt.md#dbt-power-user-extension).
-
 ---
 
 **See also:** [Guides](../guides/index.md) · [Troubleshooting dbt](dbt.md) ·

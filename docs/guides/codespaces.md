@@ -4,6 +4,21 @@ The devcontainer is pre-configured for
 [GitHub Codespaces](https://github.com/features/codespaces) — no local setup
 required.
 
+## Accounts you need
+
+Request these before creating your first Codespace. A data team admin grants the
+GitHub and Google group memberships.
+
+| Account                                    | What it's for                                                                | Access                                                                                                                                                  |
+| ------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub, `TEAMSchools` org                  | Repo, Codespaces, pull requests                                              | Org member on your role's team (see [CONTRIBUTING](../CONTRIBUTING.md#code-review)). The 1Password service account token arrives as a Codespace secret. |
+| Google Workspace (`@apps.teamschools.org`) | BigQuery, local dbt, GCP tooling                                             | Member of `teamster-analysts@apps.teamschools.org`; without it the GCloud setup step fails (see [GCloud Authentication](#gcloud-authentication)).       |
+| Claude                                     | Claude Code in the Codespace, the [Cube connector](claude-cube-connector.md) | Claude login; Cube queries also need a `cube-*` Google group.                                                                                           |
+| 1Password                                  | Shared team credentials                                                      | Team account.                                                                                                                                           |
+| dbt Cloud                                  | CI run logs on pull requests                                                 | Read-only.                                                                                                                                              |
+| Dagster+                                   | Runs, assets, branch deployments                                             | Read-only.                                                                                                                                              |
+| Asana                                      | The Teamster project task Zapier creates for each pull request               | Workspace member.                                                                                                                                       |
+
 ## Prerequisites
 
 Set **VS Code Desktop** as your default Codespaces editor:
@@ -32,42 +47,24 @@ rather than the browser editor.
 
 ## After the Codespace opens
 
-!!! warning "Allow Automatic Tasks"
+Do these once, in order. Run each task from ++ctrl+shift+p++ → **Tasks: Run
+Task**.
 
-    The first time the workspace opens, VS Code will ask:
-
-    > *"This folder has tasks that run automatically when you open this folder.
-    > Do you allow automatic tasks to run when you open this folder?"*
-
-    **Click "Allow and Run".** This is required for the automated setup to work.
-    If you dismiss or deny this prompt, the setup task will not run. To fix it,
-    add `"task.allowAutomaticTasks": "on"` to your local VS Code **User
-    Settings** (++ctrl+shift+p++ → **Open User Settings (JSON)**), then reopen
-    the Codespace.
-
-The **Setup: Post-Build Init** VS Code task runs automatically when the
-workspace opens. It walks you through each step in order:
-
-1. **GCloud Application Default Credentials** — opens a browser for Google
-   OAuth. Required for BigQuery, dbt, and all GCP-authenticated tooling.
-2. **Claude Code authentication** — opens a browser for Claude login.
-3. **Claude Code plugin installation** — installs plugins listed in
-   `.claude/settings.json`. Re-runs automatically when the plugin list changes.
-4. **dbt dev dataset reminder** — prints a note about running **dbt: Build
-   Init** for first-time setup.
-
-On subsequent opens (restarts, reconnects), the task re-checks each step and
-skips anything already configured.
+1. **Sign in to Claude Code** in the Claude Code extension panel, and accept the
+   prompt to trust the workspace folder. Trusting the folder lets Claude Code
+   register the plugin marketplaces in `.claude/settings.json`.
+2. Run **GCloud: Application Default Login**. It opens a browser for Google
+   OAuth. Required for BigQuery, dbt, and all GCP-authenticated tooling (see
+   [GCloud Authentication](#gcloud-authentication)).
+3. Run **Claude: Install Plugins**. Claude Code installs most project plugins on
+   its own once the folder is trusted, but not `dagster`, whose source is a
+   separate git repo. After this, `postStart.sh` re-runs the install whenever
+   the plugin list in `.claude/settings.json` changes.
+4. Run **dbt: Build Init** (see [First-time dbt setup](#first-time-dbt-setup)).
 
 **Dismiss VS Code extension prompts** — all required extensions are already
 configured in `devcontainer.json`; dismiss any extension install prompts VS Code
 shows.
-
-**Wait for dbt Power User to finish parsing** — the extension parses all
-projects in the background, which pegs CPU and makes the extension unresponsive
-until complete. Use `htop` to monitor; wait for CPU to settle before using the
-extension. This is also the most common cause of "extension not responding"
-errors.
 
 **Reload the window** once background processes finish (++ctrl+shift+p++ →
 **Developer: Reload Window**) for a clean editor state.
@@ -85,33 +82,32 @@ builds last since it depends on them.
 
 ## Manual tasks
 
-Individual setup steps are also available via ++ctrl+shift+p++ → **Tasks: Run
-Task**:
+Run these from ++ctrl+shift+p++ → **Tasks: Run Task**:
 
 | Task                              | When to use                          |
 | --------------------------------- | ------------------------------------ |
 | GCloud: Application Default Login | Re-authenticate after token expiry   |
-| Claude: Login                     | Re-authenticate Claude Code          |
 | Claude: Install Plugins           | Manually re-install project plugins  |
 | dbt: Build Init                   | Rebuild dev datasets (pick projects) |
 
+Claude Code sign-in is handled by the extension.
+
 ## Subsequent sessions
 
-`postStart.sh` runs automatically on resume (updates uv, syncs dependencies).
-The setup task re-checks auth and plugin state — you only need to
-re-authenticate if credentials have expired.
+`postStart.sh` runs automatically on resume: it updates uv, syncs dependencies,
+and re-installs Claude Code plugins if the plugin list changed. It does not
+refresh credentials; run **GCloud: Application Default Login** if a GCP call
+fails with an auth error.
 
 ## Container Internals
 
 ### Setup Lifecycle
 
 - **`postCreate.sh`** runs once on container creation — installs dependencies,
-  sets up GCP auth, removes `sudo`
-- **`postStart.sh`** runs on every container start — refreshes GCP ADC, Claude
-  auth, VS Code tasks. Keep it idempotent.
-- The "Setup: Post-Build Init" task polls with `pgrep` until
-  `postCreate.sh`/`postStart.sh` finish — VS Code fires `folderOpen` before they
-  complete, so the guard is intentional; do not remove it.
+  removes `sudo`
+- **`postStart.sh`** runs on every container start — updates tools and
+  dependencies, re-installs Claude Code plugins when the list changes. Keep it
+  idempotent.
 
 ### Secret Injection
 
@@ -151,6 +147,32 @@ independent layers:
 To grant a new developer access: add them to
 `teamster-analysts@apps.teamschools.org`.
 
+#### Two independent credential stores
+
+`gcloud auth login` and `gcloud auth application-default login` write to
+different places and expire independently:
+
+| Store                                  | Written by                              | Read by                                                                    |
+| -------------------------------------- | --------------------------------------- | -------------------------------------------------------------------------- |
+| `credentials.db`                       | `gcloud auth login`                     | `gcloud` CLI commands, `bq`                                                |
+| `application_default_credentials.json` | `gcloud auth application-default login` | client libraries, local dbt, the `gke` and `gcp-observability` MCP servers |
+
+A Workspace Cloud-session-length policy expires the **user** store roughly
+daily. ADC is unaffected. The symptom is lopsided: `bq` and bare `gcloud` start
+failing with "Reauthentication failed" while local dbt, the ADC-backed MCP
+servers, and client-library scripts keep working normally.
+
+The **GCloud: Application Default Login** task refreshes ADC only — there is no
+task for the user store, so re-run `gcloud auth login` yourself when you need
+`bq`.
+
+**Prefer ADC when writing tooling.** A script that shells out to `gcloud`
+inherits the daily expiry; one that calls `google.auth.default()` does not.
+`.claude/skills/dagster-day2/scripts/day2_collect.py` is the worked example — it
+authenticates every GCP call with ADC for exactly this reason. Note that ADC
+resolves to the `codespaces@` service account, whose IAM is narrower than your
+own, so a call that worked under your user credential can still 403 under ADC.
+
 ??? note "GCloud quirks"
 
     - To check if ADC is valid, use
@@ -187,16 +209,18 @@ To grant a new developer access: add them to
   (`postStart.sh`) to make `op` fail fast instead of prompting
 - `claude-plugins-official` must be listed in `.claude/settings.json`
   `extraKnownMarketplaces` (pointing to `anthropics/claude-plugins-official`) so
-  `claude-install-plugins.sh` explicitly refreshes it via
-  `marketplace add --scope project` before installs run — omitting it causes
-  "Plugin not found in marketplace" errors for all `*@claude-plugins-official`
-  plugins
+  `claude-install-plugins.sh` registers it via `marketplace add` before installs
+  run — omitting it causes "Plugin not found in marketplace" errors for all
+  `*@claude-plugins-official` plugins
+- `claude-install-plugins.sh` must never pass `--scope project`. That scope
+  rewrites the entries in `.claude/settings.json` and drops fields such as
+  `autoUpdate`. `postStart.sh` re-runs the script whenever those entries change,
+  so the rewrite repeats on every container start. The script uses the user
+  scope for marketplaces and `--scope local` (gitignored
+  `.claude/settings.local.json`) for plugins
 - Check Claude auth with `"${CLAUDE}" auth status | grep -q '"loggedIn": true'`;
   flag-file guards are redundant and produce false "not logged in" errors —
   check auth directly
-- On a fresh rebuild the Claude Code extension may not be installed when
-  `folderOpen` fires; `$CLAUDE` will be empty — poll for the binary rather than
-  silently skipping
 
 ### Container Quirks
 
@@ -215,14 +239,26 @@ To grant a new developer access: add them to
   mount options were not used — they are not supported on all Codespaces hosts.
 - **`--cap-add` stripped**: Codespaces silently strips `--cap-add` from
   `runArgs` — namespace-based sandboxing (bwrap, unshare) will not work.
-- **dbt Power User extension**: activates on
-  `workspaceContains:**/dbt_project.yml` and auto-runs `dbt deps` (controlled by
-  `dbt.installDepsOnProjectInitialization`, default `true`) and `dbt parse` (not
-  configurable) on startup. Risk: extension may activate before `uv sync`
-  installs dbt-core. If `dbt deps` runs in `postCreate.sh`, set
-  `dbt.installDepsOnProjectInitialization` to `false` to avoid duplicate work.
-- **dbt Power User project scanning**: `dbt.allowListFolders` restricts which
-  paths the extension scans for `dbt_project.yml` — uses `startsWith` matching.
-  The extension also has a built-in `notInDBtPackages` filter. Manifest is read
-  from `target/` via Python bridge, not VS Code file watcher, so
-  `files.watcherExclude` on `target/` doesn't break it.
+- **dbt Core Tools extension**: activates on
+  `workspaceContains:**/dbt_project.yml` and parses projects on startup. Risk:
+  extension may activate before `uv sync` installs dbt-core.
+- **uv cache lives outside the repo**: `UV_CACHE_DIR` points at
+  `/workspaces/.uv-cache` so the cache sits on the same filesystem as the venvs,
+  letting `UV_LINK_MODE=hardlink` share package files instead of copying them
+  into every worktree `.venv`. Both settings come from `devcontainer.json`, so a
+  change to either needs a container rebuild. The rebuild discards the old cache
+  at `~/.cache/uv` along with the rest of the home directory, so there is
+  nothing to clean up afterwards. If a host ever puts the cache and
+  `/workspaces` on different filesystems, uv warns and falls back to copying
+  rather than failing.
+- **A rebuild wipes the home directory**: `/home/vscode` sits on the container
+  overlay and only `/workspaces` is on the persistent volume, so a rebuild
+  deletes `~/.claude` — every Claude Code session transcript, the stored
+  credentials, and `~/.claude.json`. Archive them onto the volume first, then
+  restore after the rebuild:
+
+  ```bash
+  tar -czf /workspaces/claude-backup.tar.gz -C /home/vscode .claude .claude.json
+  # rebuild the container, then:
+  tar -xzf /workspaces/claude-backup.tar.gz -C /home/vscode
+  ```

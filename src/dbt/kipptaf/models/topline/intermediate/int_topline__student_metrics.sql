@@ -91,7 +91,7 @@ with
 
             is_mastery_running_int as metric_value,
         from {{ ref("int_topline__formative_assessment_weekly") }}
-        where formative_strategy = 'Miami'
+        where formative_strategy = 'Florida'
 
         union all
 

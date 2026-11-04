@@ -1,31 +1,87 @@
 models:
   - name: int_iready__personalized_instruction_unpivot
+    description: >-
+      One row per student per date range per subject, lesson type, and domain,
+      unioning the NJ and Miami i-Ready Personalized Instruction unpivot models.
+      Standard rows mostly carry classic i-Ready lesson counts and Pro rows
+      i-Ready Pro skill counts, but Standard language_structures comes from the
+      Pro export and Standard comprehension and vocabulary can hold Pro values.
+      Unlike the kipptaf staging model, student_id here is not adjusted for
+      Miami.
     columns:
       - name: _dbt_source_relation
         data_type: string
+        description: >-
+          The district relation this row was unioned from, added by the dbt
+          union.
       - name: student_id
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The vendor's Student ID for the student, as carried from the district
+          model. Unlike the kipptaf staging model, it is not adjusted to the
+          network student number for Miami.
       - name: academic_year_int
         data_type: int64
+        description: >-
+          Integer academic year of the Dagster partition that loaded the source
+          row.
       - name: subject
         data_type: string
+        description: >-
+          The subject of the export the row came from, as reported by the
+          vendor.
       - name: date_range_start
         data_type: date
+        description: First date of the date range this row covers.
       - name: date_range_end
         data_type: date
+        description: Last date of the date range this row covers.
       - name: date_range
         data_type: string
-      - name: school
-        data_type: string
-      - name: student_grade
-        data_type: string
+        description: >-
+          Label for the date range this row covers, either a week or the year to
+          date.
       - name: lesson_type
         data_type: string
+        description: >-
+          Whether the domain comes from the standard (classic) i-Ready product
+          or from i-Ready Pro, assigned from the unpivoted source column set.
+          The comprehension, vocabulary, and language structures domains are
+          labeled Standard.
       - name: domain
         data_type: string
+        description: >-
+          The domain or strand the row measures, taken from the unpivoted source
+          column set (for example geometry or phonics). Classic and Pro high-
+          frequency words both appear as high_frequency_words and are told apart
+          by lesson_type.
       - name: completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          For Standard rows, the number of lessons the student completed in the
+          domain. For Pro rows, the number of skills the student completed in
+          the strand.
       - name: passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          For Standard rows, the number of lessons the student passed in the
+          domain. For Pro rows, the number of skills the student was successful
+          on in the strand.
       - name: percent_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          For Standard rows, the percent of lessons passed in the domain. For
+          Pro rows, the percent of skills successful in the strand. Kept as a
+          whole number.

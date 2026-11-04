@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "cubejs-server"
+    "dev": "cubejs-server",
+    "test": "node --test"
   },
   "dependencies": {
-    "@cubejs-backend/bigquery-driver": "^1.6.44",
-    "@cubejs-backend/server": "^1.6.44",
-    "googleapis": "^171.4.0"
+    "@cubejs-backend/bigquery-driver": "^1.8.15",
+    "@cubejs-backend/server": "^1.8.15",
+    "@google-cloud/bigquery": "^9.5.0",
+    "jsonwebtoken": "^9.0.3"
   }
 }

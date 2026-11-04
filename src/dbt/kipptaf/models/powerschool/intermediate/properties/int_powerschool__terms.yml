@@ -1,4 +1,0 @@
-models:
-  - name: int_powerschool__terms
-    config:
-      materialized: table

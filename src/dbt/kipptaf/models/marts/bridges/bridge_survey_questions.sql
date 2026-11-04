@@ -27,16 +27,11 @@ with
     ),
 
     manager_pairs as (
-        -- Sources directly from the historic Manager Survey Alchemer
-        -- archive. Original Alchemer survey_ids were not preserved, so
-        -- the synthetic 'historic_alchemer_Manager_survey' survey_id ties
-        -- archive responses to the dim_surveys archive_manager row.
+        -- grain projection, not dup-masking: one row per archive question
         select distinct
-            'historic_alchemer_Manager_survey' as survey_id,
-            question_shortname,
-            cast(null as bool) as is_required,
-        from {{ source("surveys", "stg_surveys__manager_survey_detail_archive") }}
-        where question_shortname is not null
+            survey_id, question_shortname, cast(null as bool) as is_required,
+        from {{ ref("int_surveys__manager_survey_details") }}
+        where survey_id = 'historic_alchemer_Manager_survey'
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate

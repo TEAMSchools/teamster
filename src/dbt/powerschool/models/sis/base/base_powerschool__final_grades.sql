@@ -19,6 +19,10 @@ with
             enr.courses_gradescaleid_unweighted,
             enr.teacher_lastfirst,
             enr.school_name,
+            enr.students_dcid,
+            enr.students_student_number,
+            enr.school_abbreviation,
+            enr.school_level,
             enr.is_dropped_section,
 
             tb.storecode,
@@ -48,6 +52,9 @@ with
             on enr.cc_schoolid = tb.schoolid
             and enr.cc_abs_termid = tb.termid
             and tb.storecode_type in ('Q', 'E')
+            -- cc_dateleft is the first day not enrolled: no row for a term
+            -- that starts after the student left the section
+            and enr.cc_dateleft > tb.date1
         where
             enr.cc_academic_year = {{ var("current_academic_year") }}
             and not enr.is_dropped_section
@@ -255,6 +262,10 @@ select
     y1.courses_credittype as credittype,
     y1.teacher_lastfirst,
     y1.school_name,
+    y1.students_dcid,
+    y1.students_student_number,
+    y1.school_abbreviation,
+    y1.school_level,
     y1.is_dropped_section,
     y1.storecode,
     y1.term_percent_grade,

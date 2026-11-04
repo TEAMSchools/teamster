@@ -1,53 +1,126 @@
 models:
   - name: rpt_appsheet__seat_tracker_roster
+    description: >
+      Seat tracker roster for the AppSheet app — one row per active or pre-start
+      staff member, joined to ITR (intent to return) responses and performance
+      management tier, plus five fixed sentinel rows (`employee_number`
+      999995-999999) for a seat with no active teammate — an open seat, a new
+      hire not yet started, a closed position, a scoot sub, or a name only
+      captured in notes — so the app still has a row to attach seat-tracking
+      actions to when no real employee occupies the seat.
     columns:
       - name: employee_number
         data_type: int64
+        description:
+          Staff member's employee number, or a sentinel number (999995-999999)
+          for a seat with no active teammate.
+        data_tests:
+          # TODO(#6261): flip to error once pm_tier keeps one tier per person
+          - unique:
+              config:
+                severity: warn
       - name: assignment_status
         data_type: string
+        description:
+          Roster assignment status (e.g. Active, Pre-Start); the sentinel rows
+          carry a fixed value.
       - name: preferred_name_lastfirst
         data_type: string
+        description:
+          Staff member's preferred name, last name first, or the sentinel row's
+          label.
       - name: home_work_location_name
         data_type: string
+        description:
+          Home work location on the staff member's primary assignment.
       - name: home_work_location_grade_band
         data_type: string
+        description: Grade band of the home work location.
       - name: job_title
         data_type: string
+        description: Job title on the primary assignment.
       - name: mail
         data_type: string
+        description: Work email address.
       - name: google_email
         data_type: string
+        description: Google Workspace email address, used for AppSheet sign-in.
       - name: report_to_mail
         data_type: string
+        description: Work email address of the staff member's manager.
       - name: report_to_google_email
         data_type: string
+        description:
+          Google Workspace email address of the staff member's manager.
       - name: worker_original_hire_date
         data_type: date
+        description: Original hire date from the roster.
       - name: business_unit_home_name
         data_type: string
+        description: Legal entity the staff member is employed by.
       - name: worker_termination_date
         data_type: date
+        description: Termination date, when one is recorded.
       - name: tableau_username
         data_type: string
+        description:
+          Staff member's sAMAccountName, used as the Tableau username.
       - name: tableau_manager_username
         data_type: string
+        description: Manager's sAMAccountName, used as the Tableau username.
       - name: itr_response
         data_type: string
+        description:
+          Short label for the staff member's Intent to Return answer this
+          academic year (Returning, Interested in Transfer, Not Returning, Not
+          Sure). Null when they have not answered.
       - name: certification_renewal_status
         data_type: int64
+        description: Placeholder for a future certification feed; always null.
       - name: last_performance_management_score
         data_type: int64
+        description:
+          Performance management tier from the staff member's PMS observations.
       - name: smart_recruiter_id
         data_type: int64
+        description: Placeholder for a future SmartRecruiters feed; always null.
       - name: grade_department
         data_type: string
+        description:
+          Primary grade level taught for teachers, otherwise the home
+          department.
       - name: location_entity
         data_type: string
+        description:
+          Region of the home location, falling back to the legal entity.
       - name: location_shortname
         data_type: string
+        description:
+          Abbreviation of the home location, falling back to its full name.
       - name: campus
         data_type: string
+        description:
+          Campus of the home location, falling back to the location name.
       - name: region_state
         data_type: string
+        description:
+          New Jersey, Miami or CMO, from the legal entity and a few role
+          exceptions.
       - name: permission_level
         data_type: int64
+        description: >
+          App access tier derived from `job_title` and `home_department_name`,
+          from broadest to narrowest. 7 sees and edits everything — the Data
+          department, or a Talent Acquisition Director. 6 sees and edits
+          everything within their own state or region — an Operations Director
+          at a room-code location (no lower tiers are assigned within that
+          scope). 5 sees everything and edits only teammate and seat-status
+          fields — Talent Acquisition recruiters and managers. 4 sees their own
+          school and edits teammate fields (name, gutcheck, nonrenewal) — school
+          leader and school-operations-director titles. 3 sees everything and
+          edits nothing — Chiefs, Special Education directors, or the Leadership
+          Development, Human Resources, or Finance and Purchasing departments. 2
+          sees their own state or region and edits nothing — Operations or
+          School Support managing directors, School Support directors at a
+          room-code location, or a Head of Schools title. 1 is the fallback and
+          sees nothing.

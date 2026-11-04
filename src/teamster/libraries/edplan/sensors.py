@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from dagster import (
@@ -8,6 +8,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     define_asset_job,
     sensor,
 )
@@ -37,13 +38,10 @@ def build_edplan_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        with (
-            ssh_edplan.get_connection() as connection,
-            connection.open_sftp() as sftp_client,
-        ):
-            files = ssh_edplan.listdir_attr_r(
-                sftp_client=sftp_client, remote_dir="Reports"
-            )
+        files = ssh_edplan.listdir_attr_r_or_skip(remote_dir="Reports")
+
+        if isinstance(files, SkipReason):
+            return files
 
         asset_identifier = asset.key.to_python_identifier()
         context.log.info(asset_identifier)
@@ -62,9 +60,12 @@ def build_edplan_sftp_sensor(
                 and check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
+                # Daily partitions are in execution_timezone; a UTC date runs a
+                # day ahead in the evening and names a partition not yet created.
                 partition_key = (
                     datetime.fromtimestamp(
-                        timestamp=check.not_none(value=f.st_mtime), tz=timezone.utc
+                        timestamp=check.not_none(value=f.st_mtime),
+                        tz=execution_timezone,
                     )
                     .date()
                     .isoformat()

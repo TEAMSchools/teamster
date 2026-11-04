@@ -1,7 +1,8 @@
 with
-    behaviors as (
+    behaviors_typed as (
         select
             b._dbt_source_relation,
+            b._dbt_source_project,
             b.dl_said,
             b.school_name,
             b.student_school_id,
@@ -10,82 +11,92 @@ with
             b.point_value,
             b.staff_full_name as entry_staff,
 
-            w.academic_year,
-            w.quarter as term,
-            w.week_start_monday,
-            w.week_end_sunday,
-            w.date_count as days_in_session,
-
+            /* Miami and NJ category names are disjoint, so no region guard is
+               needed. The `category_type is not null` filter below is what
+               makes this CASE the only category list. */
             case
-                when
-                    b._dbt_source_relation like '%kippmiami%'
-                    and b.behavior_category != 'Earned Incentives'
-                then regexp_extract(b.behavior_category, r'([\w\s]+) \(')
-                when b.behavior like '%(%)'
-                then regexp_extract(b.behavior, r'([\w\s]+) \(')
-                else b.behavior
-            end as behavior,
-
-            case
-                -- when b.behavior_category = 'Earned Incentives'
-                -- then 'Incentives'
-                /* Miami */
-                when
-                    b._dbt_source_relation like '%kippmiami%'
-                    and b.behavior_category in ('Written Reminders', 'Big Reminders')
+                when b.behavior_category in ('Written Reminders', 'Big Reminders')
                 then 'Corrective'
                 when
-                    b._dbt_source_relation like '%kippmiami%'
-                    and b.behavior_category in (
+                    b.behavior_category in (
+                        'Accountability (Empowerment)',
+                        'Accountability (Purpose, Courage)',
                         'Be Kind (Love)',
                         'Be Kind (Revolutionary Love)',
                         'Effort (Perseverance)',
                         'Effort (Pride)',
-                        'Accountability (Purpose, Courage)',
-                        'Accountability (Empowerment)',
                         'Teamwork (Community)'
                     )
                 then 'BEAT'
-                /* all other regions */
                 when
-                    b._dbt_source_relation not like '%kippmiami%'
-                    and b.behavior_category = 'Corrective Behaviors'
+                    b.behavior_category
+                    in ('Corrective Behaviors', 'Tier 1 - Corrective Behaviors')
                 then 'Corrective'
+                when b.behavior_category = 'Tier 1 - Habits of Excellence Corrections'
+                then 'Habits of Excellence'
                 when
-                    b._dbt_source_relation not like '%kippmiami%'
-                    and b.behavior_category = 'Values'
+                    b.behavior_category
+                    in ('Values', 'Values (5)', 'Values (10 Point Bonus)')
                 then 'BEAT'
             end as category_type,
+
+            case
+                when b._dbt_source_relation like '%kippmiami%'
+                then regexp_extract(b.behavior_category, r'([\w\s]+) \(')
+                when b.behavior like '%(%)'
+                then regexp_extract(b.behavior, r'([\w\s]+) \(')
+                else b.behavior
+            end as behavior_extracted,
         from {{ ref("stg_deanslist__behavior") }} as b
+        where b.behavior_date >= '{{ var("current_academic_year") - 1 }}-07-01'
+    ),
+
+    behaviors as (
+        select
+            bt._dbt_source_relation,
+            bt._dbt_source_project,
+            bt.dl_said,
+            bt.school_name,
+            bt.student_school_id,
+            bt.behavior_date,
+            bt.behavior_category,
+            bt.point_value,
+            bt.entry_staff,
+            bt.category_type,
+
+            w.academic_year,
+            w.term,
+            w.week_start_monday,
+            w.week_end_sunday,
+            w.date_count as days_in_session,
+
+            /* `Values` logs TEAMwork while `Values (5)` and `Values (10 Point
+               Bonus)` log Teamwork, so without this the same value splits into
+               two members inside one year. The workbook's colour map and manual
+               sort only know 'Teamwork'. Normalizing the EXTRACTED value rather
+               than the raw one also catches any future parenthesized form,
+               which an equality test placed ahead of the regex would miss. */
+            case
+                when bt.behavior_extracted = 'TEAMwork'
+                then 'Teamwork'
+                else bt.behavior_extracted
+            end as behavior,
+        from behaviors_typed as bt
         inner join
             {{ ref("int_people__location_crosswalk") }} as lc
-            on b.school_name = lc.location_name
+            on bt.school_name = lc.location_name
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as w
-            on b.behavior_date between w.week_start_monday and w.week_end_sunday
-            and {{ union_dataset_join_clause(left_alias="w", right_alias="b") }}
+            {{ ref("int_students__calendar_week") }} as w
+            on bt.behavior_date between w.week_start_monday and w.week_end_sunday
+            and w._dbt_source_project = bt._dbt_source_project
             and lc.location_powerschool_school_id = w.schoolid
-        where
-            b.behavior_category in (
-                'Accountability (Empowerment)',
-                'Accountability (Purpose, Courage)',
-                'Be Kind (Love)',
-                'Be Kind (Revolutionary Love)',
-                'Big Reminders',
-                'Corrective Behaviors',
-                -- 'Earned Incentives',
-                'Effort (Perseverance)',
-                'Effort (Pride)',
-                'Teamwork (Community)',
-                'Values',
-                'Written Reminders'
-            )
-            and b.behavior_date >= '{{ var("current_academic_year") - 1 }}-07-01'
+        where bt.category_type is not null
     ),
 
     behavior_aggregation as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             student_school_id,
             behavior,
             behavior_category,
@@ -102,6 +113,7 @@ with
         from behaviors
         group by
             _dbt_source_relation,
+            _dbt_source_project,
             student_school_id,
             behavior,
             behavior_category,
@@ -112,6 +124,58 @@ with
             week_end_sunday,
             days_in_session,
             entry_staff
+    ),
+
+    incentives as (
+        select
+            student_school_id,
+            dl_school_id,
+            academic_year,
+            behavior,
+            behavior_date,
+
+            date_add(
+                date_trunc(behavior_date, week(sunday)), interval 1 day
+            ) as week_start_monday,
+        from {{ ref("stg_deanslist__behavior") }}
+        where
+            behavior
+            in ('Progress to Quarterly Incentive', 'Earned Quarterly Incentive')
+            and academic_year >= {{ var("current_academic_year") - 1 }}
+    ),
+
+    progress_weeks as (
+        -- grain projection, not dup-masking
+        select distinct
+            student_school_id, dl_school_id, academic_year, week_start_monday,
+        from incentives
+        where behavior = 'Progress to Quarterly Incentive'
+    ),
+
+    school_crosswalk as (
+        -- grain projection, not dup-masking: 1 row per DeansList school
+        select distinct
+            location_deanslist_school_id as deanslist_school_id,
+            location_powerschool_school_id as powerschool_school_id,
+        from {{ ref("int_people__location_crosswalk") }}
+        where
+            location_deanslist_school_id is not null
+            and location_powerschool_school_id is not null
+    ),
+
+    quarterly_awards as (
+        -- grain projection, not dup-masking
+        select distinct
+            i.student_school_id, i.dl_school_id, i.academic_year, t.term_name as term,
+        from incentives as i
+        inner join school_crosswalk as sc on i.dl_school_id = sc.deanslist_school_id
+        inner join
+            {{ ref("dim_terms") }} as t
+            on sc.powerschool_school_id = t.school_id
+            and i.academic_year = t.academic_year
+            and i.behavior_date between t.start_date and t.end_date
+            and t.type = 'RT'
+        where i.behavior = 'Earned Quarterly Incentive'
     )
 
 select
@@ -136,20 +200,23 @@ select
     co.ml_status,
     co.status_504,
     co.self_contained_status,
-    co.quarter as term,
+    co.homeless_status,
+    co.homeless_primary_nighttime_residence,
+    co.term,
     co.week_start_monday,
     co.week_end_sunday,
     co.date_count as days_in_session,
 
+    b.behavior_category,
     b.category_type,
     b.behavior,
     b.entry_staff,
     b.total_points,
     b.behavior_count,
 
-    if(bi.behavior is not null, 1, 0) as is_earned_progress_to_quarterly,
+    if(pw.student_school_id is not null, 1, 0) as is_earned_progress_to_quarterly,
 
-    if(bq.behavior is not null, 1, 0) as is_earned_quarterly_incentive,
+    if(qa.student_school_id is not null, 1, 0) as is_earned_quarterly_incentive,
 
     extract(month from co.week_start_monday) as behavior_month,
 
@@ -166,19 +233,17 @@ left join
     on co.student_number = b.student_school_id
     and co.academic_year = b.academic_year
     and co.week_start_monday = b.week_start_monday
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+    and co._dbt_source_project = b._dbt_source_project
 left join
-    {{ ref("int_deanslist__behavior_incentive_by_term") }} as bi
-    on co.student_number = bi.student_school_id
-    and co.deanslist_school_id = bi.school_id
-    and co.academic_year = bi.academic_year
-    and bi.end_date between co.week_start_monday and co.week_end_sunday
-    and bi.incentive_type = 'Weeks (Progress to Quarterly Incentive)'
+    progress_weeks as pw
+    on co.student_number = pw.student_school_id
+    and co.deanslist_school_id = pw.dl_school_id
+    and co.academic_year = pw.academic_year
+    and co.week_start_monday = pw.week_start_monday
 left join
-    {{ ref("int_deanslist__behavior_incentive_by_term") }} as bq
-    on co.student_number = bq.student_school_id
-    and co.deanslist_school_id = bq.school_id
-    and co.academic_year = bq.academic_year
-    and co.quarter = bq.term_name
-    and bq.incentive_type = 'Quarters'
+    quarterly_awards as qa
+    on co.student_number = qa.student_school_id
+    and co.deanslist_school_id = qa.dl_school_id
+    and co.academic_year = qa.academic_year
+    and co.term = qa.term
 where co.is_enrolled_week and co.academic_year >= {{ var("current_academic_year") - 1 }}

@@ -12,7 +12,7 @@ with
                         "int_powerschool__teacher_grade_levels",
                     ),
                     source(
-                        "kippmiami_powerschool",
+                        "kipppaterson_powerschool",
                         "int_powerschool__teacher_grade_levels",
                     ),
                 ]
@@ -20,5 +20,5 @@ with
         }}
     )
 
-select *, {{ extract_code_location("union_relations") }} as _dbt_source_project,
+select *, {{ extract_source_project("union_relations") }} as _dbt_source_project,
 from union_relations

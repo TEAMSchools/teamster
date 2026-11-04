@@ -1,41 +1,132 @@
 models:
   - name: rpt_tableau__attendance_interventions
+    description: >-
+      Chronic absence intervention tracker for the attendance interventions
+      Tableau dashboard, one row per student and intervention tier the student
+      has reached in the current academic year.
+
+      Each student appears once, at their latest enrollment of the year (rn_year
+      1), so a student who changes schools shows only at the current school. The
+      absence count is the year total across every school the student attended,
+      and a qualifying DeansList call log from any school satisfies a tier.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - commlog_reason
     columns:
       - name: student_number
         data_type: int64
+        description: Student Number assigned by the school.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
+        description: Grade level of the student's current enrollment.
       - name: region
         data_type: string
+        description: Region of the student's current enrollment.
       - name: school
         data_type: string
+        description: School abbreviation of the student's current enrollment.
       - name: commlog_reason
         data_type: string
+        description: >-
+          Intervention tier, named for the DeansList call log reason that
+          satisfies it (for example `Chronic Absence: 8`). Miami and the New
+          Jersey regions use different tier ladders.
       - name: absence_threshold
         data_type: int64
+        description:
+          Number of absences that triggers the tier, parsed from commlog_reason.
+          Miami's top tier, 15+, parses to 15.
       - name: days_absent_unexcused
         data_type: float64
+        description:
+          Absences so far this academic year, summed across every school the
+          student attended. New Jersey counts unexcused absences only. Miami
+          counts all absences, because Focus does not split excused from
+          unexcused at this grain.
+        config:
+          meta:
+            contains_pii: true
       - name: commlog_staff_name
         data_type: string
+        description: Staff member who logged the qualifying call.
+        config:
+          meta:
+            contains_pii: true
       - name: commlog_notes
         data_type: string
+        description: Free-text response recorded on the qualifying call log.
+        config:
+          meta:
+            contains_pii: true
       - name: commlog_topic
         data_type: string
+        description: Free-text topic recorded on the qualifying call log.
+        config:
+          meta:
+            contains_pii: true
       - name: commlog_date
         data_type: date
+        description: Date of the qualifying call.
+        config:
+          meta:
+            contains_pii: true
       - name: commlog_status
         data_type: string
+        description: Call status of the qualifying call log.
+        config:
+          meta:
+            contains_pii: true
       - name: commlog_type
         data_type: string
+        description: Call type of the qualifying call log.
+        config:
+          meta:
+            contains_pii: true
       - name: intervention_status
         data_type: string
+        description:
+          Complete when the student has the latest call log for this tier with a
+          Completed status or an in-person (IP) type, otherwise Missing.
+        config:
+          meta:
+            contains_pii: true
       - name: intervention_status_required_int
         data_type: int64
+        description: 1 when intervention_status is Complete, otherwise 0.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
+        description: Student's name as recorded in the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: team
         data_type: string
+        description: The student's advisory or homeroom.
+        config:
+          meta:
+            contains_pii: true
       - name: is_chronic_absence
         data_type: boolean
+        description:
+          Whether the student's ADA for the year (weighted for high school where
+          applicable) is 90 percent or below.
+        config:
+          meta:
+            contains_pii: true
       - name: is_ca_exception
         data_type: boolean
+        description:
+          Whether the student is enrolled today in the Attendance Exceptions
+          special program.
+        config:
+          meta:
+            contains_pii: true

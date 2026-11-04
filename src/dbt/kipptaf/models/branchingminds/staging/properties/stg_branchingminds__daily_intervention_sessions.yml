@@ -1,0 +1,95 @@
+models:
+  - name: stg_branchingminds__daily_intervention_sessions
+    description:
+      One row per scheduled Branching Minds intervention session. The export
+      holds a rolling multi-year window, so a record can appear in more than one
+      fiscal-year partition; the newest partition wins. BrM's student
+      demographics are dropped; join to our student models on student_number
+      instead.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: intervention_session_id
+        data_type: int64
+        description: BrM intervention session ID.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_number
+        data_type: int64
+        description: Student number from BrM's local student ID.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_powerschool__students")
+                field: student_number
+              config:
+                severity: warn
+                description:
+                  A BrM student whose local ID matches no PowerSchool
+                  student_number. Fix the student's local ID in Branching Minds.
+      - name: school_year
+        data_type: int64
+        description: School year the record belongs to, as its ending year.
+        data_tests:
+          - branchingminds_school_year_matches_partition:
+              config:
+                severity: warn
+                description:
+                  A partition holds a later school year than its fiscal year, so
+                  BrM rolled to the new year before July 1 and the frozen June
+                  snapshot is incomplete.
+      - name: intervention_name
+        data_type: string
+        description: Name of the intervention or support.
+      - name: intervention_subject_area
+        data_type: string
+        description: Subject area the intervention targets.
+      - name: session_missed_reason
+        data_type: string
+        description: Why the session was missed, blank when delivered.
+      - name: intervention_location
+        data_type: string
+        description: Where the session took place.
+      - name: intervention_group_size
+        data_type: string
+        description: Group size category.
+      - name: staff_delivering_intervention
+        data_type: string
+        description: Name of the staff member delivering the intervention.
+      - name: staff_email
+        data_type: string
+        description: Email of the staff member delivering the intervention.
+      - name: district
+        data_type: string
+        description: BrM district code.
+      - name: source_fiscal_year
+        data_type: int64
+        description:
+          Fiscal year (ending year) of the export partition this row came from.
+      - name: intervention_plan_id
+        data_type: int64
+        description: BrM intervention plan ID.
+      - name: school_id
+        data_type: int64
+        description: BrM school ID.
+      - name: delivered_minutes_in_session
+        data_type: int64
+        description: Minutes delivered in the session.
+      - name: planned_minutes_per_session
+        data_type: int64
+        description: Planned minutes per session.
+      - name: planned_sessions_per_week
+        data_type: int64
+        description: Planned sessions per week.
+      - name: session_week
+        data_type: date
+        description: Start date of the session's week.
+      - name: session_date
+        data_type: date
+        description: Session date.

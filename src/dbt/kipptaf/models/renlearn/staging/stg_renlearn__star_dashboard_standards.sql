@@ -1,7 +1,0 @@
-{{
-    dbt_utils.union_relations(
-        relations=[
-            source("kippmiami_renlearn", "stg_renlearn__star_dashboard_standards"),
-        ]
-    )
-}}

@@ -55,4 +55,26 @@ select
     end as dagster_code_location,
 
     case business_unit_code when 'KIPP_MIAMI' then 'FL' else 'NJ' end as state,
+
+    -- NJDOE codes. Miami's Florida numbers are not needed yet; TAF is not a
+    -- school district.
+    case
+        business_unit_code
+        when 'TEAM'
+        then '7325'
+        when 'KCNA'
+        then '1799'
+        when 'KPAT'
+        then '7899'
+    end as state_district_id,
+
+    case
+        business_unit_code
+        when 'TEAM'
+        then '965'
+        when 'KCNA'
+        then '111'
+        when 'KPAT'
+        then '925'
+    end as state_school_id,
 from bu_xref

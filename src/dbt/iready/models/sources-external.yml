@@ -53,6 +53,7 @@ sources:
             enable_logical_types: true
       - name: src_iready__instructional_usage_data
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:

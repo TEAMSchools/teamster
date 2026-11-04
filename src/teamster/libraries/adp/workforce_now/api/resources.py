@@ -3,7 +3,7 @@ import time
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Response
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError as RequestsConnectionError
@@ -22,8 +22,8 @@ class AdpWorkforceNowError(Exception):
 
 
 class AdpWorkforceNowResource(ConfigurableResource):
-    client_id: str
-    client_secret: str
+    client_id: str = Field(repr=False)
+    client_secret: str = Field(repr=False)
     cert_filepath: str
     key_filepath: str
     masked: bool = True
@@ -90,22 +90,8 @@ class AdpWorkforceNowResource(ConfigurableResource):
             # a 504 HTML page) are not JSON, and JSONDecodeError is not in the
             # retry predicate, so parsing here would convert a retryable error
             # into a non-retryable one.
-            #
-            # ADP's gateway also returns a transient "default backend - 404" when
-            # it briefly has no healthy backend (a load-balancer signature, seen
-            # mid-pagination). That is distinct from a genuine resource 404 —
-            # treat only the gateway variant as retryable so a real 404 still
-            # fails fast.
-            body = response.text
-            is_transient_gateway_404 = (
-                response.status_code == 404 and "default backend" in body.lower()
-            )
-            if (
-                response.status_code == 429
-                or response.status_code >= 500
-                or is_transient_gateway_404
-            ):
-                self._log.warning(msg=body)
+            if response.status_code == 429 or response.status_code >= 500:
+                self._log.warning(msg=response.text)
                 raise
 
             # other 4xx are deterministic client errors — surface a specific
@@ -113,8 +99,20 @@ class AdpWorkforceNowResource(ConfigurableResource):
             # parse: a 4xx body may also be non-JSON.
             try:
                 detail = response.json()
+                is_json_body = True
             except JSONDecodeError:
                 detail = response.text
+                is_json_body = False
+
+            # ADP's API layer always answers with JSON, so a non-JSON 404 did not
+            # come from it: that is the edge gateway briefly without a healthy
+            # backend, seen mid-pagination as "default backend - 404" and as a
+            # plain openresty 404 page. Transient — re-raise the HTTPError so
+            # tenacity retries. A genuine resource 404 carries a JSON body and
+            # still fails fast.
+            if not is_json_body and response.status_code == 404:
+                self._log.warning(msg=detail)
+                raise
 
             self._log.error(msg=detail)
             raise AdpWorkforceNowError(detail) from e
@@ -136,6 +134,34 @@ class AdpWorkforceNowResource(ConfigurableResource):
             method="GET", url=f"{self._service_root}/{endpoint}", params=params
         )
 
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=10, max=60),
+        retry=retry_if_exception_type(JSONDecodeError),
+    )
+    def _get_page(self, endpoint: str, params: dict) -> dict | None:
+        """Fetch and parse one page, or return None past the last page.
+
+        ADP occasionally answers 200 with a body cut off mid-stream. The parse
+        lives here, not in ``_request``, so the refetch covers it.
+        """
+        response = self.get(endpoint=endpoint, params=params)
+
+        if response.status_code == 204:
+            return None
+
+        try:
+            return response.json()
+        except JSONDecodeError:
+            # never log the body: worker records are PII
+            self._log.warning(
+                msg=(
+                    f"Unparseable page at $skip={params.get('$skip')} "
+                    f"({len(response.content)} bytes); refetching"
+                )
+            )
+            raise
+
     def get_records(self, endpoint: str, params: dict | None = None) -> list[dict]:
         page_size = 100
         all_records = []
@@ -149,14 +175,12 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
         while True:
             self._log.debug(msg=params)
-            response = self.get(endpoint=endpoint, params=params)
+            page = self._get_page(endpoint=endpoint, params=params)
 
-            if response.status_code == 204:
+            if page is None:
                 break
 
-            response_json = response.json()[endpoint_name]
-
-            all_records.extend(response_json)
+            all_records.extend(page[endpoint_name])
             params.update({"$skip": params["$skip"] + page_size})
 
         return all_records

@@ -4,55 +4,75 @@ from dagster import (
     Definitions,
     load_assets_from_modules,
 )
-from dagster_k8s import k8s_job_executor
+from dagster_dlt import DagsterDltResource
 
 from teamster.code_locations.kipppaterson import (
     CODE_LOCATION,
     DBT_PROJECT,
     amplify,
+    cambium,
     couchdrop,
     dbt,
     deanslist,
+    edplan,
     extracts,
     finalsite,
+    freshness,
     pearson,
     powerschool,
+    titan,
 )
 from teamster.code_locations.kipppaterson.resources import FINALSITE_RESOURCE
+from teamster.core.executors import zombie_aware_k8s_job_executor
+from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DEANSLIST_RESOURCE,
     GCS_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
     SSH_COUCHDROP,
+    SSH_EDPLAN,
     SSH_RESOURCE_AMPLIFY,
+    SSH_TITAN,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
+    get_powerschool_oracle_resource,
+    get_powerschool_ssh_resource,
 )
 
 defs = Definitions(
-    executor=k8s_job_executor,
-    assets=load_assets_from_modules(
-        modules=[
-            dbt,
-            amplify,
-            deanslist,
-            extracts,
-            finalsite,
-            pearson,
-            powerschool,
-        ]
+    executor=zombie_aware_k8s_job_executor,
+    assets=apply_freshness_policies(
+        load_assets_from_modules(
+            modules=[
+                dbt,
+                amplify,
+                cambium,
+                deanslist,
+                edplan,
+                extracts,
+                finalsite,
+                pearson,
+                powerschool,
+                titan,
+            ]
+        ),
+        policies=freshness.policies,
     ),
     schedules=[
         *deanslist.schedules,
         *extracts.schedules,
         *finalsite.schedules,
+        *powerschool.schedules,
     ],
     sensors=[
         *amplify.sensors,
         *couchdrop.sensors,
+        *edplan.sensors,
+        *powerschool.sensors,
+        *titan.sensors,
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),
@@ -60,8 +80,10 @@ defs = Definitions(
     ],
     resources={
         "db_bigquery": BIGQUERY_RESOURCE,
+        "db_powerschool": get_powerschool_oracle_resource(),
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
+        "dlt": DagsterDltResource(),
         "finalsite": FINALSITE_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,
@@ -70,5 +92,8 @@ defs = Definitions(
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "ssh_amplify": SSH_RESOURCE_AMPLIFY,
         "ssh_couchdrop": SSH_COUCHDROP,
+        "ssh_edplan": SSH_EDPLAN,
+        "ssh_powerschool": get_powerschool_ssh_resource(),
+        "ssh_titan": SSH_TITAN,
     },
 )

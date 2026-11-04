@@ -4,10 +4,15 @@ models:
       Union of FLDOE state assessment results (EOC, FAST, Science, FSA) for KIPP
       Miami, with assessment-grade and performance-level coalesced to single
       canonical fields and assessment_name derived from the source relation.
-      Resolves student_number by joining stg_powerschool__u_studentsuserfields
-      on fleid. Adds standardized metadata columns (results_type,
-      district_state, illuminate_subject, fast_aggregated_proficiency) for use
-      in network-level reporting.
+      Resolves student_number by joining int_focus__students on
+      florida_education_identifier. When a FLEID sits on more than one Focus
+      record, picks the record enrolled in the score's academic_year
+      (int_focus__student_enrollment.syear), else the lowest student_number.
+      Adds standardized metadata columns (results_type, district_state,
+      fast_aggregated_proficiency) for use in network-level reporting.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -74,9 +79,13 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          PowerSchool student_number resolved by joining student_id (FLEID) to
-          stg_powerschool__u_studentsuserfields.fleid. Null for the small number
-          of FLDOE students with no matching PowerSchool record.
+          Network student_number (the 8400-prefixed Focus student_id) resolved
+          by joining student_id (FLEID) to
+          int_focus__students.florida_education_identifier. Where a FLEID sits
+          on more than one Focus record, the record with a Focus enrollment in
+          the score's academic_year wins; when neither or both are enrolled that
+          year, the lowest student_number wins. Null for FLDOE students with no
+          Focus record.
       - name: results_type
         data_type: string
         description: Always 'Actual' for FLDOE results (no preliminary scores).
@@ -99,12 +108,6 @@ models:
       - name: assessment_name
         data_type: string
         description: Full assessment name (e.g. FAST, FSA, EOC).
-      - name: illuminate_subject
-        data_type: string
-        description: >
-          Standardized subject label for Illuminate/reporting — ELA subjects map
-          to 'Text Study'; Algebra I, Algebra II, and Geometry map to
-          'Mathematics'; all others pass through unchanged.
       - name: fast_aggregated_proficiency
         data_type: string
         description: >

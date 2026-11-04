@@ -1,0 +1,85 @@
+models:
+  - name: int_iready__diagnostic_results
+    description: >-
+      stg_iready__diagnostic_results with each most-recent-Diagnostic value
+      spread onto every row for the student, subject, and academic year, and the
+      student's Diagnostics ranked newest first within that year.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year_int
+              - student_id
+              - subject
+              - completion_date
+              - start_date
+              - overall_scale_score
+              - duration_min
+    columns:
+      - name: most_recent_completion_date
+        data_type: date
+        description: >-
+          completion_date of the student's most recent Diagnostic year to date,
+          on every row for that student, subject, and academic year.
+      - name: most_recent_diagnostic_gain
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          diagnostic_gain of the student's most recent Diagnostic year to date,
+          on every row for that student, subject, and academic year.
+      - name: most_recent_lexile_measure
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          lexile_measure of the student's most recent Diagnostic year to date,
+          on every row for that student, subject, and academic year.
+      - name: most_recent_lexile_range
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          lexile_range of the student's most recent Diagnostic year to date, on
+          every row for that student, subject, and academic year.
+      - name: most_recent_overall_placement
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          overall_placement of the student's most recent Diagnostic year to
+          date, on every row for that student, subject, and academic year.
+      - name: most_recent_overall_relative_placement
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          overall_relative_placement of the student's most recent Diagnostic
+          year to date, on every row for that student, subject, and academic
+          year.
+      - name: most_recent_overall_scale_score
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          overall_scale_score of the student's most recent Diagnostic year to
+          date, on every row for that student, subject, and academic year.
+      - name: most_recent_rush_flag
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          rush_flag of the student's most recent Diagnostic year to date, on
+          every row for that student, subject, and academic year.
+      - name: rn_subj_year
+        data_type: int64
+        description: >-
+          1 for the student's latest Diagnostic (by completion_date, then
+          rn_subj_day) in the subject and academic year.

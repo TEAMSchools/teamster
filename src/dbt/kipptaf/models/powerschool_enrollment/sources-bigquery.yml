@@ -1,0 +1,19 @@
+sources:
+  - name: powerschool_enrollment
+    schema: kipptaf_powerschool_enrollment
+    tables:
+      - name: stg_powerschool_enrollment__submission_records_archive
+        identifier: stg_powerschool_enrollment__submission_records
+        description: >
+          Frozen PowerSchool Enrollment (InfoSnap) form submissions, one row per
+          submission data item, retained read-only after the Enrollment
+          ingestion was retired. Last submission is dated 2026-03-02.
+        # Refs #4428
+        config:
+          meta:
+            contains_pii: true
+            dagster:
+              asset_key:
+                - kipptaf
+                - powerschool_enrollment
+                - submission_records_archive

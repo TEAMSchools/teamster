@@ -1,23 +1,5 @@
-with
-    union_relations as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source("kippnewark_powerschool", "base_powerschool__sections"),
-                    source("kippcamden_powerschool", "base_powerschool__sections"),
-                    source("kippmiami_powerschool", "base_powerschool__sections"),
-                    source("kipppaterson_powerschool", "base_powerschool__sections"),
-                ]
-            )
-        }}
-    )
-
-select
-    ur.*,
-    {{ extract_code_location("ur") }} as _dbt_source_project,
-    if(cx.ap_course_subject is not null, true, false) as is_ap_course,
-from union_relations as ur
-left join
-    {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
-    on ur.courses_dcid = cx.coursesdcid
-    and {{ union_dataset_join_clause(left_alias="ur", right_alias="cx") }}
+-- Compatibility passthrough. The section logic moved to
+-- int_students__course_sections, which carries both SIS branches; this model
+-- exists so the consumers listed in #3999 keep resolving while they migrate.
+-- Delete it once they have.
+select *, from {{ ref("int_students__course_sections") }}

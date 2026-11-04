@@ -1,7 +1,30 @@
 models:
   - name: stg_google_sheets__pearson__student_crosswalk
+    description: >
+      Hand-maintained sheet that assigns the correct network student_number to
+      an NJ state test record, for Pearson and Cambium tests alike, keyed by the
+      vendor test UUID. int_assessments__state_nj_scores left-joins it on the
+      test UUID and uses Student_Number in place of the vendor-reported local
+      student identifier wherever a row exists.
     columns:
       - name: Student_Test_UUID
         data_type: string
+        description: >
+          Vendor-assigned identifier for one student test record (Pearson
+          studenttestuuid or Cambium student_test_uuid). Join key; a duplicate
+          would fan out the assessment rows that join to it.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: Student_Number
         data_type: int64
+        description: >
+          Network student_number the test record belongs to. Overrides the
+          vendor's local student identifier downstream.
+        config:
+          meta:
+            contains_pii: true

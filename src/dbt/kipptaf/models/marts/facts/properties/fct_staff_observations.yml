@@ -18,6 +18,20 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
+
+      - name: staff_observation_rubric_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_observation_rubrics. Surrogate key pre-hashed
+          from rubric_id in int_schoolmint_grow__observations. Non-nullable —
+          rubric_id is structurally non-null for all published observations and
+          enforced by a not_null test on the upstream intermediate.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff_observation_rubrics')
+              to_columns: [staff_observation_rubric_key]
+        data_tests:
           - not_null
 
       - name: teacher_staff_key
@@ -28,16 +42,11 @@ models:
           has no employee_number (or carries the SchoolMint Grow test sentinel
           999999) flow through with a NULL key per the standard null-wrap
           pattern.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
       - name: staff_observation_type_key
         data_type: string
         description: >-
@@ -45,37 +54,11 @@ models:
           the SchoolMint Grow generic tag_id for the observation type. Null when
           the observation type abbreviation does not resolve to an active
           observationtypes tag.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff_observation_types')
-            to_columns: [staff_observation_type_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff_observation_types')
-                field: staff_observation_type_key
-
-      - name: staff_observation_rubric_key
-        data_type: string
-        description: >-
-          Foreign key to dim_staff_observation_rubrics. Surrogate key pre-hashed
-          from rubric_id in int_schoolmint_grow__observations. Non-nullable —
-          rubric_id is structurally non-null for all published observations and
-          enforced by a not_null test on the upstream intermediate.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff_observation_rubrics')
-            to_columns: [staff_observation_rubric_key]
-            warn_unsupported: false
-        data_tests:
-          - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_staff_observation_rubrics')
-                field: staff_observation_rubric_key
-              config:
-                severity: error
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff_observation_types')
+              to_columns: [staff_observation_type_key]
 
       - name: observer_staff_key
         data_type: string
@@ -83,63 +66,43 @@ models:
           Foreign key to dim_staff for the observer. Surrogate key derived from
           observer_employee_number.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
       - name: location_key
         data_type: string
         description: >-
           Foreign key to dim_locations. Surrogate key derived from the school's
           location_clean_name.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
       - name: term_key
         data_type: string
         description: >-
           Foreign key to dim_terms. Surrogate key derived from term composite
           fields.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
 
       - name: observed_date_key
         data_type: date
         description: >-
           Local date the observation was conducted. Foreign key to dim_dates.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
 
       - name: academic_year
         data_type: int64

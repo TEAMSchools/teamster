@@ -11,6 +11,9 @@ models:
         data_type: string
       - name: counselor_name
         data_type: string
+        description:
+          Name of the student's college counselor, resolved from the counselor's
+          own Salesforce contact record. Same value as college_counselor.
       - name: is_kipp_ms_graduate
         data_type: boolean
       - name: is_kipp_hs_graduate
@@ -149,6 +152,12 @@ models:
         data_type: string
       - name: ugrad_status
         data_type: string
+      - name: is_ba_grad_ever_int
+        data_type: int64
+      - name: is_aa_grad_ever_int
+        data_type: int64
+      - name: is_cte_grad_ever_int
+        data_type: int64
       - name: is_4yr_ba_grad_int
         data_type: int64
       - name: is_5yr_ba_grad_int
@@ -531,6 +540,11 @@ models:
         data_type: string
       - name: exit_school_name
         data_type: string
+      - name: exit_grade_level
+        data_type: int64
+        description: >
+          Grade level recorded on the student's most recent undergraduate
+          enrollment in PowerSchool (grades 8 through 12).
       - name: graduation_year
         data_type: int64
       - name: highest_sat_score
@@ -547,6 +561,11 @@ models:
         data_type: numeric
       - name: postsec_advisor
         data_type: string
+      - name: college_counselor
+        data_type: string
+        description:
+          Name of the student's college counselor, resolved from the counselor's
+          own Salesforce contact record. Same value as counselor_name.
       - name: recent_cumulative_gpa
         data_type: numeric
       - name: recent_transcript_date
@@ -608,6 +627,16 @@ models:
         description: >
           True if the student has tagged more than one school as #1 Choice in
           Overgrad. False if the student has no Overgrad top-choice data.
+      - name: is_grade_grad_year
+        data_type: boolean
+        description: >
+          True when the graduation year implied by the PowerSchool exit grade
+          level matches the Salesforce-derived graduation year. Implied year is
+          (13 minus exit grade level) plus the academic year the exit grade was
+          recorded, anchoring on that academic year rather than the current one
+          because most rows are alumni whose last enrollment predates the
+          current year. False flags a student whose grade level and graduation
+          year do not comport.
       - name: es_attended
         data_type: string
       - name: total_aid_amount

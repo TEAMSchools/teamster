@@ -52,7 +52,8 @@ select
     concat('AP ', test_subject) as title,
 
     row_number() over (
-        partition by powerschool_student_number, ap_course_name order by exam_score desc
+        partition by powerschool_student_number, ap_course_name
+        order by exam_score desc, academic_year desc, test_subject asc
     ) as rn_highest,
 
 from scores

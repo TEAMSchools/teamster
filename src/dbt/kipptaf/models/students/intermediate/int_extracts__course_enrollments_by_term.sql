@@ -1,0 +1,196 @@
+with
+    schedule_by_terms as (
+        select
+            e._dbt_source_project,
+            e.cc_academic_year,
+            e.cc_schoolid,
+            e.cc_dateenrolled as dateenrolled,
+            e.exit_date as dateleft,
+            e.cc_sectionid as sectionid,
+            e.cc_course_number as course_number,
+            e.sections_dcid,
+            e.sections_section_number as section_number,
+            e.sections_external_expression as external_expression,
+            e.courses_credittype as credit_type,
+            e.courses_course_name as course_name,
+            e.courses_excludefromgpa as exclude_from_gpa,
+            e.sections_termid as termid,
+
+            -- cc_studentid is null on every Focus row, so this model carried
+            -- zero Miami rows in every year. student_number carries both SIS
+            -- branches and is 1:1 with cc_studentid throughout NJ.
+            e.students_student_number as student_number,
+            e.teachernumber as teacher_number,
+            e.teacher_lastfirst as teacher_name,
+            e.is_ap_course,
+
+            q.term as `quarter`,
+            q.semester,
+            q.term_start_date as quarter_start_date,
+            q.term_end_date as quarter_end_date,
+            q.term_start_date_clamped as quarter_start_date_alt,
+            q.term_end_date_clamped as quarter_end_date_alt,
+            q.is_current_term as is_current_quarter,
+            q.first_day_school_year,
+            q.last_day_school_year,
+            q.days_in_term as days_in_quarter,
+
+            if(
+                e.cc_dateenrolled < q.first_day_school_year,
+                q.first_day_school_year,
+                e.cc_dateenrolled
+            ) as dateenrolled_alt,
+
+            if(
+                e.exit_date > q.last_day_school_year,
+                q.last_day_school_year,
+                e.exit_date
+            ) as dateleft_alt,
+
+        from {{ ref("base_powerschool__course_enrollments") }} as e
+        inner join
+            {{ ref("int_students__terms") }} as q
+            on e.cc_academic_year = q.academic_year
+            and e.cc_schoolid = q.schoolid
+            and e._dbt_source_project = q._dbt_source_project
+            and e.cc_dateenrolled <= q.term_end_date_clamped
+            and e.exit_date >= q.term_start_date_clamped
+        where
+            not e.is_dropped_section
+            and q.days_in_term is not null
+            -- Focus records no section student count, so this column is null on
+            -- every Miami row. Null is not the PowerSchool quirk the filter
+            -- targets -- a section holding enrollment rows while recording its
+            -- count as zero, 202 New Jersey rows in AY2026. A section with
+            -- nobody in it produces no enrollment rows at all, so it cannot
+            -- reach this model; #5043 measured Miami's smallest section at 1
+            -- student. Keep null, drop only a literal 0.
+            and e.sections_no_of_students is distinct from 0
+    ),
+
+    days_course_enrolled as (
+        select
+            s._dbt_source_project,
+            s.cc_academic_year,
+            s.cc_schoolid,
+            s.student_number,
+            s.course_number,
+            s.`quarter`,
+
+            sum(c.date_count) as days_course_enrolled,
+
+        from schedule_by_terms as s
+        inner join
+            {{ ref("int_students__calendar_week") }} as c
+            on s.cc_academic_year = c.academic_year
+            and s.cc_schoolid = c.schoolid
+            and s._dbt_source_project = c._dbt_source_project
+            and s.`quarter` = c.term
+            and s.dateenrolled_alt <= c.school_week_end_date
+            and s.dateleft_alt >= c.school_week_start_date
+        group by
+            s._dbt_source_project,
+            s.cc_academic_year,
+            s.cc_schoolid,
+            s.student_number,
+            s.course_number,
+            s.`quarter`
+    ),
+
+    enrollments as (
+        select
+            e.*,
+
+            s.sectionid,
+            s.course_number,
+            s.sections_dcid,
+            s.section_number,
+            s.external_expression,
+            s.credit_type,
+            s.course_name,
+            s.exclude_from_gpa,
+            s.termid,
+            s.teacher_number,
+            s.teacher_name,
+            s.is_ap_course,
+            s.`quarter`,
+            s.semester,
+            s.quarter_start_date,
+            s.quarter_end_date,
+            s.quarter_start_date_alt,
+            s.quarter_end_date_alt,
+            s.is_current_quarter,
+            s.dateenrolled,
+            s.dateleft,
+            s.dateenrolled_alt,
+            s.dateleft_alt,
+            s.days_in_quarter,
+
+            d.days_course_enrolled,
+
+            -- must match int_extracts__course_schedule_by_term's expression:
+            -- both label HS sections, and a period alone is not unique when two
+            -- sections of one course share a teacher and period. array_to_string
+            -- skips nulls, so a null external_expression yields the bare
+            -- section_number rather than a null label
+            if(
+                e.school_level_alt = 'HS',
+                array_to_string([s.external_expression, s.section_number], ' '),
+                s.section_number
+            ) as section_or_period,
+
+            safe_divide(
+                d.days_course_enrolled, s.days_in_quarter
+            ) as pct_enrolled_in_quarter,
+
+            -- known limitation: when PS has 2 overlapping section records for
+            -- the same student/course/quarter (stale dateleft on the old
+            -- section after a reassignment -- see #3900), exitdate/dateleft
+            -- are frequently identical on both candidates, leaving this pick
+            -- arbitrary; see reference doc before assuming it's deterministic
+            row_number() over (
+                partition by
+                    s._dbt_source_project,
+                    s.cc_academic_year,
+                    s.student_number,
+                    s.course_number,
+                    s.`quarter`
+                order by e.exitdate desc, s.dateleft desc
+            ) as rn,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            schedule_by_terms as s
+            on e.academic_year = s.cc_academic_year
+            and e.schoolid = s.cc_schoolid
+            and e.student_number = s.student_number
+            and e._dbt_source_project = s._dbt_source_project
+            and e.entrydate <= s.dateleft_alt
+            and e.exitdate >= s.dateenrolled_alt
+        left join
+            days_course_enrolled as d
+            on s.cc_academic_year = d.cc_academic_year
+            and s.cc_schoolid = d.cc_schoolid
+            and s.student_number = d.student_number
+            and s.course_number = d.course_number
+            and s.`quarter` = d.`quarter`
+            and s._dbt_source_project = d._dbt_source_project
+        where not e.is_pre_year_withdrawal
+    )
+
+select
+    e.*,
+
+    r.employee_number as teacher_employee_number,
+    r.sam_account_name as teacher_tableau_username,
+    r.reports_to_employee_number as manager_employee_number,
+    r.reports_to_formatted_name as manager_name,
+    r.reports_to_sam_account_name as manager_tableau_username,
+
+    concat(e.region, e.school_level_alt) as region_school_level_alt,
+
+from enrollments as e
+left join
+    {{ ref("int_people__staff_roster") }} as r
+    on e.teacher_number = r.powerschool_teacher_number
+where e.rn = 1

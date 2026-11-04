@@ -7,7 +7,7 @@ profile: kipppaterson
 model-paths: [models]
 analysis-paths: [analyses]
 test-paths: [tests]
-seed-paths: [seeds]
+seed-paths: []
 macro-paths: [macros]
 snapshot-paths: [snapshots]
 
@@ -17,16 +17,56 @@ clean-targets:
   - dbt_packages
 
 data_tests:
-  +severity: warn
   +store_failures: true
   +store_failures_as: view
+  kipppaterson:
+    +severity: warn
+  # stg_cambium__njgpa is disabled below, and disabling a model leaves its
+  # tests enabled — they would scan a relation Paterson never builds. Each name
+  # is dbt's generated test name; changing a column name or accepted values
+  # list in the cambium yml renames the test and re-orphans it here.
+  cambium:
+    staging:
+      properties:
+        unique_stg_cambium__njgpa_student_test_uuid:
+          +enabled: false
+        not_null_stg_cambium__njgpa_student_test_uuid:
+          +enabled: false
+        not_null_stg_cambium__njgpa_test_date:
+          +enabled: false
+        not_null_stg_cambium__njgpa__period_:
+          +enabled: false
+        accepted_values_stg_cambium__njgpa__period___Spring__Fall__FALL__FallBlock:
+          +enabled: false
+  # The Pearson score models are frozen: Cambium replaced Pearson from Spring
+  # 2026, and kipptaf reads the last int_pearson__all_assessments table as
+  # history. Its test is disabled by generated name for the same reason as
+  # above.
+  pearson:
+    intermediate:
+      properties:
+        dbt_utils_unique_combination_of_columns_int_pearson__all_assessments_studenttestuuid:
+          +enabled: false
 
 vars:
   local_timezone: America/New_York
-  current_academic_year: 2025
-  current_fiscal_year: 2026
+  current_academic_year: 2026
+  current_fiscal_year: 2027
   cloud_storage_uri_base: gs://teamster-kipppaterson/dagster/kipppaterson
+  # Paterson's EdPlan feed starts in FY27, after the one-time NJSMART
+  # archive load, so there is no archive table to union in.
+  edplan_has_archive: false
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
+  # Paterson sits only NJSLA and NJSLA Science, and its Pearson files carry
+  # the district SIS id, so the union reads the int_pearson__* remaps instead
+  # of the package staging models (stg_pearson__njgpa / _parcc are disabled).
+  pearson_state_assessment_relations:
+    - int_pearson__njsla
+    - int_pearson__njsla_science
+  # Paterson does not sit for NJGPA (stg_cambium__njgpa is disabled), so
+  # int_cambium__all_assessments reads stg_cambium__njsla alone.
+  cambium_state_assessment_relations:
+    - stg_cambium__njsla
 
 models:
   kipppaterson:
@@ -57,6 +97,16 @@ models:
         staging:
           stg_amplify__mclass__sftp__pm_student_summary_aimline:
             +enabled: false
+  edplan:
+    +materialized: table
+    staging:
+      stg_edplan__njsmart_powerschool_archive:
+        +enabled: false
+  cambium:
+    +materialized: table
+    staging:
+      stg_cambium__njgpa:
+        +enabled: false
   deanslist:
     +materialized: table
     staging:
@@ -70,7 +120,17 @@ models:
         +enabled: false
   pearson:
     +materialized: table
+    # Frozen: the last prod tables stay as history (see data_tests above).
+    # Paterson's own int_pearson__njsla* remaps are disabled, with their tests,
+    # in models/pearson/intermediate/properties/.
+    intermediate:
+      int_pearson__all_assessments:
+        +enabled: false
     staging:
+      stg_pearson__njsla:
+        +enabled: false
+      stg_pearson__njsla_science:
+        +enabled: false
       stg_pearson__njgpa:
         +enabled: false
       stg_pearson__parcc:
@@ -80,47 +140,25 @@ models:
   powerschool:
     +materialized: table
     sis:
-      base:
-        base_powerschool__final_grades:
-          +enabled: false
       intermediate:
-        int_powerschool__gradebook_assignments:
-          +enabled: false
-        int_powerschool__gpa_cumulative:
-          +enabled: false
-        int_powerschool__gpa_cumulative_year:
-          +enabled: false
-        int_powerschool__gpa_term:
-          +enabled: false
-        int_powerschool__category_grades:
-          +enabled: false
-        int_powerschool__category_grades_pivot:
-          +enabled: false
-        int_powerschool__final_grades_pivot:
-          +enabled: false
-        int_powerschool__gradescaleitem_lookup:
-          +enabled: false
+        # data-forced exception: needs gradesectionconfig, which is empty in
+        # Paterson's PowerSchool (no dlt model)
         int_powerschool__section_grade_config:
           +enabled: false
-        int_powerschool__teacher_grade_levels:
+        # data-forced exception: needs the grad-plan dlt tables (gpnode,
+        # gpprogresssubject*), which are disabled below (empty in Paterson's
+        # PowerSchool)
+        int_powerschool__gpnode:
           +enabled: false
+        int_powerschool__gpprogress_grades:
+          +enabled: false
+        # contacts layer disabled for Paterson (parity with kippnewark)
         int_powerschool__contacts:
           +enabled: false
         int_powerschool__person_contacts:
           +enabled: false
       staging:
-        odbc:
-          +enabled: false
-        sftp:
-          +enabled: true
-          stg_powerschool__assignmentscore:
-            +enabled: false
-          stg_powerschool__assignmentcategoryassoc:
-            +enabled: false
-          stg_powerschool__assignmentsection:
-            +enabled: false
-          stg_powerschool__districtteachercategory:
-            +enabled: false
+        dlt:
           stg_powerschool__gpnode:
             +enabled: false
           stg_powerschool__gpprogresssubject:
@@ -129,70 +167,19 @@ models:
             +enabled: false
           stg_powerschool__gpprogresssubjectenrolled:
             +enabled: false
-          stg_powerschool__gradecalcformulaweight:
-            +enabled: false
-          stg_powerschool__gradecalcschoolassoc:
-            +enabled: false
-          stg_powerschool__gradecalculationtype:
-            +enabled: false
-          stg_powerschool__gradeformulaset:
-            +enabled: false
-          stg_powerschool__gradescaleitem:
-            +enabled: false
-          stg_powerschool__gradeschoolconfig:
-            +enabled: false
-          stg_powerschool__gradeschoolformulaassoc:
-            +enabled: false
           stg_powerschool__gradesectionconfig:
-            +enabled: false
-          stg_powerschool__log:
-            +enabled: false
-          stg_powerschool__pgfinalgrades:
-            +enabled: false
-          stg_powerschool__roledef:
-            +enabled: false
-          stg_powerschool__s_stu_x:
-            +enabled: false
-          stg_powerschool__sectionteacher:
-            +enabled: false
-          stg_powerschool__studentrace:
-            +enabled: false
-          stg_powerschool__studenttest:
-            +enabled: false
-          stg_powerschool__studenttestscore:
-            +enabled: false
-          stg_powerschool__teachercategory:
-            +enabled: false
-          stg_powerschool__test:
-            +enabled: false
-          stg_powerschool__testscore:
             +enabled: false
           stg_powerschool__u_clg_et_stu:
             +enabled: false
           stg_powerschool__u_clg_et_stu_alt:
             +enabled: false
-          stg_powerschool__codeset:
+          stg_powerschool__u_storedgrades_de:
             +enabled: false
-          stg_powerschool__emailaddress:
-            +enabled: false
-          stg_powerschool__originalcontactmap:
-            +enabled: false
-          stg_powerschool__person:
-            +enabled: false
-          stg_powerschool__personaddress:
-            +enabled: false
-          stg_powerschool__personaddressassoc:
-            +enabled: false
-          stg_powerschool__personemailaddressassoc:
-            +enabled: false
-          stg_powerschool__personphonenumberassoc:
-            +enabled: false
-          stg_powerschool__phonenumber:
-            +enabled: false
-          stg_powerschool__studentcontactassoc:
-            +enabled: false
-          stg_powerschool__studentcontactdetail:
-            +enabled: false
+  titan:
+    +materialized: table
+    staging:
+      stg_titan__income_form_data:
+        +enabled: false
 
 sources:
   amplify:
@@ -211,6 +198,10 @@ sources:
     finalsite:
       contacts:
         +enabled: true
+  cambium:
+    cambium:
+      src_cambium__njgpa:
+        +enabled: false
   deanslist:
     deanslist:
       src_deanslist__dff_stats:
@@ -229,124 +220,7 @@ sources:
         +enabled: false
       src_pearson__student_test_update:
         +enabled: false
-  powerschool:
-    sis:
-      staging:
-        odbc:
-          +enabled: false
-        sftp:
-          powerschool_sftp:
-            src_powerschool__assignmentscore:
-              +enabled: false
-            src_powerschool__assignmentcategoryassoc:
-              +enabled: false
-            src_powerschool__assignmentsection:
-              +enabled: false
-            src_powerschool__districtteachercategory:
-              +enabled: false
-            src_powerschool__gpnode:
-              +enabled: false
-            src_powerschool__gpprogresssubject:
-              +enabled: false
-            src_powerschool__gpprogresssubjectearned:
-              +enabled: false
-            src_powerschool__gpprogresssubjectenrolled:
-              +enabled: false
-            src_powerschool__gpprogresssubjectrequested:
-              +enabled: false
-            src_powerschool__gradecalcformulaweight:
-              +enabled: false
-            src_powerschool__gradecalcschoolassoc:
-              +enabled: false
-            src_powerschool__gradecalculationtype:
-              +enabled: false
-            src_powerschool__gradeformulaset:
-              +enabled: false
-            src_powerschool__gradescaleitem:
-              +enabled: false
-            src_powerschool__gradeschoolconfig:
-              +enabled: false
-            src_powerschool__gradeschoolformulaassoc:
-              +enabled: false
-            src_powerschool__gradesectionconfig:
-              +enabled: false
-            src_powerschool__gradplan:
-              +enabled: false
-            src_powerschool__log:
-              +enabled: false
-            src_powerschool__period:
-              +enabled: false
-            src_powerschool__pgfinalgrades:
-              +enabled: false
-            src_powerschool__prefs:
-              +enabled: false
-            src_powerschool__roledef:
-              +enabled: false
-            src_powerschool__s_nj_usr_x:
-              +enabled: false
-            src_powerschool__s_stu_x:
-              +enabled: false
-            src_powerschool__sced_code_mapping:
-              +enabled: false
-            src_powerschool__sectionteacher:
-              +enabled: false
-            src_powerschool__studentrace:
-              +enabled: false
-            src_powerschool__studenttest:
-              +enabled: false
-            src_powerschool__studenttestscore:
-              +enabled: false
-            src_powerschool__teachercategory:
-              +enabled: false
-            src_powerschool__test:
-              +enabled: false
-            src_powerschool__testscore:
-              +enabled: false
-            src_powerschool__userscorefields:
-              +enabled: false
-            src_powerschool__u_clg_et_stu:
-              +enabled: false
-            src_powerschool__u_clg_et_stu_alt:
-              +enabled: false
-            src_powerschool__u_def_ext_students:
-              +enabled: false
-            src_powerschool__u_storedgrades_de:
-              +enabled: false
-            src_powerschool__gpprogresssubjectwaived:
-              +enabled: false
-            src_powerschool__gpprogresssubjwaivedapplied:
-              +enabled: false
-            src_powerschool__gpselectedcrs:
-              +enabled: false
-            src_powerschool__gpselectedcrtype:
-              +enabled: false
-            src_powerschool__gpselector:
-              +enabled: false
-            src_powerschool__gptarget:
-              +enabled: false
-            src_powerschool__gpversion:
-              +enabled: false
-            src_powerschool__gpstudentwaiver:
-              +enabled: false
-            src_powerschool__codeset:
-              +enabled: false
-            src_powerschool__emailaddress:
-              +enabled: false
-            src_powerschool__originalcontactmap:
-              +enabled: false
-            src_powerschool__person:
-              +enabled: false
-            src_powerschool__personaddress:
-              +enabled: false
-            src_powerschool__personaddressassoc:
-              +enabled: false
-            src_powerschool__personemailaddressassoc:
-              +enabled: false
-            src_powerschool__personphonenumberassoc:
-              +enabled: false
-            src_powerschool__phonenumber:
-              +enabled: false
-            src_powerschool__studentcontactassoc:
-              +enabled: false
-            src_powerschool__studentcontactdetail:
-              +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
+        +enabled: false

@@ -59,8 +59,10 @@ with
             and nc.measure_standard = m.measure_standard
         where
             s.academic_year = {{ var("current_academic_year") }}
+            and s.rn_year = 1
             and s.enroll_status = 0
             and s.grade_level <= 4
+            and s.region != 'Miami'
     )
 
 select

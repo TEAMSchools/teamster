@@ -7,8 +7,11 @@ models:
       snapshot of `stg_finalsite__status_report`, the track attributes, and the
       custom attributes. In scope = an active accepted-to-enrolled status
       (`accepted`, `enrollment_in_progress`, `assigned_school`, `enrolled`,
-      `retained`), OR a transfer-out (a `withdrawal_last_attended_date` on or
-      after the enrollment start). SIS-agnostic.
+      `retained`), OR a transfer-out (a withdrawal on or after the enrollment
+      start). Finalsite reuses one contact record across enrollment cycles, so
+      both date columns are gated to the current cycle — a date carried over
+      from a prior cycle is dropped rather than read as current state.
+      SIS-agnostic.
     columns:
       - name: finalsite_enrollment_id
         data_type: string
@@ -37,13 +40,19 @@ models:
         data_type: date
         description:
           Enrolled date from the Status Report (= Focus `START_DATE`); null
-          until the student reaches the enrolled status.
+          until the student reaches the enrolled status. Also null when the
+          enrolled date precedes the current cycle's applicant date, which marks
+          it as a prior cycle's value carried on a reused contact rather than an
+          enrollment.
       - name: enrollment_end_date
         data_type: date
         description:
-          The `withdrawal_last_attended_date` custom attribute when it is on or
-          after `enrollment_start_date` (the official withdrawal signal); null
-          otherwise.
+          Earliest withdrawal date on or after `enrollment_start_date`, drawn
+          from three independent signals — the `withdrawal_last_attended_date`
+          custom attribute plus the Status Report's `mid_year_withdrawal_date`
+          and `summer_withdraw_date`. Null when none of the three is populated,
+          and null when every populated one precedes the enrollment start, since
+          such a date belongs to a prior enrollment on this reused contact.
       - name: is_transfer_out
         data_type: boolean
         description:
@@ -53,10 +62,13 @@ models:
 unit_tests:
   - name: test_enrollment_lifecycle_eligibility_and_withdrawal
     description:
-      Applies the in-scope filter (active status, or a valid withdrawal) and
-      derives the withdrawal signal from withdrawal_last_attended_date. A
-      withdrawal on or after the enrollment start transfers out; one before it
-      is stale and ignored; an out-of-scope status with no valid withdrawal is
+      Applies the in-scope filter (active status, or a valid withdrawal), gates
+      the enrolled date to the current enrollment cycle, and derives the
+      withdrawal signal from the three withdrawal columns. A withdrawal on or
+      after the enrollment start transfers out; one before it is stale and
+      ignored; the earliest of several valid ones wins; an enrolled date before
+      the cycle's applicant date is a reused contact's prior value and yields no
+      enrollment at all; an out-of-scope status with no valid withdrawal is
       dropped.
     model: int_finalsite__enrollment_lifecycle
     given:
@@ -98,6 +110,30 @@ unit_tests:
               school_year_start: 2025,
               grade_canonical_name: "07",
             }
+          - {
+              finalsite_enrollment_id: c_reused,
+              status: assigned_school,
+              school_year_start: 2025,
+              grade_canonical_name: KG,
+            }
+          - {
+              finalsite_enrollment_id: c_mid_year,
+              status: enrolled,
+              school_year_start: 2025,
+              grade_canonical_name: PK,
+            }
+          - {
+              finalsite_enrollment_id: c_mid_year_stale,
+              status: enrolled,
+              school_year_start: 2025,
+              grade_canonical_name: "04",
+            }
+          - {
+              finalsite_enrollment_id: c_summer,
+              status: enrolled,
+              school_year_start: 2025,
+              grade_canonical_name: "01",
+            }
       - input: ref('stg_finalsite__status_report')
         rows:
           - {
@@ -136,6 +172,38 @@ unit_tests:
               enrolled_date: null,
               assigned_school: School B,
             }
+          # enrolled_date predates applicant_date, so it belongs to the prior
+          # cycle on this reused contact and the mid-year withdrawal with it
+          - {
+              finalsite_enrollment_id: c_reused,
+              _dagster_partition_key: 2026-06-15,
+              enrolled_date: 2024-10-24,
+              applicant_date: 2025-08-16,
+              mid_year_withdrawal_date: 2025-01-21,
+              assigned_school: School A,
+            }
+          - {
+              finalsite_enrollment_id: c_mid_year,
+              _dagster_partition_key: 2026-06-15,
+              enrolled_date: 2025-08-15,
+              applicant_date: 2025-04-01,
+              mid_year_withdrawal_date: 2026-01-21,
+              assigned_school: School A,
+            }
+          - {
+              finalsite_enrollment_id: c_mid_year_stale,
+              _dagster_partition_key: 2026-06-15,
+              enrolled_date: 2025-08-15,
+              mid_year_withdrawal_date: 2025-01-10,
+              assigned_school: School A,
+            }
+          - {
+              finalsite_enrollment_id: c_summer,
+              _dagster_partition_key: 2026-06-15,
+              enrolled_date: 2025-06-01,
+              summer_withdraw_date: 2025-07-20,
+              assigned_school: School A,
+            }
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
@@ -146,6 +214,8 @@ unit_tests:
           select 'c_stale', '2025-01-10'
           union all
           select 'c_denied_xfer', '2026-03-01'
+          union all
+          select 'c_summer', '2026-03-01'
       - input: ref('int_finalsite__contact_track_attributes')
         format: sql
         rows: |
@@ -201,4 +271,44 @@ unit_tests:
             enrollment_start_date: null,
             enrollment_end_date: null,
             is_transfer_out: false,
+          }
+        - {
+            finalsite_enrollment_id: c_reused,
+            school_year_start: 2025,
+            grade_canonical_name: KG,
+            promotion_status: null,
+            assigned_school: School A,
+            enrollment_start_date: null,
+            enrollment_end_date: null,
+            is_transfer_out: false,
+          }
+        - {
+            finalsite_enrollment_id: c_mid_year,
+            school_year_start: 2025,
+            grade_canonical_name: PK,
+            promotion_status: null,
+            assigned_school: School A,
+            enrollment_start_date: 2025-08-15,
+            enrollment_end_date: 2026-01-21,
+            is_transfer_out: true,
+          }
+        - {
+            finalsite_enrollment_id: c_mid_year_stale,
+            school_year_start: 2025,
+            grade_canonical_name: "04",
+            promotion_status: null,
+            assigned_school: School A,
+            enrollment_start_date: 2025-08-15,
+            enrollment_end_date: null,
+            is_transfer_out: false,
+          }
+        - {
+            finalsite_enrollment_id: c_summer,
+            school_year_start: 2025,
+            grade_canonical_name: "01",
+            promotion_status: null,
+            assigned_school: School A,
+            enrollment_start_date: 2025-06-01,
+            enrollment_end_date: 2025-07-20,
+            is_transfer_out: true,
           }

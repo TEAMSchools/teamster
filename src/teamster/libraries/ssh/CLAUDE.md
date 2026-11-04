@@ -1,29 +1,59 @@
 # CLAUDE.md — `teamster/libraries/ssh/`
 
 Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
-`dagster-ssh`'s `SSHResource` with two extra capabilities:
+`dagster-ssh`'s `SSHResource` with three extra capabilities:
 
 - `listdir_attr_r()` — recursive SFTP directory listing returning
-  `(SFTPAttributes, path)` tuples
-- `open_ssh_tunnel()` — opens an SSH tunnel via `sshpass` + subprocess, used
-  exclusively for the PowerSchool Oracle ODBC connection
+  `(SFTPAttributes, path)` tuples. Skips (does not raise on) a listing entry
+  that isn't a single, non-traversing path component — see
+  `_is_safe_listing_filename`. Regression:
+  `tests/resources/test_resource_ssh_listdir.py`.
+- `listdir_attr_r_or_skip()` — connect + `listdir_attr_r` with failure triage;
+  **the entry point every SFTP sensor should use**
+- `open_ssh_tunnel()` — in-process paramiko local port forward, used by the dlt
+  PowerSchool path (renamed from `open_ssh_tunnel_paramiko` in #4442; the
+  earlier `sshpass` + subprocess tunnel is retired)
+
+## SFTP sensors: use `listdir_attr_r_or_skip`
+
+Do NOT hand-roll `try: ... except SSHException: return SkipReason(...)` in a new
+sensor. It has been got wrong twice (#4636): `except SSHException` misses
+`NoValidConnectionsError` / `TimeoutError` / `socket.gaierror` /
+`ConnectionResetError` (none are `SSHException` subclasses, and `reraise=True`
+re-raises the original type), so a downed host fails the tick; and catching the
+whole `TRANSIENT_CONNECT_EXCEPTIONS` net instead swallows
+`AuthenticationException` / `BadHostKeyException` / `IncompatiblePeer` /
+`ProxyCommandFailure`, so a rotated credential stops ingestion **silently and
+indefinitely** — indistinguishable from "no new files" in the UI.
+
+`listdir_attr_r_or_skip(**listdir_kwargs)` encodes both halves: transient →
+`SkipReason`, deterministic → re-raised so the tick fails and alerts. Callers
+just need:
+
+```python
+files = ssh_x.listdir_attr_r_or_skip(remote_dir=...)
+
+if isinstance(files, SkipReason):
+    return files
+```
 
 ## Key Fields Added
 
-| Field                | Type          | Purpose                                                           |
-| -------------------- | ------------- | ----------------------------------------------------------------- |
-| `tunnel_remote_host` | `str \| None` | Remote bind host for local port forwarding                        |
-| `test`               | `bool`        | If `True`, reads SSH password from env var instead of secret file |
-| `enable_legacy_rsa`  | `bool`        | Re-enable paramiko's dropped `ssh-rsa` host-key algorithm         |
+| Field                | Type          | Purpose                                                                                                                                             |
+| -------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tunnel_remote_host` | `str \| None` | Remote bind host for local port forwarding                                                                                                          |
+| `test`               | `bool`        | Unused by any method on this class; kept because other resource construction paths (e.g. `tests/resources/test_resource_ssh_rekey.py`) still set it |
+| `enable_legacy_rsa`  | `bool`        | Re-enable paramiko's dropped `ssh-rsa` host-key algorithm                                                                                           |
 
 ## Notes
 
 - `SFTPAttributes.st_mtime` and `st_mode` are `int | None` in paramiko's type
   stubs — wrap in `check.not_none()` when comparing
-- `open_ssh_tunnel()` is only called by the PowerSchool ODBC library
-- In production, the PowerSchool SSH password is read from
-  `/etc/secret-volume/powerschool_ssh_password.txt`; in test mode it reads from
-  the `password` field directly
+- The archived odbc library's `open_ssh_tunnel()` comments and docstrings
+  describe the removed sshpass semantics, not the current paramiko tunnel. That
+  code is dead.
+- The PowerSchool SSH password is passed via `EnvVar("PS_SSH_PASSWORD")` in
+  `get_powerschool_ssh_resource()` (`core/resources.py`).
 - paramiko 5.0 disabled `ssh-rsa` at three independent layers, and ALL three
   must be temporarily re-enabled for a connect against a legacy-only server
   (e.g. GlobalSCAPE EFT 8.1) to succeed:
@@ -43,3 +73,17 @@ Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
   the offered host-key algorithms at the `peer server KEXINIT proposal` line,
   then read the paramiko traceback to identify which of the three layers the
   failure surfaces from.
+
+- **The three ssh-rsa mutations above are class-level and reverted right after
+  the initial handshake — so they do NOT survive a mid-stream rekey.** paramiko
+  renegotiates keys every `Packetizer.REKEY_BYTES` (512 MiB); against an
+  ssh-rsa-only server that rekey's KEXINIT would drop ssh-rsa and kill the
+  transport (surfaced as `oracledb DPY-4011` on a bulk PowerSchool pull — the
+  9M-row cliff). `get_connection` fixes this by calling `_persist_legacy_rsa` on
+  the returned transport: it re-applies ssh-rsa scoped to that **instance**
+  (`_preferred_keys` + a `_LegacyRSAKey` in `_key_info`, so no process-global
+  `RSAKey.HASHES` weakening) and bumps the instance `packetizer.REKEY_BYTES` to
+  disable auto-rekey outright (OpenSSH `RekeyLimit none`). Preserve this call if
+  you refactor `get_connection`. Regression:
+  `tests/resources/test_resource_ssh_rekey.py` (loopback ssh-rsa-only server,
+  forced rekey — no external creds).

@@ -1,8 +1,63 @@
 with
+    responses_keyed as (
+        select
+            asr.student_assessment_id,
+            asr.response_type,
+            asr.response_type_code,
+            asr.response_type_description,
+            asr.response_type_root_description,
+            asr.points_possible,
+            asr.points,
+            asr.percent_correct,
+
+            pb.canonical_performance_band_set_id,
+
+            coalesce(
+                pb.canonical_response_type_id, asr.response_type_id
+            ) as response_type_id,
+        from {{ ref("int_illuminate__agg_student_responses") }} as asr
+        left join
+            {{ ref("int_assessments__performance_bands") }} as pb
+            on asr.assessment_id = pb.assessment_id
+            and asr.response_type = pb.response_type
+            and asr.response_type_id = pb.response_type_id
+    ),
+
+    -- one sitting scores a split standard once per record; sum the records back
+    -- into one score
+    responses_merged as (
+        select
+            student_assessment_id,
+            response_type,
+            response_type_id,
+            response_type_code,
+            response_type_description,
+            canonical_performance_band_set_id,
+
+            min(response_type_root_description) as response_type_root_description,
+            sum(points_possible) as points_possible,
+            sum(points) as points,
+            any_value(percent_correct) as reported_percent_correct,
+            count(*) as n_records,
+
+            round(
+                safe_divide(sum(points), sum(points_possible)) * 100, 1
+            ) as merged_percent_correct,
+        from responses_keyed
+        group by
+            student_assessment_id,
+            response_type,
+            response_type_id,
+            response_type_code,
+            response_type_description,
+            canonical_performance_band_set_id
+    ),
+
     scaffold_responses as (
         select
             s.illuminate_student_id,
-            s.powerschool_student_number,
+            s.student_number,
+            s.source,
             s.assessment_id,
             s.title,
             s.scope,
@@ -20,6 +75,7 @@ with
             s.is_replacement,
             s.student_assessment_id,
             s.canonical_assessment_id,
+            s.date_taken,
 
             asr.response_type,
             asr.response_type_id,
@@ -28,10 +84,13 @@ with
             asr.response_type_root_description,
             asr.points_possible,
             asr.points,
-            asr.percent_correct,
+            asr.canonical_performance_band_set_id,
 
-            pb.canonical_performance_band_set_id,
-
+            if(
+                asr.n_records = 1,
+                asr.reported_percent_correct,
+                asr.merged_percent_correct
+            ) as percent_correct,
             if(s.is_internal_assessment, c.title, s.title) as canonical_title,
             if(
                 s.is_internal_assessment, c.administered_date, s.administered_at
@@ -40,40 +99,81 @@ with
                 s.is_internal_assessment, c.grade_level_id, s.grade_level_id
             ) as canonical_grade_level_id,
 
-            if(s.date_taken < date '2000-01-01', null, s.date_taken) as date_taken,
         from {{ ref("int_assessments__scaffold") }} as s
         left join
-            {{ ref("int_illuminate__agg_student_responses") }} as asr
+            responses_merged as asr
             on s.student_assessment_id = asr.student_assessment_id
         left join
-            {{ ref("int_assessments__performance_bands") }} as pb
-            on s.assessment_id = pb.assessment_id
-            and asr.response_type = pb.response_type
-            and asr.response_type_id = pb.response_type_id
-        left join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on s.canonical_assessment_id = c.canonical_assessment_id
+            on s.source = c.source
+            and s.canonical_assessment_id = c.canonical_assessment_id
+        where s.source = 'illuminate'
+    ),
+
+    -- Illuminate `date_taken` is unreliable for a small share of rows, in BOTH
+    -- directions: the raw column spans 0001-01-01 to 4024-12-04. Every row is
+    -- judged against a date it should sit near, never against a calendar
+    -- constant — an absolute floor is arbitrary, and being one-sided it can
+    -- never reject a future date.
+    --
+    -- Preferred anchor is the row's own administration (+/-365 days). ~296k
+    -- rows have none, so those fall back to their `academic_year`, which is
+    -- always populated; the +/-1 year window is wide enough to absorb the
+    -- academic-year tagging drift of #3801. Together they null 11,455 rows
+    -- (0.34% of dated rows) and bring the range to 2013-06-03 .. 2026-12-27.
+    --
+    -- The fallback is what earns its keep: an earlier version of this guard
+    -- used a 2000-01-01 floor for unanchored rows, which caught exactly 1 row
+    -- and let a ~1,300-row cluster of 2001-01-01 sittings through, because
+    -- they cleared the constant while sitting a decade from their academic
+    -- year.
+    --
+    -- Rows inside their window pass through untouched, so a legitimately
+    -- future-dated sitting within its administration window is preserved, and
+    -- `assessment_date_key` (`coalesce(administration, date_taken)`) keeps a
+    -- real administration date where one exists — the invariant #4546 rests on.
+    --
+    -- This matters more than the row counts suggest: the final select takes
+    -- `min(date_taken)` per canonical group, so one junk row poisons its whole
+    -- group's date. Nulling before the aggregate is what actually fixes it.
+    sanitized_responses as (
+        select
+            * except (date_taken),
+
+            case
+                when date_taken is null
+                then null
+                when
+                    canonical_administered_at is not null
+                    and date_diff(date_taken, canonical_administered_at, day)
+                    between -365 and 365
+                then date_taken
+                when
+                    canonical_administered_at is null
+                    and extract(year from date_taken)
+                    between academic_year - 1 and academic_year + 1
+                then date_taken
+            end as date_taken,
+        from scaffold_responses
     ),
 
     -- Per-partition tiebreak for location columns. NOT a canonical attribute —
-    -- school / _dbt_source_project are per-response location data that vary
-    -- across rows in the same (student, canonical_assessment, is_replacement)
-    -- partition because of upstream Illuminate canonicalization defects
-    -- (#3801) carrying wrong academic_year tags onto duplicated assessments.
-    -- first_value on a deterministic ordering picks both columns from the
-    -- same row so independent min() drift can't split them. Once #3801 is
-    -- resolved, the partition becomes pure and this CTE can be removed.
+    -- school / _dbt_source_project can vary within a (student,
+    -- canonical_assessment, is_replacement) partition when the student is
+    -- rostered to the canonical assessment at a second school. The ordering
+    -- credits the result to the school of the sitting; first_value picks both
+    -- columns from the same row so independent min() drift can't split them.
     tiebroken_attrs as (
         select
             *,
             first_value(powerschool_school_id) over (w) as selected_school_id,
             first_value(region) over (w) as selected_region,
             first_value(_dbt_source_project) over (w) as selected_dbt_source_project,
-        from scaffold_responses
+        from sanitized_responses
         window
             w as (
                 partition by
-                    illuminate_student_id, canonical_assessment_id, is_replacement
+                    student_number, source, canonical_assessment_id, is_replacement
                 -- powerschool_school_id is the final tiebreaker so that
                 -- partitions where every row has null date_taken and null
                 -- student_assessment_id (students rostered to canonical members
@@ -90,7 +190,8 @@ with
     internal_assessment_rollup as (
         select
             illuminate_student_id,
-            powerschool_student_number,
+            student_number,
+            source,
             canonical_assessment_id as assessment_id,
             canonical_title as title,
             canonical_administered_at as administered_at,
@@ -108,13 +209,14 @@ with
             response_type_id,
             response_type_code,
             response_type_description,
-            response_type_root_description,
 
+            -- members can score one standard through records with different roots
+            min(response_type_root_description) as response_type_root_description,
             min(date_taken) as date_taken,
 
             -- selected_* values are constant per partition (windowed in
             -- tiebroken_attrs). any_value() makes that explicit without
-            -- independent-min() drift. See #3801.
+            -- independent-min() drift.
             any_value(selected_school_id) as powerschool_school_id,
             any_value(selected_region) as region,
             any_value(selected_dbt_source_project) as _dbt_source_project,
@@ -122,8 +224,9 @@ with
             count(distinct assessment_id) as n_assessments,
 
             sum(points) as points,
+            sum(points_possible) as points_possible,
 
-            array_agg(distinct assessment_id) as assessment_ids,
+            array_agg(distinct assessment_id order by assessment_id) as assessment_ids,
 
             round(
                 safe_divide(sum(points), sum(points_possible)) * 100, 1
@@ -132,7 +235,8 @@ with
         where is_internal_assessment
         group by
             illuminate_student_id,
-            powerschool_student_number,
+            student_number,
+            source,
             canonical_assessment_id,
             canonical_title,
             canonical_administered_at,
@@ -149,14 +253,14 @@ with
             response_type,
             response_type_id,
             response_type_code,
-            response_type_description,
-            response_type_root_description
+            response_type_description
     ),
 
     response_union as (
         select
             illuminate_student_id,
-            powerschool_student_number,
+            student_number,
+            source,
             academic_year,
             scope,
             subject_area,
@@ -174,6 +278,7 @@ with
             response_type_root_description,
             date_taken,
             points,
+            points_possible,
             percent_correct,
             n_assessments,
             assessment_ids,
@@ -183,6 +288,13 @@ with
             administered_at,
             grade_level_id,
             performance_band_set_id,
+            performance_band_set_id as illuminate_performance_band_set_id,
+
+            cast(null as int64) as cc_dcid,
+            cast(null as string) as section_match_method,
+            cast(null as string) as apex_performance_band_label,
+            cast(null as int64) as apex_performance_band_label_number,
+            cast(null as bool) as apex_is_mastery,
 
             if(n_assessments > 1, true, false) as is_multipart_assessment,
         from internal_assessment_rollup
@@ -191,7 +303,8 @@ with
 
         select
             illuminate_student_id,
-            powerschool_student_number,
+            student_number,
+            source,
             academic_year,
             scope,
             subject_area,
@@ -209,6 +322,7 @@ with
             response_type_root_description,
             date_taken,
             points,
+            points_possible,
             percent_correct,
 
             1 as n_assessments,
@@ -221,15 +335,89 @@ with
             canonical_administered_at as administered_at,
             canonical_grade_level_id as grade_level_id,
             canonical_performance_band_set_id as performance_band_set_id,
+            canonical_performance_band_set_id as illuminate_performance_band_set_id,
+
+            cast(null as int64) as cc_dcid,
+            cast(null as string) as section_match_method,
+            cast(null as string) as apex_performance_band_label,
+            cast(null as int64) as apex_performance_band_label_number,
+            cast(null as bool) as apex_is_mastery,
 
             false as is_multipart_assessment,
-        from scaffold_responses
+        -- sanitized_responses, not scaffold_responses: both union branches must
+        -- read the cleaned date_taken. Reading the raw CTE here leaves the
+        -- non-internal branch unsanitized.
+        from sanitized_responses
         where not is_internal_assessment
+
+        union all
+
+        -- Apex scores and bands arrive per response from Focus; each assessment
+        -- is its own canonical group, so nothing rolls up
+        select
+            s.illuminate_student_id,
+            s.student_number,
+            s.source,
+            s.academic_year,
+            s.scope,
+            s.subject_area,
+            s.discipline,
+            s.module_type,
+            s.module_code,
+            s.region,
+            s._dbt_source_project,
+            s.is_internal_assessment,
+            s.is_replacement,
+
+            r.response_type,
+            r.response_type_id,
+            r.response_type_code,
+            r.response_type_description,
+            r.response_type_root_description,
+            r.date_taken,
+            r.points,
+            r.points_possible,
+
+            -- float64 in Focus; numeric keeps the union's Illuminate type
+            cast(r.percent_correct as numeric) as percent_correct,
+
+            1 as n_assessments,
+
+            [s.assessment_id] as assessment_ids,
+
+            s.powerschool_school_id,
+            s.title,
+            s.assessment_id,
+            s.administered_at,
+            s.grade_level_id,
+
+            r.performance_band_set_id,
+
+            -- Apex band sets are Focus ids, so they never look up Illuminate bands
+            cast(null as int64) as illuminate_performance_band_set_id,
+
+            s.cc_dcid,
+            s.section_match_method,
+
+            r.performance_band_label as apex_performance_band_label,
+            r.performance_band_label_number as apex_performance_band_label_number,
+            r.is_mastery as apex_is_mastery,
+
+            false as is_multipart_assessment,
+        from {{ ref("int_assessments__scaffold") }} as s
+        inner join
+            {{ ref("int_focus__apex_results") }} as r
+            on s.student_number = r.student_number
+            and s._dbt_source_project = r._dbt_source_project
+            and s.assessment_id = r.assessment_id
+            and s.student_assessment_id = r.session_id
+        where s.source = 'apex'
     )
 
 select
     ru.illuminate_student_id,
-    ru.powerschool_student_number,
+    ru.student_number,
+    ru.source,
     ru.academic_year,
     ru.scope,
     ru.subject_area,
@@ -248,6 +436,7 @@ select
     ru.response_type_root_description,
     ru.date_taken,
     ru.points,
+    ru.points_possible,
     ru.percent_correct,
     ru.title,
     ru.assessment_id,
@@ -257,18 +446,24 @@ select
     ru.n_assessments,
     ru.is_multipart_assessment,
     ru.assessment_ids,
-
-    pbl.label as performance_band_label,
-    pbl.label_number as performance_band_label_number,
-    pbl.is_mastery,
+    ru.cc_dcid,
+    ru.section_match_method,
 
     rta.name as term_administered,
 
     rtt.name as term_taken,
+
+    if(
+        ru.source = 'apex', ru.apex_performance_band_label, pbl.label
+    ) as performance_band_label,
+    if(
+        ru.source = 'apex', ru.apex_performance_band_label_number, pbl.label_number
+    ) as performance_band_label_number,
+    if(ru.source = 'apex', ru.apex_is_mastery, pbl.is_mastery) as is_mastery,
 from response_union as ru
 left join
     {{ ref("int_illuminate__performance_band_sets") }} as pbl
-    on ru.performance_band_set_id = pbl.performance_band_set_id
+    on ru.illuminate_performance_band_set_id = pbl.performance_band_set_id
     and ru.percent_correct between pbl.minimum_value and pbl.maximum_value
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as rta

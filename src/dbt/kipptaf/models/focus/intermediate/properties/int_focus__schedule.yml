@@ -1,0 +1,22 @@
+models:
+  - name: int_focus__schedule
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__schedule, exposing Miami's student schedules at network level —
+      one row per student per course period, with section, course, and
+      marking-period context resolved. The grain is set in the package model,
+      which keeps one stint when Focus holds several for a student and course
+      period (a drop and re-add); its description gives the pick order. Read
+      stg_focus__schedule for every stint. Column docs and tests live on the
+      kippmiami source model.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - course_period_id
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

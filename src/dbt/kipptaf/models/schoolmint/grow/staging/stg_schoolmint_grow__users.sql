@@ -5,6 +5,7 @@ select
     email,
     `name`,
     coach,
+    readonly as read_only,
     inactive,
 
     /* records */
@@ -14,6 +15,7 @@ select
 
     /* repeated records */
     roles,
+    regionaladminschools as regional_admin_schools,
 
     /* transformations */
     safe_cast(internalid as int) as internal_id_int,

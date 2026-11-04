@@ -1,8 +1,8 @@
 # Automation Conditions
 
-Teamster uses three custom `AutomationCondition` builders in
+Teamster uses four custom `AutomationCondition` builders in
 `teamster.core.automation_conditions` that replace Dagster's default
-`AutomationCondition.eager()` for dbt assets. All three share a common skeleton
+`AutomationCondition.eager()` for dbt assets. All four share a common skeleton
 (`_build_dbt_condition`) and differ only in what triggers a materialization
 request beyond `newly_missing`.
 
@@ -50,33 +50,91 @@ version stays the same.
 ### `dbt_union_relations_automation_condition()`
 
 A third condition that sits between view and table. Triggers on everything in
-the view condition, plus:
+the view condition, plus one extra trigger:
 
-- **Ancestor code version changes** — recursive `code_version_changed` detection
-  through intermediate views (up to 10 levels). When an upstream model's raw SQL
-  changes (e.g., a staging model adds a column after a deploy), the view re-runs
-  so the `union_relations` macro recompiles with the updated column set.
+- **A parent's code change lands** — the view re-runs on the tick a parent's
+  post-code-change materialization lands. "Code change" covers the parent's own
+  raw SQL or any of its ancestors'. A view parent counts when it rebuilds
+  itself, and the check also looks through it to the table behind it (up to 10
+  levels).
+
+It does **not** re-run on the deploy tick itself. At that point the parent still
+has its old schema, and re-running then compiles the stale column list
+([#4290](https://github.com/TEAMSchools/teamster/issues/4290)). The trigger
+stays armed until the view is requested, so a run that started before the parent
+landed cannot consume it.
 
 Unlike the table condition, this does **not** trigger on upstream data changes
 (`any_deps_updated`). Re-materializing views on every upstream data refresh
-would waste Dagster credits and Kubernetes resources. Only code deploys that
-change upstream model definitions trigger a re-run.
+would waste Dagster credits and Kubernetes resources.
+
+Known limits:
+
+- A parent that reloads and finishes rebuilding within one sensor tick is
+  missed.
+- If a parent table does a data rebuild before its changed ancestor rebuilds,
+  the view re-runs early against the old schema.
+- A second parent that lands on the tick right after the view was requested is
+  dropped. This usually does no harm, because the requested run compiles after
+  the landing. The exception is a table behind a view parent.
+
+In each case, rematerialize the view from the Dagster UI.
 
 The `CustomDagsterDbtTranslator` **auto-detects** these views by checking for
 `"union_relations"` in the model's `raw_code`.
 
-To manually override the condition type for any model, set
-`meta.dagster.automation_condition.type` in the dbt model's config:
+## Cron-cadence tables
+
+### `dbt_cron_automation_condition(cron_schedule, cron_timezone)`
+
+For expensive `materialized: table` models whose consumers refresh on a schedule
+(nightly extracts, Cube pre-aggregation refresh keys). Under the eager table
+condition, a wide table rebuilds on **every** upstream data refresh — freshness
+nothing consumes. This condition swaps the ancestor-updated trigger for
+`cron_tick_passed`: the table rebuilds on each cron tick instead.
+
+Everything else in the shared skeleton is retained — `newly_missing`,
+`code_version_changed` (deploys still rebuild immediately), and the
+deps-missing/in-progress guards. The tick trigger is wrapped in
+`.since(newly_requested | newly_updated)`, so a tick that fires while a dep is
+missing or in progress is latched, not lost — the request goes out once the
+guard clears.
+
+It is deliberately **not** Dagster's stock `AutomationCondition.on_cron()`: that
+condition's `all_deps_updated_since_cron` gate waits for _every_ dep to update
+after each tick, so one slower-cadence upstream (e.g. a weekly model) silently
+starves the schedule. `cron_tick_passed` is unconditional — a rebuild on a tick
+where nothing changed is accepted waste (one scan) in exchange for a
+deadlock-free cadence.
+
+Opt a model in via `meta.dagster.automation_condition.cron_schedule` in its
+properties YAML:
 
 ```yaml
 models:
-  - name: my_model
+  - name: my_expensive_model
     config:
+      materialized: table
       meta:
         dagster:
           automation_condition:
-            type: table # or "view"
+            cron_schedule: 0 0 * * *
+            # cron_timezone: America/New_York  # optional
 ```
+
+Contract and constraints:
+
+- **Tables only.** The translator ignores the key on `view` / `ephemeral` models
+  — a view must keep its view or `union_relations` condition (losing ancestor
+  code-version detection makes a stale `union_relations` view non-self-healing).
+- `cron_timezone` defaults to the code location's `LOCAL_TIMEZONE` (passed to
+  `CustomDagsterDbtTranslator` at construction); set the meta key only to
+  deviate from it.
+- The cron expression is **not validated at `dbt parse`** — a typo surfaces when
+  Dagster loads definitions. Multi-tick expressions (`0 0,10,15 * * *`) are
+  fine; align ticks ahead of the downstream consumers' refresh schedules.
+- Downstream eager tables cascade normally: assets requested on the same
+  evaluation batch into one run, and dbt orders them by DAG position.
 
 ## Non-dbt partitioned assets
 

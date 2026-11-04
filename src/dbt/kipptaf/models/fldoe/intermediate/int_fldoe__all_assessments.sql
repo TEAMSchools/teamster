@@ -1,4 +1,7 @@
 with
+    -- Passthrough over the kippmiami build. student_number arrives already
+    -- resolved there from int_focus__students as the 8400-prefixed network
+    -- number; nothing here re-keys it.
     source as (
         {{
             dbt_utils.union_relations(
@@ -60,13 +63,15 @@ select
     fl.test_date,
     fl.student_number,
 
-    {{ extract_code_location("fl") }} as _dbt_source_project,
+    {{ extract_source_project("fl") }} as _dbt_source_project,
 
     cw1.sublevel_number,
     cw1.sublevel_name,
 
     'Actual' as results_type,
     'KTAF FL' as district_state,
+
+    cast(fl.assessment_grade as int) as grade_level,
 
     case
         when fl.test_code = 'ALG01' and fl.assessment_grade = '8'
@@ -75,14 +80,6 @@ select
         then concat(fl.test_code, '_', 'HS')
         else fl.test_code
     end as aligned_level_test_code,
-
-    case
-        when fl.assessment_subject like 'English Language Arts%'
-        then 'Text Study'
-        when fl.assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
-        then 'Mathematics'
-        else fl.assessment_subject
-    end as illuminate_subject,
 
     case
         when fl.performance_level = 1

@@ -1,7 +1,32 @@
 models:
   - name: stg_google_sheets__crdc__student_numbers
+    description: >-
+      Manually maintained list of students tagged to CRDC question sections that
+      no source system records, such as distance education (`DSED-2`), athletics
+      (`ATHL-3`), and arrests (`ARRS-1` through `ARRS-6`). One row per student
+      per tagged section. `rpt_tableau__crdc_roster` joins it on
+      `student_number`.
+    data_tests:
+      # TODO: raise to error once the duplicate row is removed from the sheet
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - crdc_question_section
+          config:
+            severity: warn
     columns:
       - name: crdc_question_section
         data_type: string
+        description: CRDC question section the student is tagged to.
+        config:
+          meta:
+            contains_pii: true
       - name: student_number
         data_type: numeric
+        description: >-
+          School-facing student number, typed numeric because it comes from the
+          sheet.
+        config:
+          meta:
+            contains_pii: true

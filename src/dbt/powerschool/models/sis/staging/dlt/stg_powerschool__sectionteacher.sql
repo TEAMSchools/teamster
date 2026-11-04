@@ -1,0 +1,22 @@
+select
+    start_date,
+    end_date,
+    notes,
+    whocreated,
+    whencreated,
+    whomodified,
+    whenmodified,
+    sectionnickname,
+    ip_address,
+    whomodifiedtype,
+    transaction_date,
+    executionid,
+    allocation,
+
+    cast(id as int) as id,
+    cast(teacherid as int) as teacherid,
+    cast(sectionid as int) as sectionid,
+    cast(roleid as int) as roleid,
+    cast(priorityorder as int) as priorityorder,
+    cast(whomodifiedid as int) as whomodifiedid,
+from {{ source("powerschool_dlt", "sectionteacher") }}

@@ -1,6 +1,54 @@
 models:
   - name: rpt_tableau__ddi_dashboard
+    description: >-
+      Weekly extract behind the DDI Suite dashboard, unioning ES/MS assessment
+      responses, HS assessment responses, and staff walkthrough observations. An
+      assessment response appears for a student when that student was enrolled
+      as of the end of the week the assessment was administered, determined from
+      enrollment dates rather than from whether the student is enrolled today,
+      so students who have since withdrawn or graduated keep their history for
+      as long as the extract's two-year window still covers it. Rows are
+      restricted to students holding a valid enrollment status, and students in
+      an out-of-district placement are excluded.
+
+      Network-wide, Miami included. Miami held 5,378 AY2026 rows in prod as of
+      2026-08-27, but that was a partial picture: the ES/MS assessment leg
+      dropped Miami on `not co.is_out_of_district`, which was null for Miami
+      until #5038, while the other union legs let it through. Ratified on #4996.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - region
+              - week_start_monday
+              - assessment_id
+              - title
+              - response_type
+              - response_type_code
+              - response_type_description
+              - is_replacement
+          config:
+            severity: error
     columns:
+      - name: region
+        data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: week_start_monday
+        data_type: date
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: assessment_id
+        data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: student_number
         data_type: int64
       - name: student_name
@@ -10,8 +58,6 @@ models:
       - name: schoolid
         data_type: int64
       - name: school
-        data_type: string
-      - name: region
         data_type: string
       - name: grade_level
         data_type: int64
@@ -25,8 +71,6 @@ models:
         data_type: string
       - name: ethnicity
         data_type: string
-      - name: week_start_monday
-        data_type: date
       - name: week_end_sunday
         data_type: date
       - name: days_in_session
@@ -97,14 +141,15 @@ models:
         data_type: string
       - name: is_current_week
         data_type: boolean
-      - name: assessment_id
-        data_type: string
       - name: is_mastery_int
         data_type: float64
       - name: is_complete
         data_type: int64
       - name: qbl
         data_type: string
+        description:
+          Always null. QBLs are a retired assessment program; the column stays
+          only so the DDI Suite workbook's field list does not change.
       - name: grade_goal
         data_type: float64
       - name: school_goal
@@ -127,6 +172,10 @@ models:
         data_type: string
       - name: is_qbl
         data_type: boolean
+        description:
+          False on assessment rows and null on walkthrough rows. QBLs are a
+          retired assessment program; the column stays only so the DDI Suite
+          workbook's field list does not change.
       - name: is_passed_iready_2plus_reading_int
         data_type: int64
       - name: is_passed_iready_4plus_reading_int

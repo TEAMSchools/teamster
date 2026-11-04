@@ -39,7 +39,8 @@ with
                     'Chronic Absence: 40'
                 ]
             ) as family_communication_reason
-        cross join unnest(['kippnewark', 'kippcamden']) as _dbt_source_project
+        cross join
+            unnest(['kippnewark', 'kippcamden', 'kipppaterson']) as _dbt_source_project
     ),
 
     with_business_unit as (

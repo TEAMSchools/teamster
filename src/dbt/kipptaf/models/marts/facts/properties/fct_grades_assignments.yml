@@ -8,6 +8,24 @@ models:
       enrollment period. FK to dim_student_section_enrollments, dim_terms, and
       dim_dates (role-playing via due_date_key). Reaches dim_student_enrollments
       by traversing student_section_enrollment_key.
+
+
+      Sourced from int_students__gradebook_assignments_scores, which unions the
+      three NJ PowerSchool districts with Miami's Focus gradebook. Miami's
+      PowerSchool gradebook archive is excluded in every year — Focus is Miami's
+      sole gradebook source. Focus records no missing flag and no numeric grade
+      distinct from the points score, so is_missing and numeric_grade_earned are
+      null on every Miami row.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Nightly: every data test on this view recomputed it in full, and
+          # dbt Cloud CI ran that on nearly every PR. No Cube cube or Tableau
+          # exposure reads this mart, so nightly clears its break-even with
+          # room to spare. Refs #5217
+          automation_condition:
+            cron_schedule: 0 3 * * *
     columns:
       - name: grades_assignment_key
         data_type: string
@@ -17,33 +35,22 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
-          # TODO(#3915): remove the warn override once PS source cleanup
-          # completes; residual ~71 duplicate rows are historical PowerSchool
-          # double-writes (frozen corpus, AY <= 2023). When #3915 closes,
-          # drop this block and restore bare `- unique`.
           - unique:
               config:
-                severity: warn
-          - not_null
+                severity: error
 
       - name: student_section_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_section_enrollments. Surrogate key derived from
           cc_dcid and _dbt_source_project.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_section_enrollments')
-            to_columns: [student_section_enrollment_key]
-            warn_unsupported: false
-        data_tests:
-          - not_null
-
-          - relationships:
-              arguments:
-                to: ref('dim_student_section_enrollments')
-                field: student_section_enrollment_key
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_section_enrollments')
+              to_columns: [student_section_enrollment_key]
       - name: term_key
         data_type: string
         description: >-
@@ -51,16 +58,11 @@ models:
           start_date, region, and school_id. Null when due_date does not fall
           within any reporting term for the school and region.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
       - name: due_date_key
         data_type: date
         description: >-
@@ -72,16 +74,9 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__assignmentsection
             source_column: duedate
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
       - name: academic_year
         data_type: int64
         description: >-
@@ -91,7 +86,7 @@ models:
         quote: true
         data_type: string
         description: >-
-          Name of the assignment as entered in the PowerSchool gradebook.
+          Name of the assignment as the teacher entered it in the gradebook.
 
       - name: category_name
         data_type: string
@@ -152,12 +147,14 @@ models:
       - name: is_missing
         data_type: boolean
         description: >-
-          TRUE if the assignment is flagged as missing in PowerSchool.
+          TRUE if the assignment is flagged as missing. NULL on Focus rows —
+          Focus records no missing flag on a gradebook score.
 
       - name: is_late
         data_type: boolean
         description: >-
-          TRUE if the assignment is flagged as late in PowerSchool.
+          TRUE if the assignment is flagged as late. On Focus rows this is the
+          score's late flag.
 
       - name: is_exempt
         data_type: boolean

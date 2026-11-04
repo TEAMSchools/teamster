@@ -2,6 +2,7 @@ with
     es_grad as (
         select
             co._dbt_source_relation,
+            co._dbt_source_project,
             co.student_number,
 
             s.abbreviation as entry_school,
@@ -16,18 +17,27 @@ with
             ) as is_es_grad,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
-            {{ ref("stg_powerschool__schools") }} as s
+            {{ ref("int_students__schools") }} as s
             on co.entry_schoolid = s.school_number
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
+            and co._dbt_source_project = s._dbt_source_project
         where co.rn_year = 1
-        group by co._dbt_source_relation, co.student_number, s.abbreviation
+        group by
+            co._dbt_source_relation,
+            co._dbt_source_project,
+            co.student_number,
+            s.abbreviation
     ),
 
     dlm as (
-        select _dbt_source_relation, student_number, max(pathway_option) as dlm,
+        select
+            _dbt_source_relation,
+            _dbt_source_project,
+            student_number,
+
+            max(pathway_option) as dlm,
         from {{ ref("int_students__graduation_path_codes") }}
         where rn_discipline_distinct = 1 and final_grad_path_code = 'M'
-        group by _dbt_source_relation, student_number
+        group by _dbt_source_relation, _dbt_source_project, student_number
     ),
 
     tier as (
@@ -84,6 +94,58 @@ with
             ) as rn_military_testing,
         from {{ ref("int_kippadb__standardized_test") }}
         where test_type in ('ASVAB', 'Military Physical Training')
+    ),
+
+    overgrad_admissions as (
+        select
+            student__external_student_id,
+            award_letter__out_of_pocket,
+            award_letter__unmet_need,
+            updated_at,
+
+            safe_cast(university__ipeds_id as string) as university_ipeds_id_str,
+        from {{ ref("int_overgrad__admissions") }}
+    ),
+
+    # trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    matriculated_award_letter_all as (
+        select
+            app.applicant as contact_id,
+
+            adm.award_letter__out_of_pocket,
+            adm.award_letter__unmet_need,
+            adm.updated_at,
+        from {{ ref("base_kippadb__application") }} as app
+        inner join {{ ref("stg_kippadb__account") }} as acc on app.school = acc.id
+        inner join
+            overgrad_admissions as adm
+            on app.applicant = adm.student__external_student_id
+            and acc.nces_id = adm.university_ipeds_id_str
+        where app.is_matriculated
+    ),
+
+    matriculated_award_letter as (
+        {{
+            dbt_utils.deduplicate(
+                relation="matriculated_award_letter_all",
+                partition_by="contact_id",
+                order_by="updated_at desc",
+            )
+        }}
+    ),
+
+    college_gpa_sources as (
+        select c.id as contact_id, g.`source`,
+        from {{ ref("stg_kippadb__contact") }} as c
+        inner join
+            {{ ref("stg_kippadb__gpa") }} as g
+            on c.id = g.student
+            and c.current_college_cumulative_gpa_rounded = g.gpa_rounded
+            and g.rn_student_record_type_gpa = 1
+        inner join
+            {{ ref("stg_kippadb__record_type") }} as rt
+            on g.record_type_id = rt.id
+            and rt.name = 'Cumulative College'
     ),
 
     roster as (
@@ -166,6 +228,7 @@ with
             c.contact_actual_college_graduation_date,
             c.contact_actual_hs_graduation_date,
             c.contact_advising_provider,
+            c.contact_college_counselor_id,
             c.contact_college_graduated_from,
             c.contact_college_match_display_gpa,
             c.contact_current_college_cumulative_gpa,
@@ -222,6 +285,7 @@ with
             c.record_type_last_modified_by_id,
             c.record_type_namespace_prefix,
             c.contact_postsec_advisor_name,
+            c.contact_college_counselor_name,
             c.years_out_of_hs,
 
             os.id as overgrad_students_id,
@@ -266,6 +330,11 @@ with
             ms.total_qualified_military_branches,
 
             mpt.physical_training_requirement_passed,
+
+            mal.award_letter__out_of_pocket as out_of_pocket_matriculated,
+            mal.award_letter__unmet_need as unmet_need_matriculated,
+
+            gs.`source` as contact_current_college_cumulative_gpa_source,
 
             concat(
                 os.assigned_counselor__last_name,
@@ -334,15 +403,15 @@ with
         left join
             {{ ref("int_overgrad__students") }} as os
             on se.salesforce_id = os.external_student_id
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="os") }}
+            and se._dbt_source_project = os._dbt_source_project
         left join
             es_grad as e
             on se.student_number = e.student_number
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="e") }}
+            and se._dbt_source_project = e._dbt_source_project
         left join
             dlm as d
             on se.student_number = d.student_number
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="d") }}
+            and se._dbt_source_project = d._dbt_source_project
         left join tier as t on se.salesforce_id = t.contact and t.rn_tier_recent = 1
         left join
             military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 1
@@ -356,7 +425,14 @@ with
             on c.contact_id = mpt.contact
             and mpt.test_type = 'Military Physical Training'
             and mpt.rn_military_testing = 1
-        where se.rn_undergrad = 1 and se.grade_level between 8 and 12
+        left join matriculated_award_letter as mal on c.contact_id = mal.contact_id
+        left join college_gpa_sources as gs on c.contact_id = gs.contact_id
+        -- TODO(#5181): Miami stays out until the KIPP Forward feeds downstream
+        -- are reviewed for it.
+        where
+            se.rn_undergrad = 1
+            and se.grade_level between 8 and 12
+            and se.region != 'Miami'
     )
 
 select *,

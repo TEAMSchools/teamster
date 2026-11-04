@@ -13,6 +13,24 @@ models:
         data_type: string
       - name: _dagster_partition_key
         data_type: string
+      - name: grade_level
+        data_type: int64
+        description: >-
+          Numeric grade level derived from application_grade — K/Kindergarten =
+          0, PK/Prekindergarten = -1, else the parsed digit grade. No district
+          currently recruits PK through Finalsite, so the PK match is unverified
+          against a real raw value; not_null makes any unrecognized grade string
+          (which parses to null) fail loudly.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                quote: false
+              config:
+                severity: error
       - name: academic_hold_date
         data_type: date
       - name: academic_hold_timestamp
@@ -23,6 +41,11 @@ models:
         data_type: timestamp
       - name: active_school_year
         data_type: string
+      - name: active_school_year_display
+        data_type: string
+        description: >-
+          active_school_year with the two-digit end-year suffix collapsed (e.g.
+          2026-27 to 2026-), for display concatenation downstream.
       - name: active_school_year_int
         data_type: int64
       - name: applicant_date
@@ -73,12 +96,15 @@ models:
         data_type: timestamp
       - name: enrollment_type
         data_type: string
+        description: >-
+          Enrollment type, initcap-normalized; a null raw value defaults to New.
       - name: financial_hold_date
         data_type: date
       - name: financial_hold_timestamp
         data_type: timestamp
       - name: first_name
         data_type: string
+        description: First name, initcap-normalized.
       - name: gender
         data_type: string
       - name: inactive_inquiry_date

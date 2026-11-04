@@ -1,15 +1,40 @@
 models:
   - name: rpt_deanslist__sight_words
+    description: >-
+      DeansList SFTP extract of Illuminate Sight Words Quiz responses
+      administered since 1 July of the current academic year, one row per
+      student, quiz date, and sight word. Every region is included. Each
+      response is tagged with the network reporting term (RT, school_id 0) its
+      administration date falls in; a date outside every term drops the row.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - date_administered
+              - word
     columns:
       - name: student_number
         data_type: int64
+        description: Student number, from the Illuminate local student id.
       - name: date_administered
         data_type: date
+        description: Date the quiz was administered.
       - name: word
         data_type: string
+        description: The sight word, from the repository field label.
       - name: term_name
         data_type: string
+        description: Network reporting term the administration date falls in.
       - name: mastery_status
         data_type: string
+        description:
+          Mastered for a yes response, Not Mastered for no, Retested for
+          retested. Null for any other value.
       - name: is_mastery
         data_type: int64
+        description:
+          1 for a yes or retested response, 0 for no, null for any other value.

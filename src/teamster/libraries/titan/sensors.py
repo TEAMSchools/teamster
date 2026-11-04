@@ -12,7 +12,6 @@ from dagster import (
     sensor,
 )
 from dagster_shared import check
-from paramiko.ssh_exception import SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -38,16 +37,10 @@ def build_titan_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            with (
-                ssh_titan.get_connection() as connection,
-                connection.open_sftp() as sftp_client,
-            ):
-                files = ssh_titan.listdir_attr_r(
-                    sftp_client=sftp_client, exclude_dirs=exclude_dirs
-                )
-        except SSHException as e:
-            return SkipReason(str(e))
+        files = ssh_titan.listdir_attr_r_or_skip(exclude_dirs=exclude_dirs)
+
+        if isinstance(files, SkipReason):
+            return files
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()

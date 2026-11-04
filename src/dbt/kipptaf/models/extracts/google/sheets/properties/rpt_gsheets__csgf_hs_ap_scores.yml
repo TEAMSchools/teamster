@@ -1,13 +1,56 @@
 models:
   - name: rpt_gsheets__csgf_hs_ap_scores
+    description:
+      Scoped to students who completed the prior school year at a high school
+      (is_enrolled_recent) to match rpt_gsheets__csgf_hs_enrollment's
+      population; see rpt_gsheets__csgf_hs_sat.yml for the full rationale (same
+      filter on the HS student-level models and AP Offerings).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - test_year
+              - aptest_name
     columns:
       - name: studentid
         data_type: int64
+        description: >-
+          The student's PowerSchool student_number (the school-facing student
+          number), not the internal studentid key. CSGF's template names the
+          column studentid.
+        config:
+          meta:
+            contains_pii: true
       - name: test_year
         data_type: string
+        description: School year of the exam, written as 2024-2025.
+        config:
+          meta:
+            contains_pii: true
       - name: aptest_name
         data_type: string
+        description:
+          Sourced from int_assessments__ap_assessments.ap_course_name, a
+          different upstream than rpt_gsheets__csgf_hs_ap_offerings' College
+          Board crosswalk -- but subject to the same naming-mismatch risk
+          against CSGF's official names for a given cycle, remapped here with
+          the same case statement. Keep both models' case statements in sync;
+          update per the csgf-data-collection skill whenever CSGF's list
+          changes.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level_when_taken
         data_type: int64
+        description: >-
+          The student's grade level in the school year the exam was taken.
+        config:
+          meta:
+            contains_pii: true
       - name: score
         data_type: numeric
+        description: The student's highest score on that exam, 1 to 5.
+        config:
+          meta:
+            contains_pii: true

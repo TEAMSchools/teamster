@@ -1,9 +1,8 @@
 # trunk-ignore-all(yamllint/quoted-strings)
 packages:
-  - local: ../deanslist
+  - local: ../dbt_overrides
   - local: ../finalsite
   - local: ../iready
-  - local: ../powerschool
   - local: ../focus
   - local: ../renlearn
   # https://github.com/dbt-labs/dbt-external-tables

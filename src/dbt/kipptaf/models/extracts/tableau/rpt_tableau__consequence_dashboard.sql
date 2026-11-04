@@ -71,7 +71,7 @@ left join
     {{ ref("int_deanslist__incidents__penalties") }} as dli
     on co.student_number = dli.student_school_id
     and co.academic_year = dli.create_ts_academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
+    and co._dbt_source_project = dli._dbt_source_project
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as d
     on co.schoolid = d.school_id
@@ -81,5 +81,5 @@ left join
     suspension_att as att
     on co.studentid = att.studentid
     and co.academic_year = att.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
+    and co._dbt_source_project = att._dbt_source_project
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}

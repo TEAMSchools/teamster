@@ -1,15 +1,5 @@
 # CLAUDE.md — `src/teamster/`
 
-## Overview
-
-```text
-teamster/
-  __init__.py             # GCS_PROJECT_NAME = "teamster-332318"
-  core/                   # Shared infrastructure (IO managers, resources, utils)
-  libraries/              # Reusable asset builders, resources, and schemas
-  code_locations/         # Per-district Dagster definitions (kipptaf, kippnewark, etc.)
-```
-
 ## Library + Code Location Pattern
 
 Integrations follow a two-layer separation:
@@ -25,11 +15,10 @@ config and a few lines of Python in the code location — no library changes.
 
 ## Python Standards
 
-`requires-python = ">=3.13"`. All library resource methods require return type
-annotations. Use built-in generics (`list[str]`, `dict[str, int]`), `X | None`
-for nullable params, and `_` for unused unpacked variables. Callable-returning
-functions annotate as `Callable[[], ReturnType]` (import from
-`collections.abc`).
+All library resource methods require return type annotations. Use built-in
+generics (`list[str]`, `dict[str, int]`), `X | None` for nullable params, and
+`_` for unused unpacked variables. Callable-returning functions annotate as
+`Callable[[], ReturnType]` (import from `collections.abc`).
 
 **`defaultdict` typing**: `defaultdict(set[T])` works at runtime in 3.13
 (GenericAlias is callable) but is semantically wrong — use
@@ -69,18 +58,15 @@ at construction and crashes module-load resource wiring when the var is unset
 
 ## Library Categories
 
-Libraries fall into four patterns based on how they ingest data:
-
-| Pattern            | Libraries                                                                                  | How it works                                                    |
-| ------------------ | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| **SFTP file drop** | collegeboard, edplan, fldoe, iready, nsc, pearson, performance_management, renlearn, titan | `build_sftp_*_asset()` from `libraries/sftp/` + Avro schemas    |
-| **REST API**       | coupa, deanslist, knowbe4, level_data, overgrad, smartrecruiters                           | Custom `build_*_asset()` factory + resource class               |
-| **Framework**      | dbt, dlt, google, airbyte, fivetran                                                        | Dagster-native integration (`dagster-dbt`, `dagster-dlt`, etc.) |
-| **Multi-access**   | adp (API + SFTP), amplify (API + SFTP), powerschool (ODBC + SFTP + API)                    | Multiple factories per product line                             |
-
 Schema-only libraries (collegeboard, dayforce, fldoe, nsc, pearson,
 performance_management) contain only Avro schemas — the asset is built in the
 code location using the generic SFTP factory.
+
+`cambium` is the exception: alongside its schemas it has an `assets.py` holding
+`build_partitions_def` and `build_remote_file_regex`. The filename regex is
+composed FROM the partitions definition, so a filename the regex matches always
+captures a declared partition key — put any new Cambium feed's regex through
+that function rather than hand-writing the alternations per code location.
 
 ## Code Location Structure
 
@@ -88,25 +74,7 @@ code location using the generic SFTP factory.
 integrations — adp, google, ldap, tableau, etc. — are kipptaf-only). Use it as
 the reference implementation when adding new integrations to other districts.
 
-Each code location follows the same layout:
-
-```text
-code_locations/<name>/
-  CLAUDE.md          # Module-specific context (read before working here)
-  __init__.py        # CODE_LOCATION, LOCAL_TIMEZONE, CURRENT_FISCAL_YEAR, DBT_PROJECT
-  definitions.py     # Dagster Definitions object wiring everything together
-  resources.py       # Location-specific resource instances (if any)
-  dbt/assets.py      # dbt asset definitions
-  <integration>/     # Per-integration assets, config YAML, optional sensors
-```
-
-**Identity constants** (defined in `__init__.py`):
-
-| Constant              | Example (`kippnewark`)          |
-| --------------------- | ------------------------------- |
-| `CODE_LOCATION`       | `"kippnewark"`                  |
-| `LOCAL_TIMEZONE`      | `ZoneInfo("America/New_York")`  |
-| `CURRENT_FISCAL_YEAR` | fiscal year (updated each July) |
+Each code location carries its own CLAUDE.md — read it before working there.
 
 **GCS bucket**: `teamster-<code_location>` (redirects to `teamster-test` in
 branch deployments).
@@ -122,6 +90,18 @@ Resources are defined in two places:
   kipptaf defines ADP WFN, Airbyte, Coupa, LDAP, Tableau, etc.). Only exists
   when a code location needs resources beyond the shared set.
 
+Declare credential fields (secrets, passwords, tokens, API keys, OAuth client
+ids) as `name: str = Field(repr=False)` so tracebacks and log lines that print
+the resource omit them. `SecretStr` fails at class definition on a
+`ConfigurableResource` (`DagsterInvalidPythonicConfigDefinitionError`).
+
+**`EnvVar`-backed resource config resolves in TWO places** under
+`k8s_job_executor`: execution-plan build (code server) AND step-pod resource
+init (run pod). A field like `password=EnvVar("PS_SSH_PASSWORD")` needs that var
+in BOTH `dagster-cloud.yaml` blocks — `container_context` (server) and
+`run_k8s_config` (run pod). Missing server-side fails at launch
+(`PostProcessingError: ... not set`); missing run-pod-side fails at step init.
+
 ## Asset Key Convention
 
 `[code_location, integration, ...]` — e.g., `kippnewark/powerschool/students`,
@@ -135,8 +115,8 @@ In Python, get this slash form with `key.to_user_string()` —
 
 See `core/CLAUDE.md` for automation condition builders
 (`dbt_view_automation_condition`, `dbt_union_relations_automation_condition`,
-`dbt_table_automation_condition`). Non-dbt assets use
-`AutomationCondition.eager()` or sensor/schedule triggers.
+`dbt_table_automation_condition`, `dbt_cron_automation_condition`). Non-dbt
+assets use `AutomationCondition.eager()` or sensor/schedule triggers.
 
 ## IO Managers
 
@@ -147,8 +127,11 @@ All use Hive-style partitioned GCS paths.
 
 **Avro schema validation**: All asset factories yielding Avro output call
 `build_check_spec_avro_schema_valid()` + `check_avro_schema_valid()` from
-`core/asset_checks.py` (warns on extra fields, doesn't fail). Clear a drift
-warning by adding the field to the **Pydantic model** in
+`core/asset_checks.py` (warns on extra fields, doesn't fail). The check compares
+TOP-LEVEL record keys only — extra fields inside a nested struct (e.g. a new
+`households` subfield) are silently dropped by the Avro writer and never
+flagged; a clean check is not evidence of nested coverage. Clear a drift warning
+by adding the field to the **Pydantic model** in
 `libraries/<integration>/.../schema.py` (the code-location `schema.py` only
 regenerates the Avro via `py_avro_schema.generate()`) — there is no allowlist,
 the fix is always to declare the field. Shared models (e.g. amplify mclass
@@ -178,16 +161,26 @@ first post-deploy tick.
 **Retry pattern**: Use `tenacity` — standard import set:
 `retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter`.
 Match on a specific exception class (define one if the upstream code raises bare
-`Exception`), never on error message or bare `Exception`. Existing examples:
-`libraries/adp/workforce_now/api/resources.py`,
-`libraries/tableau/resources.py`, `libraries/level_data/grow/resources.py`. Wrap
-the init path (`fetch_token` / `connect` in `setup_for_execution`) too, not just
-the request method. For network-call retries, the predicate must include
+`Exception`), never on error message or bare `Exception`; e.g. `GrowServerError`
+in `libraries/level_data/grow/resources.py`. Wrap the init path (`fetch_token` /
+`connect` in `setup_for_execution`) too, not just the request method. For
+network-call retries, the predicate must include
 `(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
-`ConnectTimeout`. For runtime-parameterized retry loops (e.g.
-`with_powerschool_retry`), use `tenacity.Retrying` — a manual
-`for attempt in range(...)` has no backoff. Avoid broad base classes whose
-subclasses include deterministic config errors (e.g.
+`ConnectTimeout` (examples: `libraries/adp/workforce_now/api/resources.py`,
+`libraries/overgrad/resources.py`). Keep `RequestsConnectionError` whole even
+though `SSLError` includes certificate failures that won't recover: a wasted
+retry costs seconds, while failing fast on a handshake blip can throw away a
+long paginated pull. Let only 429 and 5xx reach the predicate as `HTTPError`;
+raise other 4xx as a non-retried error first, or a 401/404 burns every attempt
+(`overgrad/resources.py` `_request`). The `tableau` sign-in path is the
+exception: `tableauserverclient` raises its own errors, not
+`requests.HTTPError`, so its predicate is
+`(RequestsConnectionError, Timeout, InternalServerError, StaleSessionError)`
+(`InternalServerError` wraps a 5xx) and it fails fast on `FailedSignInError`
+(401) / `ServerResponseError` (other 4xx) — do not "restore" `HTTPError` there.
+For runtime-parameterized retry loops (e.g. `with_powerschool_retry`), use
+`tenacity.Retrying` — a manual `for attempt in range(...)` has no backoff. Avoid
+broad base classes whose subclasses include deterministic config errors (e.g.
 `paramiko.ssh_exception.SSHException` covers `IncompatiblePeer`,
 `BadHostKeyException`, `BadAuthenticationType`). List transient subclasses
 explicitly.
@@ -209,27 +202,33 @@ billed (10 MB min/query) while `tables.get` is free metadata.
 ## Development Commands
 
 ```bash
-# Start Dagster webserver locally (all code locations)
-uv run dagster dev
-
-# Validate Dagster definitions for a code location
-uv run dagster definitions validate -m teamster.code_locations.kipptaf.definitions
-
 # Prepare and package a dbt project (required before running dbt assets)
 uv run dagster-dbt project prepare-and-package --file src/teamster/code_locations/kipptaf/__init__.py
 ```
 
-`dagster definitions validate` may mislead locally — env vars unavailable in
-codespace cause false errors unrelated to production failures. Fall back to
-`uv run python -c "import <module>"` for syntactic checks when validate fails on
-missing manifest or env vars.
-
 In the codespace, importing a district `definitions.py` first needs the dbt
 manifest (`dagster-dbt project prepare-and-package`, above). With the manifest,
-the powerschool districts (`kippnewark`, `kippcamden`, `kippmiami`) import
-cleanly. `kipptaf.definitions` still fails at module load because the
-Illuminate/Zendesk dlt credential specs call `EnvVar("...").get_value()` eagerly
-(unset in the codespace). For a `kipptaf` per-integration change, import that
-integration submodule alone (e.g.
-`import teamster.code_locations.kipptaf.finalsite`), not the `definitions`
-module.
+`kippnewark` and `kippcamden` import cleanly. `kipptaf.definitions` AND
+`kippmiami.definitions` fail at module load: kipptaf on the Illuminate/Zendesk
+dlt credential specs, kippmiami on the Focus dlt spec
+(`resolve_configuration(ConnectionStringCredentials(), sections=("FOCUS_DB",))`
+in `dlt/focus/assets.py`) — both call the credential resolver eagerly (unset in
+the codespace). For a change to either, `py_compile` the edited files and import
+the affected submodule alone (e.g.
+`import teamster.code_locations.kipptaf.finalsite` or
+`teamster.code_locations.kippmiami.extracts`), not the `definitions` module.
+
+`tests/test_dagster_definitions.py` fails all 6 in a FRESH worktree — run
+`prepare-and-package` for all 5 locations first or each dies on a missing
+`target/manifest.json`. The pytest failure is a bare
+`subprocess.CalledProcessError` that hides the cause; re-run
+`uv run dagster definitions validate -m <module>` directly to see it. With
+manifests, conftest's 1Password bootstrap resolves kipptaf's dlt credentials
+too, so only `kippmiami` (`FOCUS_DB`) and `test_definitions_all` still fail.
+
+Importing a kipptaf **asset submodule** (e.g.
+`teamster.code_locations.kipptaf.google.directory.assets`) transitively imports
+`kipptaf.dbt` and needs the dbt manifest — absent in a fresh worktree, so a unit
+test importing it errors at collection (`FileNotFoundError: .../manifest.json`).
+Put unit-testable pure helpers in `libraries/` (imports cleanly), not a
+code-location asset module.

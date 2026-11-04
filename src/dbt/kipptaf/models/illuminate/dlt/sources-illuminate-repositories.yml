@@ -3951,3 +3951,58 @@ sources:
                 - illuminate
                 - dna_repositories
                 - repository_472
+      - name: repository_473
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - dlt
+                - illuminate
+                - dna_repositories
+                - repository_473
+      - name: repository_474
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - dlt
+                - illuminate
+                - dna_repositories
+                - repository_474
+      - name: repository_475
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - dlt
+                - illuminate
+                - dna_repositories
+                - repository_475
+      - name: repository_476
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - dlt
+                - illuminate
+                - dna_repositories
+                - repository_476
+      - name: repository_477
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - dlt
+                - illuminate
+                - dna_repositories
+                - repository_477

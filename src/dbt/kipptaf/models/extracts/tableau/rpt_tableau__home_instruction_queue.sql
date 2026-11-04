@@ -41,7 +41,7 @@ inner join
     {{ ref("int_deanslist__incidents") }} as dli
     on co.student_number = dli.student_school_id
     and co.academic_year = dli.create_ts_academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
+    and co._dbt_source_project = dli._dbt_source_project
     and (dli.category = 'TX - HI Request (admin only)' or dli.hi_start_date is not null)
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as d

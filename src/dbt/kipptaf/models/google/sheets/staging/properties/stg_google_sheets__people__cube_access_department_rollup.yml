@@ -1,0 +1,22 @@
+models:
+  - name: stg_google_sheets__people__cube_access_department_rollup
+    description: >-
+      Cube access department rollup, maintained by the data team in Google
+      Sheets. One row per ADP department name, mapping it to a functional
+      department group (the own_group remit for the staff sensitive fields).
+    columns:
+      - name: department_name
+        data_type: string
+        description: ADP assigned department name.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
+      - name: department_group
+        data_type: string
+        description: >-
+          Functional grouping of ADP departments that operate as one (e.g.
+          academics, student_services, kipp_forward).

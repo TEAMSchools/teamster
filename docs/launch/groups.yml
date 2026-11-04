@@ -1,0 +1,83 @@
+# Presentation data the catalog itself does not carry.
+
+# Below this many verified entries, no page is generated at all. The URL
+# 404s rather than serving a near-empty page. Owned by the catalog owner.
+minimum_verified: 25
+
+groups:
+  - id: attendance
+    name: Attendance & behavior
+  - id: academics
+    name: Academics & assessment
+  - id: college
+    name: College readiness & pathways
+  - id: performance
+    name: Performance management & coaching
+  - id: staff
+    name: Staff, hiring & pay
+  - id: operations
+    name: Enrollment & operations
+  - id: surveys
+    name: Surveys
+
+# Region-variant tools collapse into one row with per-region sub-links.
+# Members are matched on `name`; each must carry exactly one region.
+families:
+  - id: bucket_roster
+    name: Bucket Roster
+    description:
+      The bucket rosters — each student's intervention bucket for reading and
+      math, with prior-year state test and i-Ready results. Pick your region.
+    group: academics
+    members:
+      - NJ Bucket Rosters [Camden]
+      - Bucket Rosters [Miami]
+      - NJ Bucket Rosters [Newark]
+      - NJ Bucket Rosters [Paterson]
+  - id: gpa_roster
+    name: GPA Roster
+    description:
+      Student GPA for the current year, one sheet per region — quarter GPAs,
+      year-to-date, and cumulative in weighted, unweighted and projected forms —
+      plus grade level, advisory, ADA, and IEP, 504, MLL and gifted status. (No
+      Miami for now — Miami's gradebook runs on Focus and its GPA data isn't
+      available yet.)
+    group: academics
+    members:
+      - "GPA Roster: Camden"
+      - "GPA Roster: Miami"
+      - "GPA Roster: Newark"
+      - "GPA Roster: Paterson"
+  - id: report_cards_and_transcripts
+    name: Report Cards and Transcripts
+    description:
+      Student report cards and transcripts, plus assessment results, in a folder
+      per school. Pick your region.
+    group: operations
+    members:
+      - Camden Report Cards and Transcripts
+      - Miami Report Cards and Transcripts
+      - Newark Report Cards and Transcripts
+      - Paterson Report Cards and Transcripts
+  - id: student_contact_info_feed
+    name: Student Contact Info Feed (SCIF)
+    description: Student and guardian contact information. Pick your region.
+    group: operations
+    members:
+      - Student Contact Info Feed (SCIF) - KIPP Newark
+      - Student Contact Info Feed (SCIF) - KIPP Camden
+      - Student Contact Info Feed (SCIF) - KIPP Miami
+      - Student Contact Info Feed (SCIF) - KIPP Paterson
+
+# "From the data team" cards, pointing at prose that lives in Zendesk or at
+# other pages on this site.
+promos:
+  - label: Meet the data team
+    blurb: Who's on the team, and who to ask.
+    url: https://teamschools.zendesk.com/hc/en-us/articles/43201228776855-Meet-the-data-team
+  - label: All help guides
+    blurb: Every written guide in one list.
+    url: https://teamschools.zendesk.com/hc/en-us/categories/204269047-Data-Launch
+  - label: Semantic layer build status
+    blurb: Where each core dashboard stands in its move to Cube.
+    url: https://teamschools.github.io/teamster/launch/semantic-layer/
