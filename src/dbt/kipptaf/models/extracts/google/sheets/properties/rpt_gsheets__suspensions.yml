@@ -1,0 +1,303 @@
+models:
+  - name: rpt_gsheets__suspensions
+    description:
+      One row per DeansList suspension consequence for the current and prior
+      academic year, for the Suspensions Google Sheet. School and student fields
+      come from the enrollment stint covering the incident's created date, else
+      the student's rn_year = 1 stint for that year. Miami 2025-26 rows are
+      absent until Miami DeansList ids match Focus student numbers.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - region
+              - incident_penalty_id
+          config:
+            severity: error
+    columns:
+      - name: region
+        data_type: string
+        description: Region of the student's enrollment (Newark, Camden, Miami).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: incident_penalty_id
+        data_type: int64
+        description:
+          DeansList consequence id. Unique within a region; ids repeat across
+          regions.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: school
+        data_type: string
+        description: School abbreviation of the picked enrollment stint.
+      - name: academic_year
+        data_type: string
+        description: School year label, for example 2025-26.
+      - name: student_number
+        data_type: int64
+        description: Student number from the enrollment record.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_name
+        data_type: string
+        description: Student name from the enrollment record.
+        config:
+          meta:
+            contains_pii: true
+      - name: grade_level
+        data_type: int64
+        description: Grade level of the picked enrollment stint.
+        config:
+          meta:
+            contains_pii: true
+      - name: gender
+        data_type: string
+        description: Student gender from the enrollment record.
+        config:
+          meta:
+            contains_pii: true
+      - name: homeroom_section
+        data_type: string
+        description: Homeroom (team) of the picked enrollment stint.
+        config:
+          meta:
+            contains_pii: true
+      - name: iep_status
+        data_type: string
+        description: IEP status on the picked enrollment stint.
+        config:
+          meta:
+            contains_pii: true
+      - name: ml_status
+        data_type: string
+        description: Multilingual learner status on the picked enrollment stint.
+        config:
+          meta:
+            contains_pii: true
+      - name: incident_id
+        data_type: int64
+        description: DeansList incident id the consequence belongs to.
+      - name: created_date
+        data_type: date
+        description: Date the incident was created in DeansList.
+        config:
+          meta:
+            contains_pii: true
+      - name: entry_staff
+        data_type: string
+        description: Staff member who created the incident, as Last, First.
+        config:
+          meta:
+            contains_pii: true
+      - name: referral_tier
+        data_type: string
+        description: Referral tier of the incident.
+        config:
+          meta:
+            contains_pii: true
+      - name: category
+        data_type: string
+        description: Incident category.
+        config:
+          meta:
+            contains_pii: true
+      - name: admin_summary
+        data_type: string
+        description: Administrator's free-text summary of the incident.
+        config:
+          meta:
+            contains_pii: true
+      - name: reported_details
+        data_type: string
+        description: Free-text details reported with the incident.
+        config:
+          meta:
+            contains_pii: true
+      - name: nj_state_reporting
+        data_type: string
+        description: NJ state reporting category entered on the incident.
+        config:
+          meta:
+            contains_pii: true
+      - name: ssds_incident_id
+        data_type: string
+        description: NJ SSDS incident id entered on the incident.
+        config:
+          meta:
+            contains_pii: true
+      - name: penalty_name
+        data_type: string
+        description: Name of the consequence.
+        config:
+          meta:
+            contains_pii: true
+      - name: suspension_type
+        data_type: string
+        description: Suspension type of the consequence (ISS or OSS).
+        config:
+          meta:
+            contains_pii: true
+      - name: start_date
+        data_type: date
+        description: First day of the suspension.
+        config:
+          meta:
+            contains_pii: true
+      - name: end_date
+        data_type: date
+        description: Last day of the suspension.
+        config:
+          meta:
+            contains_pii: true
+      - name: num_days
+        data_type: float64
+        description: Length of the suspension in days.
+        config:
+          meta:
+            contains_pii: true
+      - name: suspension_letters
+        data_type: string
+        description:
+          Suspension letters on file for the incident, each as letter name
+          followed by its upload date in parentheses, joined with semicolons in
+          upload-date order. Null when none are on file.
+        config:
+          meta:
+            contains_pii: true
+      - name: other_uploads
+        data_type: string
+        description:
+          Other files uploaded to the incident, each as file name followed by
+          its upload date in parentheses, joined with semicolons in upload-date
+          order. Null when none are on file.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: unit_rpt_gsheets_suspensions_stint_window_letters
+    model: rpt_gsheets__suspensions
+    description:
+      A transfer-day incident takes the entering stint, an incident outside
+      every stint falls back to the rn_year = 1 stint, another region's letters
+      on the same incident id stay out, and non-suspensions, rows before the
+      window, and students with no enrollment drop out.
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref("int_deanslist__incidents__penalties")
+        rows:
+          - incident_penalty_id: 9001
+            incident_id: 501
+            student_school_id: 1001
+            create_ts_academic_year: 2026
+            create_ts_date: 2026-10-15T09:00:00
+            is_suspension: true
+            _dbt_source_project: kippnewark
+          - incident_penalty_id: 9002
+            incident_id: 502
+            student_school_id: 1001
+            create_ts_academic_year: 2026
+            create_ts_date: 2026-10-01T09:00:00
+            is_suspension: true
+            _dbt_source_project: kippnewark
+          - incident_penalty_id: 9003
+            incident_id: 503
+            student_school_id: 1002
+            create_ts_academic_year: 2025
+            create_ts_date: 2026-07-15T09:00:00
+            is_suspension: true
+            _dbt_source_project: kippnewark
+          - incident_penalty_id: 9004
+            incident_id: 504
+            student_school_id: 1001
+            create_ts_academic_year: 2026
+            create_ts_date: 2026-10-20T09:00:00
+            is_suspension: false
+            _dbt_source_project: kippnewark
+          - incident_penalty_id: 9005
+            incident_id: 505
+            student_school_id: 1002
+            create_ts_academic_year: 2024
+            create_ts_date: 2024-11-01T09:00:00
+            is_suspension: true
+            _dbt_source_project: kippnewark
+          - incident_penalty_id: 9006
+            incident_id: 506
+            student_school_id: 123456
+            create_ts_academic_year: 2025
+            create_ts_date: 2025-11-01T09:00:00
+            is_suspension: true
+            _dbt_source_project: kippmiami
+      - input: ref("int_extracts__student_enrollments")
+        rows:
+          - student_number: 1001
+            academic_year: 2026
+            academic_year_display: 2026-27
+            region: Newark
+            school: SA
+            entrydate: 2026-08-20
+            exitdate: 2026-10-01
+            rn_year: 2
+            _dbt_source_project: kippnewark
+          - student_number: 1001
+            academic_year: 2026
+            academic_year_display: 2026-27
+            region: Newark
+            school: SB
+            entrydate: 2026-10-01
+            exitdate: 2027-06-20
+            rn_year: 1
+            _dbt_source_project: kippnewark
+          - student_number: 1002
+            academic_year: 2025
+            academic_year_display: 2025-26
+            region: Newark
+            school: SC
+            entrydate: 2025-09-02
+            exitdate: 2026-06-20
+            rn_year: 1
+            _dbt_source_project: kippnewark
+      - input: ref("int_deanslist__incidents__attachments")
+        rows:
+          - _dbt_source_project: kippnewark
+            incident_id: 501
+            attachment_type: INC-LETTER
+            entity_name: OSS
+            public_filename: oss.pdf
+            file_posted_at__date: 2026-10-16T08:00:00
+          - _dbt_source_project: kippnewark
+            incident_id: 501
+            attachment_type: UPLOAD
+            entity_name: null
+            public_filename: letter.pdf
+            file_posted_at__date: 2026-10-17T08:00:00
+          - _dbt_source_project: kippcamden
+            incident_id: 501
+            attachment_type: INC-LETTER
+            entity_name: OSS
+            public_filename: oss.pdf
+            file_posted_at__date: 2026-10-20T08:00:00
+    expect:
+      rows:
+        - incident_penalty_id: 9001
+          school: SB
+          academic_year: 2026-27
+          suspension_letters: OSS (2026-10-16)
+          other_uploads: letter.pdf (2026-10-17)
+        - incident_penalty_id: 9002
+          school: SB
+          academic_year: 2026-27
+          suspension_letters: null
+          other_uploads: null
+        - incident_penalty_id: 9003
+          school: SC
+          academic_year: 2025-26
+          suspension_letters: null
+          other_uploads: null
