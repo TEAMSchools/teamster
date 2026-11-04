@@ -4,7 +4,10 @@ with
         by the partition key; not a mask for upstream duplicates */
         select distinct region, grade_level,
         from {{ ref("int_students__promotional_status_metrics") }}
-        where academic_year = {{ var("current_academic_year") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            -- Miami is unseeded until its source integrations are complete
+            and region in ('Camden', 'Newark', 'Paterson')
     )
 
 select e.region, e.grade_level, d as `domain`,

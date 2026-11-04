@@ -1,8 +1,10 @@
 with
+    -- Keyed on student_number, not studentid: studentid is a PowerSchool-
+    -- internal id and is null for every Focus-sourced (Miami) row.
     attendance as (
         select
-            mem._dbt_source_relation,
-            mem.studentid,
+            mem._dbt_source_project,
+            mem.student_number,
             mem.yearid,
 
             rt.name as term_name,
@@ -17,7 +19,7 @@ with
             coalesce(
                 sum(mem.is_absent_non_susp), 0
             ) as n_absences_y1_running_non_susp_no_tardy,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as mem
+        from {{ ref("int_students__attendance_daily") }} as mem
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on mem.schoolid = rt.school_id
@@ -28,14 +30,14 @@ with
         where
             mem.membershipvalue = 1
             and mem.calendardate <= current_date('{{ var("local_timezone") }}')
-        group by mem._dbt_source_relation, mem.yearid, mem.studentid, rt.name
+        group by mem._dbt_source_project, mem.yearid, mem.student_number, rt.name
     ),
 
     credits as (
         -- TODO(#3900): final_grades_rollup PS double-write fans out ~4 Newark
         -- rows/term; expected uniqueness warn, no dedupe per repo convention
         select
-            fg._dbt_source_relation,
+            fg._dbt_source_project,
             fg.studentid,
             fg.academic_year,
             fg.storecode,
@@ -60,7 +62,7 @@ with
             academic_year_int,
             `subject`,
             most_recent_overall_relative_placement,
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__iready_diagnostic_results") }}
     ),
 
     iready as (
@@ -147,6 +149,7 @@ with
     ps_log as (
         select
             lg._dbt_source_relation,
+            lg._dbt_source_project,
             lg.studentid,
             lg.academic_year,
             lg.entry_date,
@@ -164,6 +167,7 @@ with
     exempt_override as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             academic_year,
             entry_date,
@@ -180,6 +184,7 @@ with
     force_retention as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             academic_year,
             entry_date,
@@ -278,7 +283,7 @@ inner join
     and rt.type = 'RT'
 left join
     attendance as att
-    on co.studentid = att.studentid
+    on co.student_number = att.student_number
     and co.yearid = att.yearid
     and rt.name = att.term_name
     and co._dbt_source_project = att._dbt_source_project
