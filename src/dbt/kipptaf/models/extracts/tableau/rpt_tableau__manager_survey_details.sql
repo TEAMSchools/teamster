@@ -1,17 +1,17 @@
 with
-    manager_rounds as (
+    closed_manager_rounds as (
         select
             term_code,
             academic_year,
             end_date,
 
-            end_date < current_date('{{ var("local_timezone") }}') as is_closed,
+            end_date = max(end_date) over () as is_latest_closed_round,
         from {{ ref("dim_terms") }}
-        where `type` = 'SURVEY' and term_name = 'Manager Survey'
-    ),
-
-    latest_closed_round as (
-        select max(end_date) as end_date, from manager_rounds where is_closed
+        where
+            `type` = 'SURVEY'
+            -- the codes int_surveys__manager_survey_details assigns
+            and term_code in ('MGR1', 'MGR2')
+            and end_date < current_date('{{ var("local_timezone") }}')
     )
 
 -- trunk-ignore(sqlfluff/ST06): contract column order is mandated
@@ -70,19 +70,16 @@ select
     sr.reports_to_mail,
     sr.reports_to_sam_account_name,
 
-    mr.end_date as round_end_date,
-
-    lcr.end_date is not null as is_latest_closed_round,
+    cmr.end_date as round_end_date,
+    cmr.is_latest_closed_round,
 from {{ ref("int_surveys__manager_survey_details") }} as msd
 inner join
-    manager_rounds as mr
-    on msd.campaign_reporting_term = mr.term_code
-    and msd.campaign_academic_year = mr.academic_year
-    and mr.is_closed
+    closed_manager_rounds as cmr
+    on msd.campaign_reporting_term = cmr.term_code
+    and msd.campaign_academic_year = cmr.academic_year
 left join
     {{ ref("int_people__staff_roster") }} as sr
     on msd.subject_df_employee_number = sr.employee_number
 left join
     {{ ref("int_people__location_crosswalk") }} as lc
     on sr.home_work_location_name = lc.location_name
-left join latest_closed_round as lcr on mr.end_date = lcr.end_date

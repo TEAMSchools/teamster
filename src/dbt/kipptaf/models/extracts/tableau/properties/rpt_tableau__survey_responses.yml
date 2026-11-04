@@ -16,8 +16,6 @@ models:
               - survey_question_id
               - question_shortname
               - answer
-          config:
-            severity: error
     columns:
       - name: location_clean_name
         data_type: string
@@ -39,16 +37,23 @@ models:
         description: >-
           Survey identifier — the Google Form id for live surveys, or the
           Alchemer survey id for archived responses.
+        data_tests:
+          - not_null
+      - name: survey_response_id
+        data_type: string
+        description: Identifier of the submission this answer belongs to.
+        data_tests:
+          - not_null
       - name: survey_title
         data_type: string
         description: >-
           Survey name. Matches the reporting-term name of the survey's rounds.
-      - name: survey_response_id
-        data_type: string
-        description: Identifier of the submission this answer belongs to.
       - name: survey_response_link
         data_type: string
         description: Link to view or edit the submission in its source system.
+        config:
+          meta:
+            contains_pii: true
       - name: survey_question_id
         data_type: string
         description: >-
@@ -95,24 +100,42 @@ models:
       - name: employee_number
         data_type: int64
         description: Respondent's employee number.
+        config:
+          meta:
+            contains_pii: true
       - name: respondent_name
         data_type: string
         description: Respondent's formatted name from the staff roster.
+        config:
+          meta:
+            contains_pii: true
       - name: is_manager
         data_type: boolean
         description: Whether the respondent holds a management position.
       - name: race_ethnicity
         data_type: string
         description: Respondent's reported race/ethnicity.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
         description: Respondent's reported gender identity.
+        config:
+          meta:
+            contains_pii: true
       - name: manager_name
         data_type: string
         description: Formatted name of the respondent's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: manager_user_principal_name
         data_type: string
         description: User principal name of the respondent's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: alumni_status
         data_type: string
         description: Respondent's KIPP alumni status from the staff roster.
@@ -148,20 +171,35 @@ models:
       - name: mail
         data_type: string
         description: Post-cutover Tableau identity.
+        config:
+          meta:
+            contains_pii: true
       - name: user_principal_name
         data_type: string
         description:
           Respondent's user principal name, for the Tableau identity match.
+        config:
+          meta:
+            contains_pii: true
       - name: sam_account_name
         data_type: string
         description:
           Respondent's sAMAccountName, for the Tableau identity match.
+        config:
+          meta:
+            contains_pii: true
       - name: reports_to_mail
         data_type: string
         description: Mail address of the respondent's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: reports_to_sam_account_name
         data_type: string
         description: sAMAccountName of the respondent's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: primary_grade_level_taught
         data_type: int64
         description: >-
@@ -173,6 +211,9 @@ models:
       - name: answer
         data_type: string
         description: The answer text, with HTML tags removed.
+        config:
+          meta:
+            contains_pii: true
       - name: question_title
         data_type: string
         description: The question prompt, with HTML tags removed.
