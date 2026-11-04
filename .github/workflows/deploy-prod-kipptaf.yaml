@@ -16,6 +16,7 @@ on:
       - .github/workflows/deploy-prod-kipptaf.yaml
       - Dockerfile
       - uv.lock
+      - src/dbt/dbt_overrides/**
       - src/dbt/kipptaf/**
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
