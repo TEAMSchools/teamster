@@ -1,5 +1,19 @@
 models:
   - name: rpt_tableau__survey_responses
+    description: >-
+      Staff survey answers for the Survey Dashboard, one row per answer at the
+      grain of int_surveys__survey_responses, with the respondent's roster
+      attributes as of the submit time. Only respondents who match a primary
+      staff record are kept.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_id
+              - survey_response_id
+              - survey_question_id
+              - question_shortname
+              - answer
     columns:
       - name: location_clean_name
         data_type: string
@@ -18,10 +32,37 @@ models:
           - not_null
       - name: survey_id
         data_type: string
-      - name: survey_title
-        data_type: string
+        data_tests:
+          - not_null
       - name: survey_response_id
         data_type: string
+        data_tests:
+          - not_null
+      - name: survey_title
+        data_type: string
+      - name: survey_question_id
+        data_type: string
+        description: >-
+          Source question id. Part of the grain, because one question can emit
+          several shortnames or answers.
+      - name: survey_round_start_date
+        data_type: date
+        description: >-
+          First day of the SURVEY reporting-terms window the submission falls
+          in. Null on Alchemer rows and on submissions outside any window.
+      - name: survey_round_end_date
+        data_type: date
+        description: >-
+          Last day of the SURVEY reporting-terms window the submission falls in.
+          Null wherever survey_round_start_date is null.
+      - name: is_survey_round_open
+        data_type: boolean
+        description: >-
+          True while today, in the local timezone, falls inside the submission's
+          round window. Computed when the view is read, so it turns false on the
+          day after survey_round_end_date with no rebuild. False when the window
+          is null. The Survey Dashboard filters to false so responses stay
+          hidden until their round closes, while completion keeps updating.
       - name: survey_response_link
         data_type: string
       - name: survey_code
@@ -104,3 +145,68 @@ models:
       - name: rated_department_name
         data_type: string
         description: Display label for rated_department_code.
+
+unit_tests:
+  - name: test_rpt_tableau__survey_responses_round_open
+    description: >-
+      A round is open only while today falls inside its window. A closed window
+      and a missing window both read as not open.
+    model: rpt_tableau__survey_responses
+    given:
+      # sql format: term_start_date and term_end_date are new upstream columns
+      - input: ref("int_surveys__survey_responses")
+        format: sql
+        rows: |
+          select
+              'f1' as survey_id,
+              'Survey' as survey_title,
+              'closed' as survey_response_id,
+              'q1' as survey_question_id,
+              cast(null as string) as survey_response_link,
+              'SUP1' as term_code,
+              2000 as academic_year,
+              timestamp '2000-01-15 12:00:00' as date_started,
+              timestamp '2000-01-15 12:00:00' as date_submitted,
+              cast(null as numeric) as answer_value,
+              0 as is_open_ended,
+              1 as round_rn,
+              cast(null as string) as rated_department_code,
+              cast(null as string) as rated_department_name,
+              date '2000-01-01' as term_start_date,
+              date '2000-01-31' as term_end_date,
+              1 as respondent_employee_number,
+              'q1' as question_shortname,
+              'a' as answer,
+              'Question' as question_title
+          union all
+          select
+              'f1', 'Survey', 'open', 'q1', null, 'SUP1', 2000,
+              timestamp '2000-01-15 12:00:00', timestamp '2000-01-15 12:00:00',
+              null, 0, 1, null, null,
+              date '2000-01-01', date '9999-12-31',
+              1, 'q1', 'a', 'Question'
+          union all
+          select
+              'f1', 'Survey', 'no_window', 'q1', null, null, 2000,
+              timestamp '2000-01-15 12:00:00', timestamp '2000-01-15 12:00:00',
+              null, 0, 1, null, null,
+              cast(null as date), cast(null as date),
+              1, 'q1', 'a', 'Question'
+      - input: ref("int_people__staff_roster_history")
+        rows:
+          - employee_number: 1
+            effective_date_start_timestamp: 2000-01-01 00:00:00
+            effective_date_end_timestamp: 2000-12-31 00:00:00
+            primary_indicator: true
+      - input: ref("int_people__location_crosswalk")
+        rows: []
+      - input: ref("int_students__teacher_grade_levels")
+        rows: []
+    expect:
+      rows:
+        - survey_response_id: closed
+          is_survey_round_open: false
+        - survey_response_id: open
+          is_survey_round_open: true
+        - survey_response_id: no_window
+          is_survey_round_open: false

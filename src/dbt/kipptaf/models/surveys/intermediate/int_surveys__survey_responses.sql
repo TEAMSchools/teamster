@@ -16,6 +16,8 @@ with
             ss.academic_year,
             ss.term_code,
             ss.term_name,
+            ss.term_start_date,
+            ss.term_end_date,
             ss.respondent_employee_number,
             ss.respondent_preferred_name,
             ss.respondent_samaccountname,
@@ -49,6 +51,10 @@ with
             academic_year,
             term_code,
             term_name,
+
+            cast(null as date) as term_start_date,
+            cast(null as date) as term_end_date,
+
             respondent_employee_number,
             respondent_preferred_name,
             respondent_samaccountname,
@@ -85,6 +91,8 @@ select
     e.academic_year,
     e.term_code,
     e.term_name,
+    e.term_start_date,
+    e.term_end_date,
     e.respondent_employee_number,
     e.respondent_preferred_name,
     e.respondent_samaccountname,

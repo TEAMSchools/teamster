@@ -13,6 +13,8 @@ with
             rt.academic_year,
             rt.code as term_code,
             rt.name as term_name,
+            rt.start_date as term_start_date,
+            rt.end_date as term_end_date,
 
             ss.subject_employee_number,
             ss.respondent_student_number,
@@ -116,6 +118,8 @@ select
     academic_year,
     term_code,
     term_name,
+    term_start_date,
+    term_end_date,
     survey_response_link,
 
     respondent_student_number,
@@ -155,6 +159,10 @@ select
     academic_year,
     term_code,
     term_name,
+
+    cast(null as date) as term_start_date,
+    cast(null as date) as term_end_date,
+
     survey_response_link,
     respondent_student_number,
     subject_employee_number,
