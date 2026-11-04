@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from datetime import UTC, datetime
 
 from dagster import (
@@ -21,6 +21,7 @@ from dagster._core.executor.step_delegating.step_handler.base import (
 from dagster._core.storage.tags import AUTOMATION_CONDITION_TAG
 from dagster_k8s import k8s_job_executor
 from dagster_k8s.executor import K8sStepHandler
+from dagster_k8s.job import get_user_defined_k8s_config
 from dagster_shared import check
 
 # Far above the run pod's lag in reading a step's success event. A healthy step
@@ -90,7 +91,9 @@ class AutomationInProcessExecutor(Executor):
     also run in process.
 
     In process, op-level `dagster-k8s/config` tags do not apply; the step runs with
-    the run pod's resources.
+    the run pod's resources. An op that sizes its own memory keeps its step pod, so
+    adding an automation condition to it cannot shrink it into the run pod. Ops
+    that only raise CPU run in process and get the run pod's CPU limit.
     """
 
     def __init__(self, step_executor: Executor):
@@ -114,12 +117,24 @@ class AutomationInProcessExecutor(Executor):
         from_automation = (
             plan_context.dagster_run.tags.get(AUTOMATION_CONDITION_TAG) == "true"
         )
-        one_step = len(execution_plan.step_keys_to_execute) == 1
+        step_keys = execution_plan.step_keys_to_execute
 
-        target = (
-            self._in_process if from_automation and one_step else self._step_executor
+        in_process = (
+            from_automation
+            and len(step_keys) == 1
+            and not _sizes_own_memory(execution_plan.get_step_by_key(step_keys[0]).tags)
         )
+
+        target = self._in_process if in_process else self._step_executor
         yield from target.execute(plan_context, execution_plan)
+
+
+def _sizes_own_memory(op_tags: Mapping[str, str] | None) -> bool:
+    """Whether an op's `dagster-k8s/config` tags request or limit memory."""
+    resources = get_user_defined_k8s_config(op_tags or {}).container_config.get(
+        "resources", {}
+    )
+    return any("memory" in resources.get(kind, {}) for kind in ("requests", "limits"))
 
 
 @executor(

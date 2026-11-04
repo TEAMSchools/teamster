@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -133,14 +134,40 @@ AUTO = {AUTOMATION_CONDITION_TAG: "true"}
 DEFAULT_DEPS = StepDependencyConfig.default()
 
 
-def _dispatch(tags: dict[str, str], step_keys: list[str]) -> list:
+def _dispatch(
+    tags: dict[str, str], step_keys: list[str], op_tags: dict[str, str] | None = None
+) -> list:
     step = Mock(retries=RetryMode.ENABLED, step_dependency_config=DEFAULT_DEPS)
     step.execute = Mock(return_value=iter(["step"]))
     executor = AutomationInProcessExecutor(step)
     executor._in_process = Mock(execute=Mock(return_value=iter(["in"])))
     plan_context = SimpleNamespace(dagster_run=SimpleNamespace(tags=tags))
-    plan = SimpleNamespace(step_keys_to_execute=step_keys)
+    plan = SimpleNamespace(
+        step_keys_to_execute=step_keys,
+        get_step_by_key=lambda _: SimpleNamespace(tags=op_tags or {}),
+    )
     return list(executor.execute(plan_context, plan))  # type: ignore[arg-type]
+
+
+def _k8s_tags(resources: dict) -> dict[str, str]:
+    return {
+        "dagster-k8s/config": json.dumps({"container_config": {"resources": resources}})
+    }
+
+
+def test_automation_step_sizing_its_memory_uses_step_pods():
+    op_tags = _k8s_tags({"requests": {"cpu": "1000m", "memory": "4.0Gi"}})
+    assert _dispatch(AUTO, ["a"], op_tags) == ["step"]
+
+
+def test_automation_step_with_memory_limit_only_uses_step_pods():
+    op_tags = _k8s_tags({"limits": {"memory": "3.0Gi"}})
+    assert _dispatch(AUTO, ["a"], op_tags) == ["step"]
+
+
+def test_automation_step_with_cpu_only_sizing_runs_in_process():
+    op_tags = _k8s_tags({"requests": {"cpu": "500m"}, "limits": {"cpu": "2250m"}})
+    assert _dispatch(AUTO, ["a"], op_tags) == ["in"]
 
 
 def test_automation_one_step_runs_in_process():
