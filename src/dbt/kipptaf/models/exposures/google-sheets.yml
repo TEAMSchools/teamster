@@ -869,6 +869,20 @@ exposures:
           kinds:
             - googlesheets
 
+  - name: rpt_gsheets__suspensions
+    label: Suspensions
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/14rRId8aUT6awwlVDGnWTLdZmcJ5IugumMDwXC7zrCSQ
+    depends_on:
+      - ref("rpt_gsheets__suspensions")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
   # - name: hro_2425_renewal_workbook_data_team_workspace
   #   label: HRO 24-25 Renewal Workbook - Data Team Workspace
   #   type: application
