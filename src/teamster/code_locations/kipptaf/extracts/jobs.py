@@ -1,4 +1,4 @@
-from dagster import define_asset_job, multiprocess_executor
+from dagster import define_asset_job, in_process_executor
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.extracts.assets import (
@@ -49,26 +49,14 @@ branchingminds_extract_asset_job = define_asset_job(
     selection=branchingminds_extract_assets,
 )
 
-# Steps run in parallel inside the run pod instead of one step pod each: this
-# hourly job adds to the top-of-hour bursts that GKE preempts on new nodes
-# (#6225). Each step's child process re-imports the code location, so the run
-# pod needs more memory than the default.
+# In process: a step pod per asset adds to the top-of-hour bursts that GKE
+# preempts on new nodes (#6225). The steps are short, so loading the code location
+# once and running them in turn takes about as long as parallel step pods, and the
+# default run pod fits on an existing node.
 clever_extract_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}__extracts__clever__asset_job",
     selection=clever_extract_assets,
-    executor_def=multiprocess_executor.configured(
-        {"max_concurrent": len(clever_extract_assets)}
-    ),
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"memory": "6.0Gi"},
-                    "limits": {"memory": "7.0Gi"},
-                }
-            }
-        }
-    },
+    executor_def=in_process_executor,
 )
 
 deanslist_annual_extract_asset_job = define_asset_job(
