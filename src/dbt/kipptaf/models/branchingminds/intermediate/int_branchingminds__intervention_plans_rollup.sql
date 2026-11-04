@@ -14,7 +14,7 @@ with
                 intervention_end_date, current_date('{{ var("local_timezone") }}')
             ) as end_date_or_today,
         from {{ ref("stg_branchingminds__intervention_plans") }}
-        where intervention_start_date is not null
+        where intervention_start_date is not null and student_number is not null
     ),
 
     plan_year_bounds as (
@@ -36,7 +36,21 @@ with
                     year_source="start",
                 )
             }} as end_academic_year,
+
+            {{ current_school_year(var("local_timezone")) }} as current_academic_year,
         from plans
+    ),
+
+    plan_year_span as (
+        select
+            *,
+
+            -- rows stop at the current school year; a later year's row appears
+            -- once that year starts
+            least(
+                greatest(end_academic_year, start_academic_year), current_academic_year
+            ) as last_academic_year,
+        from plan_year_bounds
     ),
 
     plan_years as (
@@ -47,6 +61,7 @@ with
             pyb.intervention_subject_area,
             pyb.district,
             pyb.school_id,
+            pyb.intervention_start_date,
 
             academic_year,
 
@@ -60,13 +75,10 @@ with
                 when academic_year < pyb.end_academic_year
                 then date(academic_year + 1, 6, 30)
             end as year_end,
-        from plan_year_bounds as pyb
+        from plan_year_span as pyb
         cross join
             unnest(
-                generate_array(
-                    pyb.start_academic_year,
-                    greatest(pyb.end_academic_year, pyb.start_academic_year)
-                )
+                generate_array(pyb.start_academic_year, pyb.last_academic_year)
             ) as academic_year
     ),
 
@@ -132,7 +144,7 @@ with
             row_number() over (
                 partition by
                     student_number, intervention_name, academic_year, episode_number
-                order by year_start desc, intervention_plan_id desc
+                order by intervention_start_date desc, intervention_plan_id desc
             ) as rn_latest,
         from plans_numbered
     ),
@@ -174,9 +186,6 @@ select
         episode_end_or_max = cast('9999-12-31' as date), null, episode_end_or_max
     ) as episode_end,
 
-    current_date('{{ var("local_timezone") }}') >= episode_start
-    and current_date('{{ var("local_timezone") }}') <= episode_end_or_max as is_current,
-
     {{
         dbt_utils.generate_surrogate_key(
             [
@@ -187,4 +196,7 @@ select
             ]
         )
     }} as intervention_episode_key,
+
+    current_date('{{ var("local_timezone") }}') >= episode_start
+    and current_date('{{ var("local_timezone") }}') <= episode_end_or_max as is_current,
 from episodes

@@ -159,3 +159,32 @@ Rollout order: the hub change ships with the rollup in 1 PR, but `is_sipps`
 carries no rows until the BrM assets run in prod and the externals are
 re-staged. Until then the flag is false everywhere, which is also its state
 today.
+
+## Revision 2026-11-04 (review): 2 PRs, and 4 rules the review added
+
+The rollout paragraph above was wrong. The hub's prod automation condition
+requires every dependency to have materialized, so a hub that reads the rollup
+stops rebuilding until the BrM assets run in prod, and about 100 assets
+downstream of it freeze with it. The work therefore ships as 2 PRs: the rollup
+alone first (#6270), then the `is_sipps` cutover (branch
+`anthonygwalters/feat/claude-branchingminds-sipps-cutover`) after the BrM sensor
+is started and `stg_branchingminds__intervention_plans` has materialized in
+prod. dbt Cloud CI also needs that staging model built into
+`zz_stg_kipptaf_branchingminds`, since CI defers unmodified models to the
+staging copies.
+
+Rules the review added to the rollup:
+
+- A plan whose end precedes its start cannot pull the running end below a plan
+  that shares its start date: the running max uses `greatest(start, end)`, and
+  the window orders tiebreak on plan id.
+- Rows stop at the current school year. A plan whose planned end falls in a
+  later year gets that year's row once the year starts.
+- A plan whose `student_number` is null is dropped rather than merged with other
+  unmatched plans.
+- Episode attributes come from the plan with the latest real start date, not the
+  latest clamped July 1 start.
+- The grain test is `unique` on the surrogate key alone; the
+  `unique_combination_of_columns` over the same 4 inputs was redundant.
+- Unit-test fixtures that depend on the current school year derive their dates
+  from today, so no test breaks on July 1.

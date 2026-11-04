@@ -13,22 +13,12 @@ models:
     config:
       meta:
         contains_pii: true
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_number
-              - intervention_name
-              - academic_year
-              - episode_start
-          config:
-            severity: error
     columns:
       - name: intervention_episode_key
         data_type: string
         description:
           Surrogate key from student_number, intervention_name, academic_year,
-          and episode_start.
+          and episode_start, which together are the model's grain.
         data_tests:
           - unique:
               config:
@@ -66,7 +56,9 @@ models:
         description:
           Last day of the episode within the academic year, the latest planned
           end among its plans. June 30 when a plan runs into the next school
-          year. Null when a plan in the episode has no end date.
+          year. Null only on the current school year's row of an episode that
+          holds a plan with no end date. Rows stop at the current school year; a
+          later year's row appears once that year starts.
       - name: intervention_subject_area
         data_type: string
         description:
@@ -290,6 +282,72 @@ unit_tests:
             school_id: 2,
             is_current: false,
           }
+
+  - name: test_rollup_drops_null_student_number
+    description:
+      A plan whose local student ID did not cast to a student number is left out
+      instead of merging with other unmatched plans.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, cast(null as int64) as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2026-09-14' as date) as intervention_start_date, cast('2026-10-27' as date) as intervention_end_date
+          union all
+          select 2, 100001, 'SIPPS', 'Reading', 'kippteamandfamily', 2, cast('2026-09-14' as date), cast('2026-10-27' as date)
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-09-14,
+            episode_end: 2026-10-27,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
+
+  - name: test_rollup_caps_rows_at_current_school_year
+    description:
+      A plan whose planned end falls in a later school year yields rows only
+      through the current school year. The later year's row appears once that
+      year starts.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, date(y, 7, 1) as intervention_start_date, date(y + 1, 9, 30) as intervention_end_date
+          from unnest([if(extract(month from current_date('America/New_York')) >= 7, extract(year from current_date('America/New_York')), extract(year from current_date('America/New_York')) - 1)]) as y
+    expect:
+      format: sql
+      rows: |
+        select 100001 as student_number, 'SIPPS' as intervention_name, y as academic_year, date(y, 7, 1) as episode_start, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, 1 as plans_in_episode, [1] as intervention_plan_ids, date(y + 1, 6, 30) as episode_end, true as is_current, to_hex(md5(concat('100001', '-', 'SIPPS', '-', cast(y as string), '-', cast(date(y, 7, 1) as string)))) as intervention_episode_key
+        from unnest([if(extract(month from current_date('America/New_York')) >= 7, extract(year from current_date('America/New_York')), extract(year from current_date('America/New_York')) - 1)]) as y
+
+  - name: test_rollup_picks_attributes_by_real_start_for_carried_over_plans
+    description:
+      Two plans carried over from the prior school year both start the current
+      year's row on July 1. The row takes its school from the plan with the
+      later real start date, not the higher plan id.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 2 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, date(y - 1, 8, 1) as intervention_start_date, date(y, 12, 15) as intervention_end_date
+          from unnest([if(extract(month from current_date('America/New_York')) >= 7, extract(year from current_date('America/New_York')), extract(year from current_date('America/New_York')) - 1)]) as y
+          union all
+          select 1, 100001, 'SIPPS', 'Reading', 'kippteamandfamily', 3, date(y - 1, 10, 1), date(y, 12, 15)
+          from unnest([if(extract(month from current_date('America/New_York')) >= 7, extract(year from current_date('America/New_York')), extract(year from current_date('America/New_York')) - 1)]) as y
+    expect:
+      format: sql
+      rows: |
+        select 100001 as student_number, 'SIPPS' as intervention_name, y - 1 as academic_year, date(y - 1, 8, 1) as episode_start, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 3 as school_id, 2 as plans_in_episode, [1, 2] as intervention_plan_ids, date(y, 6, 30) as episode_end, false as is_current, to_hex(md5(concat('100001', '-', 'SIPPS', '-', cast(y - 1 as string), '-', cast(date(y - 1, 8, 1) as string)))) as intervention_episode_key
+        from unnest([if(extract(month from current_date('America/New_York')) >= 7, extract(year from current_date('America/New_York')), extract(year from current_date('America/New_York')) - 1)]) as y
+        union all
+        select 100001, 'SIPPS', y, date(y, 7, 1), 'Reading', 'kippteamandfamily', 3, 2, [1, 2], date(y, 12, 15), true, to_hex(md5(concat('100001', '-', 'SIPPS', '-', cast(y as string), '-', cast(date(y, 7, 1) as string))))
+        from unnest([if(extract(month from current_date('America/New_York')) >= 7, extract(year from current_date('America/New_York')), extract(year from current_date('America/New_York')) - 1)]) as y
 
   - name: test_rollup_end_before_start_does_not_merge_or_crash
     description: A plan whose end precedes its start passes through unchanged.
