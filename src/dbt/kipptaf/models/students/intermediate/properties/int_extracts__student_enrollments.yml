@@ -991,8 +991,9 @@ models:
       - name: is_sipps
         data_type: boolean
         description:
-          True when the student held a SIPPS or SIPPS Challenge plan in
-          Branching Minds at any point in the academic year, per
+          True when the student held a plan for any intervention whose name
+          starts with SIPPS (SIPPS and SIPPS Challenge today) in Branching Minds
+          at any point in the academic year, per
           int_branchingminds__intervention_plans_rollup.
       - name: is_hs_honors_program
         data_type: boolean

@@ -9,6 +9,7 @@ with
         -- grain projection, not dup-masking: 1 row per student and year
         select distinct student_number, academic_year,
         from {{ ref("int_branchingminds__intervention_plans_rollup") }}
+        -- the prefix deliberately counts SIPPS Challenge as SIPPS
         where intervention_name like 'SIPPS%'
     ),
 
