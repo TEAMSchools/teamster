@@ -10,6 +10,8 @@ with
             and region in ('Camden', 'Newark', 'Paterson')
     )
 
+-- checks region x grade x domain only; a scope seeded for some terms but not
+-- others (no 'All' row) is not flagged
 select e.region, e.grade_level, d as `domain`,
 from enrolled as e
 cross join unnest(['attendance', 'academic', 'overall']) as d
