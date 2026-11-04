@@ -4,7 +4,7 @@ from dagster import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
     define_asset_job,
-    multiprocess_executor,
+    in_process_executor,
     schedule,
 )
 from dagster_shared import check
@@ -25,26 +25,14 @@ grow_user_sync_schedule = ScheduleDefinition(
 )
 
 
-# Steps run in parallel inside the run pod instead of one step pod each: this
-# job adds to the 02:00 pod burst that GKE preempts on new nodes (#6225). Each
-# step's child process re-imports the code location, so the run pod needs more
-# memory than the default.
+# In process: a step pod per asset adds to the 02:00 pod burst that GKE preempts
+# on new nodes (#6225). Each step is a few seconds of API work, so loading the
+# code location once and running the steps in turn is faster than a child process
+# per step, and the default run pod fits on an existing node.
 grow_static_partition_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}__grow__static_partition_assets_job",
     selection=grow_static_partition_assets,
-    executor_def=multiprocess_executor.configured(
-        {"max_concurrent": len(grow_static_partition_assets)}
-    ),
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"memory": "12.0Gi"},
-                    "limits": {"memory": "14.0Gi"},
-                }
-            }
-        }
-    },
+    executor_def=in_process_executor,
 )
 
 
