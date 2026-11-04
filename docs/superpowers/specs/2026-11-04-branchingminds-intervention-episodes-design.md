@@ -107,3 +107,55 @@ students read not current while Camden reads current through 2027-01-05.
 - Whether `intervention_plan_ids` is worth the array column or a min and max
   pair is enough.
 - Column order and descriptions per `.claude/rules/dbt-yaml.md`.
+
+## Revision 2026-11-04: academic year in the grain, and replace `is_sipps`
+
+Two changes after reviewing the consumers.
+
+### Academic year joins the grain
+
+`int_extracts__student_enrollments_subjects` is student x academic year x
+subject, and its subject values (`Reading`, `Math`) are the same strings BrM
+puts in `intervention_subject_area`. `dim_student_enrollments` is stint grain
+within a year. An episode with no year cannot equi-join to either, and once
+history accrues a span can cross July 1.
+
+So the rollup splits a span at the fiscal-year boundary and carries
+`academic_year` (the year the span sits in, as its start year, matching the
+enrollment models). Grain becomes `student_number`, `intervention_name`,
+`academic_year`, `episode_start`; the surrogate key and the uniqueness test take
+all 4. A plan that starts in June and ends in September yields 2 rows, one per
+year, with `plans_in_episode` counting the plan in both.
+
+The stint-level FK to `dim_student_enrollments` is a date-range join on
+enrollment data, so it stays out of this source `int_`. A consumer that needs it
+joins `episode_start` half-open against entry and exit dates.
+
+### `is_sipps` reads the rollup
+
+`int_extracts__student_enrollments` derives `is_sipps` from enrollment in
+PowerSchool course `SEM01099G1`. That course carried rows only for Camden in
+AY2025; in AY2026 the flag is false for every student while BrM holds SIPPS
+plans in 3 regions. 4 Tableau extracts read the flag (DIBELS, DDI, assessment,
+i-Ready APM).
+
+The `sip` join on `base_powerschool__course_enrollments` is removed. In its
+place, a CTE projects the rollup to distinct `student_number` and
+`academic_year` where `intervention_name` starts with `SIPPS` (SIPPS and SIPPS
+Challenge both count; grain projection per S12), and the hub left-joins it on
+student number and academic year. `is_sipps` keeps its meaning: assigned at any
+point in that year. The column's description changes to say the source is
+Branching Minds.
+
+This is a clean cut. BrM's export holds the current year only, so the 279 Camden
+students flagged in AY2025 read false after the change. Keeping them would need
+a year-conditional branch on the old course join, which is the plumbing being
+retired. The user chose the cut.
+
+The hub is a domain `int_` reading a source `int_`, an allowed edge (A1). The
+edit widens dbt Cloud CI to the hub's descendants; expected.
+
+Rollout order: the hub change ships with the rollup in 1 PR, but `is_sipps`
+carries no rows until the BrM assets run in prod and the externals are
+re-staged. Until then the flag is false everywhere, which is also its state
+today.
