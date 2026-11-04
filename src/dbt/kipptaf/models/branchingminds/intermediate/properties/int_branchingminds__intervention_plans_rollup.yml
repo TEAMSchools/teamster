@@ -1,0 +1,328 @@
+models:
+  - name: int_branchingminds__intervention_plans_rollup
+    description:
+      One row per student, intervention, academic year, and continuous
+      assignment span (an episode) in Branching Minds. Plans from
+      stg_branchingminds__intervention_plans are split at July 1 so no row
+      crosses a school year, then plans for the same student and intervention
+      that overlap or start within 1 day of the running end merge into 1
+      episode. A plan with no end date keeps its episode open. The end dates are
+      BrM's planned ends and the export has no plan status, so a plan dropped
+      early still reads current until its planned end, and a gap between cycles
+      reads as not current.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - intervention_name
+              - academic_year
+              - episode_start
+          config:
+            severity: error
+    columns:
+      - name: intervention_episode_key
+        data_type: string
+        description:
+          Surrogate key from student_number, intervention_name, academic_year,
+          and episode_start.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: student_number
+        data_type: int64
+        description: Student number from BrM's local student ID.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: intervention_name
+        data_type: string
+        description: Name of the intervention or support, as BrM labels it.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: episode_start
+        data_type: date
+        description:
+          First day of the episode within the academic year. July 1 when the
+          underlying plan started in an earlier school year.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: academic_year
+        data_type: int64
+        description:
+          School year the episode row sits in, as its starting year (2026 for
+          2026-27), matching the enrollment models.
+      - name: episode_end
+        data_type: date
+        description:
+          Last day of the episode within the academic year, the latest planned
+          end among its plans. June 30 when a plan runs into the next school
+          year. Null when a plan in the episode has no end date.
+      - name: intervention_subject_area
+        data_type: string
+        description:
+          Subject area of the latest-starting plan in the episode, Reading or
+          Math.
+      - name: district
+        data_type: string
+        description: BrM district code of the latest-starting plan.
+      - name: school_id
+        data_type: int64
+        description: BrM school ID of the latest-starting plan.
+      - name: plans_in_episode
+        data_type: int64
+        description: Number of BrM plans merged into the episode.
+      - name: intervention_plan_ids
+        data_type: array<int64>
+        description: BrM plan IDs merged into the episode, ascending.
+      - name: is_current
+        data_type: boolean
+        description:
+          True when today falls on or after episode_start and on or before
+          episode_end, or the episode has no end. Reads the planned window, so a
+          plan dropped early stays current to its planned end.
+
+unit_tests:
+  - name: test_rollup_merges_overlapping_plans
+    description:
+      Two overlapping plans for 1 student and intervention merge into 1 episode
+      spanning both, with the later plan's school.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2026-09-14' as date) as intervention_start_date, cast('2026-10-27' as date) as intervention_end_date
+          union all
+          select 2, 100001, 'SIPPS', 'Reading', 'kippteamandfamily', 3, cast('2026-10-01' as date), cast('2026-12-15' as date)
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-09-14,
+            episode_end: 2026-12-15,
+            plans_in_episode: 2,
+            school_id: 3,
+          }
+
+  - name: test_rollup_merges_adjacent_plans
+    description: A plan starting the day after the prior plan ends merges.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2026-09-14' as date) as intervention_start_date, cast('2026-10-27' as date) as intervention_end_date
+          union all
+          select 2, 100001, 'SIPPS', 'Reading', 'kippteamandfamily', 2, cast('2026-10-28' as date), cast('2026-12-15' as date)
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-09-14,
+            episode_end: 2026-12-15,
+            plans_in_episode: 2,
+            school_id: 2,
+          }
+
+  - name: test_rollup_splits_on_gap
+    description:
+      A plan starting 2 days after the prior plan ends opens a new episode.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2026-09-14' as date) as intervention_start_date, cast('2026-10-27' as date) as intervention_end_date
+          union all
+          select 2, 100001, 'SIPPS', 'Reading', 'kippteamandfamily', 2, cast('2026-10-29' as date), cast('2026-12-15' as date)
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-09-14,
+            episode_end: 2026-10-27,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-10-29,
+            episode_end: 2026-12-15,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
+
+  - name: test_rollup_null_end_keeps_episode_open
+    description:
+      A plan with no end date absorbs a later plan and leaves the episode open.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2026-09-14' as date) as intervention_start_date, cast(null as date) as intervention_end_date
+          union all
+          select 2, 100001, 'SIPPS', 'Reading', 'kippteamandfamily', 2, cast('2026-11-01' as date), cast('2026-11-30' as date)
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-09-14,
+            episode_end: null,
+            plans_in_episode: 2,
+            school_id: 2,
+          }
+
+  - name: test_rollup_splits_at_fiscal_year
+    description: A plan crossing July 1 yields 1 row per school year.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2026-06-15' as date) as intervention_start_date, cast('2026-09-30' as date) as intervention_end_date
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2025,
+            episode_start: 2026-06-15,
+            episode_end: 2026-06-30,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-07-01,
+            episode_end: 2026-09-30,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
+
+  - name: test_rollup_null_end_spans_to_current_year
+    description:
+      A plan with no end date from a prior school year yields a closed row for
+      that year and an open row for the current one. Breaks on 2027-07-01 by
+      design, as the reminder to revisit the current-year fixture.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2025-09-01' as date) as intervention_start_date, cast(null as date) as intervention_end_date
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2025,
+            episode_start: 2025-09-01,
+            episode_end: 2026-06-30,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-07-01,
+            episode_end: null,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
+
+  - name: test_rollup_end_before_start_does_not_merge_or_crash
+    description: A plan whose end precedes its start passes through unchanged.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2026-10-01' as date) as intervention_start_date, cast('2026-09-01' as date) as intervention_end_date
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-10-01,
+            episode_end: 2026-09-01,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
+
+  - name: test_rollup_two_ids_same_dates_count_twice
+    description: Two plan IDs with identical dates merge and both count.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2026-09-14' as date) as intervention_start_date, cast('2026-10-27' as date) as intervention_end_date
+          union all
+          select 2, 100001, 'SIPPS', 'Reading', 'kippteamandfamily', 2, cast('2026-09-14' as date), cast('2026-10-27' as date)
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-09-14,
+            episode_end: 2026-10-27,
+            plans_in_episode: 2,
+            school_id: 2,
+          }
+
+  - name: test_rollup_separates_interventions
+    description: Overlapping plans for different interventions stay separate.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2026-09-14' as date) as intervention_start_date, cast('2026-10-27' as date) as intervention_end_date
+          union all
+          select 2, 100001, 'UFLI Foundations (Ongoing)', 'Reading', 'kippteamandfamily', 2, cast('2026-09-21' as date), cast('2027-01-05' as date)
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-09-14,
+            episode_end: 2026-10-27,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
+        - {
+            student_number: 100001,
+            intervention_name: UFLI Foundations (Ongoing),
+            academic_year: 2026,
+            episode_start: 2026-09-21,
+            episode_end: 2027-01-05,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
