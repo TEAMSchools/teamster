@@ -1,8 +1,8 @@
 sources:
   - name: kipppaterson_titan
     schema:
-      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      endif -%}kipppaterson_titan"
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') |
+      replace('-', '_') }}_{%- endif -%}kipppaterson_titan"
     tables:
       - name: stg_titan__person_data
         config:

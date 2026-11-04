@@ -2,8 +2,8 @@ sources:
   - name: smartrecruiters
     schema:
       "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
-      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
-      -%}kipptaf_smartrecruiters"
+      'dev') | replace('-', '_') }}_{%- elif target.name == 'staging'
+      -%}zz_stg_{%- endif -%}kipptaf_smartrecruiters"
     tables:
       - name: src_smartrecruiters__applications
         external:
