@@ -1,9 +1,9 @@
--- trunk-ignore(sqlfluff/ST06): entity case fixed 3rd by Tableau RLS contract order
 select
     sr.survey_id,
     sr.survey_title,
     sr.survey_response_id,
     sr.survey_response_link,
+    sr.survey_question_id,
     sr.term_code as survey_code,
 
     'SURVEY' as survey_type,
@@ -59,6 +59,10 @@ select
 
     tgl.grade_level as primary_grade_level_taught,
 
+    coalesce(
+        dt.end_date >= current_date('{{ var("local_timezone") }}'), false
+    ) as is_round_open,
+
     lower(sr.question_shortname) as question_shortname,
 
     regexp_replace(sr.answer, r'<[^>]*>', '') as answer,
@@ -79,3 +83,9 @@ left join
     and eh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
+left join
+    {{ ref("dim_terms") }} as dt
+    on sr.survey_title = dt.term_name
+    and sr.term_code = dt.term_code
+    and sr.academic_year = dt.academic_year
+    and dt.`type` = 'SURVEY'
