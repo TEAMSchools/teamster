@@ -1,0 +1,109 @@
+# Branching Minds intervention assignment episodes — design
+
+Issue: [#6269](https://github.com/TEAMSchools/teamster/issues/6269)
+
+## Intent
+
+Answer "is this student assigned to intervention X right now?" and "when was the
+student assigned to it?" from Branching Minds (BrM) data. The first consumer is
+a yes or no on SIPPS per student. The BrM export is 1 row per plan, and plans
+overlap and run in cycles, so a plan-level read makes the boolean ambiguous.
+This model collapses plans into dated assignment spans.
+
+## Goals
+
+- 1 row per student, intervention, and continuous assignment span (an
+  "episode"), with `episode_start`, `episode_end`, and `is_current`.
+- Every intervention in BrM, not only SIPPS. Consumers filter on
+  `intervention_name`.
+- A span survives BrM's fiscal-year rollover: staging already keeps the newest
+  partition per plan, so a plan that ran across years appears once.
+
+## Non-goals
+
+- Dosage, session delivery, goals, or progress monitoring. The brainstorm
+  started there and was pared down to assignment status.
+- Plan-level detail (setting, staff, minutes). It stays in
+  `stg_branchingminds__intervention_plans`.
+- A join to PowerSchool for region, school, or demographics. Consumers join on
+  `student_number`.
+
+## Anti-goals
+
+- Treating `intervention_end_date` as an actual end. It is the planned end, and
+  the export has no plan status column. The model must not invent an exit.
+- A SIPPS-specific model. A second intervention would need a copy.
+
+## Constraints
+
+- Source: `stg_branchingminds__intervention_plans` (kipptaf). It has not built
+  in prod: the BrM sensor is stopped and no asset has materialized. The only
+  copy is `zz_stg_kipptaf_branchingminds` from the 2026-10-22 branch deployment.
+  The model can ship before prod rollout; it carries no rows until the 9 BrM
+  assets run and the externals are re-staged against prod.
+- Layer: source `int_` under `models/branchingminds/intermediate/`. It changes
+  grain, so the name takes a reshape suffix (A3):
+  `int_branchingminds__intervention_plans_rollup`. The issue body names it
+  `int_branchingminds__intervention_episodes`; the rollup name wins.
+- The collapse is a pick over plans, allowed in a source `int_` (A5).
+- Student-level rows, so `config.meta.contains_pii: true`.
+- `qualify` is banned (S1); the running max is a window column in 1 CTE and the
+  episode number a second window in the next.
+
+## Approaches
+
+- **A. Plan grain.** 1 row per plan with `is_current`. History is free, and
+  uniqueness is the plan id. Rejected: a student with 2 overlapping plans
+  returns 2 current rows, so the boolean consumer has to aggregate.
+- **B. Episodes (chosen).** Merge overlapping or back-to-back plans for 1
+  student and intervention into 1 dated span. "On SIPPS now" is a filter.
+  Validated on the 2026-10-22 snapshot: 381 SIPPS students yield 381 episodes, 2
+  episodes merge more than 1 plan, and against the Camden BOY SIPPS group roster
+  (182 students), 174 read current; the 8 that do not are 3 stale or duplicate
+  roster rows and 5 students with no plan in BrM.
+- **C. Daily scaffold.** Student x date x intervention. Rejected: heavy for a
+  boolean, and no day-level consumer exists.
+
+## Design
+
+Model `int_branchingminds__intervention_plans_rollup`:
+
+1. From staging, take `student_number`, `intervention_name`,
+   `intervention_subject_area`, `district`, `school_id`, `intervention_plan_id`,
+   `intervention_start_date`, `intervention_end_date`. Drop rows with a null
+   start date; they cannot be placed on a timeline.
+2. Per `student_number` and `intervention_name`, order by start then end, and
+   compute the running max of prior plans' end dates.
+3. A plan opens a new episode when it has no prior plan, or its start is more
+   than 1 day after that running max. A null end date on a prior plan counts as
+   open-ended: it extends the episode.
+4. Episode number is the running sum of the new-episode flag.
+5. Group to the episode: `episode_start` = min start, `episode_end` = max end
+   (null when any plan in the episode has a null end), `plans_in_episode`,
+   `intervention_plan_ids` as an array, `school_id` and `district` from the
+   latest-starting plan, `intervention_subject_area` likewise.
+6. `is_current` = `current_date(local timezone)` is on or after `episode_start`
+   and (`episode_end` is null or on or before `episode_end`).
+7. Surrogate key `intervention_episode_key` from `student_number`,
+   `intervention_name`, `episode_start`.
+
+Tests: `unique` on `intervention_episode_key` and
+`dbt_utils.unique_combination_of_columns` on `student_number`,
+`intervention_name`, `episode_start`, both at `error`; `not_null` on
+`student_number`, `intervention_name`, `episode_start` at `error`. A unit test
+covers 4 cases: 2 overlapping plans merge, 2 back-to-back plans (end = next
+start minus 1 day) merge, 2 plans with a gap split, and a null end date keeps
+the episode open.
+
+Description names the planned-end limit: a plan dropped early stays current to
+its end date, and a gap between cycles reads as not current. On 2026-11-04 every
+Newark and Paterson SIPPS plan had a planned end of 2026-10-27, so those
+students read not current while Camden reads current through 2027-01-05.
+
+## Left to the builder
+
+- The exact `rows between` frame for the running max and whether BigQuery needs
+  a sentinel for null ends inside `max()`.
+- Whether `intervention_plan_ids` is worth the array column or a min and max
+  pair is enough.
+- Column order and descriptions per `.claude/rules/dbt-yaml.md`.
