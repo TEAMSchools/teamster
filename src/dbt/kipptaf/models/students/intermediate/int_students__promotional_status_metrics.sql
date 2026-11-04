@@ -34,8 +34,6 @@ with
     ),
 
     credits as (
-        -- TODO(#3900): final_grades_rollup PS double-write fans out ~4 Newark
-        -- rows/term; expected uniqueness warn, no dedupe per repo convention
         select
             fg._dbt_source_project,
             fg.studentid,

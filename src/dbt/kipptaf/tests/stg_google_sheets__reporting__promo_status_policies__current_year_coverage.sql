@@ -6,7 +6,7 @@ with
         from {{ ref("int_students__promotional_status_metrics") }}
         where
             academic_year = {{ var("current_academic_year") }}
-            -- Miami is unseeded until its source integrations are complete
+            -- TODO(#6265): Miami is unseeded until its integrations are complete
             and region in ('Camden', 'Newark', 'Paterson')
     )
 

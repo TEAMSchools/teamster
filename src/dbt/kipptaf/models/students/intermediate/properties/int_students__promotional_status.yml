@@ -18,6 +18,8 @@ models:
               - student_number
               - academic_year
               - term_name
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: int64
