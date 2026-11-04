@@ -63,8 +63,8 @@ clever_extract_asset_job = define_asset_job(
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"memory": "3.5Gi"},
-                    "limits": {"memory": "4.0Gi"},
+                    "requests": {"memory": "6.0Gi"},
+                    "limits": {"memory": "7.0Gi"},
                 }
             }
         }

@@ -32,7 +32,8 @@ def build_finalsite_contacts_schedule(
     """
 
     # In process: a step pod adds a pod to the 00:15 burst that GKE preempts on
-    # new nodes (#6225) and buys nothing for a one-asset run.
+    # new nodes (#6225) and buys nothing for a one-asset run. A wider selection
+    # keeps the default executor so its steps stay parallel.
     job = define_asset_job(
         name=f"{code_location}__finalsite__contacts__daily_asset_job",
         selection=asset_selection,
