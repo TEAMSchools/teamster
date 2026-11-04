@@ -12,6 +12,7 @@ select
     l.home_work_location_grade_band,
     l.department_home_name,
     l.job_title,
+    l.job_function,
     l.base_remuneration_annual_rate_amount_amount_value,
     l.additional_remuneration_rate_amount_value,
     l.report_to_employee_number,
