@@ -237,7 +237,7 @@ async function resolveAccess(email) {
 function jwtRejectionReason(err) {
   if (err?.name === "TokenExpiredError") {
     return String(err.message).includes("maxAge")
-      ? "Token too old: exceeds the 12h maxAge cap measured from `iat`. Re-mint it: mint a new token for each request rather than reusing one."
+      ? "Token too old: exceeds the 12h maxAge cap measured from `iat`. Re-mint it: an API client should mint a fresh token per request; in the local Playground, clear `localhost` local storage or re-save the security context."
       : "Token expired: past its own `exp`.";
   }
   if (err?.name === "JsonWebTokenError") {

@@ -92,7 +92,7 @@ test("checkAuth: no Authorization token is rejected with 401", async () => {
   }
 });
 
-test("checkAuth: a too-old token's message tells an API caller what to do", async () => {
+test("checkAuth: a too-old token's message tells both an API client and a Playground user what to do", async () => {
   const now = Math.floor(Date.now() / 1000);
   const token = sign({
     email: "stale@apps.teamschools.org",
@@ -102,8 +102,9 @@ test("checkAuth: a too-old token's message tells an API caller what to do", asyn
   await assert.rejects(
     () => cube.checkAuth({}, token),
     (err) => {
-      assert.match(err.message, /mint a new token/i);
-      assert.doesNotMatch(err.message, /Playground|localhost/);
+      assert.match(err.message, /mint a fresh token per request/i);
+      assert.match(err.message, /Playground/);
+      assert.match(err.message, /localhost.*local storage/);
       return true;
     },
   );
