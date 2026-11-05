@@ -55,18 +55,28 @@ with
                     ) as d
             ) as date_reviewed,
 
-            /* App Review Week runs Thursday to Wednesday and is named for its
-               Monday: +4 days moves Thursday onto that Monday */
-            date_trunc(
-                -- trunk-ignore(sqlfluff/LT01)
-                date_add(a.new_date_local, interval 4 day), week(monday)
-            ) as application_week_start,
+            (
+                select min(d), from unnest([a.lead_date_local, a.new_date_local]) as d
+            ) as date_received,
 
             a.resume_score is not null as has_resume_score,
         from {{ ref("stg_smartrecruiters__applications") }} as a
         /* separating out multi-select fields for reporting */
         cross join unnest(split(a.subject_preference, ',')) as subject_preference_single
         cross join unnest(split(a.recruiters, ',')) as recruiter
+    ),
+
+    application_weeks as (
+        select
+            *,
+
+            /* App Review Week runs Thursday to Wednesday and is named for its
+               Monday: +4 days moves Thursday onto that Monday */
+            date_trunc(
+                -- trunk-ignore(sqlfluff/LT01)
+                date_add(date_received, interval 4 day), week(monday)
+            ) as application_week_start,
+        from applications_unnested
     ),
 
     add_dimensions_and_metrics as (
@@ -138,7 +148,7 @@ with
 
             date_diff(date_hired, date_new, day) as days_to_hire,
             date_diff(current_date(), date_last_update, day) as days_since_update,
-        from applications_unnested
+        from application_weeks
     )
 
 select

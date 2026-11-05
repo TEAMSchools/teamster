@@ -145,10 +145,15 @@ models:
         data_type: date
         description: >-
           Monday that names the App Review Week the application arrived in. The
-          week runs Thursday to Wednesday around that Monday, so date_new plus 4
-          days, truncated to its Monday. Null when date_new is null, such as an
-          application that entered SmartRecruiters as a Lead and never reached
-          New.
+          week runs Thursday to Wednesday around that Monday, so date_received
+          plus 4 days, truncated to its Monday. Null when date_received is null.
+      - name: date_received
+        data_type: date
+        description: >-
+          Eastern date the application came in, the earlier of date_lead and
+          date_new. A Lead starts the review clock the day it comes in, whether
+          or not it reaches New. Null only when the application has neither
+          date.
       - name: date_reviewed
         data_type: date
         description: >-
@@ -241,7 +246,9 @@ unit_tests:
       deadline has not passed. app_g has only a SmartRecruiters rating, which is
       not a resume score. app_h was withdrawn unreviewed and is flagged to leave
       out. app_i was reviewed on time and then withdrawn, so it keeps its
-      credit.
+      credit. app_j is a Lead nobody acted on, placed in its week by the Lead
+      date. app_k came in as a Lead and reached New 9 days later, so its clock
+      started at the Lead date and its move was late.
     model: rpt_tableau__smartrecruiters
     given:
       - input: ref("stg_smartrecruiters__applications")
@@ -350,6 +357,23 @@ unit_tests:
               null, null, null, null, null, null
           union all
           select
+              'app_j', 'LEAD', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', null, null,
+              null, null, null, null, null, null,
+              null, null, null, null, null, null,
+              null, null, date '2026-10-22', date '2026-10-22', null, null
+          union all
+          select
+              'app_k', 'INTERVIEW', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', 3, null,
+              date '2026-10-29', date '2026-10-29',
+              date '2026-10-30', date '2026-10-30', null, null,
+              null, null, null, null, null, null,
+              null, null, date '2026-10-20', date '2026-10-20', null, null
+          union all
+          select
               'app_i', 'WITHDRAWN', null, null, null, null, null, null, null,
               'Teacher', null, null, null, null, null, null, null, null, null,
               null, null, 'Recruiter A', 'Math', 3, null,
@@ -360,6 +384,7 @@ unit_tests:
     expect:
       rows:
         - application_id: app_a
+          date_received: 2026-10-22
           application_week_start: 2026-10-26
           review_due_date: 2026-11-02
           date_reviewed: 2026-10-30
@@ -367,6 +392,7 @@ unit_tests:
           within_week_initial_review: 1
           is_withdrawn_before_review: false
         - application_id: app_b
+          date_received: 2026-10-28
           application_week_start: 2026-10-26
           review_due_date: 2026-11-02
           date_reviewed: 2026-11-02
@@ -374,6 +400,7 @@ unit_tests:
           within_week_initial_review: 0
           is_withdrawn_before_review: false
         - application_id: app_c
+          date_received: 2026-10-15
           application_week_start: 2026-10-19
           review_due_date: 2026-10-26
           date_reviewed: 2026-10-16
@@ -381,6 +408,7 @@ unit_tests:
           within_week_initial_review: 0
           is_withdrawn_before_review: false
         - application_id: app_d
+          date_received: 2026-10-26
           application_week_start: 2026-10-26
           review_due_date: 2026-11-02
           date_reviewed: null
@@ -388,6 +416,7 @@ unit_tests:
           within_week_initial_review: 0
           is_withdrawn_before_review: false
         - application_id: app_e
+          date_received: 2026-10-26
           application_week_start: 2026-10-26
           review_due_date: 2026-11-02
           date_reviewed: 2026-10-27
@@ -395,6 +424,7 @@ unit_tests:
           within_week_initial_review: 1
           is_withdrawn_before_review: false
         - application_id: app_f
+          date_received: 2099-01-01
           application_week_start: 2099-01-05
           review_due_date: 2099-01-12
           date_reviewed: null
@@ -402,6 +432,7 @@ unit_tests:
           within_week_initial_review: 0
           is_withdrawn_before_review: false
         - application_id: app_g
+          date_received: 2026-10-26
           application_week_start: 2026-10-26
           review_due_date: 2026-11-02
           date_reviewed: 2026-10-27
@@ -409,6 +440,7 @@ unit_tests:
           within_week_initial_review: 0
           is_withdrawn_before_review: false
         - application_id: app_h
+          date_received: 2026-10-26
           application_week_start: 2026-10-26
           review_due_date: 2026-11-02
           date_reviewed: null
@@ -416,9 +448,26 @@ unit_tests:
           within_week_initial_review: 0
           is_withdrawn_before_review: true
         - application_id: app_i
+          date_received: 2026-10-26
           application_week_start: 2026-10-26
           review_due_date: 2026-11-02
           date_reviewed: 2026-10-27
           is_review_due: true
           within_week_initial_review: 1
+          is_withdrawn_before_review: false
+        - application_id: app_j
+          date_received: 2026-10-22
+          application_week_start: 2026-10-26
+          review_due_date: 2026-11-02
+          date_reviewed: null
+          is_review_due: true
+          within_week_initial_review: 0
+          is_withdrawn_before_review: false
+        - application_id: app_k
+          date_received: 2026-10-20
+          application_week_start: 2026-10-19
+          review_due_date: 2026-10-26
+          date_reviewed: 2026-10-30
+          is_review_due: true
+          within_week_initial_review: 0
           is_withdrawn_before_review: false
