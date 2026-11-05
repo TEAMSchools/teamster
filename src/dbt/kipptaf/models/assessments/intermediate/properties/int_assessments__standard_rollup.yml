@@ -7,9 +7,10 @@ models:
       set, and an assessment can align items to the same standard through
       records in 2 sets, which splits it across `response_type_id` rows in the
       rollup. This model scores those records as 1 standard, so a standard
-      counts once wherever scores are averaged by standard. Read standard-level
-      scores here, not from the rollup.
+      counts once wherever scores are averaged by standard. Disabled; the rollup
+      now merges split standards itself, so read its `standard` rows instead.
     config:
+      enabled: false
       meta:
         contains_pii: true
     data_tests:
@@ -79,64 +80,3 @@ models:
         description:
           The rollup's band label with 1 standard record; null with more than 1,
           since each record carries its own band.
-unit_tests:
-  - name: test_int_assessments__standard_rollup_split_standard
-    description: >-
-      Standard A is aligned to 2 Illuminate standard records on one assessment,
-      3 of 4 points on one and 0 of 2 on the other. It scores once, 3 of 6
-      points (50), not the average of 75 and 0, and has no band. Standard B has
-      1 record and keeps its percent_correct of 80 and its band, rather than a
-      recomputed 77.8.
-    model: int_assessments__standard_rollup
-    given:
-      - input: ref('int_assessments__response_rollup')
-        format: sql
-        rows: |
-          select
-              'illuminate' as source,
-              101 as student_number,
-              2026 as academic_year,
-              9001 as assessment_id,
-              'Unit 1' as title,
-              'Unit Assessment' as scope,
-              'Mathematics' as subject_area,
-              'Q1' as term_administered,
-              true as is_internal_assessment,
-              false as is_replacement,
-              'standard' as response_type,
-              'CODE.A' as response_type_code,
-              'Standard A' as response_type_description,
-              cast(3 as numeric) as points,
-              cast(4 as numeric) as points_possible,
-              cast(75 as numeric) as percent_correct,
-              'Proficient' as performance_band_label
-          union all
-          select
-              'illuminate', 101, 2026, 9001, 'Unit 1', 'Unit Assessment',
-              'Mathematics', 'Q1', true, false, 'standard', 'CODE.A',
-              'Standard A', cast(0 as numeric), cast(2 as numeric),
-              cast(0 as numeric), 'Far Below'
-          union all
-          select
-              'illuminate', 101, 2026, 9001, 'Unit 1', 'Unit Assessment',
-              'Mathematics', 'Q1', true, false, 'standard', 'CODE.B',
-              'Standard B', cast(7 as numeric), cast(9 as numeric),
-              cast(80 as numeric), 'Proficient'
-          union all
-          select
-              'illuminate', 101, 2026, 9001, 'Unit 1', 'Unit Assessment',
-              'Mathematics', 'Q1', true, false, 'overall', cast(null as string),
-              cast(null as string), cast(10 as numeric), cast(15 as numeric),
-              cast(66.7 as numeric), 'Approaching'
-    expect:
-      rows:
-        - {
-            response_type_code: CODE.A,
-            percent_correct: 50,
-            performance_band_label: null,
-          }
-        - {
-            response_type_code: CODE.B,
-            percent_correct: 80,
-            performance_band_label: Proficient,
-          }
