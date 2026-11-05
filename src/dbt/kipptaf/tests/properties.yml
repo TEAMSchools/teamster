@@ -1286,13 +1286,14 @@ data_tests:
       Lists every current-year region and grade with enrolled students that has
       no policy row for one of the three domains (attendance, academic,
       overall). A scope with no rule reads NULL statuses on the promotional
-      status dashboard, so a missing row is a silent gap, not an error. Fix by
-      adding the rows to the Promo Status Policies sheet. Miami is left out
-      while its integrations are incomplete.
+      status dashboard, and nothing else flags the gap. Fix by adding the rows
+      to the Promo Status Policies sheet; expect this to fail each July until
+      the new year's rows are added. Miami is left out while its integrations
+      are incomplete.
     config:
       tags:
         - google_sheet
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
