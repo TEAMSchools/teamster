@@ -65,7 +65,10 @@ models:
       - name: campus
         data_type: string
         description: >-
-          Physical campus name. Multiple schools may share a campus.
+          Physical campus name. Multiple schools may share a campus. A school
+          row names its parent campus, or null for a standalone school. A
+          campus-level row names itself, unless the campus crosswalk maps it to
+          a differently named campus.
 
       - name: is_campus
         data_type: boolean
@@ -84,3 +87,29 @@ models:
       - name: postal_code
         data_type: string
         description: Postal code. Nullable for non-physical rows.
+
+unit_tests:
+  - name: test_dim_locations_campus
+    description:
+      Locks how campus resolves. A school takes its crosswalk campus. A
+      campus-level location with no crosswalk row takes its own name. A
+      campus-level location with a crosswalk row takes the crosswalk campus. A
+      school with no crosswalk row stays null.
+    model: dim_locations
+    given:
+      - input: ref('stg_google_sheets__people__locations')
+        rows:
+          - { location_name: School A, is_campus: false, is_pathways: false }
+          - { location_name: Campus X, is_campus: true, is_pathways: false }
+          - { location_name: Office 1, is_campus: true, is_pathways: false }
+          - { location_name: School B, is_campus: false, is_pathways: false }
+      - input: ref('stg_google_sheets__people__campus_crosswalk')
+        rows:
+          - { Location_Name: School A, Name: Campus X }
+          - { Location_Name: Office 1, Name: Campus Y }
+    expect:
+      rows:
+        - { name: School A, campus: Campus X }
+        - { name: Campus X, campus: Campus X }
+        - { name: Office 1, campus: Campus Y }
+        - { name: School B, campus: null }

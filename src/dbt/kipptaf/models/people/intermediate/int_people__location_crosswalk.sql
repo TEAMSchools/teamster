@@ -16,7 +16,7 @@ select
     pl.dagster_code_location as location_dagster_code_location,
     pl.head_of_schools_employee_number as location_head_of_schools_employee_number,
 
-    cc.name as campus_name,
+    coalesce(cc.name, if(pl.is_campus, pl.location_name, null)) as campus_name,
 from {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
 left join
     {{ ref("stg_google_sheets__people__locations") }} as pl
