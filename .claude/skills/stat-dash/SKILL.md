@@ -92,8 +92,8 @@ Read the one file for your task.
 ## Gotchas
 
 - Never judge the current contents of either Google Sheet from the prod `stg_`
-  table; both are frozen at the last build. Read the `src_` external live
-  through ADC from Python (the BigQuery MCP has no Drive scope).
+  table; both are frozen at the last build. Read the sheet live with the Google
+  Sheets MCP (the BigQuery MCP has no Drive scope).
 - The Tableau MCP cannot say what the workbook does with a field: it returns no
   calculated-field text and errors on this workbook's embedded extracts. Use the
   `tableau-workbook-xml` skill to read the `.twb`.

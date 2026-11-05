@@ -554,7 +554,7 @@ def test_review_issue_prints_one_bullet_per_decision():
     bullets = [x for x in body.splitlines() if x.startswith("- Q1. `dashboard_filter`")]
     assert bullets == [
         "- Q1. `dashboard_filter` = `enroll_status` in tardy-roster of `enrollment_view` "
-        "(dashboard_filtered): 13 row groups, 130 rows, 130 students. "
+        "(dashboard_filtered): 13 row groups, 130 rows, at least 10 students. "
         "Reason: " + ENROLLED_REASON + "."
     ]
 
@@ -646,7 +646,7 @@ def test_review_issue_merges_decisions_that_share_a_reason():
     assert bullets == [
         "- Q1. `dashboard_filter` = `enroll_status` in absences-roster, tardy-roster of "
         "`enrollment_view` (dashboard_filtered): 2 row groups, 400 rows, "
-        "up to 20 students per comparison. "
+        "at least 20 students in one comparison. "
         "Reason: " + LEFT
     ]
     fold = body.split("<summary>For Claude</summary>", 1)[1]
@@ -725,7 +725,19 @@ def test_merged_comparisons_never_add_up_to_unmask_a_value():
     body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
     line = next(x for x in body.splitlines() if LEFT in x)
     assert "`dashboard_filter` = `<redacted>`" in line
-    assert "up to <10 students per comparison" in line
+    assert "at least <10 students in one comparison" in line
+
+
+def test_groups_of_one_value_never_add_up_to_unmask_it():
+    # 2 groups of 6 in one comparison can be the same 6 students (a student
+    # with rows in 2 buckets), not 12.
+    d, g = _left("tardy-roster", students=6)
+    other = Group("tardy-roster", g.dims, "cube_only", 60, 6)
+    quiet = [(d, g), (d, other)]
+    body = render_review_issue("Registrar", [_run(applied=Applied(quiet=quiet))])
+    line = next(x for x in body.splitlines() if LEFT in x)
+    assert "`dashboard_filter` = `<redacted>`" in line
+    assert "at least <10 students." in line
 
 
 OOD = "Board YOY leaves out out-of-district students"

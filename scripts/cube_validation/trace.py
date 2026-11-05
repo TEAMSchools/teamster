@@ -53,7 +53,7 @@ from .compare import (
 from .config import Comparison, ViewConfig
 from .cube_client import Cube, network_schools
 from .moment import Build, changed_between
-from .report import SUPPRESSED, RunResult, shown_counts
+from .report import MASK_BELOW, SUPPRESSED, RunResult, mask, shown_counts
 from .sqlsteps import Query, Step, TableRef
 from .timetravel import PROJECT, repin, strip_comments
 
@@ -199,11 +199,11 @@ class ItemTrace:
                 self.unattributed, [n for _, n in reasons], posted
             )
             shown = texts[-1] if len(texts) > len(causes) else total
-            if posted and shown in ("<10", SUPPRESSED):
+            if posted and not shown.isdigit():
                 # A hidden count hides its whole breakdown, or the breakdown
                 # adds back up to it.
                 total = shown
-                why = ["<10" if n < 10 else SUPPRESSED for _, n in reasons]
+                why = [SUPPRESSED if n >= MASK_BELOW else mask(n) for _, n in reasons]
             lines.append(
                 f"{total} rows unattributed: "
                 + "; ".join(f"{t} {r}" for (r, _), t in zip(reasons, why, strict=True))

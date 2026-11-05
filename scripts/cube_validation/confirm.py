@@ -797,6 +797,7 @@ def _with_students(
         cols = ", ".join(f"CAST(f.{dim(d)} AS STRING) AS {d}" for d in s.dims)
         flags = "".join(f", f.__cut{j}" for j in range(s.cuts))
         return (
+            # trunk-ignore(bandit/B608): identifiers are validated in config.py; cause literals are quoted by pipeline._lit
             f"SELECT per.cause, {cols + ', ' if cols else ''}f.{s.student} AS __st"
             f"{flags} FROM __per AS per JOIN {s.source} AS f ON f.__row = per.__row "
             f"WHERE per.cause IN ({allowed}) AND per.__times = 1"
@@ -811,6 +812,7 @@ def _with_students(
         for c in ("n", "missed", "doubled", "bad", "stray")
     )
     per_cut = [
+        # trunk-ignore(bandit/B608): identifiers are validated in config.py; no values are interpolated
         f"SELECT 'students' AS __kind, {nulls}, {j} AS __cut, {cell} AS __cell, "
         f"COUNT(DISTINCT __st) AS n_students FROM __cs WHERE __cut{j} "
         "GROUP BY cause, __cell"
@@ -843,8 +845,8 @@ def cause_students(
 ) -> list[dict]:
     """The `students` rows of `proof_query`, as triage keeps them: per cause
     (`triage.cause_key`), cut label and cell (`dims` as [column, value]
-    pairs), `n` distinct students. Rows of causes the proof does not map are
-    left out (`outcomes` refuses those)."""
+    pairs), `n` distinct students, and the proof's `bucket`. Rows of causes
+    the proof does not map are left out (`outcomes` refuses those)."""
     labels = [label for label, _, _ in pipeline.cut_flags(comparison) or []]
     dims = [p.cube for p in pipeline.group_dims(comparison)]
     out = []
@@ -859,16 +861,29 @@ def cause_students(
                 "cut": labels[int(r["__cut"])],
                 "dims": [[d, cell.get(d)] for d in dims],
                 "n": int(r["n_students"]),
+                "bucket": proof.bucket,
             }
         )
     return out
 
 
-def keep_students(loaded: dict, comparison: str, found: list[dict]) -> None:
-    """Add a proof's cause-student counts to a triage, per comparison; a
-    count 2 proofs give the same cell keeps the larger (each is exact for
-    its own bucket's rows)."""
-    kept = loaded.setdefault("cause_students", {}).setdefault(comparison, [])
+def keep_students(
+    loaded: dict, comparison: str, bucket: str, found: list[dict]
+) -> None:
+    """Put a proof's cause-student counts in a triage, per comparison.
+
+    They replace the counts an earlier run of the same bucket's proof left,
+    and any count saved without its bucket: a revised proof's smaller count
+    must not lose to its old one. A count 2 buckets' proofs give the same
+    cell keeps the larger (each is exact for its own bucket's rows).
+    """
+    by_comparison = loaded.setdefault("cause_students", {})
+    kept = [
+        e
+        for e in by_comparison.get(comparison, [])
+        if e.get("bucket") not in (bucket, None)
+    ]
+    by_comparison[comparison] = kept
     at = {(e["cause"], e["cut"], json.dumps(e["dims"])): e for e in kept}
     for e in found:
         key = (e["cause"], e["cut"], json.dumps(e["dims"]))
@@ -1647,7 +1662,7 @@ def apply_runs(
     """Sort the items by the proofs' runs, then link cell sets."""
     for r in runs:
         if r.found is not None and loaded is not None:
-            keep_students(loaded, _comparison_of(r), r.students)
+            keep_students(loaded, _comparison_of(r), r.proof.bucket, r.students)
         if r.found is None:
             note(items, {i for i, _ in r.items}, r.why, r.proof.path.name)
         else:
@@ -1851,7 +1866,7 @@ def run_confirm(
     stored.parent.mkdir(parents=True, exist_ok=True)
     stored.write_text(proof.text)
     apply_outcomes(all_items, proof, found)
-    keep_students(loaded, target.id, students)
+    keep_students(loaded, target.id, proof.bucket, students)
     apply_runs(run, all_items, shared, cfg, loaded)
     link_cells(run, all_items, comparison, cfg)
     _mark(run, all_items, cfg)

@@ -258,6 +258,7 @@ def as_of(sql: str, ts: datetime, catalog: Catalog) -> AsOf:
             at = f"FOR SYSTEM_TIME AS OF TIMESTAMP '{literal}'"
 
             if _PIVOT_NEXT.match(match.string, match.end()):
+                # trunk-ignore(bandit/B608): the table name is parsed from the query and the timestamp is a formatted literal
                 inner = f"(SELECT * FROM {pinned} {at})"
                 return f"{prefix}{inner}{_as(alias) if alias else ''}"
 

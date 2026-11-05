@@ -3,6 +3,8 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
+    define_asset_job,
+    in_process_executor,
     schedule,
 )
 from dagster_shared import check
@@ -23,9 +25,20 @@ grow_user_sync_schedule = ScheduleDefinition(
 )
 
 
+# In process: a step pod per asset adds to the 02:00 pod burst that GKE preempts
+# on new nodes (#6225). Each step is a few seconds of API work, so loading the
+# code location once and running the steps in turn is faster than a child process
+# per step, and the default run pod fits on an existing node.
+grow_static_partition_asset_job = define_asset_job(
+    name=f"{CODE_LOCATION}__grow__static_partition_assets_job",
+    selection=grow_static_partition_assets,
+    executor_def=in_process_executor,
+)
+
+
 @schedule(
     name=f"{CODE_LOCATION}__grow__static_partition_assets_schedule",
-    target=grow_static_partition_assets,
+    target=grow_static_partition_asset_job,
     cron_schedule="0 2 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )

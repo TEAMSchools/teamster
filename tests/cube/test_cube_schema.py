@@ -216,6 +216,27 @@ def test_refresh_key_sql_names_its_cubes_table() -> None:
     )
 
 
+def test_refresh_key_window_ends_at_build_range_end() -> None:
+    # A refresh_key that limits rebuilds to a date window must end that window at
+    # build_range_end. If the window ends earlier, a partition past it reads
+    # 'frozen' forever and stops picking up new rows, with no error.
+    offenders = []
+    for path in CUBE_MODEL_DIR.rglob("cubes/**/*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for cube in doc.get("cubes", []) or []:
+            for pre_agg in cube.get("pre_aggregations", []) or []:
+                key_sql = (pre_agg.get("refresh_key") or {}).get("sql") or ""
+                end_sql = (pre_agg.get("build_range_end") or {}).get("sql") or ""
+                if "GENERATE_DATE_ARRAY" not in key_sql or not end_sql:
+                    continue
+                ceiling = re.sub(r"\s+", "", re.sub(r"^\s*SELECT", "", end_sql))
+                if ceiling not in re.sub(r"\s+", "", key_sql):
+                    offenders.append(f"{path}: {cube['name']}.{pre_agg['name']}")
+    assert not offenders, (
+        "refresh_key window does not end at build_range_end:\n" + "\n".join(offenders)
+    )
+
+
 def test_row_level_filter_members_are_exposed_by_their_view() -> None:
     # A row_level filter naming a member the view doesn't (or no longer)
     # expose compiles fine but silently never matches -- Cube has no
@@ -519,6 +540,7 @@ TWINS.update(
             ("student_assessments", c): ("dim_assessments", c)
             for c in [
                 "is_internal_assessment",
+                "assessment_family",
                 "module_type",
                 "module_code",
                 "academic_subject",
@@ -658,7 +680,7 @@ PHRASES.update(
         ],
         # Assessments cube
         "student_assessments.assessment_type": [
-            "filter is_internal_assessment instead",
+            "filter assessment_family instead",
             "computer-adaptive",
             "select a source",
             "college (SAT, ACT and PSAT, Official and Practice)",
@@ -667,7 +689,12 @@ PHRASES.update(
         "student_assessments.is_internal_assessment": [
             "KIPP-authored interims, Illuminate and Focus Assessments",
             "internal source can change between years",
-            "filter assessment_type to select an external source",
+            "Filter assessment_family instead to select any kind of source",
+        ],
+        "student_assessments.assessment_family": [
+            "vendor_diagnostic (iready, dibels and star)",
+            "filter assessment_type to select 1 source",
+            "report them per source rather than pooled",
         ],
         "student_assessments.module_type": [
             "UA (Unit Assessment)",
