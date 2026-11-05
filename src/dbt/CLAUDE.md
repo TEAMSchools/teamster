@@ -21,6 +21,10 @@ Authoritative consumer list for a source-system package:
 Packages" prose drifts; `packages.yml` is ground truth. `kipptaf` consumes most
 source data via `source()`, not as a package.
 
+Every `kipp*` project installs `dbt_overrides` and carries a root stub at
+`macros/materialization_test.sql`. A new dbt project that stores test failures
+needs both; see `src/dbt/dbt_overrides/CLAUDE.md`.
+
 **A model name can exist in both a source-system package and `kipptaf`** (e.g.
 `int_finalsite__student_contacts`). `ref()` resolves to the CURRENT project's
 copy, so when reading a `kipptaf` model's upstream, open the `kipptaf` file —
