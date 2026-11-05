@@ -26,11 +26,16 @@ models:
       AppSheet tags join on source and assessment_id, so an Apex tag fills its
       module, grade, subject, date, and regions; Apex scope is always null.
     data_tests:
+      # error, not the project's warn: dim_assessments dedupes on its own key,
+      # so a duplicate member (a crosswalk subject with 2 disciplines) would
+      # vanish there and keep an arbitrary bucket_subject
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - source
               - assessment_id
+          config:
+            severity: error
     columns:
       - name: assessment_id
         data_tests:
