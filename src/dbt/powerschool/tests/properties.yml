@@ -46,8 +46,10 @@ data_tests:
       A school's attendance conversion has no codeday conversion item for an
       attendance code that counts for ADA. Each row is 1 missing item, for an
       FTE and attendance conversion that enrolled students use that school year.
-      Days with that code get no attendance value. Fix it in PowerSchool by
-      adding the code to the attendance conversion for that FTE.
+      It includes codes no student has received yet, so a row is a setup gap,
+      not always a day that is already wrong. Days with that code get no
+      attendance value. Fix it in PowerSchool by adding the code to the
+      attendance conversion for that FTE.
       fct_student_attendance_enrollment_daily skips days with no attendance
       value when it counts membership and present days.
     config:
@@ -56,6 +58,25 @@ data_tests:
         dagster:
           ref:
             name: stg_powerschool__attendance_conversion_items
+            package: powerschool
+
+  # TODO(#5558): runbook
+  - name: test_stg_powerschool__attendance_code__present_code_per_school_year
+    description: >-
+      A school has enrolled students in a school year but no attendance code
+      described as Present for that year. A NULL yearid means the enrollment
+      starts on a date no year term covers at that school. Days with no
+      attendance record are valued with the Present code, so these days get no
+      attendance value. Fix it in PowerSchool by adding the Present code for
+      that school year, or by adding or extending the year term.
+      fct_student_attendance_enrollment_daily skips days with no attendance
+      value when it counts membership and present days.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_powerschool__attendance_code
             package: powerschool
 
   # TODO(#5558): runbook

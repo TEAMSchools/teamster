@@ -826,7 +826,7 @@ unit_tests:
   - name: test_days_ytd_skips_a_day_with_null_attendance
     description:
       Three membership days, present, unmeasured, then absent. A day whose
-      attendance_value is null (the source could not convert it) must add to
+      attendancevalue is null (the source could not convert it) must add to
       neither n_membership_days_ytd nor n_present_days_ytd, so the unmeasured
       day sits outside every rate instead of reading as present or absent. This
       is the defense the upstream PowerSchool warn tests on null attendance rely
