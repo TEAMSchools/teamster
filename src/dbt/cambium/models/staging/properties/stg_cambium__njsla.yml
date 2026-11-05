@@ -82,8 +82,8 @@ models:
         data_type: int64
         description: >-
           Student growth percentile, 1 to 99. Compares the student's score with
-          students statewide who had similar prior scores. Null where Cambium
-          reports none, including grade 3, Science and the end-of-course tests.
+          students statewide who had similar prior scores. Cambium fills it for
+          ELA grades 4 to 8 and Math grades 4 to 7; null on every other test.
         config:
           meta:
             contains_pii: true
