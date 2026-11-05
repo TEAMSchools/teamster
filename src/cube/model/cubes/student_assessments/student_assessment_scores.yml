@@ -36,6 +36,14 @@ cubes:
         sql: "{terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
+      # The band the score fell in, on its own response type's band set. Only
+      # path to the band dimension, so no diamond.
+      - name: student_performance_bands
+        sql: >
+          {student_performance_bands.performance_band_key} =
+          {CUBE}.performance_band_key
+        relationship: many_to_one
+
     dimensions:
       - name: assessment_score_key
         description: Surrogate key. Primary key for this fact.
@@ -142,7 +150,8 @@ cubes:
             Compare band numbers within one assessment and one response_type.
             There, prefer this number to proficiency_level text for grouping and
             ordering; on standard and group rows a few bands carry more than one
-            label spelling.
+            label spelling. To compare bands across assessments, compare
+            mastery_level instead.
 
       - name: is_mastery
         description: >-
@@ -164,7 +173,9 @@ cubes:
           ai_context: >-
             For i-Ready at or above grade level, filter proficiency_level to Mid
             or Above Grade Level instead. When reporting an Illuminate or Focus
-            Assessments rate, say which assessments it covers.
+            Assessments rate, say which assessments it covers. The bar behind an
+            Illuminate or Focus Assessments row is in performance_band_set and
+            mastery_minimum_score.
 
       - name: scale_score
         description: >-
@@ -436,6 +447,68 @@ cubes:
           ai_context: >-
             Pair it with count_scored; never multiply it by count_assigned to
             get a proficient count.
+
+      # Below and Far Below shares are percents of students, counted on the
+      # same key as count_students. Their numerators filter on the joined band
+      # cube's level; a band set that fails the level rule has a null level and
+      # drops out of both numerators but stays in the denominator.
+      - name: _count_students_banded
+        description: >-
+          Distinct students (per student-year) with a score that fell in a
+          performance band. Denominator of pct_students_below and
+          pct_students_far_below.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.performance_band_key IS NOT NULL"
+
+      - name: _count_students_below
+        description: >-
+          Distinct students (per student-year) with a score at the Below level.
+          Numerator of pct_students_below.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{student_performance_bands.mastery_level} = 'Below'"
+
+      - name: _count_students_far_below
+        description: >-
+          Distinct students (per student-year) with a score in the lowest band
+          of its set. Numerator of pct_students_far_below.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{student_performance_bands.is_far_below}"
+
+      - name: pct_students_below
+        description: >-
+          The percent of students with a score at the Below level (Far Below
+          included), out of students with a banded score in the slice.
+          Illuminate and Focus Assessments only. A level is relative to the
+          mastery band of the band set that scored the row, so it means the same
+          on every set. A student counts once if any of their scores in the
+          slice is Below.
+        sql:
+          "1.0 * {_count_students_below} / NULLIF({_count_students_banded}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: pct_students_far_below
+        description: >-
+          The percent of students with a score in the lowest band of its set,
+          when that band is not a mastery band, out of students with a banded
+          score in the slice. Illuminate and Focus Assessments only. A student
+          counts once if any of their scores in the slice is Far Below.
+        sql:
+          "1.0 * {_count_students_far_below} / NULLIF({_count_students_banded},
+          0)"
+        type: number
+        format: percent
+        public: true
 
       - name: _sum_percent_correct
         description: >-

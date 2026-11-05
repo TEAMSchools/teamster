@@ -1,0 +1,98 @@
+cubes:
+  - name: student_performance_bands
+    public: false
+    sql_table: kipptaf_marts.dim_performance_bands
+
+    dimensions:
+      - name: performance_band_key
+        description: >-
+          Surrogate key of the band, hashed from the source system, the band set
+          and the band number. Primary key.
+        sql: performance_band_key
+        type: string
+        primary_key: true
+
+      - name: performance_band_set
+        description: Name of the band set the band belongs to.
+        sql: performance_band_set
+        type: string
+        public: true
+
+      - name: band_label
+        description: >-
+          The band's label, as the source spells it. A set can repeat a label,
+          so band_number, not the label, identifies a band.
+        sql: band_label
+        type: string
+        public: true
+
+      - name: band_number
+        description: >-
+          Position of the band in its set, 1 = lowest. Means something only
+          inside its set; use mastery_level to compare across sets.
+        sql: band_number
+        type: number
+        public: true
+
+      - name: band_count
+        description: Number of bands in the band's set.
+        sql: band_count
+        type: number
+        public: true
+
+      - name: minimum_score
+        description: Lowest percent correct in the band.
+        sql: minimum_score
+        type: number
+        public: true
+
+      - name: maximum_score
+        description: >-
+          The next band's minimum percent correct, which this band runs up to
+          but does not include. Null for the top band.
+        sql: maximum_score
+        type: number
+        public: true
+
+      - name: mastery_band_number
+        description: The lowest band that counts as mastery on the band's set.
+        sql: mastery_band_number
+        type: number
+        public: true
+
+      - name: mastery_minimum_score
+        description: >-
+          The band set's mastery cut: the lowest percent correct that counts as
+          mastery.
+        sql: mastery_minimum_score
+        type: number
+        public: true
+        meta:
+          ai_context: >-
+            Use this, with performance_band_set, to answer what counts as
+            mastery on this test: group by title and response_type, since a
+            standard can be scored on a different band set from its assessment's
+            overall score.
+
+      - name: mastery_level
+        description: >-
+          The band's level relative to its set's mastery band, the same on every
+          set. At/Above is the mastery band and every band above it; Approaching
+          is the band directly below the mastery band; Below is every band under
+          that. Null when the band set's setup breaks the rule's assumptions.
+        sql: mastery_level
+        type: string
+        public: true
+        meta:
+          ai_context: >-
+            Compares across assessments, where band numbers do not. To see
+            whether a student moved between bands on 2 assessments, compare
+            mastery_level on each, and name both assessments.
+
+      - name: is_far_below
+        description: >-
+          True for the lowest band of a set when it is not a mastery band. Null
+          when the band set's setup breaks the level rule's assumptions.
+        sql: is_far_below
+        type: boolean
+        public: true

@@ -33,6 +33,8 @@ views:
           - pct_proficient
           - pct_proficient_formative
           - pct_proficient_crq
+          - pct_students_below
+          - pct_students_far_below
           - avg_percent_correct
           - avg_scale_score
           - assessment_score_key
@@ -68,6 +70,21 @@ views:
           - administration_period
           - test_type
           - source_assessment_id
+
+      # is_mastery stays on the fact's include; the band's own flag would
+      # collide with it.
+      - join_path: student_assessment_scores.student_performance_bands
+        includes:
+          - performance_band_set
+          - band_label
+          - band_number
+          - band_count
+          - minimum_score
+          - maximum_score
+          - mastery_band_number
+          - mastery_minimum_score
+          - mastery_level
+          - is_far_below
 
       - join_path: student_assessment_scores.dates
         includes:
@@ -229,6 +246,18 @@ views:
             - response_type_description
             - response_type_root_description
             - is_replacement
+        - name: Performance band
+          members:
+            - performance_band_set
+            - band_label
+            - band_number
+            - band_count
+            - minimum_score
+            - maximum_score
+            - mastery_band_number
+            - mastery_minimum_score
+            - mastery_level
+            - is_far_below
         - name: Date
           members:
             - assessment_date
