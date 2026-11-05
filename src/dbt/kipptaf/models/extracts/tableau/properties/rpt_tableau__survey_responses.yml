@@ -1,5 +1,22 @@
 models:
   - name: rpt_tableau__survey_responses
+    description: >-
+      Staff survey responses for the Survey Dashboard, one row per answer, with
+      the respondent's staff roster attributes as of the submission date.
+      Limited to the surveys the dashboard reports on, and to rounds that have
+      closed: a round's answers appear the first time the view is read after its
+      end date in the reporting terms sheet. Surveys with no matching round are
+      kept. Completion tracking reads int_surveys__survey_submissions instead,
+      so it stays live during a round.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_id
+              - survey_response_id
+              - survey_question_id
+              - question_shortname
+              - answer
     columns:
       - name: location_clean_name
         data_type: string
@@ -18,56 +35,136 @@ models:
           - not_null
       - name: survey_id
         data_type: string
-      - name: survey_title
-        data_type: string
+        description: >-
+          Survey identifier — the Google Form id for live surveys, or the
+          Alchemer survey id for archived responses.
+        data_tests:
+          - not_null
       - name: survey_response_id
         data_type: string
+        description: Identifier of the submission this answer belongs to.
+        data_tests:
+          - not_null
+      - name: survey_title
+        data_type: string
+        description: >-
+          Survey name. Matches the reporting-term name of the survey's rounds.
       - name: survey_response_link
         data_type: string
+        description: Link to view or edit the submission in its source system.
+        config:
+          meta:
+            contains_pii: true
+      - name: survey_question_id
+        data_type: string
+        description: >-
+          Identifier of the question answered. Grid and check-all-that-apply
+          questions repeat it once per row shortname or selected option.
       - name: survey_code
         data_type: string
+        description: >-
+          Reporting-term code of the survey round (e.g. SUP1, MGR2, ITR). Null
+          for surveys that run without rounds.
       - name: survey_type
         data_type: string
+        description: Constant SURVEY.
       - name: academic_year
         data_type: int64
+        description: Academic year of the survey round.
       - name: date_started
         data_type: timestamp
+        description: When the respondent started the submission.
       - name: date_submitted
         data_type: timestamp
+        description: When the respondent submitted.
       - name: answer_value
         data_type: numeric
+        description: >-
+          The answer as a number when it is a rating. Null for open-ended text.
       - name: is_open_ended
         data_type: int64
+        description: 1 when the answer is free text, 0 when it is a rating.
       - name: round_rn
         data_type: int64
+        description: >-
+          Rank of the submission among one respondent's submissions for the same
+          survey round and subject, latest first. 1 is the submission that
+          counts.
       - name: employee_number
         data_type: int64
+        description: Respondent's employee number.
+        config:
+          meta:
+            contains_pii: true
       - name: respondent_name
         data_type: string
+        description: Respondent's formatted name from the staff roster.
+        config:
+          meta:
+            contains_pii: true
       - name: is_manager
         data_type: boolean
+        description: Whether the respondent holds a management position.
       - name: race_ethnicity
         data_type: string
+        description: Respondent's reported race/ethnicity.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
+        description: Respondent's reported gender identity.
+        config:
+          meta:
+            contains_pii: true
       - name: manager_name
         data_type: string
+        description: Formatted name of the respondent's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: manager_user_principal_name
         data_type: string
+        description: User principal name of the respondent's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: alumni_status
         data_type: string
+        description: Respondent's KIPP alumni status from the staff roster.
+        config:
+          meta:
+            contains_pii: true
       - name: community_grew_up
         data_type: string
+        description: Community the respondent grew up in, from the staff roster.
+        config:
+          meta:
+            contains_pii: true
       - name: community_professional_exp
         data_type: string
+        description: >-
+          Community where the respondent has professional experience, from the
+          staff roster.
+        config:
+          meta:
+            contains_pii: true
       - name: level_of_education
         data_type: string
+        description: Respondent's highest level of education.
+        config:
+          meta:
+            contains_pii: true
       - name: assignment_status
         data_type: string
+        description: Respondent's assignment status as of the submission date.
       - name: campus_name
         data_type: string
+        description: >-
+          Respondent's campus grouping, from int_people__location_crosswalk.
       - name: home_department_name
         data_type: string
+        description: Respondent's home department.
       - name: job_function
         data_type: string
         description: >-
@@ -75,25 +172,56 @@ models:
           job function for the person.
       - name: job_title
         data_type: string
+        description: Respondent's job title.
       - name: mail
         data_type: string
         description: Post-cutover Tableau identity.
+        config:
+          meta:
+            contains_pii: true
       - name: user_principal_name
         data_type: string
+        description:
+          Respondent's user principal name, for the Tableau identity match.
+        config:
+          meta:
+            contains_pii: true
       - name: sam_account_name
         data_type: string
+        description:
+          Respondent's sAMAccountName, for the Tableau identity match.
+        config:
+          meta:
+            contains_pii: true
       - name: reports_to_mail
         data_type: string
+        description: Mail address of the respondent's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: reports_to_sam_account_name
         data_type: string
+        description: sAMAccountName of the respondent's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: primary_grade_level_taught
         data_type: int64
+        description: >-
+          Grade level the respondent teaches most, for teachers with a
+          PowerSchool section that year. Null otherwise.
       - name: question_shortname
         data_type: string
+        description: Lowercased short code for the question.
       - name: answer
         data_type: string
+        description: The answer text, with HTML tags removed.
+        config:
+          meta:
+            contains_pii: true
       - name: question_title
         data_type: string
+        description: The question prompt, with HTML tags removed.
       - name: rated_department_code
         data_type: string
         description: >-

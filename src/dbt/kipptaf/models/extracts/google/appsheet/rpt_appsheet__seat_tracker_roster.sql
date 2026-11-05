@@ -1,7 +1,7 @@
 with
     itr_response as (
         select
-            employee_number,
+            respondent_employee_number as employee_number,
             answer,
             academic_year,
             max(date_submitted) as last_date_submitted,
@@ -38,12 +38,12 @@ with
                 else answer
             end as answer_short,
         -- trunk-ignore-end(sqlfluff/LT05)
-        from {{ ref("rpt_tableau__survey_responses") }}
+        from {{ ref("int_surveys__survey_responses") }}
         where
-            survey_code = 'ITR'
+            term_code = 'ITR'
             and question_shortname = 'itr_plans'
             and academic_year = {{ var("current_academic_year") }}
-        group by employee_number, answer, academic_year
+        group by respondent_employee_number, answer, academic_year
     ),
 
     pm_tier as (

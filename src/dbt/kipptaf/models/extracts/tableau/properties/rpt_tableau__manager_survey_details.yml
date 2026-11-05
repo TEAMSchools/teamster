@@ -1,13 +1,16 @@
 models:
   - name: rpt_tableau__manager_survey_details
     description: >-
-      Extract so the Manager Survey Reports and Manager Survey Rollup Tableau
-      workbooks depend on an rpt_ model rather than reading
-      int_surveys__manager_survey_details directly. The contract columns
-      (location_clean_name, campus_name, home_business_unit_name,
-      home_department_name, job_function, job_title, mail, user_principal_name,
-      sam_account_name, reports_to_mail, reports_to_sam_account_name) describe
-      the survey subject — the person being rated — not the respondent.
+      Manager Survey answers for the Manager Survey Reports and Manager Survey
+      Rollup Tableau workbooks. Only rounds that have closed appear: a round's
+      answers show up the first time the view is read after its end date in the
+      reporting terms sheet, so the workbooks publish a round with no hand
+      edits. Submissions that fall in no Manager Survey round are dropped. The
+      contract columns (location_clean_name, campus_name,
+      home_business_unit_name, home_department_name, job_function, job_title,
+      mail, user_principal_name, sam_account_name, reports_to_mail,
+      reports_to_sam_account_name) describe the survey subject — the person
+      being rated — not the respondent.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -189,3 +192,13 @@ models:
       - name: reports_to_sam_account_name
         data_type: string
         description: sAMAccountName of the subject's manager.
+      - name: round_end_date
+        data_type: date
+        description: >-
+          Last day of the Manager Survey round, from the reporting terms sheet.
+      - name: is_latest_closed_round
+        data_type: boolean
+        description: >-
+          True for answers in the most recent round that has closed. The
+          workbooks filter on this instead of a fixed year and round, so they
+          move to the next round on their own once it closes.

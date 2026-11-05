@@ -97,6 +97,20 @@ jobs:
             to a folder the PR adds, and A7 only to an entity that already has a
             key macro under src/dbt/kipptaf/macros/.
 
+            For a model the PR adds, an rpt_ model it modifies, or a properties
+            file whose tests it changes, also read .claude/rules/dbt-models.md
+            and .claude/rules/dbt-yaml.md with the Read tool. Check the tests
+            against the per-layer requirements in dbt-models.md and against
+            "Choosing a test", "Test severity" and "Tests on marts and rpt_
+            models" in dbt-yaml.md: uniqueness test, its severity, explicit
+            severity on every staging test, not_null on natural-key grain
+            columns the model's own SQL does not keep non-null, no test the
+            model's own SQL already guarantees (the grain uniqueness test
+            excepted), and only error tests on marts and rpt_ models. Severity
+            resolves from the folder defaults in dbt_project.yml as well as the
+            test's own config. These rules have no IDs, so cite the file and
+            section name.
+
             For each int_ or rpt_ model the PR adds, write a ledger in the
             fold-out: one line per rule below, even when the answer is "none". A
             model with no ledger means you skipped it, so never leave one out.
@@ -113,6 +127,10 @@ jobs:
             A10 line: every join between 2 regional models (unions of district
             models), with its join keys and whether _dbt_source_project is one
             of them.
+
+            Tests line: the uniqueness test and its resolved severity, or the
+            exemption that applies, and for an rpt_ model, any test that
+            resolves to warn.
 
             Also check model altitude: derive a model in the source-system
             package at the same layer the source system derives it, not at

@@ -69,6 +69,10 @@ select
 
     safe_cast(kipp_hs_class__c as int) as kipp_hs_class,
 
+    round(
+        current_college_cumulative_gpa__c, 2
+    ) as current_college_cumulative_gpa_rounded,
+
     mailingstreet
     || ' '
     || mailingcity

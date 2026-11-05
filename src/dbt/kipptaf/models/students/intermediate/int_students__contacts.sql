@@ -29,7 +29,7 @@ with
             {{ ref("int_finalsite__contact_id_attributes") }} as xw
             on fc.finalsite_enrollment_id = xw.finalsite_enrollment_id
             and fc._dbt_source_project = xw._dbt_source_project
-        where xw.powerschool_student_number is not null
+        where xw.is_latest_powerschool_student_number
     ),
 
     -- Miami Focus branch, replacing the branch that read the frozen

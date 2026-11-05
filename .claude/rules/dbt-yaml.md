@@ -252,7 +252,8 @@ query the rebuilt `zz_<user>_*` table.
 
 Never judge CURRENT sheet content from the prod `stg_*` table — it is a table
 frozen at the last prod build, not a live read, so it reports pre-edit values
-indefinitely. Rebuild into dev (or query the external directly) first.
+indefinitely. Rebuild into dev, or read the sheet with the Google Sheets MCP,
+first.
 
 ### BigQuery type synonyms in contracts
 
@@ -271,57 +272,88 @@ without it being real drift — normalize before comparing.
 `unique` test `where: <active_flag>` — a plain `unique` false-fails on
 legitimately-superseded inactive rows that repeat the key.
 
-### Test config defaults
+### Choosing a test
 
-- **A test/asset-check re-runs only when its host model materializes, and the
-  data-change automation condition re-materializes only TABLE models, not
-  views.** To make a check refresh regularly, anchor it to a table-materialized
-  model — only `staging/` is table by default; other layers need
-  `config: materialized: table` in properties yml (e.g.
-  `int_people__staff_roster`). `store_failures_as: table` does NOT affect
-  refresh cadence — it only relocates failure rows.
-- **Before adding a data-quality test, read the target model's existing
-  `data_tests:`.** This repo commonly uses `config.where`-scoped `not_null` /
+- Before adding a data-quality test, read the target model's existing
+  `data_tests:`. This repo commonly uses `config.where`-scoped `not_null` /
   `expression_is_true` to flag null-column / drop-from-extract conditions, so
   the coverage you want may already exist and already fire as a warn.
+- **Never add a test that the SQL of the model it is declared on already
+  guarantees.** That SQL means the model's CTEs and the macros it calls, not its
+  parents. Such a test can never fail, and it still costs a full BigQuery scan
+  per CI run — on a view mart that scan re-expands the entire upstream chain.
+  Ask: could any input data, however wrong, make this test fail? If not, skip
+  it. A guarantee counts only if it holds at every definition site of the
+  column, in every UNION branch, and no later join or step changes it. It does
+  not count when it rests on a parent: a parent's test or SQL filter, a join
+  that matches today, a source that always sends the field. The test is what
+  catches a later change there. It does not count on an incremental model or
+  snapshot either: rows from earlier runs predate the current SQL. Common cases:
+  `accepted_values` on a `case` whose every branch, `else` included, returns an
+  accepted literal; `relationships` on a column taken from an inner join to the
+  `to:` model; `expression_is_true` restating the SQL (`end >= start` on
+  `greatest(start, end)`).
+- `not_null` is the most common case. Guarantees that count: an unwrapped
+  `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
+  literal, `count(...)`, a `where <col> is not null` filter, and an expression
+  over these that cannot itself return NULL (for example, not `nullif`, a
+  `safe_` function, `regexp_extract`, `lag` / `lead`, or a `case` without a
+  non-null `else`).
+- Also skip a test that duplicates another on the same model, such as
+  `unique_combination_of_columns` beside `unique` on a surrogate key of those
+  columns. Keep one uniqueness test: the one `.claude/rules/dbt-models.md`
+  requires stays even when that model's SQL guarantees it, because it guards the
+  grain against later edits, where a join fan-out is silent and costly
+  downstream.
+- **Never delete a `not_null` from a column that carries `accepted_values`.**
+  `accepted_values` compiles to `where value not in (...)`, which NULL never
+  satisfies, so it passes NULLs. Every enum column that must be non-null carries
+  `not_null` too, even one that model's SQL keeps non-null; the pairing is the
+  only thing making the enum test reject NULL. It and the grain uniqueness test
+  are the only exceptions to the unfailable-test rule.
+
+### Test severity
+
+- How severity resolves. The district and kipptaf project default is `warn`. A
+  source package declares no project-level severity, so its tests resolve dbt's
+  own default, `error`, unless the test says otherwise; keep it that way. The
+  root project's `dbt_project.yml` test config overrides a package's
+  resource-level config, so an unscoped `data_tests: +severity: warn` in a
+  district would silently downgrade every package test declared `error`;
+  districts scope their `warn` default under their own project name
+  (`kippnewark: +severity: warn`).
+- Staging-layer tests MUST set `config: severity` explicitly on every test;
+  without it, a district or kipptaf staging test degrades to a warning and won't
+  fail CI. Set `error`, except on a ticketed test (#5558): it runs at `warn` on
+  the earliest model that can route its ticket, which is often a staging model.
+- Intermediate tests may omit the override where a warning is acceptable. A
+  warning is not acceptable on the uniqueness test `.claude/rules/dbt-models.md`
+  requires: it is the model's grain backstop, so set `error`, with the
+  source-defect exception in the _Grain_ bullet under _Tests on marts and `rpt_`
+  models_.
+- Tests on marts and `rpt_` models follow _Tests on marts and `rpt_` models_ at
+  the end of this file.
+- Removing a `severity: warn` override reverts to the project default above. To
+  force `error`, set `config: severity: error` explicitly.
 - Project-level `data_tests:` defaults flow through to singular tests too. Drop
   redundant `severity` / `store_failures` / `store_failures_as` from
   singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
-- Staging-layer tests MUST set `config: severity` explicitly on every test. The
-  district and kipptaf project default is `warn`, so their staging tests without
-  an explicit severity silently degrade to warnings and won't fail CI. Set
-  `error`, except on a ticketed test (#5558): it runs at `warn` on the earliest
-  model that can route its ticket, which is often a staging model. Intermediate
-  tests may omit the override where a warning is acceptable.
-- Tests on marts and `rpt_` models follow _Tests on marts and `rpt_` models_ at
-  the end of this file.
-- Removing a `severity: warn` override reverts to the project default: `warn` in
-  a district or kipptaf, `error` in a source package. To force `error`, set
-  `config: severity: error` explicitly.
-- The root project's `dbt_project.yml` test config overrides a package's
-  resource-level config, so an unscoped `data_tests: +severity: warn` in a
-  district silently downgrades every package test declared `error`. Districts
-  therefore scope their `warn` default under their own project name
-  (`kippnewark: +severity: warn`). Source packages declare no project-level
-  severity at all, so a package test resolves dbt's own default, `error`, unless
-  the test itself says otherwise. Keep it that way.
-- **`accepted_values` passes NULLs** — it compiles to
-  `where value not in (...)`, which NULL never satisfies. Every enum column that
-  must be non-null carries `not_null` too, including one a `coalesce` makes
-  non-null by construction. **Never delete a `not_null` from a column that
-  carries `accepted_values`.** It is not vacuous, whatever the SQL looks like —
-  the pairing is the only thing making the enum test reject NULL.
-- **Never add `not_null` to a column that cannot be NULL by construction.** It
-  can never fail, and it still costs a full BigQuery scan per CI run — on a view
-  mart that scan re-expands the entire upstream chain. Non-nullable by
-  construction means every definition site is one of: an unwrapped
-  `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
-  literal in every UNION branch, or `count(...)`. The `accepted_values` pairing
-  above overrides this rule; nothing else does.
-- **Disabling a model disables only the generic tests declared on it.** A
-  singular test that refs it, and a `relationships` test on another model whose
-  `to:` names it, stay in `nodes` (verified with `--no-partial-parse`) and keep
-  scanning the stale prod relation. Disable or remove each of those.
+
+### When tests run
+
+A test or asset check re-runs only when its host model materializes, and the
+data-change automation condition re-materializes only table models, not views.
+To make a check refresh regularly, anchor it to a table-materialized model: only
+`staging/` is table by default; other layers need `config: materialized: table`
+in properties yml. `store_failures_as: table` does not affect refresh cadence —
+it only relocates failure rows.
+
+### Disabling a model
+
+Disabling a model disables only the generic tests declared on it. A singular
+test that refs it, and a `relationships` test on another model whose `to:` names
+it, stay in the graph and keep scanning the stale prod relation. Disable or
+remove each of those.
 
 ### An FK check belongs on the pre-join model, as a column `relationships` test
 
@@ -462,13 +494,15 @@ after its query returns 0 rows in prod.
 Sort each test by what it guards:
 
 - Grain: the backstop on every mart and `rpt_` model. Add `not_null` on
-  natural-key grain columns (`unique` skips nulls) unless they are non-null by
-  construction; a `generate_surrogate_key` primary key needs only `unique`. If a
-  grain test fails in prod on a source defect that waits on a fix elsewhere, set
-  `severity: warn` on that one test with a `TODO(#N)` comment, and still flip
-  the folder. A kipptaf `rpt_` model listed on
+  natural-key grain columns (`unique` skips nulls) unless the model's own SQL
+  keeps them non-null; a `generate_surrogate_key` primary key needs only
+  `unique`. If a grain test fails in prod on a source defect that waits on a fix
+  elsewhere, set `severity: warn` on that one test with a `TODO(#N)` comment,
+  and still flip the folder. A kipptaf `rpt_` model listed on
   [#5990](https://github.com/TEAMSchools/teamster/issues/5990) has no grain test
-  yet: add one in any PR that modifies it, and check it off there.
+  yet: add one in any PR that modifies it, and check it off there. The grain
+  test is also the guard against join fan-out. A unit test cannot anticipate a
+  join that does not exist yet, so do not add fan-out fixtures.
 - A `relationships` test from a mart or `rpt_` model to another model is not a
   regression test. Key drift is the key macros' job (A7). When two models must
   cover the same population, have both read one shared upstream model. A test

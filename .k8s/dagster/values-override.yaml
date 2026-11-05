@@ -244,12 +244,11 @@ workspace:
           cpu: 500m
           memory: 2.0Gi
         limits:
-          # Bumped from 1000m to 1750m to cover non-dbt step pods whose p95 CPU
-          # usage is ~950m with observed peaks to 1.45 cores. 1750m gives ~20%
-          # headroom above the 14-day max, staying below the most aggressive
-          # per-asset dbt override (2250m). Dbt assets keep their own higher
-          # per-asset limit overrides in Python asset definitions.
-          cpu: 1750m
+          # Sized for dbt, the heaviest CPU user. One-step automation runs execute
+          # in this run pod, not a step pod (`AutomationInProcessExecutor` in
+          # `src/teamster/core/executors.py`), so op_tags cannot raise it for
+          # them. Autopilot bills the request, so the limit only caps bursting.
+          cpu: 2250m
           memory: 2.5Gi
       securityContext:
         runAsNonRoot: true

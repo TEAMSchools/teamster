@@ -34,7 +34,9 @@ formatting. The rules below are where we add to or differ from that guide.
 ### Rules
 
 Common remedy for S3, S8, S9, and S10: derive the expression as a named column
-in an upstream CTE, then reference the plain column.
+upstream, then reference the plain column. A value derived from 1 source column
+goes in the staging model that reads it (S9); anything else goes in an upstream
+CTE.
 
 #### S1. ANSI SQL or a dbt macro first
 
@@ -120,15 +122,17 @@ Aggregates passed as direct arguments do not count.
 - Bad: `if(coalesce(cast(x as int64), 0) > 0, 'a', 'b')`.
 - Enforced by: review.
 
-#### S9. Cast early, once, with an alias
+#### S9. Cast and derive at the point of entry, once, with an alias
 
-Cast in staging or where the raw value first appears, as a named column. Never
-nest `cast()` inside another function.
+Cast, round, trim, or parse a source column in the staging model that first
+reads it, as a named column. Never nest `cast()` inside another function.
 
-- Why: 1 typed column downstream; an unaliased `cast()` is named `f0_` by
-  BigQuery.
-- Good: `cast(student_id as string) as student_id` in staging.
-- Bad: `date(cast(entry_ts as timestamp))` in a mart.
+- Why: 1 typed or derived column downstream that every consumer joins and
+  filters on; an unaliased `cast()` is named `f0_` by BigQuery.
+- Good: `cast(student_id as string) as student_id` and
+  `round(gpa__c, 2) as gpa_rounded` in staging.
+- Bad: `date(cast(entry_ts as timestamp))` in a mart; a CTE in an intermediate
+  that only rounds a staging column so a join can match on it.
 - Enforced by: review.
 
 #### S10. `where` and `on` hold only plain comparisons
@@ -147,14 +151,19 @@ other side are fine; so are expressions that combine both join sides.
   `and ((py.score_source = 'state_nj' and ...) or (...))`.
 - Enforced by: review.
 
-#### S11. Row filters on the preserved table go in `where`
+#### S11. A row filter goes with the table it filters
 
-For a `left join`, a filter in `on` keeps non-matching rows. Exception: a
+A filter on the `from` table goes in `where`; for a `left join`, a filter in
+`on` keeps non-matching rows. A 1-sided filter on a joined table goes in that
+join's `on`, for an `inner join` as well as a `left join`. Exception: a
 `full join` condition on 1 side stays in `on`.
 
-- Why: `on` decides matches; `where` decides rows.
-- Good: `left join t on a.id = t.id where a.is_active`.
-- Bad: `left join t on a.id = t.id and a.is_active`.
+- Why: `on` decides matches; `where` decides rows. Each filter sits next to the
+  table it narrows.
+- Good: `left join t on a.id = t.id where a.is_active`;
+  `inner join rt on g.record_type_id = rt.id and rt.name = 'College'`.
+- Bad: `left join t on a.id = t.id and a.is_active`;
+  `inner join rt on g.record_type_id = rt.id where rt.name = 'College'`.
 - Enforced by: review.
 
 #### S12. `distinct` only for grain projection

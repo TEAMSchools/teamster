@@ -1,0 +1,11 @@
+SELECT `student_school_enrollments`.grade_level `student_attendance_enrollment_daily_view__grade_level`, `locations`.abbreviation `student_attendance_enrollment_daily_view__locations_abbreviation`, sum(CASE WHEN (`student_attendance_enrollment_daily`.membership_value = 1) THEN `student_attendance_enrollment_daily`.attendance_value END) / NULLIF(sum(CASE WHEN (`student_attendance_enrollment_daily`.membership_value = 1) AND (`student_attendance_enrollment_daily`.attendance_value IS NOT NULL) THEN `student_attendance_enrollment_daily`.membership_value END), 0) `student_attendance_enrollment_daily_view__avg_daily_attendance`, COUNT(DISTINCT `student_school_enrollments`.student_key) `student_attendance_enrollment_daily_view__count_students`
+FROM  kipptaf_marts.fct_student_attendance_enrollment_daily  AS `student_attendance_enrollment_daily`
+LEFT JOIN  kipptaf_marts.dim_student_enrollments  AS `student_school_enrollments` ON `student_school_enrollments`.student_enrollment_key = `student_attendance_enrollment_daily`.student_enrollment_key
+
+LEFT JOIN  kipptaf_marts.dim_locations  AS `locations` ON `locations`.location_key = `student_school_enrollments`.location_key
+LEFT JOIN  kipptaf_marts.dim_dates  AS `dates` ON `dates`.date_key = `student_attendance_enrollment_daily`.date_key
+LEFT JOIN  kipptaf_marts.dim_regions  AS `regions` ON `regions`.region_key = `locations`.region_key
+WHERE (`dates`.academic_year = CAST(? AS FLOAT64)) AND (`regions`.`name` = ?) AND (`locations`.abbreviation IN (?, ?, ?))
+GROUP BY 1, 2
+ORDER BY  3  DESC
+LIMIT 50000

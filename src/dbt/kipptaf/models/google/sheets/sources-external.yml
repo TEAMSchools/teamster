@@ -2234,6 +2234,190 @@ sources:
                 - sheets
                 - kfwd
                 - career_launch_bulk_add
+      - name: src_google_sheets__kfwd__career_launch_rubric
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1vk6gkwZnh-Q_5uuOftkzt38hC3xyeTpHwSEUfzhfGIc
+            sheet_range: career_launch_rubric_v1
+            skip_leading_rows: 1
+        columns:
+          - name: rubric_key
+            data_type: string
+          - name: indicator
+            data_type: string
+          - name: level
+            data_type: int64
+          - name: label
+            data_type: string
+          - name: points
+            data_type: int64
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - career_launch_rubric
+      - name: src_google_sheets__kfwd__career_launch_stages
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1vk6gkwZnh-Q_5uuOftkzt38hC3xyeTpHwSEUfzhfGIc
+            sheet_range: career_launch_stages_v1
+            skip_leading_rows: 1
+        columns:
+          - name: stage_key
+            data_type: string
+          - name: stage
+            data_type: string
+          - name: min_score
+            data_type: int64
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - career_launch_stages
+      - name: src_google_sheets__kfwd__career_launch_gpa_bands
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1vk6gkwZnh-Q_5uuOftkzt38hC3xyeTpHwSEUfzhfGIc
+            sheet_range: career_launch_gpa_bands_v1
+            skip_leading_rows: 1
+        columns:
+          - name: band_key
+            data_type: string
+          - name: label
+            data_type: string
+          - name: min_gpa
+            data_type: float64
+          - name: points
+            data_type: int64
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - career_launch_gpa_bands
+      - name: src_google_sheets__kfwd__career_launch_caseloads
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1vk6gkwZnh-Q_5uuOftkzt38hC3xyeTpHwSEUfzhfGIc
+            sheet_range: career_launch_caseloads_v1
+            skip_leading_rows: 1
+        columns:
+          - name: advisor_name
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - career_launch_caseloads
+      - name: src_google_sheets__kfwd__early_apps_goals
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1_qb4Ldmbs0x_SqHIEcgzFK-Y1MJWjNK-PqfCtSPGiGk
+            sheet_range: early_apps_goals_v1
+            skip_leading_rows: 1
+        columns:
+          - name: criterion_code
+            data_type: string
+          - name: criterion_sort
+            data_type: int64
+          - name: gpa_band
+            data_type: string
+          - name: criterion_label
+            data_type: string
+          - name: required_type
+            data_type: string
+          - name: type_label
+            data_type: string
+          - name: urm_bar
+            data_type: int64
+          - name: required_count
+            data_type: int64
+          - name: requires_full_need
+            data_type: boolean
+          - name: sets_aside_full_need
+            data_type: boolean
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - early_apps_goals
+      - name: src_google_sheets__kfwd__early_apps_gpa_bands
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1_qb4Ldmbs0x_SqHIEcgzFK-Y1MJWjNK-PqfCtSPGiGk
+            sheet_range: early_apps_gpa_bands_v1
+            skip_leading_rows: 1
+        columns:
+          - name: gpa_band
+            data_type: string
+          - name: band_sort
+            data_type: int64
+          - name: min_gpa
+            data_type: numeric
+          - name: summary_group
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - early_apps_gpa_bands
+      - name: src_google_sheets__kfwd__early_apps_schools
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1_qb4Ldmbs0x_SqHIEcgzFK-Y1MJWjNK-PqfCtSPGiGk
+            sheet_range: early_apps_schools_v1
+            skip_leading_rows: 1
+        columns:
+          - name: overgrad_school_name
+            data_type: string
+          - name: school_key
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - early_apps_schools
       - name: src_google_sheets__focus__language_code_crosswalk
         external:
           options:
