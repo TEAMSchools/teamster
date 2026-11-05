@@ -4,11 +4,12 @@ sources:
       Miami's PowerSchool archive (final ODBC pull 2026-07-01; Miami's SIS moved
       to Focus). Permanent history source for stored grades, attendance, the
       course enrollments they hang off (#5193), section teachers (#5260), terms
-      (#5397), and the calendars the network calendar models read — 16 permanent
-      tables in total. Enrollment stints are deliberately absent: Focus is
-      Miami's sole enrollment source across all years, so unioning the archive's
-      stints double-counts every row. Terms and calendars are the opposite case,
-      and that is why they are here — int_students__terms,
+      (#5397), the calendars the network calendar models read, and special
+      programs (the ELA and math bucket assignments) — 17 permanent tables in
+      total. Enrollment stints are deliberately absent: Focus is Miami's sole
+      enrollment source across all years, so unioning the archive's stints
+      double-counts every row. Terms and calendars are the opposite case, and
+      that is why they are here — int_students__terms,
       int_students__calendar_day and int_students__calendar_week all floor their
       Focus branch at the SIS cutover year, so the archive covers the pre-AY2026
       years Focus does not. Rebuilt from the frozen externals with the 8400
@@ -161,3 +162,12 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__terms_spine
+      - name: int_powerschool__spenrollments
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__spenrollments
