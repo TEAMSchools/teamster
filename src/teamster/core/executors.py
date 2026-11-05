@@ -1,18 +1,27 @@
+from collections.abc import Iterator, Mapping
 from datetime import UTC, datetime
 
 from dagster import (
+    DagsterEvent,
     Executor,
     InitExecutorContext,
     executor,
     multiple_process_executor_requirements,
 )
+from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
+from dagster._core.executor.in_process import InProcessExecutor
 from dagster._core.executor.step_delegating import StepDelegatingExecutor
 from dagster._core.executor.step_delegating.step_handler.base import (
     CheckStepHealthResult,
     StepHandlerContext,
 )
+from dagster._core.storage.tags import AUTOMATION_CONDITION_TAG
 from dagster_k8s import k8s_job_executor
 from dagster_k8s.executor import K8sStepHandler
+from dagster_k8s.job import get_user_defined_k8s_config
 from dagster_shared import check
 
 # Far above the run pod's lag in reading a step's success event. A healthy step
@@ -72,6 +81,62 @@ class ZombieAwareK8sStepHandler(K8sStepHandler):
         )
 
 
+class AutomationInProcessExecutor(Executor):
+    """Runs one-step automation-sensor runs in process, everything else in step pods.
+
+    Almost every automation run materializes a single op, so a step pod adds a pod
+    without adding parallelism. Each extra pod feeds the node scale-ups where GKE
+    preempts our pods. Manual launches and user-launched backfills keep step pods.
+    Backfills the automation daemon creates carry its tag, so their one-step runs
+    also run in process.
+
+    In process, op-level `dagster-k8s/config` tags do not apply; the step runs with
+    the run pod's resources. An op that sizes its own memory keeps its step pod, so
+    adding an automation condition to it cannot shrink it into the run pod. Ops
+    that only raise CPU run in process and get the run pod's CPU limit.
+    """
+
+    def __init__(self, step_executor: Executor):
+        self._step_executor = step_executor
+        self._in_process = InProcessExecutor(
+            retries=step_executor.retries,
+            step_dependency_config=step_executor.step_dependency_config,
+        )
+
+    @property
+    def retries(self) -> RetryMode:
+        return self._step_executor.retries
+
+    @property
+    def step_dependency_config(self) -> StepDependencyConfig:
+        return self._step_executor.step_dependency_config
+
+    def execute(
+        self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
+    ) -> Iterator[DagsterEvent]:
+        from_automation = (
+            plan_context.dagster_run.tags.get(AUTOMATION_CONDITION_TAG) == "true"
+        )
+        step_keys = execution_plan.step_keys_to_execute
+
+        in_process = (
+            from_automation
+            and len(step_keys) == 1
+            and not _sizes_own_memory(execution_plan.get_step_by_key(step_keys[0]).tags)
+        )
+
+        target = self._in_process if in_process else self._step_executor
+        yield from target.execute(plan_context, execution_plan)
+
+
+def _sizes_own_memory(op_tags: Mapping[str, str] | None) -> bool:
+    """Whether an op's `dagster-k8s/config` tags request or limit memory."""
+    resources = get_user_defined_k8s_config(op_tags or {}).container_config.get(
+        "resources", {}
+    )
+    return any("memory" in resources.get(kind, {}) for kind in ("requests", "limits"))
+
+
 @executor(
     name=k8s_job_executor.name,
     # trunk-ignore(pyright/reportArgumentType): the same schema object upstream passes in
@@ -79,7 +144,11 @@ class ZombieAwareK8sStepHandler(K8sStepHandler):
     requirements=multiple_process_executor_requirements(),
 )
 def zombie_aware_k8s_job_executor(init_context: InitExecutorContext) -> Executor:
-    """`k8s_job_executor` with `ZombieAwareK8sStepHandler` as its step handler."""
+    """`k8s_job_executor` with `ZombieAwareK8sStepHandler` as its step handler.
+
+    Wrapped in `AutomationInProcessExecutor`, so one-step automation-sensor runs
+    run in process instead of in a step pod.
+    """
     step_executor = check.inst(
         check.not_none(k8s_job_executor.executor_creation_fn)(init_context),
         StepDelegatingExecutor,
@@ -89,4 +158,4 @@ def zombie_aware_k8s_job_executor(init_context: InitExecutorContext) -> Executor
     check.inst(
         step_executor._step_handler, K8sStepHandler
     ).__class__ = ZombieAwareK8sStepHandler
-    return step_executor
+    return AutomationInProcessExecutor(step_executor)
