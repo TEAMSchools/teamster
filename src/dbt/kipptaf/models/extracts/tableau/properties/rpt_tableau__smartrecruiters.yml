@@ -238,7 +238,10 @@ unit_tests:
       arrived Wednesday and was rejected on the deadline Monday. app_c was
       rejected in time with no score. app_d is scored but still New. app_e is a
       non-teacher role on the separate 7-day rule. app_f is in a week whose
-      deadline has not passed.
+      deadline has not passed. app_g has only a SmartRecruiters rating, which is
+      not a resume score. app_h was withdrawn unreviewed and is flagged to leave
+      out. app_i was reviewed on time and then withdrawn, so it keeps its
+      credit.
     model: rpt_tableau__smartrecruiters
     given:
       - input: ref("stg_smartrecruiters__applications")
@@ -345,6 +348,15 @@ unit_tests:
               date '2026-10-26', date '2026-10-26', null, null, null, null,
               null, null, null, null, null, null,
               null, null, null, null, null, null
+          union all
+          select
+              'app_i', 'WITHDRAWN', null, null, null, null, null, null, null,
+              'Teacher', null, null, null, null, null, null, null, null, null,
+              null, null, 'Recruiter A', 'Math', 3, null,
+              date '2026-10-26', date '2026-10-26',
+              date '2026-10-27', date '2026-10-27', null, null,
+              null, null, null, null, null, null,
+              null, null, null, null, null, null
     expect:
       rows:
         - application_id: app_a
@@ -403,3 +415,10 @@ unit_tests:
           is_review_due: true
           within_week_initial_review: 0
           is_withdrawn_before_review: true
+        - application_id: app_i
+          application_week_start: 2026-10-26
+          review_due_date: 2026-11-02
+          date_reviewed: 2026-10-27
+          is_review_due: true
+          within_week_initial_review: 1
+          is_withdrawn_before_review: false
