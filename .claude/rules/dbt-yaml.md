@@ -430,7 +430,7 @@ group check groups by the group key.
 - Intermediate tests may omit the override where a warning is acceptable. A
   warning is not acceptable on the uniqueness test `.claude/rules/dbt-models.md`
   requires: it is the model's grain backstop, so set `error`, with the
-  source-defect exception in the _Grain_ bullet under _Tests on marts and `rpt_`
+  known-defect exception in the _Grain_ bullet under _Tests on marts and `rpt_`
   models_.
 - Tests on marts and `rpt_` models follow _Tests on marts and `rpt_` models_
   below.
@@ -459,9 +459,12 @@ Sort each test by what it guards:
 - Grain: the backstop on every mart and `rpt_` model. Add `not_null` on
   natural-key grain columns (`unique` skips nulls) unless the model's own SQL
   keeps them non-null; a `generate_surrogate_key` primary key needs only
-  `unique`. If a grain test fails in prod on a source defect that waits on a fix
-  elsewhere, set `severity: warn` on that one test with a `TODO(#N)` comment,
-  and still flip the folder. A kipptaf `rpt_` model listed on
+  `unique`. If a grain test fails in prod on a known defect, set
+  `severity: warn` on that one test with a `TODO(#N)` comment, and still flip
+  the folder. The defect can sit in source data or in the model's own SQL, and
+  its issue names the fix or the decision it waits on. When the fix to a model
+  defect is clear, make it in the PR that adds the test instead; the warn is for
+  a defect that needs an owner's call. A kipptaf `rpt_` model listed on
   [#5990](https://github.com/TEAMSchools/teamster/issues/5990) has no grain test
   yet: add one in any PR that modifies it, and check it off there. The grain
   test is also the guard against join fan-out. A unit test cannot anticipate a
