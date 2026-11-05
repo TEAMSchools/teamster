@@ -41,5 +41,4 @@ select
     }} as student_enrollment_key,
 
     true as is_504,
-    effective_date_end = '9999-12-31' as is_current,
 from stints
