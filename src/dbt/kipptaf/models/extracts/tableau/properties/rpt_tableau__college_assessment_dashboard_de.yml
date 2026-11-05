@@ -2,25 +2,34 @@ models:
   - name: rpt_tableau__college_assessment_dashboard_de
     description: >-
       Dual-enrollment course results for the CARAT workbook. One row per
-      PowerSchool stored grade for a course whose name ends in (DE), at store
-      code Y1 or Q2, with the college course, pass flag, score, semester, and
-      institution from the dual-enrollment extension table. Reads PowerSchool
-      only, not the college assessment models. A student can hold both a Q2 and
-      a Y1 row for one course in one year; see the inline TODO.
+      PowerSchool stored grade and college semester, for a course whose name
+      ends in (DE), at store code Y1 or Q2. The college course, pass flag,
+      score, semester, and institution come from the dual-enrollment extension
+      table, which holds one row per college semester, so a course that spans
+      Fall and Spring has 2 rows. A stored grade with no extension row has 1 row
+      with null college columns. Reads PowerSchool only, not the college
+      assessment models. A student can hold both a Q2 and a Y1 row for one
+      course in one year; see the inline TODO.
     data_tests:
-      # TODO(#5889): one stored grade joins more than one DE extension row
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - student_number
               - storedgrades_dcid
-          config:
-            severity: warn
+              - de_semester
     columns:
       - name: student_number
         description: >-
           PowerSchool student number.
         data_type: int64
+        data_tests:
+          - not_null
+      - name: storedgrades_dcid
+        description: >-
+          PowerSchool stored grade record key.
+        data_type: int64
+        data_tests:
+          - not_null
       - name: lastfirst
         description: >-
           Student's full name, last name first.
@@ -49,10 +58,6 @@ models:
         description: >-
           Teacher of record on the stored grade.
         data_type: string
-      - name: storedgrades_dcid
-        description: >-
-          PowerSchool stored grade record key.
-        data_type: int64
       - name: de_course_name
         description: >-
           College course name from the dual-enrollment extension table. Null
@@ -77,6 +82,6 @@ models:
       - name: unique_identifier
         description: >-
           student_number and course_number joined with an underscore. Not unique
-          when a student has both Q2 and Y1 rows, or takes the course in two
-          years.
+          when a student has both Q2 and Y1 rows, takes the course in two years,
+          or the course spans two college semesters.
         data_type: string

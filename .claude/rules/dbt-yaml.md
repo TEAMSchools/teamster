@@ -375,6 +375,16 @@ A singular test fits a check that compares rows with each other or with another
 row set: a window predicate, a self-join for overlaps, an anti-join from a
 driving set for coverage, or a group whose rows must agree.
 
+A source defect that a `stg_` model dedups (A5) is the one case where a generic
+test cannot do the job. The dedup hides the duplicates from any test on the
+`stg_`, and a generic test declared on the source never becomes a Dagster check,
+because dagster-dbt's `enable_source_tests_as_checks` is off here, so its
+failures reach no one. Write a singular test that reads the `source()`, with
+`-- depends_on: {{ ref("<stg model>") }}` and `meta.dagster.ref` naming that
+`stg_` (see _Singular-test `meta.dagster.ref`_ below). Its severity follows the
+staging rule. The `stg_` dedup is the downstream defense the _Source data_
+bullet asks for.
+
 Return one row per violation, so the failure count is the number of things to
 fix. A self-join keeps one direction of each pair with a strict tie-break on the
 compared columns (`a.grade_min < b.grade_min`, then the next column on a tie). A
