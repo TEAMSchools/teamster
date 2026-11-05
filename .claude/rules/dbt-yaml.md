@@ -283,12 +283,14 @@ legitimately-superseded inactive rows that repeat the key.
   view mart that scan re-expands the entire upstream chain. Ask: could any input
   data, however wrong, make this column NULL? If not, skip the test. Guarantees
   that count: an unwrapped `generate_surrogate_key`, a `coalesce` / `ifnull`
-  with a non-null default, a literal in every UNION branch, `count(...)`, a
-  `where <col> is not null` filter in this model that no later outer join
-  undoes, and any expression built only from these. A guarantee that rests on
-  upstream data does not count — a parent's `not_null` test, a join that matches
-  today, a source that always sends the field — because that is what the test
-  guards.
+  with a non-null default, a literal, `count(...)`, a `where <col> is not null`
+  filter, and an expression over these that cannot itself return NULL (not
+  `nullif`, a `safe_` function, division, or a `case` without `else`). A
+  guarantee counts only if it holds at every definition site of the column, in
+  every UNION branch, and no later outer join can bring the column back as NULL.
+  A guarantee that rests on upstream data does not count — a parent's `not_null`
+  test, a join that matches today, a source that always sends the field —
+  because that is what the test guards.
 - **Never delete a `not_null` from a column that carries `accepted_values`.**
   `accepted_values` compiles to `where value not in (...)`, which NULL never
   satisfies, so it passes NULLs. Every enum column that must be non-null carries
