@@ -294,7 +294,14 @@ def _dashboard_ref(comparison: Comparison) -> str:
             f"comparison {comparison.id!r}: `dashboard_view` must be dataset.view"
         )
     ds, name = comparison.dashboard_view.split(".")
-    return f"`{PROJECT}`.`{ds}`.`{name}`"
+    table = f"`{PROJECT}`.`{ds}`.`{name}`"
+    if not comparison.dashboard_columns:
+        return table
+    computed = ", ".join(
+        f"{sql} AS {column}" for column, sql in comparison.dashboard_columns.items()
+    )
+    # trunk-ignore(bandit/B608): column names are validated in config.py; the expressions are the analyst's own SQL, like probe_sql
+    return f"(SELECT *, {computed} FROM {table})"
 
 
 def _date_cubes(cfg: ViewConfig) -> set[str]:
