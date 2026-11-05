@@ -776,6 +776,40 @@ def test_set_shelves_clears_a_filter_on_one_sheet_only():
         assert after["Mastery by Week"] == before["Mastery by Week"]
 
 
+_ACTION = f"{DKI_DS}.[Action (School)]"
+_ACTION_FILTER = (
+    f"<filter class='categorical' column='{_ACTION}'>\n"
+    "            <groupfilter function='crossjoin' "
+    "user:ui-action-filter='[Action1_X]' user:ui-domain='database' "
+    "user:ui-enumeration='inclusive' user:ui-marker='enumerate'>\n"
+    "              <groupfilter function='empty-level' member='[school]' />\n"
+    "            </groupfilter>\n"
+    "          </filter>\n"
+    "          "
+)
+
+
+def test_set_shelves_clears_an_action_filter_by_removing_it():
+    discipline = f"<filter class='categorical' column='{DKI_DS}.[Discipline]'"
+    slice_ = f"<column>{DKI_DS}.[Discipline]</column>"
+    assert DKI_TWB.count(discipline) == 2 and DKI_TWB.count(slice_) == 1
+    src = DKI_TWB.replace(discipline, _ACTION_FILTER + discipline, 1).replace(
+        slice_, f"<column>{_ACTION}</column>\n            {slice_}", 1
+    )
+    assert _ACTION in _worksheets(src)["Mastery Grid"]
+
+    out = set_shelves(src, "Mastery Grid", {"clear_filters": ["Action (School)"]}).xml
+
+    ET.fromstring(out)
+    grid = _worksheets(out)["Mastery Grid"]
+    # An action filter has no level to keep every member of; leaving it out of
+    # the copy shows every row, as the dashboard does before a click.
+    assert _ACTION not in grid
+    assert grid.count("<filter class='categorical'") == 4
+    assert grid.count("<column>[federated") == 4
+    assert out.replace(grid, "") == src.replace(_worksheets(src)["Mastery Grid"], "")
+
+
 def test_set_shelves_refuses_to_clear_a_missing_or_range_filter():
     with pytest.raises(ValueError, match="no filter on 'School'; it filters Disc"):
         set_shelves(DKI_TWB, "Mastery Grid", {"clear_filters": ["School"]})

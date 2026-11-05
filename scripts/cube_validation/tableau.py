@@ -984,10 +984,14 @@ def _clear_filter(
 
     Each such filter keeps its element and attributes (a context filter stays
     one, and its filter cards still name it); its members become the level's
-    every member, the form an untouched All filter takes.
+    every member, the form an untouched All filter takes. A dashboard action
+    filter has no level to keep every member of, so it leaves the sheet with
+    its slices entry: the sheet then shows every row, as the dashboard does
+    before a click.
     """
     nl = "\r\n" if "\r\n" in text else "\n"
     found = 0
+    removed: list[str] = []
 
     def clear(m: re.Match) -> str:
         nonlocal found
@@ -998,6 +1002,9 @@ def _clear_filter(
         if not is_named(column, wanted):
             return m[0]
         found += 1
+        if "user:ui-action-filter=" in element:
+            removed.append(column)
+            return ""
         if _attrs(opening).get("class") != "categorical":
             raise ValueError(
                 f"the filter on {wanted!r} on {sheet!r} is not on members; "
@@ -1013,6 +1020,8 @@ def _clear_filter(
         return f"{lead}{opening}>{nl}{indent}  {members}{nl}{indent}</filter>"
 
     out = _element("filter").sub(clear, text)
+    for column in removed:
+        out = re.sub(rf"\s*<column>{re.escape(column)}</column>", "", out)
     if not found:
         on_sheet = [
             shown(_attrs(m[0].lstrip().split(">", 1)[0]).get("column", ""))
