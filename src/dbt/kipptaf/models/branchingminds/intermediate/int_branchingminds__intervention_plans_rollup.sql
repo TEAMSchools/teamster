@@ -14,7 +14,10 @@ with
                 intervention_end_date, current_date('{{ var("local_timezone") }}')
             ) as end_date_or_today,
         from {{ ref("stg_branchingminds__intervention_plans") }}
-        where intervention_start_date is not null and student_number is not null
+        where
+            intervention_start_date is not null
+            and student_number is not null
+            and intervention_name is not null
     ),
 
     plan_year_bounds as (

@@ -307,6 +307,30 @@ unit_tests:
             school_id: 2,
           }
 
+  - name: test_rollup_drops_null_intervention_name
+    description:
+      A plan with no intervention name is left out instead of forming an unnamed
+      episode.
+    model: int_branchingminds__intervention_plans_rollup
+    given:
+      - input: ref("stg_branchingminds__intervention_plans")
+        format: sql
+        rows: |
+          select 1 as intervention_plan_id, 100001 as student_number, cast(null as string) as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, cast('2026-09-14' as date) as intervention_start_date, cast('2026-10-27' as date) as intervention_end_date
+          union all
+          select 2, 100001, 'SIPPS', 'Reading', 'kippteamandfamily', 2, cast('2026-09-14' as date), cast('2026-10-27' as date)
+    expect:
+      rows:
+        - {
+            student_number: 100001,
+            intervention_name: SIPPS,
+            academic_year: 2026,
+            episode_start: 2026-09-14,
+            episode_end: 2026-10-27,
+            plans_in_episode: 1,
+            school_id: 2,
+          }
+
   - name: test_rollup_caps_rows_at_current_school_year
     description:
       A plan whose planned end falls in a later school year yields rows only
@@ -335,10 +359,10 @@ unit_tests:
       - input: ref("stg_branchingminds__intervention_plans")
         format: sql
         rows: |
-          select 2 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, date(y - 1, 8, 1) as intervention_start_date, date(y, 12, 15) as intervention_end_date
+          select 2 as intervention_plan_id, 100001 as student_number, 'SIPPS' as intervention_name, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 2 as school_id, date(y - 1, 8, 1) as intervention_start_date, date(y + 1, 6, 30) as intervention_end_date
           from unnest([if(extract(month from current_date('America/New_York')) >= 7, extract(year from current_date('America/New_York')), extract(year from current_date('America/New_York')) - 1)]) as y
           union all
-          select 1, 100001, 'SIPPS', 'Reading', 'kippteamandfamily', 3, date(y - 1, 10, 1), date(y, 12, 15)
+          select 1, 100001, 'SIPPS', 'Reading', 'kippteamandfamily', 3, date(y - 1, 10, 1), date(y + 1, 6, 30)
           from unnest([if(extract(month from current_date('America/New_York')) >= 7, extract(year from current_date('America/New_York')), extract(year from current_date('America/New_York')) - 1)]) as y
     expect:
       format: sql
@@ -346,7 +370,7 @@ unit_tests:
         select 100001 as student_number, 'SIPPS' as intervention_name, y - 1 as academic_year, date(y - 1, 8, 1) as episode_start, 'Reading' as intervention_subject_area, 'kippteamandfamily' as district, 3 as school_id, 2 as plans_in_episode, [1, 2] as intervention_plan_ids, date(y, 6, 30) as episode_end, false as is_current, to_hex(md5(concat('100001', '-', 'SIPPS', '-', cast(y - 1 as string), '-', cast(date(y - 1, 8, 1) as string)))) as intervention_episode_key
         from unnest([if(extract(month from current_date('America/New_York')) >= 7, extract(year from current_date('America/New_York')), extract(year from current_date('America/New_York')) - 1)]) as y
         union all
-        select 100001, 'SIPPS', y, date(y, 7, 1), 'Reading', 'kippteamandfamily', 3, 2, [1, 2], date(y, 12, 15), true, to_hex(md5(concat('100001', '-', 'SIPPS', '-', cast(y as string), '-', cast(date(y, 7, 1) as string))))
+        select 100001, 'SIPPS', y, date(y, 7, 1), 'Reading', 'kippteamandfamily', 3, 2, [1, 2], date(y + 1, 6, 30), true, to_hex(md5(concat('100001', '-', 'SIPPS', '-', cast(y as string), '-', cast(date(y, 7, 1) as string))))
         from unnest([if(extract(month from current_date('America/New_York')) >= 7, extract(year from current_date('America/New_York')), extract(year from current_date('America/New_York')) - 1)]) as y
 
   - name: test_rollup_end_before_start_does_not_merge_or_crash
