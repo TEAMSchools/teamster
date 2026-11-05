@@ -68,7 +68,8 @@ models:
           TRUE if the student had a Section 504 plan during this enrollment
           stint. FALSE when no 504 record covers the stint, including when the
           source system leaves the flag unset, as it does for most Miami
-          students and every current-year Paterson student. This is the
+          students and every current-year Paterson student. Graduate placeholder
+          stints, which have no entry date, always read FALSE. This is the
           enrollment 504 status the assessment dashboards show; state test files
           carry their own 504 flag, which can differ.
         config:

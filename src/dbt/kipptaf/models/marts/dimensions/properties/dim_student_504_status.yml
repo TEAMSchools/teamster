@@ -12,6 +12,7 @@ models:
       target date.
     config:
       meta:
+        contains_pii: true
         dagster:
           group: marts
           asset_key:
@@ -51,6 +52,8 @@ models:
           Last date this span is valid (inclusive) — the day before the stint's
           exit date. The current stint carries its scheduled exit date, so
           `'9999-12-31'` appears only when a source leaves the exit date empty.
+          A stint that exits on its entry date gives an end one day before its
+          start.
         config:
           meta:
             foreign_key:
@@ -59,9 +62,9 @@ models:
       - name: is_current
         data_type: boolean
         description: >-
-          True when `effective_date_end_key = '9999-12-31'`. Every stint carries
-          an exit date, so this is false on every row today; filter on the
-          enrollment's academic year to find a current stint.
+          True when `effective_date_end_key = '9999-12-31'`. False while every
+          stint carries an exit date; filter on the enrollment's academic year
+          to find a current stint.
       - name: is_504
         data_type: boolean
         description: >-
