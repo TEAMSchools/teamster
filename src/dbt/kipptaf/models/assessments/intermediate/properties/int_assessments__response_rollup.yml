@@ -52,6 +52,21 @@ models:
               - response_type
               - response_type_id
               - is_replacement
+      # Standard-domain averages read the standard rows as one row per standard
+      # code and description; a split standard that misses its canonical id
+      # would count twice there.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - source
+              - assessment_id
+              - response_type_code
+              - response_type_description
+              - is_replacement
+          config:
+            severity: error
+            where: response_type = 'standard'
       # Asserts the relative invariant the model now enforces: a sitting date is
       # judged against its own administration, not an absolute calendar floor.
       # Kept at warn so a source regression surfaces without blocking CI.
