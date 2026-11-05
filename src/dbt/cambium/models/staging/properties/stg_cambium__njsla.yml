@@ -78,6 +78,22 @@ models:
                   - Geometry
               config:
                 severity: error
+      - name: student_growth_percentile
+        data_type: int64
+        description: >-
+          Student growth percentile, 1 to 99. Compares the student's score with
+          students statewide who had similar prior scores. Null where Cambium
+          reports none, including grade 3, Science and the end-of-course tests.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 99
+              config:
+                severity: error
       - name: academic_year
         data_type: int64
         description: >-
