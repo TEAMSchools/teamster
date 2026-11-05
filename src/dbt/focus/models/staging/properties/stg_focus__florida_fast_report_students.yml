@@ -2,8 +2,9 @@ models:
   - name: stg_focus__florida_fast_report_students
     description: >-
       Focus's FAST (Florida Assessment of Student Thinking) report. One row per
-      student, school year and subject. Focus builds this table from state FAST
-      results; it is a report output, not a table staff edit.
+      student, school year and subject among rows where `is_current_report_row`
+      is true. Focus builds this table from state FAST results; it is a report
+      output, not a table staff edit.
 
 
       The PM3 score columns keep the administration year Focus puts in their
@@ -23,7 +24,22 @@ models:
               - syear
               - subject
           config:
+            where: is_current_report_row
             severity: error
+      - dbt_utils.unique_combination_of_columns:
+          name: stg_focus__florida_fast_report_students__student_syear_subject_unique
+          description: >-
+            Focus's FAST report has more than 1 row for a student, school year
+            and subject. Consumers must filter on `is_current_report_row` to
+            read only the newest row. Ask Focus support to remove the duplicate
+            FAST report row for the student.
+          arguments:
+            combination_of_columns:
+              - student_id
+              - syear
+              - subject
+          config:
+            severity: warn
     columns:
       - name: id
         description: Primary key — Focus FAST report row id.
@@ -61,6 +77,12 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: is_current_report_row
+        description: >-
+          True on the one row per student, school year and subject with the
+          highest `id`. False on older duplicate rows Focus has repeated.
+          Consumers must filter on it.
+        data_type: bool
       - name: school_id
         description: Focus school id (internal integer, not the Florida code).
         data_type: int

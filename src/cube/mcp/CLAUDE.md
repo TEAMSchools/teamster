@@ -149,6 +149,23 @@ Cloud Run service via `--set-secrets`).
 
 ## WorkOS quirks
 
+- Staging (`environment_01KRKXNKQ43HDNS42FZQB91AQ3`, a sandbox environment) is
+  the live AuthKit environment for this server and for staff apps. Production
+  was never activated: it has no billing, no Google provider, and no JWT
+  template, so an app created there cannot sign anyone in. Read and change
+  Staging unless the user says production has been turned on.
+- Two token kinds, two issuers. The OAuth tokens this server verifies come from
+  the AuthKit domain (`AUTHKIT_DOMAIN`). An app's sign-in session tokens carry
+  `iss` = `https://api.workos.com/user_management/<default app client id>` and
+  verify against `https://api.workos.com/sso/jwks/<default app client id>`. Both
+  are shared by every app in the environment, so never build the issuer from an
+  app's own client id; the `client_id` claim names the app.
+- Staging allows Google sign-in only. Its Google OAuth client lives in
+  `teamster-mcp` with audience Internal, which limits sign-in to KTAF Workspace
+  accounts (every domain in the Workspace, `kippmiami.org` included).
+  Re-enabling password or another provider lets non-staff accounts get tokens.
+  The audience is readable only in the GCP console (Google Auth Platform →
+  Audience); the `gcloud iap oauth-brands` API is shut down.
 - Access tokens omit `email` by default. Add a JWT template at Authentication →
   Features → JWT Template: `{"email": "{{ user.email }}"}`. The environment has
   one template shared by every application, so another app's claims get merged

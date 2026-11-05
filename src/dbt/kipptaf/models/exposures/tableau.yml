@@ -816,6 +816,7 @@ exposures:
           asset:
             metadata:
               id: 61c1e07d-778e-40a8-81ad-327f3951c8e2
+              cron_schedule: 0 7 * * *
   - name: fresh_dashboard
     label: FRESH Dashboard
     type: dashboard
@@ -853,7 +854,6 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("int_surveys__manager_survey_details")
       - ref("rpt_tableau__manager_survey_details")
     config:
       meta:
@@ -863,6 +863,7 @@ exposures:
           asset:
             metadata:
               id: 400e54b2-4b34-4185-b7e6-72765e6f1c86
+              cron_schedule: 0 7 * * *
   - name: content_team_dashboard
     label: Content Team Dashboard
     type: dashboard
