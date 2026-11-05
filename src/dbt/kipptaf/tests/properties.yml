@@ -392,6 +392,8 @@ data_tests:
       as untested on that quiz, and the DeansList sight words extract leaves it
       out.
     config:
+      # TODO(#6292): warn, not error, because late score entry also fires this
+      # and would stop the kipptaf build. #6292 splits the 2 causes.
       severity: warn
       meta:
         dagster:
