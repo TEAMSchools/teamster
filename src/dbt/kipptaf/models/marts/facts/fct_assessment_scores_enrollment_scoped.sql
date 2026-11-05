@@ -15,6 +15,7 @@ with
             rr.is_replacement,
             rr.performance_band_label,
             rr.performance_band_label_number,
+            rr.performance_band_set_id,
             rr.is_mastery,
             rr.n_assessments,
             rr.percent_correct,
@@ -392,6 +393,15 @@ select
     ia.is_replacement,
     ia.performance_band_label_number,
 
+    {{
+        performance_band_key(
+            "ia.source",
+            "ia.performance_band_set_id",
+            "ia.performance_band_label_number",
+            nullable="ia.performance_band_label_number",
+        )
+    }} as performance_band_key,
+
     sr.resolution_type as enrollment_resolution,
 from internal_assessments as ia
 -- ia.assessment_id is canonical-grain: int_assessments__response_rollup aliases
@@ -479,6 +489,7 @@ select
     cast(null as string) as response_type_root_description,
     cast(null as bool) as is_replacement,
     cast(null as numeric) as performance_band_label_number,
+    cast(null as string) as performance_band_key,
 
     sr.resolution_type as enrollment_resolution,
 from state_union as su
@@ -572,6 +583,7 @@ select
     cast(null as string) as response_type_root_description,
     cast(null as bool) as is_replacement,
     cast(null as numeric) as performance_band_label_number,
+    cast(null as string) as performance_band_key,
 
     sr.resolution_type as enrollment_resolution,
 from vendor_all as va
