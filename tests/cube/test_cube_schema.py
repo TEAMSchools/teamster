@@ -601,6 +601,14 @@ PHRASES.update(
         "student_assessment_scores.pct_students_below": [
             "percent of students",
             "Far Below included",
+            "Filter response_type to overall",
+        ],
+        "student_assessment_scores.pct_students_far_below": [
+            "Filter response_type to overall",
+        ],
+        "student_assessment_scores.count_students_banded": [
+            "Group by mastery_level",
+            "can add up to more than the ungrouped total",
         ],
         "student_assessment_scores.proficiency_level": [
             "Tested Out",

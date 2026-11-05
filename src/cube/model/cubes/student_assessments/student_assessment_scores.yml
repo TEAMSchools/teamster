@@ -449,19 +449,26 @@ cubes:
             get a proficient count.
 
       # Below and Far Below shares are percents of students, counted on the
-      # same key as count_students. Their numerators filter on the joined band
-      # cube's level; a band set that fails the level rule has a null level and
-      # drops out of both numerators but stays in the denominator.
-      - name: _count_students_banded
+      # same key as count_students. Numerators and denominator all filter on
+      # the joined band cube's level, so a band set that fails the level rule
+      # (null level) drops out of both sides.
+      - name: count_students_banded
         description: >-
           Distinct students (per student-year) with a score that fell in a
-          performance band. Denominator of pct_students_below and
+          performance band with a mastery level. Illuminate and Focus
+          Assessments only. Denominator of pct_students_below and
           pct_students_far_below.
         sql: "{student_section_enrollments.student_enrollment_key}"
         type: count_distinct
-        public: false
+        public: true
         filters:
-          - sql: "{CUBE}.performance_band_key IS NOT NULL"
+          - sql: "{student_performance_bands.mastery_level} IS NOT NULL"
+        meta:
+          ai_context: >-
+            Group by mastery_level for the number of students at each level. A
+            student with scores at 2 levels in the slice counts at both, so the
+            level rows can add up to more than the ungrouped total; filter to 1
+            assessment and response_type overall for 1 level per student.
 
       - name: _count_students_below
         description: >-
@@ -492,10 +499,16 @@ cubes:
           on every set. A student counts once if any of their scores in the
           slice is Below.
         sql:
-          "1.0 * {_count_students_below} / NULLIF({_count_students_banded}, 0)"
+          "1.0 * {_count_students_below} / NULLIF({count_students_banded}, 0)"
         type: number
         format: percent
         public: true
+        meta:
+          ai_context: &band_share_context >-
+            Filter response_type to overall for a share of students by their
+            overall score. With response_type open, a student counts as Below
+            when any standard or group score is Below; for standards, filter
+            response_type to standard and group by response_type_description.
 
       - name: pct_students_far_below
         description: >-
@@ -504,11 +517,13 @@ cubes:
           score in the slice. Illuminate and Focus Assessments only. A student
           counts once if any of their scores in the slice is Far Below.
         sql:
-          "1.0 * {_count_students_far_below} / NULLIF({_count_students_banded},
+          "1.0 * {_count_students_far_below} / NULLIF({count_students_banded},
           0)"
         type: number
         format: percent
         public: true
+        meta:
+          ai_context: *band_share_context
 
       - name: _sum_percent_correct
         description: >-

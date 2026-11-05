@@ -33,6 +33,7 @@ views:
           - pct_proficient
           - pct_proficient_formative
           - pct_proficient_crq
+          - count_students_banded
           - pct_students_below
           - pct_students_far_below
           - avg_percent_correct
