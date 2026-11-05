@@ -4,6 +4,11 @@ with
         select student_enrollment_key, is_ell, from {{ ref("dim_student_ell_status") }}
     ),
 
+    -- 504: at most one span per stint; LEFT JOIN returns NULL when absent.
+    section_504 as (
+        select student_enrollment_key, is_504, from {{ ref("dim_student_504_status") }}
+    ),
+
     -- IEP: latest span per stint (max effective_date_start_key).
     -- All five IEP columns come from the same row.
     iep_ranked as (
@@ -121,10 +126,12 @@ select
     meal.meal_eligibility,
 
     coalesce(ell.is_ell, false) as is_ell,
+    coalesce(sec.is_504, false) as is_504,
     coalesce(iep.is_iep, false) as is_iep,
     coalesce(meal.is_meal_eligible, false) as is_meal_eligible,
 
 from {{ ref("dim_student_enrollments") }} as enr
 left join ell on enr.student_enrollment_key = ell.student_enrollment_key
+left join section_504 as sec on enr.student_enrollment_key = sec.student_enrollment_key
 left join iep on enr.student_enrollment_key = iep.student_enrollment_key
 left join meal on enr.student_enrollment_key = meal.student_enrollment_key
