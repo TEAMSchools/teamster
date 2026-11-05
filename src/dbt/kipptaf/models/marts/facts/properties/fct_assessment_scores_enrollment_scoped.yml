@@ -279,3 +279,16 @@ models:
           comparable across assessments, or across response types within one
           assessment: standard and group rows can carry different band labels
           than the assessment's overall rows.
+
+      - name: performance_band_key
+        data_type: string
+        description: >-
+          FK to dim_performance_bands: the band the score fell in, on the band
+          set its response type was scored against. Illuminate and Focus
+          Assessments only; null for every other source, for not-taken rows, and
+          for a score with no band set.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_performance_bands')
+              to_columns: [performance_band_key]
