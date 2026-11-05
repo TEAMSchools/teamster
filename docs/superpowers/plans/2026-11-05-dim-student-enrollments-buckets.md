@@ -366,10 +366,14 @@ select * from archive full join model using (academic_year, `subject`)
       `int_assessments__assessments_canonical` to match. Give
       `int_iready__diagnostic_results` rows for Math and Reading with a scale
       score, and `int_assessments__college_assessment` 1 SAT EBRW row with
-      `course_discipline: ENG`. The other 6 inputs get `rows: []`. Expect
-      `type`, `academic_subject` and `bucket_subject`: (illuminate, Text Study,
-      Reading), (illuminate, Science, null), (iready, Math, Math), (iready,
-      Reading, Reading), (college, EBRW, Reading).
+      `course_discipline: ENG`. Give
+      `int_assessments__college_assessment_practice` 2 SAT rows: `EBRW`
+      (`module_code: sat_ebrw`) and `Combined` (`module_code: sat_combined`).
+      The other 5 inputs get `rows: []`. Expect `type`, `test_type`,
+      `academic_subject` and `bucket_subject`: (illuminate, null, Text Study,
+      Reading), (illuminate, null, Science, null), (iready, null, Math, Math),
+      (iready, null, Reading, Reading), (college, Official, EBRW, Reading),
+      (college, Practice, EBRW, Reading), (college, Practice, Combined, null).
 
 - [ ] **Step 2: Run it to see it fail.** UNIT `dim_assessments`. Expected: FAIL.
 
@@ -378,18 +382,20 @@ select * from archive full join model using (academic_year, `subject`)
       Add the YAML column (`data_type: string`). Its description says which
       bucket applies to scores on the assessment: `Reading` pairs with
       `ela_bucket`, `Math` with `math_bucket`, and null when none applies
-      (science, social studies, AP, and internal subjects with no course subject
-      crosswalk row). It also says where each family's value comes from.
+      (science, social studies, AP, combined and composite college scores, and
+      internal subjects with no course subject crosswalk row). It also says
+      where each family's value comes from.
 
-| Branch                                         | `bucket_subject` expression                                                    |
-| ---------------------------------------------- | ------------------------------------------------------------------------------ |
-| `illuminate_assessments`                       | `m.bucket_subject`                                                             |
-| `state_nj_assessments`, `state_fl_assessments` | `case discipline when 'ELA' then 'Reading' when 'Math' then 'Math' end`        |
-| `iready_assessments`                           | `subject` (already `Reading` or `Math`)                                        |
-| `star_assessments`                             | `if(star_subject = 'Math', 'Math', 'Reading')`                                 |
-| `dibels_assessments`                           | `'Reading'`                                                                    |
-| `college_assessments`                          | `case course_discipline when 'ENG' then 'Reading' when 'MATH' then 'Math' end` |
-| `practice_assessments`, `ap_assessments`       | `cast(null as string)`                                                         |
+| Branch                                         | `bucket_subject` expression                                                                                          |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `illuminate_assessments`                       | `m.bucket_subject`                                                                                                   |
+| `state_nj_assessments`, `state_fl_assessments` | `case discipline when 'ELA' then 'Reading' when 'Math' then 'Math' end`                                              |
+| `iready_assessments`                           | `subject` (already `Reading` or `Math`)                                                                              |
+| `star_assessments`                             | `if(star_subject = 'Math', 'Math', 'Reading')`                                                                       |
+| `dibels_assessments`                           | `'Reading'`                                                                                                          |
+| `college_assessments`                          | `case course_discipline when 'ENG' then 'Reading' when 'MATH' then 'Math' end`                                       |
+| `practice_assessments`                         | `case when subject_area in ('EBRW', 'English', 'Reading') then 'Reading' when subject_area = 'Math' then 'Math' end` |
+| `ap_assessments`                               | `cast(null as string)`                                                                                               |
 
 - [ ] **Step 4: Run it to see it pass.** UNIT `dim_assessments`. Expected: PASS.
 
@@ -398,7 +404,9 @@ select * from archive full join model using (academic_year, `subject`)
       including the `unique` test on `assessment_key`. Then count dev rows by
       `type` x `bucket_subject`. Expected: `Text Study` and `Mathematics` are
       always Reading and Math; Science and Social Studies are always null;
-      `Algebra I MS` is Math.
+      `Algebra I MS` is Math. Every SAT, PSAT and ACT row, Official and
+      Practice, maps EBRW, English and Reading to Reading and Math to Math, and
+      leaves Combined, Composite and Science null.
 
 - [ ] **Step 6: Commit.**
       `git -C <wt> add -u && git -C <wt> commit -m "feat(dbt): add bucket_subject to dim_assessments"`
