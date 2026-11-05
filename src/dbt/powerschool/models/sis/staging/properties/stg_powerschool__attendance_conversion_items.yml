@@ -1,9 +1,22 @@
 models:
   - name: stg_powerschool__attendance_conversion_items
     description:
-      Defines the number of periods in which the student must be present in
-      order to receive the number of points defined, such as full attendance =
-      1.
+      Maps an attendance input to the attendance value a student earns for the
+      day. One row per (fteid, attendance_conversion_id, conversion_mode_code,
+      input_value) among rows with a real FTE. In codeday mode, input_value is
+      the attendance code id. Rows with fteid 0 belong to no FTE, can repeat
+      that key, and match no enrollment.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - fteid
+              - attendance_conversion_id
+              - conversion_mode_code
+              - input_value
+          config:
+            where: fteid != 0
+            severity: error
     columns:
       - name: id
         data_type: int64
@@ -59,7 +72,7 @@ models:
         data_type: int64
         description:
           The internal number for the FTE with which this record is associated.
-          Indexed.
+          0 means the row belongs to no FTE. Indexed.
       - name: unused
         data_type: int64
         description: Unused at this time.
