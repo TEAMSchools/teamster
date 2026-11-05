@@ -8,6 +8,13 @@ models:
       hire not yet started, a closed position, a scoot sub, or a name only
       captured in notes — so the app still has a row to attach seat-tracking
       actions to when no real employee occupies the seat.
+    config:
+      meta:
+        standard_exempt:
+          A5: >-
+            Keeping the tier from each staff member's latest PMS evaluation is
+            the business rule (last_performance_management_score means the most
+            recent score), not source-duplicate masking.
     columns:
       - name: employee_number
         data_type: int64
@@ -15,10 +22,7 @@ models:
           Staff member's employee number, or a sentinel number (999995-999999)
           for a seat with no active teammate.
         data_tests:
-          # TODO(#6261): flip to error once pm_tier keeps one tier per person
-          - unique:
-              config:
-                severity: warn
+          - unique
       - name: assignment_status
         data_type: string
         description:
@@ -80,7 +84,8 @@ models:
       - name: last_performance_management_score
         data_type: int64
         description:
-          Performance management tier from the staff member's PMS observations.
+          Performance management tier from the staff member's most recent PMS
+          evaluation.
       - name: smart_recruiter_id
         data_type: int64
         description: Placeholder for a future SmartRecruiters feed; always null.

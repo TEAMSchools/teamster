@@ -46,14 +46,19 @@ with
         group by respondent_employee_number, answer, academic_year
     ),
 
-    pm_tier as (
-        select employee_number, overall_tier, max(eval_date) as eval_date,
+    pm_tier_ranked as (
+        select
+            employee_number,
+            overall_tier,
 
+            row_number() over (
+                partition by employee_number order by eval_date desc
+            ) as rn,
         from {{ ref("int_performance_management__observations") }}
         where observation_type_abbreviation = 'PMS'
-        group by employee_number, overall_tier
+    ),
 
-    )
+    pm_tier as (select employee_number, overall_tier, from pm_tier_ranked where rn = 1)
 
 select
     sr.employee_number,
