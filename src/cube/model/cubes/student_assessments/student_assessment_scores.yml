@@ -682,10 +682,15 @@ cubes:
         build_range_start:
           sql: SELECT DATE('2015-07-01')
         build_range_end:
-          sql: >-
-            SELECT DATE(EXTRACT(YEAR FROM
-            DATE_ADD(CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH)), 6,
-            30)
+          # Literal block (|-) so the formatter cannot reflow it.
+          # test_refresh_key_window_ends_at_build_range_end guards the copy in
+          # refresh_key below.
+          sql: |-
+            SELECT DATE(
+              EXTRACT(YEAR FROM DATE_ADD(CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH)),
+              6,
+              30
+            )
         # Rebuild a partition when the fact rebuilds (a full CREATE OR REPLACE,
         # on the cron in its properties yml), but only partitions from July 1
         # of the previous school year through build_range_end. The window start
