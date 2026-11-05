@@ -338,6 +338,9 @@ legitimately-superseded inactive rows that repeat the key.
 - Project-level `data_tests:` defaults flow through to singular tests too. Drop
   redundant `severity` / `store_failures` / `store_failures_as` from
   singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
+- A singular test follows the severity rule of the model its `meta.dagster.ref`
+  names, or of the one model it reads. One on a staging model sets `error` in
+  `tests/properties.yml`, unless it is a ticketed test.
 
 ### When tests run
 
@@ -360,7 +363,22 @@ remove each of those.
 A `relationships` test on a model built through an INNER JOIN to its parent is
 vacuous — the join already dropped every unmatched row. Put it on the staging
 model feeding the join, as a column-level generic (precedent:
-`stg_collegeboard__ap.yml`), not a bespoke `*_resolves` singular test.
+`stg_collegeboard__ap.yml`), not a singular test that anti-joins to the parent,
+whatever its name. Scope out values the parent never holds with `config.where`.
+
+### Choosing a singular test
+
+Write a singular test only when no generic test can express the check. Check
+`relationships`, `accepted_values`, and the `dbt_utils` generics
+(`unique_combination_of_columns`, `expression_is_true`, `accepted_range`) first.
+A singular test fits a check that compares rows with each other or with another
+row set: a window predicate, a self-join for overlaps, an anti-join from a
+driving set for coverage, or a group whose rows must agree.
+
+Return one row per violation, so the failure count is the number of things to
+fix. A self-join keeps one direction of each pair with a strict tie-break on the
+compared columns (`a.grade_min < b.grade_min`, then the next column on a tie). A
+group check groups by the group key.
 
 ### `dbt_utils.expression_is_true` window-function limit
 
