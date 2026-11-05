@@ -15,10 +15,8 @@ models:
           Staff member's employee number, or a sentinel number (999995-999999)
           for a seat with no active teammate.
         data_tests:
-          # TODO(#6261): flip to error once pm_tier keeps one tier per person
-          - unique:
-              config:
-                severity: warn
+          - unique
+          - not_null
       - name: assignment_status
         data_type: string
         description:
@@ -80,7 +78,8 @@ models:
       - name: last_performance_management_score
         data_type: int64
         description:
-          Performance management tier from the staff member's PMS observations.
+          Performance management tier from the staff member's most recent PMS
+          evaluation.
       - name: smart_recruiter_id
         data_type: int64
         description: Placeholder for a future SmartRecruiters feed; always null.
