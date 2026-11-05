@@ -146,7 +146,9 @@ models:
         description: >-
           Monday that names the App Review Week the application arrived in. The
           week runs Thursday to Wednesday around that Monday, so date_new plus 4
-          days, truncated to its Monday.
+          days, truncated to its Monday. Null when date_new is null, such as an
+          application that entered SmartRecruiters as a Lead and never reached
+          New.
       - name: date_reviewed
         data_type: date
         description: >-
@@ -163,8 +165,13 @@ models:
       - name: is_review_due
         data_type: boolean
         description: >-
-          True once review_due_date has arrived (Eastern), so the week's review
-          rate no longer changes. False for the current and upcoming weeks.
+          True once review_due_date has arrived (Eastern), false for the current
+          and upcoming weeks, and null when application_week_start is null. Use
+          it to score only finished weeks under the App Review Week rule, which
+          covers Teacher and Teaching Fellow applications. A due week can still
+          change slightly, because SmartRecruiters does not date the resume
+          score: an application moved before the deadline and scored after it
+          turns to on time when the score is entered.
       - name: subject_preference
         data_type: string
         description: >-
@@ -187,9 +194,10 @@ models:
         description: >-
           1 when the application was reviewed on time, else 0. Teacher and
           Teaching Fellow applications need a resume_score and a date_reviewed
-          before review_due_date. Other roles count when they moved out of New
-          within 7 days of date_new, or moved to a later step within 7 days with
-          a resume score.
+          before review_due_date; the score itself has no date, so it may be
+          entered later. Other roles count when they moved out of New within 7
+          days of date_new, or moved to a later step within 7 days with a resume
+          score; their rows can change after is_review_due turns true.
       - name: days_to_hire
         data_type: int64
         description: Days from date_new to date_hired.

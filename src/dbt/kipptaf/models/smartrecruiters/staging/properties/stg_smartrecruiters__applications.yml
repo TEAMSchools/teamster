@@ -13,7 +13,9 @@ models:
         description: Unique SmartRecruiters identifier for the job application.
         data_type: string
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
       - name: application_custom_step
         description: >-
           Name of the custom hiring step the application is currently in, if the
@@ -104,21 +106,36 @@ models:
       - name: candidate_email
         description: Candidate's email address as entered on the application.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_first_and_last_name
         description: Candidate's full name as entered on the application.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_first_name
         description: Candidate's first name as entered on the application.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_id
         description: SmartRecruiters identifier for the candidate.
         data_type: string
       - name: candidate_last_name
         description: Candidate's last name as entered on the application.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_linkedin_profile_url
         description: Link to the candidate's LinkedIn profile, if provided.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: candidate_source_subtype
         description: >-
           Finer-grained channel for how the candidate first entered
