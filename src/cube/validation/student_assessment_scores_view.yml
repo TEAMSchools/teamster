@@ -467,6 +467,150 @@ comparisons:
         Dibels Most Recent Composite: dibels_most_recent_composite
         Ml Status: ml_status
         IEP Status: iep_status
+  # DKI - Assessment Mastery Bars colors each row by Performance Bands - 3
+  # Level, a workbook calc that bins performance_band_label_number by school
+  # level instead of reading the band set's mastery band. dashboard_columns
+  # rebuilds that calc under its own name, so its export header maps to it.
+  # Cells differ where the school-level guess and the band set disagree. The
+  # sheet shows each level's share of Student Count (COUNTD of students)
+  # across the levels of its row; the probe rebuilds that percent of total.
+  - id: levels-dki-mastery-bars
+    <<: *dki
+    sheet: DKI - Assessment Mastery Bars
+    measure: pct_students_at_level
+    probe_sql: |
+      select {dims},
+        n / sum(n) over (partition by school, grade_level, subject_area, module_code) as value
+      from (
+        select {dims}, count(distinct student_number) as n
+        from ({rows})
+        where {where}
+        group by {dims}
+      )
+    dashboard_columns:
+      Calculation_3457427549115576330: |
+        case
+          when performance_band_label_number is null then null
+          when school_level = 'HS' then case cast(performance_band_label_number as int64)
+            when 1 then 'Below' when 2 then 'Approaching'
+            when 3 then 'At/Above' when 4 then 'At/Above' when 5 then 'At/Above'
+          end
+          else case cast(performance_band_label_number as int64)
+            when 1 then 'Below' when 2 then 'Below' when 3 then 'Approaching'
+            when 4 then 'At/Above' when 5 then 'At/Above'
+          end
+        end
+    dims:
+      - { dashboard: school, cube: abbreviation }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+      - { dashboard: module_code, cube: module_code }
+      - { dashboard: Calculation_3457427549115576330, cube: mastery_level }
+    shelves:
+      drop: [Grade/Subject, School]
+      add: { rows: [School, Grade Level, Subject Area] }
+      # The action filter applies only after a click on the grid; unclicked,
+      # the dashboard shows every row.
+      clear_filters:
+        - Discipline
+        - Action (Grade/Subject,Module Code,School,Week Start Monday)
+    rows:
+      grain:
+        - { dashboard: student_number, cube: lea_student_identifier }
+        - { dashboard: assessment_id, cube: source_assessment_id }
+        - { dashboard: response_type, cube: response_type }
+        - { dashboard: response_type_code, cube: response_type_code }
+      values:
+        - { dashboard: performance_band_label_number, cube: band_number }
+    proof: null
+  # DKI - Assessment Mastery Table shows AVG(Is Far Below) through Measure
+  # Values: band 1 is 1, any higher band 0. Module Code joins the rows so each
+  # cell holds 1 overall score per student, where an average of score rows and
+  # Cube's distinct-student share agree.
+  - id: far-below-dki-mastery-table
+    <<: *dki
+    sheet: DKI - Assessment Mastery Table
+    measure: pct_students_far_below
+    sheet_field: "% Far Below"
+    probe: |
+      avg(case
+        when performance_band_label_number = 1 then 1
+        when performance_band_label_number > 1 then 0
+      end)
+    cuts: [{ Response Type: overall }]
+    dims:
+      - { dashboard: school, cube: abbreviation }
+      - { dashboard: grade_level, cube: grade_level }
+      - { dashboard: subject_area, cube: academic_subject }
+      - { dashboard: module_code, cube: module_code }
+    shelves:
+      drop: [Grade/Subject, School]
+      add: { rows: [School, Module Code, Grade Level, Subject Area] }
+      clear_filters: [Discipline]
+    rows:
+      grain:
+        - { dashboard: student_number, cube: lea_student_identifier }
+        - { dashboard: assessment_id, cube: source_assessment_id }
+        - { dashboard: response_type, cube: response_type }
+        - { dashboard: response_type_code, cube: response_type_code }
+      values:
+        - { dashboard: performance_band_label_number, cube: band_number }
+    proof:
+      fingerprint: f7cc9a4cf8b0e25ef9bdd1b83c04756558f1039486d7d46734fbe3b6b8ce422d
+      cells: 1303
+      proven_at: "2026-11-05T22:09:03.658665+00:00"
+      workbook_updated_at: "2026-11-05T06:41:01+00:00"
+      probe_fingerprint: dbe399bbffffb1f5edd68acf45cd392b3f41997cfa72370e110aee110754381c
+      source_fingerprint: 0f04e5bc396bc10f77f44b8ef651a385c4eb60d3a8d925755e8ebbb36c7d3b6e
+      cuts:
+        - '{"Response Type": "overall"}'
+      totals_skipped: 1
+      shelves:
+        drop:
+          - Grade/Subject
+          - School
+        clear_filters:
+          - Discipline
+        add:
+          rows:
+            - School
+            - Module Code
+            - Grade Level
+            - Subject Area
+      missing_cuts: []
+      missing_filters:
+        - Dibels Most Recent Composite
+        - Discipline
+        - Exclude Future Assessments
+        - Head Of School
+        - IEP Status
+        - Ml Status
+        - Performance Band Label
+        - School Level
+        - Student Tier
+        - Term
+        - Week Start Monday
+        - gifted_and_talented
+        - is_low_25_fl
+        - is_sipps
+        - state_test_proficiency
+      restricting_filters:
+        - Exclude Future Assessments
+      filter_notes: {}
+      missing_columns:
+        Head Of School: head_of_school
+        Student Tier: nj_student_tier
+        School Level: school_level
+        Week Start Monday: week_start_monday
+        Performance Band Label: performance_band_label
+        is_sipps: is_sipps
+        gifted_and_talented: gifted_and_talented
+        IEP Status: iep_status
+        is_low_25_fl: is_low_25_fl
+        Term: term
+        Ml Status: ml_status
+        state_test_proficiency: state_test_proficiency
+        Dibels Most Recent Composite: dibels_most_recent_composite
 decisions:
   - id: school-c6-future-filter
     comparison: mastery-dki-school
